@@ -32,6 +32,7 @@ export type AgentIconKey =
   | 'cascade'
   | 'user'
   | 'gavel'
+  | 'crowd'
   | 'agent';
 
 export interface AgentBadgeInfo {
@@ -84,6 +85,11 @@ export const AGENT_BADGES: Record<string, AgentBadgeInfo> = {
     icon: 'hourglass',
     plain: 'Estimates when a trend or shock might actually play out, from dated events, turns in the economic cycle and crowded bets starting to unwind.',
     reads: 'Dated catalysts, cycle turns, CFTC positioning, news tone shifts, Treasury flows and 3-month yield moves.',
+  },
+  behaviour: {
+    icon: 'crowd',
+    plain: 'Looks for herding and mood swings: whether many traders bet the same way, how sure the crowd is, and how far confidence is from normal.',
+    reads: 'CFTC futures positioning, Polymarket crowd odds, EU consumer confidence, sentiment and households’ expected prices, the Timing Agent’s reading.',
   },
   doc: {
     icon: 'file',

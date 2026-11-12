@@ -141,8 +141,15 @@ full council and saved research.
   event counts and economic news themes from the GDELT raw files, World Bank stability rank,
   Polymarket odds), Relative Value (cheap or rich against peers), FX (real exchange
   rate against its history), Global Spillover (Hormuz, Taiwan, Russia, commodity prices), Calendar
-  (dates in the next 60 days) and Timing (catalysts, cycle clock, positioning, tone shifts; dates,
-  never probabilities).
+  (dates in the next 60 days), Timing (catalysts, cycle clock, positioning, tone shifts; dates,
+  never probabilities) and Behavioural Finance (herding and sentiment: CFTC positioning with the
+  crowding rule's badge, Polymarket crowd odds as market prices, EU consumer confidence, economic
+  sentiment and households' expected prices each placed against its own history, with their
+  12-month change; survey against market inflation expectations reads Missing, since breakevens
+  are saved for the US only and the survey covers EU members only; Kalshi reads Missing. Every
+  reading not covered by a tested rule says "Description, not a tested signal"; the claim that
+  rising household expectations come before higher inflation waits for its pre-registered test,
+  `inflation_expectations_lead`, in Models & validation).
 - *Policy documents*: add a PDF or text file, or paste text. The Document agent quotes passages, and
   figures in the document are checked against the app's own figures.
 - *Brief*: with Gemini or Ollama set up, a summary agent writes a short brief from the agents'

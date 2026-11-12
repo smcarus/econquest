@@ -27,6 +27,8 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Growth and inflation quadrant | Research | Backtest failed | v1, 2026-11-06, method 2 |
 | Cycle clock | Research | Backtest passed | v1, 2026-11-06, method 2 |
 | Timing Agent | Research | Backtest passed | v1, 2026-11-06, method 2 |
+| Behavioural Finance Agent | Research | Not validated | None |
+| Household price expectations before inflation | Research | Not validated | None |
 | Council summary (AI synthesis) | Decision input | Model-assisted, not validated | None |
 | GDP nowcast (bridge equation) | Research | Forecast evaluation passed | v1, 2026-11-07 |
 | Forecasts with fan charts (AR models) | Research | Forecast evaluation failed | debt_forecast v2, 2026-11-07 |
@@ -302,6 +304,46 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - v1: Bands use only past weeks (no hindsight). An unwind is measured in positioning, not in the exchange rate.
 - v1: A position already 3 points off its extreme is partly mean reversion in progress; the base rate after any week does not remove that.
 - v1: Six USD crosses move together; method 2 groups cases by year, not by the common dollar factor within a year.
+
+### Behavioural Finance Agent
+
+- **Says:** Describes herding and sentiment: crowded futures positioning, how sure the prediction-market crowd is, and EU consumer confidence, sentiment and households' expected prices against their own history.
+- **Rule:** Percentiles of each series against its own saved history (window stated), the Timing Agent's reading; gives no probability and makes no forecast.
+- **Reads:** CFTC Traders in Financial Futures, Polymarket, European Commission consumer and business surveys via Eurostat
+- **Shows in:** Council chat
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Its readings are descriptions, not tested signals. The one forward claim it could make, that rising household price expectations come before higher inflation, is the pre-registered test inflation_expectations_lead; crowding has its own test (cftc_crowding).
+- **Limits:** EU members only for the surveys; breakevens are saved for the United States only, so the survey-against-market comparison reads Missing; Kalshi odds are not saved per country.
+- **Code:** `src/utils/behaviourAgent.ts`
+
+### Household price expectations before inflation
+
+- **Says:** When households' expected price trends rose over the past year, inflation is higher a year later, and when they fell it is lower, more often than half the time (EU members).
+- **Rule:** Each December: the 12-month change in the EC consumer survey balance on price trends over the next 12 months, against the change in HICP annual inflation over the following 12 months; whole calendar years resampled.
+- **Reads:** European Commission consumer survey (ei_bsco_m, BS-PT-NY) and Eurostat HICP annual rate, via Eurostat
+- **Shows in:** Behavioural Finance Agent (only once the test passes)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered on 11 November 2026 before the runner existed (docs/validation/preregistered/inflation_expectations_lead.json): at least 100 cases in 15 years, hit rate 55% or more, p at or below 0.05 with whole years resampled.
+- **Limits:** Direction only, not size; EU members only; common energy and food shocks move countries together.
+- **Code:** `src/utils/backtest.ts (expectationsDirectionCases), src/utils/backtestRun.ts`
+
+**Pre-registered tests**
+
+- Version 1 (`docs/validation/preregistered/inflation_expectations_lead.json`, registered 2026-11-11, method 2, whole years resampled, sample from 2000). In EU countries, when households' expected price trends over the next 12 months (European Commission consumer survey, balance of answers) rose over the past 12 months, headline HICP inflation is higher 12 months later than it is now, and when they fell it is lower, more often than half the time. Pass mark: at least 100 cases, p at or below 0.05, at least 15 years. SHA-256 b2b4b504765c4e2b…
+
+**Recorded verdicts**
+
+- None recorded yet. Run `npm run backtest` (or Menu > Models & validation > Run backtests).
+
+**Known limits, stated before the run**
+
+- v1: The test checks direction only, not size: it says whether households' expectations point the right way, not how far inflation moves.
+- v1: EU members only, because the survey is the European Commission's; other countries' household surveys differ in question and licence.
+- v1: Countries move together (common energy and food shocks), so resampling whole years is used; the effective number of independent cases is closer to the number of years than to country-years.
+- v1: Survey answers are not revised; HICP rates are final figures, which differ little from first releases.
+- v1: The existing cftc_crowding test already covers extreme currency positioning; this test adds the household-expectations claim the G32 agent would make.
 
 ### Council summary (AI synthesis)
 

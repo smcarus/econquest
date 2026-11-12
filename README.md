@@ -67,7 +67,8 @@ in downloads or shared copies.
 Council chat is the heart of the app. Type a question in plain words, such as "Is Brazil's debt
 sustainable?" or "Who is most exposed to a closure of the Strait of Hormuz?". The agents that cover
 the question answer from the app's figures, each naming its source: Central Bank, Fiscal & Debt,
-Politics & Events, Relative Value, FX (currencies), Global Spillover, Calendar and Timing, plus a
+Politics & Events, Relative Value, FX (currencies), Global Spillover, Calendar, Timing and
+Behavioural Finance, plus a
 Document agent that reads policy papers you upload. A summary agent then writes a short brief that may
 quote only their figures, and a number check flags any figure it cannot trace back to a source.
 

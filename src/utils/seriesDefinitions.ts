@@ -199,6 +199,7 @@ const BY_ID: Record<string, Def> = {
   eu_survey_services: d('Balance of positive minus negative replies from service firms (European Commission); not a PMI', 'firmsHouseholds'),
   eu_survey_consumer: d('Balance of positive minus negative replies from consumers (European Commission); not a PMI', 'firmsHouseholds'),
   eu_survey_employment: d('Employment expectations indicator, 100 = long-term average (European Commission); not a PMI', 'firmsHouseholds'),
+  eu_survey_prices: d("Balance of households expecting prices to rise faster minus those expecting slower rises or falls over the next 12 months (European Commission consumer survey); an expectation, not an inflation rate", 'firmsHouseholds'),
   // Stress and supply chain indices
   stress_stlfsi: d('St. Louis Fed Financial Stress Index (STLFSI4): zero = average stress', 'financial'),
   stress_nfci: d('Chicago Fed National Financial Conditions Index: zero = average, positive = tighter', 'financial'),
@@ -496,6 +497,7 @@ const UNITS_BY_ID: Record<string, Units> = {
   eu_survey_industry: ['balance'],
   eu_survey_services: ['balance'],
   eu_survey_consumer: ['balance'],
+  eu_survey_prices: ['balance'],
   stress_stlfsi: ['index'],
   stress_nfci: ['index'],
   stress_anfci: ['index'],
