@@ -18,7 +18,7 @@ import { spawn } from 'node:child_process';
 import { mkdtempSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -34,7 +34,7 @@ const server = spawn(process.execPath, ['--import', 'tsx', path.join(root, 'serv
   cwd: root,
   env: {
     ...process.env,
-    NODE_OPTIONS: `--import ${path.join(root, 'tests/helpers/offline-fetch.mjs')}`,
+    NODE_OPTIONS: `--import ${pathToFileURL(path.join(root, 'tests/helpers/offline-fetch.mjs')).href}`,
     NODE_ENV: 'production',
     PORT: String(port),
     DATA_DIR: dataDir,

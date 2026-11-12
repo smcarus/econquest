@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Windows fixes found by the first GitHub Windows check: every text file now keeps Unix line endings
+  on every checkout, so the pre-registered tests' hashes match on Windows (and in a Docker image built
+  from a Windows checkout); test helpers are loaded by file URL so the tests run on Windows.
 - Security, privacy and Windows review before the public release (G43, docs/SECURITY_REVIEW.md).
   `npm audit` finds no known vulnerabilities; routes, sign-in, file permissions, backups and exports
   were checked and needed no change. Fixed: the bundled Ollama container (used when no Ollama runs

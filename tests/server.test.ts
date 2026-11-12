@@ -9,7 +9,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { getSnapshotDataStatus } from '../src/utils/dataStatus.ts';
 import type { OpenDataSnapshot, WatchlistItem } from '../src/types/council.ts';
 
@@ -28,7 +28,7 @@ before(async () => {
     cwd: root,
     env: {
       ...process.env,
-      NODE_OPTIONS: `--import ${path.join(root, 'tests/helpers/offline-fetch.mjs')}`,
+      NODE_OPTIONS: `--import ${pathToFileURL(path.join(root, 'tests/helpers/offline-fetch.mjs')).href}`,
       NODE_ENV: 'production',
       PORT: String(port),
       DATA_DIR: dataDir,

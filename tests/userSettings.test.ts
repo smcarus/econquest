@@ -62,7 +62,7 @@ test('settings file: saved readable by this user only, broken or missing reads a
     const file = settingsFilePath(dir);
     assert.deepEqual(loadSettings(file), { apiKeys: {} });
     saveSettings(file, { apiKeys: { FRED_API_KEY: GOOD } });
-    assert.equal(statSync(file).mode & 0o777, 0o600);
+    if (process.platform !== 'win32') assert.equal(statSync(file).mode & 0o777, 0o600);
     assert.equal(loadSettings(file).apiKeys.FRED_API_KEY, GOOD);
     assert.match(readFileSync(file, 'utf8'), /FRED_API_KEY/);
     writeFileSync(file, '{not json');

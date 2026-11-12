@@ -20,6 +20,7 @@
  * is used; the cases carry frozen inputs. Takes a few minutes on a 32B model.
  */
 import { spawn, execSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -60,7 +61,7 @@ const env: Record<string, string> = {};
 for (const [k, v] of Object.entries(process.env)) if (v !== undefined) env[k] = v;
 Object.assign(env, {
   // RECORD_PRELOAD: a module loaded first (the self-check in CI records a stand-in model this way).
-  NODE_OPTIONS: `${process.env.RECORD_PRELOAD ? `--import ${process.env.RECORD_PRELOAD} ` : ''}--import ${path.join(root, 'tests/helpers/model-record-fetch.mjs')}`,
+  NODE_OPTIONS: `${process.env.RECORD_PRELOAD ? `--import ${pathToFileURL(path.resolve(process.env.RECORD_PRELOAD)).href} ` : ''}--import ${pathToFileURL(path.join(root, 'tests/helpers/model-record-fetch.mjs')).href}`,
   MODEL_RECORD_DIR: recordDir,
   DATA_DIR: dataDir,
   PORT: String(port),

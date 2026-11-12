@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { pathToFileURL } from 'node:url';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -80,7 +81,7 @@ test('npm run daily: runs offline against fixtures, writes the report, and does 
   const run = () =>
     spawnSync(process.execPath, ['--import', 'tsx', path.join(root, 'server.ts'), '--daily', '--countries=MEX'], {
       cwd: root,
-      env: { ...process.env, NODE_OPTIONS: `--import ${path.join(root, 'tests/helpers/offline-fetch.mjs')}`, DATA_DIR: dataDir, COMTRADE_API_KEY: '', GEMINI_API_KEY: '', SCHEDULE_BACKTESTS: 'off', PRELOAD_STEP_TIMEOUT_S: '20' },
+      env: { ...process.env, NODE_OPTIONS: `--import ${pathToFileURL(path.join(root, 'tests/helpers/offline-fetch.mjs')).href}`, DATA_DIR: dataDir, COMTRADE_API_KEY: '', GEMINI_API_KEY: '', SCHEDULE_BACKTESTS: 'off', PRELOAD_STEP_TIMEOUT_S: '20' },
       encoding: 'utf8',
       timeout: 240_000,
     });

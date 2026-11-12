@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   EMPTY_PRELOAD_STATE,
   PRELOAD_FRESH_MS,
@@ -84,7 +84,7 @@ test('npm run preload offline: says the feeds cannot be reached and downloads no
   try {
     const r = spawnSync(process.execPath, ['--import', 'tsx', path.join(rootDir, 'server.ts'), '--preload', '--countries=MEX'], {
       cwd: rootDir,
-      env: { ...process.env, NODE_OPTIONS: `--import ${path.join(rootDir, 'tests/helpers/offline-fetch.mjs')}`, DATA_DIR: dataDir, OFFLINE_PROBE: 'down' },
+      env: { ...process.env, NODE_OPTIONS: `--import ${pathToFileURL(path.join(rootDir, 'tests/helpers/offline-fetch.mjs')).href}`, DATA_DIR: dataDir, OFFLINE_PROBE: 'down' },
       encoding: 'utf8',
       timeout: 60_000,
     });
@@ -102,7 +102,7 @@ test('npm run preload: a step that never answers is recorded as not saved and th
   try {
     const r = spawnSync(process.execPath, ['--import', 'tsx', path.join(rootDir, 'server.ts'), '--preload', '--countries=MEX'], {
       cwd: rootDir,
-      env: { ...process.env, NODE_OPTIONS: `--import ${path.join(rootDir, 'tests/helpers/offline-fetch.mjs')}`, DATA_DIR: dataDir, OFFLINE_HANG: 'stats.bis.org/api', PRELOAD_STEP_TIMEOUT_S: '15' },
+      env: { ...process.env, NODE_OPTIONS: `--import ${pathToFileURL(path.join(rootDir, 'tests/helpers/offline-fetch.mjs')).href}`, DATA_DIR: dataDir, OFFLINE_HANG: 'stats.bis.org/api', PRELOAD_STEP_TIMEOUT_S: '15' },
       encoding: 'utf8',
       timeout: 150_000,
     });
@@ -123,7 +123,7 @@ test('npm run preload: runs offline against fixtures, saves progress, and a seco
   const run = () =>
     spawnSync(process.execPath, ['--import', 'tsx', path.join(root, 'server.ts'), '--preload', '--countries=MEX'], {
       cwd: root,
-      env: { ...process.env, NODE_OPTIONS: `--import ${path.join(root, 'tests/helpers/offline-fetch.mjs')}`, DATA_DIR: dataDir, COMTRADE_API_KEY: '', GEMINI_API_KEY: '' },
+      env: { ...process.env, NODE_OPTIONS: `--import ${pathToFileURL(path.join(root, 'tests/helpers/offline-fetch.mjs')).href}`, DATA_DIR: dataDir, COMTRADE_API_KEY: '', GEMINI_API_KEY: '' },
       encoding: 'utf8',
       timeout: 90_000,
     });
