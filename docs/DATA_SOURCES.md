@@ -78,6 +78,7 @@ own-data switch in Settings).
 | BIS | Real exchange rates; government debt securities | stats.bis.org | 12 h |
 | ILOSTAT (International Labour Organization) | Average monthly earnings of employees, local currency (EAR_4MTH_SEX_ECO_CUR_NB_A): nominal wage growth, and real wage growth with World Bank inflation (FP.CPI.TOTL.ZG); CC BY 4.0 | rplumber.ilo.org | 1 week, daily run, on disk |
 | BIS residential property prices | Real and nominal house prices, change on a year earlier, all countries in one request (WS_SPP) | stats.bis.org | 20 h, daily run, on disk |
+| BIS total credit | Household and non-financial company debt, credit from all lenders, % of GDP, market value, adjusted for breaks (WS_TC, key Q.{country}.H+N.A.M.770.A); the daily run reads all countries, History & data the full history per country | stats.bis.org | 20 h, daily run, on disk |
 | BIS central bank policy rates | Policy rate per country with its date and central bank, the 12-month change and the last move | stats.bis.org | 12 h, on disk |
 | WITS | Export and import shares with China and Russia | wits.worldbank.org | 24 h |
 | CFTC Commitments of Traders | Weekly currency futures positioning (leveraged funds, asset managers) for MXN, BRL, ZAR, JPY, GBP, EUR | publicreporting.cftc.gov | Until a newer report can exist (weekly), on disk |

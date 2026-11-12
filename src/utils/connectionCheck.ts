@@ -12,6 +12,7 @@
  * Keys and passwords are never put in a row: only whether they are set.
  */
 import { EMISSIONS_CODE, OWID_ENERGY_URL, energyColumns } from './climateEnergy';
+import { BIS_PRIVATE_DEBT_SAMPLE_URL, parseBisPrivateDebtAll } from './sectorBalances';
 import { BIS_PROPERTY_SAMPLE_URL, iloEarningsSampleUrl, parseBisPropertyAll, parseIloEarnings, quarterLabel, wageReading } from './wagesHousing';
 import { debtStructureUrl, parseDebtStructure, currencyValue } from './debtStructure';
 import { INVESTOR_BASE_SETUP_HELP, investorBaseValue } from './investorBase';
@@ -284,6 +285,7 @@ export const SOURCE_IDS = [
   'owid_energy',
   'ilostat_wages',
   'bis_property',
+  'bis_private_debt',
   'worldbank_debt_structure',
   'imf',
   'imf_reserves',
@@ -447,6 +449,24 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
         const v = (x?: number) => (x === undefined ? 'n/a' : `${x > 0 ? '+' : ''}${fmt(x)}%`);
         return `${SAMPLE_NAME} house prices ${v(h.realYoyPct)} real, ${v(h.nominalYoyPct)} nominal on a year earlier (${quarterLabel(h.quarter)})`;
       }
+    )
+  );
+
+  add('bis_private_debt', () =>
+    httpCheck(
+      { id: 'bis_private_debt', name: 'BIS total credit (household and company debt)', group: 'free', feeds: 'Household and company debt, % of GDP (country brief, History & data, Fiscal Agent)' },
+      fetchFn,
+      BIS_PRIVATE_DEBT_SAMPLE_URL,
+      T,
+      (r) => {
+        const all = parseBisPrivateDebtAll(r.text || '');
+        const d = all[SAMPLE_ISO3];
+        if (!d) return Object.keys(all).length ? 'Answered (no row for the sample country)' : null;
+        const v = (x?: number) => (x === undefined ? 'n/a' : `${fmt(x)}% of GDP`);
+        return `${SAMPLE_NAME} household debt ${v(d.householdPct)}, company debt ${v(d.corporatePct)} (${d.quarter.replace(/^(\d{4})Q/, '$1 Q')})`;
+      },
+      undefined,
+      'It answered, but not with the BIS total credit columns the app reads (BORROWERS_CTY, TC_BORROWERS, TC_LENDERS, TIME_PERIOD, OBS_VALUE). The BIS may have changed the series key.'
     )
   );
 

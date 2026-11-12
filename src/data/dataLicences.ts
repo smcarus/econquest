@@ -180,7 +180,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'bis',
     name: 'BIS statistics (policy rates, real exchange rates, debt securities, credit cycle)',
-    usedFor: 'Central bank policy rates and their history, real exchange rates, government debt securities, credit-to-GDP gaps, debt service ratios and residential property prices (real and nominal, country brief and History & data)',
+    usedFor: 'Central bank policy rates and their history, real exchange rates, government debt securities, credit-to-GDP gaps, debt service ratios, residential property prices (real and nominal, country brief and History & data) and household and company debt (total credit)',
     terms: [
       { label: 'Terms of permitted use of BIS statistics', url: 'https://data.bis.org/help/legal' },
       { label: 'BIS terms and conditions', url: 'https://www.bis.org/terms_conditions.htm' },

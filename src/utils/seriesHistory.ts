@@ -24,6 +24,7 @@ import { outputGapFromGrowth, outputGapSeries } from './outputGap';
 import { fxDailySeries, type FxHistoryFile } from './fxHistory';
 import type { FxExtraFile } from './fxExtra';
 import { bisCreditSeries, type BisCreditCycle } from './bisCreditCycle';
+import { privateDebtSeries, sectorBalanceSeries } from './sectorBalances';
 import { idsCreditorSeries, type IdsCreditors } from './idsCreditors';
 import { sovereignDefaultSeries, type SovereignDefaults } from './sovereignDefaults';
 import { inflationExpectationSeries, type InflationExpectations } from './inflationExpectations';
@@ -371,6 +372,7 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
     hcSpread(code, inputs.hcSpread),
     impliedDefaultSeries(hcSpread(code, inputs.hcSpread)),
     ...bisCreditSeries(inputs.bisCredit, Boolean(BIS_ISO2[code])),
+    ...privateDebtSeries(inputs.bisCredit, Boolean(BIS_ISO2[code])),
     ...idsCreditorSeries(inputs.idsCreditors),
     ...sovereignDefaultSeries(code, inputs.sovereignDefaults),
     ...inflationExpectationSeries(code, inputs.inflationExpectations),
@@ -392,6 +394,8 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
       else all[gapAt] = { ...all[gapAt], reason: `${(all[gapAt] as SeriesMissing).reason}; the app estimate needs more history: ${est.reason}` };
     }
   }
+  // Sector balances (G40, src/utils/sectorBalances.ts): private and foreign, worked out from the government balance and current account.
+  all.push(...sectorBalanceSeries(all.find((x) => x.id === 'overall_balance'), all.find((x) => x.id === 'current_account_imf')));
   return { iso3: code, series: all.filter(isSeries), missing: all.filter((x): x is SeriesMissing => !isSeries(x)) };
 }
 

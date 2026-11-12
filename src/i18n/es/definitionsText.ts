@@ -111,6 +111,8 @@ export const DEFINITIONS_TEXT_ES: Record<string, string> = {
   "Industry": "Industria",
   "All sectors of the economy, public and private": "Todos los sectores de la economía, públicos y privados",
   "Households and non-financial firms": "Hogares y empresas no financieras",
+  "Households and the non-profit bodies that serve them": "Hogares y las instituciones sin fines de lucro que les sirven",
+  "Non-financial companies": "Empresas no financieras",
   "Households (consumer prices)": "Hogares (precios al consumidor)",
   "Central bank": "Banco central",
   "Market prices": "Precios de mercado",
@@ -203,4 +205,10 @@ export const DEFINITIONS_TEXT_ES: Record<string, string> = {
   "Renewable energy as % of final energy consumption, including traditional biomass (World Bank EG.FEC.RNEW.ZS)": "Energía renovable en % del consumo final de energía, incluida la biomasa tradicional (Banco Mundial EG.FEC.RNEW.ZS)",
   // G22: wages and house prices
   "Residential property prices in local currency, change on a year earlier (BIS)": "Precios de la vivienda en moneda local, variación respecto a un año antes (BIS)",
+  // G40: sector balances and private debt
+  "Credit to households from all lenders, % of GDP, market value, break-adjusted (BIS total credit)": "Crédito a los hogares de todos los prestamistas, % del PIB, valor de mercado, ajustado por rupturas (crédito total del BIS)",
+  "Credit to non-financial companies from all lenders, % of GDP, market value, break-adjusted (BIS total credit)": "Crédito a las empresas no financieras de todos los prestamistas, % del PIB, valor de mercado, ajustado por rupturas (crédito total del BIS)",
+  "Current account balance, % of GDP (IMF WEO BCA_NGDPD)": "Saldo de la cuenta corriente, % del PIB (FMI WEO BCA_NGDPD)",
+  "Households and firms: saving minus investment, % of GDP, worked out as current account minus government balance (remainder of the identity)": "Hogares y empresas: ahorro menos inversión, % del PIB, calculado como cuenta corriente menos saldo del gobierno (resto de la identidad)",
+  "Rest of the world lending to the country, % of GDP: minus the current account": "Préstamos del resto del mundo al país, % del PIB: la cuenta corriente con el signo cambiado",
 };

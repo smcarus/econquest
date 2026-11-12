@@ -355,4 +355,16 @@ export const BRIEF_TEXT_FR: Record<string, string> = {
   "The World Bank has no consumer price inflation for this country in the year of the latest earnings figure, so real wage growth cannot be worked out.": "La Banque mondiale n'a pas d'inflation des prix à la consommation pour ce pays l'année du dernier chiffre de gains ; la croissance réelle des salaires ne peut donc pas être calculée.",
   "House prices come from the BIS (Bank for International Settlements) residential property price series, which the daily run downloads. It has not been downloaded yet, or the download did not answer.": "Les prix des logements proviennent de la série des prix de l'immobilier résidentiel de la BRI (Banque des règlements internationaux), que l'exécution quotidienne télécharge. Elle n'a pas encore été téléchargée, ou le téléchargement n'a pas répondu.",
   "The BIS was read but publishes no residential property price series for this country. The BIS collects them from central banks and statistics offices in about 60 countries. The app shows Missing rather than an estimate.": "La BRI a été lue, mais elle ne publie pas de série de prix de l'immobilier résidentiel pour ce pays. La BRI les recueille auprès des banques centrales et des instituts statistiques d'environ 60 pays. L'application indique Manquant plutôt qu'une estimation.",
+  // G40: sector balances and private debt
+  "Sector balances and private debt": "Soldes sectoriels et dette privée",
+  "Government balance": "Solde des administrations publiques",
+  "Private sector balance (remainder)": "Solde du secteur privé (reste)",
+  "Foreign balance": "Solde extérieur",
+  "Household debt": "Dette des ménages",
+  "Company debt": "Dette des entreprises",
+  "IMF figures are for different years": "Les chiffres du FMI portent sur des années différentes",
+  "Needs a live IMF current account": "Nécessite un solde courant du FMI en direct",
+  "Not in the BIS total credit series": "Absent des séries de crédit total de la BRI",
+  "Household and company debt come from the BIS (Bank for International Settlements) total credit statistics, which the daily run downloads (npm run go -- daily, or Menu > Offline data > Download all country data). They have not been downloaded yet, or the download did not answer.": "La dette des ménages et des entreprises provient des statistiques de crédit total de la BRI (Banque des règlements internationaux), que l'exécution quotidienne télécharge (npm run go -- daily, ou Menu > Données hors ligne > Télécharger toutes les données des pays). Elles n'ont pas encore été téléchargées, ou le téléchargement n'a pas répondu.",
+  "The BIS was read but has no total credit series for this country. The BIS publishes them for about 40 economies, from central banks and statistics offices. The app shows Missing rather than an estimate.": "La BRI a été lue, mais elle n'a pas de séries de crédit total pour ce pays. La BRI les publie pour environ 40 économies, à partir des banques centrales et des instituts statistiques. L'application indique Manquant plutôt qu'une estimation.",
 };

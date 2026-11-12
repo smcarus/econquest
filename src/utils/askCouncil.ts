@@ -44,6 +44,7 @@ import { chinaSource, chinaValue, COMMON_FRAMEWORK_AS_OF, COMMON_FRAMEWORK_SOURC
 import { foreignShare, investorBaseSource, investorBaseValue } from './investorBase';
 import { IDS_STRUCTURE_SOURCE, INTEREST_CENTRAL_NOTE, INTEREST_SOURCE, currencyValue, usdShare } from './debtStructure';
 import { ILO_MODEL_NOTE, PEOPLE_SOURCE, POVERTY_SOURCE, povertyValue } from './peopleLiving';
+import { PRIVATE_DEBT_SOURCE, SECTOR_RULE, balanceValue, quarterText } from './sectorBalances';
 import { HOUSE_PRICES_SOURCE, REAL_WAGES_SOURCE, WAGES_SOURCE, housePriceValue, wageGrowthValue } from './wagesHousing';
 import { ENERGY_MIX_SOURCE, ENERGY_MIX_TERMS_NOTE, energyMixValue } from './climateEnergy';
 import { CONCENTRATION_SOURCE, ENERGY_SOURCE, EXPORT_FIELDS, GROUP_LABEL, TRADE_GROUPS_NOTE, TRADE_MIX_SOURCE, concentrationValue, netEnergyValue, shareSplitValue, topPartnersValue } from './tradeMix';
@@ -715,6 +716,15 @@ function fiscalAgent(countries: LiveWatchlistItem[], question = ''): Omit<AgentA
       }
     }
     if (!f.extDue12m && !f.intlBonds && !f.idsNext) missing.push(`${it.countryName}: no external debt falling due (World Bank QEDS, IDS and BIS did not answer or have no series)`);
+    // Sector balances and private debt (G40, src/utils/sectorBalances.ts): who is borrowing, with the year or quarter.
+    const sb = it.sectorBalances;
+    if (sb) {
+      figures.push({ label: 'Private sector balance (remainder)', value: balanceValue(sb.privatePct, sb.year), source: `current account minus government balance, IMF ${sb.year}; ${SECTOR_RULE}`, tag: 'model' });
+      parts.push(`In ${sb.year} the private sector ${sb.privatePct >= 0 ? 'saved more than it invested' : 'invested more than it saved'} (${balanceValue(sb.privatePct, sb.year).replace(/ \(\d{4}\)$/, '')}), and the rest of the world ${sb.foreignPct > 0 ? 'lent the country' : 'borrowed from the country'} ${Math.abs(sb.foreignPct).toFixed(1)}% of GDP.`);
+    }
+    const pd = it.privateDebt?.reading;
+    if (pd?.householdPct !== undefined) figures.push({ label: 'Household debt', value: `${pd.householdPct.toFixed(1)}% of GDP (${quarterText(pd.quarter)})`, source: PRIVATE_DEBT_SOURCE, tag: 'official' });
+    if (pd?.corporatePct !== undefined) figures.push({ label: 'Company debt', value: `${pd.corporatePct.toFixed(1)}% of GDP (${quarterText(pd.quarter)})`, source: PRIVATE_DEBT_SOURCE, tag: 'official' });
     if (!figures.length) continue;
     findings.push({
       iso3: it.iso3,

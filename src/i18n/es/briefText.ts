@@ -405,4 +405,16 @@ export const BRIEF_TEXT_ES: Record<string, string> = {
   "The World Bank has no consumer price inflation for this country in the year of the latest earnings figure, so real wage growth cannot be worked out.": "El Banco Mundial no tiene inflación de precios al consumidor para este país en el año de la última cifra de ingresos, así que no se puede calcular el crecimiento salarial real.",
   "House prices come from the BIS (Bank for International Settlements) residential property price series, which the daily run downloads. It has not been downloaded yet, or the download did not answer.": "Los precios de la vivienda proceden de la serie de precios de inmuebles residenciales del BIS (Banco de Pagos Internacionales), que la ejecución diaria descarga. Aún no se ha descargado, o la descarga no respondió.",
   "The BIS was read but publishes no residential property price series for this country. The BIS collects them from central banks and statistics offices in about 60 countries. The app shows Missing rather than an estimate.": "El BIS se leyó, pero no publica una serie de precios de inmuebles residenciales para este país. El BIS los recoge de bancos centrales y oficinas de estadística de unos 60 países. La aplicación muestra Falta en lugar de una estimación.",
+  // G40: sector balances and private debt
+  "Sector balances and private debt": "Saldos sectoriales y deuda privada",
+  "Government balance": "Saldo del gobierno",
+  "Private sector balance (remainder)": "Saldo del sector privado (resto)",
+  "Foreign balance": "Saldo con el exterior",
+  "Household debt": "Deuda de los hogares",
+  "Company debt": "Deuda de las empresas",
+  "IMF figures are for different years": "Las cifras del FMI son de años distintos",
+  "Needs a live IMF current account": "Necesita una cuenta corriente del FMI en directo",
+  "Not in the BIS total credit series": "No figura en las series de crédito total del BIS",
+  "Household and company debt come from the BIS (Bank for International Settlements) total credit statistics, which the daily run downloads (npm run go -- daily, or Menu > Offline data > Download all country data). They have not been downloaded yet, or the download did not answer.": "La deuda de los hogares y de las empresas procede de las estadísticas de crédito total del BIS (Banco de Pagos Internacionales), que la ejecución diaria descarga (npm run go -- daily, o Menú > Datos sin conexión > Descargar los datos de todos los países). Aún no se han descargado, o la descarga no respondió.",
+  "The BIS was read but has no total credit series for this country. The BIS publishes them for about 40 economies, from central banks and statistics offices. The app shows Missing rather than an estimate.": "El BIS se leyó, pero no tiene series de crédito total para este país. El BIS las publica para unas 40 economías, a partir de bancos centrales y oficinas de estadística. La aplicación muestra Falta en lugar de una estimación.",
 };

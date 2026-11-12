@@ -40,6 +40,7 @@ export const OFFICIAL_FIGURES: OfficialFigure[] = [
   { id: 'revenue', source: 'imf', code: 'GGR_G01_GDP_PT', label: 'Government revenue', unit: '% of GDP', sourceName: 'IMF Fiscal Monitor', about: 'IMF Fiscal Monitor: general government revenue.' },
   { id: 'expenditure', source: 'imf', code: 'G_X_G01_GDP_PT', label: 'Government expenditure', unit: '% of GDP', sourceName: 'IMF Fiscal Monitor', about: 'IMF Fiscal Monitor: general government total expenditure, interest included.' },
   { id: 'unemployment', source: 'imf', code: 'LUR', label: 'Unemployment rate', unit: '%', about: 'IMF WEO: unemployment rate, national definitions (they differ between countries).' },
+  { id: 'current_account_imf', source: 'imf', code: 'BCA_NGDPD', label: 'Current account (IMF WEO)', unit: '% of GDP', about: 'IMF WEO: current account balance, % of GDP. Used with the government balance for the sector balances.' },
   { id: 'current_account_usd', source: 'imf', code: 'BCA', label: 'Current account, US dollars', unit: 'USD bn', about: 'IMF WEO: current account balance in billions of US dollars.' },
   { id: 'gdp_usd', source: 'imf', code: 'NGDPD', label: 'GDP, US dollars', unit: 'USD bn', about: 'IMF WEO: GDP at current prices in US dollars. Used to turn dollar debt flows into % of GDP.' },
   { id: 'gdp_growth', source: 'imf', code: 'NGDP_RPCH', label: 'Real GDP growth', unit: '%' },

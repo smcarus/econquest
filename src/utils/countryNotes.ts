@@ -13,6 +13,7 @@ import { currencyValue, IDS_STRUCTURE_SOURCE, INVESTOR_BASE_US_HELP } from './de
 import { INVESTOR_BASE_SETUP_HELP, investorBaseSource, investorBaseValue } from './investorBase';
 import { CONCENTRATION_SOURCE, ENERGY_SOURCE, EXPORT_FIELDS, IMPORT_FIELDS, TRADE_GROUPS_NOTE, TRADE_MIX_SOURCE, concentrationValue, netEnergyValue, shareSplitValue, topPartnersValue, tradeMixFromSnapshot } from './tradeMix';
 import { comtradeMissing, HHI_MIN_COVERAGE_PCT } from './comtradeTrade';
+import { PRIVATE_DEBT_NOT_COVERED_HELP, PRIVATE_DEBT_SETUP_HELP, PRIVATE_DEBT_SOURCE, SECTOR_RULE, SECTOR_SOURCE, SECTOR_YEARS_HELP, balanceValue, quarterText, sectorBalances } from './sectorBalances';
 import { HOUSE_PRICES_NOT_COVERED_HELP, HOUSE_PRICES_SETUP_HELP, HOUSE_PRICES_SOURCE, REAL_WAGES_SOURCE, WAGES_GROWTH_HELP, WAGES_NOT_COVERED_HELP, WAGES_SETUP_HELP, WAGES_SOURCE, housePriceValue, wageGrowthValue } from './wagesHousing';
 import { CLIMATE_RISK_HELP, EMISSIONS_SOURCE, ENERGY_MIX_LEGACY_NOTE, ENERGY_MIX_NOT_COVERED_HELP, ENERGY_MIX_SETUP_HELP, ENERGY_MIX_SOURCE, ENERGY_MIX_TERMS_NOTE, RENEWABLE_SOURCE, climateFromSnapshot, energyMixValue } from './climateEnergy';
 
@@ -131,6 +132,7 @@ const PATH_NAME: Record<string, string> = {
   'imf.realGdpGrowthPct': 'live growth',
   'imf.primaryFiscalBalancePct': 'a live primary balance',
   'imf.overallBalancePct': 'a live overall balance',
+  'imf.currentAccountImfPct': 'a live IMF current account',
 };
 
 const usdBn = (v: number) => `${v < 0 ? '-' : ''}US$${Math.abs(v).toFixed(1)} bn`;
@@ -350,6 +352,38 @@ export function wagesHousingRows(open: CouncilAssessmentRun['openData']): BriefR
   ];
 }
 
+/**
+ * Sector balances and private debt (G40, src/utils/sectorBalances.ts): government balance (IMF
+ * Fiscal Monitor), private balance (the remainder) and foreign balance (minus the IMF current
+ * account), for the same year; household and company debt (BIS total credit). Missing with a reason.
+ */
+export function sectorRows(status: SnapshotDataStatus, open: CouncilAssessmentRun['openData']): BriefRow[] {
+  const years = open.imfIndicators?.years || {};
+  const yGov = years['imf.overallBalancePct'];
+  const yCa = years['imf.currentAccountImfPct'];
+  const inputs = ['imf.overallBalancePct', 'imf.currentAccountImfPct'];
+  const labels = ['Government balance', 'Private sector balance (remainder)', 'Foreign balance'] as const;
+  const gap = inputs.find((p) => !status.isLive(p));
+  const sb = gap ? undefined : sectorBalances(status.live('imf.overallBalancePct'), status.live('imf.currentAccountImfPct'), yGov, yCa);
+  const balanceRows: BriefRow[] = gap
+    ? labels.map((l) => missingRow(l, { ...pathMissing(status, gap), short: `Needs ${PATH_NAME[gap] || 'live inputs'}` }))
+    : !sb
+      ? labels.map((l) => missingRow(l, { kind: 'unreachable', short: 'IMF figures are for different years', help: `${SECTOR_YEARS_HELP} (government balance ${yGov || 'no year'}, current account ${yCa || 'no year'}).` }))
+      : [
+          { label: labels[0], value: balanceValue(sb.governmentPct, sb.year), source: `official, IMF Fiscal Monitor ${sb.year}; general government net lending`, verified: true },
+          { label: labels[1], value: balanceValue(sb.privatePct, sb.year), source: `model: current account minus government balance, ${SECTOR_SOURCE} ${sb.year}; the remainder of the identity`, verified: false },
+          { label: labels[2], value: balanceValue(sb.foreignPct, sb.year), source: `model: minus the IMF WEO current account ${sb.year}; ${SECTOR_RULE}`, verified: false },
+        ];
+  const d = open.privateDebt;
+  const debtRow = (label: string, v: number | undefined) =>
+    d?.reading && v !== undefined
+      ? { label, value: `${v.toFixed(1)}% of GDP (${quarterText(d.reading.quarter)})`, source: `official, ${PRIVATE_DEBT_SOURCE}, all lenders (pulled ${d.pulledAt.slice(0, 10)})`, verified: true }
+      : !d
+        ? missingRow(label, { kind: 'setup', short: 'BIS file not downloaded yet', help: PRIVATE_DEBT_SETUP_HELP })
+        : missingRow(label, { kind: 'unreachable', short: 'Not in the BIS total credit series', help: PRIVATE_DEBT_NOT_COVERED_HELP });
+  return [...balanceRows, debtRow('Household debt', d?.reading?.householdPct), debtRow('Company debt', d?.reading?.corporatePct)];
+}
+
 /** A figure worked out here from other figures: shown only when every input is live. */
 export function modelRow(status: SnapshotDataStatus, label: string, inputs: string[], value: () => string, how = 'model, from figures above'): BriefRow {
   const gap = inputs.find((p) => !status.isLive(p));
@@ -559,6 +593,7 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
     { title: 'People', rows: peopleRows(status, open, now) },
     { title: 'Trade', rows: tradeRows(status, open, now) },
     { title: 'Climate and energy', rows: climateRows(status, open) },
+    { title: 'Sector balances and private debt', rows: sectorRows(status, open) },
   ];
   return { headline, judgements: j, sampleWarning: missingNote(groups, run.countryName), groups };
 }
@@ -687,6 +722,7 @@ export const ECONOMIST_SECTIONS: Record<string, string> = {
   people: 'People',
   trade: 'Trade',
   climate: 'Climate and energy',
+  sectors: 'Sector balances and private debt',
   risks: 'Risks to the outlook',
   calendar: 'Coming up',
   sources: 'Data and sources',
@@ -708,6 +744,7 @@ export function buildEconomistSections(run: CouncilAssessmentRun, include: (id: 
     ['people', 'People'],
     ['trade', 'Trade'],
     ['climate', 'Climate and energy'],
+    ['sectors', 'Sector balances and private debt'],
   ];
   for (const [id, title] of groups) if (include(id)) out.push({ id, heading: ECONOMIST_SECTIONS[id], lines: groupLines(byTitle(title)) });
   if (include('risks')) {

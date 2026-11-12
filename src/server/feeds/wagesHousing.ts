@@ -1,5 +1,7 @@
 /**
- * Wages (ILOSTAT, with World Bank inflation for the real figure) and house prices (BIS), G22.
+ * Wages (ILOSTAT, with World Bank inflation for the real figure) and house prices (BIS), G22, and
+ * household and company debt (BIS total credit, G40; src/utils/sectorBalances.ts), saved like the
+ * house prices.
  * Each is one all-country download kept in data/live/: wages are yearly, so they are downloaded
  * again after a week; house prices are quarterly, downloaded again after 20 hours. A failed
  * download keeps the saved copy and is not tried again for an hour. See src/utils/wagesHousing.ts.
@@ -21,6 +23,7 @@ import {
   type WagesPull,
   wbInflationUrl,
 } from '../../utils/wagesHousing';
+import { bisPrivateDebtAllUrl, parseBisPrivateDebtAll, type PrivateDebtPull } from '../../utils/sectorBalances';
 
 const HOUR = 60 * 60 * 1000;
 const TIMEOUT_MS = 120_000;
@@ -34,6 +37,7 @@ interface Saved<T extends { pulledAt: string }> {
 
 const wages: Saved<WagesPull> = { file: 'ilostat-wages.json', maxAge: 7 * 24 * HOUR, memory: null, inFlight: null };
 const housing: Saved<HousePricesPull> = { file: 'bis-property.json', maxAge: 20 * HOUR, memory: null, inFlight: null };
+const privateDebt: Saved<PrivateDebtPull> = { file: 'bis-private-debt.json', maxAge: 20 * HOUR, memory: null, inFlight: null };
 
 function load<T extends { pulledAt: string; countries: object }>(s: Saved<T>): T | null {
   if (!s.memory) {
@@ -91,6 +95,15 @@ async function getText(url: string, who: string): Promise<string | null> {
 
 export const loadWages = (): WagesPull | null => load(wages);
 export const loadHousePrices = (): HousePricesPull | null => load(housing);
+export const loadPrivateDebt = (): PrivateDebtPull | null => load(privateDebt);
+
+/** Household and company debt from the BIS, three years back (G40). */
+export function fetchPrivateDebtPull(opts: { force?: boolean } = {}): Promise<PrivateDebtPull | null> {
+  return refresh(privateDebt, !!opts.force, async () => {
+    const csv = await getText(bisPrivateDebtAllUrl(new Date().getUTCFullYear() - 3), 'BIS total credit');
+    return csv ? parseBisPrivateDebtAll(csv) : null;
+  });
+}
 
 /** Earnings from ILOSTAT and inflation from the World Bank, eight years back. */
 export function fetchWagesPull(opts: { force?: boolean } = {}): Promise<WagesPull | null> {
@@ -120,7 +133,7 @@ export function fetchHousePricesPull(opts: { force?: boolean } = {}): Promise<Ho
 
 /** Tests only. */
 export function resetWagesHousingForTests(): void {
-  for (const s of [wages, housing] as Array<Saved<{ pulledAt: string; countries: object }>>) {
+  for (const s of [wages, housing, privateDebt] as Array<Saved<{ pulledAt: string; countries: object }>>) {
     s.memory = null;
     s.inFlight = null;
   }

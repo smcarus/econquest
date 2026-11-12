@@ -508,6 +508,8 @@ export interface OpenDataSnapshot {
   wages?: { pulledAt: string; reading?: import('../utils/wagesHousing').WageReading };
   /** House prices from the BIS copy the daily run saved (utils/wagesHousing.ts); reading absent when the BIS has none. */
   housePrices?: { pulledAt: string; reading?: import('../utils/wagesHousing').HousePriceReading };
+  /** Household and company debt from the BIS copy the daily run saved (utils/sectorBalances.ts); reading absent when the BIS has none. */
+  privateDebt?: { pulledAt: string; reading?: import('../utils/sectorBalances').PrivateDebtReading };
   livePlumbingOverrides?: {
     usSofrRatePct?: number;
     usEffrRatePct?: number;
@@ -677,6 +679,10 @@ export interface WatchlistItem {
   wages?: { pulledAt: string; reading?: import('../utils/wagesHousing').WageReading };
   /** House prices (BIS, utils/wagesHousing.ts), only when the copy has the country. */
   housePrices?: { pulledAt: string; reading?: import('../utils/wagesHousing').HousePriceReading };
+  /** Household and company debt (BIS, utils/sectorBalances.ts), only when the copy has the country. */
+  privateDebt?: { pulledAt: string; reading?: import('../utils/sectorBalances').PrivateDebtReading };
+  /** Government, private and foreign balances for one year (utils/sectorBalances.ts), only from live IMF figures. */
+  sectorBalances?: import('../utils/sectorBalances').SectorBalances;
   /** GDELT tone and headlines, WGI political stability and Polymarket odds, live only (utils/politicsEvents.ts). */
   politics?: import('../utils/politicsEvents').PoliticsFigures;
 }

@@ -28,6 +28,9 @@ export interface BisCreditCycle {
   dsr?: Record<string, number>;
   realHousePricesYoy?: Record<string, number>;
   nominalHousePricesYoy?: Record<string, number>;
+  /** G40 (src/utils/sectorBalances.ts): household and company debt, % of GDP (BIS total credit). */
+  householdDebt?: Record<string, number>;
+  corporateDebt?: Record<string, number>;
 }
 
 export function bisCreditGapUrl(iso2: string): string {

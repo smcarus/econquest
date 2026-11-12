@@ -5,6 +5,19 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Sector balances and private debt (G40): a new group "Sector balances and private debt" in the
+  country brief and note. The government balance (IMF Fiscal Monitor), the private sector balance
+  and the foreign balance sit side by side for the same year. The private balance is worked out as
+  the current account minus the government balance, the remainder of an accounting identity, and is
+  labelled so; the foreign balance is minus the IMF WEO current account. When the two IMF figures are
+  for different years the rows read Missing rather than mixing years. Household and company debt
+  (credit from all lenders, % of GDP, BIS total credit statistics) show with their quarter. A new
+  daily-run step downloads all BIS countries at once; the per-country History & data download adds
+  the full quarterly history. History & data gains five charts with CSV: household debt, company
+  debt, the IMF current account (% of GDP), and the private and foreign balances by year, with IMF
+  projection years kept as projections. The Fiscal & Debt Agent quotes the private balance and both
+  debt figures. A Data health row for BIS total credit; glossary entries; Spanish and French text.
+
 - Wages and house prices (G22): four new rows under "Growth and inflation" in the country brief and
   note: nominal wage growth (average monthly earnings of employees in local currency from ILOSTAT,
   the International Labour Organization's statistics, CC BY 4.0), real wage growth (the app's own
