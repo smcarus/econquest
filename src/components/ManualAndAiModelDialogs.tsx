@@ -391,7 +391,7 @@ const DEFAULT_DOCKER_GUI_CONFIG: DockerSelfHostGuiConfig = {
   ollamaPort: 11434,
   containerName: 'econquest-sovereign-council',
   keepAlive: '24h',
-  corsOrigins: '*',
+  corsOrigins: '',
   autoPullOnBoot: true,
 };
 
@@ -878,7 +878,8 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
     `OLLAMA_QUICK_MODEL=${runtimeConfig.ollamaQuickModel}`,
     `OLLAMA_DEEP_MODEL=${runtimeConfig.ollamaDeepModel}`,
     `OLLAMA_KEEP_ALIVE=${dockerGui.keepAlive}`,
-    `OLLAMA_ORIGINS=${dockerGui.corsOrigins}`,
+    // The pages never call Ollama themselves, so no web origin is let in unless one is typed here.
+    ...(dockerGui.corsOrigins ? [`OLLAMA_ORIGINS=${dockerGui.corsOrigins}`] : []),
     `OPENAI_COMPATIBLE_BASE_URL=${runtimeConfig.openAiBaseUrl}`,
     `OPENAI_COMPATIBLE_MODEL=${runtimeConfig.openAiModel}`,
     `LLM_TEMPERATURE=${runtimeConfig.temperature ?? 0.2}`,

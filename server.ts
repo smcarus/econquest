@@ -4150,7 +4150,7 @@ async function startServer() {
         ollamaPort: 11434,
         containerName: 'econquest-sovereign-council',
         keepAlive: '24h',
-        corsOrigins: '*',
+        corsOrigins: '',
         autoPullOnBoot: true,
       };
 
@@ -4163,7 +4163,8 @@ async function startServer() {
         `OLLAMA_DEEP_MODEL=${refereeModelOrDefault(incoming.ollamaDeepModel) || DEFAULT_REFEREE_MODEL}`,
         `OLLAMA_ALLOW_SMALL_REFEREE=${serverGuiRuntimeConfig.allowSmallReferee ? 'on' : 'off'}`,
         `OLLAMA_KEEP_ALIVE=${dockerCfg.keepAlive || '24h'}`,
-        `OLLAMA_ORIGINS=${dockerCfg.corsOrigins || '*'}`,
+        // The pages never call Ollama themselves (the server does), so no web origin is let in unless set.
+        ...(dockerCfg.corsOrigins ? [`OLLAMA_ORIGINS=${dockerCfg.corsOrigins}`] : []),
         `OPENAI_COMPATIBLE_BASE_URL=${incoming.openAiBaseUrl || 'http://localhost:8000/v1'}`,
         `OPENAI_COMPATIBLE_MODEL=${incoming.openAiModel || 'gpt-4o'}`,
       ].join('\n');

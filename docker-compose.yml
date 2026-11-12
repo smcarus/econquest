@@ -64,10 +64,11 @@ services:
     profiles:
       - bundled-ollama
     restart: unless-stopped
+    # This computer only: the app reaches the model inside Docker as http://ollama:11434. Opening
+    # 11434 to the network would let anyone on it run, download or delete models.
     ports:
-      - "11434:11434"
+      - "127.0.0.1:11434:11434"
     environment:
-      - OLLAMA_ORIGINS=*
       - OLLAMA_KEEP_ALIVE=24h
     volumes:
       - ollama_models:/root/.ollama
@@ -92,10 +93,11 @@ services:
     profiles:
       - bundled-ollama-gpu
     restart: unless-stopped
+    # This computer only: the app reaches the model inside Docker as http://ollama:11434. Opening
+    # 11434 to the network would let anyone on it run, download or delete models.
     ports:
-      - "11434:11434"
+      - "127.0.0.1:11434:11434"
     environment:
-      - OLLAMA_ORIGINS=*
       - OLLAMA_KEEP_ALIVE=24h
     volumes:
       - ollama_models:/root/.ollama

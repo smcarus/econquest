@@ -5,6 +5,17 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Security, privacy and Windows review before the public release (G43, docs/SECURITY_REVIEW.md).
+  `npm audit` finds no known vulnerabilities; routes, sign-in, file permissions, backups and exports
+  were checked and needed no change. Fixed: the bundled Ollama container (used when no Ollama runs
+  on the computer) is now published on 127.0.0.1 only, not on every network address, and Ollama no
+  longer lets every website call it (`OLLAMA_ORIGINS=*` removed from the compose file, the Mac start
+  script and the `.env` Settings generates). The Windows start scripts are now plain ASCII, so
+  Windows PowerShell 5.1 can run them (a long dash broke the script), and stop with a plain message
+  when Docker is not running or a build or start fails. A manual-only GitHub Windows check parses
+  the script with Windows PowerShell 5.1 and runs the tests on Windows; a person's run on a Windows
+  computer with Docker Desktop is still to do (steps in the review).
+
 - Euro area and UK figures as first published (G12, G13): Research > History & data on euro
   members' pages now shows every release of euro area GDP growth, HICP inflation and unemployment
   from the ECB Euro Area Real-Time Database (its revision history), and the UK page shows every
