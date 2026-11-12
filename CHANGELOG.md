@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Success measures for after the public release (S1, docs/ROADMAP.md "How we will know it works"):
+  GitHub stars, forks, issues, pull requests, flags sent as issues, discussions, app image and release
+  downloads, the outcome-check hit rate, answer ratings and pilot feedback scores, with checkpoint 1 as
+  the review date. Nothing is tracked: the app sends nothing for these. `npm run check:success` reads
+  GitHub's public counts without a key and this computer's outcome checks and ratings, and keeps each
+  run in data/local/success-measures.jsonl to show the change since the last run.
 - Windows fixes found by the first GitHub Windows check: every text file now keeps Unix line endings
   on every checkout, so the pre-registered tests' hashes match on Windows (and in a Docker image built
   from a Windows checkout); test helpers are loaded by file URL so the tests run on Windows.

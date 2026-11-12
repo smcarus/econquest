@@ -24,6 +24,9 @@ has ended or moved."
    note on the pull request saying why.
 3. **Licence check due.** Data health lists any source whose terms were last read more than 12
    months ago (see below).
+4. **Success measures.** After the public release, run `npm run check:success` to keep a record of
+   GitHub stars, issues, flags and downloads, and of the outcome checks and answer ratings on this
+   computer. The list and its review date are in docs/ROADMAP.md, "How we will know it works".
 
 ## Once a year (maintainer)
 
