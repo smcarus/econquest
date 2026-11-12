@@ -332,6 +332,10 @@ export const BRIEF_TEXT_ES: Record<string, string> = {
   "No bank figures are saved for this country yet (Menu > Offline data, or open History & data while online)": "Aún no hay cifras bancarias guardadas para este país (Menú > Datos sin conexión, o abra Historia y datos con conexión)",
   "State-owned banks' share of bank assets: no free cross-country series is read by the app (the World Bank Bank Regulation and Supervision Survey is a periodic survey file, not downloaded)": "Parte de los activos bancarios en bancos públicos: la app no lee ninguna serie gratuita entre países (la Encuesta de Regulación y Supervisión Bancaria del Banco Mundial es un archivo periódico, no se descarga)",
   "Contingent liabilities (guarantees, public-private partnerships, state firms): the IMF fiscal risks data have no confirmed reuse terms and are not read, so no figure is shown": "Pasivos contingentes (garantías, asociaciones público-privadas, empresas públicas): los datos de riesgos fiscales del FMI no tienen condiciones de reutilización confirmadas y no se leen, así que no se muestra ninguna cifra",
+  // G30: who pays for a policy
+  "Income shares by fifth of people: the World Bank has no household survey with all five shares for this country, or they are not saved yet, so the share ratios cannot be worked out": "Partes del ingreso por quinto de la población: el Banco Mundial no tiene ninguna encuesta de hogares con las cinco partes para este país, o aún no están guardadas, así que no se pueden calcular los cocientes",
+  "Tax revenue and its split: the World Bank publishes none for this country, or they are not saved yet": "Ingresos tributarios y su reparto: el Banco Mundial no publica ninguno para este país, o aún no están guardados",
+  "Poverty rates: the World Bank has no household survey for this country, or they are not saved yet": "Tasas de pobreza: el Banco Mundial no tiene ninguna encuesta de hogares para este país, o aún no están guardadas",
   "{v} (long-term average = 100)": "{v} (media de largo plazo = 100)",
   "balance {v}": "saldo {v}",
   "at its long-term average": "en su media de largo plazo",

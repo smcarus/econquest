@@ -19,6 +19,7 @@ import { driversSentence, inflationDrivers, NO_DRIVER_SOURCE } from '../../utils
 import { fetchInflationDrivers } from '../feeds/inflationDrivers';
 import { fetchPwt } from '../feeds/pwt';
 import { bankSovereign, bsSentence, type YearValue } from '../../utils/bankSovereign';
+import { incidenceContext } from '../../utils/policyIncidence';
 import { investorBaseData } from '../../utils/investorBaseStore';
 import { investorBaseReading } from '../../utils/investorBase';
 import { gaSentence, growthAccounting } from '../../utils/growthAccounting';
@@ -396,6 +397,20 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     });
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: bsSentence(r, name) } : {}) });
+  });
+  // Who pays for a policy (src/utils/policyIncidence.ts): the saved context; the incidence itself is worked out in the browser on shares the user types.
+  app.get('/api/policy-incidence/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    const pick = (id: string): YearValue[] | undefined => {
+      if (!file) return undefined;
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
+    };
+    const ids = ['gini', 'tax_revenue', 'tax_income', 'tax_goods', 'tax_trade', 'poverty_lowest', 'poverty_lower_middle', 'poverty_upper_middle', 'income_share_q1', 'income_share_q2', 'income_share_q3', 'income_share_q4', 'income_share_q5'] as const;
+    const ctx = incidenceContext(Object.fromEntries(ids.map((id) => [id, pick(id)])));
+    res.json({ iso3, ...ctx });
   });
   // Local projections (src/utils/localProjections.ts): inflation after a policy rate change, reduced form.
   app.get('/api/local-projections/:iso3', async (req, res) => {
