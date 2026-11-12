@@ -26,7 +26,7 @@ import { ruleFamily } from './ruleFamily';
 import type { CftcWeek } from './cftcPositioning';
 import type { ValidationStatus } from '../data/modelRegister';
 
-export type BacktestMethod = 'cli_turn_policy' | 'cftc_crowding' | 'taylor_gap' | 'regime_quadrant' | 'cycle_clock' | 'timing_unwind' | 'rule_family' | 'unrest_onset' | 'expectations_direction';
+export type BacktestMethod = 'cli_turn_policy' | 'cftc_crowding' | 'taylor_gap' | 'regime_quadrant' | 'cycle_clock' | 'timing_unwind' | 'rule_family' | 'unrest_onset' | 'expectations_direction' | 'yield_curve_recession';
 
 export interface BacktestSpec {
   id: string;
@@ -905,6 +905,76 @@ export function expectationsDirectionCases(
     }
     const hit = dE > 0 ? h1 > h0 : h1 < h0;
     out.push({ where, when: obs, what: `${what} then ${h1.toFixed(1)}% in ${due}`, hit, base });
+  }
+  return out;
+}
+
+/** One country's years for yield_curve_recession: annual average 10-year yield and policy rate, and real GDP growth (outturns only). */
+export interface CurveCountry {
+  where: string;
+  /** Monthly 10-year yield, "YYYY-MM". */
+  yields: Array<{ period: string; value: number }>;
+  /** Monthly policy rate, "YYYY-MM". */
+  policy: Array<{ period: string; value: number }>;
+  /** Real GDP growth by year, outturns only (IMF projections left out). */
+  growth: Array<{ year: number; value: number }>;
+}
+
+/**
+ * yield_curve_recession (docs/validation/preregistered/yield_curve_recession.json): for each calendar
+ * year with at least minMonthsInYear months of both a 10-year yield and a policy rate, the spread is
+ * the annual average yield minus the annual average policy rate. A year with the spread below
+ * invertedBelowPts is a call; it is a hit when real GDP growth in the next year is below 0. Only
+ * countries with at least 15 such years with an outcome are in the universe. The base rate is the
+ * share of all those country-years followed by a fall in real GDP, pooled over the universe ("more
+ * often than years in general"). An inverted year whose next-year outturn is not out yet is an open
+ * call, due when the IMF publishes that year's outturn.
+ */
+export function yieldCurveCases(spec: BacktestSpec, countries: CurveCountry[], lastOutturnYear: number, open?: OpenCall[]): BacktestCase[] {
+  const p = spec.params;
+  const minMonths = Number(p.minMonthsInYear ?? 10);
+  const below = Number(p.invertedBelowPts ?? 0);
+  const minYears = 15;
+  const fromYear = Number(String(spec.sample.from).slice(0, 4));
+  const yearAvg = (pts: Array<{ period: string; value: number }>) => {
+    const by = new Map<number, number[]>();
+    for (const x of pts) {
+      const y = Number(x.period.slice(0, 4));
+      if (!Number.isFinite(y) || !Number.isFinite(x.value)) continue;
+      (by.get(y) || by.set(y, []).get(y)!).push(x.value);
+    }
+    const out = new Map<number, number>();
+    for (const [y, v] of by) if (v.length >= minMonths) out.set(y, v.reduce((s, a) => s + a, 0) / v.length);
+    return out;
+  };
+  const rows: Array<{ where: string; year: number; spread: number; next?: number }> = [];
+  const perCountry = new Map<string, number>();
+  for (const c of countries) {
+    const Y = yearAvg(c.yields);
+    const P = yearAvg(c.policy);
+    const G = new Map(c.growth.filter((g) => g.year <= lastOutturnYear).map((g) => [g.year, g.value]));
+    const mine: typeof rows = [];
+    for (const [y, yv] of Y) {
+      const pv = P.get(y);
+      if (pv === undefined || y < fromYear || y >= lastOutturnYear + 1) continue;
+      mine.push({ where: c.where, year: y, spread: yv - pv, next: G.get(y + 1) });
+    }
+    const scored = mine.filter((r) => r.next !== undefined).length;
+    if (scored < minYears) continue;
+    perCountry.set(c.where, scored);
+    rows.push(...mine);
+  }
+  const scored = rows.filter((r) => r.next !== undefined);
+  const base = scored.length ? scored.filter((r) => r.next! < 0).length / scored.length : 0;
+  const out: BacktestCase[] = [];
+  for (const r of rows.sort((a, b) => a.where.localeCompare(b.where) || a.year - b.year)) {
+    if (!(r.spread < below)) continue;
+    const what = `10-year yield ${Math.abs(r.spread).toFixed(2)} pts below the policy rate on the ${r.year} averages`;
+    if (r.next === undefined) {
+      if (r.year >= lastOutturnYear) open?.push({ where: r.where, when: String(r.year), what: `${what}, so the call is a fall in real GDP in ${r.year + 1}`, due: String(r.year + 1) });
+      continue;
+    }
+    out.push({ where: r.where, when: String(r.year), what: `${what}; real GDP ${r.next >= 0 ? '+' : '−'}${Math.abs(r.next).toFixed(1)}% in ${r.year + 1}`, hit: r.next < 0, base: Math.round(base * 10000) / 10000 });
   }
   return out;
 }

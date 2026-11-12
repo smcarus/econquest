@@ -39,6 +39,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Geopolitical risk VaR | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
 | External sustainability | Research | Description, not a tested signal | None |
+| Yield curve and financial conditions | Research | Not validated | None |
 | Crisis early-warning (credit gap) | Research | Not validated | None |
 | Inflation after rate changes (local projections) | Research | Description, not a tested signal | None |
 | Policy rule family | Research | Backtest too few cases | v1, 2026-11-07, method 2 |
@@ -478,6 +479,34 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: ratios and an accounting identity, no forward call. The current account norm (IMF EBA) and the net international investment position read Missing until a usable source is confirmed.
 - **Limits:** IDS covers low- and middle-income countries only; yearly; averages of past interest and growth stand in for the future; no current account norm.
 - **Code:** `src/utils/externalSustainability.ts`
+
+### Yield curve and financial conditions
+
+- **Says:** Whether long-term government bond yields sit below the central bank's policy rate (an inverted curve), which has often come before recessions, and how tight financial conditions are against the country's own past.
+- **Rule:** Term spread = 10-year yield minus policy rate, monthly and as calendar-year averages; inverted spells; financial conditions index = equal-weight z-scores of the policy rate, the 10-year yield, the spread over US Treasuries and the real effective exchange rate. The test: a year with the average spread below 0 against a fall in real GDP the next year, whole calendar years resampled.
+- **Reads:** FRED / OECD 10-year government bond yields (IRLTLT01), BIS policy rates and real effective exchange rates, IMF WEO real GDP growth (outturns only, for the test)
+- **Shows in:** Country Research > History & data (Yield curve and financial conditions)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered on 11 November 2026 before the tool existed (docs/validation/preregistered/yield_curve_recession.json): at least 30 cases over 15 years, lift 10 points, p at or below 0.05 with whole years resampled. Until it passes no recession figure is shown; after, only its historical hit rate. The conditions index is description only (fixed weights, no forward call).
+- **Limits:** The policy rate stands in for a 3-month bill rate; annual GDP misses short recessions; growth is today's WEO vintage; FRED covers OECD members and India only.
+- **Code:** `src/utils/yieldCurve.ts, src/utils/backtest.ts (yieldCurveCases), src/utils/backtestRun.ts`
+
+**Pre-registered tests**
+
+- Version 1 (`docs/validation/preregistered/yield_curve_recession.json`, registered 2026-11-11, method 2, whole years resampled, sample from 1990). A calendar year in which a country's average 10-year government bond yield is below its average central bank policy rate (an inverted curve; Estrella and Mishkin 1998) is followed by a fall in real GDP the next calendar year more often than years in general. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05, at least 15 years. SHA-256 de6ccb7b4827e485…
+
+**Recorded verdicts**
+
+- None recorded yet. Run `npm run backtest` (or Menu > Models & validation > Run backtests).
+
+**Known limits, stated before the run**
+
+- v1: Annual data: an inversion late in year t and a recession early in t+1 count, but one that leads by more than two years does not. A quarterly test would need quarterly GDP for every country and is not planned.
+- v1: A fall in annual real GDP is a stricter test than a dated recession (NBER or CEPR style); short recessions inside a growing year are missed.
+- v1: Growth figures are today's WEO vintage, not what was known at the time; the yield and the policy rate are not revised.
+- v1: The policy rate stands in for a 3-month bill rate, which the app does not hold for most countries. Where policy rates were capped at zero, the spread reads steeper than market rates would show.
+- v1: Only a pass lets the app show a recession probability; that probability is then the historical hit rate of this rule, not a fitted probit.
 
 ### Crisis early-warning (credit gap)
 

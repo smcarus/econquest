@@ -1,5 +1,5 @@
 import type { Express } from 'express';
-import { DATA_DIR } from '../config';
+import { DATA_DIR, VALIDATION_FILE } from '../config';
 import { loadWeoVintages } from '../../utils/weoVintagesStore';
 import { ALFRED_SERIES, ALFRED_SOURCE, alfredReply } from '../../utils/alfredVintages';
 import { ECB_RTD_SERIES, ECB_RTD_SOURCE } from '../../utils/ecbRealTime';
@@ -15,6 +15,9 @@ import { ruleFamily, ruleFamilySentence, RULE_FAMILY_METHOD, type RuleFamilyInpu
 import { reserveAdequacy, reserveAdequacySentence } from '../../utils/reserveAdequacy';
 import { crisisSentence, crisisWarning, CRISIS_NOT_RUN } from '../../utils/crisisWarning';
 import { esSentence, externalSustainability } from '../../utils/externalSustainability';
+import { curveSentence, yieldCurve, CURVE_NOT_RUN, CURVE_TEST_ID } from '../../utils/yieldCurve';
+import { FRED_10Y_SERIES, US_10Y_SERIES } from '../../utils/officialYields';
+import { loadValidation } from '../../utils/backtestRun';
 import { BIS_ISO2 } from '../../utils/bisDebtSecurities';
 import { vintageLabel, weoVintageReply, WEO_VINTAGE_CODES } from '../../utils/weoVintages';
 import { fetchWithTimeout } from '../http';
@@ -36,7 +39,7 @@ import path from 'path';
 import { SOVEREIGN_CATALOG } from '../../data/presetsAndBaselines.ts';
 import { oecdFetch, fetchQnaPull, fetchNationalCpi, fetchMonthlyActivity } from '../feeds/oecd';
 import { GSCPI_SOURCE, STRESS_INDICES, stressIndex } from '../../utils/stressIndices';
-import { fetchBisCreditCycle, fetchDebtSchedule, fetchFxHistory, fetchPolicyDaily, fetchReerLong, fetchStressPulls, fetchAlfred, loadFxHistory } from '../feeds/rates';
+import { fetchBisCreditCycle, fetchDebtSchedule, fetchFxHistory, fetchPolicyDaily, fetchReerLong, fetchStressPulls, fetchAlfred, loadFxHistory, fetchFredHistory } from '../feeds/rates';
 import { beer, beerSentence } from '../../utils/beer';
 import { EVENT_METHOD, eventSentence, eventStudy } from '../../utils/eventStudy';
 import { fxDailySeries } from '../../utils/fxHistory';
@@ -310,6 +313,32 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const r = crisisWarning(cycle, covered);
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: crisisSentence(r, name), notValidated: CRISIS_NOT_RUN } : {}) });
+  });
+  // Yield curve and financial conditions (G25, src/utils/yieldCurve.ts): 10-year yield minus policy rate, and an equal-weight conditions index.
+  app.get('/api/yield-curve/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const fred = FRED_10Y_SERIES[iso3];
+    const area = CBPOL_AREA[iso3];
+    const month = (o: { date: string; value: number }) => ({ period: o.date.slice(0, 7), value: o.value });
+    const [yields, usYields, reer, hist] = await Promise.all([
+      fred ? quick(fetchFredHistory(fred, '1990-01-01')) : Promise.resolve(null),
+      fred && iso3 !== 'USA' ? quick(fetchFredHistory(US_10Y_SERIES, '1990-01-01')) : Promise.resolve(null),
+      fred && area ? quick(fetchReerLong(iso3)) : Promise.resolve(null),
+      fred && area ? quick(modelHistory()) : Promise.resolve(null),
+    ]);
+    const saved = loadValidation(VALIDATION_FILE).results[CURVE_TEST_ID];
+    const r = yieldCurve({
+      hasFred: Boolean(fred),
+      hasPolicy: Boolean(area),
+      isUs: iso3 === 'USA',
+      yields: yields?.map(month),
+      usYields: usYields?.map(month),
+      reer,
+      policy: area ? hist?.policyMonthly?.[area]?.points.map((p) => ({ period: p.period, value: p.pct })) : null,
+      test: saved || null,
+    });
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: curveSentence(r, name), ...(r.hitRate ? {} : { notValidated: CURVE_NOT_RUN }) } : {}) });
   });
   // Local projections (src/utils/localProjections.ts): inflation after a policy rate change, reduced form.
   app.get('/api/local-projections/:iso3', async (req, res) => {

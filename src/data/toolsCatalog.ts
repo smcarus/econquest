@@ -213,6 +213,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-crisis-warning' },
   },
   {
+    id: 'yield_curve',
+    category: 'history',
+    title: 'Yield curve and financial conditions',
+    what: "The open country's 10-year government bond yield minus its policy rate, past spells with the curve inverted, and a financial conditions index from the policy rate, the 10-year yield, the spread over US Treasuries and the real exchange rate with fixed equal weights. No recession figure until its pre-registered test passes.",
+    sources: 'FRED / OECD 10-year yields, BIS policy rates and real effective exchange rates',
+    target: { area: 'country', tab: 'history', anchor: 'tool-yield-curve' },
+  },
+  {
     id: 'book',
     category: 'portfolio',
     title: 'Book and client briefs',
