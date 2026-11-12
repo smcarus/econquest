@@ -18,6 +18,9 @@ import { esSentence, externalSustainability } from '../../utils/externalSustaina
 import { driversSentence, inflationDrivers, NO_DRIVER_SOURCE } from '../../utils/inflationDrivers';
 import { fetchInflationDrivers } from '../feeds/inflationDrivers';
 import { fetchPwt } from '../feeds/pwt';
+import { bankSovereign, bsSentence, type YearValue } from '../../utils/bankSovereign';
+import { investorBaseData } from '../../utils/investorBaseStore';
+import { investorBaseReading } from '../../utils/investorBase';
 import { gaSentence, growthAccounting } from '../../utils/growthAccounting';
 import { EUROSTAT_GEO } from '../../utils/nationalCpi';
 import { curveSentence, yieldCurve, CURVE_NOT_RUN, CURVE_TEST_ID } from '../../utils/yieldCurve';
@@ -365,6 +368,34 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const r = growthAccounting(file, iso3);
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: gaSentence(r, name) } : {}) });
+  });
+  // Bank and government links (G28, src/utils/bankSovereign.ts): bank size, claims on government, banks' share of government debt, soundness.
+  app.get('/api/bank-sovereign/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    if (!file) return res.json({ iso3, ok: false, reason: 'No bank figures are saved for this country yet (Menu > Offline data, or open History & data while online)' });
+    const pick = (id: string): YearValue[] | undefined => {
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
+    };
+    let ib = null;
+    try {
+      ib = investorBaseReading(iso3, investorBaseData(DATA_DIR));
+    } catch {
+      ib = null;
+    }
+    const r = bankSovereign({
+      bankAssetsGdp: pick('bank_assets_gdp'),
+      claimsGovGdp: pick('bank_claims_gov_gdp'),
+      capitalAssets: pick('bank_capital_assets'),
+      npl: pick('bank_npl'),
+      govDebtGdp: pick('debt_gdp'),
+      investorBase: ib,
+      firstProjectionYear: new Date().getUTCFullYear(),
+    });
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: bsSentence(r, name) } : {}) });
   });
   // Local projections (src/utils/localProjections.ts): inflation after a policy rate change, reduced form.
   app.get('/api/local-projections/:iso3', async (req, res) => {

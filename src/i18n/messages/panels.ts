@@ -419,6 +419,21 @@ export const PANELS = defineMessages('panels', {
   ga_edition: "Edition: {edition}, last year {year}.",
   ga_persons: "persons only",
 
+  // Bank and government links (G28)
+  bs_title: "Banks and the government, {country}",
+  bs_what: "Bank and government links",
+  bs_intro: "How tied the banks and the government are to each other. If the government gets into trouble, banks that hold much of its debt lose; if banks get into trouble, the government may have to rescue them. Each figure with its source and year; a description, not a score.",
+  bs_figure: "Figure",
+  bs_value: "Value",
+  bs_source: "Source",
+  bs_bankAssets: "Bank assets, % of GDP",
+  bs_claimsGov: "Bank claims on the central government, % of GDP",
+  bs_claimsShare: "Claims on the government as a share of bank assets, % (approximate)",
+  bs_banksShareDebt: "Domestic banks' share of government debt, %",
+  bs_banksDebtGdp: "Government debt held by domestic banks, % of GDP",
+  bs_capital: "Bank capital to assets, %",
+  bs_npl: "Non-performing loans, % of gross loans",
+
   // Country risk scorecard
   risk_title: 'Country risk scorecard, {country}',
   risk_what: 'The scorecard',

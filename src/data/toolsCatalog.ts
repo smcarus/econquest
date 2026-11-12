@@ -237,6 +237,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-growth-accounting' },
   },
   {
+    id: 'bank_sovereign',
+    category: 'history',
+    title: 'Banks and the government',
+    what: "Where the open country's banks and government are tied to each other: bank assets, bank claims on the central government, domestic banks' share of government debt, and bank capital and bad loans, each with its source and year. State-owned banks and contingent liabilities read Missing with the reason.",
+    sources: 'World Bank WDI and GFDD (IMF Financial Soundness Indicators, IMF monetary statistics), IMF Sovereign Debt Investor Base',
+    target: { area: 'country', tab: 'history', anchor: 'tool-bank-sovereign' },
+  },
+  {
     id: 'book',
     category: 'portfolio',
     title: 'Book and client briefs',
