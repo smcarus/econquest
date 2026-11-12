@@ -50,6 +50,7 @@ export const SHELL = defineMessages(
     examTitle: 'On: no AI summaries or AI steps for anyone using this app; Council chat shows figures only, and questions asked and countries opened go to the audit log.',
     about: 'About & data licences',
     manual: 'User manual',
+    worked: 'Worked examples',
     helpOff: 'Help off',
     helpOffNote: 'Figures and sources only, no explanations or forecast ranges.',
     rangesHidden: 'Ranges hidden at Help off. Switch help on to see how far the figure could be off.',

@@ -131,6 +131,16 @@ try {
         await settle('About & data licences');
         if ((await page.locator('[data-about-credits] [data-source-credits]').count()) !== 4) failures.push(`${mode}: About does not list the four required source credits (ExchangeRate-API, GDELT, FRED, ACLED)`);
         await page.keyboard.press('Escape');
+        // Menu > Worked examples: four case studies; one opens with its figures (live or Missing) and a memo draft.
+        await page.getByRole('button', { name: 'Menu', exact: true }).click();
+        await page.getByRole('menuitem', { name: /^Worked examples/ }).first().click();
+        await page.waitForSelector('[data-worked-examples]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Menu > Worked examples did not open`));
+        if ((await page.locator('[data-worked-open]').count()) !== 4) failures.push(`${mode}: Worked examples does not list four case studies`);
+        await page.locator('[data-worked-open="debt"]').click();
+        await page.waitForSelector('[data-worked-memo]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: the debt worked example shows no memo draft`));
+        if ((await page.locator('[data-worked-figure]').count()) !== 7) failures.push(`${mode}: the debt worked example does not list its seven figures`);
+        await settle('Worked examples');
+        await page.keyboard.press('Escape');
         continue;
       }
       const nav = page.getByRole('button', { name: navName, exact: true }).first();

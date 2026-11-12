@@ -73,7 +73,7 @@ list until checkpoint 1;** new ideas are kept on a parked list and looked at the
 | Checkpoint 1 | About four weeks after the public release | Real use decides what comes next |
 | 5 | G23 crisis early-warning; G24 external sustainability; G25 yield curve and financial conditions; G26 inflation drivers; G27 growth accounting; G28 bank and government links; G29 debt restructuring calculator; G30 who pays for a policy; G31 central bank word count; then G32 behavioural finance agent | New analysis tools; each forward-looking one is tested before it gets a badge |
 | 6 | G33 behavioural policy check; G34 precedent finder; G35 fiscal rules check; G36 political feasibility; G37 trade-off chart; G39 one-page policy brief | A fuller policy review |
-| 7 | U2 Portuguese, Arabic and Swahili; W1 worked examples; Phase 5 classroom and pilot, with P4 expert review | More languages once the screens have settled; teaching |
+| 7 | U2 Portuguese, Arabic and Swahili; W1 worked examples (done early, 12 November: Menu > Worked examples, four case studies from a question to a memo, EN/ES/FR); Phase 5 classroom and pilot, with P4 expert review | More languages once the screens have settled; teaching |
 | Checkpoint 2 | After the pilot term | |
 | When documentation arrives | G14 Haver, G15 Moody's | Paid vendors that need a subscriber's API documentation |
 

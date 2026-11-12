@@ -56,14 +56,17 @@ validation), and nothing in it is a recommendation to buy or sell. Every export 
    or No answer. Add the free keys you want (FRED, EIA, UN Comtrade) under Menu > Settings.
 3. **Save it for offline use.** Menu > Offline data > *Download all country data*. After that the app
    works without a connection and each figure shows the date it was saved.
-4. **Ask the council.** On Workspace, type a question ("Is Brazil's policy rate too tight?"). Each
+4. **Try a worked example.** Menu > Worked examples walks through four case studies (debt,
+   inflation, the currency, a policy review) with the open country's figures, from the question to a
+   memo draft.
+5. **Ask the council.** On Workspace, type a question ("Is Brazil's policy rate too tight?"). Each
    agent answers with its figures, sources and dates; open a document for the full working, or
    *Explain* on any figure for where it came from and what moves it.
-5. **Look closer.** Research > one country: Summary, Markets & signals, History & data (output gap,
+6. **Look closer.** Research > one country: Summary, Markets & signals, History & data (output gap,
    debt sustainability, fiscal multipliers), Sources.
-6. **Write it up.** Save the answer to Reports, start a Policy review, or build a report. Download as
+7. **Write it up.** Save the answer to Reports, start a Policy review, or build a report. Download as
    Markdown or PDF.
-7. **Before you share.** Check the badge on each signal (Menu > Models & validation) and the terms of
+8. **Before you share.** Check the badge on each signal (Menu > Models & validation) and the terms of
    each source in the figures (Menu > About & data licences): some ask for a credit line, a few need
    the provider's permission before figures go to clients or into a paid product.
 
@@ -831,6 +834,19 @@ hold no figures of their own; the handout reads them from the app's series when 
 
 ## 5. Menu
 
+- **Worked examples** (W1): four guided case studies for the country open in Research, each going
+  from a question to a short memo with the app's own screens: debt sustainability ("Is government
+  debt on a path the country can keep up?"), inflation and interest rates ("Is the central bank's
+  policy tight or loose?"), the currency ("How exposed is the currency if foreign money stops coming
+  in?") and a policy review ("Can the government afford to spend 1% of GDP more each year?"). Each
+  example lists the figures saved on this computer for that country, with source and year; a figure
+  no source has filled reads Missing, and nothing is built in. A short working follows (for example
+  the primary balance that holds debt steady, or the real policy rate), done only when every figure
+  it needs is live; otherwise it names the missing ones. Each step says where its screen is, and
+  *Open this screen* goes there. The last step is a memo draft with the question, the figures, the
+  working and space for your own answers: *Copy* or *Download (.md)*, then write the conclusion in
+  your own words. To work an example for another country, open that country in Research first. In
+  English, Spanish and French.
 - **Tools**: opens Settings on its Tools tab (section 6). Opening a tool closes Settings and goes to it.
 - **Settings** (⌘, or Ctrl+,): free keys (FRED, EIA, UN Comtrade, Turkey EVDS), your own paid data
   (CDS source Off, My CSV or My LSEG), and the Gemini key. Each key has a Test button. Keys are

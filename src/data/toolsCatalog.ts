@@ -11,7 +11,7 @@ export type ToolTarget =
   | { area: 'today'; anchor: string }
   | { area: 'compare'; anchor: string }
   | { area: 'country'; tab: 'brief' | 'macro' | 'overview' | 'history'; brief?: 'economist' | 'banker' | 'official'; anchor?: string }
-  | { area: 'reports' }
+  | { area: 'reports'; anchor?: string }
   | { area: 'portfolio'; anchor?: string };
 
 export type ToolCategoryId = 'council' | 'monitor' | 'screen' | 'country' | 'history' | 'portfolio' | 'write';

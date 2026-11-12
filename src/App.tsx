@@ -92,6 +92,7 @@ import {
   CheckCircle2,
   ShieldCheck,
   GraduationCap,
+  ListChecks,
   ScrollText,
   Activity,
   ShieldQuestion,
@@ -135,6 +136,7 @@ const DataHealthDialog = lazyNamed(() => import('./components/DataHealthDialog')
 const IdeaJournalDialog = lazyNamed(() => import('./components/IdeaJournalDialog'), 'IdeaJournalDialog');
 const OwnSeriesDialog = lazyNamed(() => import('./components/OwnSeriesDialog'), 'OwnSeriesDialog');
 const AboutDialog = lazyNamed(() => import('./components/AboutDialog'), 'AboutDialog');
+const WorkedExamplesDialog = lazyNamed(() => import('./components/WorkedExamplesDialog'), 'WorkedExamplesDialog');
 const AddCountryDialog = lazyNamed(() => import('./components/AddCountryDialog'), 'AddCountryDialog');
 const QuestsDialog = lazyNamed(() => import('./components/QuestsDialog'), 'QuestsDialog');
 const ModelRegisterDialog = lazyNamed(() => import('./components/ModelRegisterDialog'), 'ModelRegisterDialog');
@@ -429,6 +431,7 @@ export default function App() {
   const [isCustomSovereignModalOpen, setIsCustomSovereignModalOpen] =
     useState<boolean>(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState<boolean>(false);
+  const [isWorkedOpen, setIsWorkedOpen] = useState<boolean>(false);
   const [isRuntimeModalOpen, setIsRuntimeModalOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [settingsTab, setSettingsTab] = useState<SettingsTab>('ai');
@@ -1069,8 +1072,16 @@ export default function App() {
 
 
   /** Opens a ready tool from the Tools page where it lives. */
-  const scrollToAnchor = (anchor: string) =>
-    window.setTimeout(() => document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+  // The screen may still be loading (a lazy panel), so look for the anchor for up to about five seconds.
+  const scrollToAnchor = (anchor: string) => {
+    let tries = 0;
+    const go = () => {
+      const el = document.getElementById(anchor);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      else if (tries++ < 25) window.setTimeout(go, 200);
+    };
+    window.setTimeout(go, 120);
+  };
   const openTool = (t: ToolTarget) => {
     if (t.area === 'today' || t.area === 'compare') {
       if (t.area === 'compare') setResearchSection(sectionForAnchor(t.anchor));
@@ -1090,7 +1101,10 @@ export default function App() {
       setAppArea('portfolio');
       window.scrollTo({ top: 0 });
       if (t.anchor) scrollToAnchor(t.anchor);
-    } else openWorkspace('reports');
+    } else {
+      openWorkspace('reports', t.anchor ? 'ic_memo_builder' : undefined);
+      if (t.anchor) scrollToAnchor(t.anchor);
+    }
   };
 
 
@@ -1447,6 +1461,14 @@ export default function App() {
                         label: t('manual'),
                         hint: '',
                         onClick: () => setIsManualModalOpen(true),
+                        className: '',
+                      },
+                      {
+                        key: 'worked',
+                        icon: <ListChecks className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: t('worked'),
+                        hint: '',
+                        onClick: () => setIsWorkedOpen(true),
                         className: '',
                       },
                     ]
@@ -1853,6 +1875,19 @@ export default function App() {
       <Suspense fallback={null}>{isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isDataHealthOpen && <DataHealthDialog onClose={() => setIsDataHealthOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isIdeasOpen && <IdeaJournalDialog onClose={() => setIsIdeasOpen(false)} />}</Suspense>
+      <Suspense fallback={null}>
+        {isWorkedOpen && (
+          <WorkedExamplesDialog
+            countryName={run.countryName}
+            snapshot={run.openData}
+            onOpenScreen={(target) => {
+              setIsWorkedOpen(false);
+              openTool(target);
+            }}
+            onClose={() => setIsWorkedOpen(false)}
+          />
+        )}
+      </Suspense>
       <Suspense fallback={null}>{isOwnDataOpen && <OwnSeriesDialog onClose={() => setIsOwnDataOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isQuestsOpen && questsOn && <QuestsDialog items={liveWatchlistItems} onClose={() => setIsQuestsOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}</Suspense>
