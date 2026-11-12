@@ -15,6 +15,9 @@ import { ruleFamily, ruleFamilySentence, RULE_FAMILY_METHOD, type RuleFamilyInpu
 import { reserveAdequacy, reserveAdequacySentence } from '../../utils/reserveAdequacy';
 import { crisisSentence, crisisWarning, CRISIS_NOT_RUN } from '../../utils/crisisWarning';
 import { esSentence, externalSustainability } from '../../utils/externalSustainability';
+import { driversSentence, inflationDrivers, NO_DRIVER_SOURCE } from '../../utils/inflationDrivers';
+import { fetchInflationDrivers } from '../feeds/inflationDrivers';
+import { EUROSTAT_GEO } from '../../utils/nationalCpi';
 import { curveSentence, yieldCurve, CURVE_NOT_RUN, CURVE_TEST_ID } from '../../utils/yieldCurve';
 import { FRED_10Y_SERIES, US_10Y_SERIES } from '../../utils/officialYields';
 import { loadValidation } from '../../utils/backtestRun';
@@ -339,6 +342,19 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     });
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: curveSentence(r, name), ...(r.hitRate ? {} : { notValidated: CURVE_NOT_RUN }) } : {}) });
+  });
+  // Inflation drivers (G26, src/utils/inflationDrivers.ts): headline against core, food and energy, from official sub-indices.
+  app.get('/api/inflation-drivers/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    // Other OECD members: the countries the OECD headline CPI pull covers.
+    const hist = await quick(modelHistory());
+    const oecdCovered = Boolean(hist?.cpi && areaSeries(iso3, hist.cpi)?.points?.length);
+    if (!EUROSTAT_GEO[iso3] && iso3 !== 'USA' && !oecdCovered) return res.json({ iso3, ok: false, reason: NO_DRIVER_SOURCE });
+    const inputs = await quick(fetchInflationDrivers(iso3, oecdCovered));
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    if (!inputs) return res.json({ iso3, ok: false, reason: 'The consumer price sources have not answered yet' });
+    const r = inflationDrivers(inputs);
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: driversSentence(r, name) } : {}) });
   });
   // Local projections (src/utils/localProjections.ts): inflation after a policy rate change, reduced form.
   app.get('/api/local-projections/:iso3', async (req, res) => {

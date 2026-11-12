@@ -212,6 +212,16 @@ In the same monthly European Commission survey, households are asked whether the
 
 **Limits.** It is a balance of answers, not an inflation rate in percent, so it cannot be compared directly with market-implied inflation. Whether a rise comes before higher inflation is tested by the pre-registered inflation_expectations_lead test; until that test passes the app only describes the figure. Only EU members are covered.
 
+### Core inflation
+
+Inflation without the prices that jump around the most: food and energy. Statistics offices publish it beside the headline rate, which covers everything people buy.
+
+**Why it matters.** Food and energy prices swing with harvests, weather and world oil prices, which a central bank cannot steer. Core inflation shows the slower trend underneath, which is what interest rates can affect.
+
+**How to read it.** If core is close to headline, price rises are broad. If headline is well above core, food or energy are pushing it up and may fall back; if core is above headline, cheaper food or energy are hiding a firmer trend. The app shows both, how core moved over 3 months, and for EU members how many points food and energy add.
+
+**Limits.** Definitions differ: Eurostat also leaves out alcohol and tobacco, BLS and the OECD do not. Food and energy still matter to households, so core is not a measure of the cost of living.
+
 ### CPI inflation
 
 How fast the prices people pay for a typical basket of goods and services (food, rent, fuel, transport and so on) are rising, compared with a year earlier.

@@ -41,6 +41,7 @@ const BeerPanel = lazyNamed(() => import('./BeerPanel'), 'BeerPanel');
 const LocalProjectionsPanel = lazyNamed(() => import('./LocalProjectionsPanel'), 'LocalProjectionsPanel');
 const ReserveAdequacyPanel = lazyNamed(() => import('./ReserveAdequacyPanel'), 'ReserveAdequacyPanel');
 const CrisisWarningPanel = lazyNamed(() => import('./CrisisWarningPanel'), 'CrisisWarningPanel');
+const InflationDriversPanel = lazyNamed(() => import('./InflationDriversPanel'), 'InflationDriversPanel');
 const YieldCurvePanel = lazyNamed(() => import('./YieldCurvePanel'), 'YieldCurvePanel');
 const ExternalSustainabilityPanel = lazyNamed(() => import('./ExternalSustainabilityPanel'), 'ExternalSustainabilityPanel');
 const RiskScorecardPanel = lazyNamed(() => import('./RiskScorecardPanel'), 'RiskScorecardPanel');
@@ -428,6 +429,12 @@ export const CountryPage: React.FC<{
           <PanelBoundary name="Yield curve">
             <React.Suspense fallback={<DeskLoading />}>
               <YieldCurvePanel key={`yc-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-inflation-drivers" className="scroll-mt-4" />
+          <PanelBoundary name="Inflation drivers">
+            <React.Suspense fallback={<DeskLoading />}>
+              <InflationDriversPanel key={`inf-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
             </React.Suspense>
           </PanelBoundary>
           <div id="tool-fiscal-reaction" className="scroll-mt-4" />
