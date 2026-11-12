@@ -25,6 +25,7 @@ import { figureRows } from '../../utils/csvExport';
 import { listArchivedDays } from '../../utils/pullArchive';
 import { parseEffects } from '../../utils/behaviouralCheck';
 import { CONSENTS, expertCsv, expertSummaryMarkdown, parseExpertForm } from '../../utils/expertReview';
+import { findPrecedents, parseFeatures, type HistoryInput } from '../../utils/precedentFinder';
 import express from 'express';
 
 type FetchedSeriesLike = { id: string; label: string; unit: string; freq: string; source: string; points: Array<{ date: string; value: number }> };
@@ -47,10 +48,12 @@ export interface ReviewDeps {
     runtimeConfig: Partial<AIRuntimeConfig>
   ) => Promise<{ status: 502 | 503; error: string; model?: string } | { content: Pick<OptionsStepT, 'model' | 'options' | 'ranking' | 'gaps' | 'removed'>; step: { model?: string; temperature?: number; seed?: number } }>;
   withModelFigures: (d: Diagnosis) => Diagnosis;
+  /** Every country's saved yearly history (data/history/), for the precedent finder. */
+  allHistories: () => { histories: HistoryInput[]; pulledAt?: string };
 }
 
 export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): void {
-  const { refuseRemoteChange, signedIn, archivedSnapshot, seriesFor, fetchLiveOpenDataSnapshot, reviewOptionsStep, withModelFigures } = deps;
+  const { refuseRemoteChange, signedIn, archivedSnapshot, seriesFor, fetchLiveOpenDataSnapshot, reviewOptionsStep, withModelFigures, allHistories } = deps;
   // Report sign-off: where each saved council conversation stands, and one step at a time.
   app.get('/api/signoffs', (_req, res) => {
     const all = loadSignOffs(SIGNOFF_FILE);
@@ -306,6 +309,16 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
       detail: { id: r.id, step: 'evidence', hash: out.review.steps.evidence?.hash, asOf: frame.asOf, analyses: analyses.map((a) => ({ id: a.id, tests: a.tests.length, missing: a.missing.length, inputs: a.inputs })), episodes: items.length, signals: signals.map((s) => `${s.id}: ${s.statusLabel}`), researchOnly: content.researchOnly },
     });
     res.json({ review: out.review, states: stepStates(out.review) });
+  });
+  // Precedent finder (G34): other countries that matched on the chosen figures, and what followed.
+  // Worked out on request from the saved yearly histories; nothing is saved and the steps do not change.
+  app.get('/api/reviews/:id/precedents', (req, res) => {
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const frame = frameOf(r);
+    if (!frame) return res.status(400).json({ error: 'Save the frame first.' });
+    const { histories, pulledAt } = allHistories();
+    res.json({ ...findPrecedents(frame.iso3, frame.asOf, parseFeatures(req.query.features), histories), historyPulledAt: pulledAt, folder: 'data/history/' });
   });
   // Behavioural check (G33): the flags are worked out in the browser from the saved options; only the
   // effect sizes the user enters, each with its source, are saved here, beside the steps.

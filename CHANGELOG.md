@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Precedent finder (G34): Policy review shows, after Diagnose, the eight countries whose yearly
+  figures were closest to the review country's on the figures you pick, and what followed over the
+  next three years (growth, inflation, debt, primary balance, current account, reserves, currency),
+  read from the saved histories with the median of each. Only years before the As of year are read.
+  IMF programme and crisis dates read Missing until the IMF confirms their terms. New route
+  `GET /api/reviews/:id/precedents`; glossary entry Precedent finder.
 - Portuguese, part 4 (U2): the Menu dialogs and Settings (keys, accounts, sign-in, add a country,
   idea journal, data connections, offline data, user manual and glossary), the help at Key help and
   Full help with the whole glossary and chart guides, the definition tags, Worked examples, and the

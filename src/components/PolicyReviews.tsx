@@ -14,6 +14,7 @@ import { withNotice } from '../utils/disclaimer';
 import { useLang, useT, useTx } from '../i18n/useLang';
 import { REPORTS } from '../i18n/messages/reports';
 import { BehaviouralCheck } from './BehaviouralCheck';
+import { PrecedentFinder } from './PrecedentFinder';
 import { ExpertReviewForm } from './ExpertReviewForm';
 
 /**
@@ -852,6 +853,14 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                 </p>
               )}
             </section>
+
+            {frame && (
+              <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="precedents">
+                <h4 className="ui-section-title">2b. {t('pc_title')}</h4>
+                <p className="ui-label">{t('pc_hint')}</p>
+                <PrecedentFinder review={r} countryName={name(frame.iso3)} />
+              </section>
+            )}
 
             <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="options">
               <h4 className="ui-section-title">3. {tx(STEP_LABEL.options)}</h4>

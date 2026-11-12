@@ -896,6 +896,16 @@ Writing down a test's rules, data, and pass mark before running it, and recordin
 
 **Why it matters.** It stops the rules being adjusted after seeing the results until something "works".
 
+### Precedent finder
+
+A list of other countries whose figures in some past year looked like this country's figures now, on the ones you pick (such as government debt, inflation, reserves and the current account), with what happened to their figures in the three years after.
+
+**Why it matters.** Seeing how similar situations played out elsewhere gives a sense of the range of outcomes: some countries grew out of high debt, others slid into a crisis. It helps frame what an option might face.
+
+**How to read it.** The closest countries come first; a distance near 0 means the figures were almost the same, about 1 means one standard deviation apart on average. The last row gives the median of what followed. In Policy review, it sits after Diagnose and is worked out on request from the saved yearly figures.
+
+**Limits.** It describes what happened, not what will happen here, and it has not been tested as a signal. Countries differ in many ways the chosen figures leave out. IMF programme data and crisis dates read Missing until their terms are confirmed.
+
 ### Naive benchmark
 
 The simplest possible forecast to beat, such as "next year will be the same as this year".
