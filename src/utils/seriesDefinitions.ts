@@ -41,6 +41,7 @@ export const COVERAGE = {
   own: 'Your own file',
   paid: 'Your own subscription',
   notStated: 'Not stated yet',
+  banks: 'Banks and other deposit-taking institutions',
 } as const;
 export type CoverageKey = keyof typeof COVERAGE;
 
@@ -131,6 +132,10 @@ const BY_ID: Record<string, Def> = {
   external_debt_usd: d("Total external debt stocks, public and private, in US dollars (World Bank DT.DOD.DECT.CD)", 'allSectors'),
   ext_debt_service_usd: d("Principal and interest paid on total external debt in the year, in US dollars (World Bank DT.TDS.DECT.CD)", 'allSectors'),
   ext_interest_usd: d("Interest paid on total external debt in the year, in US dollars (World Bank DT.INT.DECT.CD)", 'allSectors'),
+  bank_assets_gdp: d("Assets of deposit money banks, % of GDP (World Bank GFDD.DI.02)", 'banks'),
+  bank_claims_gov_gdp: d("Claims of deposit-taking institutions on central government, % of GDP (World Bank FS.AST.CGOV.GD.ZS, from IMF monetary statistics)", 'banks'),
+  bank_capital_assets: d("Bank capital and reserves as % of total assets, not risk-weighted (World Bank FB.BNK.CAPA.ZS, from IMF Financial Soundness Indicators)", 'banks'),
+  bank_npl: d("Non-performing loans as % of gross bank loans (World Bank FB.AST.NPER.ZS, from IMF Financial Soundness Indicators)", 'banks'),
   fdi_in_gdp: d('Direct investment into the country by foreigners, net of disinvestment, as % of GDP', 'allSectors'),
   fdi_out_gdp: d('Direct investment abroad by residents, net of disinvestment, as % of GDP', 'allSectors'),
   fdi_net_usd: d('Net direct investment in the balance of payments (BPM6 sign), in US dollars', 'allSectors'),
@@ -458,6 +463,10 @@ const UNITS_BY_ID: Record<string, Units> = {
   external_debt_usd: ['nominal', 'usdMarket'],
   ext_debt_service_usd: ['nominal', 'usdMarket'],
   ext_interest_usd: ['nominal', 'usdMarket'],
+  bank_assets_gdp: ['shareGdp'],
+  bank_claims_gov_gdp: ['shareGdp'],
+  bank_capital_assets: ['ratio'],
+  bank_npl: ['ratio'],
   fdi_in_gdp: ['shareGdp'],
   fdi_out_gdp: ['shareGdp'],
   fdi_net_usd: ['nominal', 'usdMarket'],

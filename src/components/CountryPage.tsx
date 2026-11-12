@@ -42,6 +42,7 @@ const LocalProjectionsPanel = lazyNamed(() => import('./LocalProjectionsPanel'),
 const ReserveAdequacyPanel = lazyNamed(() => import('./ReserveAdequacyPanel'), 'ReserveAdequacyPanel');
 const CrisisWarningPanel = lazyNamed(() => import('./CrisisWarningPanel'), 'CrisisWarningPanel');
 const GrowthAccountingPanel = lazyNamed(() => import('./GrowthAccountingPanel'), 'GrowthAccountingPanel');
+const BankSovereignPanel = lazyNamed(() => import('./BankSovereignPanel'), 'BankSovereignPanel');
 const InflationDriversPanel = lazyNamed(() => import('./InflationDriversPanel'), 'InflationDriversPanel');
 const YieldCurvePanel = lazyNamed(() => import('./YieldCurvePanel'), 'YieldCurvePanel');
 const ExternalSustainabilityPanel = lazyNamed(() => import('./ExternalSustainabilityPanel'), 'ExternalSustainabilityPanel');
@@ -442,6 +443,12 @@ export const CountryPage: React.FC<{
           <PanelBoundary name="Growth accounting">
             <React.Suspense fallback={<DeskLoading />}>
               <GrowthAccountingPanel key={`ga-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-bank-sovereign" className="scroll-mt-4" />
+          <PanelBoundary name="Bank and government links">
+            <React.Suspense fallback={<DeskLoading />}>
+              <BankSovereignPanel key={`bs-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
             </React.Suspense>
           </PanelBoundary>
           <div id="tool-fiscal-reaction" className="scroll-mt-4" />

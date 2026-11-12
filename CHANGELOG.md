@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Banks and the government (G28, Research > History & data, also in Tools): how tied a country's
+  banks and government are, each figure with its source and year: bank assets, bank claims on the
+  central government (also as a share of bank assets), domestic banks' share of government debt
+  (IMF investor base, your file) and that share in % of GDP, bank capital to assets and
+  non-performing loans. Four new saved World Bank figures (GFDD.DI.02, FS.AST.CGOV.GD.ZS,
+  FB.BNK.CAPA.ZS, FB.AST.NPER.ZS), also under History & data. State-owned banks and contingent
+  liabilities read Missing with the reason. Description only, no score. English, Spanish and French.
 - Growth accounting (G27, Research > History & data, also in Tools): growth in each ten-year period
   split into capital, hours worked, human capital and productivity (TFP) from the Penn World Table
   (CC BY 4.0), as a stacked chart, a table and a CSV download. The edition's workbook is read once

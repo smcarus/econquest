@@ -407,6 +407,21 @@ export const PANELS_ES: Partial<Record<Keys, string>> = {
   ga_edition: "Edición: {edition}, último año {year}.",
   ga_persons: "solo personas",
 
+  // Bank and government links (G28)
+  bs_title: "Los bancos y el Estado, {country}",
+  bs_what: "Los vínculos entre bancos y Estado",
+  bs_intro: "Cuán ligados están los bancos y el Estado. Si el Estado tiene problemas, los bancos que tienen mucha de su deuda pierden; si los bancos tienen problemas, el Estado puede tener que rescatarlos. Cada cifra con su fuente y su año; una descripción, no una puntuación.",
+  bs_figure: "Cifra",
+  bs_value: "Valor",
+  bs_source: "Fuente",
+  bs_bankAssets: "Activos bancarios, % del PIB",
+  bs_claimsGov: "Créditos de los bancos al gobierno central, % del PIB",
+  bs_claimsShare: "Créditos al gobierno como parte de los activos bancarios, % (aproximado)",
+  bs_banksShareDebt: "Parte de la deuda pública en manos de bancos nacionales, %",
+  bs_banksDebtGdp: "Deuda pública en manos de bancos nacionales, % del PIB",
+  bs_capital: "Capital bancario sobre activos, %",
+  bs_npl: "Préstamos morosos, % de los préstamos brutos",
+
   // Country risk scorecard
   risk_title: 'Ficha de riesgo país, {country}',
   risk_what: 'la ficha',

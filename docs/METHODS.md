@@ -39,6 +39,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Geopolitical risk VaR | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
 | External sustainability | Research | Description, not a tested signal | None |
+| Banks and the government | Research | Description, not a tested signal | None |
 | Growth accounting | Research | Description, not a tested signal | None |
 | Inflation drivers | Research | Description, not a tested signal | None |
 | Yield curve and financial conditions | Research | Not validated | None |
@@ -481,6 +482,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: ratios and an accounting identity, no forward call. The current account norm (IMF EBA) and the net international investment position read Missing until a usable source is confirmed.
 - **Limits:** IDS covers low- and middle-income countries only; yearly; averages of past interest and growth stand in for the future; no current account norm.
 - **Code:** `src/utils/externalSustainability.ts`
+
+### Banks and the government
+
+- **Says:** How tied the banks and the government are: how big banks are, how much they lend to the government, how much of the government's debt they hold, and how much loss they can take.
+- **Rule:** Latest published year of each figure. Claims on government as a share of bank assets = claims ÷ assets, both % of GDP in the same year (approximate). Banks' holdings as % of GDP = domestic banks' share of government debt × government debt to GDP in the same year.
+- **Reads:** World Bank GFDD.DI.02, FS.AST.CGOV.GD.ZS, FB.BNK.CAPA.ZS, FB.AST.NPER.ZS; IMF Sovereign Debt Investor Base (your file); IMF WEO government debt
+- **Shows in:** Country Research > History & data (Banks and the government)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published figures and two ratios, no score and no forward call.
+- **Limits:** Yearly and often a year or two behind; the investor base covers emerging and developing economies only; no free cross-country figure for state-owned banks or contingent liabilities, so both read Missing.
+- **Code:** `src/utils/bankSovereign.ts`
 
 ### Growth accounting
 
