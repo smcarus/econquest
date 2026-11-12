@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- External sustainability (G24, Research > History & data, also in Tools): external debt as % of
+  GDP, a year of external debt service against reserves and exports, and the debt-stabilising
+  non-interest current account d × (i − g) ÷ (1 + g) on five-year averages, beside the actual one.
+  New saved World Bank IDS figures: external debt, debt service and interest paid, in US dollars.
+  The current account norm (IMF EBA, terms not confirmed) and the net international investment
+  position read Missing with the reason. English, Spanish and French.
 - Crisis early-warning (G23, Research > History & data, also in Tools): the BIS credit-to-GDP gap
   against the Basel III lines of 2 and 10 points, past spells above 10 points, three-year change in
   private credit to GDP, and the private debt service ratio and real house price growth against

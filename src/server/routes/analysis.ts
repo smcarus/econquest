@@ -14,6 +14,7 @@ import { localProjections, lpSentence } from '../../utils/localProjections';
 import { ruleFamily, ruleFamilySentence, RULE_FAMILY_METHOD, type RuleFamilyInputs } from '../../utils/ruleFamily';
 import { reserveAdequacy, reserveAdequacySentence } from '../../utils/reserveAdequacy';
 import { crisisSentence, crisisWarning, CRISIS_NOT_RUN } from '../../utils/crisisWarning';
+import { esSentence, externalSustainability } from '../../utils/externalSustainability';
 import { BIS_ISO2 } from '../../utils/bisDebtSecurities';
 import { vintageLabel, weoVintageReply, WEO_VINTAGE_CODES } from '../../utils/weoVintages';
 import { fetchWithTimeout } from '../http';
@@ -278,6 +279,28 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const r = reserveAdequacy({ reservesUsd: pick('reserves_usd'), shortTermDebtUsd: pick('short_term_debt_usd'), broadMoneyGdp: pick('broad_money_gdp'), exportsUsd: pick('exports_usd'), gdpUsd: pick('gdp_usd'), reservesMonths: pick('reserves_months') });
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: reserveAdequacySentence(r, name) } : {}) });
+  });
+  // External sustainability (G24, src/utils/externalSustainability.ts): external debt, debt service and the debt-stabilising current account.
+  app.get('/api/external-sustainability/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    if (!file) return res.json({ iso3, ok: false, reason: 'Full official history not downloaded yet (Menu > Offline data, or open History & data while online)' });
+    const pick = (id: string) => {
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s : undefined;
+    };
+    const r = externalSustainability({
+      currentAccountPct: pick('current_account_imf'),
+      gdpUsd: pick('gdp_usd'),
+      externalDebtUsd: pick('external_debt_usd'),
+      debtServiceUsd: pick('ext_debt_service_usd'),
+      interestUsd: pick('ext_interest_usd'),
+      reservesUsd: pick('reserves_usd'),
+      exportsUsd: pick('exports_usd'),
+    });
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: esSentence(r, name) } : {}) });
   });
   // Crisis early-warning (G23, src/utils/crisisWarning.ts): the BIS credit cycle against the Basel III lines.
   app.get('/api/crisis-warning/:iso3', async (req, res) => {

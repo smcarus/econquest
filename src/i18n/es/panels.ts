@@ -292,6 +292,25 @@ export const PANELS_ES: Partial<Record<Keys, string>> = {
   ara_exports: 'Exportaciones',
   ara_araCol: 'ARA como máximo, flotante / fijo',
 
+  // External sustainability (G24)
+  es_title: "Sostenibilidad externa, {country}",
+  es_what: "La sostenibilidad externa",
+  es_intro: "¿Puede el país seguir pagando lo que debe al exterior? Su deuda externa, qué parte de sus reservas y de sus ingresos por exportaciones se lleva un año de pagos de deuda, y la cuenta corriente que mantendría estable su deuda externa.",
+  es_debt: "Deuda externa",
+  es_dsReserves: "Servicio de la deuda / reservas",
+  es_dsReservesNote: "({year}; por encima del 100% un año de pagos agotaría las reservas)",
+  es_dsExports: "Servicio de la deuda / exportaciones",
+  es_ca: "Cuenta corriente",
+  es_required: "Cuenta corriente sin intereses que mantiene estable la deuda externa",
+  es_requiredNote: "(medias de {n} años: interés {i}%, crecimiento del PIB en dólares {g}%; deuda {d}% del PIB)",
+  es_actual: "Cuenta corriente sin intereses, real",
+  es_holds: "({year}; {gap} pts frente al nivel necesario: el ratio de deuda se mantendría o bajaría)",
+  es_rises: "({year}; {gap} pts frente al nivel necesario: el ratio de deuda subiría)",
+  es_colCa: "Cuenta corriente, % PIB",
+  es_colDebt: "Deuda externa, % PIB",
+  es_colReserves: "Servicio de la deuda, % reservas",
+  es_colExports: "Servicio de la deuda, % exportaciones",
+
   // Crisis early-warning (G23)
   cw_title: "Alerta temprana de crisis, {country}",
   cw_what: "La alerta temprana de crisis",

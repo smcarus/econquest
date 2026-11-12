@@ -197,6 +197,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-track-record' },
   },
   {
+    id: 'external_sustainability',
+    category: 'history',
+    title: 'External sustainability',
+    what: "Whether the open country can keep paying what it owes abroad: external debt as % of GDP, a year of debt service against reserves and exports, and the non-interest current account that would hold external debt steady. The current account norm and the investment position read Missing with the reason.",
+    sources: 'World Bank International Debt Statistics, World Bank reserves and exports, IMF WEO',
+    target: { area: 'country', tab: 'history', anchor: 'tool-external-sustainability' },
+  },
+  {
     id: 'crisis_warning',
     category: 'history',
     title: 'Crisis early-warning',
