@@ -197,6 +197,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-track-record' },
   },
   {
+    id: 'crisis_warning',
+    category: 'history',
+    title: 'Crisis early-warning',
+    what: "Where the open country stands on the measures that have often come before banking crises: the credit-to-GDP gap against the Basel III lines, past spells above 10 points, three-year credit growth, the debt service ratio and real house prices. Not validated: its test waits for the crisis-dates licence.",
+    sources: 'BIS credit-to-GDP gaps, debt service ratios and property prices',
+    target: { area: 'country', tab: 'history', anchor: 'tool-crisis-warning' },
+  },
+  {
     id: 'book',
     category: 'portfolio',
     title: 'Book and client briefs',
