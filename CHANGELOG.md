@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Portuguese, part 2 (U2): the Research scope bar, section names and Sources, one country's three
+  briefs with their figure names, reasons and meanings, and every panel on one country's other tabs,
+  including the sentences the app writes from the data. The brief and panel coverage tests now check
+  Portuguese as well. Not yet checked by a native speaker.
 - Portuguese, part 1 (U2): Brazilian Portuguese with the polite "você" joins the language button
   (EN / ES / FR / PT), downloaded only when picked. This part covers the app frame, Workspace,
   Council chat and the reasons a figure is Missing; other screens show in English until their parts

@@ -4,6 +4,8 @@ import { attachLanguage, defineMessages, LANGS, nextLang, parseLang, placeholder
 import { ALL_CATALOGS } from '../src/i18n/messages';
 import { ES } from '../src/i18n/es';
 
+/** Words spelled the same in Portuguese and English; anything else left identical is untranslated. */
+const SAME_IN_PORTUGUESE = new Set(['Menu', 'Offline', 'Quests', 'Markdown', 'Bootstrap', 'Cascade', 'Instrument', 'AI: Gemini', '{n} pt', '{n} pts', '{value} pts']);
 /** Words spelled the same in French and English; anything else left identical is untranslated. */
 const SAME_IN_FRENCH = new Set(['Question {n}', 'momentum', 'macro', 'Document', '1 question', '{n} questions', 'Stable', '{n} pts', 'Sections', 'Markdown', 'Bootstrap', 'Notes', 'Communication', 'stable', 'Concentration', 'Options', 'Instrument', 'Type', 'Date', 'Sanctions', 'Question', 'Menu', 'Agents', '1 position', '{n} positions', '1 document', '{n} documents', 'Inflation', 'Cycle', 'Question', 'Instructions', '{n} pages, ', '1 page, ', 'Tests', 'Image', 'Documents', '{num} passages', '1 passage', 'Cascade',
   'Articles', 'Coefficient', 'Date', 'Excel', 'Inflation {inf}, {basis}{gap}', 'Option', 'Point', 'Programmes', 'Sanctions', 'Sources',
@@ -181,6 +183,10 @@ test('the brief panels: every title, figure name, reason and meaning they build 
   attachLanguage('fr', FR, FR_TEXT);
   const noFrench = [...need].filter((s) => translateText(s, 'fr') === s && !SAME_IN_FRENCH.has(s));
   assert.deepEqual(noFrench, [], 'brief text with no French');
+  const { PT, PT_TEXT } = await import('../src/i18n/pt');
+  attachLanguage('pt', PT, PT_TEXT);
+  const noPortuguese = [...need].filter((s) => translateText(s, 'pt') === s && !SAME_IN_PORTUGUESE.has(s));
+  assert.deepEqual(noPortuguese, [], 'brief text with no Portuguese');
 });
 
 test('a pattern swaps a whole sentence and keeps what the app put in it', async () => {
@@ -265,6 +271,10 @@ test('the one-country panels: sentences, labels and reasons the app builds in En
   attachLanguage('fr', FR, FR_TEXT);
   const noFrench = s.filter((x) => (translateText(x, 'fr') === x && !SAME_IN_FRENCH.has(x)) || / the | weaker | stronger | points? lower| higher than/.test(translateText(x, 'fr')));
   assert.deepEqual(noFrench, [], 'panel text with no French');
+  const { PT, PT_TEXT } = await import('../src/i18n/pt');
+  attachLanguage('pt', PT, PT_TEXT);
+  const noPortuguese = s.filter((x) => (translateText(x, 'pt') === x && !SAME_IN_PORTUGUESE.has(x)) || / the | weaker | stronger | points? lower| higher than/.test(translateText(x, 'pt')));
+  assert.deepEqual(noPortuguese, [], 'panel text with no Portuguese');
 });
 
 test('Holdings and Tools: tool names, briefs, signals and tool reasons the app builds in English have Spanish', async () => {
@@ -531,8 +541,7 @@ test('the French file is its own download: it imports nothing from the Spanish',
 
 // Portuguese (U2, Brazilian, polite "você"). Areas arrive in parts like the French; an area not
 // translated yet shows in English, but every area that is here must be complete.
-const SAME_IN_PORTUGUESE = new Set(['Menu', 'Offline', 'Quests', 'Markdown', 'Bootstrap', 'Cascade', 'Instrument', 'AI: Gemini']);
-const PT_AREAS = ['shell', 'common', 'workspace', 'council', 'chat'];
+const PT_AREAS = ['shell', 'common', 'workspace', 'council', 'chat', 'research', 'brief', 'panels'];
 
 test('every Portuguese message file is complete, keeps every placeholder and matches an English file', async () => {
   const { PT } = await import('../src/i18n/pt');
@@ -598,11 +607,12 @@ test('Portuguese uses "você", never "tu" or "o senhor"', async () => {
 test('the Portuguese file is its own download: it imports nothing from the Spanish or French, and English stays English', async () => {
   const { readFileSync, readdirSync } = await import('node:fs');
   for (const f of readdirSync('src/i18n/pt')) assert.doesNotMatch(readFileSync(`src/i18n/pt/${f}`, 'utf8'), /from '\.\.\/(es|fr)/, `${f} imports another language`);
-  const { attachLanguage } = await import('../src/i18n/lang');
+  const { attachLanguage, translateText } = await import('../src/i18n/lang');
   const { PT, PT_TEXT } = await import('../src/i18n/pt');
   const { SHELL } = await import('../src/i18n/messages/shell');
   attachLanguage('pt', PT, PT_TEXT);
   assert.equal(translate(SHELL, 'pt', 'research'), 'Pesquisa');
+  assert.equal(translateText('Brazil: inflation 4.6% against a 3.0% target.', 'pt'), 'Brazil: inflação de 4.6% para uma meta de 3.0%.');
   assert.equal(translate(SHELL, 'en', 'research'), 'Research');
   const later = defineMessages('demo-pt-later', { a: 'Apple' }, { a: 'Manzana' });
   assert.equal(translate(later, 'pt', 'a'), 'Apple', 'an area with no Portuguese yet falls back to English, never Spanish');
