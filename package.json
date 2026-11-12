@@ -20,6 +20,7 @@
     "check:data": "tsx scripts/check-connections.ts",
     "check:imf": "tsx scripts/imf-codes.ts",
     "check:vintages": "tsx scripts/vintage-probe.ts",
+    "check:success": "tsx scripts/success-measures.ts",
     "weo:vintages": "tsx scripts/weo-vintages.ts",
     "weo:pull": "tsx scripts/weo-pull.ts",
     "sanctions:pull": "tsx scripts/sanctions-pull.ts",
