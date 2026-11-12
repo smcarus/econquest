@@ -39,6 +39,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Geopolitical risk VaR | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
 | External sustainability | Research | Description, not a tested signal | None |
+| Debt restructuring calculator | Research | Description, not a tested signal | None |
 | Banks and the government | Research | Description, not a tested signal | None |
 | Growth accounting | Research | Description, not a tested signal | None |
 | Inflation drivers | Research | Description, not a tested signal | None |
@@ -482,6 +483,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: ratios and an accounting identity, no forward call. The current account norm (IMF EBA) and the net international investment position read Missing until a usable source is confirmed.
 - **Limits:** IDS covers low- and middle-income countries only; yearly; averages of past interest and growth stand in for the future; no current account norm.
 - **Code:** `src/utils/externalSustainability.ts`
+
+### Debt restructuring calculator
+
+- **Says:** What an old bond and the new bond offered for it are worth today at the discount rates you pick, and how much investors lose.
+- **Rule:** Yearly payments: coupon on the face outstanding, principal in equal parts after the grace years. NPV haircut = 1 − PV(new) ÷ PV(old) at the same rate (Sturzenegger and Zettelmeyer 2008); market haircut = 1 − PV(new) ÷ old face (Cruces and Trebesch 2013).
+- **Reads:** Bond terms and one to three discount rates, all typed by the user; no data
+- **Shows in:** Country Research > History & data (Debt restructuring calculator)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: arithmetic on the terms you type, no forward call.
+- **Limits:** Yearly payments only; equal principal parts after grace; no past-due interest, fees, value recovery instruments or call options; the result depends wholly on the discount rate chosen.
+- **Code:** `src/utils/restructuringCalc.ts, src/utils/restructuring.ts`
 
 ### Banks and the government
 

@@ -43,6 +43,7 @@ const ReserveAdequacyPanel = lazyNamed(() => import('./ReserveAdequacyPanel'), '
 const CrisisWarningPanel = lazyNamed(() => import('./CrisisWarningPanel'), 'CrisisWarningPanel');
 const GrowthAccountingPanel = lazyNamed(() => import('./GrowthAccountingPanel'), 'GrowthAccountingPanel');
 const BankSovereignPanel = lazyNamed(() => import('./BankSovereignPanel'), 'BankSovereignPanel');
+const RestructuringCalcPanel = lazyNamed(() => import('./RestructuringCalcPanel'), 'RestructuringCalcPanel');
 const InflationDriversPanel = lazyNamed(() => import('./InflationDriversPanel'), 'InflationDriversPanel');
 const YieldCurvePanel = lazyNamed(() => import('./YieldCurvePanel'), 'YieldCurvePanel');
 const ExternalSustainabilityPanel = lazyNamed(() => import('./ExternalSustainabilityPanel'), 'ExternalSustainabilityPanel');
@@ -377,6 +378,12 @@ export const CountryPage: React.FC<{
           <PanelBoundary name="Model sandboxes">
             <React.Suspense fallback={<DeskLoading />}>
               <ModelSandboxPanel key={`sb-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-restructuring" className="scroll-mt-4" />
+          <PanelBoundary name="Debt restructuring calculator">
+            <React.Suspense fallback={<DeskLoading />}>
+              <RestructuringCalcPanel key={`rc-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
             </React.Suspense>
           </PanelBoundary>
           <div id="tool-gap-model" className="scroll-mt-4" />
