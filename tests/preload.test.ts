@@ -5,6 +5,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { OFFICIAL_FIGURES } from '../src/utils/officialHistory.ts';
 import {
   EMPTY_PRELOAD_STATE,
   PRELOAD_FRESH_MS,
@@ -97,17 +98,20 @@ test('npm run preload offline: says the feeds cannot be reached and downloads no
 });
 
 test('npm run preload: a step that never answers is recorded as not saved and the run moves on', () => {
-  // 15 s: the history step makes one request per official figure with a 200 ms gap (51 figures since G16 and G17, about 11 s offline). Three steps wait on BIS, so the run takes about 70 s.
+  // The step limit grows with the history step: one request per official figure with a 200 ms gap
+  // (76 figures since G30, about 16 s offline), plus 8 s to spare. Three steps wait on BIS, so the run
+  // takes about three step limits plus the rest.
+  const stepS = Math.ceil(OFFICIAL_FIGURES.length * 0.2) + 8;
   const dataDir = mkdtempSync(path.join(tmpdir(), 'econquest-preload-hang-'));
   try {
     const r = spawnSync(process.execPath, ['--import', 'tsx', path.join(rootDir, 'server.ts'), '--preload', '--countries=MEX'], {
       cwd: rootDir,
-      env: { ...process.env, NODE_OPTIONS: `--import ${pathToFileURL(path.join(rootDir, 'tests/helpers/offline-fetch.mjs')).href}`, DATA_DIR: dataDir, OFFLINE_HANG: 'stats.bis.org/api', PRELOAD_STEP_TIMEOUT_S: '15' },
+      env: { ...process.env, NODE_OPTIONS: `--import ${pathToFileURL(path.join(rootDir, 'tests/helpers/offline-fetch.mjs')).href}`, DATA_DIR: dataDir, OFFLINE_HANG: 'stats.bis.org/api', PRELOAD_STEP_TIMEOUT_S: String(stepS) },
       encoding: 'utf8',
-      timeout: 150_000,
+      timeout: (stepS * 4 + 60) * 1000,
     });
     assert.equal(r.status, 0, r.stderr.slice(-1500));
-    assert.match(r.stdout, /FAIL BIS central bank policy rates.*took longer than 15 s; moved on/);
+    assert.match(r.stdout, new RegExp(`FAIL BIS central bank policy rates.*took longer than ${stepS} s; moved on`));
     assert.match(r.stdout, /\[preload\] finished:/);
     const state = JSON.parse(readFileSync(path.join(dataDir, 'local', 'preload.json'), 'utf8'));
     assert.equal(state.steps['world:bis'].outcome, 'failed');

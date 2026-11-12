@@ -253,6 +253,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-restructuring' },
   },
   {
+    id: 'policy_incidence',
+    category: 'history',
+    title: 'Who pays for a policy',
+    what: "Who carries a tax or spending change in the open country, by fifth of people from poorest to richest: you type the change and the share each fifth carries from a published incidence study you name, and the panel sets it beside each fifth's share of income, the Gini index, the tax split and poverty rates. Starts empty; no built-in incidence shares.",
+    sources: 'Your incidence shares and their source; World Bank WDI (household surveys, IMF Government Finance Statistics)',
+    target: { area: 'country', tab: 'history', anchor: 'tool-policy-incidence' },
+  },
+  {
     id: 'book',
     category: 'portfolio',
     title: 'Book and client briefs',

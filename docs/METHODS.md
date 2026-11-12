@@ -39,6 +39,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Geopolitical risk VaR | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
 | External sustainability | Research | Description, not a tested signal | None |
+| Who pays for a policy | Research | Description, not a tested signal | None |
 | Debt restructuring calculator | Research | Description, not a tested signal | None |
 | Banks and the government | Research | Description, not a tested signal | None |
 | Growth accounting | Research | Description, not a tested signal | None |
@@ -483,6 +484,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: ratios and an accounting identity, no forward call. The current account norm (IMF EBA) and the net international investment position read Missing until a usable source is confirmed.
 - **Limits:** IDS covers low- and middle-income countries only; yearly; averages of past interest and growth stand in for the future; no current account norm.
 - **Code:** `src/utils/externalSustainability.ts`
+
+### Who pays for a policy
+
+- **Says:** How a tax or spending change is shared across the five income groups, against the share of income each group holds.
+- **Rule:** Amount for each fifth = size × its share of the change; share ratio = share of the change ÷ share of income (World Bank household surveys, one survey year). Higher ratio for the poorest fifth than the richest on a payment = regressive; lower = progressive; within 0.1 = about proportional; the reading flips for a gain.
+- **Reads:** Incidence shares and their source typed by the user; World Bank SI.DST.FRST.20 to SI.DST.05TH.20, Gini, tax revenue and split, poverty rates
+- **Shows in:** Country Research > History & data (Who pays for a policy)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: arithmetic on shares you type, no forward call.
+- **Limits:** The result is only as good as the incidence study typed in; survey income shares can be several years old and some measure consumption; first-round effects only, no behaviour change.
+- **Code:** `src/utils/policyIncidence.ts`
 
 ### Debt restructuring calculator
 

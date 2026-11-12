@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Who pays for a policy (G30, Research > History & data, also in Tools): you type a tax or spending
+  change (households pay or gain), its size in % of GDP, the share each fifth of people carries and
+  the study those shares come from; the panel shows each fifth's amount, its share of income, the
+  ratio of the two and whether the change is regressive, progressive or about proportional, beside
+  the Gini index, the tax split (G16) and poverty rates (G17). Five new saved World Bank figures:
+  the income share of each fifth (SI.DST.FRST.20 to SI.DST.05TH.20). Starts empty; no built-in
+  incidence shares. English, Spanish and French.
 - Debt restructuring calculator (G29, Research > History & data, also in Tools): type an old bond
   and the new bond offered for it (face value, coupon, years, grace years) and one to three discount
   rates; the panel shows what each bond is worth, the NPV haircut (Sturzenegger and Zettelmeyer
