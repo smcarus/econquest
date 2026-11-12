@@ -16,6 +16,7 @@
  * - Takes a few minutes. Also writes data/local/recorded-feeds.zip to send in the project thread.
  */
 import dotenv from 'dotenv';
+import { pathToFileURL } from 'node:url';
 import { spawn } from 'node:child_process';
 import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -53,7 +54,7 @@ for (const f of API_KEY_FIELDS) delete childEnv[f.id];
 for (const id of FREE_KEYS) if (env[id]) childEnv[id] = env[id]!;
 Object.assign(childEnv, {
   // RECORD_PRELOAD: another module to load first (the self-check runs the recorder over the offline fixtures).
-  NODE_OPTIONS: `${process.env.RECORD_PRELOAD ? `--import ${process.env.RECORD_PRELOAD} ` : ''}--import ${path.join(root, 'tests/helpers/record-fetch.mjs')}`,
+  NODE_OPTIONS: `${process.env.RECORD_PRELOAD ? `--import ${process.env.RECORD_PRELOAD} ` : ''}--import ${pathToFileURL(path.join(root, 'tests/helpers/record-fetch.mjs')).href}`,
   RECORD_DIR: recordDir,
   DATA_DIR: dataDir,
   PORT: String(port),

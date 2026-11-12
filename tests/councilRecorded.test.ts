@@ -19,7 +19,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { caseInputText, compareToBaseline, parseRegressionSet, structuralProblems, type RegressionBaseline, type RegressionReport } from '../src/utils/councilRegression.ts';
 import { isSmallModel } from '../src/utils/refereeModel.ts';
 import { callKey, canonical, firstDifference } from './helpers/modelRecording.mjs';
@@ -36,7 +36,7 @@ async function replayServer(replayDir: string) {
   const env: Record<string, string> = {};
   for (const [k, v] of Object.entries(process.env)) if (v !== undefined) env[k] = v;
   Object.assign(env, {
-    NODE_OPTIONS: `--import ${path.join(root, 'tests/helpers/model-replay-fetch.mjs')}`,
+    NODE_OPTIONS: `--import ${pathToFileURL(path.join(root, 'tests/helpers/model-replay-fetch.mjs')).href}`,
     MODEL_REPLAY_DIR: replayDir,
     MODEL_REPLAY_LOG: missLog,
     DATA_DIR: path.join(work, 'data'),

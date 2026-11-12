@@ -10,7 +10,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -33,7 +33,7 @@ export function replaySuite(recDir: string, label: string, missingNote: string):
     // The same keys as at recording time: real values for settings (series codes), stand-ins for secrets.
     for (const [id, v] of Object.entries(index.keys || {})) env[id] = v === 'present' ? 'replay-key' : String(v);
     Object.assign(env, {
-      NODE_OPTIONS: `--import ${path.join(root, 'tests/helpers/replay-fetch.mjs')}`,
+      NODE_OPTIONS: `--import ${pathToFileURL(path.join(root, 'tests/helpers/replay-fetch.mjs')).href}`,
       REPLAY_DIR: recDir,
       DATA_DIR: dataDir,
       // The tests run weekly by default; off here so a test run on a Sunday never starts them.

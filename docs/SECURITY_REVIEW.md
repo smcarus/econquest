@@ -94,6 +94,18 @@ patterns finds only one made-up test value (`tests/userSettings.test.ts`).
    - The script now checks each step's exit code, stops with a plain message when the build or
      start fails, and does not open the browser on a failed start.
 
+5. **Found by the first GitHub Windows check** (12 November, 90 of 1,478 tests failed on Windows).
+   - A Windows checkout turned every text file's line endings into Windows ones. The pre-registered
+     tests in `docs/validation/` are checked byte for byte against their recorded hash, so every one
+     would have read "changed after it was registered", also inside a Docker image built from that
+     checkout by `start-windows.bat`. `.gitattributes` now keeps Unix line endings in every text file
+     on every computer (the two Windows scripts excepted).
+   - The test helpers loaded into the server under test were passed as bare paths; on Windows these
+     start with a drive letter (`D:`), which Node refuses. They are now passed as file URLs. The app
+     itself was not affected.
+   - Two file-permission checks (mode 600, a read-only folder) do not apply on Windows and are skipped
+     there, as the other permission checks already were.
+
 ## Still open
 
 - **First real run on Windows.** The fixes above come from reading the scripts; this review was done

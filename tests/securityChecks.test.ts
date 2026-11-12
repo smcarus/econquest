@@ -41,3 +41,18 @@ test('Windows start scripts: plain ASCII, exit codes checked, Windows line endin
   assert.match(read('.gitattributes'), /\*\.bat text eol=crlf/);
   assert.match(read('.gitattributes'), /\*\.ps1 text eol=crlf/);
 });
+
+test('Windows check: every text file checks out with Unix line endings, so hashed files match on Windows', () => {
+  assert.match(read('.gitattributes'), /^\* text=auto eol=lf$/m);
+});
+
+test('Windows check: a helper loaded with --import is given as a file URL, never a bare path (Windows paths start "D:")', () => {
+  const dirs = ['tests', 'tests/helpers', 'tests/smoke', 'scripts'];
+  for (const d of dirs) {
+    for (const f of fs.readdirSync(path.join(root, d))) {
+      if (!/\.(ts|mjs)$/.test(f)) continue;
+      const text = read(`${d}/${f}`);
+      assert.doesNotMatch(text, /--import \$\{path\.join/, `${d}/${f} passes a bare path to --import`);
+    }
+  }
+});

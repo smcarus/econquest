@@ -14,7 +14,7 @@ import { spawn } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { PUBLIC_FEEDS, publicFeedFor } from '../tests/helpers/publicFeeds.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -46,7 +46,7 @@ const env: Record<string, string> = {};
 for (const [k, v] of Object.entries(process.env)) if (v !== undefined) env[k] = v;
 for (const k of ['FRED_API_KEY', 'EVDS_API_KEY', 'BANXICO_TOKEN', 'EIA_API_KEY', 'COMTRADE_API_KEY', 'ACLED_KEY', 'ACLED_EMAIL']) delete env[k];
 Object.assign(env, keys, {
-  NODE_OPTIONS: `--import ${path.join(root, 'tests/helpers/replay-fetch.mjs')}`,
+  NODE_OPTIONS: `--import ${pathToFileURL(path.join(root, 'tests/helpers/replay-fetch.mjs')).href}`,
   REPLAY_DIR: out,
   DATA_DIR: dataDir,
   PORT: String(port),

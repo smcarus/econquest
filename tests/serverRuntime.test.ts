@@ -30,7 +30,7 @@ test('data folder check: a folder that cannot be created says what to fix', () =
   assert.ok(problem && problem.includes('Cannot write to the data folder'), String(problem));
 });
 
-test('data folder check: a read-only state folder from an older version is caught at start', { skip: process.getuid?.() === 0 }, () => {
+test('data folder check: a read-only state folder from an older version is caught at start', { skip: process.getuid?.() === 0 || process.platform === 'win32' }, () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'eq-data-'));
   fs.mkdirSync(path.join(dir, 'live'));
   fs.chmodSync(path.join(dir, 'live'), 0o555);
