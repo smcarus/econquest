@@ -1,0 +1,38 @@
+name: Windows check
+
+# Run by hand only (Actions > Windows check > Run workflow): it costs nothing unless started.
+# Checks what a GitHub Windows machine can check before the public release (docs/SECURITY_REVIEW.md):
+# the start script parses in Windows PowerShell 5.1, and the type check and tests pass on Windows.
+# It cannot start Docker Desktop, so a person's run of scripts\start-windows.bat is still needed.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start script parses in Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $PSVersionTable.PSVersion
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile("$PWD\scripts\start-windows.ps1", [ref]$null, [ref]$errors) | Out-Null
+          if ($errors.Count) { $errors | ForEach-Object { Write-Host $_ }; exit 1 }
+          $bytes = [System.IO.File]::ReadAllBytes("$PWD\scripts\start-windows.ps1")
+          if (-not ($bytes -contains 13)) { Write-Host "start-windows.ps1 was not checked out with Windows line endings"; exit 1 }
+          Write-Host "start-windows.ps1 parses with no errors."
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      # The recorded council replay check fails on main until a new recording is made on a Mac;
+      # that one failure is expected here too. The spec reporter lists every failing test again at
+      # the end of the log, where the log viewer shows it.
+      - run: npx tsx --test --test-reporter=spec "tests/*.test.ts"

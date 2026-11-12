@@ -1,7 +1,7 @@
 import type { OpenDataSnapshot } from '../types/council';
 
 /**
- * Honest data-status labels.
+ * Data-status labels that say where each figure came from.
  *
  * A snapshot starts from built-in sample values (presetsAndBaselines.ts). Only the
  * server records which feeds actually answered, in `dataStatus.verifiedLiveSources`.

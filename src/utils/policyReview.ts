@@ -6,7 +6,7 @@
  * Six steps, in order: Frame > Diagnose > Options > Evidence > Memo > Outcomes. Each saved step
  * keeps its content, when it was saved, the SHA-256 of that content, and the hash of the step
  * before it ("basedOn"). Changing an earlier step therefore marks every later step "Out of date"
- * until it is run again, so a memo can never quietly rest on a frame or figures it was not
+ * until it is run again, so a memo can never rest, without saying so, on a frame or figures it was not
  * written from. Every step is also written to the audit log by the server.
  *
  * The frame fixes the "As of" day, so running Diagnose again on the same review gives the same
@@ -15,6 +15,8 @@
  * Browser-safe: types, step names and states. Hashing, saving steps and the file store
  * (data/local/reviews.json) are in policyReviewStore.ts, which only the server imports.
  */
+
+import type { OutcomeCheck } from './outcomeChecks';
 
 /** Bumped when the steps or their content change shape, so old reviews say which version made them. */
 export const REVIEW_TEMPLATE_VERSION = 'policy-review-v1';
@@ -94,6 +96,8 @@ export interface PolicyReview {
   steps: Partial<Record<ReviewStep, ReviewStepRecord>>;
   /** Every save of every step, oldest first (capped), so earlier runs can be compared. */
   runs: ReviewRun[];
+  /** The automatic 12- and 24-month outcome checks (src/utils/outcomeChecks.ts), oldest first, hash chained, never edited. */
+  outcomeChecks?: OutcomeCheck[];
 }
 
 export type StepState = 'not_started' | 'done' | 'out_of_date';

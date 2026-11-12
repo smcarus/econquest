@@ -9,6 +9,7 @@ import {
   describeSchedule,
   downloadSummary,
   jobDue,
+  jobScheduleFrom,
   KEEP_RUNS,
   markFinished,
   markSkipped,
@@ -114,4 +115,14 @@ test('testsSummary counts each part of the weekly tests job and is not ok when a
     testsSummary([{ noun: 'Signal tests', out: { results: {}, problems: ['Frankfurter: timeout', 'BIS: 503'] } }], at),
     { ok: false, summary: 'Signal tests: none ran, 2 problems (Frankfurter: timeout, …).' }
   );
+});
+
+test('the pre-registered tests run weekly by default; Download all stays off unless set', () => {
+  const unset = jobScheduleFrom('backtests', {});
+  assert.deepEqual(unset, { schedule: { kind: 'weekly', weekday: 0, time: '03:30' }, fromDefault: true });
+  assert.deepEqual(jobScheduleFrom('backtests', { SCHEDULE_BACKTESTS: 'off' }), { schedule: { kind: 'off' }, fromDefault: false });
+  assert.deepEqual(jobScheduleFrom('backtests', { SCHEDULE_BACKTESTS: '' }), { schedule: { kind: 'off' }, fromDefault: false });
+  assert.deepEqual(jobScheduleFrom('backtests', { SCHEDULE_BACKTESTS: 'wed 01:00' }), { schedule: { kind: 'weekly', weekday: 3, time: '01:00' }, fromDefault: false });
+  assert.deepEqual(jobScheduleFrom('download_all', {}), { schedule: { kind: 'off' }, fromDefault: false });
+  assert.deepEqual(jobScheduleFrom('download_all', { SCHEDULE_DOWNLOAD_ALL: '02:30' }), { schedule: { kind: 'daily', time: '02:30' }, fromDefault: false });
 });

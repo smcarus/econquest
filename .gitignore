@@ -12,5 +12,7 @@ data/local/
 deploy/home-server/.env
 deploy/home-server/data/
 deploy/home-server/ollama/
+quests-dataset-*/
+__pycache__/
 
 tests/fixtures/recorded/

@@ -2,15 +2,18 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { History } from 'lucide-react';
 import type { LiveWatchlistItem } from '../types/council';
 import { buildDigest, digestEmptyNote, loadDigestVisit, saveDigestVisit, visitFrom, FIRST_VISIT_DAYS, type DigestKind } from '../utils/digest';
+import { useT } from '../i18n/useLang';
+import { WORKSPACE } from '../i18n/messages/workspace';
 import { evaluateRules, parseRules, type WatchRule } from '../utils/watchRules';
 
 /**
  * Workspace > Since your last visit: policy moves, new inflation prints, leading-indicator turns,
  * 10Y moves of 25 bp or more and watch alerts that started firing, each dated and sourced.
  */
-const KIND_LABEL: Record<DigestKind, string> = { policy: 'Rate move', inflation: 'Inflation', cycle: 'Cycle', yield: '10Y yield', alert: 'Alert' };
+const KIND_KEY = { policy: 'kindPolicy', inflation: 'kindInflation', cycle: 'kindCycle', yield: 'kindYield', alert: 'kindAlert' } as const satisfies Record<DigestKind, string>;
 
 export const DigestPanel: React.FC<{ items: LiveWatchlistItem[]; onOpenCountry?: (item: LiveWatchlistItem) => void; uses?: React.ReactNode }> = ({ items, onOpenCountry, uses }) => {
+  const t = useT(WORKSPACE);
   const [last] = useState(() => loadDigestVisit());
   const [rules, setRules] = useState<WatchRule[]>([]);
   useEffect(() => {
@@ -39,12 +42,12 @@ export const DigestPanel: React.FC<{ items: LiveWatchlistItem[]; onOpenCountry?:
         <div>
           <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
             <History className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            {since ? `Since your last visit (${since})` : 'What moved recently'}
+            {since ? t('sinceLastVisit', { since }) : t('movedRecently')}
           </h2>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
             {since
-              ? 'Rate moves, new inflation prints, leading-indicator turns, 10Y moves of 25 bp or more and new watch alerts. Live figures only.'
-              : `First visit on this browser: policy moves in the last ${FIRST_VISIT_DAYS} days. From your next visit this lists everything that moved in between.`}
+              ? t('sinceNote')
+              : t('firstVisitNote', { days: FIRST_VISIT_DAYS })}
           </p>
           {uses}
         </div>
@@ -59,7 +62,7 @@ export const DigestPanel: React.FC<{ items: LiveWatchlistItem[]; onOpenCountry?:
               return (
                 <li key={`${d.kind}-${d.iso3}-${i}`} className="py-1.5 flex items-start justify-between gap-3">
                   <button type="button" className="text-left" onClick={() => item && onOpenCountry?.(item)}>
-                    <span className="ui-badge mr-2">{KIND_LABEL[d.kind]}</span>
+                    <span className="ui-badge mr-2">{t(KIND_KEY[d.kind])}</span>
                     <span className="text-sm text-slate-900 dark:text-white">{d.text}</span>
                     <span className="block text-xs text-slate-500 dark:text-slate-400">{d.source}</span>
                   </button>

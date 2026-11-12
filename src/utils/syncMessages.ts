@@ -3,7 +3,7 @@ import { getSnapshotDataStatus, type DataFeedKey } from './dataStatus';
 import { describeOfficialYield } from './officialYields';
 
 /**
- * Plain, honest banner text after a data refresh: what actually came from a live source,
+ * Plain banner text after a data refresh: what actually came from a live source,
  * and what is still a built-in sample or an AI estimate. Never green when nothing answered.
  */
 export interface SyncMessage {

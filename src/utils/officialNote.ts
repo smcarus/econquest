@@ -2,6 +2,8 @@ import type { CouncilAssessmentRun } from '../types/council';
 import { getSnapshotDataStatus } from './dataStatus';
 import {
   calendarSection,
+  joinMeaning,
+  MEANS,
   groupLines,
   pct,
   pts,
@@ -153,13 +155,13 @@ export function officialBrief(run: CouncilAssessmentRun, now: Date = new Date())
     const base = scenarios[0].path;
     const end = base[base.length - 1];
     const worst = scenarios.reduce((a, s) => (s.path[s.path.length - 1] > a.path[a.path.length - 1] ? s : a), scenarios[0]);
-    j.push(`On current figures, debt moves from ${pct(base[0], 0)} to ${pct(end, 0)} of GDP by ${startYear + PROJECTION_YEARS} (${end > base[0] + 1 ? 'rising' : end < base[0] - 1 ? 'falling' : 'roughly flat'}).`);
+    j.push(`On current figures, debt moves from ${pct(base[0], 0)} to ${pct(end, 0)} of GDP by ${startYear + PROJECTION_YEARS} (${end > base[0] + 1 ? 'rising' : end < base[0] - 1 ? 'falling' : 'roughly flat'}).${MEANS}This holds today's growth, interest rate and budget still: a "what if", not a forecast.`);
     j.push(
       dsa.gap > 0.25
-        ? `Stabilising debt needs a primary balance of ${pct(dsa.pbStar)} of GDP, ${dsa.gap.toFixed(1)} pts above today's ${pct(dsa.input.pb)}.`
-        : `Today's primary balance of ${pct(dsa.input.pb)} of GDP is enough to keep debt stable (needed: ${pct(dsa.pbStar)}).`
+        ? `Stabilising debt needs a primary balance of ${pct(dsa.pbStar)} of GDP, ${dsa.gap.toFixed(1)} pts above today's ${pct(dsa.input.pb)}.${MEANS}In plain words, the budget before interest would have to improve by that much of GDP, through higher revenue or lower spending, for debt to stop growing faster than the economy.`
+        : `Today's primary balance of ${pct(dsa.input.pb)} of GDP is enough to keep debt stable (needed: ${pct(dsa.pbStar)}): at today's interest rate and growth, debt should not rise as a share of the economy.`
     );
-    j.push(`The hardest standard shock is "${worst.label.toLowerCase()}", which takes debt to ${pct(worst.path[worst.path.length - 1], 0)} of GDP by ${startYear + PROJECTION_YEARS}.`);
+    j.push(`The hardest standard shock is "${worst.label.toLowerCase()}", which takes debt to ${pct(worst.path[worst.path.length - 1], 0)} of GDP by ${startYear + PROJECTION_YEARS}.${MEANS}That is the risk this debt path is most exposed to.`);
     const idx2027 = 2027 - startYear;
     if (debt27 !== undefined && idx2027 >= 1 && idx2027 < base.length) {
       const gap = base[idx2027] - debt27;
@@ -244,7 +246,7 @@ export function buildOfficialSections(run: CouncilAssessmentRun, include: (id: s
     out.push({
       id: 'summary',
       heading: OFFICIAL_SECTIONS.summary,
-      lines: [b.headline, ...(b.sampleWarning ? [`**Note:** ${b.sampleWarning}`] : []), ...b.judgements.map((x) => `- ${x}`)],
+      lines: [b.headline, ...(b.sampleWarning ? [`**Note:** ${b.sampleWarning}`] : []), ...b.judgements.map((x) => `- ${joinMeaning(x)}`)],
     });
   }
   if (include('path')) out.push({ id: 'path', heading: OFFICIAL_SECTIONS.path, lines: groupLines(b.groups[0]) });

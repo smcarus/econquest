@@ -33,3 +33,30 @@ test('default referee is qwen2.5:32b; the old 8B default moves to it, a chosen m
   assert.equal(refereeModelOrDefault('gemma4:31b'), 'gemma4:31b');
   assert.equal(refereeModelOrDefault(''), undefined);
 });
+
+test('L1: referee tiers; a mid-size referee runs only when "Allow a 14B referee" is on', async () => {
+  const { refereeTier, isMidModel, allowedRefereeModel, FULL_REFEREE_MIN_B } = await import('../src/utils/refereeModel.ts');
+  assert.equal(FULL_REFEREE_MIN_B, 30);
+  assert.equal(refereeTier('qwen2.5:7b'), 'small');
+  assert.equal(refereeTier('deepseek-r1:8b'), 'small');
+  assert.equal(refereeTier('qwen2.5:14b'), 'mid');
+  assert.equal(refereeTier('gemma3:27b'), 'mid');
+  assert.equal(refereeTier('qwen3:30b-a3b'), 'full');
+  assert.equal(refereeTier('gemma4:31b'), 'full');
+  assert.equal(refereeTier('qwen2.5:32b'), 'full');
+  assert.equal(refereeTier('mystery'), 'full'); // unknown size is not flagged
+  assert.ok(isMidModel('qwen2.5:14b') && !isMidModel('qwen2.5:32b'));
+  // Off (the default): the 32B default stands in for a mid-size setting.
+  assert.equal(allowedRefereeModel('qwen2.5:14b', false), 'qwen2.5:32b');
+  assert.equal(allowedRefereeModel('qwen2.5:14b', undefined), 'qwen2.5:32b');
+  // On: the 14B model runs.
+  assert.equal(allowedRefereeModel('qwen2.5:14b', true), 'qwen2.5:14b');
+  // Full and small settings are never swapped here (small ones stay flagged, as before).
+  assert.equal(allowedRefereeModel('gemma4:31b', false), 'gemma4:31b');
+  assert.equal(allowedRefereeModel('qwen2.5:7b', false), 'qwen2.5:7b');
+});
+
+test('L1: every answer judged by a mid-size referee says "Small referee"', () => {
+  assert.match(smallRefereeNote('Local Ollama (qwen2.5:14b · Referee)')!, /^Small referee: qwen2\.5:14b judged this answer\..*Menu > Settings > AI model/);
+  assert.equal(smallRefereeNote('Local Ollama (qwen2.5:32b · Referee)'), null);
+});

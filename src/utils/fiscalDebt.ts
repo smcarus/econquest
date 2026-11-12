@@ -7,6 +7,7 @@
  *   real GDP growth (NGDP_RPCH), each with the WEO year it is for.
  * - World Bank QEDS: general government external principal falling due in the next 12 months.
  * - World Bank IDS: projected public external debt service by calendar year.
+ * - World Bank (SIPRI): military expenditure, % of GDP (MS.MIL.XPND.GD.ZS).
  * - BIS: government bonds in international markets (and the part due within a year), and
  *   government debt securities in all markets.
  *
@@ -35,6 +36,8 @@ export interface FiscalFigures {
   intlBonds?: { usdBn: number; due1yUsdBn?: number; asOf: string };
   /** BIS: government debt securities in all markets. */
   allSecurities?: { usdBn: number; asOf: string; valuation: 'nominal' | 'market' };
+  /** World Bank (SIPRI): military expenditure, % of GDP. */
+  defencePctGdp?: YearValue;
 }
 
 export const WEO_LABEL = 'IMF World Economic Outlook';
@@ -60,6 +63,9 @@ export function fiscalFromSnapshot(snap: OpenDataSnapshot, now: Date = new Date(
   if (pb) out.primaryBalancePctGdp = pb;
   const g = yv('imf.realGdpGrowthPct', snap.imfIndicators?.realGdpGrowthPct);
   if (g) out.realGrowthPct = g;
+  const mil = snap.worldBankIndicators?.militaryExpenditurePctGdp;
+  const milYear = /((?:19|20)\d{2})/.exec(lf['wb.militaryExpenditurePctGdp'] || '')?.[1];
+  if (milYear && typeof mil === 'number' && Number.isFinite(mil)) out.defencePctGdp = { value: mil, year: milYear };
   const ds = snap.debtSchedule;
   if (ds?.qeds) out.extDue12m = { usdBn: ds.qeds.next12mUsdBn, asOf: ds.qeds.asOf };
   const nextYear = ds?.ids?.years.filter((y) => y.year > now.getUTCFullYear()).sort((a, b) => a.year - b.year)[0];

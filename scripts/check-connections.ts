@@ -16,10 +16,12 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import { checkConnections, formatReport, isFailure } from '../src/utils/connectionCheck.ts';
-import { formatChanges, recordFromReport } from '../src/utils/dataHealth.ts';
+import { ENDED_AFTER_DAYS, formatChanges, possiblyEnded, recordFromReport, sourceHealth } from '../src/utils/dataHealth.ts';
 import { appendCheck, dataHealthFiles, readChecks } from '../src/utils/dataHealthStore.ts';
 import { ucdpData } from '../src/utils/ucdpStore.ts';
 import { acledFileData } from '../src/utils/acledFileStore.ts';
+import { aiddataData } from '../src/utils/aiddataStore.ts';
+import { investorBaseData } from '../src/utils/investorBaseStore.ts';
 import { applyKeysToEnv, envKeySnapshot, keySources, loadSettings, settingsFilePath } from '../src/utils/userSettings.ts';
 
 dotenv.config();
@@ -34,6 +36,8 @@ const report = await checkConnections({
   keySources: keySources(envFileKeys, saved),
   ucdp: () => ucdpData(dataDir),
   acledFiles: () => acledFileData(dataDir),
+  aiddata: () => aiddataData(dataDir),
+  investorBase: () => investorBaseData(dataDir),
   readFile: (p) => {
     try {
       return { text: fs.readFileSync(p, 'utf8'), modified: fs.statSync(p).mtime };
@@ -55,6 +59,8 @@ if (process.argv.includes('--json')) {
   console.log(formatReport(report));
   console.log('');
   console.log(formatChanges(previous, record));
+  const ended = sourceHealth(readChecks(files)).filter((h) => possiblyEnded(h));
+  if (ended.length) console.log(`Failing for ${ENDED_AFTER_DAYS} days or more (check whether they have ended; docs/MAINTENANCE.md): ${ended.map((h) => h.name).join(', ')}.`);
   if (keep) console.log(`Saved in ${path.relative(process.cwd(), files.checks) || files.checks}.`);
 }
 process.exitCode = report.results.some((r) => isFailure(r.state)) ? 1 : 0;

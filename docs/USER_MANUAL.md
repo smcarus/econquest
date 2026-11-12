@@ -3,7 +3,37 @@
 How to use the terminal, page by page. For setup see the [README](../README.md); for every data
 source and its settings see [DATA_SOURCES.md](./DATA_SOURCES.md); for what each source's terms allow
 see [DATA_LICENCES.md](./DATA_LICENCES.md); for how each model and signal works and its backtest
-verdict see [METHODS.md](./METHODS.md).
+verdict see [METHODS.md](./METHODS.md); for plain-language explanations of every term see the
+[Glossary](./GLOSSARY.md).
+
+**New to economics?** Every figure in the Research tables has a *What is this?* link under its name:
+tap it for what the figure is, why it matters and how to read it (what a higher or lower value
+means). Each panel opens with a sentence or two on what it tells you. The full list of terms is in
+Menu > User manual > *Glossary*, and *Explain* on any figure asks the council what it means for that
+country.
+
+**How much is explained.** The help button at the top of the page (next to the light and dark
+switch) sets the level, and each press moves to the next:
+
+- *Key help* (the default): a guide on every chart (how to read it, and what it means in real life),
+  a short introduction on each panel, a "What it means" line under each brief observation, and
+  *What is this?* on the main figures, about half of them.
+- *Full help*: everything in Key help, plus *What is this?* on every figure and term.
+- *Help off*: figures, sources and observations only; the reason a figure is missing stays as hover
+  text. Explain answers are then written for a reader who knows the terms. Forecast ranges are hidden
+  too (see *Uncertainty ranges* below).
+
+The level is kept in this browser.
+
+**Language.** The *EN* / *ES* / *FR* button beside the help button switches the app between English,
+Spanish (español) and French (français); each press moves to the next language, and the choice is
+kept in this browser. Each language downloads only when you pick it, so English readers download
+neither and a French reader downloads no Spanish. Spanish and French both cover the whole app.
+Both use the formal "you" (usted, vous). The council's agents still read
+questions in English, so in Spanish or French the chat asks you to type questions in English for now,
+and the suggested questions stay in English. Figures, source names, series names and answers written
+by the AI model are never translated: they show as the source or the model wrote them. Neither
+translation has yet been checked by a native speaker, and the button's hover text says so.
 
 **Research, not validated advice.** The app is a research workspace. No model in it has been
 independently validated, each signal shows its pre-registered backtest verdict (Menu > Models &
@@ -14,6 +44,14 @@ validation), and nothing in it is a recommendation to buy or sell. Every export 
 1. **Start the app** (README: Docker with `start-mac.command`, or `npm run dev`) and open it in the
    browser. Menu > Settings > AI model > *Test* checks the model; the Supreme Council and summaries use
    the referee model (qwen2.5:32b by default, `ollama pull qwen2.5:32b` first).
+   On a smaller computer you can tick *Allow a 14B referee* there instead and pick a 14B model
+   (`ollama pull qwen2.5:14b`). It needs about half the memory of the 32B model, but its judgements
+   are less reliable, so every answer it judges says "Small referee". With the box unticked, a 14B
+   setting is ignored and the 32B model is used. A model of 8B or less is never a good referee.
+   On a modest laptop, light mode (`LIGHT_MODE=on`, docs/INSTALL.md "On a modest laptop") runs no
+   model on the computer: the council uses your own Gemini key or stays off, Settings > AI model
+   says light mode is on, the GDELT news files are not downloaded, and only your watchlist countries
+   are fetched.
 2. **Check the data.** Menu > Tools > *Data connections* shows each source as Connected, Needs setup
    or No answer. Add the free keys you want (FRED, EIA, UN Comtrade) under Menu > Settings.
 3. **Save it for offline use.** Menu > Offline data > *Download all country data*. After that the app
@@ -91,7 +129,7 @@ Under the question box, *Options* holds the rest: the countries to ask about, po
 full council and saved research.
 
 - *Countries*: as named in the question, otherwise the whole watchlist. A country not on the
-  watchlist is named as not covered rather than silently answered for the list; *Add … for this
+  watchlist is named as not covered rather than answered for the list without saying so; *Add … for this
   question* pulls its live figures (any country, up to five at a time) and asks again, without
   changing your watchlist.
 - *Agents*: chosen from the question's topic (or by the AI model, if set up). Each answers with
@@ -135,7 +173,9 @@ full council and saved research.
   (`replicate.do`) with the settings the app used, and a README listing each column with its
   source and credit and the app's own figures to check against. The scripts do the arithmetic by
   hand (OLS, the Granger F test, the ADF lag search, the HP filter), so they match the app rather
-  than a package default. Sharing mode turns it off like the CSV.
+  than a package default. Sharing mode turns it off like the CSV. The pack also holds
+  `data-manifest.csv` (each column's label, unit, dates, source, licence row and the day the pack was
+  made) and a `CITATION.cff` file for citing the pack.
 - *Suggested questions*: the empty chat offers up to four questions picked from your own data, no
   AI: one on your largest holding (asked the way its asset class is judged), up to two on what moved
   on your watchlist (a BIS policy-rate move in the last three months, a 10Y yield change of half a
@@ -208,9 +248,19 @@ model is asked or what the checked answers say. See
 or above 90 for any country". There are no built-in thresholds, and a missing figure never
 triggers. Rules are kept in `data/local/watch-rules.json`.
 
-**Next two weeks.** Official rate decisions, CPI releases, elections, budget deadlines and IMF
+**Next two weeks.** Official rate decisions, CPI and GDP releases, elections, budget deadlines and IMF
 reviews, each linked to its source. Below it, the next three elections, budgets and IMF dates in the
 coming year (*Show all* for the rest), with countries where data and price disagree first.
+
+**Release calendar.** Each country's brief shows *Next CPI release* and *Next GDP release*: the date of
+the next inflation figure and of the next first estimate of quarterly growth, from the statistics
+office's own published calendar, with the source. On 9 November 2026 the dates were read for the
+United States, Canada, the United Kingdom, China (inflation only; its 2027 calendar is not out),
+Japan and Australia; Mexico's inflation dates come from a secondary source. For the other G20
+countries the row reads *Missing* with the reason: the office's calendar refused an automated reader,
+builds its dates in the browser, asks readers to stay away (Turkey and Russia), or gave an error. A
+date is never estimated from the usual release pattern. Menu > Data health > Calendar flags these
+schedules too when they are running out.
 
 ---
 
@@ -277,9 +327,123 @@ The sections are Summary (the brief), Markets & signals (MarketEdge), History & 
 
 **Summary (the brief).** Three views of the open country, each a list of observations with the rule behind it:
 
-- *Economist*: growth, inflation, debt, reserves and the external position.
+- *Economist*: growth, inflation, debt, reserves and the external position. For EU members it also
+  lists the latest European Commission business and consumer surveys (economic sentiment, industry,
+  services and consumer confidence, employment expectations), each marked "EU business survey, not a
+  PMI": the indexes are read against their long-term average of 100 and the confidence balances
+  against three months earlier, from the copy the daily download saves (via Eurostat). The same
+  surveys chart under History & data.
+  The group *Distribution and taxes* shows inequality (the Gini index), central government tax
+  revenue as % of GDP, the split of revenue between taxes on income and profits, on goods and
+  services and on trade, and the applied tariff on all products (weighted by imports, and a simple
+  mean), all from the World Bank. Each shows its year. The Gini comes from household surveys run only
+  every few years: the app looks back 15 years, says whether the survey measured income or
+  consumption when the World Bank states it (a consumption Gini usually reads lower), and adds how
+  old the survey is when it is more than five years old; with no survey in that time it reads
+  Missing. Tax revenue is central government only, so it is lower than the IMF revenue figure under
+  Fiscal and debt. Tariffs are yearly, so changes made since that year are not in them. All seven
+  chart under History & data, and the Fiscal & Debt Agent quotes them when they are live.
+  The group *People* shows the share of people below the World Bank's three international poverty
+  lines (the lowest line for extreme poverty, and the higher lines used for lower-middle-income and
+  upper-middle-income countries), with the dollar amount a day as the World Bank names it, the survey
+  year and whether the survey measured income or consumption. Like the Gini, poverty rates come from
+  household surveys: the app looks back 15 years and reads Missing when there is no survey in that
+  time. It also shows remittances received (money sent home by people working abroad, % of GDP),
+  labour force participation and youth unemployment (the International Labour Organization's modelled
+  estimates, which fill years without a survey with a model, and are labelled so), and the age
+  dependency ratio (children and older people per 100 people of working age). All seven chart under
+  History & data. The Politics & Events Agent quotes the extreme poverty rate and youth unemployment;
+  the FX Valuation Agent quotes remittances.
+  Under *Fiscal and debt* the brief also shows interest payments as % of central government revenue
+  (World Bank, with its year), the currency mix of the government's debt to foreign lenders and the
+  average maturity of new loans from abroad (World Bank International Debt Statistics, which cover
+  low- and middle-income countries only; the maturity is for loans taken that year, not the debt
+  already owed). *Who holds government debt* splits general government debt between foreign official
+  lenders, foreign banks, other foreign investors, the central bank, local banks and other local
+  investors, from the IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies
+  (about 136 countries, yearly, the latest year preliminary). The app does not ship this file:
+  download wp1439.zip from
+  https://www.imf.org/-/media/websites/imf/imported-datasets/external/pubs/ft/wp/2014/data/wp1439.zip
+  and put it in `data/local/imf-investor-base/`; Data health shows whether it was read. For the United
+  States, which it does not cover, the Treasury's figures on foreign holders (TIC) are in the FX
+  Valuation Agent and History & data.
+  The *Trade* group shows what the country sells and buys abroad: the shares of goods exports and
+  imports in fuel, ores and metals, food and manufactures (World Bank, with the year; the four groups
+  leave out farm raw materials and unclassified goods, so they do not add up to 100%), net energy
+  imports as % of energy use (a net exporter shows how many times its own use it produces; the World
+  Bank stopped updating this for some countries, so an old year is said to be old), export
+  concentration and the top five export markets (UN Comtrade). Export concentration is the app's own
+  calculation, the Herfindahl index: the squared share of each of the 97 HS chapters in exports,
+  added up, from near 0 (spread out) to 1 (one chapter), with the number of equal-sized product groups
+  that would be as concentrated. The Hormuz scenario's working names the energy position, and the
+  Global Spillover Agent quotes these figures.
+  Under *Growth and inflation*, four rows show how pay and house prices are moving. *Wage growth,
+  nominal* is the change in average monthly earnings of employees on the year before (ILOSTAT, the
+  International Labour Organization's statistics); *Wage growth, real* takes out consumer price
+  inflation for the same year (World Bank), so it shows whether pay buys more or less than a year
+  earlier. The real figure is the app's own calculation and is labelled so. Many countries outside
+  the OECD publish earnings only every few years, so the year can be old; growth reads Missing when
+  the year before is not published or the ILO marks a break in the series. *House prices, real* and
+  *nominal* are the BIS residential property price series, change on the same quarter a year
+  earlier, for about 60 countries.
+
+  The group *Sector balances and private debt* shows who in the economy is borrowing. Each part
+  of the economy either saves more than it invests (a surplus) or the reverse (a deficit), as % of
+  GDP. By accounting the three always add up: government balance + private balance = current
+  account, and the rest of the world lends the country minus the current account. *Government
+  balance* is the IMF figure for general government. *Private sector balance (remainder)* is
+  households and firms together, worked out as the current account minus the government balance;
+  because it is what is left over, it also takes in statistical errors, so read it as a rough guide.
+  *Foreign balance* is the current account with its sign turned: positive means the rest of the
+  world is lending to the country. All three use the same IMF year, or read Missing. *Household
+  debt* and *Company debt* are credit from all lenders as % of GDP from the BIS (Bank for
+  International Settlements), for about 40 economies, with the quarter.
+
+  The group *Monthly activity* shows how the economy did last month, well before the quarterly
+  GDP figure. *Industrial production* is the output of mines, factories and utilities; *Retail
+  sales* is what shops sold; both show the change on a year earlier and on the month before.
+  *Unemployment rate, monthly* gives the latest month and the rate a year earlier. The figures come
+  from Eurostat (EU members and Turkey), the US Federal Reserve, Census Bureau and BLS, the UK
+  Office for National Statistics and Brazil's IBGE; other countries read Missing. US retail sales
+  are in dollars, so they include price rises. For Brazil the source does not say whether the
+  series are seasonally adjusted, so no change on the month is shown. *Next monthly activity
+  release* gives the next date from the office's own calendar where it could be read.
+
+  Under *Fiscal and debt*, *Spending by level of government* and *Revenue by level of government*
+  show how much goes through central government, state or regional governments, local governments
+  and social security funds, each as % of GDP, and the share done by state and local governments.
+  Money passed from one level to another is counted at both, so the levels add up to more than the
+  general government total; the share is worked out from that sum and labelled so. The figures come
+  from Eurostat and the IMF and are usually two or three years old. Countries that report only
+  central government read Missing.
+  The *Climate and energy* group shows greenhouse gas emissions per person (World Bank, from the EU's
+  EDGAR database, leaving out land use and forests) and the renewable share of final energy use
+  (World Bank), each with its year, and the energy mix: the shares of coal, oil, gas, nuclear and
+  renewables in the country's energy supply, from Our World in Data's energy file, which uses the
+  Energy Institute's Statistical Review. The Energy Institute allows private, non-commercial use
+  only, so the daily run downloads the file to your computer once a week and the app never ships it;
+  do not pass these figures on or use them commercially without the Energy Institute's permission.
+  *Physical climate risk (ND-GAIN)* reads Missing: ND-GAIN states no licence for its scores.
 - *Issuer*: market access, external debt falling due in the next 12 months (World Bank/IMF QEDS and
-  IDS, BIS debt securities), distress tests and pricing against peers.
+  IDS, BIS debt securities), distress tests and pricing against peers. For the United States it also
+  lists the latest Treasury auctions (13- and 26-week bills, 2-, 5- and 10-year notes, 30-year bond):
+  bid-to-cover, high yield, the indirect bidders' share and whether demand was stronger or weaker
+  than the previous six auctions of the same term, from the copy the daily download saves (US
+  Treasury Fiscal Data). The same auctions chart under History & data as "Treasury auction
+  bid-to-cover" and "Treasury auction high yield" for each term.
+  The group *Debt relief and lending from China* shows, for every country: the IMF/World Bank risk
+  of debt distress (low, moderate, high or in debt distress) with the date of the latest debt
+  sustainability analysis, typed from the IMF's list (low-income countries only; others read "Not
+  on the IMF low-income list"); whether it took part in the 2020-21 Debt Service Suspension
+  Initiative (Missing until the World Bank's country table is typed in); whether it applied for a
+  debt treatment under the G20 Common Framework (Chad, Zambia, Ethiopia and Ghana as of 2024); and
+  official loan commitments from China's government and state banks, 2000-2021, from AidData's free
+  Global Chinese Development Finance Dataset (version 3.0, summed per country and shipped with the
+  app in `datasets/aiddata/`). The amounts are commitments when each loan was signed, not money paid
+  out or still owed; short-term central bank swap drawdowns, refinancing and pledges are left out so
+  a loan is not counted twice. For a newer AidData version, put its file (or .zip) in
+  `data/local/aiddata/`: it is read on this computer and wins over the shipped summary
+  (`npm run aiddata:summary` rewrites the shipped file from it).
 - *Official sector*: debt sustainability. Debt path under a baseline and standard shocks, the
   stabilising primary balance and r minus g. Run only when debt, primary balance, growth, inflation
   and the official 10Y yield are all live; otherwise it lists what is missing.
@@ -295,7 +459,15 @@ world reserve currency shares (COFER), shock early warning and the signal track 
 readings across the watchlist are under Compare countries.
 
 **History & data.** Every figure that has a run of real observations, as a chart with its source, how often it
-comes, the pull date and any gaps (named, never filled). Policy rate (BIS), monthly inflation, the OECD
+comes, the pull date and any gaps (named, never filled). Under the title each series says what it
+measures and whose figure it is ("What it measures: General government gross debt...; Whose figure:
+General government"), so two figures with the same name, such as government debt and public external
+debt, are not mistaken for each other. It also says whether the series is seasonally adjusted and,
+where it matters, how its points are formed (for example "Monthly average of daily spreads", or, for
+the monthly activity index and the OECD leading indicator, that the GDP nowcast averages the three
+months of each quarter and flags a month it had to forecast), whether it is real or nominal, its base
+year where it has one, and its currency, including whether dollar amounts use market exchange rates or
+purchasing power parity. Downloads carry the same labels as columns. Policy rate (BIS), monthly inflation, the OECD
 leading indicator, CFTC positioning and TIC holdings come with their own history. The exchange rate
 per US dollar comes daily from 1999 for the about 30 currencies the ECB publishes (ECB reference rates
 via Frankfurter; first download in the background, also a step in Menu > Offline data); other
@@ -337,6 +509,19 @@ response is Bohn's sufficient condition for sustainability; the panel says "resp
 "no response found", shows the years used and has Explain. A record of past behaviour, not a
 forecast.
 
+**Uncertainty ranges.** Forecasts show a range, not just one number. The nowcast gives its 70% band;
+the forecast chart shades 50, 70 and 90% bands, and a line under it says what they mean: the figure
+should land inside each band about that often, judged by the model's own past misses (its typical miss
+is shown). The bands leave out doubt about the model itself, so real misses can be larger. The debt
+fan chart shades the 10-90 and 25-75 percentile bands of its 2,000 paths. Where a method has no sound
+range the app says *No range available* and why, and never makes one up: IMF projections (the IMF
+publishes one figure per country), projection years in the gross financing need table, and the small
+gap model (it runs on your own numbers). The fiscal what-if gives each result as a range from the
+lowest to the highest published multiplier, which is not a probability band. Ranges show at *Key help*
+and *Full help*; at *Help off* they are hidden from the screen and a short line says so. Downloads,
+the data API and *Explain* keep the ranges at every level. Bands on estimates of the past (inflation
+and the currency after rate changes, the output gap) and on the global shock scenarios always show.
+
 **Nowcast and forecasts.** Research > History & data shows, for GDP growth, inflation, the policy
 rate and government debt, the app's nowcast of periods not published yet and its forecast of the
 next quarters with 50, 70 and 90% bands, beside the IMF projection where the IMF makes one. Each
@@ -367,6 +552,23 @@ official yearly figures at a record or their highest or lowest in ten years or m
 or World Bank revised by a lot in the last 30 days, and what moved since your last visit. Countries
 with no saved yearly history are named; open their History once to download it.
 
+**Cite this.** A *Cite* button on each Chart Agent chart, each History series and each council
+answer (in its Sources fold) gives a citation ready to paste: the app with its version and the date
+you cite it, then each data source with the credit its terms ask for and the date the figures were
+read. It comes as plain text, BibTeX and RIS (for Zotero, EndNote or Mendeley), to copy or download.
+Figures the app works out itself, such as ratios, are not listed as a source; the citation says so.
+
+**Flag a figure or an answer.** A *Flag* button on each History series, each figure in a council
+answer's snapshot and each council answer lets you say what looks wrong. The note is saved on this
+computer in `data/local/feedback.jsonl` with the figure, its source and the app version. The app then
+offers *Open a GitHub issue*, filled in for you; nothing is sent until you send it on GitHub, and a
+figure from a paid subscription leaves its value out of the issue.
+
+**Rate an answer.** Thumbs up or down under each council answer, with a reason if you like, saved in
+the same file. A rating never changes an answer. Menu > Data health counts flags and ratings, and
+`npm run feedback:export` writes the rated questions (question, rating, reason; no figures) to
+`data/local/feedback-export.json` for adding to the council test set.
+
 **Publish a chart.** Under each History chart, Publish chart downloads it as PNG or SVG with
 the title, source, period, the date and a credit line taken from the licence register (you can edit
 it). Sources whose terms restrict free sharing, such as Kalshi or OECD yields served through FRED,
@@ -390,6 +592,22 @@ debt steady), the Taylor rule (neutral rate, inflation, target, output gap and b
 the output-gap filters (HP with any lambda against Hamilton with any horizon). A figure the app
 does not have reads Missing until you type one. Illustration of the formulas, not a forecast.
 
+**Small gap model.** Under the sandboxes, Research > One country > History & data has four plain
+equations that play out one quarter at a time: the output gap (how far the economy runs above or
+below its normal level), inflation, the policy rate and the exchange-rate gap. Open "The
+equations" to read them in full. The model comes with no numbers: you type every parameter
+(how persistent each variable is, how strongly the central bank reacts, the inflation target, the
+neutral real rate and the foreign rate) and every starting value. "Fill starting point from latest
+data" copies the country's latest saved output gap, inflation and policy rate into the starting
+boxes and shows each one's source and period; a figure the app does not hold stays empty with the
+reason, and the exchange-rate gap is always your own judgement. You can add shocks (for example
++1 point to inflation in quarter 2). Once every box holds a number the chart and table appear, and
+"Download the path (CSV)" saves the path with your settings written at the top. If your settings
+explode (usually a persistence near or above 1) the path stops with a warning. It shows your own
+assumptions played out, not a forecast. "Ask the council about this run" opens Council chat and
+asks the council to explain the run; it sends your numbers labelled "Your model", so the answer treats
+them as your assumptions and not as published figures.
+
 **Event history.** Research > History & data shows protests and violence as a share of the
 country's events each month, from the GDELT 1.0 daily event files (shares, not counts, because
 GDELT's volume grew many times over the years). It is empty until the files are pulled with
@@ -409,7 +627,7 @@ Until it passes, the badge says it is not validated.
 with its source and year: the six World Bank governance indicators (0 is the world average, 1 is one
 standard deviation, with the change over five years), armed conflict and deaths from UCDP for the
 latest year it has coded, this month's unrest reading from the GDELT files, the Caldara-Iacoviello geopolitical risk
-index for the country and the world (save their monthly file as .xlsx or .csv in `data/local/gpr/`),
+index for the country and the world (the daily start-up run fetches their monthly file into `data/local/gpr/`),
 and the economy (debt,
 growth, inflation, current account, reserves, external debt). There is no overall score, because
 any weighting of them would be a guess. A figure that is not on file is listed as Missing with
@@ -453,6 +671,19 @@ debt fan coverage test (`docs/validation/forecasts/debt_fan_coverage.json`, run 
 forecast:evaluate`): at each past October edition the fan is rebuilt as the panel builds it today,
 on that edition's actual years and projections, and the test checks that later debt outturns fall
 inside the 10-90 band between 70% and 90% of the time at every horizon from 1 to 5 years.
+
+**Figures as first published.** Research > History & data shows, for the United States (with your
+FRED key), every release of real GDP growth, CPI inflation and unemployment from ALFRED. Euro
+members' pages show the same for the euro area (GDP growth on the quarter, HICP inflation,
+unemployment) from the ECB real-time database, with revisions as far back as the ECB recorded
+them; the euro area counts the members it had at each release. The UK page shows quarterly GDP
+growth as each ONS publication since 1992 printed it, from the ONS revision triangle. Pick a figure
+and a period to see every release, or a day to see what was known then. The ONS file gives the
+month of each publication, not the day, so each is dated the last day of its month. If the ONS
+refuses the download (it sometimes turns programs away), open
+https://www.ons.gov.uk/economy/grossdomesticproductgdp/datasets/revisionstrianglesforukgdpabmi in
+your browser, download the latest abmi.zip and save it in `data/local/ons-triangles/`; the app
+reads it from there. Both are downloaded weekly by the daily run.
 
 **Sources.** Every figure the country pages use, with its source and date, or why it is missing and
 what would fill it. *Download these figures* saves them as CSV: value, unit, period and source for each live
@@ -537,6 +768,9 @@ becomes the problem). Six steps, in order:
    time to effect, trade-offs, who bears the cost, what must be true and risks, and one sentence from
    each council lens. Sentences with numbers that are not in the diagnosis are removed and listed. No
    AI model? *Save my options only* keeps yours, marked not assessed.
+   Each option also gets a **pre-mortem**: how it most likely failed, supposing it had, and one to
+   three diagnosis figures that would show that first, each with whether it would rise or fall. An
+   option without one is flagged.
 4. **Evidence.** Charts and tests (Taylor gap, real rate, does the policy rate lead inflation, r minus
    g, leading indicator), past policy-rate moves with inflation a year later, and the validation status
    of each signal the options lean on. Every series is cut at the As of day.
@@ -547,6 +781,15 @@ becomes the problem). Six steps, in order:
 6. **Track outcomes.** On the review date, *Check outcomes* sets the latest saved figures beside the
    ones the review started from and says whether the goal indicator moved the right way. *Review
    again* starts a new review with the same frame on today's data, linked to this one.
+
+**Automatic outcome checks.** Every saved review is also checked on its own 12 and 24 months after
+its As of day, from the pull saved on or before that day. Each check reads **Hit** (the target was
+met, or with no number in the target, the figure moved the way the goal wants), **Miss**, **Too
+early** (no newer figure than the one the review started from) or **Missing**, with the reason.
+Each check also looks at the early-warning figures from the recommended option's pre-mortem: warning
+shown, no warning, too early or missing. The
+results show under step 6 and in **Menu > Models & validation > Track record > Policy track record**.
+They record only whether the goal was met, not whether the advice was followed or caused it.
 
 Changing an earlier step marks later ones **Out of date** until they are run again. Every step is
 saved with a hash and written to the audit log. Kept in `data/local/reviews.json`; see
@@ -592,7 +835,39 @@ hold no figures of their own; the handout reads them from the app's series when 
 - **Settings** (⌘, or Ctrl+,): free keys (FRED, EIA, UN Comtrade, Turkey EVDS), your own paid data
   (CDS source Off, My CSV or My LSEG), and the Gemini key. Each key has a Test button. Keys are
   saved on this computer, shown masked, and can be changed only from this computer.
+- **Your subscriptions** (Settings > Your subscriptions; off unless you switch it on): for a data
+  service you already pay for (Macrobond first; Haver and Moody's later). Pick the service, enter
+  your sign-in details, then under *Your series* map each series you want: the vendor's own code,
+  the country (or WLD), what it is, its unit and how often it comes out. Mapped series show under
+  Research > One country > History labelled "Your subscription: <vendor>", next to the free ones.
+  Their figures stay on this computer: downloads, backups, sharing mode and the public copy say
+  "Withheld: your subscription data", the History page offers no download or Publish chart for them,
+  and the council's AI model is never sent them. For Macrobond the app fetches your mapped series in
+  the daily run, or straight away with *Fetch now*; the note under the switch says when it last
+  fetched, how many series it read, and which ones Macrobond could not give (those keep their last
+  saved copy). Haver and Moody's are not built yet, so their mapped series read Missing with that
+  reason.
 - **AI model**: Ollama (local), Gemini, hybrid, or an OpenAI-compatible server such as LM Studio.
+- **Your data**: load your own series from a CSV file, for figures the app does not have (for
+  example a series from your country's statistics office or a central bank report). Pick the file,
+  give it a name, unit, frequency, country (or *Not about one country*) and say where the figures came
+  from; the terms of use and a note for readers are optional. *Check* reads the file and lists every
+  problem by line, or shows how many figures it found and the first rows; *Save* opens only after a
+  clean check. The file needs a header row and two columns, the date and the value (with more
+  columns, name the two to use `date` and `value`). Commas, semicolons or tabs separate columns; with
+  semicolons or tabs a decimal comma (3,5) is fine. Dates: daily and weekly `YYYY-MM-DD`, monthly
+  `YYYY-MM`, quarterly `YYYY-Q1`, annual `YYYY`; dates such as 03/04/2025 are refused because they
+  could mean March or April. An empty value, `NA` or `..` means no figure for that date: the row is
+  counted and skipped, never filled in. Your figures are kept exactly as given and labelled
+  *Your file* with your source wherever they show; the app has not checked them. Each series keeps
+  the SHA-256 of the file you loaded and of the figures read from it, and the list says *Changed
+  outside the app* if the saved copy no longer matches. Saving and deleting go to the audit log;
+  viewers can look but not load or delete. Kept in `data/local/own-series/` (one file per series, up
+  to 200 series, 2 MB and 50,000 rows per file).
+  Saved series join the country's series (or the world list for *Not about one country*): they
+  show in the History tab, the Chart Agent and the econometrics lab, and download with the other
+  series, with *Your file* as their source. Sharing mode holds their values back, because the app
+  cannot check their terms. The council does not read them yet.
 - **Offline data**: downloads every free feed for every country for fast, offline use (below). Shows
   countries ready, size on this computer, an estimate for what is left, and anything not saved with
   the reason.
@@ -638,7 +913,10 @@ hold no figures of their own; the handout reads them from the app's series when 
   makes is written down while its window is still open, before anyone knows the outcome, and scored
   by the same rule when the window ends. The dialog shows, under Forward record, how many calls,
   how many followed against the base rate, and the latest calls. Lines are never edited, and each
-  carries a hash over the line before it, so the dialog says if the file was changed. A passing
+  carries a hash over the line before it, so the dialog says if the file was changed. The server runs
+  all the pre-registered tests by itself every Sunday at 03:30 (Menu > Data health > Scheduled), so
+  the forward record grows without anyone pressing a button; `SCHEDULE_BACKTESTS=off` stops it and
+  `SCHEDULE_BACKTESTS="wed 01:00"` moves it. A passing
   currency factor test (`npm run signals:evaluate`) does the same with its book: the long and short
   currencies at the latest complete month-end are recorded before that month's return exists, and
   scored as recorded (net of the same flat cost) once the month ends. A passing nowcast
@@ -675,6 +953,21 @@ hold no figures of their own; the handout reads them from the app's series when 
   it reads hiking or cutting, another move the same way within 6 months) and the Timing Agent's one
   call (`timing_agent.json`: crowded and already turning before a further 3-point unwind within 8
   weeks). Until they are run these three read *Not validated*.
+- **Your tests** (in Models & validation): register a test of your own before you see any result.
+  Give it a name, write what you expect to find, pick one of the app's backtest methods (for
+  example the policy rate against a Taylor rule, or crowded currency positioning) and type every
+  threshold, the sample start and the pass mark: the fewest cases, the smallest lift over the base
+  rate and the largest p-value that counts as a pass. Every box starts empty; the value the app's own
+  test uses is shown beside each one only as a reference. *Save and freeze* writes the test to
+  `data/local/validation/user-tests/` with today's date and its SHA-256 fingerprint in the folder's
+  `manifest.json`. It can never be edited or removed, and a file changed by hand is refused; a
+  changed idea is a new test with a new name. Your tests are kept apart from the app's, so neither
+  changes the other's correction for multiple tests. *Run my tests* runs every registered test that
+  has no verdict yet, in the background, on the same long free histories as the app's own backtests
+  (so it needs a connection and a minute or two). Each verdict shows under its test with the cases,
+  hit rate, base rate and p-value, and a Holm-adjusted p across your own tests only. A recorded
+  verdict is never run again, so it can never change; verdicts are kept in
+  `data/local/validation/user-results.json` and in the audit log.
 - **About & data licences**: the standing research notice and the licence register. One row per
   source: what the app reads from it, what its terms say about showing figures to others and about
   commercial use, the credit to print, quotes from the terms page with links, and the open questions
@@ -696,7 +989,7 @@ hold no figures of their own; the handout reads them from the app's series when 
   that matters. Keys, document text and holdings amounts are never logged. The log is not in backups.
 - **Data health**: whether the data is still coming in, and whether any of it changed under you.
   The menu shows how many sources failed at the last check and how many watchlist figures are
-  missing now. Three tabs:
+  missing now. Tabs:
   - *Sources*: every source's state at the last check, failing first, with "No answer since <date>
     (n checks in a row)", how many of its last checks connected, and its last 14 checks as dots. The
     app checks every source once a night after 05:30 (`DATA_CHECK_TIME`, `DATA_CHECK_TZ` in `.env`;
@@ -712,6 +1005,18 @@ hold no figures of their own; the handout reads them from the app's series when 
     the old value, the new one and the date the change was seen. Revised IMF projections are hidden
     unless you tick *Include IMF projections* (every WEO revises them). The History tab shows the same
     as "Revised from X on <date>" beside the year.
+  - *Scheduled*: jobs the server runs by itself and how each run ended.
+  - *Inflation*: every country's monthly inflation figure with its source, month and age in days.
+    Each country uses the freshest source that answered (its own statistics office or central bank,
+    Eurostat, IMF monthly consumer prices, then the OECD copy on DBnomics, which stopped updating in
+    June 2026); a figure more than 90 days old is flagged, and an old OECD copy says a fresher source
+    replaces it as soon as one answers. A country's series always comes whole from one source.
+  - *Calendar*: the official calendar (central bank decisions, CPI and GDP releases, elections, budget
+    deadlines) is typed in by hand from each source page, so it goes out of date unless someone
+    reads the pages again. This tab lists, for each country and kind of date, the next date, the last
+    one on file and when the source was last read, and flags a source read more than 30 days ago, a
+    schedule whose last date is within 60 days, and one whose dates have all passed. It also names
+    the countries with no central bank decision dates on file. It never adds or moves a date.
   Kept in `data/local/data-health/` and in `data/history/` (never keys).
 - **Backup** (Settings > Backup): *Download backup* saves one file with your saved research
   (briefs, documents, notebooks, teaching episodes), policy reviews, watch alerts, holdings, watchlists, added
@@ -719,6 +1024,16 @@ hold no figures of their own; the handout reads them from the app's series when 
   file holds, then *Restore this backup* replaces what is saved here with it; a copy of what was
   here is saved first in `data/local/backups/`, and AI keys already on this computer are kept. Use it
   to move to another computer or to keep a copy.
+
+### Reading the data from R, Python or Stata
+
+Your own scripts can read the same series, panel tables and figure tables the screens show, with the
+unit, source and date on every value and "Missing" with its reason where the app has no figure. Three
+small helper files, one each for Python, R and Stata, are in `scripts/data-api/`; none needs anything
+installed beyond the language. For example, in Python `eq.series("BRA", "policy_rate")` gives
+Brazil's policy rate one row per month. The full guide, with every address and what comes back, is
+`docs/DATA_API.md`. Downloads follow Sharing mode. A copy with sign-in on lets scripts read these
+addresses only with the integration API key, sent in a header (the guide says how to switch it on).
 
 ### Download all country data (for offline use)
 
@@ -733,6 +1048,11 @@ In the app: Menu > Offline data > *Download all country data*. The window shows 
 countries ready, the size on disk and an estimate for what is left (the average of the countries
 already saved; "known after the first country" until then). You can close it; the download carries
 on. *Stop after this step* stops it; *Carry on downloading* picks up where it stopped.
+
+**How big it is.** The first full download is about 3.6 to 3.8 GB, most of it the GDELT news files,
+which are read and then thrown away; what stays on disk is about 150 MB after the first few days. A
+daily run after that downloads roughly 150 to 200 MB (an estimate). The full tables, and how each
+figure was found, are in INSTALL.md under "What you need".
 
 **Offline.** When the free feeds cannot be reached from this computer, an *Offline* pill appears in
 the top bar with the date of the saved data. Pages, History and downloads keep working from disk; the

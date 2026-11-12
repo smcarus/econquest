@@ -137,7 +137,7 @@ test('watchlist and book: own CDS named per country and by weight', () => {
   const wl = [item('BRA', true), item('MEX', false)];
   const h = (iso3: string, n: number): Holding => ({ id: iso3, iso3, instrument: `${iso3} 2035`, assetClass: 'HC_BOND', side: 'LONG', notionalUsdMm: n, durationYears: 7 });
   const v = bookView([h('BRA', 30), h('MEX', 10)], wl, wl);
-  const b = pmBookBrief(v, [], NOW);
+  const b = pmBookBrief(v, NOW);
   const row = b.groups.flatMap((g) => g.rows).find((r) => r.label === 'Weighted 5Y CDS')!;
   // Only Brazil has your own CDS: the average is Brazil's, and the row says Mexico is missing.
   assert.equal(row.value, '200 bps');

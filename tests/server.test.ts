@@ -9,7 +9,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { getSnapshotDataStatus } from '../src/utils/dataStatus.ts';
 import type { OpenDataSnapshot, WatchlistItem } from '../src/types/council.ts';
 
@@ -28,7 +28,7 @@ before(async () => {
     cwd: root,
     env: {
       ...process.env,
-      NODE_OPTIONS: `--import ${path.join(root, 'tests/helpers/offline-fetch.mjs')}`,
+      NODE_OPTIONS: `--import ${pathToFileURL(path.join(root, 'tests/helpers/offline-fetch.mjs')).href}`,
       NODE_ENV: 'production',
       PORT: String(port),
       DATA_DIR: dataDir,
@@ -40,6 +40,8 @@ before(async () => {
       CDS_CSV_PATH: path.join(dataDir, 'cds.csv'),
       // Not a time: the job must read as off, with the reason (never started by the tests).
       SCHEDULE_DOWNLOAD_ALL: 'nightly',
+      // The tests run weekly by default; off here so a test run on a Sunday never starts them.
+      SCHEDULE_BACKTESTS: 'off',
       SCHEDULE_TZ: 'UTC',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -203,11 +205,12 @@ test('MarketEdge benchmarks: US, China, Russia, UK, EU, India, with sources or r
   assert.equal(by.CHN.yield, undefined);
   assert.match(by.RUS.noYieldReason, /2018/);
   assert.equal(body.us10Y.seriesId, 'IRLTLT01USM156N');
-  // The UK is a full country, so it comes with its live watchlist figures for the peer fit.
-  assert.deepEqual(body.peers.map((p: WatchlistItem) => p.iso3), ['GBR']);
+  // Benchmarks that are full catalog countries (the UK, and since the G20 group China, India,
+  // Russia and the US) come with their live watchlist figures for the peer fit.
+  assert.deepEqual(body.peers.map((p: WatchlistItem) => p.iso3), ['GBR', 'CHN', 'IND', 'RUS', 'USA']);
 });
 
-test('scheduled jobs: off unless set, a bad setting says why, and no run is invented', async () => {
+test('scheduled jobs: a bad setting says why, "off" turns the default off, and no run is invented', async () => {
   const res = await fetch(`${base}/api/scheduled-jobs`);
   assert.equal(res.status, 200);
   const body = await res.json();
@@ -217,6 +220,7 @@ test('scheduled jobs: off unless set, a bad setting says why, and no run is inve
   assert.match(byId.download_all.schedule, /^Off: "nightly" is not a time/);
   assert.equal(byId.backtests.on, false);
   assert.equal(byId.backtests.schedule, 'Off');
+  assert.equal(byId.backtests.fromDefault, false);
   assert.deepEqual(byId.backtests.runs, []);
   assert.match(body.nightlyCheck.schedule, /Every day after|Off/);
 });
@@ -336,7 +340,7 @@ test('council re-run: the same snapshot sent again gives the same answer, and sa
   assert.equal(missing.status, 404);
 });
 
-test('council regression set: each case is checked and reported honestly (stand-in model: only the Turkey summary and the Egypt options read right)', async () => {
+test('council regression set: each case is checked and reported as it is (stand-in model: only the Turkey summary and the Egypt options read right)', async () => {
   const res = await fetch(`${base}/api/council/regression`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -398,7 +402,7 @@ test('council explain: facts apart from interpretation, by lens; invented number
   assert.equal(e.focus.value, '27.5%');
 });
 
-test('council progress: each step reports as it finishes, honestly marked when no model answered', async () => {
+test('council progress: each step reports as it finishes, clearly marked when no model answered', async () => {
   const progressId = 'test-progress-1';
   const run = await fetch(`${base}/api/council/phase1-and-cascade`, {
     method: 'POST',
@@ -474,7 +478,7 @@ test('data connections: every source gets a row; keys are never in the reply', a
   assert.equal(res.status, 200);
   const rep = (await res.json()) as import('../src/utils/connectionCheck.ts').ConnectionReport;
   const row = (id: string) => rep.results.find((r) => r.id === id)!;
-  assert.equal(rep.results.length, 44); // + ECB SPF, BCB Focus and NY Fed GSCPI layout probes
+  assert.equal(rep.results.length, 66); // + ECB real-time database and ONS GDP revision triangle (G12, G13), + IMF GFS by level of government (G42), + Eurostat, ONS and BCB monthly activity (G41), + BIS total credit (G40), + ILOSTAT earnings, BIS residential property prices (G22), World Bank emissions and renewables, Our World in Data energy file (G20), World Bank trade and energy (G18), IMF investor base file (G19), World Bank debt structure (G19), World Bank people and living standards (G17), AidData file (U1), World Bank inequality, taxes and tariffs (G16), ECB SPF, BCB Focus and NY Fed GSCPI layout probes, IMF PortWatch, US Treasury auctions, EU business surveys, IMF monthly CPI, your data subscription
   assert.equal(row('ucdp').state, 'connected', 'the UCDP release shipped in datasets/ucdp/');
   assert.equal(row('bcb_ipca').state, 'connected');
   assert.match(row('bcb_ipca').sample || '', /Brazil IPCA 4\.58% over 12 months \(Sep 2026\)/);

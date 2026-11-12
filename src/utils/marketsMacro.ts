@@ -48,6 +48,18 @@ export const INFLATION_TARGETS: Record<string, InflationTarget> = {
   JPN: { pct: 2, bank: 'Bank of Japan', url: 'https://www.boj.or.jp/en/mopo/outline/qqe.htm', checked: true },
   BRA: { pct: 3, bandPts: 1.5, bank: 'BCB', url: 'https://www.bcb.gov.br/en/monetarypolicy/inflationtargeting', checked: false },
   MEX: { pct: 3, bandPts: 1, bank: 'Banxico', url: 'https://www.banxico.org.mx/monetary-policy/inflation-target.html', checked: false },
+  // The rest of the G20, read on each bank's own page on 2026-11-07. India's page could not be
+  // found that day, so it carries the published 4% (2-6%) target and says so. Argentina, China
+  // and Saudi Arabia have no stated central bank inflation target, so none is filed for them.
+  USA: { pct: 2, bank: 'Federal Reserve (PCE prices)', url: 'https://www.federalreserve.gov/faqs/economy_14400.htm', checked: true },
+  CAN: { pct: 2, bandPts: 1, bank: 'Bank of Canada', url: 'https://www.bankofcanada.ca/rates/indicators/key-variables/inflation-control-target/', checked: true },
+  AUS: { pct: 2.5, bandPts: 0.5, bank: 'Reserve Bank of Australia', url: 'https://www.rba.gov.au/inflation-overview.html', checked: true },
+  KOR: { pct: 2, bank: 'Bank of Korea', url: 'https://www.bok.or.kr/eng/main/contents.do?menuNo=400015', checked: true },
+  RUS: { pct: 4, bank: 'Bank of Russia', url: 'https://www.cbr.ru/eng/dkp/', checked: true },
+  DEU: { pct: 2, bank: 'ECB', url: 'https://www.ecb.europa.eu/mopo/strategy/html/index.en.html', checked: true },
+  FRA: { pct: 2, bank: 'ECB', url: 'https://www.ecb.europa.eu/mopo/strategy/html/index.en.html', checked: true },
+  ITA: { pct: 2, bank: 'ECB', url: 'https://www.ecb.europa.eu/mopo/strategy/html/index.en.html', checked: true },
+  IND: { pct: 4, bandPts: 2, bank: 'Reserve Bank of India', url: 'https://www.rbi.org.in/', checked: false },
 };
 
 /**

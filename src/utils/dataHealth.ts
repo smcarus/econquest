@@ -1,7 +1,7 @@
 /**
  * Data health, part 1: the history of the data connection check (Sam, 2026-11-06: "make the data
  * feeds reliable"). Every run of the check (the nightly one, Refresh under Tools > Data
- * connections, and `npm run check:data`) is kept, one line per run, so a feed that breaks quietly
+ * connections, and `npm run check:data`) is kept, one line per run, so a feed that breaks without an error
  * shows up as "failing since" with the date, and one that flickers shows a low connected rate.
  *
  * Stated rules, no model:
@@ -144,6 +144,18 @@ export function sourceHealth(records: SourceCheckRecord[], window = 30, dots = 1
     };
   });
 }
+
+/** A source failing at every check for this many days may have ended (docs/MAINTENANCE.md). */
+export const ENDED_AFTER_DAYS = 30;
+
+/** Failing for ENDED_AFTER_DAYS or more and at three or more checks in a row. */
+export function possiblyEnded(s: Pick<SourceHealth, 'state' | 'failingSince' | 'failuresInRow'>, now: Date = new Date()): boolean {
+  if (!isFailingState(s.state) || !s.failingSince || s.failuresInRow < 3) return false;
+  const since = Date.parse(s.failingSince);
+  return Number.isFinite(since) && now.getTime() - since >= ENDED_AFTER_DAYS * 86_400_000;
+}
+
+export const ENDED_NOTE = `Failing for ${ENDED_AFTER_DAYS} days or more. Check whether the source has ended or moved; if it has ended, follow docs/MAINTENANCE.md (its figures keep their last date with an "Ended" note).`;
 
 export interface CheckChanges {
   /** Connected at the run before, failing now. */

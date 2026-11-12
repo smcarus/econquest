@@ -71,5 +71,6 @@ for (const f of FILES) {
 if (missed.length) {
   console.log(`\nNot saved (${missed.length}):`);
   for (const m of missed) console.log(`  ${m}`);
+  if (missed.length === FILES.length) process.exitCode = 1;
 }
 console.log(`\nFolder: ${dir}`);

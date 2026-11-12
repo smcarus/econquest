@@ -19,7 +19,8 @@ import { buildOutcomes } from '../../utils/reviewOutcomes';
 import { cutAt, EPISODE_METHOD, EVIDENCE_TEMPLATE_VERSION, isResearchOnly, packRequests, pastEpisodes, perOption, runAnalysis, signalsFor, type EvidenceStep } from '../../utils/reviewEvidence';
 import { OPTIONS_INSTRUCTION, OPTIONS_TEMPLATE_VERSION, optionsPrompt, parseUserOptions, unassessedOptions, type OptionsStep } from '../../utils/reviewOptions';
 import { frameOf, parseFrame, summarise as summariseReview, stepStates, REVIEW_TEMPLATE_VERSION } from '../../utils/policyReview';
-import { deleteReview, loadReviews, newReview, putReview, saveStep, verifyReview } from '../../utils/policyReviewStore';
+import { appendOutcomeCheck, deleteReview, loadReviews, newReview, putReview, saveStep, verifyOutcomeChecks, verifyReview } from '../../utils/policyReviewStore';
+import { dueChecks, judgeCheck, nextCheck, tallyChecks, tallySentence, OUTCOME_CHECK_CAVEAT, VERDICT_LABEL } from '../../utils/outcomeChecks';
 import { figureRows } from '../../utils/csvExport';
 import { listArchivedDays } from '../../utils/pullArchive';
 import express from 'express';
@@ -80,6 +81,74 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
     });
     res.json(view);
   });
+  // Outcome checks (roadmap P1): each review is checked on its own at 12 and 24 months after its As of day,
+  // from the saved pull on or before the due day. Run shortly after start, every 6 hours, and when the
+  // track record is opened. Each check is saved once and written to the audit log.
+  const runOutcomeChecks = (now: Date = new Date()): number => {
+    const today = now.toISOString().slice(0, 10);
+    let made = 0;
+    for (const r of loadReviews(REVIEW_FILE).reviews) {
+      const due = dueChecks(r, today);
+      const frame = frameOf(r);
+      if (!due.length || !frame) continue;
+      const states = stepStates(r);
+      const then = states.diagnose === 'done' ? (r.steps.diagnose!.content as Diagnosis) : null;
+      // The recommended option's early-warning figures (pre-mortem, G38), once the memo is written.
+      const memoStep = states.memo === 'done' ? (r.steps.memo!.content as MemoStep) : null;
+      const warnings = memoStep ? (r.steps.options!.content as OptionsStep).options.find((o) => o.rank === memoStep.inputs.recommended)?.failure?.watch ?? [] : [];
+      let next = r;
+      for (const d of due) {
+        const past = archivedSnapshot(frame.iso3, d.due);
+        const pulledAt = past ? new Date(past.pulledAt).toISOString() : '';
+        const nowDiag = past ? withModelFigures(buildDiagnosis(figureRows({ ...past.snapshot, fetchedAt: pulledAt }), { iso3: frame.iso3, asOf: d.due, pullDate: past.date, pulledAt, incomplete: past.incomplete })) : null;
+        const check = judgeCheck({ frame, frameHash: r.steps.frame!.hash, months: d.months, then, now: nowDiag, checkedOn: today, warnings });
+        next = appendOutcomeCheck(next, check);
+        appendAudit(AUDIT_FILES, {
+          kind: 'research',
+          summary: `${d.months}-month outcome check of policy review "${r.title}": ${VERDICT_LABEL[check.verdict]}`,
+          detail: { id: r.id, months: d.months, due: d.due, verdict: check.verdict, reason: check.reason, ...(check.warnings ? { warnings: check.warnings.map((w) => `${w.label} [${w.ref}]: ${w.result}`) } : {}), hash: next.outcomeChecks![next.outcomeChecks!.length - 1].hash, version: check.version },
+        });
+        made += 1;
+      }
+      try {
+        putReview(REVIEW_FILE, next);
+      } catch (error: any) {
+        console.warn(`[reviews] could not save outcome checks for ${r.id}: ${error?.code || error?.message || 'unknown error'}`);
+      }
+    }
+    return made;
+  };
+  setTimeout(() => {
+    try {
+      runOutcomeChecks();
+    } catch (error: any) {
+      console.warn(`[reviews] outcome checks: ${error?.message || error}`);
+    }
+  }, 30_000).unref?.();
+  setInterval(() => {
+    try {
+      runOutcomeChecks();
+    } catch (error: any) {
+      console.warn(`[reviews] outcome checks: ${error?.message || error}`);
+    }
+  }, 6 * 3_600_000).unref?.();
+  // Policy track record: every outcome check, newest review first, with the next check still to come.
+  app.get('/api/reviews/track-record', (_req, res) => {
+    try {
+      runOutcomeChecks();
+    } catch (error: any) {
+      console.warn(`[reviews] outcome checks: ${error?.message || error}`);
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    const reviews = loadReviews(REVIEW_FILE).reviews;
+    const rows = reviews.map((r) => {
+      const frame = frameOf(r);
+      return { id: r.id, title: r.title, iso3: frame?.iso3 ?? '', asOf: frame?.asOf ?? '', checks: r.outcomeChecks ?? [], next: nextCheck(r, today), changed: verifyOutcomeChecks(r) };
+    });
+    const all = rows.flatMap((x) => x.checks);
+    const tally = tallyChecks(all);
+    res.json({ rows, tally, sentence: tallySentence(tally), caveat: OUTCOME_CHECK_CAVEAT, file: 'data/local/reviews.json' });
+  });
   // Policy reviews: a guided case file per country and problem (src/utils/policyReview.ts).
   app.get('/api/reviews', (_req, res) => {
     res.json({ reviews: loadReviews(REVIEW_FILE).reviews.map(summariseReview), templateVersion: REVIEW_TEMPLATE_VERSION, file: 'data/local/reviews.json' });
@@ -87,7 +156,7 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
   app.get('/api/reviews/:id', (req, res) => {
     const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
     if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
-    res.json({ review: r, states: stepStates(r), changed: verifyReview(r) });
+    res.json({ review: r, states: stepStates(r), changed: verifyReview(r), changedChecks: verifyOutcomeChecks(r), nextCheck: nextCheck(r, new Date().toISOString().slice(0, 10)) });
   });
   const writeReview = (res: express.Response, review: Parameters<typeof putReview>[1]): boolean => {
     try {

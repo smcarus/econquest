@@ -86,7 +86,7 @@ export function fresherCpi(iso3: string): string | undefined {
   if (iso3 === 'MEX') return 'Banxico (free token: add it under Menu > Settings > Data API keys; once added it fills in when the feed answers)';
   if (iso3 === 'CHL') return 'Central Bank of Chile (free registration, not yet added)';
   if (iso3 === 'TUR') return 'Central Bank of Turkey EVDS (free key: add it under Menu > Settings > Data API keys; once added it fills in when the feed answers)';
-  return undefined;
+  return 'IMF monthly consumer prices (connected; it fills in when the daily download reads a month at least as new)';
 }
 
 function check(id: string, label: string, period: string | undefined, rule: keyof typeof USUAL_MAX, now: Date, extra: Pick<FreshnessCheck, 'why' | 'fresher'> = {}): FreshnessCheck | null {
@@ -113,7 +113,7 @@ export function freshnessChecks(item: DatedItem, now = new Date()): FreshnessChe
     out.push(check('policy', 'Policy rate', item.policyRateDate, daily ? 'policy_daily' : 'policy_monthly', now, { why: 'The BIS has not published a newer reading for this bank.' }));
   }
   if (item.cpiMonth) {
-    const viaDbnomics = item.cpiSource === 'oecd' && item.oecdCpi?.basis !== 'national';
+    const viaDbnomics = item.cpiSource === 'oecd' && item.oecdCpi?.basis !== 'national' && item.oecdCpi?.basis !== 'imf';
     out.push(
       check('cpi', 'Inflation', item.cpiMonth, 'cpi', now, {
         why: viaDbnomics ? 'Read from the OECD through DBnomics, whose copy runs several months behind (the OECD site blocks the app).' : 'The source has not published a newer month.',

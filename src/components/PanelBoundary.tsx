@@ -1,4 +1,6 @@
 import React from 'react';
+import { readLang, translate, translateText } from '../i18n/lang';
+import { COMMON } from '../i18n/messages/common';
 
 /**
  * Crash guard. Before this, one panel throwing while it drew (the #54 "missing figures" note, for
@@ -41,17 +43,18 @@ export class PanelBoundary extends React.Component<Props, State> {
     const { error } = this.state;
     if (!error) return this.props.children;
     const message = String(error?.message || error).slice(0, 300);
+    // A class component cannot use the language hook; the saved choice is read directly.
+    const lang = readLang();
+    const t = (key: keyof typeof COMMON.en, vars?: Record<string, string>) => translate(COMMON, lang, key, vars);
     if (this.props.page) {
       return (
         <div role="alert" data-panel-error={this.props.name} className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950 p-6">
           <div className="ui-panel max-w-lg p-5 space-y-3">
-            <h1 className="text-lg text-slate-900 dark:text-white">Something went wrong drawing the app</h1>
-            <p className="text-sm text-slate-600 dark:text-slate-300">
-              Your saved data is safe. Reload to try again. If it keeps happening, the error below helps find the cause.
-            </p>
+            <h1 className="text-lg text-slate-900 dark:text-white">{t('appFailed')}</h1>
+            <p className="text-sm text-slate-600 dark:text-slate-300">{t('appFailedBody')}</p>
             <pre className="text-xs whitespace-pre-wrap bg-slate-50 dark:bg-slate-900 p-2 border border-slate-200 dark:border-slate-700 text-rose-700 dark:text-rose-300">{message}</pre>
             <button type="button" className="ui-btn ui-btn-primary" onClick={() => window.location.reload()}>
-              Reload
+              {t('reload')}
             </button>
           </div>
         </div>
@@ -60,11 +63,11 @@ export class PanelBoundary extends React.Component<Props, State> {
     return (
       <div role="alert" data-panel-error={this.props.name} className="ui-panel p-4 border-rose-200 dark:border-rose-900 space-y-2">
         <p className="text-sm text-slate-900 dark:text-white">
-          {this.props.name} could not be drawn. The rest of the app still works.
+          {t('panelFailed', { name: translateText(this.props.name, lang) })}
         </p>
         <p className="text-xs text-rose-700 dark:text-rose-300 break-words">{message}</p>
         <button type="button" className="ui-btn" onClick={() => this.setState({ error: null })}>
-          Try again
+          {t('tryAgain')}
         </button>
       </div>
     );

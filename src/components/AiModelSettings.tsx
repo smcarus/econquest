@@ -1,7 +1,9 @@
-import { isSmallModel, largestModel } from '../utils/refereeModel';
+import { DEFAULT_REFEREE_MODEL, isMidModel, isSmallModel, largestModel } from '../utils/refereeModel';
 import React, { useState } from 'react';
 import { CheckCircle2, Loader2, Search, XCircle } from 'lucide-react';
 import type { AIRuntimeConfig } from '../types/council';
+import { useT, useTx } from '../i18n/useLang';
+import { MENU } from '../i18n/messages/menu';
 
 /**
  * Settings > AI model: the plain version of the AI setup. Which model writes the council's
@@ -11,17 +13,13 @@ import type { AIRuntimeConfig } from '../types/council';
 
 type Provider = AIRuntimeConfig['providerMode'];
 
-const PROVIDERS: Array<{ id: Provider; title: string; note: string }> = [
-  { id: 'ollama', title: 'Ollama on your computer', note: 'Free and private. Ollama must be running with a model downloaded.' },
-  { id: 'gemini', title: 'Google Gemini', note: 'Needs a Gemini key (below). Questions are sent to Google.' },
-  { id: 'hybrid', title: 'Ollama, then Gemini', note: 'Ollama first; Gemini answers when Ollama does not.' },
-];
+const PROVIDERS = ['ollama', 'gemini', 'hybrid'] as const;
 
-const PLACES: Array<{ url: string; title: string }> = [
-  { url: 'http://localhost:11434', title: 'This computer (app started with npm run dev)' },
-  { url: 'http://host.docker.internal:11434', title: 'This computer, app running in Docker' },
-  { url: 'http://ollama:11434', title: 'Ollama container bundled with the app' },
-];
+const PLACES = [
+  { url: 'http://localhost:11434', title: 'ai_place_local' },
+  { url: 'http://host.docker.internal:11434', title: 'ai_place_docker' },
+  { url: 'http://ollama:11434', title: 'ai_place_bundled' },
+] as const;
 
 interface OllamaStatus {
   connected: boolean;
@@ -46,6 +44,8 @@ export const AiModelSettings: React.FC<{
   geminiKeySet?: boolean;
   onOpenAdvanced?: () => void;
 }> = ({ config, onChange, geminiKey, geminiKeySet, onOpenAdvanced }) => {
+  const t = useT(MENU);
+  const tx = useTx();
   const [status, setStatus] = useState<OllamaStatus | null>(null);
   const [finding, setFinding] = useState(false);
   const [tryReply, setTryReply] = useState<TryReply | null>(null);
@@ -90,9 +90,9 @@ export const AiModelSettings: React.FC<{
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ runtimeConfig: config, ...(referee ? { referee: true } : {}) }),
       });
-      return r.ok ? ((await r.json()) as TryReply) : { ok: false, ms: 0, reason: `the app server answered HTTP ${r.status}` };
+      return r.ok ? ((await r.json()) as TryReply) : { ok: false, ms: 0, reason: t('ai_serverHttp', { status: r.status }) };
     } catch {
-      return { ok: false, ms: 0, reason: 'the app server did not answer' };
+      return { ok: false, ms: 0, reason: t('ai_serverDown') };
     }
   };
   /** Tests the fast model, then (with Ollama) the referee model, the way the council calls each. */
@@ -115,30 +115,30 @@ export const AiModelSettings: React.FC<{
   return (
     <div className="space-y-5" data-settings-ai="true">
       <div>
-        <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Which AI model writes the summaries</h4>
+        <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('ai_which')}</h4>
         <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-          The agents answer from the app's own figures either way. The model only writes the summary, picks agents and runs the debate.
+          {t('ai_whichNote')}
         </p>
-        <div className="mt-2 grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="AI model">
+        <div className="mt-2 grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label={t('ai_aria')}>
           {PROVIDERS.map((p) => {
-            const on = config.providerMode === p.id;
+            const on = config.providerMode === p;
             return (
               <button
-                key={p.id}
+                key={p}
                 type="button"
                 role="radio"
                 aria-checked={on}
-                onClick={() => update({ providerMode: p.id })}
+                onClick={() => update({ providerMode: p })}
                 className={`text-left border p-2.5 ${on ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/40 dark:border-blue-500' : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'}`}
               >
-                <div className="text-sm font-medium text-slate-900 dark:text-white">{p.title}</div>
-                <div className="mt-0.5 text-xs text-slate-600 dark:text-slate-400">{p.note}</div>
+                <div className="text-sm font-medium text-slate-900 dark:text-white">{p === 'gemini' ? 'Google Gemini' : t(`ai_p_${p}`)}</div>
+                <div className="mt-0.5 text-xs text-slate-600 dark:text-slate-400">{t(`ai_pn_${p}`)}</div>
               </button>
             );
           })}
         </div>
         {config.providerMode === 'openai_compatible' && (
-          <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">A local OpenAI-compatible server is set up under Advanced.</p>
+          <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">{t('ai_openaiNote')}</p>
         )}
       </div>
 
@@ -147,7 +147,7 @@ export const AiModelSettings: React.FC<{
           <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Ollama</h4>
           <div className="flex flex-wrap items-end gap-2">
             <label className="flex-1 min-w-[16rem] text-xs text-slate-600 dark:text-slate-400">
-              Where Ollama runs
+              {t('ai_where')}
               <select
                 className="mt-1 block w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-white"
                 value={place ? place.url : 'custom'}
@@ -155,19 +155,19 @@ export const AiModelSettings: React.FC<{
               >
                 {PLACES.map((p) => (
                   <option key={p.url} value={p.url}>
-                    {p.title}
+                    {t(p.title)}
                   </option>
                 ))}
-                <option value="custom">Another address: {place ? '' : config.ollamaBaseUrl}</option>
+                <option value="custom">{t('ai_another', { url: place ? '' : config.ollamaBaseUrl })}</option>
               </select>
             </label>
             <button type="button" className="ui-btn inline-flex items-center gap-1.5" onClick={findOllama} disabled={finding} data-settings-find-ollama="true">
-              {finding ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden /> : <Search className="w-3.5 h-3.5" aria-hidden />} Find Ollama
+              {finding ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden /> : <Search className="w-3.5 h-3.5" aria-hidden />} {t('ai_find')}
             </button>
           </div>
           {!place && (
             <input
-              aria-label="Ollama address"
+              aria-label={t('ai_addrAria')}
               className="block w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-white"
               value={config.ollamaBaseUrl}
               onChange={(e) => update({ ollamaBaseUrl: e.target.value.trim() })}
@@ -176,15 +176,15 @@ export const AiModelSettings: React.FC<{
           {status && (
             <p className={`text-xs ${status.connected ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`} role="status">
               {status.connected
-                ? `Found Ollama at ${status.endpoint} with ${status.models.length} model${status.models.length === 1 ? '' : 's'} downloaded.${status.models.length ? '' : ' Download one in a terminal: ollama pull qwen2.5:7b'}`
-                : 'Ollama did not answer at any address. Start the Ollama app (or run "ollama serve" in a terminal), then press Find Ollama again.'}
+                ? `${t(status.models.length === 1 ? 'ai_found1' : 'ai_foundN', { url: status.endpoint, n: status.models.length })}${status.models.length ? '' : t('ai_pullHint')}`
+                : t('ai_notFound')}
             </p>
           )}
           <div className="grid gap-3 sm:grid-cols-2">
             {(
               [
-                { key: 'ollamaQuickModel', label: 'Fast model: picking agents and the desk agents', hint: 'A 7-8B model answers in under a minute on most Macs.' },
-                { key: 'ollamaDeepModel', label: 'Referee model: Supreme Council, chat summaries, explanations, the debate and Policy review options', hint: 'Use your largest model (for example a 31B). It judges and sums up the agents, so it can take a few minutes.' },
+                { key: 'ollamaQuickModel', label: t('ai_fast'), hint: t('ai_fastHint') },
+                { key: 'ollamaDeepModel', label: t('ai_ref'), hint: t('ai_refHint') },
               ] as const
             ).map((m) => (
               <label key={m.key} className="text-xs text-slate-600 dark:text-slate-400">
@@ -198,7 +198,7 @@ export const AiModelSettings: React.FC<{
                     {modelChoices(config[m.key]).map((name) => (
                       <option key={name} value={name}>
                         {name}
-                        {installed.includes(name) ? '' : ' (not downloaded)'}
+                        {installed.includes(name) ? '' : t('ai_notDownloaded')}
                       </option>
                     ))}
                   </select>
@@ -215,23 +215,42 @@ export const AiModelSettings: React.FC<{
           </div>
           {isSmallModel(config.ollamaDeepModel) && (
             <p className="text-xs text-amber-800 dark:text-amber-300 flex flex-wrap items-center gap-2" data-settings-small-referee="true">
-              <span>The referee model is {config.ollamaDeepModel}, a small model. The Supreme Council and the chat summaries should run on your largest model.</span>
+              <span>{t('ai_small', { model: config.ollamaDeepModel })}</span>
               {largestModel(installed) && (
                 <button type="button" className="ui-btn" onClick={() => update({ ollamaDeepModel: largestModel(installed)! })}>
-                  Use {largestModel(installed)}
+                  {t('ai_use', { model: largestModel(installed)! })}
                 </button>
               )}
             </p>
           )}
-          {!installed.length && <p className="text-xs text-slate-500 dark:text-slate-400">Press Find Ollama to pick from the models you have downloaded.</p>}
+          <label className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300" data-settings-allow-small-referee="true">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={Boolean(config.allowSmallReferee)}
+              onChange={(e) => update({ allowSmallReferee: e.target.checked })}
+            />
+            <span>
+              <span className="font-semibold">{t('ai_allowSmall')}</span>
+              <span className="block text-slate-500">{t('ai_allowSmallNote')}</span>
+            </span>
+          </label>
+          {isMidModel(config.ollamaDeepModel) && (
+            <p className="text-xs text-amber-800 dark:text-amber-300" data-settings-mid-referee="true">
+              {config.allowSmallReferee
+                ? t('ai_midOn', { model: config.ollamaDeepModel })
+                : t('ai_midOff', { model: config.ollamaDeepModel, fallback: DEFAULT_REFEREE_MODEL })}
+            </p>
+          )}
+          {!installed.length && <p className="text-xs text-slate-500 dark:text-slate-400">{t('ai_pressFind')}</p>}
         </div>
       )}
 
       {(config.providerMode === 'gemini' || config.providerMode === 'hybrid') && (
         <div>
-          <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Gemini key</h4>
+          <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('ai_geminiKey')}</h4>
           {geminiKeySet === false && config.providerMode === 'gemini' && (
-            <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">No Gemini key is set, so no summary can be written until you add one.</p>
+            <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">{t('ai_noGemini')}</p>
           )}
           {geminiKey}
         </div>
@@ -240,37 +259,37 @@ export const AiModelSettings: React.FC<{
       <div className="border-t border-slate-200 dark:border-slate-800 pt-3">
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" className="ui-btn ui-btn-primary inline-flex items-center gap-1.5" onClick={tryModel} disabled={trying} data-settings-try-model="true">
-            {trying && <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden />} Test the model
+            {trying && <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden />} {t('ai_test')}
           </button>
           <span className="text-xs text-slate-500 dark:text-slate-400">
-            {trying ? 'Asking the model… a model that is not loaded yet can take a minute or two.' : 'Sends one short question the way the council chat does.'}
+            {trying ? t('ai_asking') : t('ai_testNote')}
           </span>
         </div>
         {tryReply && (
           <p className={`mt-2 text-xs inline-flex items-start gap-1.5 ${tryReply.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`} role="status" data-settings-try-result={tryReply.ok ? 'ok' : 'failed'}>
             {tryReply.ok ? <CheckCircle2 className="w-3.5 h-3.5 mt-px shrink-0" aria-hidden /> : <XCircle className="w-3.5 h-3.5 mt-px shrink-0" aria-hidden />}
             {tryReply.ok
-              ? `Fast model working: ${tryReply.provider} answered in ${Math.max(1, Math.round(tryReply.ms / 1000))} s.`
-              : `Fast model not working: ${tryReply.reason}.`}
+              ? t('ai_fastOk', { provider: tryReply.provider || '', s: Math.max(1, Math.round(tryReply.ms / 1000)) })
+              : t('ai_fastBad', { reason: tx(tryReply.reason || '') })}
           </p>
         )}
         {refereeReply && (
           <p className={`mt-1 text-xs flex items-start gap-1.5 ${refereeReply.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`} role="status" data-settings-try-referee={refereeReply.ok ? 'ok' : 'failed'}>
             {refereeReply.ok ? <CheckCircle2 className="w-3.5 h-3.5 mt-px shrink-0" aria-hidden /> : <XCircle className="w-3.5 h-3.5 mt-px shrink-0" aria-hidden />}
             {refereeReply.ok
-              ? `Referee working: ${refereeReply.provider} answered in ${Math.max(1, Math.round(refereeReply.ms / 1000))} s. The Supreme Council, summaries, explanations, debate and Policy review options use it.`
-              : `Referee not working: ${refereeReply.reason}.`}
+              ? t('ai_refOk', { provider: refereeReply.provider || '', s: Math.max(1, Math.round(refereeReply.ms / 1000)) })
+              : t('ai_refBad', { reason: tx(refereeReply.reason || '') })}
           </p>
         )}
       </div>
 
       {onOpenAdvanced && (
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          Per-agent models, temperature, Docker set-up and integrations are under{' '}
+          {t('ai_advanced', { link: '\u0000' }).split('\u0000')[0]}
           <button type="button" className="text-blue-700 dark:text-blue-300 underline" onClick={onOpenAdvanced}>
-            Advanced AI set-up
+            {t('ai_advancedLink')}
           </button>
-          .
+          {t('ai_advanced', { link: '\u0000' }).split('\u0000')[1]}
         </p>
       )}
     </div>

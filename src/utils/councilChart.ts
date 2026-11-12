@@ -6,6 +6,7 @@
  * talk about it and follow-up questions can ask about the results. Only real series are charted:
  * a series the app does not hold is listed as Missing with the reason.
  */
+import { isPaidSeriesId } from '../engine/paidData';
 import type { LiveWatchlistItem } from '../types/council';
 import { INFLATION_TARGETS } from './marketsMacro';
 import { breaksTest, hacRegression, JOHANSEN_CRIT, johansenTest, lpTest, SUPF_CRIT_5, varTest, type LabStep } from './econometricsLab';
@@ -176,6 +177,21 @@ const SERIES_WORDS: Array<{ re: RegExp; id: string; label: string; world?: boole
   { re: /adjusted (?:nfci|national financial conditions)|\banfci\b/i, id: 'stress_anfci', label: 'Chicago Fed adjusted NFCI', world: true },
   { re: /\bnfci\b|chicago fed|financial conditions index/i, id: 'stress_nfci', label: 'Chicago Fed NFCI', world: true },
   { re: /financial stress|stlfsi|st\.? louis fed (?:stress )?index/i, id: 'stress_stlfsi', label: 'St. Louis Fed Financial Stress Index', world: true },
+  { re: /suez/i, id: 'portwatch_suez_ships', label: 'Suez Canal: ships through per day', world: true },
+  { re: /panama canal/i, id: 'portwatch_panama_ships', label: 'Panama Canal: ships through per day', world: true },
+  { re: /hormuz/i, id: 'portwatch_hormuz_ships', label: 'Strait of Hormuz: ships through per day', world: true },
+  { re: /bab[- ]el[- ]mandeb|red sea/i, id: 'portwatch_bab_el_mandeb_ships', label: 'Bab el-Mandeb Strait: ships through per day', world: true },
+  { re: /malacca/i, id: 'portwatch_malacca_ships', label: 'Malacca Strait: ships through per day', world: true },
+  { re: /bosporus|bosphorus/i, id: 'portwatch_bosporus_ships', label: 'Bosporus Strait: ships through per day', world: true },
+  { re: /cape of good hope/i, id: 'portwatch_cape_good_hope_ships', label: 'Cape of Good Hope: ships through per day', world: true },
+  { re: /taiwan strait/i, id: 'portwatch_taiwan_ships', label: 'Taiwan Strait: ships through per day', world: true },
+  { re: /port calls|port activity|portwatch/i, id: 'portwatch_port_calls', label: 'Port calls per day' },
+  { re: /seaborne exports/i, id: 'portwatch_exports', label: 'Seaborne exports per day (estimated)' },
+  { re: /seaborne imports/i, id: 'portwatch_imports', label: 'Seaborne imports per day (estimated)' },
+  { re: /economic sentiment|\besi\b|business (?:and consumer )?surveys?|business confidence/i, id: 'eu_survey_esi', label: 'Economic sentiment indicator (EU business survey, not a PMI)' },
+  { re: /consumer confidence/i, id: 'eu_survey_consumer', label: 'Consumer confidence (EU business survey, not a PMI)' },
+  { re: /auction (?:high )?yield/i, id: 'ust_auction_high_yield_10y', label: 'Treasury auction high yield, 10-year note' },
+  { re: /bid[- ]to[- ]cover|treasury auctions?|auction demand/i, id: 'ust_auction_btc_10y', label: 'Treasury auction bid-to-cover, 10-year note' },
   { re: /supply[- ]chain|\bgscpi\b/i, id: 'gscpi', label: 'NY Fed Global Supply Chain Pressure Index', world: true },
   { re: /\bbrent\b|\boil\b/i, id: 'commodity_pink_sheet_crude_brent', label: 'Brent crude', world: true },
   { re: /\bgold\b/i, id: 'commodity_pink_sheet_gold', label: 'Gold', world: true },
@@ -935,6 +951,8 @@ export function computeChart(req: ChartRequest, fetched: Array<FetchedSeries | {
 /** Fetches each series of a request from the app's own history routes; a missing one comes back with its reason. */
 export async function fetchChartSeries(req: ChartRequest, get: typeof fetch = fetch): Promise<Array<FetchedSeries | { reason: string }>> {
   const one = async (ref: ChartSeriesRef, id: string): Promise<FetchedSeries | { reason: string }> => {
+    // Your subscription's figures stay out of the council: its answers can go to an AI provider and be saved and shared.
+    if (isPaidSeriesId(id)) return { reason: 'figures from your own subscription are kept out of the council' };
     const url = ref.iso3 ? `/api/series/${encodeURIComponent(ref.iso3)}/${encodeURIComponent(id)}` : `/api/series/world/${encodeURIComponent(id)}`;
     const r = await get(url);
     const body = (await r.json().catch(() => ({}))) as Partial<FetchedSeries> & { reason?: string; message?: string };

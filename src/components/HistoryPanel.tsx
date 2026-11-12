@@ -1,8 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ChartGuide, RangeNote } from './HelpLevel';
+import type { SeriesTags } from '../utils/seriesDefinitions';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { seriesGaps, type Series, type SeriesMissing } from '../utils/seriesHistory';
-import { contextSentence, historicalContext } from '../utils/historicalContext';
+import { historicalContext, type HistoricalContext } from '../utils/historicalContext';
 import { PublishChartButton } from './PublishChartButton';
+import { CiteButton } from './CiteButton';
+import { FlagButton } from './FeedbackControls';
+import { isPaidSource } from '../engine/paidData';
+import { useT, useTx } from '../i18n/useLang';
+import { PANELS, type PanelT } from '../i18n/messages/panels';
 
 /**
  * Country Research > History: every figure that has a run of real observations, as a chart with
@@ -10,19 +17,38 @@ import { PublishChartButton } from './PublishChartButton';
  * they came: nothing filled in, carried forward or smoothed.
  */
 
-type SeriesListItem = Omit<Series, 'points'> & { count: number; first?: string; last?: string; latest?: number };
+type SeriesListItem = Omit<Series, 'points'> & { count: number; first?: string; last?: string; latest?: number; tags?: SeriesTags };
 
-const FREQ_LABEL: Record<Series['freq'], string> = {
-  daily: 'daily',
-  weekly: 'weekly',
-  monthly: 'monthly',
-  quarterly: 'quarterly',
-  annual: 'yearly',
-  'per pull': 'one point per saved pull',
-};
+const FREQ_KEY = {
+  daily: 'freq_daily',
+  weekly: 'freq_weekly',
+  monthly: 'freq_monthly',
+  quarterly: 'freq_quarterly',
+  annual: 'freq_annual',
+  'per pull': 'freq_perPull',
+} as const satisfies Record<Series['freq'], string>;
 
-function fmt(v: number | undefined, unit?: string): string {
-  if (v === undefined || !Number.isFinite(v)) return 'Missing';
+
+/** The "how this compares with its own past" sentence, in the reader's language. */
+function contextLine(t: PanelT, label: string, unit: string | undefined, c: HistoricalContext): string {
+  const r2 = (v: number) => Math.round(v * 100) / 100;
+  const u = unit?.startsWith('%') ? unit : unit ? ` ${unit}` : '';
+  const parts = [t('ctx_was', { label, value: `${r2(c.value)}${u}`, date: c.date })];
+  if (c.record) {
+    const high = c.record.kind === 'highest';
+    parts.push(c.record.since ? t(high ? 'ctx_highestSince' : 'ctx_lowestSince', { since: c.record.since }) : t(high ? 'ctx_highestOnRecord' : 'ctx_lowestOnRecord', { first: c.first }));
+  }
+  parts.push(t('ctx_percentile', { pct: c.percentile, n: c.observations, first: c.first }));
+  if (c.yearAgo) {
+    const amount = Math.abs(c.yearAgo.change);
+    const change = unit?.startsWith('%') ? t('ctx_points', { n: amount }) : `${amount}${u}`;
+    parts.push(t(c.yearAgo.change >= 0 ? 'ctx_up' : 'ctx_down', { change, date: c.yearAgo.date }));
+  }
+  return `${parts.join(', ')}.`;
+}
+
+function fmt(v: number | undefined, unit?: string, missing = 'Missing'): string {
+  if (v === undefined || !Number.isFinite(v)) return missing;
   const abs = Math.abs(v);
   const n = abs >= 1000 ? v.toLocaleString(undefined, { maximumFractionDigits: 0 }) : abs >= 100 ? v.toFixed(1) : v.toFixed(2);
   return unit === '%' || unit?.startsWith('%') ? `${n}%` : n;
@@ -41,6 +67,10 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
   const [selected, setSelected] = useState<string | null>(pick ?? null);
   const [series, setSeries] = useState<Series | null>(null);
   const [seriesError, setSeriesError] = useState<string | null>(null);
+  const t = useT(PANELS);
+  const tx = useTx();
+  const miss = t('c_missing');
+  const freqLabel = (f: Series['freq']) => t(FREQ_KEY[f]);
 
   useEffect(() => {
     let live = true;
@@ -91,43 +121,53 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
   if (failed) {
     return (
       <section className="ui-panel p-4" data-history-panel="true">
-        <p className="ui-body">History could not be loaded ({failed}). The rest of the page still works.</p>
+        <p className="ui-body">{t('h_failed', { error: failed })}</p>
       </section>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-3" data-history-panel="true" data-no-stat-ref="true">
-      <section className="ui-panel xl:col-span-2" data-no-provenance-overlay="true">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-3" data-history-panel="true">
+      <section className="ui-panel xl:col-span-2">
         <header className="ui-panel-header">
-          <h2 className="ui-section-title">{current ? `${current.label}, ${countryName}` : `History for ${countryName}`}</h2>
+          <h2 className="ui-section-title">{current ? `${tx(current.label)}, ${countryName}` : t('h_titleFor', { country: countryName })}</h2>
           {current && (
             <p className="ui-label">
-              {current.unit} · {FREQ_LABEL[current.freq]} · {current.source}
-              {pulledLabel(current.pulledAt) ? ` · pulled ${pulledLabel(current.pulledAt)}` : ''}
+              {tx(current.unit)} · {freqLabel(current.freq)} · {current.source}
+              {pulledLabel(current.pulledAt) ? t('h_pulled', { date: pulledLabel(current.pulledAt)! }) : ''}
             </p>
           )}
+          {current?.tags && (
+            <p className="ui-label pt-0.5" data-history-definition="true">
+              {t('h_defines', { definition: tx(current.tags.definition) })} {t('h_covers', { coverage: tx(current.tags.coverage) })}
+              {current.tags.seasonalAdjustment && <> {t('h_seasonal', { value: tx(current.tags.seasonalAdjustment) })}</>}
+              {current.tags.frequencyNote && <> {t('h_freqNote', { note: tx(current.tags.frequencyNote) })}</>}
+              {current.tags.measure && <> {t('h_measure', { value: tx(current.tags.measure) })}</>}
+              {current.tags.baseYear && <> {t('h_baseYear', { year: current.tags.baseYear })}</>}
+              {current.tags.currency && <> {t('h_currency', { value: tx(current.tags.currency) })}</>}
+            </p>
+          )}
+          {series?.points.some((p) => p.note === 'IMF projection') && <RangeNote none="noRangeImf" className="ui-label pt-0.5" />}
+          {current && <ChartGuide id="history" className="pt-1" />}
         </header>
         <div className="p-4 space-y-3">
-          {list === null && <p className="ui-body">Loading…</p>}
+          {list === null && <p className="ui-body">{t('c_loading')}</p>}
           {list !== null && list.length === 0 && (
-            <p className="ui-body">
-              No figure for {countryName} has a history yet. Each figure below says why. Saved pulls build a history week by week from now on.
-            </p>
+            <p className="ui-body">{t('h_none', { country: countryName })}</p>
           )}
           {pickedMissing && (
             <p className="text-sm text-amber-700 dark:text-amber-400">
-              {pickedMissing.label}: Missing. {pickedMissing.reason}.
+              {t('h_missingLine', { label: tx(pickedMissing.label), reason: tx(pickedMissing.reason) })}
             </p>
           )}
           {current && seriesError && <p className="text-sm text-amber-700 dark:text-amber-400">{seriesError}</p>}
-          {current && !series && !seriesError && <p className="ui-body">Loading…</p>}
+          {current && !series && !seriesError && <p className="ui-body">{t('c_loading')}</p>}
           {series && (
             <>
-              {series.about && <p className="text-xs text-slate-500 dark:text-slate-400">{series.about}</p>}
+              {series.about && <p className="text-xs text-slate-500 dark:text-slate-400">{tx(series.about)}</p>}
               {context && (
                 <p className="text-sm text-slate-900 dark:text-white" data-history-context="true">
-                  {contextSentence(series.label, series.unit, context)}
+                  {contextLine(t, tx(series.label), series.unit && tx(series.unit), context)}
                 </p>
               )}
               <div className="h-64" data-history-chart="true" ref={chartRef}>
@@ -137,7 +177,7 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
                     <XAxis dataKey="date" tick={{ fontSize: 12 }} minTickGap={24} />
                     <YAxis tick={{ fontSize: 12 }} width={56} domain={['auto', 'auto']} />
                     <Tooltip
-                      formatter={(v) => [fmt(Number(v), series.unit), series.label]}
+                      formatter={(v) => [fmt(Number(v), series.unit, miss), tx(series.label)]}
                       labelFormatter={(label) => {
                         const d = String(label ?? '');
                         const pt = series.points.find((p) => p.date === d);
@@ -150,52 +190,67 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
                 </ResponsiveContainer>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {series.points.length} observation{series.points.length === 1 ? '' : 's'}, {series.points[0]?.date} to {series.points[series.points.length - 1]?.date}.{' '}
-                {series.freq === 'per pull' && series.points.length < 3 ? 'This figure gains a point with each weekly pull. ' : ''}
+                {t(series.points.length === 1 ? 'h_obs1' : 'h_obsN', { n: series.points.length, from: series.points[0]?.date ?? '', to: series.points[series.points.length - 1]?.date ?? '' })}{' '}
+                {series.freq === 'per pull' && series.points.length < 3 ? t('h_gainsPoint') : ''}
                 {gaps.length === 0
                   ? series.freq === 'monthly' || series.freq === 'weekly'
-                    ? 'No gaps.'
+                    ? t('h_noGaps')
                     : ''
-                  : `Gaps (no observation, not filled): ${gaps.map((g) => `${g.after} to ${g.before}`).join('; ')}.`}
+                  : t('h_gaps', { gaps: gaps.map((g) => t('c_range', { from: g.after, to: g.before })).join('; ') })}
               </p>
+              {isPaidSource(series.source) && (
+                <p className="ui-label" data-paid-held="true">
+                  {t('h_paidHeld')}
+                </p>
+              )}
               <div className="flex flex-wrap gap-1.5">
-                <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/series/${encodeURIComponent(series.id)}.csv`} download>
-                  Download this series (CSV)
-                </a>
-                <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/series/${encodeURIComponent(series.id)}.xlsx`} download>
-                  Excel
-                </a>
+                {!isPaidSource(series.source) && (
+                  <>
+                    <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/series/${encodeURIComponent(series.id)}.csv`} download>
+                      {t('h_dlSeries')}
+                    </a>
+                    <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/series/${encodeURIComponent(series.id)}.xlsx`} download>
+                      {t('c_excel')}
+                    </a>
+                  </>
+                )}
                 <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/series.csv`} download>
-                  Download every series for {countryName} (CSV)
+                  {t('h_dlAll', { country: countryName })}
                 </a>
                 <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/series.xlsx`} download>
-                  Excel
+                  {t('c_excel')}
                 </a>
+                <CiteButton kind="table" className="ui-btn inline-flex items-center gap-1" title={`${tx(series.label)}, ${countryName}`} sources={[series.source || current?.source]} />
+                <FlagButton
+                  target="figure"
+                  className="ui-btn inline-flex items-center gap-1"
+                  figure={{ iso3, label: series.label, value: series.points.length ? `${series.points[series.points.length - 1].value} ${series.unit} (${series.points[series.points.length - 1].date})` : '', source: series.source || current?.source || '' }}
+                />
               </div>
-              <PublishChartButton
+              {!isPaidSource(series.source) && <PublishChartButton
                 chartRef={chartRef}
-                title={`${series.label}, ${countryName}`}
-                subtitle={`${series.unit}, ${FREQ_LABEL[series.freq].toLowerCase()}`}
+                title={`${tx(series.label)}, ${countryName}`}
+                subtitle={`${tx(series.unit)}, ${freqLabel(series.freq).toLowerCase()}`}
                 source={series.source || current?.source || ''}
-                period={`${series.points[0]?.date} to ${series.points[series.points.length - 1]?.date}`}
+                period={t('c_range', { from: series.points[0]?.date ?? '', to: series.points[series.points.length - 1]?.date ?? '' })}
                 fileName={`${iso3}-${series.id}`}
-              />
+              />}
               <details>
-                <summary className="text-xs text-blue-700 dark:text-blue-300 cursor-pointer">Show the numbers</summary>
+                <summary className="text-xs text-blue-700 dark:text-blue-300 cursor-pointer">{t('h_showNumbers')}</summary>
                 <div className="mt-2 max-h-64 overflow-auto">
                   <table className="w-full text-xs [font-variant-numeric:tabular-nums]">
                     <thead>
                       <tr className="text-left text-slate-500 dark:text-slate-400">
-                        <th className="py-1 pr-3 font-normal">Date</th>
-                        <th className="py-1 pr-3 font-normal text-right">{series.unit}</th>
-                        {series.points.some((p) => p.note || p.revised) && <th className="py-1 font-normal">{series.freq === 'per pull' ? 'Source that day' : 'Note'}</th>}
+                        <th className="py-1 pr-3 font-normal">{t('c_date')}</th>
+                        <th className="py-1 pr-3 font-normal text-right">{tx(series.unit)}</th>
+                        {series.points.some((p) => p.note || p.revised) && <th className="py-1 font-normal">{series.freq === 'per pull' ? t('h_sourceThatDay') : t('c_note')}</th>}
                       </tr>
                     </thead>
                     <tbody>
                       {[...series.points].reverse().map((p) => (
                         <tr key={p.date} className="border-t border-slate-100 dark:border-slate-800">
                           <td className="py-1 pr-3">{p.date}</td>
-                          <td className="py-1 pr-3 text-right">{fmt(p.value, series.unit)}</td>
+                          <td className="py-1 pr-3 text-right">{fmt(p.value, series.unit, miss)}</td>
                           {series.points.some((x) => x.note || x.revised) && <td className="py-1">{[p.note, p.revised].filter(Boolean).join(' · ')}</td>}
                         </tr>
                       ))}
@@ -210,8 +265,8 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
 
       <section className="ui-panel">
         <header className="ui-panel-header">
-          <h2 className="ui-section-title">Figures with a history</h2>
-          <p className="ui-label">Pick one to chart it.</p>
+          <h2 className="ui-section-title">{t('h_withHistory')}</h2>
+          <p className="ui-label">{t('h_pick')}</p>
         </header>
         <div className="p-2">
           <ul>
@@ -225,9 +280,9 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
                     current?.id === s.id ? 'bg-blue-50 dark:bg-blue-950/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
                   }`}
                 >
-                  <span className="text-sm text-slate-900 dark:text-white">{s.label}</span>
+                  <span className="text-sm text-slate-900 dark:text-white">{tx(s.label)}</span>
                   <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap [font-variant-numeric:tabular-nums]">
-                    {fmt(s.latest, s.unit)} · {s.last} · {s.count} pt{s.count === 1 ? '' : 's'}
+                    {fmt(s.latest, s.unit, miss)} · {s.last} · {t(s.count === 1 ? 'h_pt1' : 'h_ptN', { n: s.count })}
                   </span>
                 </button>
               </li>
@@ -235,12 +290,12 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
           </ul>
           {missing.length > 0 && (
             <>
-              <h3 className="mt-3 px-2 text-xs font-medium text-slate-500 dark:text-slate-400">No history yet</h3>
+              <h3 className="mt-3 px-2 text-xs font-medium text-slate-500 dark:text-slate-400">{t('h_noHistory')}</h3>
               <ul className="mt-1">
                 {groupMissing(missing).map((g) => (
                   <li key={g.reason} className="px-2 py-1 text-xs" data-missing="true">
-                    <span className="text-slate-700 dark:text-slate-300">{g.labels.join(', ')}</span>
-                    <span className="text-amber-700 dark:text-amber-400">: Missing. {g.reason}.</span>
+                    <span className="text-slate-700 dark:text-slate-300">{g.labels.map(tx).join(', ')}</span>
+                    <span className="text-amber-700 dark:text-amber-400">{t('h_missingSuffix', { reason: tx(g.reason) })}</span>
                   </li>
                 ))}
               </ul>

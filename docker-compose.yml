@@ -40,6 +40,9 @@ services:
       - ARCHIVE_KEEP_DAYS=${ARCHIVE_KEEP_DAYS:-0}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - DEFAULT_AI_PROVIDER=${DEFAULT_AI_PROVIDER:-ollama}
+      # Light mode for a modest laptop (docs/INSTALL.md): no AI model here, no GDELT news files,
+      # only the watchlist countries downloaded. The start scripts set it with their light option.
+      - LIGHT_MODE=${LIGHT_MODE:-off}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       - OLLAMA_QUICK_MODEL=${OLLAMA_QUICK_MODEL:-qwen2.5:7b}
       - OLLAMA_DEEP_MODEL=${OLLAMA_DEEP_MODEL:-qwen2.5:32b}
@@ -64,10 +67,11 @@ services:
     profiles:
       - bundled-ollama
     restart: unless-stopped
+    # This computer only: the app reaches the model inside Docker as http://ollama:11434. Opening
+    # 11434 to the network would let anyone on it run, download or delete models.
     ports:
-      - "11434:11434"
+      - "127.0.0.1:11434:11434"
     environment:
-      - OLLAMA_ORIGINS=*
       - OLLAMA_KEEP_ALIVE=24h
     volumes:
       - ollama_models:/root/.ollama
@@ -77,9 +81,9 @@ services:
         /bin/ollama serve &
         SERVER_PID=$$!
         sleep 4
-        echo "[EconQuest Ollama] Ensuring Phase 1-2 Sub-Agent model (${OLLAMA_QUICK_MODEL:-qwen2.5:7b}) is available..."
+        echo "[EconQuest Ollama] Checking Phase 1-2 Sub-Agent model (${OLLAMA_QUICK_MODEL:-qwen2.5:7b}) is available..."
         /bin/ollama pull ${OLLAMA_QUICK_MODEL:-qwen2.5:7b} || true
-        echo "[EconQuest Ollama] Ensuring Phase 3 Supreme Council model (${OLLAMA_DEEP_MODEL:-qwen2.5:32b}) is available..."
+        echo "[EconQuest Ollama] Checking Phase 3 Supreme Council model (${OLLAMA_DEEP_MODEL:-qwen2.5:32b}) is available..."
         /bin/ollama pull ${OLLAMA_DEEP_MODEL:-qwen2.5:32b} || true
         wait $$SERVER_PID
     networks:
@@ -92,10 +96,11 @@ services:
     profiles:
       - bundled-ollama-gpu
     restart: unless-stopped
+    # This computer only: the app reaches the model inside Docker as http://ollama:11434. Opening
+    # 11434 to the network would let anyone on it run, download or delete models.
     ports:
-      - "11434:11434"
+      - "127.0.0.1:11434:11434"
     environment:
-      - OLLAMA_ORIGINS=*
       - OLLAMA_KEEP_ALIVE=24h
     volumes:
       - ollama_models:/root/.ollama

@@ -3,6 +3,11 @@
  * into one OpenDataSnapshot.
  */
 
+import { DIST_TAX_CODES, GINI_CODE, pickDistTaxRow } from '../../utils/distributionTaxes';
+import { PEOPLE_CODES, peopleTag, pickPeopleRow } from '../../utils/peopleLiving';
+import { INTEREST_REVENUE_CODE, debtStructureUrl, parseDebtStructure } from '../../utils/debtStructure';
+import { TRADE_MIX_CODES, pickTradeMixRow, tradeMixTag } from '../../utils/tradeMix';
+import { CLIMATE_CODES, pickClimateRow } from '../../utils/climateEnergy';
 import { BIS_LABEL } from '../../utils/bisDebtSecurities';
 import { HC_SPREAD_FEED_LABEL } from '../../utils/hardCurrencySpread.ts';
 import { IDS_LABEL, QEDS_LABEL } from '../../utils/debtSchedule';
@@ -63,6 +68,7 @@ export async function fetchLiveOpenDataSnapshotNetwork(
         'DT.DOD.DECT.GN.ZS', // Total External Debt Stocks (% of GNI)
         'DT.DOD.DSTC.IR.ZS', // Short-Term Debt (% of Total Reserves)
         'PV.EST', // WGI Political Stability & Absence of Violence (-2.5 to +2.5)
+        'MS.MIL.XPND.GD.ZS', // Military expenditure (% of GDP), SIPRI via the World Bank
       ];
       const results = await Promise.allSettled(
         wbIndicators.map(async (ind) => {
@@ -94,6 +100,8 @@ export async function fetchLiveOpenDataSnapshotNetwork(
           baseline.worldBankIndicators.externalDebtPctGni = Number(val.toFixed(1)); markLive('wb.externalDebtPctGni', `World Bank, ${row.date}`);
         } else if (ind === 'DT.DOD.DSTC.IR.ZS' && val > 0) {
           liveShortTermDebtPctReserves = Number(val.toFixed(1));
+        } else if (ind === 'MS.MIL.XPND.GD.ZS' && val > 0) {
+          baseline.worldBankIndicators.militaryExpenditurePctGdp = Number(val.toFixed(2)); markLive('wb.militaryExpenditurePctGdp', `World Bank (SIPRI), ${row.date}`);
         } else if (ind === 'PV.EST') {
           // Convert WGI estimate (-2.5 to +2.5) into 0-100 percentile scale
           const pctl = Math.max(2, Math.min(98, ((val + 2.5) / 5.0) * 100));
@@ -103,6 +111,101 @@ export async function fetchLiveOpenDataSnapshotNetwork(
       if (latestWbYear) {
         activeSources.push(`World Bank Open Data v2 (${latestWbYear} Live)`);
       }
+    })(),
+
+    // 1b. Distribution and taxes (G16, src/utils/distributionTaxes.ts): Gini from surveys up to 15
+    // years back, central government tax revenue and its split, applied tariffs. Each only when found.
+    (async () => {
+      const now = new Date();
+      await Promise.allSettled(
+        DIST_TAX_CODES.map(async ({ code, field, perPage }) => {
+          const res = await fetchWithTimeout(
+            `https://api.worldbank.org/v2/country/${normalizedIso}/indicator/${code}?format=json&per_page=${perPage}${code === GINI_CODE ? '&footnote=y' : ''}`
+          );
+          if (!res.ok) return;
+          const data: any = await res.json();
+          const row = pickDistTaxRow(code, data?.[1], now);
+          if (!row) return;
+          baseline.worldBankIndicators[field] = Number(row.value.toFixed(field.startsWith('tariff') ? 2 : 1));
+          if (code === GINI_CODE) {
+            if (row.welfare) baseline.worldBankIndicators.giniWelfare = row.welfare;
+            markLive('wb.giniIndex', `World Bank (household survey), ${row.year}`);
+          } else {
+            markLive(`wb.${field}`, `World Bank, ${row.year}`);
+          }
+        })
+      );
+    })(),
+
+    // 1c. People and living standards (G17, src/utils/peopleLiving.ts): poverty at three lines from
+    // surveys up to 15 years back, remittances, labour force participation, youth unemployment, age
+    // dependency. Each only when found.
+    (async () => {
+      const now = new Date();
+      await Promise.allSettled(
+        PEOPLE_CODES.map(async ({ code, field, perPage, survey }) => {
+          const res = await fetchWithTimeout(
+            `https://api.worldbank.org/v2/country/${normalizedIso}/indicator/${code}?format=json&per_page=${perPage}${survey ? '&footnote=y' : ''}`
+          );
+          if (!res.ok) return;
+          const data: any = await res.json();
+          const row = pickPeopleRow(field, data?.[1], now);
+          if (!row) return;
+          baseline.worldBankIndicators[field] = Number(row.value.toFixed(1));
+          if (field === 'povertyLowestPct' && row.welfare) baseline.worldBankIndicators.povertyWelfare = row.welfare;
+          markLive(`wb.${field}`, peopleTag(field, row));
+        })
+      );
+    })(),
+
+    // 1d. Debt structure (G19, src/utils/debtStructure.ts): interest as % of revenue (WDI, central
+    // government) and the currency mix and new-loan maturity of public external debt (IDS).
+    (async () => {
+      const res = await fetchWithTimeout(`https://api.worldbank.org/v2/country/${normalizedIso}/indicator/${INTEREST_REVENUE_CODE}?format=json&per_page=8`);
+      if (!res.ok) return;
+      const data: any = await res.json();
+      const row = pickDistTaxRow(INTEREST_REVENUE_CODE, data?.[1]);
+      if (!row) return;
+      baseline.worldBankIndicators.interestPctRevenue = Number(row.value.toFixed(1));
+      markLive('wb.interestPctRevenue', `World Bank, ${row.year}`);
+    })(),
+    (async () => {
+      const res = await fetchWithTimeout(debtStructureUrl(normalizedIso));
+      if (!res.ok) return;
+      const parsed = parseDebtStructure(await res.json(), new Date().toISOString());
+      if (parsed) baseline.debtStructure = parsed;
+    })(),
+
+    // 1f. Climate and energy (G20, src/utils/climateEnergy.ts): greenhouse gas emissions per head and
+    // the renewable share of final energy use. Each only when found.
+    (async () => {
+      await Promise.allSettled(
+        CLIMATE_CODES.map(async ({ code, field, perPage }) => {
+          const res = await fetchWithTimeout(`https://api.worldbank.org/v2/country/${normalizedIso}/indicator/${code}?format=json&per_page=${perPage}`);
+          if (!res.ok) return;
+          const data: any = await res.json();
+          const row = pickClimateRow(field, data?.[1]);
+          if (!row) return;
+          baseline.worldBankIndicators[field] = Number(row.value.toFixed(field === 'ghgPerHeadT' ? 2 : 1));
+          markLive(`wb.${field}`, `World Bank, ${row.year}`);
+        })
+      );
+    })(),
+
+    // 1e. Trade and commodity exposure (G18, src/utils/tradeMix.ts): shares of goods exports and
+    // imports in fuel, ores and metals, food and manufactures, and net energy imports. Each only when found.
+    (async () => {
+      await Promise.allSettled(
+        TRADE_MIX_CODES.map(async ({ code, field, perPage }) => {
+          const res = await fetchWithTimeout(`https://api.worldbank.org/v2/country/${normalizedIso}/indicator/${code}?format=json&per_page=${perPage}`);
+          if (!res.ok) return;
+          const data: any = await res.json();
+          const row = pickTradeMixRow(field, data?.[1]);
+          if (!row) return;
+          baseline.worldBankIndicators[field] = Number(row.value.toFixed(1));
+          markLive(`wb.${field}`, tradeMixTag(row));
+        })
+      );
     })(),
 
     // 2. Expanded IMF DataMapper WEO API (Debt/GDP, 2027F Debt, CPI Inflation, Real GDP Growth, Primary Balance)
@@ -363,11 +466,15 @@ export async function fetchLiveOpenDataSnapshotNetwork(
   // 7. Apply any user-configured GUI External/Internal Macro REST Connectors
   await applyGuiMacroConnectorsToSnapshot(baseline, normalizedIso, activeSources);
 
-  // Dynamically recompute DSA (r - g), Greenspan-Guidotti Debt Rollover, Yield Curve & Real Policy Rate
-  recomputeDerivedOpenDataAnalytics(baseline, {
-    liquidReservesUsdBn: liveReservesUsdBn,
-    shortTermDebtPctReserves: liveShortTermDebtPctReserves,
-  });
+  // Reserve cover from the World Bank figures only (Greenspan-Guidotti: reserves over short-term
+  // external debt); without both figures it stays Missing.
+  if (liveReservesUsdBn !== undefined) baseline.debtRollover.liquidFxReservesUsdBn = liveReservesUsdBn;
+  if (liveReservesUsdBn !== undefined && liveShortTermDebtPctReserves !== undefined) {
+    baseline.debtRollover.shortTermExternalDebtUsdBn = Number(((liveReservesUsdBn * liveShortTermDebtPctReserves) / 100).toFixed(1));
+    baseline.debtRollover.greenspanGuidottiRatioPct = Number((10000 / liveShortTermDebtPctReserves).toFixed(0));
+  }
+  // Real policy rate and the official calendar, from the figures above only.
+  recomputeDerivedOpenDataAnalytics(baseline);
 
   // Only feeds that actually answered count as live; never inherit the sample list.
   const verifiedLiveSources = Array.from(new Set(activeSources));

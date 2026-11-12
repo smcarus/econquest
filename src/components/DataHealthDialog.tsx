@@ -6,15 +6,20 @@
  * - Figure alerts: watchlist figures that went missing, got old, jumped, left their range or were revised.
  * - Revisions: IMF and World Bank yearly values changed since the app first downloaded them.
  * - Scheduled: jobs the server runs by itself (Download all, the pre-registered tests) and how each run ended.
+ * - Calendar: the hand-typed official calendar against today (old checks, schedules running out).
+ * - Inflation: every country's monthly inflation figure with its source and age; old OECD copies flagged.
  *
  * Nothing here changes a figure: it says what to check.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Activity, RefreshCw, X } from 'lucide-react';
 import type { ConnectionState } from '../utils/connectionCheck';
-import type { SourceHealth } from '../utils/dataHealth';
+import { ENDED_NOTE, possiblyEnded, type SourceHealth } from '../utils/dataHealth';
+import { licencesDue } from '../data/dataLicences';
 import type { FigureEvent, FigureEventKind, OpenIssue } from '../utils/figureWatch';
 import type { HistoryRevision } from '../utils/officialHistory';
+import { CALENDAR_FLAG_TEXT, type CalendarHealth } from '../utils/calendarHealth';
+import { BASIS_TEXT, INFLATION_FLAG_TEXT, type InflationHealth } from '../utils/inflationHealth';
 
 type SourcesReply = {
   sources: SourceHealth[];
@@ -30,12 +35,12 @@ type RevisionsReply = { revisions: RevisionRow[]; total: number; projectionsHidd
 type JobRun = { startedAt: string; finishedAt?: string; ok?: boolean; summary?: string };
 type ScheduledReply = {
   timeZone: string;
-  jobs: Array<{ id: string; label: string; what: string; env: string; on: boolean; schedule: string; running: boolean; lastSkipped: { at: string; reason: string } | null; runs: JobRun[] }>;
+  jobs: Array<{ id: string; label: string; what: string; env: string; on: boolean; schedule: string; fromDefault?: boolean; running: boolean; lastSkipped: { at: string; reason: string } | null; runs: JobRun[] }>;
   nightlyCheck: { schedule: string };
   file: string;
 };
 
-export type DataHealthTab = 'sources' | 'figures' | 'revisions' | 'scheduled';
+export type DataHealthTab = 'sources' | 'figures' | 'revisions' | 'scheduled' | 'calendar' | 'inflation';
 
 const when = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
@@ -95,6 +100,8 @@ function SourcesView() {
     }
   };
   const failing = data?.sources.filter((s) => FAILING.has(s.state)) || [];
+  // Flags and answer ratings (roadmap P2, P3): counts only, from data/local/feedback.jsonl.
+  const feedback = useJson<{ line: string }>('/api/feedback/summary');
   return (
     <div className="space-y-3">
       {error && <p className="text-rose-600 dark:text-rose-400">{error}</p>}
@@ -115,6 +122,16 @@ function SourcesView() {
               ? `${failing.length} sources failing at the last check, listed first below.${failing.length >= data.sources.filter((x) => x.group === 'free').length ? ' Every free source failed: this computer was probably offline.' : ''}`
               : `${failing.length} source${failing.length === 1 ? '' : 's'} failing at the last check: ${failing.map((s) => s.name).join(', ')}.`
             : 'Every source that was asked answered at the last check.'}
+        </p>
+      )}
+      {licencesDue().length > 0 && (
+        <p className="text-amber-700 dark:text-amber-400" data-health-licence-due="true">
+          Licence check due (terms last read over 12 months ago): {licencesDue().map((r) => r.name).join('; ')}. Read each source&apos;s terms again and update src/data/dataLicences.ts (docs/MAINTENANCE.md).
+        </p>
+      )}
+      {feedback.data && (
+        <p className="text-xs text-slate-500 dark:text-slate-400" data-health-feedback="true">
+          Feedback: {feedback.data.line} `npm run feedback:export` writes the rated questions for the council test set.
         </p>
       )}
       {data && !data.sources.length && <p>The first check runs tonight after {data.nightly.time}, or press Check now.</p>}
@@ -138,6 +155,11 @@ function SourcesView() {
               {s.asked ? ` · Connected ${s.connected} of its last ${s.asked} checks` : ''}
               {FAILING.has(s.state) && s.lastConnectedAt ? ` · last connected ${day(s.lastConnectedAt)}` : ''}
             </p>
+            {possiblyEnded(s) && (
+              <p className="text-xs text-amber-700 dark:text-amber-400" data-health-ended={s.id}>
+                {ENDED_NOTE}
+              </p>
+            )}
           </li>
         ))}
       </ul>
@@ -292,6 +314,7 @@ function ScheduledView() {
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {j.what}
               {!j.on ? ` To switch it on, set ${j.env} on the server (see docs/HOME_SERVER.md).` : ''}
+              {j.on && j.fromDefault ? ` On by default; set ${j.env}=off on the server to stop it.` : ''}
             </p>
             {j.lastSkipped && <p className="text-xs text-amber-700 dark:text-amber-300">{when(j.lastSkipped.at)}: {j.lastSkipped.reason}</p>}
             {j.runs.length > 0 && (
@@ -317,6 +340,108 @@ function ScheduledView() {
   );
 }
 
+function CalendarView() {
+  const { data, error } = useJson<CalendarHealth>('/api/data/health/calendar');
+  const short = (d: string | null) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '');
+  return (
+    <div className="space-y-3">
+      {error && <p className="text-rose-600 dark:text-rose-400">{error}</p>}
+      <p className="text-sm text-slate-600 dark:text-slate-300">
+        Central bank, release, election and budget dates are typed in by hand from each source page (src/data/officialCalendar.ts), so they go out of date unless someone reads the pages again. This lists what to check; it never adds or moves a date.
+      </p>
+      {data && (
+        <p className="text-sm">
+          {data.needsLook ? `${data.needsLook} item${data.needsLook === 1 ? '' : 's'} to check.` : 'Nothing to check: every schedule runs beyond the next two months and was read recently.'}
+        </p>
+      )}
+      {data && data.noDecisionDates.length > 0 && (
+        <p className="text-sm text-amber-700 dark:text-amber-300">No central bank decision dates on file for: {data.noDecisionDates.join(', ')}. Their pages show &quot;no date on file&quot; until someone adds the schedule.</p>
+      )}
+      {data && data.rows.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs text-slate-500 dark:text-slate-400">
+              <tr>
+                <th className="pr-3 font-normal">Country</th>
+                <th className="pr-3 font-normal">Dates</th>
+                <th className="pr-3 font-normal">Next</th>
+                <th className="pr-3 font-normal">Last listed</th>
+                <th className="pr-3 font-normal">Source read</th>
+                <th className="font-normal">Check</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.rows.map((r) => (
+                <tr key={`${r.iso3}-${r.category}`} className="border-t border-slate-100 dark:border-slate-800 align-top">
+                  <td className="pr-3">{r.iso3}</td>
+                  <td className="pr-3">
+                    <a href={r.sourceUrl} target="_blank" rel="noreferrer" className="underline decoration-dotted" title={r.sourceName}>
+                      {r.label}
+                    </a>
+                    <span className="text-xs text-slate-500 dark:text-slate-400"> ({r.upcoming} ahead)</span>
+                  </td>
+                  <td className="pr-3 whitespace-nowrap">{short(r.nextDate) || 'none'}</td>
+                  <td className="pr-3 whitespace-nowrap">{short(r.lastDate)}</td>
+                  <td className="pr-3 whitespace-nowrap">
+                    {short(r.checked)} <span className="text-xs text-slate-500 dark:text-slate-400">({r.ageDays} d)</span>
+                  </td>
+                  <td className={r.flags.length ? 'text-amber-700 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400'}>{r.flags.length ? r.flags.map((f) => CALENDAR_FLAG_TEXT[f]).join('; ') : 'OK'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InflationView() {
+  const { data, error } = useJson<InflationHealth>('/api/data/health/inflation');
+  const month = (m?: string) => (m ? new Date(`${m}-01T00:00:00`).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : '');
+  return (
+    <div className="space-y-3">
+      {error && <p className="text-rose-600 dark:text-rose-400">{error}</p>}
+      <p className="text-sm text-slate-600 dark:text-slate-300">
+        Each country's monthly inflation comes from the freshest source that answered: its own statistics office or central bank, Eurostat, IMF monthly consumer prices, and last the OECD copy on DBnomics, which stopped updating in June 2026. A country's series always comes whole from one source. This lists each figure's source and age; it never changes a figure.
+      </p>
+      {data && (
+        <p className="text-sm">
+          {data.needsLook ? `${data.needsLook} figure${data.needsLook === 1 ? '' : 's'} more than ${data.oldDays} days old or missing.` : `Every figure is under ${data.oldDays} days old.`}
+        </p>
+      )}
+      {data && data.rows.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs text-slate-500 dark:text-slate-400">
+              <tr>
+                <th className="pr-3 font-normal">Country</th>
+                <th className="pr-3 font-normal">Source</th>
+                <th className="pr-3 font-normal">Month</th>
+                <th className="pr-3 font-normal">Inflation</th>
+                <th className="pr-3 font-normal">Age</th>
+                <th className="font-normal">Check</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.rows.map((r) => (
+                <tr key={r.iso3} className="border-t border-slate-100 dark:border-slate-800 align-top">
+                  <td className="pr-3">{r.iso3}</td>
+                  <td className="pr-3">{r.basis ? `${BASIS_TEXT[r.basis]}${r.source ? ` (${r.source})` : ''}` : 'none'}</td>
+                  <td className="pr-3 whitespace-nowrap">{month(r.month)}</td>
+                  <td className="pr-3 whitespace-nowrap">{r.yoyPct !== undefined ? `${r.yoyPct.toFixed(1)}%` : ''}</td>
+                  <td className="pr-3 whitespace-nowrap">{r.ageDays !== undefined ? `${r.ageDays} d` : ''}</td>
+                  <td className={r.flag ? 'text-amber-700 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400'}>{r.flag ? INFLATION_FLAG_TEXT[r.flag] : 'OK'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DataHealthDialog({ onClose, initialTab = 'sources' }: { onClose: () => void; initialTab?: DataHealthTab }) {
   const [tab, setTab] = useState<DataHealthTab>(initialTab);
   const closeRef = useRef<HTMLButtonElement | null>(null);
@@ -331,6 +456,8 @@ export function DataHealthDialog({ onClose, initialTab = 'sources' }: { onClose:
     ['figures', 'Figure alerts'],
     ['revisions', 'Revisions'],
     ['scheduled', 'Scheduled'],
+    ['calendar', 'Calendar'],
+    ['inflation', 'Inflation'],
   ];
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
@@ -362,6 +489,8 @@ export function DataHealthDialog({ onClose, initialTab = 'sources' }: { onClose:
           {tab === 'figures' && <FiguresView />}
           {tab === 'revisions' && <RevisionsView />}
           {tab === 'scheduled' && <ScheduledView />}
+          {tab === 'calendar' && <CalendarView />}
+          {tab === 'inflation' && <InflationView />}
         </div>
       </div>
     </div>

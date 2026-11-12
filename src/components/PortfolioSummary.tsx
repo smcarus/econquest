@@ -3,10 +3,12 @@ import React, { useMemo } from 'react';
 import { Upload } from 'lucide-react';
 import type { LiveWatchlistItem } from '../types/council';
 import { yieldSourceHelp, yieldSourceNote } from '../utils/watchlistYield';
-import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEngine';
 import { summariseBook, type Holding } from '../utils/holdings';
 import { bookView, type BookLine } from '../utils/bookNote';
 import { missingReason, type FigureKey } from '../utils/liveFigures';
+import { useT, useTx } from '../i18n/useLang';
+import { TOOLS } from '../i18n/messages/tools';
+
 
 /**
  * Top of the Portfolio page: what the book holds, with weights and live figures by country.
@@ -21,7 +23,6 @@ interface PortfolioSummaryProps {
   /** Watchlist plus the full catalogue, for the figures of held countries. */
   riskLookup: LiveWatchlistItem[];
   holdings: Holding[];
-  stagedTickets: StagedTradeTicketSpec[];
   onOpenCountry: (item: LiveWatchlistItem) => void;
   onManageHoldings: () => void;
 }
@@ -42,10 +43,12 @@ type Row = BookLine;
 /** A grey Missing with the short reason underneath and the fix in the tooltip. */
 const MissingCell: React.FC<{ k: FigureKey; iso3: string }> = ({ k, iso3 }) => {
   const r = missingReason(k, iso3);
+  const t = useT(TOOLS);
+  const tx = useTx();
   return (
-    <span title={r.help}>
-      <span className="text-slate-400 dark:text-slate-500">Missing</span>
-      <span className="block text-xs whitespace-nowrap text-amber-700 dark:text-amber-400">{r.short}</span>
+    <span title={tx(r.help)}>
+      <span className="text-slate-400 dark:text-slate-500">{t('c_missing')}</span>
+      <span className="block text-xs whitespace-nowrap text-amber-700 dark:text-amber-400">{tx(r.short)}</span>
     </span>
   );
 };
@@ -60,17 +63,18 @@ function coveredAvg(rows: Row[], get: (i: LiveWatchlistItem) => number | undefin
   return { value: have.reduce((a, r) => a + get(r.item!)! * r.weight, 0) / w, share: w / wAll };
 }
 
-const coverNote = (c: { share: number }) => (c.share >= 0.999 ? undefined : `${(c.share * 100).toFixed(0)}% of weight has this`);
 
 export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
   watchlistItems,
   riskLookup,
   holdings,
-  stagedTickets,
   onOpenCountry,
   onManageHoldings,
 }) => {
   const hasHoldings = holdings.length > 0;
+  const t = useT(TOOLS);
+  const tx = useTx();
+  const coverNote = (c: { share: number }) => (c.share >= 0.999 ? undefined : t('ps_cover', { pct: (c.share * 100).toFixed(0) }));
 
   const s = useMemo(() => {
     const v = bookView(holdings, riskLookup, watchlistItems);
@@ -85,57 +89,59 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
   if (!hasHoldings && watchlistItems.length === 0) {
     return (
       <div className="flex flex-wrap items-center gap-3">
-        <p className="ui-body">No holdings and an empty watchlist. Import holdings to see your book.</p>
+        <p className="ui-body">{t('ps_empty')}</p>
         <button type="button" className="ui-btn ui-btn-primary" onClick={onManageHoldings}>
-          <Upload className="w-3.5 h-3.5" /> Import holdings
+          <Upload className="w-3.5 h-3.5" /> {t('ps_importHoldings')}
         </button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3" data-no-stat-ref="true" data-no-provenance-overlay="true">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="ui-label">
           {hasHoldings
-            ? `Your holdings: ${holdings.length} position${holdings.length === 1 ? '' : 's'}, weighted by gross notional.`
-            : 'No holdings loaded, so this table is your watchlist at equal weight. Import holdings to weight it by your positions.'}
+            ? holdings.length === 1
+              ? t('ps_yoursOne')
+              : t('ps_yours', { n: holdings.length })
+            : t('ps_equal')}
         </p>
         <button type="button" className="ui-btn" onClick={onManageHoldings}>
-          <Upload className="w-3.5 h-3.5" /> {hasHoldings ? 'Edit holdings' : 'Import holdings'}
+          <Upload className="w-3.5 h-3.5" /> {hasHoldings ? t('ps_editHoldings') : t('ps_importHoldings')}
         </button>
       </div>
 
       {hasHoldings && s.book ? (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-3">
-          <Stat label="Gross notional" value={fmtMm(s.book.grossUsdMm)} note={`${s.countries} ${s.countries === 1 ? 'country' : 'countries'}`} />
+          <Stat label={t('ps_gross')} value={fmtMm(s.book.grossUsdMm)} note={t('ps_countries', { n: s.countries })} />
           <Stat
-            label="Net credit exposure"
+            label={t('ps_netCredit')}
             value={signed(s.book.netCreditUsdMm, fmtMm)}
-            note="Long bonds and sold protection, less hedges"
+            note={t('ps_netCreditNote')}
           />
           <Stat
-            label="Credit DV01"
+            label={t('ps_dv01')}
             value={`${signed(s.book.dv01UsdK, (v) => `$${v.toFixed(1)}k`)} / bp`}
-            note={s.book.missingDuration ? `${s.book.missingDuration} position${s.book.missingDuration === 1 ? '' : 's'} without duration left out` : 'Loss per 1 bp wider spreads'}
+            note={s.book.missingDuration ? t('ps_noDuration', { n: s.book.missingDuration }) : t('ps_dv01Note')}
           />
           {/* CDS hidden for now (src/utils/cdsHidden.ts). */}
           {CDS_HIDDEN ? null : s.avgCds ? (
-            <Stat label="Weighted 5Y CDS" value={`${s.avgCds.value.toFixed(0)} bps`} note={coverNote(s.avgCds) || 'your CDS data'} />
+            <Stat label={t('ps_cds')} value={`${s.avgCds.value.toFixed(0)} bps`} note={coverNote(s.avgCds) || t('ps_cdsYours')} />
           ) : (
-            <Stat label="Weighted 5Y CDS" value="Missing" note={missingReason('cds', '').short} help={missingReason('cds', '').help} missing />
+            <Stat label={t('ps_cds')} value={t('c_missing')} note={tx(missingReason('cds', '').short)} help={tx(missingReason('cds', '').help)} missing />
           )}
         </div>
       ) : null}
 
       {s.book && s.book.uncovered.length > 0 && (
         <p className="ui-label">
-          {s.book.uncovered.join(', ')} {s.book.uncovered.length === 1 ? 'is' : 'are'} not covered by the app. These positions count in notional and DV01 but have no figures.
+          {t('ps_uncovered', { list: s.book.uncovered.join(', ') })}
         </p>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <div className="lg:col-span-2 min-w-0">
+      <div>
+        <div className="min-w-0">
           {/* Phones: one tappable card per country instead of a table that scrolls sideways. */}
           <ul className="sm:hidden divide-y divide-slate-100 dark:divide-slate-800 border-y border-slate-100 dark:border-slate-800">
             {s.rows.map((r) => {
@@ -143,15 +149,15 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
                 <>
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-sm font-medium text-slate-900 dark:text-white">{r.countryName}</span>
-                    {!r.item && <span className="ui-badge">No data</span>}
+                    {!r.item && <span className="ui-badge">{t('ps_noData')}</span>}
                   </div>
                   <dl className="mt-1 grid grid-cols-2 gap-x-3 text-sm ui-num">
                     <div>
-                      <dt className="ui-label">Weight</dt>
+                      <dt className="ui-label">{t('ps_weight')}</dt>
                       <dd>{(r.weight * 100).toFixed(0)}%</dd>
                     </div>
-                    <div title={r.item?.yield10YPct !== undefined ? yieldSourceHelp(r.item) : undefined}>
-                      <dt className="ui-label">10Y yield</dt>
+                    <div title={r.item?.yield10YPct !== undefined ? tx(yieldSourceHelp(r.item)) : undefined}>
+                      <dt className="ui-label">{t('ps_yield')}</dt>
                       <dd>{r.item?.yield10YPct !== undefined ? `${r.item.yield10YPct.toFixed(2)}%` : r.item ? <MissingCell k="yield" iso3={r.iso3} /> : '–'}</dd>
                       {r.item?.yield10YPct !== undefined && (
                         <dd
@@ -161,19 +167,19 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
                               : 'text-slate-500 dark:text-slate-400'
                           }`}
                         >
-                          {yieldSourceNote(r.item)}
+                          {tx(yieldSourceNote(r.item))}
                         </dd>
                       )}
                     </div>
                     {hasHoldings && (
                       <div className="mt-1">
-                        <dt className="ui-label">Net credit</dt>
+                        <dt className="ui-label">{t('ps_netCreditCol')}</dt>
                         <dd>{signed(r.netCreditUsdMm ?? 0, fmtMm)}</dd>
                       </div>
                     )}
                     {hasHoldings && (
                       <div className="mt-1">
-                        <dt className="ui-label">DV01 ($k/bp)</dt>
+                        <dt className="ui-label">{t('ps_dv01Col')}</dt>
                         <dd>{signed(r.dv01UsdK ?? 0, (v) => v.toFixed(1))}</dd>
                       </div>
                     )}
@@ -199,14 +205,14 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
           </ul>
           <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-sm">
-            <caption className="sr-only">The book by country</caption>
+            <caption className="sr-only">{t('ps_caption')}</caption>
             <thead>
               <tr className="ui-label text-left border-b border-slate-100 dark:border-slate-800">
-                <th className="py-1.5 pr-3 font-normal">Country</th>
-                {hasHoldings && <th className="py-1.5 pr-3 font-normal text-right">Net credit</th>}
-                {hasHoldings && <th className="py-1.5 pr-3 font-normal text-right">DV01 ($k/bp)</th>}
-                <th className="py-1.5 pr-3 font-normal text-right">10Y yield</th>
-                <th className="py-1.5 pr-3 font-normal text-right">Weight</th>
+                <th className="py-1.5 pr-3 font-normal">{t('ho_country')}</th>
+                {hasHoldings && <th className="py-1.5 pr-3 font-normal text-right">{t('ps_netCreditCol')}</th>}
+                {hasHoldings && <th className="py-1.5 pr-3 font-normal text-right">{t('ps_dv01Col')}</th>}
+                <th className="py-1.5 pr-3 font-normal text-right">{t('ps_yield')}</th>
+                <th className="py-1.5 pr-3 font-normal text-right">{t('ps_weight')}</th>
                 <th className="py-1.5 font-normal w-1/4 hidden sm:table-cell" aria-hidden="true" />
               </tr>
             </thead>
@@ -219,7 +225,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
                 >
                   <td className="py-1.5 pr-3 text-slate-900 dark:text-white whitespace-nowrap">
                     {r.countryName}
-                    {!r.item && <span className="ui-badge ml-2">No data</span>}
+                    {!r.item && <span className="ui-badge ml-2">{t('ps_noData')}</span>}
                   </td>
                   {hasHoldings && (
                     <td className="py-1.5 pr-3 text-right ui-num whitespace-nowrap">{signed(r.netCreditUsdMm ?? 0, fmtMm)}</td>
@@ -227,7 +233,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
                   {hasHoldings && (
                     <td className="py-1.5 pr-3 text-right ui-num">{signed(r.dv01UsdK ?? 0, (v) => v.toFixed(1))}</td>
                   )}
-                  <td className="py-1.5 pr-3 text-right" title={r.item?.yield10YPct !== undefined ? yieldSourceHelp(r.item) : undefined}>
+                  <td className="py-1.5 pr-3 text-right" title={r.item?.yield10YPct !== undefined ? tx(yieldSourceHelp(r.item)) : undefined}>
                     {r.item && r.item.yield10YPct === undefined ? (
                       <MissingCell k="yield" iso3={r.iso3} />
                     ) : r.item ? (
@@ -240,7 +246,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
                               : 'text-slate-500 dark:text-slate-400'
                           }`}
                         >
-                          {yieldSourceNote(r.item)}
+                          {tx(yieldSourceNote(r.item))}
                         </span>
                       </>
                     ) : (
@@ -265,30 +271,10 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
             {(() => {
               const items = s.rows.filter((r) => r.item);
               const have = items.filter((r) => r.item!.yield10YPct !== undefined).length;
-              return `${have} of ${items.length} yields are official or uploaded figures; the rest are missing, not estimated.`;
+              return t('ps_yieldsNote', { have, n: items.length });
             })()}{' '}
-            Tap or click a country to open it.
+            {t('ps_tap')}
           </p>
-        </div>
-
-        <div>
-          <div className="ui-section-title mb-1">Staged trade ideas</div>
-          {stagedTickets.length === 0 ? (
-            <p className="ui-label">None yet. Stage a ticket from Workspace or any desk.</p>
-          ) : (
-            <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-              {stagedTickets.slice(0, 5).map((t) => (
-                <li key={t.ticketId} className="py-1.5">
-                  <div className="text-sm text-slate-900 dark:text-white truncate" title={t.strategyTitle}>
-                    {t.strategyTitle}
-                  </div>
-                  <div className="ui-label">
-                    {t.countryName} · conviction {t.convictionScore0To100}/100
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
       </div>
     </div>

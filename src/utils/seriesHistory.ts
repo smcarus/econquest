@@ -24,12 +24,18 @@ import { outputGapFromGrowth, outputGapSeries } from './outputGap';
 import { fxDailySeries, type FxHistoryFile } from './fxHistory';
 import type { FxExtraFile } from './fxExtra';
 import { bisCreditSeries, type BisCreditCycle } from './bisCreditCycle';
+import { privateDebtSeries, sectorBalanceSeries } from './sectorBalances';
 import { idsCreditorSeries, type IdsCreditors } from './idsCreditors';
 import { sovereignDefaultSeries, type SovereignDefaults } from './sovereignDefaults';
 import { inflationExpectationSeries, type InflationExpectations } from './inflationExpectations';
 import { focusSeries, type InflationSurveys } from './inflationSurveys';
+import { portActivitySeries, type PortWatchPorts } from './portWatch';
+import { ustAuctionSeries, type UstAuctionPull } from './treasuryAuctions';
+import { euSurveySeries, type EuSurveyPull } from './euSurveys';
+import { monthlyIndicatorSeries, type MonthlyIndicatorsPull } from './monthlyIndicators';
 import { impliedDefaultSeries } from './impliedDefault';
 import { BIS_ISO2 } from './bisDebtSecurities';
+import { seriesTags, type SeriesTags } from './seriesDefinitions';
 import { HC_SPREAD_NOT_CDS, HC_SPREAD_SOURCE, hasHcSpreadSource, type HcSpreadPull } from './hardCurrencySpread';
 
 export type SeriesFreq = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'per pull';
@@ -56,6 +62,8 @@ export interface Series {
   points: SeriesPoint[];
   /** A sentence on how to read it, when it is not obvious. */
   about?: string;
+  /** Loaded by the user from their own CSV file (Menu > Your data), not from a feed. */
+  own?: boolean;
 }
 
 export interface SeriesMissing {
@@ -109,6 +117,14 @@ export interface SeriesInputs {
   inflationExpectations?: InflationExpectations | null;
   /** Survey expectations (src/utils/inflationSurveys.ts): the Focus series on Brazil's page. */
   inflationSurveys?: InflationSurveys | null;
+  /** The country's ports added up, IMF PortWatch (src/utils/portWatch.ts), when pulled. */
+  portWatch?: PortWatchPorts | null;
+  /** US Treasury auctions (src/utils/treasuryAuctions.ts), the saved copy; United States only. */
+  ustAuctions?: UstAuctionPull | null;
+  /** EU business and consumer surveys (src/utils/euSurveys.ts), the saved copy; EU members only. */
+  euSurveys?: EuSurveyPull | null;
+  /** Industrial production, retail sales and monthly unemployment (src/utils/monthlyIndicators.ts), the saved copy. */
+  monthlyIndicators?: MonthlyIndicatorsPull | null;
   /** The country's currency (ISO 4217), for the daily exchange rate. */
   currency?: string;
 }
@@ -359,10 +375,15 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
     hcSpread(code, inputs.hcSpread),
     impliedDefaultSeries(hcSpread(code, inputs.hcSpread)),
     ...bisCreditSeries(inputs.bisCredit, Boolean(BIS_ISO2[code])),
+    ...privateDebtSeries(inputs.bisCredit, Boolean(BIS_ISO2[code])),
     ...idsCreditorSeries(inputs.idsCreditors),
     ...sovereignDefaultSeries(code, inputs.sovereignDefaults),
     ...inflationExpectationSeries(code, inputs.inflationExpectations),
     ...focusSeries(code, inputs.inflationSurveys),
+    ...portActivitySeries(code, inputs.portWatch),
+    ...ustAuctionSeries(code, inputs.ustAuctions),
+    ...euSurveySeries(code, inputs.euSurveys),
+    ...monthlyIndicatorSeries(code, inputs.monthlyIndicators),
     ...ARCHIVE_FIGURES.map((f) => figureHistory(f, inputs)),
     ...OFFICIAL_FIGURES.filter((o) => !ARCHIVE_FIGURES.some((f) => f.id === o.id)).map((o) => officialSeries(inputs.official, o)),
   ];
@@ -377,6 +398,8 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
       else all[gapAt] = { ...all[gapAt], reason: `${(all[gapAt] as SeriesMissing).reason}; the app estimate needs more history: ${est.reason}` };
     }
   }
+  // Sector balances (G40, src/utils/sectorBalances.ts): private and foreign, worked out from the government balance and current account.
+  all.push(...sectorBalanceSeries(all.find((x) => x.id === 'overall_balance'), all.find((x) => x.id === 'current_account_imf')));
   return { iso3: code, series: all.filter(isSeries), missing: all.filter((x): x is SeriesMissing => !isSeries(x)) };
 }
 
@@ -396,13 +419,15 @@ export function commoditySeries(prices: PriceSeries[], pulledAt: Record<'pink_sh
 }
 
 /** A series without its points, for lists. */
-export function seriesSummary(s: Series): Omit<Series, 'points'> & { count: number; first?: string; last?: string; latest?: number; projectedTo?: string } {
+export function seriesSummary(s: Series): Omit<Series, 'points'> & { count: number; first?: string; last?: string; latest?: number; projectedTo?: string; tags: SeriesTags } {
   const { points, ...rest } = s;
   // The latest figure is the newest outturn; IMF projection years are counted but never shown as "latest".
   const actual = points.filter((p) => p.note !== 'IMF projection');
   const lastActual = actual[actual.length - 1] ?? points[points.length - 1];
   const projectedTo = actual.length < points.length ? points[points.length - 1]?.date : undefined;
-  return { ...rest, count: points.length, first: points[0]?.date, last: lastActual?.date, latest: lastActual?.value, ...(projectedTo ? { projectedTo } : {}) };
+  // What it measures and whose figure it is (data plan G6).
+  const tags = seriesTags(s as Series & { paid?: boolean });
+  return { ...rest, count: points.length, first: points[0]?.date, last: lastActual?.date, latest: lastActual?.value, ...(projectedTo ? { projectedTo } : {}), tags };
 }
 
 /** Months between two YYYY-MM periods. */

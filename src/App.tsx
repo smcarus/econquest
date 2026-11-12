@@ -4,11 +4,17 @@
  */
 
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { HelpLevelButton } from './components/HelpLevel';
+import { LanguageButton } from './components/LanguageButton';
+import { useT } from './i18n/useLang';
+import { RESEARCH } from './i18n/messages/research';
+import { REPORTS } from './i18n/messages/reports';
+import { SHELL } from './i18n/messages/shell';
 import {
   AIRuntimeConfig,
   CROOverrideState,
   CouncilAssessmentRun,
-  CustomSovereignOnboardingDraft,
+  AddedCountry,
   ExternalInternalConnectorMetricKey,
   OpenDataSnapshot,
   UserPersonaId,
@@ -23,17 +29,16 @@ import {
   addNewDefaultWatchlists,
   loadSeenDefaultWatchlists,
   saveSeenDefaultWatchlists,
-  buildAnnotatedChartsForSovereign,
   buildDefaultAssessmentRun,
   buildBaselineOpenData,
   recomputeDerivedOpenDataAnalytics,
   registerCustomSovereignInCatalog,
 } from './data/presetsAndBaselines';
 import {
-  loadCustomSovereignsFromStorage,
+  loadAddedCountriesFromStorage,
   loadWorkspaceSessionFromStorage,
   saveWorkspaceSessionToStorage,
-} from './utils/turnkeyReadinessAndCommandEngine';
+} from './utils/workspaceSession';
 import { WatchlistSidebar } from './components/WatchlistSidebar';
 import { toLive } from './utils/liveFigures';
 import { WATCHLIST_CHANNEL, WATCHLIST_STORAGE_KEY, type WatchlistMessage } from './utils/watchlistView';
@@ -79,14 +84,6 @@ import { EconQuestLogo } from './components/EconQuestLogo';
 import { lazyNamed, DeskLoading } from './components/LazyDesk';
 import { SavedCouncilDocuments } from './components/CouncilDocuments';
 import { describeSnapshotSync } from './utils/syncMessages';
-import {
-  ExecutiveTearSheetAndTradeTicketDrawer,
-} from './components/MultiSovereignComparatorAndTicketDrawers';
-import {
-  computeSovereignNssYieldCurveSuite,
-  DEFAULT_NSS_SHOCK_INPUTS,
-  StagedTradeTicketSpec,
-} from './utils/nssYieldCurveAndCatalystEngine';
 import { watchlistYieldFields } from './utils/watchlistYield';
 import {
   Sun,
@@ -99,6 +96,8 @@ import {
   Activity,
   ShieldQuestion,
   NotebookPen,
+  FileUp,
+  Compass,
   Info,
   ChevronDown,
   BookOpen,
@@ -111,7 +110,7 @@ import {
   Users,
 } from 'lucide-react';
 import { OfflineDataDialog, OfflinePill, useOnlineStatus } from './components/OfflineData';
-import { AboutDialog, OPEN_ABOUT_EVENT } from './components/AboutDialog';
+import { OPEN_ABOUT_EVENT } from './components/aboutOpen';
 import type { PublicAccount } from './utils/auth';
 import { fetchAuthStatus } from './utils/authClient';
 import { ROLE_LABEL } from './utils/authLabels';
@@ -127,7 +126,6 @@ import { loadShareMode, saveShareMode } from './utils/shareMode';
 
 // Desks load on first use, so the first screen does not download all 41 of them.
 // The menu dialogs load when first opened, keeping them out of the first download.
-const GlobalTerminalProvenanceAndStatRefController = lazyNamed(() => import('./components/RealTimeDataProvenanceOverlay'), 'GlobalTerminalProvenanceAndStatRefController');
 const IcMemoBuilder = lazyNamed(() => import('./components/IcMemoBuilder'), 'IcMemoBuilder');
 const ResearchNotebooks = lazyNamed(() => import('./components/ResearchNotebooks'), 'ResearchNotebooks');
 const PolicyReviews = lazyNamed(() => import('./components/PolicyReviews'), 'PolicyReviews');
@@ -135,12 +133,15 @@ const TeachingEpisodes = lazyNamed(() => import('./components/TeachingEpisodes')
 const AuditLogDialog = lazyNamed(() => import('./components/AuditLogDialog'), 'AuditLogDialog');
 const DataHealthDialog = lazyNamed(() => import('./components/DataHealthDialog'), 'DataHealthDialog');
 const IdeaJournalDialog = lazyNamed(() => import('./components/IdeaJournalDialog'), 'IdeaJournalDialog');
+const OwnSeriesDialog = lazyNamed(() => import('./components/OwnSeriesDialog'), 'OwnSeriesDialog');
+const AboutDialog = lazyNamed(() => import('./components/AboutDialog'), 'AboutDialog');
+const AddCountryDialog = lazyNamed(() => import('./components/AddCountryDialog'), 'AddCountryDialog');
+const QuestsDialog = lazyNamed(() => import('./components/QuestsDialog'), 'QuestsDialog');
 const ModelRegisterDialog = lazyNamed(() => import('./components/ModelRegisterDialog'), 'ModelRegisterDialog');
 const AccountDialog = lazyNamed(() => import('./components/AccountDialog'), 'AccountDialog');
 const UsersDialog = lazyNamed(() => import('./components/UsersDialog'), 'UsersDialog');
-const CustomSovereignOnboardingModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'CustomSovereignOnboardingModal');
-const SelfHostAndOllamaRuntimeModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'SelfHostAndOllamaRuntimeModal');
-const SovereignManualAndGithubModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'SovereignManualAndGithubModal');
+const SelfHostAndOllamaRuntimeModal = lazyNamed(() => import('./components/ManualAndAiModelDialogs'), 'SelfHostAndOllamaRuntimeModal');
+const SovereignManualAndGithubModal = lazyNamed(() => import('./components/ManualAndAiModelDialogs'), 'SovereignManualAndGithubModal');
 
 
 const THEME_STORAGE_KEY = 'econquest_theme_dark_v1';
@@ -198,11 +199,9 @@ type NavSectionId =
 const CORE_REPORTS_TABS: WorkspaceTab[] = [{ id: 'ic', label: 'Notes', hint: '', desks: ['ic_memo_builder'] }];
 
 export default function App() {
-  // Hydrate any previously onboarded custom ISO-3 sovereigns into SOVEREIGN_CATALOG on boot
-  const [customOnboardedSovereigns, setCustomOnboardedSovereigns] = useState<
-    CustomSovereignOnboardingDraft[]
-  >(() => {
-    const savedCustom = loadCustomSovereignsFromStorage();
+  // Countries the user added (names only) go into SOVEREIGN_CATALOG on boot.
+  const [customOnboardedSovereigns, setCustomOnboardedSovereigns] = useState<AddedCountry[]>(() => {
+    const savedCustom = loadAddedCountriesFromStorage();
     savedCustom.forEach((draft) => registerCustomSovereignInCatalog(draft));
     return savedCustom;
   });
@@ -265,10 +264,30 @@ export default function App() {
   const [registerFocus, setRegisterFocus] = useState<string | null | undefined>(undefined);
   // Menu > Idea journal, or "Log idea" on a Council chat answer.
   const [isIdeasOpen, setIsIdeasOpen] = useState(false);
+  // The header and Menu in the chosen language (src/i18n; Spanish added 2026-11-08).
+  const t = useT(SHELL);
+  const tr = useT(RESEARCH);
+  const trp = useT(REPORTS);
+  // Menu > Your data: series loaded from your own CSV files.
+  const [isOwnDataOpen, setIsOwnDataOpen] = useState(false);
   useEffect(() => {
     const go = () => setIsIdeasOpen(true);
     window.addEventListener(OPEN_IDEAS_EVENT, go);
     return () => window.removeEventListener(OPEN_IDEAS_EVENT, go);
+  }, []);
+  // Menu > Quests: switched off (greyed out, "Not yet available") unless the server has
+  // QUESTS_ENABLED=on (docs/QUESTS.md). null = not known yet, shown as off.
+  const [isQuestsOpen, setIsQuestsOpen] = useState(false);
+  const [questsOn, setQuestsOn] = useState<boolean | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetch('/api/quests')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => live && setQuestsOn(Boolean(j?.enabled)))
+      .catch(() => live && setQuestsOn(false));
+    return () => {
+      live = false;
+    };
   }, []);
   // Menu > About & data licences (undefined = closed; a string opens it on that source's licence).
   const [aboutFocus, setAboutFocus] = useState<string | null | undefined>(undefined);
@@ -480,32 +499,6 @@ export default function App() {
   );
 
   const [croDraft, setCroDraft] = useState<CROOverrideState>(() => run.croState);
-
-  const [isTradeTicketDrawerOpen, setIsTradeTicketDrawerOpen] = useState<boolean>(false);
-  const [stagedTradeTickets, setStagedTradeTickets] = useState<StagedTradeTicketSpec[]>(
-    () =>
-      computeSovereignNssYieldCurveSuite(
-        buildDefaultAssessmentRun(savedSessionOnBoot?.activeIso3 || 'BRA'),
-        DEFAULT_NSS_SHOCK_INPUTS
-      ).recommendedCurveTickets.slice(0, 2)
-  );
-
-  const handleStageTradeTicket = (ticket: StagedTradeTicketSpec) => {
-    setStagedTradeTickets((prev) => {
-      const exists = prev.some((t) => t.ticketId === ticket.ticketId);
-      if (exists) return prev;
-      return [ticket, ...prev];
-    });
-    setIsTradeTicketDrawerOpen(true);
-    setStatusBanner({
-      type: 'success',
-      message: `Staged IC Trade Ticket: "${ticket.strategyTitle}" (${ticket.iso3} · +${ticket.expected12MCarryRollBps} bps/yr Carry+Roll).`,
-    });
-  };
-
-  const handleRemoveTradeTicket = (ticketId: string) => {
-    setStagedTradeTickets((prev) => prev.filter((t) => t.ticketId !== ticketId));
-  };
 
   const [runtimeConfig, setRuntimeConfig] = useState<AIRuntimeConfig>(() => {
     try {
@@ -852,12 +845,10 @@ export default function App() {
       new Set([...(nextOpenData.liveApiSourcesActive || []), `${connectorName} (GUI Connector)`])
     );
     recomputeDerivedOpenDataAnalytics(nextOpenData);
-    const updatedCharts = buildAnnotatedChartsForSovereign(nextOpenData);
 
     setRun((prev) => ({
       ...prev,
       openData: nextOpenData,
-      charts: updatedCharts,
     }));
     setStatusBanner({
       type: 'success',
@@ -1044,7 +1035,7 @@ export default function App() {
 
 
 
-  const handleOnboardCustomSovereign = (draft: CustomSovereignOnboardingDraft) => {
+  const handleOnboardCustomSovereign = (draft: AddedCountry) => {
     const newItem = registerCustomSovereignInCatalog(draft);
     setCustomOnboardedSovereigns((prev) => {
       const filtered = prev.filter((c) => c.iso3 !== newItem.iso3);
@@ -1069,8 +1060,9 @@ export default function App() {
     setScenarioInput(newItem.focusTheme);
     setStatusBanner({
       type: 'success',
-      message: `Onboarded ${newItem.countryName} (${newItem.iso3} · ${newItem.currencyCode}) into active watchlist and all 10 analytical hubs (Debt/GDP ${newItem.debtToGdpPct.toFixed(1)}%, 10Y Yield ${newItem.yield10YPct.toFixed(2)}%, 5Y CDS ${newItem.cds5YBps} bps).`,
+      message: `Added ${newItem.countryName} to the watchlist. Its figures come from the feeds and read Missing until a feed answers.`,
     });
+    void handlePullLiveOpenData(newItem.iso3, newItem.countryName, false);
   };
 
 
@@ -1155,7 +1147,7 @@ export default function App() {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-3 focus:py-2 focus:bg-white focus:text-slate-900 dark:focus:bg-slate-900 dark:focus:text-white focus:border focus:border-blue-600"
       >
-        Skip to content
+        {t('skip')}
       </a>
       {/* PRIMARY TOP BAR: BRAND + 4 COMPACT CATEGORY PILL MENUS + CMD+K SEARCH + PERSONA & ACTIONS */}
       <header className="flex items-center justify-between gap-3 min-w-0 px-4 sm:px-6 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
@@ -1189,7 +1181,7 @@ export default function App() {
                   aria-pressed={appArea === 'today'}
                   className="ui-pill inline-flex items-center whitespace-nowrap"
                 >
-                  Workspace
+                  {t('workspace')}
                 </button>
               ),
               research: (
@@ -1198,10 +1190,10 @@ export default function App() {
                   onClick={openResearch}
                   aria-current={isResearchScope(appArea) ? 'page' : undefined}
                   aria-pressed={isResearchScope(appArea)}
-                  title="One country, countries side by side, or your holdings"
+                  title={t('researchTitle')}
                   className="ui-pill inline-flex items-center whitespace-nowrap"
                 >
-                  Research
+                  {t('research')}
                 </button>
               ),
               reports: (
@@ -1212,7 +1204,7 @@ export default function App() {
                   aria-pressed={appArea === 'reports'}
                   className="ui-pill inline-flex items-center whitespace-nowrap"
                 >
-                  Reports
+                  {t('reports')}
                 </button>
               ),
               // Tools lives in Menu, next to Settings (Sam, 2026-11-05).
@@ -1231,21 +1223,25 @@ export default function App() {
           <button
             type="button"
             onClick={openChat}
-            title={chatDocked ? 'Close the Council chat panel' : 'Open Council chat beside this page: the same conversation as on Workspace'}
+            title={chatDocked ? t('chatClose') : t('chatOpen')}
             aria-pressed={chatDocked}
             data-chat-toggle="true"
             className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap"
           >
             <MessageSquare className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Council chat</span>
+            <span className="hidden sm:inline">{t('councilChat')}</span>
           </button>
           )}
+
+          <HelpLevelButton />
+
+          <LanguageButton />
 
           <button
             type="button"
             onClick={() => setDarkMode(!darkMode)}
-            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-            aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={darkMode ? t('lightMode') : t('darkMode')}
+            aria-label={darkMode ? t('lightMode') : t('darkMode')}
             className="inline-flex items-center px-2 py-1.5 text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors"
           >
             {darkMode ? (
@@ -1259,12 +1255,12 @@ export default function App() {
 
           {exam.on && (
             <span
-              title="Exam mode is on: no AI summaries or AI steps; questions asked and countries opened are written to the audit log."
+              title={t('examOnTitle')}
               className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap text-amber-700 dark:text-amber-300"
               data-exam-mode="on"
             >
               <GraduationCap className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Exam mode</span>
+              <span className="hidden sm:inline">{t('examMode')}</span>
             </span>
           )}
 
@@ -1272,11 +1268,11 @@ export default function App() {
             <button
               type="button"
               onClick={toggleShareMode}
-              title="Sharing mode is on: downloads hold back figures whose sources' terms do not let them be passed on. Click to turn it off."
+              title={t('sharingOnTitle')}
               className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap text-amber-700 dark:text-amber-300"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Sharing mode</span>
+              <span className="hidden sm:inline">{t('sharingMode')}</span>
             </button>
           )}
 
@@ -1284,15 +1280,15 @@ export default function App() {
             <button
               type="button"
               onClick={() => setIsHeaderMenuOpen((v) => !v)}
-              aria-label="Menu"
+              aria-label={t('menu')}
               aria-haspopup="menu"
               aria-expanded={isHeaderMenuOpen}
-              title="View settings, AI and data connections, manual, saved sessions"
+              title={t('menuTitle')}
               aria-pressed={isHeaderMenuOpen}
               className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap"
             >
               <Settings2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Menu</span>
+              <span className="hidden sm:inline">{t('menu')}</span>
               <ChevronDown className="w-3 h-3 opacity-70" />
             </button>
 
@@ -1309,23 +1305,23 @@ export default function App() {
                         icon: <KeyRound className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
                         // The AI model and Backup are tabs in Settings, so they are not listed again here;
                         // the model in use shows beside Settings.
-                        label: 'Settings',
+                        label: t('settings'),
                         hint:
                           runtimeConfig.providerMode === 'ollama'
-                            ? `AI: Ollama (${runtimeConfig.ollamaQuickModel.split(':')[0]})`
+                            ? t('aiOllama', { model: runtimeConfig.ollamaQuickModel.split(':')[0] ?? '' })
                             : runtimeConfig.providerMode === 'hybrid'
-                            ? 'AI: Ollama, then Gemini'
+                            ? t('aiHybrid')
                             : runtimeConfig.providerMode === 'openai_compatible'
-                            ? 'AI: local server'
-                            : 'AI: Gemini',
-                        title: `AI model, free data keys, your own paid data, backup and tools (${navigator.platform.toLowerCase().includes('mac') ? '⌘,' : 'Ctrl+,'})`,
+                            ? t('aiLocal')
+                            : t('aiGemini'),
+                        title: t('settingsTitle', { shortcut: navigator.platform.toLowerCase().includes('mac') ? '⌘,' : 'Ctrl+,' }),
                         onClick: () => setIsSettingsOpen(true),
                         className: '',
                       },
                       {
                         key: 'tools',
                         icon: <Wrench className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
-                        label: 'Tools',
+                        label: t('tools'),
                         hint: '',
                         onClick: () => {
                           setSettingsTab('tools');
@@ -1336,15 +1332,15 @@ export default function App() {
                       {
                         key: 'offline',
                         icon: <HardDriveDownload className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
-                        label: 'Offline data',
-                        hint: onlineStatus?.preloadRunning ? 'Downloading' : onlineStatus && !onlineStatus.online ? 'Offline' : '',
+                        label: t('offlineData'),
+                        hint: onlineStatus?.preloadRunning ? t('downloading') : onlineStatus && !onlineStatus.online ? t('offline') : '',
                         onClick: () => setIsOfflineDataOpen(true),
                         className: '',
                       },
                       {
                         key: 'health',
                         icon: <Activity className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
-                        label: 'Data health',
+                        label: t('dataHealth'),
                         hint: dataHealthSummary
                           ? [
                               dataHealthSummary.failingSources ? `${dataHealthSummary.failingSources} failing` : '',
@@ -1359,7 +1355,7 @@ export default function App() {
                       {
                         key: 'account',
                         icon: <UserRound className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
-                        label: 'Account',
+                        label: t('account'),
                         hint: accountHint,
                         onClick: () => setIsAccountOpen(true),
                         className: '',
@@ -1369,7 +1365,7 @@ export default function App() {
                             {
                               key: 'users',
                               icon: <Users className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
-                              label: 'Users',
+                              label: t('users'),
                               hint: '',
                               onClick: () => setIsUsersOpen(true),
                               className: '',
@@ -1379,7 +1375,7 @@ export default function App() {
                       {
                         key: 'audit',
                         icon: <ScrollText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
-                        label: 'Audit log',
+                        label: t('auditLog'),
                         hint: '',
                         onClick: () => setIsAuditLogOpen(true),
                         className: '',
@@ -1387,7 +1383,7 @@ export default function App() {
                       {
                         key: 'register',
                         icon: <ShieldQuestion className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
-                        label: 'Models & validation',
+                        label: t('models'),
                         hint: '',
                         onClick: () => setRegisterFocus(null),
                         className: '',
@@ -1395,33 +1391,52 @@ export default function App() {
                       {
                         key: 'ideas',
                         icon: <NotebookPen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
-                        label: 'Idea journal',
+                        label: t('ideas'),
                         hint: '',
                         onClick: () => setIsIdeasOpen(true),
                         className: '',
                       },
                       {
+                        key: 'own-data',
+                        icon: <FileUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: t('yourData'),
+                        hint: '',
+                        title: t('yourDataTitle'),
+                        onClick: () => setIsOwnDataOpen(true),
+                        className: '',
+                      },
+                      {
+                        key: 'quests',
+                        icon: <Compass className={`w-3.5 h-3.5 ${questsOn ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`} />,
+                        label: t('quests'),
+                        hint: questsOn ? '' : t('notYet'),
+                        title: questsOn ? t('questsOnTitle') : t('questsOffTitle'),
+                        disabled: !questsOn,
+                        onClick: () => setIsQuestsOpen(true),
+                        className: questsOn ? '' : 'opacity-60 cursor-not-allowed',
+                      },
+                      {
                         key: 'share',
                         icon: <ShieldCheck className={`w-3.5 h-3.5 ${shareMode ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'}`} />,
-                        label: 'Sharing mode',
-                        hint: shareMode ? 'On' : 'Off',
-                        title: 'On: downloads hold back figures whose sources\' terms do not let them be passed on, or do not say (Menu > About & data licences).',
+                        label: t('sharingMode'),
+                        hint: shareMode ? t('on') : t('off'),
+                        title: t('sharingTitle'),
                         onClick: toggleShareMode,
                         className: '',
                       },
                       {
                         key: 'exam',
                         icon: <GraduationCap className={`w-3.5 h-3.5 ${exam.on ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'}`} />,
-                        label: 'Exam mode',
-                        hint: exam.error ? 'Not allowed' : exam.on ? 'On' : 'Off',
-                        title: exam.error || (exam.canChange === false ? 'Only the computer running the app, or an admin when sign-in is on, can switch exam mode.' : 'On: no AI summaries or AI steps for anyone using this app; Council chat shows figures only, and questions asked and countries opened go to the audit log.'),
+                        label: t('examMode'),
+                        hint: exam.error ? t('notAllowed') : exam.on ? t('on') : t('off'),
+                        title: exam.error || (exam.canChange === false ? t('examCannotChange') : t('examTitle')),
                         onClick: toggleExam,
                         className: '',
                       },
                       {
                         key: 'about',
                         icon: <Info className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
-                        label: 'About & data licences',
+                        label: t('about'),
                         hint: '',
                         onClick: () => setAboutFocus(null),
                         className: '',
@@ -1429,7 +1444,7 @@ export default function App() {
                       {
                         key: 'manual',
                         icon: <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
-                        label: 'User manual',
+                        label: t('manual'),
                         hint: '',
                         onClick: () => setIsManualModalOpen(true),
                         className: '',
@@ -1444,6 +1459,8 @@ export default function App() {
                       type="button"
                       role="menuitem"
                       title={'title' in item ? (item as { title?: string }).title : undefined}
+                      disabled={'disabled' in item ? Boolean((item as { disabled?: boolean }).disabled) : undefined}
+                      aria-disabled={'disabled' in item ? Boolean((item as { disabled?: boolean }).disabled) : undefined}
                       onClick={() => {
                         setIsHeaderMenuOpen(false);
                         item.onClick();
@@ -1483,7 +1500,7 @@ export default function App() {
                   aria-pressed={appArea === 'today'}
                   className="ui-pill whitespace-nowrap shrink-0"
                 >
-                  Workspace
+                  {t('workspace')}
                 </button>
               ),
               research: (
@@ -1493,7 +1510,7 @@ export default function App() {
                   aria-pressed={isResearchScope(appArea)}
                   className="ui-pill whitespace-nowrap shrink-0"
                 >
-                  Research
+                  {t('research')}
                 </button>
               ),
               reports: (
@@ -1503,7 +1520,7 @@ export default function App() {
                   aria-pressed={appArea === 'reports'}
                   className="ui-pill whitespace-nowrap shrink-0"
                 >
-                  Reports
+                  {t('reports')}
                 </button>
               ),
               desks: null
@@ -1614,15 +1631,12 @@ export default function App() {
               watchlistName={watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}
               watchlistId={activeWatchlistId}
               watchlistItems={liveWatchlistItems}
-              stagedTickets={stagedTradeTickets}
               onOpenCountry={(item, sectionId) => {
                 // Select the stored row (the live view drops built-in figures but keeps the country).
                 const stored = activeWatchlistItems.find((w) => w.iso3 === item.iso3) || SOVEREIGN_CATALOG.find((c) => c.iso3 === item.iso3);
                 if (stored && item.iso3 !== run.iso3) handleSelectSovereign(stored);
                 openCountryPage(sectionId);
               }}
-              onStageTicket={handleStageTradeTicket}
-              onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
               onOpenWatchlistManager={() => setIsWatchlistCollapsed(false)}
               fullCouncil={fullCouncilStep}
               onSendCouncilToReports={sendCouncilToReports}
@@ -1675,11 +1689,14 @@ export default function App() {
             <PanelBoundary name="My holdings" resetKey={researchSection}>
             <div className="space-y-3" data-research-holdings="true">
               <ResearchHeader
-                title="My holdings"
+                title={tr('scopeHoldings')}
                 subtitle={
                   holdings.length
-                    ? `${holdings.length} ${holdings.length === 1 ? 'position' : 'positions'} in ${heldLive.length} ${heldLive.length === 1 ? 'country' : 'countries'}, from the holdings you imported. Click a country to open it on its own.`
-                    : `No holdings imported yet, so this shows your watchlist, ${watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}, at equal weight. Import holdings under History & data.`
+                    ? tr('holdingsSub', {
+                        positions: holdings.length === 1 ? tr('positionOne') : tr('positionMany', { n: holdings.length }),
+                        countries: heldLive.length === 1 ? tr('countryOne') : tr('countryMany', { n: heldLive.length }),
+                      })
+                    : tr('holdingsNone', { name: watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist' })
                 }
                 badge={<LiveCountBadge items={heldLive.length ? heldLive : liveWatchlistItems} />}
                 section={researchSection}
@@ -1693,7 +1710,6 @@ export default function App() {
                       holdings={holdings}
                       riskLookup={liveRiskLookup}
                       watchlist={liveWatchlistItems}
-                      stagedTickets={[]}
                       view="pm"
                       onWriteReport={(view) => {
                         setRequestedReport(view === 'client' ? 'client_review' : 'book');
@@ -1707,7 +1723,6 @@ export default function App() {
                       riskLookup={liveRiskLookup}
                       holdings={holdings}
                       onManageHoldings={openHoldingsEditor}
-                      stagedTickets={[]}
                       onOpenCountry={(live) => {
                         const item = holdingsRiskLookup.find((w) => w.iso3 === live.iso3);
                         if (item && item.iso3 !== run.iso3) handleSelectSovereign(item);
@@ -1741,8 +1756,8 @@ export default function App() {
                 <PanelBoundary name="Sources across your holdings">
                   <SourcesGrid
                     items={heldLive.length ? heldLive : liveWatchlistItems}
-                    title={heldLive.length ? 'What is live for the countries you hold' : 'What is live across your watchlist (no holdings imported)'}
-                    empty="No countries yet."
+                    title={heldLive.length ? tr('holdingsSourcesHeld') : tr('holdingsSourcesWatch')}
+                    empty={tr('noCountries')}
                     onOpenCountry={(live) => {
                       const item = holdingsRiskLookup.find((w) => w.iso3 === live.iso3);
                       if (item && item.iso3 !== run.iso3) handleSelectSovereign(item);
@@ -1760,9 +1775,9 @@ export default function App() {
           {appArea === 'reports' && (
             <PanelBoundary name="Reports">
             <WorkspacePage
-              ariaLabel="Reports sections"
-              title="Reports"
-              subtitle={`Documents to hand to the investment committee, risk and clients. Current country: ${run.countryName}`}
+              ariaLabel={trp('rp_aria')}
+              title={trp('rp_title')}
+              subtitle={trp('rp_subtitle', { country: run.countryName })}
               tabs={CORE_REPORTS_TABS}
               activeTabId={reportsTab}
               activeDesk={activeNavSection}
@@ -1795,7 +1810,6 @@ export default function App() {
                   <IcMemoBuilder
                     key={`${d}-${requestedReport || openingReport}-${reportNonce}`}
                     run={run}
-                    stagedTickets={[]}
                     holdings={holdings}
                     riskLookup={liveRiskLookup}
                     peers={liveWatchlistItems}
@@ -1831,34 +1845,20 @@ export default function App() {
         </section>
       </main>
 
-      {/* GLOBAL REAL-TIME DATA PROVENANCE OVERLAY & INTERACTIVE STATISTICAL REFERENCE TOOLTIP CONTROLLER */}
       <Suspense fallback={null}>
-      <GlobalTerminalProvenanceAndStatRefController
-        run={run}
-        activeNavSection={activeNavSection}
-        onRefreshLiveOpenData={() => handlePullLiveOpenData(run.iso3, run.countryName, false)}
-        isFetchingData={isFetchingOpenData}
-      />
+        {isCustomSovereignModalOpen && <AddCountryDialog onClose={() => setIsCustomSovereignModalOpen(false)} onAdd={handleOnboardCustomSovereign} />}
       </Suspense>
-
-      {isCustomSovereignModalOpen && (
-        <Suspense fallback={null}>
-      <CustomSovereignOnboardingModal
-        isOpen={isCustomSovereignModalOpen}
-        onClose={() => setIsCustomSovereignModalOpen(false)}
-        onOnboardSovereign={handleOnboardCustomSovereign}
-      />
-        </Suspense>
-      )}
 
       {isOfflineDataOpen && <OfflineDataDialog onClose={() => setIsOfflineDataOpen(false)} />}
       <Suspense fallback={null}>{isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isDataHealthOpen && <DataHealthDialog onClose={() => setIsDataHealthOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isIdeasOpen && <IdeaJournalDialog onClose={() => setIsIdeasOpen(false)} />}</Suspense>
+      <Suspense fallback={null}>{isOwnDataOpen && <OwnSeriesDialog onClose={() => setIsOwnDataOpen(false)} />}</Suspense>
+      <Suspense fallback={null}>{isQuestsOpen && questsOn && <QuestsDialog items={liveWatchlistItems} onClose={() => setIsQuestsOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}</Suspense>
       <Suspense fallback={null}>{isUsersOpen && me && <UsersDialog me={me} onClose={() => setIsUsersOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isAccountOpen && <AccountDialog onClose={() => setIsAccountOpen(false)} />}</Suspense>
-      {aboutFocus !== undefined && <AboutDialog focusId={aboutFocus} onClose={() => setAboutFocus(undefined)} />}
+      <Suspense fallback={null}>{aboutFocus !== undefined && <AboutDialog focusId={aboutFocus} onClose={() => setAboutFocus(undefined)} />}</Suspense>
       {isManualModalOpen && (
         <Suspense fallback={null}>
       <SovereignManualAndGithubModal
@@ -1903,21 +1903,6 @@ export default function App() {
       />
         </Suspense>
       )}
-
-      {/* 1-CLICK EXECUTIVE TEAR-SHEET & IC TRADE TICKET QUICK-DRAWER */}
-      <ExecutiveTearSheetAndTradeTicketDrawer
-        isOpen={isTradeTicketDrawerOpen}
-        onClose={() => setIsTradeTicketDrawerOpen(false)}
-        activeRun={run}
-        stagedTickets={stagedTradeTickets}
-        onAddTicket={handleStageTradeTicket}
-        onRemoveTicket={handleRemoveTradeTicket}
-        onNavigateToSection={(sec) => {
-          setLayoutMode('executive_brief');
-    setAppArea('desks');
-          setActiveNavSection(sec as NavSectionId);
-        }}
-      />
 
       {/* Council chat side panel on Research and Reports: the same conversation as on Workspace. */}
       {chatDocked && (

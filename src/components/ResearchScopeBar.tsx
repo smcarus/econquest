@@ -1,5 +1,7 @@
 import React from 'react';
 import { ArrowLeft, Briefcase, Globe2, Layers } from 'lucide-react';
+import { useT } from '../i18n/useLang';
+import { RESEARCH } from '../i18n/messages/research';
 
 /**
  * Research: one page that looks at the same questions at three zoom levels (Sam, 2026-11-05).
@@ -40,10 +42,15 @@ export const ResearchScopeBar: React.FC<{
   onChange: (scope: ResearchScope) => void;
   /** After opening a country from Compare or My holdings: the way back. */
   cameFrom?: ResearchScope | null;
-}> = ({ scope, countryName, holdingsCount, onChange, cameFrom }) => (
+}> = ({ scope, countryName, holdingsCount, onChange, cameFrom }) => {
+  const t = useT(RESEARCH);
+  const label = (s: ResearchScope) =>
+    s === 'country' ? t('scopeCountry', { name: countryName }) : s === 'compare' ? t('scopeCompare') : holdingsCount ? t('scopeHoldingsN', { n: holdingsCount }) : t('scopeHoldings');
+  const short = (s: ResearchScope) => (s === 'country' ? shortScopeLabel(s, countryName) : s === 'compare' ? t('shortCompare') : t('shortHoldings'));
+  return (
   <div className="flex flex-wrap items-center gap-x-3 gap-y-2" data-research-scope={scope}>
-    <h1 className="ui-section-title text-base mr-1">Research</h1>
-    <div role="group" aria-label="What to look at" className="flex flex-wrap gap-1.5">
+    <h1 className="ui-section-title text-base mr-1">{t('research')}</h1>
+    <div role="group" aria-label={t('scopeGroup')} className="flex flex-wrap gap-1.5">
       {RESEARCH_SCOPES.map((s) => {
         const Icon = ICON[s];
         return (
@@ -56,8 +63,8 @@ export const ResearchScopeBar: React.FC<{
             className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap pointer-coarse:min-h-10"
           >
             <Icon className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{scopeLabel(s, countryName, holdingsCount)}</span>
-            <span className="sm:hidden">{shortScopeLabel(s, countryName)}</span>
+            <span className="hidden sm:inline">{label(s)}</span>
+            <span className="sm:hidden">{short(s)}</span>
           </button>
         );
       })}
@@ -70,8 +77,9 @@ export const ResearchScopeBar: React.FC<{
         data-research-back={cameFrom}
       >
         <ArrowLeft className="w-3 h-3" />
-        Back to {cameFrom === 'compare' ? 'Compare countries' : 'My holdings'}
+        {cameFrom === 'compare' ? t('backCompare') : t('backHoldings')}
       </button>
     )}
   </div>
-);
+  );
+};

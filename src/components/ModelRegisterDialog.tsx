@@ -3,8 +3,11 @@
  * status. A status other than Not validated / Descriptive / Model-assisted comes only from a
  * pre-registered backtest. See src/data/modelRegister.ts.
  */
-import { useEffect, useRef, useState } from 'react';
-import { Download, List, Play, ShieldQuestion, Table2, X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Download, FlaskConical, List, Play, ShieldQuestion, Table2, X } from 'lucide-react';
+import { lazyNamed } from './LazyDesk';
+import { useT } from '../i18n/useLang';
+import { YOUR_TESTS } from '../i18n/messages/yourTests';
 import { MODEL_REGISTER, REGISTER_HEADER, registerRows, STATUS_LABEL, type ValidationStatus } from '../data/modelRegister';
 import { ValidationBadge } from './ValidationBadge';
 import { TestLedgerTable } from './TestLedgerTable';
@@ -14,6 +17,11 @@ import { holmSentence } from '../utils/multipleTesting';
 import { forwardSentence } from '../utils/forwardRecord';
 import { EXPORT_NOTICE } from '../utils/disclaimer';
 import { forecastRegisterStatus, forecastVerdicts } from '../utils/forecastRegister';
+
+// Your own registered tests: downloaded the first time the view is opened.
+const YourTests = lazyNamed(() => import('./YourTests'), 'YourTests');
+// Policy outcome checks (roadmap P1): downloaded when the track record is opened.
+const PolicyTrackRecord = lazyNamed(() => import('./PolicyTrackRecord'), 'PolicyTrackRecord');
 
 const csvCell = (v: string) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
 
@@ -53,7 +61,8 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
   const v = useValidation();
   const holmMap = validationHolm(v);
   const [runError, setRunError] = useState<string | null>(null);
-  const [view, setView] = useState<'register' | 'record'>('register');
+  const [view, setView] = useState<'register' | 'record' | 'mine'>('register');
+  const ty = useT(YOUR_TESTS);
   const counts = MODEL_REGISTER.reduce<Partial<Record<ValidationStatus, number>>>((acc, e) => {
     const s = effectiveStatus(e.id, e.status, v);
     return { ...acc, [s]: (acc[s] ?? 0) + 1 };
@@ -107,6 +116,15 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
             >
               {view === 'record' ? <List className="w-3.5 h-3.5" aria-hidden /> : <Table2 className="w-3.5 h-3.5" aria-hidden />} {view === 'record' ? 'Register' : 'Track record'}
             </button>
+            <button
+              type="button"
+              onClick={() => setView(view === 'mine' ? 'register' : 'mine')}
+              aria-pressed={view === 'mine'}
+              className="ui-btn ui-btn-ghost inline-flex items-center gap-1"
+              data-your-tests-toggle
+            >
+              <FlaskConical className="w-3.5 h-3.5" aria-hidden /> {ty('tab')}
+            </button>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400" data-backtest-status>
             {v?.lastRun ? `Backtests last run ${when(v.lastRun.at)}.` : 'Backtests not run yet on this computer.'} They pull the long free histories (BIS policy rates since 1990, OECD leading indicator, CFTC since 2006), so they need a connection and take a minute or two. Same as `npm run backtest`.
@@ -122,7 +140,17 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
           {runError && <p className="text-rose-600 dark:text-rose-400">{runError}</p>}
           {v?.lastRun?.problems?.length ? <p className="text-amber-700 dark:text-amber-300">Last run: {v.lastRun.problems.join(' · ')}</p> : null}
           {view === 'record' && <TestLedgerTable v={v} holmMap={holmMap} />}
-          <ul className={`divide-y divide-slate-100 dark:divide-slate-800 ${view === 'record' ? 'hidden' : ''}`}>
+          {view === 'record' && (
+            <React.Suspense fallback={null}>
+              <PolicyTrackRecord />
+            </React.Suspense>
+          )}
+          {view === 'mine' && (
+            <React.Suspense fallback={null}>
+              <YourTests />
+            </React.Suspense>
+          )}
+          <ul className={`divide-y divide-slate-100 dark:divide-slate-800 ${view !== 'register' ? 'hidden' : ''}`}>
             {MODEL_REGISTER.map((e) => (
               <li key={e.id} id={`register-${e.id}`} className="py-2">
                 <div className="flex items-start justify-between gap-3">

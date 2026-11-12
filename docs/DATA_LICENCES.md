@@ -8,6 +8,9 @@ terms page on the date shown. Where a page could not be read or does not answer 
 "Terms not confirmed" rather than guessing. This is a research note, not legal advice: a question that
 matters for a client or a sale should go to the provider in writing.
 
+Each row's terms are read again at least once a year; the app marks a row "Licence check due" when its
+date is more than 12 months old (docs/MAINTENANCE.md).
+
 The same register is in the app under **Menu > About & data licences**. Every export (council briefs and
 documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backups) ends with the line
 "Research, not validated advice." and points here (src/utils/disclaimer.ts).
@@ -25,7 +28,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | --- | --- | --- | --- | --- | --- |
 | World Bank indicators and debt statistics (IDS, QEDS) | Open with attribution | Free sharing allowed | Allowed: the data may be shared with third parties under CC BY 4.0. | Allowed (CC BY 4.0 sets no commercial limit). | The World Bank: <dataset name>: <data source>, e.g. "The World Bank: World Development Indicators". |
 | World Bank Pink Sheet (commodity prices) | Terms not confirmed | Sharing unclear | Likely covered by the World Bank dataset terms (CC BY 4.0), but the Pink Sheet's own catalog entry could not be read. | Not confirmed. | The World Bank: Commodity Price Data (The Pink Sheet). |
-| IMF (World Economic Outlook, Fiscal Monitor, International Liquidity, Balance of Payments, COFER) | Permission needed for client or commercial use | Free sharing allowed | Allowed with attribution: the IMF lets users publish and distribute its Data. | Needs permission: email copyright@imf.org. Systematic or bulk automated download also needs permission. | Source: International Monetary Fund, <database name>, <link to the dataset>. |
+| IMF (World Economic Outlook, Fiscal Monitor, International Liquidity, Balance of Payments, COFER, Consumer Price Index) | Permission needed for client or commercial use | Free sharing allowed | Allowed with attribution: the IMF lets users publish and distribute its Data. | Needs permission: email copyright@imf.org. Systematic or bulk automated download also needs permission. | Source: International Monetary Fund, <database name>, <link to the dataset>. |
 | UN Comtrade | Permission needed for client or commercial use | Free sharing allowed | Internal use only. Free, not-for-profit visualisation is exempt; a paid report or dashboard is exempt only below 100,000 original records. | Paid, subscription or otherwise monetised use counts as commercial; commercial APIs need a premium subscription. | Source: UN Comtrade. |
 | WITS (World Integrated Trade Solution) | Permission needed for client or commercial use | Do not pass on | The trade shares come from UN Comtrade data, which WITS says is for internal use only. | Needs UNSD's written permission (see UN Comtrade). | Source: UN Comtrade via WITS (World Bank). |
 | BIS statistics (policy rates, real exchange rates, debt securities, credit cycle) | Allowed with conditions | Free sharing allowed | Allowed if the BIS is cited as the source. | Allowed, provided including the statistics adds no extra charge for subscribers or users. | Source: BIS (Bank for International Settlements), <dataset>, e.g. "Source: BIS central bank policy rates". |
@@ -34,9 +37,11 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | New York Fed markets data | Allowed with conditions | Free sharing allowed | Allowed for personal or business purposes; reference rates (SOFR, EFFR and others) must carry the New York Fed's notice. | Allowed for business purposes; no general ban on data. | "© <year> Federal Reserve Bank of New York. Content from the New York Fed subject to the Terms of Use at newyorkfed.org." For SOFR and EFFR also: "The <rate> is subject to the Terms of Use posted at newyorkfed.org. The New York Fed is not responsible for publication of the <rate> by <publisher>, does not sanction or endorse any particular republication, and has no liability for your use." |
 | FRED (St. Louis Fed): 10Y government yields from the OECD; St. Louis Fed and Chicago Fed stress indices; US inflation expectations | Permission needed for client or commercial use | Sharing unclear | The series are labelled "Copyrighted: Citation Required" (owner: OECD). FRED's terms say to contact the data owner before any use beyond personal use, and that FRED cannot give that permission. | Unclear in FRED's own terms (one section allows reports to clients with attribution for citation-required series; others require the owner's permission). | OECD (year), Main Economic Indicators, long-term interest rates, retrieved from FRED, Federal Reserve Bank of St. Louis. With the FRED API key: "This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis." |
 | OECD leading indicators and consumer prices (via DBnomics) | Terms not confirmed | Sharing unclear | DBnomics passes on the OECD's own licence. The OECD terms page could not be read past its navigation, so the OECD data licence is not confirmed here. | Not confirmed. | OECD (year), <dataset name>, <data source>, via DBnomics (citation form quoted on FRED's OECD series notes). |
-| Eurostat HICP | Open with attribution | Free sharing allowed | Allowed without a licence if Eurostat is named and any change to the data is stated. | Allowed for EU, EFTA and candidate countries (the app reads EU members only). | Source: Eurostat (prc_hicp_minr). |
+| Eurostat HICP, government expenditure by function (COFOG) and EU business and consumer surveys | Open with attribution | Free sharing allowed | Allowed without a licence if Eurostat is named and any change to the data is stated. | Allowed for EU, EFTA and candidate countries (the app reads EU and EFTA members only). | Source: Eurostat (prc_hicp_minr, gov_10a_exp, gov_10a_main, ei_bssi_m_r2, ei_bsee_m_r2, sts_inpr_m, sts_trtu_m, une_rt_m); surveys by the European Commission (DG ECFIN). |
+| Office for National Statistics (UK) | Open with attribution | Free sharing allowed | Open Government Licence v3.0: reuse is allowed with ONS named as the source. | Allowed ("whether commercially or privately", ONS licences page; "exploit the Information commercially and non-commercially", OGL v3.0). | Source: Office for National Statistics licensed under the Open Government Licence v.3.0 |
 | CFTC Commitments of Traders | Open with attribution | Free sharing allowed | Public domain. | Allowed. | Source: CFTC Commitments of Traders (acknowledgement requested). |
 | US Treasury TIC (major foreign holders) | Terms not confirmed | Sharing unclear | No terms, licence or copyright statement was found on the TIC or Treasury site-policy pages. | Not stated. | Source: US Treasury, Treasury International Capital (TIC) system. |
+| US Treasury Fiscal Data (Treasury Securities Auctions Data) | Open with attribution | Free sharing allowed | Allowed: Fiscal Data says its data are free, without restriction, to copy, adapt and redistribute. | Allowed ("for non-commercial or commercial purposes"). | Source: U.S. Department of the Treasury, Fiscal Data, Treasury Securities Auctions Data. |
 | US EIA open data | Open with attribution | Free sharing allowed | Public domain. | No restriction stated. | Source: U.S. Energy Information Administration (<publication date>). |
 | GDELT (DOC API, raw GDELT 2.0 files and GDELT 1.0 event files) | Open with attribution | Free sharing allowed | Allowed in any form, with a citation and link. | Allowed, without fee. | Source: The GDELT Project (https://www.gdeltproject.org/). |
 | UCDP (Uppsala Conflict Data Program) downloaded files | Open with attribution | Free sharing allowed | Allowed: free to use and redistribute under CC BY 4.0, citing the publications listed with each dataset. | Allowed (CC BY 4.0 sets no commercial limit). | UCDP, Uppsala University (ucdp.uu.se), CC BY 4.0; cite the dataset publications, e.g. Davies, Pettersson & Öberg (2026), Journal of Peace Research, and Gleditsch et al. (2002), Journal of Peace Research 39(5). |
@@ -54,20 +59,27 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | Central Bank of Turkey (EVDS), with your key | Permission needed for client or commercial use | Free sharing allowed | May be published with the source cited. | Needs the TCMB's written permission. | Kaynak: TCMB EVDS (Central Bank of the Republic of Türkiye). |
 | ACLED (Armed Conflict Location & Event Data), with your account or your downloaded files | Allowed with conditions | Do not pass on | Free for non-commercial use, including internal research. Anything published must be transformative and must not let the underlying data be rebuilt; ACLED must be named as the source. | Not allowed without a corporate licence from ACLED; governments and multilateral bodies need a public-sector licence. | ACLED (Armed Conflict Location & Event Data), accessed [date], www.acleddata.com; filters and any changes stated. |
 | Bank of Canada and Bank of England Sovereign Default Database (BoC-BoE) | Allowed with conditions | Free sharing allowed | Allowed: the Bank lets anyone use, copy and distribute its website content, crediting the Bank and saying if anything was changed, without suggesting the Bank endorses the use. | Not limited by the terms for the Bank's own content; a paid product that includes it must tell buyers the content is free on the Bank's website. | Source: Bank of Canada and Bank of England, BoC-BoE Sovereign Default Database (<edition>), Bank of Canada Valet API; figures as published, US$ millions. |
+| IMF PortWatch (daily chokepoint transits and port activity, ArcGIS feature layers) | Terms not confirmed | Sharing unclear | The PortWatch terms page did not give its text to an automated reader, and the layers carry no licence or copyright text. | Not confirmed. | Source: IMF PortWatch (portwatch.imf.org), daily port and chokepoint data and preliminary trade volume estimates. |
 | Your own paid data (CDS file, LSEG account) | Terms not confirmed | Do not pass on | Set by your own licence with the vendor. Market data licences usually limit display to licensed users. | Set by your own licence. | As your vendor contract requires. |
+| AidData Global Chinese Development Finance Dataset, version 3.0 | Open with attribution | Free sharing allowed | Allowed: the AidData dataset is under the Open Data Commons Attribution License (ODC-By). | ODC-By sets no commercial limit; the pages read do not mention commercial use. | AidData. 2023. Global Chinese Development Finance Dataset, Version 3.0. |
+| IMF list of low-income country debt sustainability analyses | Terms not confirmed | Sharing unclear | Not stated: the one-page list has no terms of use. The ratings are shown as facts with the source, the list date and the day it was read. | Not stated. | Source: International Monetary Fund, List of IMF/WBG LIC DSAs for PRGT-Eligible Countries, as of September 30, 2026. |
+| ILOSTAT (International Labour Organization) | Open with attribution | Free sharing allowed | Allowed: ILO databases and datasets published from 3 May 2023 are under CC BY 4.0. | Allowed (CC BY 4.0 sets no commercial limit). | Source: ILOSTAT, International Labour Organization (ILO). |
+| Our World in Data energy file (Energy Institute Statistical Review of World Energy) | Permission needed for client or commercial use | Do not pass on | Not allowed without the Energy Institute's permission: its terms allow private, non-commercial use only. Our World in Data's CC BY covers its own work, not the Energy Institute's figures. | Not allowed without the Energy Institute's permission. | Energy Institute - Statistical Review of World Energy (year); Our World in Data energy dataset. |
+| IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies (Arslanalp and Tsuda) | Permission needed for client or commercial use | Free sharing allowed | Allowed with credit under the IMF data terms; the workbook itself states no terms. | Needs permission: email copyright@imf.org. | Source: International Monetary Fund, Sovereign Debt Investor Base for Emerging Markets and Developing Economies; Arslanalp and Tsuda (2014), IMF Working Paper WP/14/39. |
+| DSSI and Common Framework status (World Bank, Paris Club) | Terms not confirmed | Sharing unclear | Not stated on either page. | Not stated. | World Bank, COVID-19 Debt Service Suspension Initiative; Paris Club, Common Framework. |
 
 ## Sources
 
 ### World Bank indicators and debt statistics (IDS, QEDS)
 
-- **Used for:** Reserves, current account, external debt, political stability, trade shares; external debt falling due; who holds public external debt and terms of new loans (IDS)
+- **Used for:** Reserves, current account, external debt, political stability, trade shares, military spending (SIPRI, MS.MIL.XPND.GD.ZS); inequality (Gini, SI.POV.GINI), central government tax revenue and its split (GC.TAX.*), applied tariffs (TM.TAX.MRCH.*, WITS/TRAINS); poverty rates (SI.POV.DDAY, SI.POV.LMIC, SI.POV.UMIC), remittances (BX.TRF.PWKR.DT.GD.ZS), labour force participation and youth unemployment (ILO modelled estimates), age dependency (SP.POP.DPND); interest as % of revenue (GC.XPN.INTP.RV.ZS); goods exports and imports by group (TX.VAL.*, TM.VAL.*), net energy imports (EG.IMP.CONS.ZS); consumer price inflation to work out real wage growth (FP.CPI.TOTL.ZG); greenhouse gas emissions per person (EN.GHG.ALL.PC.CE.AR5, from EU EDGAR), renewable share of energy use (EG.FEC.RNEW.ZS); currency mix and maturity of new loans of public external debt (IDS DT.CUR.*, DT.MAT.DPPG); external debt falling due; who holds public external debt and terms of new loans (IDS)
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0 allows sharing with credit.
 - **Terms read:** [Terms of Use for Datasets](https://www.worldbank.org/ext/en/legal/terms-conditions/datasets) (checked 2026-11-06)
 - **Show to others:** Allowed: the data may be shared with third parties under CC BY 4.0.
 - **Commercial use:** Allowed (CC BY 4.0 sets no commercial limit).
 - **Credit:** The World Bank: <dataset name>: <data source>, e.g. "The World Bank: World Development Indicators".
-- **Open question:** Third-party indicators inside World Bank datasets can carry their own terms (stated in each indicator's metadata); the per-dataset licence for IDS and QEDS in the Data Catalog was not read.
+- **Open question:** Third-party indicators inside World Bank datasets can carry their own terms (stated in each indicator's metadata); the per-dataset licence for IDS and QEDS in the Data Catalog was not read. Military spending is SIPRI's data republished by the World Bank; SIPRI's own terms were not read.
 
 From the terms:
 
@@ -88,9 +100,9 @@ From the terms:
 - **Credit:** The World Bank: Commodity Price Data (The Pink Sheet).
 - **Open question:** Read the Pink Sheet licence field in the World Bank Data Catalog before showing commodity prices to clients. Some prices in it come from third parties.
 
-### IMF (World Economic Outlook, Fiscal Monitor, International Liquidity, Balance of Payments, COFER)
+### IMF (World Economic Outlook, Fiscal Monitor, International Liquidity, Balance of Payments, COFER, Consumer Price Index)
 
-- **Used for:** Debt/GDP, inflation, growth, primary balance, output gap, reserves, current account, imports, COFER shares
+- **Used for:** Debt/GDP, inflation, growth, primary balance, output gap, reserves, current account, imports, COFER shares, monthly consumer prices (CPI dataset), government spending by function (GFS COFOG, read through DBnomics); revenue and spending by level of government (GFS main aggregates by sub-sector, GFSMAB, read through DBnomics)
 - **Status:** Permission needed for client or commercial use
 - **Free non-commercial sharing:** Free sharing allowed. IMF Data may be published and distributed with attribution; only commercial reuse needs permission.
 - **Terms read:** [Copyright and Usage (Special Terms for Statistical Data)](https://www.imf.org/en/About/copyright-and-terms) (checked 2026-11-06)
@@ -111,7 +123,7 @@ From the terms:
 
 ### UN Comtrade
 
-- **Used for:** Goods trade by partner and export mix by HS chapter
+- **Used for:** Goods trade by partner and export mix by HS chapter; top five export markets and export concentration (the app's Herfindahl calculation)
 - **Status:** Permission needed for client or commercial use
 - **Free non-commercial sharing:** Free sharing allowed. The FAQ exempts free, not-for-profit visualisation and analytics applications.
 - **Terms read:** [Policy on Comtrade data use](https://uncomtrade.org/docs/policy-on-comtrade-data-use/); [Re-dissemination of data (FAQ)](https://uncomtrade.org/docs/re-dissemination-of-data/) (checked 2026-11-06)
@@ -149,7 +161,7 @@ From the terms:
 
 ### BIS statistics (policy rates, real exchange rates, debt securities, credit cycle)
 
-- **Used for:** Central bank policy rates and their history, real exchange rates, government debt securities, credit-to-GDP gaps, debt service ratios and residential property prices
+- **Used for:** Central bank policy rates and their history, real exchange rates, government debt securities, credit-to-GDP gaps, debt service ratios, residential property prices (real and nominal, country brief and History & data) and household and company debt (total credit)
 - **Status:** Allowed with conditions
 - **Free non-commercial sharing:** Free sharing allowed. Use is unrestricted with the BIS cited.
 - **Terms read:** [Terms of permitted use of BIS statistics](https://data.bis.org/help/legal); [BIS terms and conditions](https://www.bis.org/terms_conditions.htm) (checked 2026-11-06)
@@ -168,7 +180,7 @@ From the terms:
 
 ### ECB statistics: euro reference rates (through Frankfurter), Survey of Professional Forecasters
 
-- **Used for:** Daily exchange rate history per US dollar since 1999; FX volatility; last year's closing rate for the year-to-date move; Survey of Professional Forecasters inflation expectations (ECB Data Portal, dataset SPF, quarterly world series)
+- **Used for:** Daily exchange rate history per US dollar since 1999; FX volatility; last year's closing rate for the year-to-date move; Survey of Professional Forecasters inflation expectations (ECB Data Portal, dataset SPF, quarterly world series); euro area GDP, HICP inflation and unemployment as first published (ECB Euro Area Real-Time Database, dataset RTD, with its revision history)
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. Free reuse with the source quoted and the figures unmodified.
 - **Terms read:** [ECB statistics reuse policy](https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html); [Frankfurter licence](https://frankfurter.dev/license/) (checked 2026-11-06)
@@ -221,7 +233,7 @@ From the terms:
 
 ### FRED (St. Louis Fed): 10Y government yields from the OECD; St. Louis Fed and Chicago Fed stress indices; US inflation expectations
 
-- **Used for:** US data as first published and as known on a past day (ALFRED vintages of GDPC1 real GDP, CPIAUCSL CPI and UNRATE unemployment, with your FRED API key; government statistics from BEA and BLS); US inflation expectations: 5- and 10-year breakevens and the 5y5y forward (T5YIE, T10YIE, T5YIFR, computed by the St. Louis Fed from US Treasury yields, labelled "Copyrighted: Citation Required") and the Cleveland Fed 1- and 10-year expected inflation (EXPINF1YR, EXPINF10YR, labelled "Public Domain: Citation Requested"); St. Louis Fed Financial Stress Index (STLFSI4, the default stress factor in the global shock scenarios; owned by the St. Louis Fed itself, labelled "Copyrighted: Citation Required"); Chicago Fed NFCI and adjusted NFCI (NFCI, ANFCI, alternative stress factors and world series; owned by the Federal Reserve Bank of Chicago, labelled "Copyrighted: Citation Required"); 10Y yields for the US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, the Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries (all OECD series on FRED)
+- **Used for:** US monthly activity: industrial production (INDPRO, Federal Reserve), retail and food services sales (RSAFS, Census Bureau) and the unemployment rate (UNRATE, BLS); US data as first published and as known on a past day (ALFRED vintages of GDPC1 real GDP, CPIAUCSL CPI and UNRATE unemployment, with your FRED API key; government statistics from BEA and BLS); US inflation expectations: 5- and 10-year breakevens and the 5y5y forward (T5YIE, T10YIE, T5YIFR, computed by the St. Louis Fed from US Treasury yields, labelled "Copyrighted: Citation Required") and the Cleveland Fed 1- and 10-year expected inflation (EXPINF1YR, EXPINF10YR, labelled "Public Domain: Citation Requested"); St. Louis Fed Financial Stress Index (STLFSI4, the default stress factor in the global shock scenarios; owned by the St. Louis Fed itself, labelled "Copyrighted: Citation Required"); Chicago Fed NFCI and adjusted NFCI (NFCI, ANFCI, alternative stress factors and world series; owned by the Federal Reserve Bank of Chicago, labelled "Copyrighted: Citation Required"); 10Y yields for the US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, the Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries (all OECD series on FRED)
 - **Status:** Permission needed for client or commercial use
 - **Free non-commercial sharing:** Sharing unclear. The OECD owns the series; FRED says to ask the owner before any use beyond personal use.
 - **Terms read:** [FRED legal](https://fred.stlouisfed.org/legal/); [FRED API terms](https://fred.stlouisfed.org/docs/api/terms_of_use.html); [Example series: Mexico 10Y](https://fred.stlouisfed.org/series/IRLTLT01MXM156N) (checked 2026-11-06)
@@ -255,21 +267,39 @@ From the terms:
 >
 > All OECD data should be cited as follows: OECD (year), (dataset name), (data source) DOI or https://data-explorer.oecd.org/. (accessed on (date)).
 
-### Eurostat HICP
+### Eurostat HICP, government expenditure by function (COFOG) and EU business and consumer surveys
 
-- **Used for:** Monthly inflation for EU members (Poland on the defaults)
+- **Used for:** Monthly inflation for EU members (Poland on the defaults); government spending by function, % of GDP (gov_10a_exp); revenue and spending by level of government (gov_10a_main); the European Commission's business and consumer surveys as Eurostat republishes them (ei_bssi_m_r2, ei_bsee_m_r2); monthly industrial production, retail trade volume and unemployment rate (sts_inpr_m, sts_trtu_m, une_rt_m)
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. Free reuse with Eurostat named.
 - **Terms read:** [Eurostat copyright and reuse](https://ec.europa.eu/eurostat/about-us/policies/copyright) (checked 2026-11-06)
 - **Show to others:** Allowed without a licence if Eurostat is named and any change to the data is stated.
-- **Commercial use:** Allowed for EU, EFTA and candidate countries (the app reads EU members only).
-- **Credit:** Source: Eurostat (prc_hicp_minr).
+- **Commercial use:** Allowed for EU, EFTA and candidate countries (the app reads EU and EFTA members only).
+- **Credit:** Source: Eurostat (prc_hicp_minr, gov_10a_exp, gov_10a_main, ei_bssi_m_r2, ei_bsee_m_r2, sts_inpr_m, sts_trtu_m, une_rt_m); surveys by the European Commission (DG ECFIN).
 
 From the terms:
 
 > Eurostat has a policy of encouraging free re-use of its data, both for non-commercial and commercial purposes.
 >
 > when re-use involves modifications to the data or text, this must be stated clearly to the end user of the information.
+
+### Office for National Statistics (UK)
+
+- **Used for:** UK monthly activity: index of production (K222), retail sales volume (J5EK) and the unemployment rate (MGSX); UK GDP as first published (GDP revision triangle, ABMI)
+- **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. Open Government Licence v3.0 with ONS named.
+- **Terms read:** [ONS licences](https://www.ons.gov.uk/methodology/geography/licences); [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/) (checked 2026-11-12)
+- **Show to others:** Open Government Licence v3.0: reuse is allowed with ONS named as the source.
+- **Commercial use:** Allowed ("whether commercially or privately", ONS licences page; "exploit the Information commercially and non-commercially", OGL v3.0).
+- **Credit:** Source: Office for National Statistics licensed under the Open Government Licence v.3.0
+
+From the terms:
+
+> if you wish to use or re-use ONS material, whether commercially or privately
+>
+> you may do so freely without a specific application for a licence, subject to the conditions of the Open Government Licence
+>
+> If you are reproducing ONS content you must include a source accreditation to ONS.
 
 ### CFTC Commitments of Traders
 
@@ -295,6 +325,20 @@ From the terms:
 - **Commercial use:** Not stated.
 - **Credit:** Source: US Treasury, Treasury International Capital (TIC) system.
 - **Open question:** Treasury does not state a licence for TIC. Its Fiscal Data site says its data is "free, without restriction" for commercial use, but that page does not cover TIC.
+
+### US Treasury Fiscal Data (Treasury Securities Auctions Data)
+
+- **Used for:** Bid-to-cover, high yield, amounts offered and accepted, and the indirect bidders' share at each auction of US bills, notes and bonds
+- **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. Free, without restriction.
+- **Terms read:** [Fiscal Data about and terms](https://fiscaldata.treasury.gov/about-us/); [Treasury Securities Auctions Data](https://fiscaldata.treasury.gov/datasets/treasury-securities-auctions-data/) (checked 2026-11-08)
+- **Show to others:** Allowed: Fiscal Data says its data are free, without restriction, to copy, adapt and redistribute.
+- **Commercial use:** Allowed ("for non-commercial or commercial purposes").
+- **Credit:** Source: U.S. Department of the Treasury, Fiscal Data, Treasury Securities Auctions Data.
+
+From the terms:
+
+> free, without restriction, and available to copy, adapt, redistribute, or otherwise use for non-commercial or commercial purposes.
 
 ### US EIA open data
 
@@ -329,7 +373,7 @@ From the terms:
 
 ### UCDP (Uppsala Conflict Data Program) downloaded files
 
-- **Used for:** Armed conflicts, battle deaths, non-state and one-sided violence per country and year; preliminary monthly Candidate events since the yearly release (files you put in data/local/ucdp/)
+- **Used for:** Armed conflicts, battle deaths, non-state and one-sided violence per country and year; preliminary monthly Candidate events since the yearly release (release shipped in datasets/ucdp/; newer files fetched into data/local/ucdp/ by the daily start-up run or npm run ucdp:pull, or put there by you)
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0 allows sharing with a citation of the dataset publications.
 - **Terms read:** [UCDP downloads (licence and citations)](https://ucdp.uu.se/downloads/) (checked 2026-11-06)
@@ -365,7 +409,7 @@ From the terms:
 
 ### Caldara-Iacoviello Geopolitical Risk index
 
-- **Used for:** Monthly geopolitical risk index, world and 44 countries (file you save in data/local/gpr/), in the country risk scorecard
+- **Used for:** Monthly geopolitical risk index, world and 44 countries (file fetched into data/local/gpr/ by the daily start-up run or npm run gpr:pull, or saved there by you), in the country risk scorecard
 - **Status:** Terms not confirmed
 - **Free non-commercial sharing:** Sharing unclear. Terms not read.
 - **Terms read:** [Geopolitical Risk Index page](https://www.matteoiacoviello.com/gpr.htm) (checked 2026-11-06)
@@ -451,7 +495,7 @@ From the terms:
 
 ### Banco Central do Brasil (SGS 13522, IPCA 12 months; Focus market expectations)
 
-- **Used for:** Brazil's IPCA inflation over 12 months; Focus survey median IPCA expected over the next 12 months (Olinda OData, Expectativas)
+- **Used for:** Brazil's IPCA inflation over 12 months; IBGE monthly industrial production, retail sales volume and unemployment rate as the BCB republishes them (SGS 21859, 1455, 24369); Focus survey median IPCA expected over the next 12 months (Olinda OData, Expectativas)
 - **Status:** Terms not confirmed
 - **Free non-commercial sharing:** Sharing unclear. No licence stated; the footer reads all rights reserved.
 - **Terms read:** [Open data portal: about](https://dadosabertos.bcb.gov.br/pages/sobre-o-portal); [Focus dataset page (licence: ODbL)](https://dadosabertos.bcb.gov.br/dataset/expectativas-mercado) (checked 2026-11-06)
@@ -544,6 +588,17 @@ From the terms:
 >
 > The Bank does not grant You permission to re-use such third-party content unless it expressly indicates that You may do so.
 
+### IMF PortWatch (daily chokepoint transits and port activity, ArcGIS feature layers)
+
+- **Used for:** Ships through eight chokepoints and estimated volume (world series); each country's port calls and estimated seaborne imports and exports, monthly averages of daily data
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. Terms not read yet.
+- **Terms read:** [PortWatch terms of use (page could not be read)](https://portwatch.imf.org/pages/terms); [PortWatch data and methodology](https://portwatch.imf.org/pages/data-and-methodology) (checked 2026-11-08)
+- **Show to others:** The PortWatch terms page did not give its text to an automated reader, and the layers carry no licence or copyright text.
+- **Commercial use:** Not confirmed.
+- **Credit:** Source: IMF PortWatch (portwatch.imf.org), daily port and chokepoint data and preliminary trade volume estimates.
+- **Open question:** Read the PortWatch terms in a browser (portwatch.imf.org/pages/terms) and update this row. PortWatch is an IMF site, so the IMF Copyright and Usage terms may apply, but the AIS ship data come from partners and may carry their own terms.
+
 ### Your own paid data (CDS file, LSEG account)
 
 - **Used for:** 5Y sovereign CDS (hidden for now)
@@ -555,10 +610,238 @@ From the terms:
 - **Credit:** As your vendor contract requires.
 - **Open question:** Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.
 
+### AidData Global Chinese Development Finance Dataset, version 3.0
+
+- **Used for:** Official loan commitments from China by borrowing country, 2000-2021: per-country sums of version 3.0 shipped in datasets/aiddata/, or a newer file the user puts in data/local/aiddata/ (issuer brief, Fiscal & Debt Agent)
+- **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. ODC-By allows sharing with credit to AidData.
+- **Terms read:** [gcdf-geospatial-data README and LICENSE (AidData, GitHub)](https://github.com/aiddata/gcdf-geospatial-data); [Dataset page (citation)](https://www.aiddata.org/data/aiddatas-global-chinese-development-finance-dataset-version-3-0) (checked 2026-11-11)
+- **Show to others:** Allowed: the AidData dataset is under the Open Data Commons Attribution License (ODC-By).
+- **Commercial use:** ODC-By sets no commercial limit; the pages read do not mention commercial use.
+- **Credit:** AidData. 2023. Global Chinese Development Finance Dataset, Version 3.0.
+- **Open question:** The licence is stated in AidData's GitHub repository for the geospatial edition; the dataset page itself states none and aiddata.org/terms did not load. Use the project-level table only (ODC-By), not the OpenStreetMap shapes (ODbL, share-alike).
+
+From the terms:
+
+> The original dataset produced by AidData is licensed using the Open Data Commons Attribution License (ODC-By).
+>
+> Any use of the dataset and its content must include appropriate attribution to AidData
+>
+> uses incorporating the geospatial features from OSM must also attribute OSM and be made available using ODbL.
+
+### IMF list of low-income country debt sustainability analyses
+
+- **Used for:** Risk of external debt distress for each low-income country, with the date of its latest DSA (issuer brief, Fiscal & Debt Agent), typed by hand from the list as of 30 September 2026
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No terms stated on the list; facts quoted with source and date.
+- **Terms read:** [LIC DSA list (PDF)](https://www.imf.org/external/Pubs/ft/dsa/DSAlist.pdf) (checked 2026-11-11)
+- **Show to others:** Not stated: the one-page list has no terms of use. The ratings are shown as facts with the source, the list date and the day it was read.
+- **Commercial use:** Not stated.
+- **Credit:** Source: International Monetary Fund, List of IMF/WBG LIC DSAs for PRGT-Eligible Countries, as of September 30, 2026.
+- **Open question:** The list itself states no terms (copy read 2026-11-11, given by the maintainer). The general IMF copyright and usage page did not load from the build computer; the question is in the email to copyright@imf.org.
+
+### ILOSTAT (International Labour Organization)
+
+- **Used for:** Average monthly earnings of employees (EAR_4MTH_SEX_ECO_CUR_NB_A): nominal and real wage growth (country brief, Central Bank and Politics agents), downloaded weekly by the daily run
+- **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0 allows sharing with credit to the ILO.
+- **Terms read:** [ILO rights and permissions](https://www.ilo.org/rights-and-permissions); [ILOSTAT](https://ilostat.ilo.org/) (checked 2026-11-11)
+- **Show to others:** Allowed: ILO databases and datasets published from 3 May 2023 are under CC BY 4.0.
+- **Commercial use:** Allowed (CC BY 4.0 sets no commercial limit).
+- **Credit:** Source: ILOSTAT, International Labour Organization (ILO).
+- **Open question:** Data produced before 3 May 2023 is not automatically CC BY; the app reads the current ILOSTAT release, published after that date. The ILO name and logo may not be used without written permission.
+
+From the terms:
+
+> As of 3 May 2023, databases and datasets together with the accompanying referential metadata are covered by the Creative Commons CC BY 4.0 licence.
+>
+> Databases and datasets together with the accompanying referential metadata produced prior to 3 May 2023 do not automatically benefit from a Creative Commons licence.
+
+### Our World in Data energy file (Energy Institute Statistical Review of World Energy)
+
+- **Used for:** Energy mix: shares of coal, oil, gas, nuclear and renewables in primary energy (country brief, Global Spillover Agent), downloaded weekly to this computer by the daily run
+- **Status:** Permission needed for client or commercial use
+- **Free non-commercial sharing:** Do not pass on. Private, non-commercial use only; not shipped with the app.
+- **Terms read:** [Our World in Data energy data (README)](https://github.com/owid/energy-data); [Energy Institute terms](https://www.energyinst.org/terms); [Energy Institute Statistical Review](https://www.energyinst.org/statistical-review) (checked 2026-11-11)
+- **Show to others:** Not allowed without the Energy Institute's permission: its terms allow private, non-commercial use only. Our World in Data's CC BY covers its own work, not the Energy Institute's figures.
+- **Commercial use:** Not allowed without the Energy Institute's permission.
+- **Credit:** Energy Institute - Statistical Review of World Energy (year); Our World in Data energy dataset.
+- **Open question:** The energy mix shares come from the Energy Institute, whose website terms allow private, non-commercial use only. The maintainer chose (2026-11-11, personal non-commercial use) to have each computer download the file itself and never ship it. Do not show these figures to others or use them commercially without the Energy Institute's permission; ask the Energy Institute before any wider use.
+
+From the terms:
+
+> You may only print (or download to disk) the Contents for the purpose of private and personal non-commercial use
+>
+> is subject to the license terms from the original third-party authors
+
+### IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies (Arslanalp and Tsuda)
+
+- **Used for:** Who holds government debt: foreign official, foreign banks, foreign other investors, domestic central bank, domestic banks, domestic other investors (country brief, Fiscal & Debt Agent), from the workbook you put in data/local/imf-investor-base/
+- **Status:** Permission needed for client or commercial use
+- **Free non-commercial sharing:** Free sharing allowed. IMF Data may be published and distributed with credit; commercial reuse needs permission. The workbook is not shipped.
+- **Terms read:** [IMF Copyright and Usage (Special Terms for Statistical Data)](https://www.imf.org/en/About/copyright-and-terms); [Workbook (wp1439.zip)](https://www.imf.org/-/media/websites/imf/imported-datasets/external/pubs/ft/wp/2014/data/wp1439.zip) (checked 2026-11-11)
+- **Show to others:** Allowed with credit under the IMF data terms; the workbook itself states no terms.
+- **Commercial use:** Needs permission: email copyright@imf.org.
+- **Credit:** Source: International Monetary Fund, Sovereign Debt Investor Base for Emerging Markets and Developing Economies; Arslanalp and Tsuda (2014), IMF Working Paper WP/14/39.
+- **Open question:** The workbook (version of 6 November 2026, read 2026-11-11, given by the maintainer) and the working paper state no terms; the paper PDF is marked "Not for Redistribution", so neither is shipped with the app. The general IMF statistical data terms are taken to apply (publish with credit; commercial reuse needs permission). Confirm with copyright@imf.org with the other IMF questions.
+
+From the terms:
+
+> The dataset can be quoted as "Sovereign investor base estimates by Arslanalp and Tsuda (2014)".
+
+### DSSI and Common Framework status (World Bank, Paris Club)
+
+- **Used for:** Which countries applied to the Common Framework (and, once typed, which took part in the Debt Service Suspension Initiative), typed by hand with source and date (issuer brief, Fiscal & Debt Agent)
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No terms stated.
+- **Terms read:** [World Bank DSSI brief](https://www.worldbank.org/en/brief/2022/03/10/covid-19-debt-service-suspension-initiative); [Paris Club, Common Framework](https://clubdeparis.org/en/communications/page/common-framework) (checked 2026-11-11)
+- **Show to others:** Not stated on either page.
+- **Commercial use:** Not stated.
+- **Credit:** World Bank, COVID-19 Debt Service Suspension Initiative; Paris Club, Common Framework.
+- **Open question:** Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.
+
+From the terms:
+
+> Forty-eight out of 73 eligible countries participated.
+>
+> As of 2024, four countries have applied to the Common Framework for a debt treatment: Tchad, Zambia, Ethiopia and Ghana.
+
+## Sources planned, not read by the app yet
+
+Read in the licence sweep of 11 November 2026, before the steps that need them are built. Each row moves into the register above when its step is built. UN Comtrade (G18) and the IMF datasets already read are covered by the rows above.
+
+| Source | Planned for | Status | Free non-commercial sharing | Credit |
+| --- | --- | --- | --- | --- |
+| Penn World Table (Groningen Growth and Development Centre) | G27 Growth accounting | Open with attribution | Free sharing allowed | Feenstra, Robert C., Robert Inklaar and Marcel P. Timmer (2015), "The Next Generation of the Penn World Table", American Economic Review, 105(10), 3150-3182. |
+| IMF Government Finance Statistics and Financial Soundness Indicators | G28 Bank-sovereign links (GFS by level of government is in use since G42, under the IMF row) | Permission needed for client or commercial use | Free sharing allowed | Source: International Monetary Fund, <database name>, <link to the dataset>. |
+| IMF Monitoring of Fund Arrangements (MONA) | G34 Precedent finder | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, Monitoring of Fund Arrangements (MONA) database. |
+| IMF Fiscal Rules Dataset, 1985-2024 | G35 Fiscal rules check | Terms not confirmed | Sharing unclear | "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page. |
+| IMF External Balance Assessment (EBA) | G24 External sustainability | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, External Balance Assessment. |
+| Laeven and Valencia, Systemic Banking Crises database (2018 update) | G23 Crisis early-warning; G34 Precedent finder | Terms not confirmed | Sharing unclear | Laeven, Luc and Fabian Valencia (2018), "Systemic Banking Crises Revisited", IMF Working Paper 18/206. |
+| Database of Political Institutions 2020 (Inter-American Development Bank) | G36 Political feasibility | Terms not confirmed | Sharing unclear | Database of Political Institutions 2020 (DPI2020), Inter-American Development Bank; take the full citation from the download page when it is found. |
+| ND-GAIN Country Index (University of Notre Dame) | G20 Climate and energy | Terms not confirmed | Sharing unclear | Notre Dame Global Adaptation Initiative Country Index (ND-GAIN). (Year). University of Notre Dame. |
+
+### Penn World Table (Groningen Growth and Development Centre)
+
+- **Planned for:** G27 Growth accounting
+- **Will be used for:** Capital stock, hours, human capital and productivity for growth accounting
+- **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0 allows sharing with credit.
+- **Terms read:** [Penn World Table page (PWT 11.0, October 2025)](https://www.rug.nl/ggdc/productivity/pwt/) (checked 2026-11-11)
+- **Show to others:** Allowed under CC BY 4.0.
+- **Commercial use:** Allowed (CC BY 4.0 sets no commercial limit).
+- **Credit:** Feenstra, Robert C., Robert Inklaar and Marcel P. Timmer (2015), "The Next Generation of the Penn World Table", American Economic Review, 105(10), 3150-3182.
+
+From the terms:
+
+> is licensed under a Creative Commons Attribution 4.0 International License
+>
+> When using these data (for whatever purpose), please make the following reference:
+
+### IMF Government Finance Statistics and Financial Soundness Indicators
+
+- **Planned for:** G28 Bank-sovereign links (GFS by level of government is in use since G42, under the IMF row)
+- **Will be used for:** Bank capital, asset quality and holdings of government debt
+- **Status:** Permission needed for client or commercial use
+- **Free non-commercial sharing:** Free sharing allowed. IMF Data may be published and distributed with attribution.
+- **Terms read:** [IMF Copyright and Usage (Special Terms for Statistical Data)](https://www.imf.org/en/About/copyright-and-terms) (checked 2026-11-11)
+- **Show to others:** Allowed with attribution: GFS is named in the IMF's statistical data terms.
+- **Commercial use:** Needs permission: email copyright@imf.org. Bulk automated download also needs permission.
+- **Credit:** Source: International Monetary Fund, <database name>, <link to the dataset>.
+- **Before building:** FSI is not named in the terms; it falls under "statistical data ... that explicitly identify the International Monetary Fund as the source". Same commercial and bulk-download limits as the main IMF row.
+
+From the terms:
+
+> Users may download, extract, copy, create derivative works, publish, distribute, and use Data obtained from IMF Sites subject to these conditions:
+>
+> For any potential commercial reuse of IMF Data, email copyright@imf.org to request permission.
+>
+> The IMF prohibits bulk download of information by automated technology without explicit permission
+
+### IMF Monitoring of Fund Arrangements (MONA)
+
+- **Planned for:** G34 Precedent finder
+- **Will be used for:** IMF programmes by country: type, dates, size and conditions
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No terms on the dataset page.
+- **Terms read:** [MONA database page](https://www.imf.org/external/np/pdr/mona/index.aspx) (checked 2026-11-11)
+- **Show to others:** Not stated on the MONA page.
+- **Commercial use:** Not stated on the MONA page.
+- **Credit:** Source: International Monetary Fund, Monitoring of Fund Arrangements (MONA) database.
+- **Before building:** The MONA page has no terms. It is probably covered by the general IMF statistical data terms (publish with attribution, commercial use needs permission), but the page does not say so. Ask copyright@imf.org or treat as the main IMF row only after confirming.
+
+### IMF Fiscal Rules Dataset, 1985-2024
+
+- **Planned for:** G35 Fiscal rules check
+- **Will be used for:** National and supranational fiscal rules by country and year (123 economies)
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No terms on the dataset page.
+- **Terms read:** [Fiscal Rules Dataset page (version 1.0 update, 25 September 2025)](https://www.imf.org/en/topics/fiscal-policies/fiscal-rules-dataset) (checked 2026-11-11)
+- **Show to others:** Not stated on the dataset page.
+- **Commercial use:** Not stated on the dataset page.
+- **Credit:** "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page.
+- **Before building:** The page gives a citation but no terms. Probably under the general IMF statistical data terms; confirm before building G35.
+
+### IMF External Balance Assessment (EBA)
+
+- **Planned for:** G24 External sustainability
+- **Will be used for:** Published current account norm coefficients
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No terms on the page.
+- **Terms read:** [EBA page](https://www.imf.org/external/np/res/eba/) (checked 2026-11-11)
+- **Show to others:** Not stated on the EBA page.
+- **Commercial use:** Not stated on the EBA page.
+- **Credit:** Source: International Monetary Fund, External Balance Assessment.
+- **Before building:** The page says data and estimates are online but does not say whether the coefficients are included or under what terms. Read the methodology paper and data files before G24; if reuse is not allowed, the norm shows "Missing".
+
+From the terms:
+
+> Data and estimates from the EBA exercise are available online.
+
+### Laeven and Valencia, Systemic Banking Crises database (2018 update)
+
+- **Planned for:** G23 Crisis early-warning; G34 Precedent finder
+- **Will be used for:** Start and end years of systemic banking, currency and sovereign debt crises
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No terms found.
+- **Terms read:** [IMF Working Paper 18/206](https://www.imf.org/en/Publications/WP/Issues/2018/09/14/Systemic-Banking-Crises-Revisited-46232); [IMF Copyright and Usage](https://www.imf.org/en/About/copyright-and-terms) (checked 2026-11-11)
+- **Show to others:** Not stated: the paper has no licence or data statement.
+- **Commercial use:** Not stated.
+- **Credit:** Laeven, Luc and Fabian Valencia (2018), "Systemic Banking Crises Revisited", IMF Working Paper 18/206.
+- **Before building:** No data file or terms found on the IMF page. Whether the IMF statistical data terms cover a working paper's crisis dates is not stated. The crisis dates could be typed from the paper's tables with citation; confirm with the IMF before G23 runs.
+
+### Database of Political Institutions 2020 (Inter-American Development Bank)
+
+- **Planned for:** G36 Political feasibility
+- **Will be used for:** Checks and balances, government fractionalisation, election timing
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No licence found.
+- **Terms read:** [DPI 2020 publication page (IDB)](https://publications.iadb.org/en/database-political-institutions-2020-dpi2020) (checked 2026-11-11)
+- **Show to others:** Not stated on the publication page.
+- **Commercial use:** Not stated.
+- **Credit:** Database of Political Institutions 2020 (DPI2020), Inter-American Development Bank; take the full citation from the download page when it is found.
+- **Before building:** The IDB page has no licence or data link, and the DPI was not found on data.iadb.org. Find the download page in a browser and read its licence before G36.
+
+### ND-GAIN Country Index (University of Notre Dame)
+
+- **Planned for:** G20 Climate and energy
+- **Will be used for:** Climate vulnerability and readiness scores
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. "Free and open-access" is not a licence.
+- **Terms read:** [ND-GAIN download page](https://gain.nd.edu/our-work/country-index/download-data/); [University of Notre Dame copyright page](https://www.nd.edu/copyright/) (checked 2026-11-11)
+- **Show to others:** Not stated: the page calls the index "free and open-access" but gives no licence.
+- **Commercial use:** Not stated.
+- **Credit:** Notre Dame Global Adaptation Initiative Country Index (ND-GAIN). (Year). University of Notre Dame.
+- **Before building:** No licence stated. Ask ND-GAIN in writing whether the scores may be redistributed inside an open-source app before G20 uses them.
+
+From the terms:
+
+> As a free and open-access tool, ND-GAIN appreciates understanding how the Country Index is used.
+
 ## Open questions
 
 1. **World Bank Pink Sheet (commodity prices)** (Terms not confirmed): Read the Pink Sheet licence field in the World Bank Data Catalog before showing commodity prices to clients. Some prices in it come from third parties.
-2. **IMF (World Economic Outlook, Fiscal Monitor, International Liquidity, Balance of Payments, COFER)** (Permission needed for client or commercial use): Commercial reuse (for example a paid service or client deliverables) needs the IMF's permission. Whether the app's "Download all country data" counts as bulk automated download is not addressed by the terms. COFER and Fiscal Monitor are not named, but fall under "statistical data ... that explicitly identify the International Monetary Fund as the source".
+2. **IMF (World Economic Outlook, Fiscal Monitor, International Liquidity, Balance of Payments, COFER, Consumer Price Index)** (Permission needed for client or commercial use): Commercial reuse (for example a paid service or client deliverables) needs the IMF's permission. Whether the app's "Download all country data" counts as bulk automated download is not addressed by the terms. COFER and Fiscal Monitor are not named, but fall under "statistical data ... that explicitly identify the International Monetary Fund as the source".
 3. **UN Comtrade** (Permission needed for client or commercial use): The policy page and the FAQ read differently (blanket "internal use only" against the FAQ's exemptions). The app stores a few hundred rows per country, well under 100,000, but confirm with comtrade@un.org before a paid product.
 4. **WITS (World Integrated Trade Solution)** (Permission needed for client or commercial use): Same position as UN Comtrade. Where Comtrade has the shares the app already uses Comtrade instead.
 5. **BIS statistics (policy rates, real exchange rates, debt securities, credit cycle)** (Allowed with conditions): In a paid product the BIS figures must not be what is charged for. The general bis.org terms allow redistribution "for non-commercial purposes", which the statistics terms override for statistics.
@@ -580,4 +863,9 @@ From the terms:
 21. **Central Bank of Turkey (EVDS), with your key** (Permission needed for client or commercial use): These are the TCMB website terms; they do not name EVDS, whose own pages need JavaScript and were not read.
 22. **ACLED (Armed Conflict Location & Event Data), with your account or your downloaded files** (Allowed with conditions): Monthly counts per country may count as "reorganized" data, which the EULA says is not enough to publish. Keep ACLED figures to your own research and leave them out of anything shared until ACLED confirms. API access needs the Research level; Open accounts get aggregated downloads only, which the app reads from data/local/acled/. The same EULA covers the downloaded files: they stay on your computer and are never shipped with the app.
 23. **Bank of Canada and Bank of England Sovereign Default Database (BoC-BoE)** (Allowed with conditions): The database is compiled from published sources (IMF, World Bank, Paris Club and others); the Bank's terms withhold permission for third-party content unless stated, and no database-specific licence was found. The Valet API must not be queried around its request limits: the app reads the file at most once a day.
-24. **Your own paid data (CDS file, LSEG account)** (Terms not confirmed): Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.
+24. **IMF PortWatch (daily chokepoint transits and port activity, ArcGIS feature layers)** (Terms not confirmed): Read the PortWatch terms in a browser (portwatch.imf.org/pages/terms) and update this row. PortWatch is an IMF site, so the IMF Copyright and Usage terms may apply, but the AIS ship data come from partners and may carry their own terms.
+25. **Your own paid data (CDS file, LSEG account)** (Terms not confirmed): Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.
+26. **IMF list of low-income country debt sustainability analyses** (Terms not confirmed): The list itself states no terms (copy read 2026-11-11, given by the maintainer). The general IMF copyright and usage page did not load from the build computer; the question is in the email to copyright@imf.org.
+27. **Our World in Data energy file (Energy Institute Statistical Review of World Energy)** (Permission needed for client or commercial use): The energy mix shares come from the Energy Institute, whose website terms allow private, non-commercial use only. The maintainer chose (2026-11-11, personal non-commercial use) to have each computer download the file itself and never ship it. Do not show these figures to others or use them commercially without the Energy Institute's permission; ask the Energy Institute before any wider use.
+28. **IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies (Arslanalp and Tsuda)** (Permission needed for client or commercial use): The workbook (version of 6 November 2026, read 2026-11-11, given by the maintainer) and the working paper state no terms; the paper PDF is marked "Not for Redistribution", so neither is shipped with the app. The general IMF statistical data terms are taken to apply (publish with credit; commercial reuse needs permission). Confirm with copyright@imf.org with the other IMF questions.
+29. **DSSI and Common Framework status (World Bank, Paris Club)** (Terms not confirmed): Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.

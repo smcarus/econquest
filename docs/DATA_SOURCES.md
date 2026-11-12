@@ -51,11 +51,22 @@ own-data switch in Settings).
 | Source | Fills | Address | Kept for |
 | --- | --- | --- | --- |
 | World Bank indicators | Reserves, current account, external debt, political stability, trade shares, governance (WGI), and for the unit converters CPI, population, the official exchange rate and the ICP PPP factor | api.worldbank.org | 1 week (country snapshot) |
+| World Bank inequality, taxes and tariffs (WDI) | Gini index (SI.POV.GINI, household surveys up to 15 years back), central government tax revenue (GC.TAX.TOTL.GD.ZS) and its split (GC.TAX.YPKG.RV.ZS, GC.TAX.GSRV.RV.ZS, GC.TAX.INTT.RV.ZS), applied tariff weighted and simple mean (TM.TAX.MRCH.WM.AR.ZS, TM.TAX.MRCH.SM.AR.ZS, from WITS/TRAINS) | api.worldbank.org | 1 week (country snapshot) |
+| World Bank people and living standards (WDI) | Poverty rate at three international lines (SI.POV.DDAY, SI.POV.LMIC, SI.POV.UMIC, household surveys up to 15 years back), remittances received (BX.TRF.PWKR.DT.GD.ZS), labour force participation (SL.TLF.CACT.ZS) and youth unemployment (SL.UEM.1524.ZS), both ILO modelled estimates, age dependency ratio (SP.POP.DPND) | api.worldbank.org | 1 week (country snapshot) |
+| World Bank emissions and renewables (WDI) | Greenhouse gas emissions per person excluding land use, tonnes CO2e (EN.GHG.ALL.PC.CE.AR5, from EU EDGAR); renewable energy, % of final energy consumption (EG.FEC.RNEW.ZS) | api.worldbank.org | 1 week (country snapshot) |
+| Our World in Data energy file | Energy mix: shares of coal, oil, gas, nuclear and renewables in primary energy (Energy Institute Statistical Review of World Energy, via Our World in Data); downloaded to this computer, not shipped (Energy Institute terms: private, non-commercial use only) | catalog.ourworldindata.org (older file: raw.githubusercontent.com/owid/energy-data) | 1 week, daily run, on disk |
+| World Bank trade and energy (WDI) | Shares of merchandise exports and imports in fuel, ores and metals, food and manufactures (TX.VAL.FUEL.ZS.UN, TX.VAL.MMTL.ZS.UN, TX.VAL.FOOD.ZS.UN, TX.VAL.MANF.ZS.UN and the TM.VAL.* counterparts); net energy imports, % of energy use (EG.IMP.CONS.ZS; negative = net exporter) | api.worldbank.org | 1 week (country snapshot) |
+| World Bank debt structure (WDI, IDS) | Interest payments, % of central government revenue (GC.XPN.INTP.RV.ZS); currency mix of public and publicly guaranteed external debt (IDS DT.CUR.USDL.ZS, DT.CUR.EURO.ZS, DT.CUR.JYEN.ZS, DT.CUR.UKPS.ZS, DT.CUR.SWFR.ZS, DT.CUR.SDRW.ZS, DT.CUR.MULC.ZS, DT.CUR.OTHC.ZS) and average maturity of new loans (DT.MAT.DPPG), low- and middle-income countries only | api.worldbank.org | 1 week (country snapshot) |
+| IMF Sovereign Debt Investor Base (Arslanalp and Tsuda) | Who holds general government debt: foreign official, foreign banks, foreign other investors, domestic central bank, domestic banks, domestic other investors (shares), about 136 emerging and developing economies, yearly | your file in data/local/imf-investor-base/ (wp1439.zip from imf.org) | when you replace the file (the IMF updates it end-April and end-October) |
+| IMF list of LIC DSAs | Risk of debt distress for 67 low-income countries, with each DSA's date (typed from the list as of 30 Sep 2026) | typed in src/utils/lowIncomeDebt.ts | updated by hand when the list changes |
+| Paris Club, Common Framework | Countries that applied for a debt treatment (typed, as of 2024) | typed in src/utils/lowIncomeDebt.ts | by hand |
+| AidData Global Chinese Development Finance (v3.0) | Official loan commitments from China by country, 2000-2021 | datasets/aiddata/china-lending.json (shipped summary); data/local/aiddata/ (a newer file of yours wins) | when AidData publishes a new version |
 | World Bank debt statistics (IDS, QEDS) | External debt falling due by year and quarter (banker brief) | api.worldbank.org | 12 h |
 | IMF World Economic Outlook | Debt/GDP, inflation, GDP growth, primary balance, output gap (only where the IMF publishes one, mostly advanced economies) | www.imf.org | 1 week (country snapshot) |
 | IMF WEO past editions (your files) | Each figure as a given WEO edition published it (real-time vintages), for fair comparisons against the IMF | data/local/weo-vintages/ (you download them; nothing fetched) | when you add files |
 | IMF reserves and balance of payments | Monthly official reserves (International Liquidity, IL); quarterly current account and imports of goods and services (BOP); import cover and current account % of GDP | api.imf.org | 1 day, on disk (structures 1 week) |
 | IMF COFER | World shares of official FX reserves by currency (US dollar, euro, renminbi, yen, sterling and others), quarterly | api.imf.org | 1 day, on disk |
+| IMF monthly consumer prices (CPI) | Monthly inflation, all items, year on year, for catalog countries outside the EU; used when its month is at least as new as the OECD copy's (national and Eurostat series win a tie) | api.imf.org | Daily run, on disk (data/live/imf-cpi.json); pages read the saved copy |
 | GDELT | Headlines and news tone (a risk score input) | api.gdeltproject.org | 7 days, on disk (`GDELT_REFRESH_DAYS`) |
 | GDELT 2.0 raw files (events and Global Knowledge Graph) | Weekly event counts per country (protests, sanctions, violence, Goldstein and tone) and economic-theme shares of news (inflation, central bank, debt, currency, fiscal, lenders and more) with tone and the people and organisations named | data.gdeltproject.org/gdeltv2/ | Per day on disk (`data/live/gdelt-raw/`), look-back `GDELT_RAW_WEEKS` (default 8) |
 | GDELT 1.0 event files | Monthly event history per country (events, protests, sanctions, violence, Goldstein, tone; share of all events GDELT coded), back to 1979 if wanted. Alongside the 2.0 files, not instead | data.gdeltproject.org/events/ | Per month on disk (`data/live/gdelt-daily/`), from `GDELT_DAILY_FROM` (default 2016-01) |
@@ -65,10 +76,17 @@ own-data switch in Settings).
 | ECB rates (Frankfurter) | FX volatility; last year's closing rate for the year-to-date move | api.frankfurter.dev | 12 h |
 | ECB daily history (Frankfurter) | Exchange rate per US dollar, every ECB business day since 1999, one quarter per request; saved to data/live/fx-history.json, finished quarters kept for good | api.frankfurter.dev | 12 h (current quarter) |
 | BIS | Real exchange rates; government debt securities | stats.bis.org | 12 h |
+| ILOSTAT (International Labour Organization) | Average monthly earnings of employees, local currency (EAR_4MTH_SEX_ECO_CUR_NB_A): nominal wage growth, and real wage growth with World Bank inflation (FP.CPI.TOTL.ZG); CC BY 4.0 | rplumber.ilo.org | 1 week, daily run, on disk |
+| BIS residential property prices | Real and nominal house prices, change on a year earlier, all countries in one request (WS_SPP) | stats.bis.org | 20 h, daily run, on disk |
+| BIS total credit | Household and non-financial company debt, credit from all lenders, % of GDP, market value, adjusted for breaks (WS_TC, key Q.{country}.H+N.A.M.770.A); the daily run reads all countries, History & data the full history per country | stats.bis.org | 20 h, daily run, on disk |
+| Monthly activity | Industrial production, retail sales and the monthly unemployment rate: Eurostat (sts_inpr_m, sts_trtu_m, une_rt_m) for EU members and Turkey; FRED INDPRO, RSAFS, UNRATE for the United States; ONS K222, J5EK, MGSX for the United Kingdom; BCB SGS 21859, 1455, 24369 (IBGE) for Brazil | ec.europa.eu, fred.stlouisfed.org, www.ons.gov.uk, api.bcb.gov.br | 20 h, daily run, on disk |
+| Levels of government | Revenue and spending of central, state, local and social security government, % of GDP: Eurostat gov_10a_main (TR, TE; S1311-S1314, S13) for EU members; IMF GFS main aggregates through DBnomics (IMF/GFSMAB/A.{ISO2}.{sector}.XDC_R_B1GQ.G1 and G2M) for other countries | ec.europa.eu, api.db.nomics.world | 1 week, daily run, on disk |
+| Figures as first published | Euro area: ECB Euro Area Real-Time Database (dataset RTD, includeHistory=true): RTD.Q.S0.S.G_GDPM_TO_C.E (GDP, chain-linked volumes), RTD.M.S0.N.P_C_OV.A (HICP annual rate), RTD.M.S0.S.L_UNETO.F (unemployment rate). UK: ONS GDP revision triangle (ABMI, abmi.zip, worksheet "triangle"; a copy in data/local/ons-triangles/ is read when the download is refused) | data-api.ecb.europa.eu, www.ons.gov.uk | 1 week, daily run, gzipped on disk |
 | BIS central bank policy rates | Policy rate per country with its date and central bank, the 12-month change and the last move | stats.bis.org | 12 h, on disk |
 | WITS | Export and import shares with China and Russia | wits.worldbank.org | 24 h |
 | CFTC Commitments of Traders | Weekly currency futures positioning (leveraged funds, asset managers) for MXN, BRL, ZAR, JPY, GBP, EUR | publicreporting.cftc.gov | Until a newer report can exist (weekly), on disk |
 | US Treasury TIC | Holdings of US Treasuries by country, monthly (Japan, UK, China, Brazil, India and the other ~15 holders Treasury names) | ticdata.treasury.gov | 1 day, on disk |
+| US Treasury Fiscal Data (auctions) | US Treasury auctions: bid-to-cover, high yield (bills: high investment rate), amounts offered and accepted, indirect bidders' share, for 13- and 26-week bills, 2-, 5- and 10-year notes and 30-year bonds, ten years back (TIPS, floating-rate notes and cash management bills left out). United States page, issuer note and council charts | api.fiscaldata.treasury.gov | Daily run, on disk (data/live/ust-auctions.json); pages read the saved copy |
 | World Bank Pink Sheet | Monthly commodity prices: oil (Brent, WTI, Dubai), gas, LNG, coal, copper, iron ore, aluminium, nickel, gold, platinum, silver, soybeans, maize, wheat, palm oil, coffee, cocoa, sugar | www.worldbank.org (page), thedocs.worldbank.org (workbook) | 1 day, on disk |
 | OECD leading indicators (via DBnomics) | Composite leading indicator (amplitude adjusted, 100 = long-term average), monthly, for the countries the OECD covers | api.db.nomics.world | 1 day, on disk |
 | OECD quarterly GDP (via DBnomics) | Real GDP growth, quarter on quarter and year on year, seasonally adjusted, for about 53 OECD and partner areas; feeds the nowcast and forecasts | api.db.nomics.world | 1 day, on disk |
@@ -77,12 +95,14 @@ own-data switch in Settings).
 | OECD consumer prices (via DBnomics) | Headline CPI inflation, y/y, monthly; the app's inflation figure where the OECD publishes one (IMF elsewhere) | api.db.nomics.world | 1 day, on disk |
 | Banco Central do Brasil (SGS 13522) | Brazil's IPCA inflation over 12 months, monthly; used instead of the OECD figure when at least as new (it was September 2026 against May on 2026-11-05) | api.bcb.gov.br | 1 day, on disk |
 | Eurostat HICP (prc_hicp_minr) | Monthly inflation, annual rate, all items, for EU members on your lists (Poland on the defaults); used instead of the OECD figure when at least as new. Turkey is not in this dataset | ec.europa.eu | 1 day, on disk |
-| UN Comtrade | Annual goods trade by partner (shares with China, Taiwan, Russia and the Gulf producers; top partners) and the export mix by HS chapter (fuels, ores, metals, farm goods) | comtradeapi.un.org | 30 days per country, on disk |
+| Eurostat: EU business and consumer surveys (ei_bssi_m_r2, ei_bsee_m_r2) | The European Commission's monthly surveys, seasonally adjusted, for EU members on the country list, from 2005: Economic Sentiment Indicator, industrial, services and consumer confidence, Employment Expectations Indicator. Labelled "EU business survey, not a PMI". Economist note, country page and council charts | ec.europa.eu | Daily run, on disk (data/live/eu-surveys.json); pages read the saved copy |
+| UN Comtrade | Annual goods trade by partner (shares with China, Taiwan, Russia and the Gulf producers; top five export markets) and exports by HS chapter, every chapter (the export mix of fuels, ores, metals and farm goods, and the app's export concentration index) | comtradeapi.un.org | 30 days per country, on disk |
 | Central bank of Peru (BCRPData, EMBIG) | USD bond spread over US Treasuries: J.P. Morgan EMBI Global spread, monthly average, for Argentina, Brazil, Chile, Colombia, Ecuador, Mexico, Peru and Venezuela, plus the Latin American and emerging-market aggregates. The free stand-in for 5Y CDS: labelled a bond spread, never CDS. Other countries read Missing ("No free source"). Published about three weeks after the month | estadisticas.bcrp.gob.pe | 12 h, on disk (`data/live/market-extras.json`) |
 | FRED download | 10Y yields (OECD monthly): US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries | fred.stlouisfed.org | 6 h |
 | FRED download | Fed balance sheet (H.4.1): WALCL total assets, WRESBAL reserves, WTREGEN Treasury General Account; NY Fed RRPONTSYD overnight reverse repos | fred.stlouisfed.org | 12 h (1 h after a miss); saved to data/live/fed-balance-sheet.json |
 | FRED download (API with your key) | Stress indices: St. Louis Fed STLFSI4, Chicago Fed NFCI and ANFCI (weekly; scenario factor of your choice and world series) | fred.stlouisfed.org | 12 h (1 h after a miss) |
 | NY Fed download | Global Supply Chain Pressure Index (monthly; scenario factor and world series), an Excel 97 .xls file (served even at gscpi_data.csv), read with the app's own .xls reader | newyorkfed.org | 12 h (1 h after a miss) |
+| IMF PortWatch (ArcGIS feature layers) | Ships through eight chokepoints and their estimated volume (world series); each country's port calls and estimated seaborne imports and exports. Daily data from ship signals, shown as monthly averages per day; the latest month is partial | services9.arcgis.com | 24 h (1 h after a miss) |
 | ECB Data Portal | Survey of Professional Forecasters: euro-area HICP expected 1 year, 2 years and longer term ahead (quarterly world series). Series keys not yet verified live; see `npm run check:data` | data-api.ecb.europa.eu | 12 h (1 h after a miss) |
 | BCB Olinda (Focus) | Focus survey median IPCA expected over the next 12 months, Brazil page. Field names not yet verified live; see `npm run check:data` | olinda.bcb.gov.br | 12 h (1 h after a miss) |
 | FRED download (API with your key) | US inflation expectations: T5YIE, T10YIE, T5YIFR breakevens (daily, shown at month-end); Cleveland Fed EXPINF1YR, EXPINF10YR (monthly). US country page only | fred.stlouisfed.org | 12 h (1 h after a miss) |
@@ -147,6 +167,35 @@ Notes from the first check on Sam's Mac (2026-11-05):
   after a day. Readings: holdings, change on the month and over 12 months, share of all foreign
   holdings, and a stated rule on the 12-month change (down 10% or more = selling, up 10% or
   more = buying; tagged as the FX Valuation Agent's reading).
+- **EU business and consumer surveys** are the European Commission's monthly surveys of firms and
+  households (DG ECFIN), read from Eurostat's free JSON API, which republishes them (datasets
+  `ei_bssi_m_r2` and `ei_bsee_m_r2`; reuse allowed with Eurostat named and changes stated). One
+  request per indicator covers every EU member on the country list, seasonally adjusted, from
+  2005: the Economic Sentiment Indicator and the Employment Expectations Indicator (indexes,
+  long-term average = 100) and industrial, services and consumer confidence (balances: "better"
+  minus "worse" replies, in percentage points). They stand in for the paid purchasing managers'
+  indexes but are not PMIs (different questions and scale; a PMI's line is 50), and every label
+  says "EU business survey, not a PMI". Readings: an index above or below 100 (within 0.5 counts
+  as at the average); a balance against three months earlier (within 0.5 points counts as about
+  unchanged). A month not yet published is skipped, never filled in. The daily run saves the copy
+  (`data/live/eu-surveys.json`); a failed indicator keeps its last good series. Other countries stay
+  Missing: China's statistics office blocks robots and the regional Fed surveys on FRED may not be
+  redistributed.
+- **US Treasury auctions** come from the Fiscal Data API (`auctions_query`, free, no key; Fiscal
+  Data's terms allow any use). One request reads ten years of auctions. Kept: regular bills, notes
+  and bonds of six terms (13- and 26-week bills; 2-, 5- and 10-year notes; 30-year bonds), by
+  original term so a reopened 10-year counts as a 10-year. Left out: inflation-protected
+  securities, floating-rate notes and cash management bills, whose yields do not compare. Every
+  value arrives as text and an unpublished one is the word "null"; auctions announced but not
+  yet held have no bid-to-cover and are skipped, never filled in. The daily run saves the copy
+  (`data/live/ust-auctions.json`); the United States page, its issuer note and the council charts
+  read only that copy, so no page waits on Fiscal Data. Readings: bid-to-cover (dollars bid per
+  dollar sold), high yield (bills: high investment rate), amounts offered and accepted, the
+  indirect bidders' share of the competitive amount, and a stated rule against the previous six
+  auctions of the same term (more than 0.1 above their average bid-to-cover = stronger demand,
+  more than 0.1 below = weaker, otherwise in line). TreasuryDirect asks robots not to read it and
+  is not used. Germany's, the UK's and Brazil's auctions have no free source the app can read and
+  are not shown.
 - **OECD quarterly GDP** comes from the OECD's dataflow `DSD_NAMAIN1@DF_QNA_EXPENDITURE_GROWTH_OECD`
   through DBnomics: GDP (`B1GQ`), chain-linked volume, calendar and seasonally adjusted (`Y`),
   growth on the previous quarter (`G1`) and on the same quarter a year earlier (`GY`). DBnomics'
@@ -174,6 +223,18 @@ Notes from the first check on Sam's Mac (2026-11-05):
   for that reason. `GET /api/data/policy-rates` lists what the app holds for each country.
   The rate feeds the watchlist column, the Country tab (with the 12-month change and last move),
   the Central Bank Watcher Agent and the stance check (policy tight / neutral / loose).
+- **Monthly inflation, freshest source first** (plan G3). Each country's monthly inflation comes
+  from the freshest of: its own statistics office or central bank feed (Brazil, Mexico and Turkey
+  with a key), Eurostat HICP for EU members, the IMF's monthly consumer prices, and the OECD copy
+  on DBnomics, which stopped updating in June 2026. The newest month wins; on the same month the
+  order above decides. A country's series always comes whole from one source, never stitched,
+  and every figure names its source and month. The IMF series comes from the CPI dataset on
+  api.imf.org, found by name as for the reserves: in each dimension the code named "Consumer price
+  index", "All items" and "Year-over-year percent change", monthly, other dimensions open
+  (`IMF_CPI_KEY` in `.env` overrides it; `npm run check:imf` prints what matched). The daily run
+  saves the IMF copy (`data/live/imf-cpi.json`). Menu > Data health > Inflation lists each
+  country's source and age, flags any figure more than 90 days old, and says when an old OECD copy
+  is in use.
 - **IMF reserves and balance of payments** come from the IMF data portal's SDMX 3.0 API
   (api.imf.org, no key). IFS was retired in 2025 and split into topic datasets: monthly reserves
   are in **IL** (International Liquidity) and the balance of payments in **BOP**. The IMF also
@@ -249,16 +310,23 @@ Notes from the first check on Sam's Mac (2026-11-05):
   of imports from the Gulf producers, and a fourth line, "Commodity prices, last 12 months",
   applies each commodity's actual 12-month Pink Sheet move to the country's export mix and its
   fuel imports. Each line reads Missing when a figure it needs did not load.
+  The World Bank trade shares and WITS partner shares are kept on disk after each pull that
+  returned any figure (`data/live/trade-exposure.json`) and shown from there when no feed answers.
 
-## Free, downloaded files (nothing fetched)
+## Free, downloaded files
+
+These files are fetched by the daily start-up run (see "Daily start-up run" below) where the
+publisher allows an automated download; ACLED is the one that still has to be downloaded by hand.
 
 ### Geopolitical Risk index (Caldara and Iacoviello)
 
 The country risk scorecard reads the monthly Geopolitical Risk file from
 <https://www.matteoiacoviello.com/gpr.htm> (Caldara and Iacoviello, American Economic Review 2022):
-the world index and the country index for 44 countries. Download the monthly file, open it and save
-it as .xlsx or .csv in `data/local/gpr/` (the site's .xls is the old binary Excel format, which the
-app does not read). The newest file in the folder is used. Nothing is fetched.
+the world index and the country index for 44 countries (CC BY: cite Caldara and Iacoviello 2022 and
+the page). The daily start-up run (`npm run daily`, started by `npm run go`) fetches the monthly
+file as published (`data_gpr_export.xls`) into `data/local/gpr/` when the saved copy is more than 7
+days old; `npm run gpr:pull` does the same by hand. A download is kept only if it reads as the GPR
+table. You can also save the file there yourself as .xls, .xlsx or .csv; the newest file is used.
 
 ### Sanctions lists (OFAC, UN)
 
@@ -266,18 +334,21 @@ Country Research > History & data > Sanctions lists reads files you download int
 `data/local/sanctions/`: OFAC's SDN.CSV and ADD.CSV and the non-SDN CONS_PRIM.CSV and CONS_ADD.CSV
 (from <https://ofac.treasury.gov/sanctions-list-service>, the legacy CSV layout), and the UN Security
 Council consolidated.xml (<https://main.un.org/securitycouncil/en/content/un-sc-consolidated-list>).
-`npm run sanctions:pull` tries the official download addresses and keeps a file only if it reads as
-the list; if a site refuses, download the file by hand into the same folder. No key is needed. The
+`npm run sanctions:pull` (also part of the daily start-up run) tries the official download addresses
+and keeps a file only if it reads as the list; if a site refuses, download the file by hand into the
+same folder. No key is needed. The
 EU and UK lists are not read yet.
 
 ### UCDP conflict data
 
 The Uppsala Conflict Data Program publishes its datasets as CSV files at
 <https://ucdp.uu.se/downloads/> (free, CC BY 4.0, cite the publications listed with each dataset).
-The app does not call UCDP. The 26.1 release of the five files below is shipped in the repository
-(`datasets/ucdp/`, unchanged, with its licence and citations in the README there), so the figures work
-with no setup. For a newer release, download the same files and put them, as the .zip or the .csv
-inside, in `data/local/ucdp/` (or replace the shipped ones). The app reads both folders when it starts
+The 26.1 release of the five files below is shipped in the repository (`datasets/ucdp/`, unchanged,
+with its licence and citations in the README there), so the figures work with no setup. The daily
+start-up run (`npm run daily`; by hand `npm run ucdp:pull`) checks ucdp.uu.se for a newer yearly
+release of the same five files and for the monthly Candidate Events files after the latest release,
+and saves any it finds, as published, in `data/local/ucdp/`; a file is kept only if it reads as that
+UCDP file. You can also put files there yourself, as the .zip or the .csv inside. The app reads both folders when it starts
 and again whenever a file changes; a newer release of a dataset wins over an older one.
 
 | File (26.1 release) | Fills | Years |
@@ -376,6 +447,92 @@ Not built yet (planned, also own-account only): Bloomberg, EPFR/IIF flows, conse
 Policy rates come from the free BIS dataset (see above); only Egypt, which the BIS does not cover,
 reads Missing.
 
+## What each series measures (data plan G6)
+
+Every series carries two labels, taken from its source's own definition: **what it measures** (for
+example "General government gross debt, as % of GDP (IMF WEO GGXWDG_NGDP)") and **whose figure it
+is**, from one short list: general government (central, state and local government and social
+security), central government, public and publicly guaranteed debt owed abroad, government debt in
+default, the whole economy, industry, all sectors of the economy, households and non-financial firms,
+households (consumer prices), the central bank, market prices, surveys of forecasters or of firms and
+households, and a few more. They show under the title on the History page and as the `definition` and
+`coverage` columns in every series download. The labels are kept in one table
+(`src/utils/seriesDefinitions.ts`); a series not in it says "Not stated yet", never a guess. Your own
+files say "As you described it when you loaded the file" and your subscription series "As your vendor
+defines the series code you mapped".
+
+**Units (data plan G8).** Each series also says whether it is real (adjusted for inflation) or nominal,
+a share of GDP, a price change, a rate, an index and so on; the base year of an index or of constant
+prices where it has one (World Bank CPI 2010 = 100, terms of trade 2015 = 100, GDP per head at PPP in
+constant 2021 international dollars, IBC-Br 2002 = 100, Eurostat industrial production 2021 = 100); and,
+for amounts and prices, the currency, including whether dollar figures use market exchange rates (IMF
+WEO GDP in US dollars, World Bank amounts, debt in default) or purchasing power parity (GDP per head at
+PPP). The unit converters (Research > One country > History & data) turn nominal amounts into real ones, local currency into
+dollars and dollars into PPP terms using the World Bank CPI, exchange rate and PPP factor series these
+labels name.
+
+**Seasonal adjustment and how often (data plan G7).** Each series also says whether it is seasonally
+adjusted, from how the app asks the source for it: OECD quarterly GDP is seasonally and calendar
+adjusted (ADJUSTMENT Y); the EU surveys are seasonally adjusted (s_adj=SA); Eurostat industrial
+production is seasonally and calendar adjusted, Brazil's IBC-Br seasonally adjusted; monthly inflation
+is a change on a year earlier, so seasonal swings largely cancel; yearly figures, market prices and
+inflation forecasts are "not applicable"; where the source does not say (BIS credit series, the NY Fed
+supply chain index), "Not stated by the source". Where it matters, a note says how the points are
+formed: month-end policy rates then the latest daily figures, the bond spread as a monthly average of
+daily spreads, PortWatch daily counts averaged over each month, CFTC positions as of each Tuesday, one
+point per Treasury auction, saved-download series as one point per download. **Months into quarters:**
+the only place the app turns monthly figures into quarterly ones is the GDP nowcast, which averages the
+three months of each quarter of the activity index and the leading indicator; a month not yet published
+is forecast from the series' own past and the nowcast says so.
+
+## Your data subscription (data plan G4; off unless you switch it on)
+
+For someone who already pays for a data service. **Menu > Settings > Your subscriptions** switches
+it on and picks the vendor, takes the vendor's sign-in details, and keeps the list of series you
+want ("Your series"). The same switch can be set in `.env` as `PAID_DATA_VENDOR`.
+
+- **Nothing is built in.** The app ships no vendor series codes and no vendor figures. You type the
+  vendor's own code (for example Macrobond `usgdp`), the country (or WLD), what it is, its unit and
+  how often it comes out. The list (codes and your labels, no figures) is kept in
+  `data/local/paid/mappings.json`; adding and removing go to the audit log, never a figure or a key.
+- **Labelled.** A mapped series shows under Research > One country > History as
+  "<your label> (Your subscription: <vendor>)", with "Your subscription: <vendor>, series <code>" as
+  its source. It sits next to the free series and never replaces or blends with them.
+- **Never passed on.** Every table download, the series download, sharing mode, backups, the public
+  copy and the council leave subscription figures out. Downloads name the series and say
+  "Withheld: your subscription data" where the figures would be. The figures are shown only to
+  screens on the computer running the app: another computer on the network, or a script using the
+  data API key, is told they are withheld. The History page offers no download or "Publish chart"
+  for them.
+- **Sign-in details** are stored like the other keys (encrypted when a master key is set, masked,
+  never in the audit log, a backup or the connection check).
+
+| Vendor | Status | Settings |
+| --- | --- | --- |
+| Macrobond | Fetching works (data plan G5); not yet tried against a live licence | `PAID_DATA_VENDOR="macrobond"`, `MACROBOND_CLIENT_ID`, `MACROBOND_CLIENT_SECRET` (Web API client credentials; the API licence is separate from the desktop app) |
+| Haver Analytics | Planned, G14, once a subscriber shares the API documentation | `PAID_DATA_VENDOR="haver"` |
+| Moody's Analytics | Planned, G15, memory only (figures never saved to disk) | `PAID_DATA_VENDOR="moodys"` |
+
+Until a vendor's fetching part exists, its mapped series read Missing with that reason.
+
+**Macrobond (data plan G5).** The app signs in to the Macrobond Web API with your client ID and
+secret (OAuth2 client credentials, scope `macrobond_web_api.read_mb`, the token address taken from
+`apiauth.macrobondfinancial.com`) and reads your mapped codes from
+`api.macrobondfinancial.com/v1/series/fetchseries`, a few codes per request, a quarter of a second
+apart (Macrobond allows 100 requests per 10 seconds). The sign-in token is held in memory only.
+Each date is turned into the period of the frequency you chose (for example 2026-04-01 becomes
+2026-Q2 for a quarterly series); missing values are skipped, never filled in. A series Macrobond
+cannot give keeps its last saved copy. Figures are saved in `data/local/paid/macrobond/`, which the
+public copy refuses to include. Fetching happens in the daily run (step "Your data subscription",
+`npm run go -- daily`) and with **Fetch now** under Settings > Your subscriptions; both report counts
+and dates, never a figure. Before relying on it, check that your Macrobond licence lets you keep a
+local copy of the series you fetch.
+
+The connection check (row `paid_data`, also in `npm run check:data`) says whether the subscription
+is on, whether its sign-in details are set and how many series are mapped. For Macrobond it also
+signs in and reads the first mapped series, showing only how many values came back and their first
+and last dates. It never shows a figure or a sign-in detail.
+
 ## AI model
 
 | Provider | Settings | The check |
@@ -393,6 +550,37 @@ Menu > Settings > AI model and data connections > connectors lets you point the 
 address (an internal data lake, for example) and map its fields. Figures from a connector are
 labelled with the connector's name. When a connector cannot be reached, its test says so and
 maps nothing.
+
+## Daily start-up run
+
+Every `npm run go` (and a double-click on `econquest-mac.command`) starts the daily start-up run in
+the background once the app is up; the app can be used straight away. It runs at most once every
+20 hours (an hour after a run that found no connection), inside the Docker app when that is running
+(so its figures land in the Docker app's data) and on this computer otherwise. In order:
+
+1. Every free feed for every country, the same run as Menu > Offline data > Download all (steps
+   pulled within the last day are skipped), including government spending by sector (Eurostat and
+   IMF COFOG) and defence spending (SIPRI via the World Bank).
+2. Files: past IMF WEO editions (`npm run weo:pull`, tried at most once a week because the IMF
+   often refuses automated downloads with HTTP 403; then they have to be downloaded by hand from the
+   IMF WEO database page into `data/local/weo-vintages/`), the OFAC and UN sanctions lists
+   (`sanctions:pull`), the Geopolitical Risk index (`gpr:pull`) and newer UCDP files (`ucdp:pull`).
+3. The long histories behind the nowcasts and forecasts (refreshed weekly), then a nowcast and a
+   forecast for every country, listing which are Missing and why.
+4. The pre-registered tests (backtests, forecast evaluations, currency signal tests) when the last
+   run is more than 7 days old, so a Sunday the computer was off is caught up. Results are added to
+   the forward record; recorded verdicts are never changed. `SCHEDULE_BACKTESTS=off` stops them here
+   too.
+5. The connection check, which lists every source that needs a key or a file from you. Sources that
+   need your own key (FRED, Comtrade and the rest under Menu > Settings > API keys) are used only
+   when you have set the key.
+
+How much each run downloads (roughly 150 to 200 MB a day, an estimate) and how much space the
+saved data takes is in [INSTALL.md](INSTALL.md#how-much-data-it-downloads).
+
+The log is `data/local/logs/daily.log`; `npm run go -- status` (or `npm run daily:status -- --full`)
+shows what the last run did. `npm run go -- daily` runs it now in the window, `npm run go -- --no-daily`
+starts without it. Nothing is made up: a step that fails says why and the last good figures stay.
 
 ## Pull archive
 

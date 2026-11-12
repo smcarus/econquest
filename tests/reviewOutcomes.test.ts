@@ -15,7 +15,7 @@ test('the goal figure is found by its label', () => {
   assert.equal(goalFigure({ ...frame, goal: { ...frame.goal, indicator: 'Unemployment' } }, diag('2026-11-01', 4.4, 2)), undefined);
 });
 
-test('changes beside the start, the goal move, and honest caveats', () => {
+test('changes beside the start, the goal move, and plain caveats', () => {
   const o = buildOutcomes(frame, diag('2026-11-01', 4.4, 2), diag('2027-05-02', 3.9, null), memo, '2027-05-03');
   assert.equal(o.goal.move, 'right_way');
   assert.equal(o.rows[0].change, -0.5);

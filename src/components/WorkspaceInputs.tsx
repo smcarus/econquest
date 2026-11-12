@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { PANEL_LABEL, panelUses, type InputChip, type InputId, type PanelId, type WorkspaceInputsState } from '../utils/workspaceInputs';
+import { PANEL_KEY, PANEL_LABEL, panelUses, type InputChip, type InputId, type PanelId, type WorkspaceInputsState, type WorkspaceT } from '../utils/workspaceInputs';
+import { useT } from '../i18n/useLang';
+import { WORKSPACE } from '../i18n/messages/workspace';
 
 /**
  * Workspace > Your inputs: one chip per input (watchlist, open country, feeds, keys, AI model,
@@ -9,9 +11,9 @@ import { PANEL_LABEL, panelUses, type InputChip, type InputId, type PanelId, typ
 
 const ALL_PANELS = Object.keys(PANEL_LABEL).length;
 
-function feedsText(c: InputChip): string {
-  const here = c.drives.length === ALL_PANELS ? 'Feeds every panel' : c.drives.length ? `Feeds ${c.drives.map((p) => PANEL_LABEL[p]).join(', ')}` : 'Feeds no panel here';
-  return c.alsoFeeds ? `${here}; also ${c.alsoFeeds}` : here;
+function feedsText(c: InputChip, t: WorkspaceT): string {
+  const here = c.drives.length === ALL_PANELS ? t('feedsEvery') : c.drives.length ? t('feedsSome', { list: c.drives.map((p) => t(PANEL_KEY[p])).join(', ') }) : t('feedsNone');
+  return c.alsoFeeds ? t('feedsAlso', { here, other: c.alsoFeeds }) : here;
 }
 
 type Keys = NonNullable<WorkspaceInputsState['keys']>;
@@ -63,15 +65,16 @@ export const WorkspaceInputs: React.FC<{
   onHighlight?: (id: InputId | null) => void;
 }> = ({ chips, onAction, onHighlight }) => {
   const toFix = chips.filter((c) => c.state === 'setup').length;
+  const t = useT(WORKSPACE);
 
   return (
     <section className="ui-panel" aria-labelledby="ws-inputs-title" data-workspace-inputs="true">
       <header className="px-4 pt-3 pb-2 border-b border-slate-100 dark:border-slate-800">
         <h2 id="ws-inputs-title" className="text-sm font-semibold text-slate-900 dark:text-white">
-          Your inputs
+          {t('yourInputs')}
         </h2>
         <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-          {toFix ? `${toFix} need setup. ` : ''}Point at one to outline the panels it feeds; press it to change it. Each panel's Uses line links back here.
+          {toFix ? t('inputsNeedSetup', { n: toFix }) : ''}{t('inputsHelp')}
         </p>
       </header>
       <ul>
@@ -86,8 +89,8 @@ export const WorkspaceInputs: React.FC<{
               onMouseLeave={() => onHighlight?.(null)}
               onFocus={() => onHighlight?.(c.id)}
               onBlur={() => onHighlight?.(null)}
-              title={`${c.label}: ${c.value}. ${c.note} ${feedsText(c)}. Press to ${c.action.charAt(0).toLowerCase()}${c.action.slice(1)}.`}
-              aria-label={`${c.label}: ${c.value}. ${c.state === 'setup' ? c.note + ' ' : ''}${feedsText(c)}. ${c.action}.`}
+              title={`${c.label}: ${c.value}. ${c.note} ${feedsText(c, t)}. ${t('pressTo', { action: `${c.action.charAt(0).toLowerCase()}${c.action.slice(1)}` })}`}
+              aria-label={`${c.label}: ${c.value}. ${c.state === 'setup' ? c.note + ' ' : ''}${feedsText(c, t)}. ${c.action}.`}
               className="w-full h-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <span className="flex items-center gap-2 min-w-0">
@@ -108,10 +111,11 @@ export const WorkspaceInputs: React.FC<{
 /** "Uses: Watchlist · Data feeds (Missing) · …" under a panel title. Each name opens that input. */
 export const UsesLine: React.FC<{ chips: InputChip[]; panel: PanelId; onAction: (id: InputId) => void }> = ({ chips, panel, onAction }) => {
   const uses = panelUses(chips, panel);
+  const t = useT(WORKSPACE);
   if (!uses.length) return null;
   return (
     <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400" data-uses={panel}>
-      Uses:{' '}
+      {t('uses')}{' '}
       {uses.map((c, i) => (
         <React.Fragment key={c.id}>
           {i > 0 && ' · '}
@@ -119,7 +123,7 @@ export const UsesLine: React.FC<{ chips: InputChip[]; panel: PanelId; onAction: 
             {c.label}
           </button>
           {c.state === 'setup' && (
-            <span className="text-amber-800 dark:text-amber-300"> ({c.note.startsWith('Missing') ? 'Missing' : 'Needs setup'})</span>
+            <span className="text-amber-800 dark:text-amber-300"> ({c.note.startsWith(t('missing')) ? t('missing') : t('needsSetup')})</span>
           )}
         </React.Fragment>
       ))}

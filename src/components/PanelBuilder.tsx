@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Table2 } from 'lucide-react';
+import { useT, useTx } from '../i18n/useLang';
+import { TOOLS } from '../i18n/messages/tools';
 import { DEFAULT_PANEL_FIGURES, PANEL_FIGURES, type PanelCell } from '../utils/panelTable';
 
 /**
@@ -24,6 +26,8 @@ export const PanelBuilder: React.FC<{ countries: Country[] }> = ({ countries }) 
   const [rowCount, setRowCount] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const t = useT(TOOLS);
+  const tx = useTx();
 
   // Keep the picks in step when the watchlist changes.
   useEffect(() => {
@@ -58,21 +62,21 @@ export const PanelBuilder: React.FC<{ countries: Country[] }> = ({ countries }) 
   const cell = (iso3: string, id: string) => cells?.find((c) => c.iso3 === iso3 && c.figureId === id);
 
   return (
-    <section className="ui-panel" data-panel-builder="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
+    <section className="ui-panel" data-panel-builder="true">
       <header className="flex items-start justify-between gap-3 px-4 pt-3 pb-2 border-b border-slate-100 dark:border-slate-800">
         <div>
           <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
             <Table2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            Compare countries
+            {t('pb_title')}
           </h2>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-            Pick countries and figures for one table. Each value keeps its source and period; a missing one says why. Download it as CSV.
+            {t('pb_intro')}
           </p>
         </div>
       </header>
       <div className="p-4 space-y-3">
         <fieldset>
-          <legend className="ui-label mb-1">Countries</legend>
+          <legend className="ui-label mb-1">{t('pb_countries')}</legend>
           <div className="flex flex-wrap gap-1.5">
             {countries.map((c) => (
               <label key={c.iso3} className="ui-pill inline-flex items-center gap-1 cursor-pointer">
@@ -83,40 +87,40 @@ export const PanelBuilder: React.FC<{ countries: Country[] }> = ({ countries }) 
           </div>
         </fieldset>
         <fieldset>
-          <legend className="ui-label mb-1">Figures</legend>
+          <legend className="ui-label mb-1">{t('pb_figures')}</legend>
           <div className="flex flex-wrap gap-1.5">
             {PANEL_FIGURES.map((f) => (
-              <label key={f.id} className="ui-pill inline-flex items-center gap-1 cursor-pointer" title={f.unit}>
+              <label key={f.id} className="ui-pill inline-flex items-center gap-1 cursor-pointer" title={tx(f.unit)}>
                 <input type="checkbox" checked={figures.includes(f.id)} onChange={() => setFigures((p) => toggle(p, f.id))} />
-                {f.label}
+                {tx(f.label)}
               </label>
             ))}
           </div>
         </fieldset>
         <div className="flex flex-wrap items-center gap-2">
-          <div role="group" aria-label="What to show" className="flex gap-1">
+          <div role="group" aria-label={t('pb_whatToShow')} className="flex gap-1">
             {(['latest', 'history'] as const).map((m) => (
               <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)} className="ui-pill">
-                {m === 'latest' ? 'Latest values' : 'Full history (long format)'}
+                {m === 'latest' ? t('pb_latest') : t('pb_history')}
               </button>
             ))}
           </div>
           <button type="button" className="ui-btn ui-btn-primary" onClick={build} disabled={loading || !picked.length || !figures.length}>
-            {loading ? 'Building…' : 'Build table'}
+            {loading ? t('pb_building') : t('pb_build')}
           </button>
           <a className={`ui-btn inline-flex ${!picked.length || !figures.length ? 'pointer-events-none opacity-50' : ''}`} href={`/api/export/panel.csv?${query}`} download>
-            Download CSV
+            {t('pb_csv')}
           </a>
           <a className={`ui-btn inline-flex ${!picked.length || !figures.length ? 'pointer-events-none opacity-50' : ''}`} href={`/api/export/panel.xlsx?${query}`} download>
-            Download Excel
+            {t('pb_excel')}
           </a>
         </div>
 
-        {error && <p className="text-sm text-amber-700 dark:text-amber-400">{error}</p>}
+        {error && <p className="text-sm text-amber-700 dark:text-amber-400">{tx(error)}</p>}
 
         {mode === 'history' && rowCount !== null && (
           <p className="ui-body">
-            {rowCount} observation{rowCount === 1 ? '' : 's'} across the chosen countries and figures. Download the CSV for the full table: one row per observation, with unit, source and pull date.
+            {t('pb_rows', { n: rowCount })}
           </p>
         )}
 
@@ -125,11 +129,11 @@ export const PanelBuilder: React.FC<{ countries: Country[] }> = ({ countries }) 
             <table className="w-full text-xs [font-variant-numeric:tabular-nums]">
               <thead>
                 <tr className="text-left text-slate-500 dark:text-slate-400">
-                  <th className="py-1 pr-3 font-normal">Country</th>
+                  <th className="py-1 pr-3 font-normal">{t('pb_country')}</th>
                   {shownFigures.map((f) => (
-                    <th key={f.id} className="py-1 pr-3 font-normal text-right" title={f.unit}>
-                      {f.label}
-                      <div className="text-xs text-slate-400">{f.unit}</div>
+                    <th key={f.id} className="py-1 pr-3 font-normal text-right" title={tx(f.unit)}>
+                      {tx(f.label)}
+                      <div className="text-xs text-slate-400">{tx(f.unit)}</div>
                     </th>
                   ))}
                 </tr>
@@ -147,10 +151,10 @@ export const PanelBuilder: React.FC<{ countries: Country[] }> = ({ countries }) 
                           <td
                             key={f.id}
                             className={`py-1.5 pr-3 text-right whitespace-nowrap ${missing ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}`}
-                            title={missing ? `Missing: ${c?.reason || 'not built yet'}` : `${c!.source}${c!.period ? `, ${c!.period}` : ''}`}
+                            title={missing ? t('c_missingReason', { reason: c?.reason ? tx(c.reason) : t('pb_notBuilt') }) : `${c!.source}${c!.period ? `, ${c!.period}` : ''}`}
                             data-missing={missing ? 'true' : undefined}
                           >
-                            {missing ? 'Missing' : fmt(c!.value)}
+                            {missing ? t('c_missing') : fmt(c!.value)}
                             {!missing && c!.period && <div className="text-xs text-slate-400">{c!.period}</div>}
                           </td>
                         );
@@ -160,7 +164,7 @@ export const PanelBuilder: React.FC<{ countries: Country[] }> = ({ countries }) 
                 })}
               </tbody>
             </table>
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Hover a value for its source; hover Missing for the reason. The CSV carries both.</p>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('pb_hover')}</p>
           </div>
         )}
       </div>

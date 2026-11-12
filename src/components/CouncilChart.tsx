@@ -1,6 +1,8 @@
 import React, { useMemo, useRef, useState } from 'react';
+import { ChartGuide } from './HelpLevel';
 import { ChartNumbers } from './ChartNumbers';
 import { Bar, BarChart, CartesianGrid, LabelList, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
+import { CiteButton } from './CiteButton';
 import { Download, FileArchive, Image as ImageIcon, Maximize2, MessageCircleQuestion, X } from 'lucide-react';
 import { chartFocus, explainInChat } from '../utils/explainHandoff';
 import { computeChart, fetchChartSeries, PAIR_TESTS, TEST_ORDER, TEST_TITLE, type ChartResult, type ChartTest } from '../utils/councilChart';
@@ -8,6 +10,8 @@ import { TRANSFORM_LABEL, type Transform } from '../utils/stats';
 import { csvNoticeLine, EXPORT_NOTICE } from '../utils/disclaimer';
 import { creditsFor, framedSvg, shareModeBlock } from '../utils/creditLines';
 import { loadShareMode } from '../utils/shareMode';
+import { useT, useTx } from '../i18n/useLang';
+import { CHAT } from '../i18n/messages/chat';
 
 /**
  * Council chat > the Chart Agent's chart: the lines the question named, then each test with its
@@ -229,20 +233,22 @@ function footnote(result: ChartResult): string {
   return parts.length ? `${parts.join('. ')}.` : '';
 }
 
-const Body: React.FC<{ result: ChartResult; big?: boolean }> = ({ result, big }) => (
+const Body: React.FC<{ result: ChartResult; big?: boolean }> = ({ result, big }) => {
+  const t = useT(CHAT);
+  return (
   <div className="space-y-3">
-    {result.lines.length ? <ChartLines result={result} height={big ? 420 : 240} /> : !result.scatter?.pairs.length && <p className="ui-body">Nothing to draw: every series asked for is missing.</p>}
+    {result.lines.length ? <ChartLines result={result} height={big ? 420 : 240} /> : !result.scatter?.pairs.length && <p className="ui-body">{t('ch_nothing')}</p>}
     {result.scatter && <ScatterFit result={result} height={result.lines.length ? (big ? 360 : 220) : big ? 480 : 300} />}
     {result.tests.length > 0 && (
       <ul className="space-y-2" data-council-chart-tests={result.tests.length}>
-        {result.tests.map((t, i) => (
-          <li key={`${t.test}-${i}`} className="border-t border-slate-100 dark:border-slate-800 pt-2">
-            <div className="text-sm font-medium text-slate-900 dark:text-white">{t.title}</div>
-            <p className="text-sm text-slate-700 dark:text-slate-300">{t.reading}</p>
-            {t.caution && <p className="text-xs text-amber-700 dark:text-amber-400">{t.caution}</p>}
-            {big && t.lags && <SmallLags lags={t.lags} />}
-            {big && t.rolling && <SmallRolling points={t.rolling} />}
-            {big && t.irf && <SmallIrf irf={t.irf} />}
+        {result.tests.map((tt, i) => (
+          <li key={`${tt.test}-${i}`} className="border-t border-slate-100 dark:border-slate-800 pt-2">
+            <div className="text-sm font-medium text-slate-900 dark:text-white">{tt.title}</div>
+            <p className="text-sm text-slate-700 dark:text-slate-300">{tt.reading}</p>
+            {tt.caution && <p className="text-xs text-amber-700 dark:text-amber-400">{tt.caution}</p>}
+            {big && tt.lags && <SmallLags lags={tt.lags} />}
+            {big && tt.rolling && <SmallRolling points={tt.rolling} />}
+            {big && tt.irf && <SmallIrf irf={tt.irf} />}
           </li>
         ))}
       </ul>
@@ -256,7 +262,8 @@ const Body: React.FC<{ result: ChartResult; big?: boolean }> = ({ result, big })
     )}
     {footnote(result) && <p className="text-xs text-slate-500 dark:text-slate-400">{footnote(result)}</p>}
   </div>
-);
+  );
+};
 
 const SHOW_AS: Transform[] = ['level', 'change', 'yoy', 'index100', 'zscore'];
 const ALL_TESTS: ChartTest[] = TEST_ORDER;
@@ -266,6 +273,8 @@ const ALL_TESTS: ChartTest[] = TEST_ORDER;
  * fetched again from the app's own history, so the view is redrawn from real figures only.
  */
 const Controls: React.FC<{ base: ChartResult; view: ChartResult; busy: boolean; onChange: (transform: Transform, tests: ChartTest[]) => void }> = ({ base, view, busy, onChange }) => {
+  const tr = useT(CHAT);
+  const tx = useTx();
   const req = view.request;
   if (!req || req.cross) return null;
   const pair = req.series.length >= 2 && !req.derived?.length;
@@ -275,26 +284,26 @@ const Controls: React.FC<{ base: ChartResult; view: ChartResult; busy: boolean; 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs border-y border-slate-100 dark:border-slate-800 py-2" data-council-chart-controls="true">
       <label className="flex items-center gap-1.5">
-        <span className="text-slate-500 dark:text-slate-400">Show as</span>
+        <span className="text-slate-500 dark:text-slate-400">{tr('ch_showAs')}</span>
         <select className="border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-1.5 py-0.5 text-xs" value={req.transform} disabled={busy} onChange={(e) => onChange(e.target.value as Transform, req.tests)} data-council-chart-transform="true">
           {SHOW_AS.map((t) => (
             <option key={t} value={t}>
-              {TRANSFORM_LABEL[t]}
+              {tx(TRANSFORM_LABEL[t])}
             </option>
           ))}
         </select>
       </label>
       <span className="flex flex-wrap items-center gap-1.5">
-        <span className="text-slate-500 dark:text-slate-400">Tests</span>
+        <span className="text-slate-500 dark:text-slate-400">{tr('ch_tests')}</span>
         {offered.map((t) => (
           <button key={t} type="button" className="ui-pill" aria-pressed={req.tests.includes(t)} disabled={busy} onClick={() => toggle(t)} data-council-chart-test={t}>
-            {TEST_TITLE[t].replace(/ \(.*\)$/, '').replace(/^Is the relationship stable\?/, 'Rolling correlation')}
+            {tx(TEST_TITLE[t].replace(/ \(.*\)$/, '').replace(/^Is the relationship stable\?/, 'Rolling correlation'))}
           </button>
         ))}
       </span>
-      {busy && <span className="text-slate-500 dark:text-slate-400">Redrawing…</span>}
+      {busy && <span className="text-slate-500 dark:text-slate-400">{tr('ch_redrawing')}</span>}
       {changed && !busy && (
-        <span className="text-slate-500 dark:text-slate-400">Changed here only; ask in the chat to have the council talk about this view.</span>
+        <span className="text-slate-500 dark:text-slate-400">{tr('ch_changedHere')}</span>
       )}
     </div>
   );
@@ -306,6 +315,7 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
   const [view, setView] = useState<ChartResult>(result);
   const [busy, setBusy] = useState(false);
   const chartBox = useRef<HTMLDivElement>(null);
+  const t = useT(CHAT);
   // Sharing mode: no image or CSV of figures whose sources' terms do not let them be passed on.
   const blocked = shareModeBlock([...result.lines.map((l) => l.source), ...(result.sources ?? [])], loadShareMode());
   const redraw = async (transform: Transform, tests: ChartTest[]) => {
@@ -319,11 +329,12 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
     }
   };
   return (
-    <section className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 space-y-2" data-council-chart="true" data-no-provenance-overlay="true">
+    <section className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 space-y-2" data-council-chart="true">
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="ui-label">Chart Agent</div>
+          <div className="ui-label">{t('ch_agent')}</div>
           <h3 className="text-sm font-medium text-slate-900 dark:text-white">{result.title}</h3>
+          <ChartGuide id="council_chart" className="pt-1" />
         </div>
         <div className="flex items-center gap-1">
           <button
@@ -331,23 +342,23 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
             className="ui-btn ui-btn-ghost"
             onClick={() => explainInChat(chartFocus(result))}
             disabled={!result.lines.length}
-            title="Ask the council what this pattern shows, why, and what it means"
+            title={t('ch_explainTitle')}
             data-council-chart-explain="true"
           >
-            <MessageCircleQuestion className="w-3.5 h-3.5" /> Explain
+            <MessageCircleQuestion className="w-3.5 h-3.5" /> {t('ch_explain')}
           </button>
           <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setOpen(true)} data-council-chart-open="true">
-            <Maximize2 className="w-3.5 h-3.5" /> Open larger
+            <Maximize2 className="w-3.5 h-3.5" /> {t('ch_open')}
           </button>
           <button
             type="button"
             className="ui-btn ui-btn-ghost"
             onClick={() => downloadImage(result, chartBox.current)}
             disabled={!result.lines.length || Boolean(blocked)}
-            title={blocked ?? 'Download the chart as an image (SVG) with its sources and credit lines under it'}
+            title={blocked ?? t('ch_imageTitle')}
             data-council-chart-image="true"
           >
-            <ImageIcon className="w-3.5 h-3.5" /> Image
+            <ImageIcon className="w-3.5 h-3.5" /> {t('ch_image')}
           </button>
           <button type="button" className="ui-btn ui-btn-ghost" onClick={() => downloadCsv(result)} disabled={(!result.lines.length && !result.scatter?.pairs.length) || Boolean(blocked)} title={blocked ?? undefined}>
             <Download className="w-3.5 h-3.5" /> CSV
@@ -357,11 +368,12 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
             className="ui-btn ui-btn-ghost"
             onClick={() => void downloadPack(result)}
             disabled={(!result.lines.length && !result.scatter?.pairs.length) || Boolean(blocked)}
-            title={blocked ?? 'Download the data with Python, R and Stata scripts that redo these tests, and the app\'s figures to check against'}
+            title={blocked ?? t('ch_packTitle')}
             data-council-chart-pack="true"
           >
-            <FileArchive className="w-3.5 h-3.5" /> Replication pack
+            <FileArchive className="w-3.5 h-3.5" /> {t('ch_pack')}
           </button>
+          <CiteButton kind="chart" title={result.title} sources={[...result.lines.map((l) => l.source), ...(result.sources ?? [])]} disabled={!result.lines.length && !result.scatter?.pairs.length} />
         </div>
       </header>
       {blocked && <p className="text-xs text-amber-700 dark:text-amber-400" data-council-chart-blocked="true">{blocked}</p>}
@@ -373,7 +385,7 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
           <div className="w-full max-w-5xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 space-y-3" onClick={(e) => e.stopPropagation()} data-council-chart-dialog="true">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <div className="ui-label">Chart Agent</div>
+                <div className="ui-label">{t('ch_agent')}</div>
                 <h2 className="ui-section-title">{view.title}</h2>
               </div>
               <div className="flex items-center gap-1">
@@ -381,9 +393,9 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
                   <Download className="w-3.5 h-3.5" /> CSV
                 </button>
                 <button type="button" className="ui-btn ui-btn-ghost" onClick={() => void downloadPack(view)} disabled={(!view.lines.length && !view.scatter?.pairs.length) || Boolean(blocked)} title={blocked ?? undefined}>
-                  <FileArchive className="w-3.5 h-3.5" /> Replication pack
+                  <FileArchive className="w-3.5 h-3.5" /> {t('ch_pack')}
                 </button>
-                <button type="button" className="ui-btn" onClick={() => setOpen(false)} aria-label="Close chart">
+                <button type="button" className="ui-btn" onClick={() => setOpen(false)} aria-label={t('ch_close')}>
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>

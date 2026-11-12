@@ -37,8 +37,8 @@ export function cpiUrl(opts: { areas?: string[]; wide?: boolean } = {}): string 
   });
 }
 
-/** 'national': a central bank or Eurostat series that is newer than the OECD's (utils/nationalCpi.ts). */
-export type CpiBasis = 'oecd_yoy' | 'from_index' | 'national';
+/** 'national': a central bank or Eurostat series (utils/nationalCpi.ts); 'imf': IMF monthly CPI (utils/imfCpi.ts). */
+export type CpiBasis = 'oecd_yoy' | 'from_index' | 'national' | 'imf';
 export type CpiSeries = Record<string, { basis: CpiBasis; points: { period: string; value: number }[]; short?: string; long?: string }>;
 
 /** Reads the OECD reply into one y/y series per area. Null when nothing usable. */
@@ -109,7 +109,7 @@ export function cpiFor(iso3: string, series: CpiSeries | null | undefined): CpiR
 
 /** Source line for a figure. */
 export function cpiSource(c: { month: string; basis: CpiBasis; long?: string }): string {
-  if (c.basis === 'national' && c.long) return `${c.long}, ${formatMonth(c.month)}`;
+  if ((c.basis === 'national' || c.basis === 'imf') && c.long) return `${c.long}, ${formatMonth(c.month)}`;
   return `OECD via DBnomics, ${formatMonth(c.month)}${c.basis === 'from_index' ? ' (y/y worked out from the OECD CPI index)' : ''}`;
 }
 

@@ -16,6 +16,38 @@ generated from the code; this document explains the framework those entries sit 
 
 ---
 
+## The short version, in plain words
+
+EconQuest is a free research tool. It gathers public figures about countries (growth, prices,
+interest rates, government debt, trade, politics and conflict), helps people understand them, and
+tests whether simple rules built on them say anything useful about what comes next.
+
+- **Every number has a source.** Each figure on screen names where it came from and when. If no real
+  source provided it, the app shows "Missing" and says why. It never fills a gap with a guess, a
+  sample number or an estimate from an AI model.
+- **The AI explains; it does not invent figures.** The council of agents is a set of AI models, each
+  covering one area (the central bank, the budget, politics and so on), that read the figures and
+  write an answer. The app checks that every number in an answer appears in the figures the agents
+  were given, and labels the answer as written by an AI model. It is an interpretation, not advice.
+- **Rules are tested before they are trusted.** A signal is a rule that claims to say something
+  about the future, for example that currencies paying high interest tend to earn more than they
+  lose. Before a rule is tested, its details and pass mark are written down and locked with a digital
+  fingerprint, so any change made after seeing the result would show. The test uses only figures
+  that had been published at the time, counts trading costs, and the rule must beat the simplest
+  possible guess.
+- **Luck is counted.** When many rules are tested, some pass by chance. The app applies a standard
+  correction (the Holm method) across every test on record and says which passes survive it.
+- **Failures are kept.** Most rules tested so far failed. Their results stay on the record,
+  unchanged, beside the few that passed, in the [Track record](./TRACK_RECORD.md).
+- **Labels say how much weight a reading can bear:** Validated, Provisional, Under review,
+  Withdrawn and Review due (section 9).
+- **What it does not do.** It does not give investment advice, does not promise any forecast, and
+  does not replace assessments by the IMF, the World Bank or credit rating agencies.
+
+Every technical term used here and in the app is explained in the [Glossary](./GLOSSARY.md).
+
+---
+
 ## Contents
 
 1. [What the terminal is](#1-what-the-terminal-is)
@@ -70,7 +102,7 @@ Seven rules govern everything below. They are enforced in code and in tests, not
 5. **Tested before it is trusted.** A rule that turns figures into a call carries a status. A "passed"
    label comes only from a test whose rule, sample and pass mark were written down and hashed before
    the run. A failed rule is shown as failed and never tuned until it passes.
-6. **Honest labels.** Each output says what it is: live figure, official series, the user's document,
+6. **Accurate labels.** Each output says what it is: live figure, official series, the user's document,
    a model reading, a description that makes no forward claim, or an AI-written answer.
 7. **Open and reproducible.** The code, the test specifications, their hashes and the recorded
    verdicts are public. Anyone can rerun the tests.
@@ -331,7 +363,9 @@ backtests, forecast evaluations and signal tests, failed ones and earlier versio
 tried twice is two tests). Holm's step-down procedure controls the family-wise error rate without
 assumptions about how the tests depend on each other. A verdict "holds after correction" when its
 adjusted p-value is at or below that test's own registered pass mark. The correction never changes a
-recorded verdict; it determines the evidence grade (`src/utils/multipleTesting.ts`).
+recorded verdict; it determines the evidence grade (`src/utils/multipleTesting.ts`). The public
+track record (docs/TRACK_RECORD.md) also counts the tests people enter to Signal Quests
+(docs/QUESTS.md), so every outside test tried raises the bar for the app's own passes too.
 
 ## 9. Evidence grades
 
@@ -363,7 +397,7 @@ The grades follow practices used by model-validation and quantitative research t
 | Hypothetical performance labelled as such, net of costs | SEC Marketing Rule (2020); GIPS standards | Every backtest figure is labelled hypothetical and stated net of the registered costs |
 
 The terminal is not a regulated entity and these frameworks do not apply to it formally. They are
-followed because they are the best available public statements of how to keep model claims honest.
+followed because they are the best available public statements of how to keep model claims accurate and checkable.
 
 ## 10. The forward record
 
@@ -435,7 +469,7 @@ consistent with the wider literature on macroeconomic forecasting, and they are 
 
 ## 13. Limitations and what stays Missing
 
-The terminal is honest about what it cannot do. In particular:
+The terminal states what it cannot do. In particular:
 
 - **No free source, so Missing:** sovereign CDS (hidden; a USD bond spread stands in, labelled as
   such), credit ratings, PMIs, government bond auction results, consensus forecasts, and some

@@ -14,6 +14,13 @@ QUICK_MODEL="${OLLAMA_QUICK_MODEL:-qwen2.5:7b}"
 DEEP_MODEL="${OLLAMA_DEEP_MODEL:-qwen2.5:32b}"
 PORT="${PORT:-3737}"
 
+# Light mode for a modest laptop (docs/INSTALL.md): `scripts/start-mac.sh --light`, or LIGHT_MODE=on
+# in .env. No AI model on this computer, no GDELT news files, only the watchlist countries.
+LIGHT=0
+[ "${1:-}" = "--light" ] && LIGHT=1
+echo "${LIGHT_MODE:-}" | grep -Eiq '^(on|true|1|yes)$' && LIGHT=1
+[ -f .env ] && grep -Eiq '^[[:space:]]*LIGHT_MODE[[:space:]]*=[[:space:]]*"?(on|true|1|yes)"?[[:space:]]*$' .env && LIGHT=1
+
 echo "=============================================================================="
 echo "  EconQuest — Sovereign Council Orchestrator (macOS Self-Host Launcher)"
 echo "=============================================================================="
@@ -44,19 +51,24 @@ docker compose build econquest
 docker compose run --rm --no-deps --user root --entrypoint chown econquest -R 1000:1000 /app/data >/dev/null 2>&1 || true
 
 # 2. Detect Native macOS Ollama (Apple Silicon Metal Acceleration) vs Bundled Container
-if curl -sSf http://localhost:11434/api/tags >/dev/null 2>&1; then
+if [ "${LIGHT}" = 1 ]; then
+  echo "[INFO] Light mode: no AI model on this computer, no GDELT news files, only your watchlist countries."
+  echo "[INFO] Add your own Google Gemini key in Menu > Settings > API keys to use the council."
+  export LIGHT_MODE=on
+  docker compose up -d --build econquest
+elif curl -sSf http://localhost:11434/api/tags >/dev/null 2>&1; then
   echo "[OK] Detected native macOS Ollama running on http://localhost:11434 (Apple Metal GPU accelerated)."
   export OLLAMA_BASE_URL="http://host.docker.internal:11434"
   if command -v ollama >/dev/null 2>&1; then
-    echo "[INFO] Ensuring local models (${QUICK_MODEL} & ${DEEP_MODEL}) are pulled..."
+    echo "[INFO] Checking local models (${QUICK_MODEL} & ${DEEP_MODEL}) are pulled..."
     ollama pull "${QUICK_MODEL}" || true
     ollama pull "${DEEP_MODEL}" || true
   fi
   echo "[INFO] Launching EconQuest container connected to Host Ollama (${OLLAMA_BASE_URL})..."
   docker compose up -d --build
 elif command -v ollama >/dev/null 2>&1; then
-  echo "[INFO] Native macOS Ollama CLI found. Starting 'ollama serve' with OLLAMA_ORIGINS=*..."
-  OLLAMA_ORIGINS="*" nohup ollama serve >/tmp/econquest-ollama.log 2>&1 &
+  echo "[INFO] Native macOS Ollama CLI found. Starting 'ollama serve'..."
+  nohup ollama serve >/tmp/econquest-ollama.log 2>&1 &
   sleep 3
   export OLLAMA_BASE_URL="http://host.docker.internal:11434"
   ollama pull "${QUICK_MODEL}" || true
@@ -71,7 +83,11 @@ fi
 
 echo "=============================================================================="
 echo "  EconQuest is live at: http://localhost:${PORT}"
-echo "  Ollama Endpoint     : ${OLLAMA_BASE_URL}"
+if [ "${LIGHT}" = 1 ]; then
+  echo "  Light mode          : on (no AI model on this computer)"
+else
+  echo "  Ollama Endpoint     : ${OLLAMA_BASE_URL}"
+fi
 echo "=============================================================================="
 
 if command -v open >/dev/null 2>&1; then

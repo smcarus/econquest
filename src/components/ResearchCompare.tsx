@@ -11,6 +11,8 @@ import { StoryLeadsPanel } from './StoryLeadsPanel';
 import { LiveCountBadge, ResearchHeader, SourcesGrid } from './ResearchSections';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 import type { ResearchSectionId } from '../utils/researchSections';
+import { useT } from '../i18n/useLang';
+import { RESEARCH } from '../i18n/messages/research';
 // Charts load only when the Summary section opens.
 const RegimeQuadrant = lazyNamed(() => import('./RegimeQuadrant'), 'RegimeQuadrant');
 
@@ -40,16 +42,17 @@ export const ResearchCompare: React.FC<{
   /** Opens one country under Research > One country, on the given country tab. */
   onOpenCountry: (item: LiveWatchlistItem, tab?: string) => void;
 }> = ({ run, watchlistName, watchlistItems, section, onSection, onOpenCountry }) => {
+  const t = useT(RESEARCH);
   const [lastLook] = useState(loadLastVisitRows);
   const anchors = useMarketEdgeAnchors();
   const edgeItems = useMemo(() => marketEdgePeers(watchlistItems, anchors?.peers || []), [watchlistItems, anchors]);
   const open = (tab: string) => (item: LiveWatchlistItem) => onOpenCountry(item, tab);
 
   return (
-    <div className="space-y-3" data-no-stat-ref="true" data-research-compare="true">
+    <div className="space-y-3" data-research-compare="true">
       <ResearchHeader
         title={watchlistName}
-        subtitle={`${watchlistItems.length} ${watchlistItems.length === 1 ? 'country' : 'countries'} side by side. Click a country to open it on its own.`}
+        subtitle={watchlistItems.length === 1 ? t('compareSubOne') : t('compareSubMany', { n: watchlistItems.length })}
         badge={<LiveCountBadge items={watchlistItems} />}
         section={section}
         onSection={(id) => onSection(id as ResearchSectionId)}
@@ -115,8 +118,8 @@ export const ResearchCompare: React.FC<{
         <PanelBoundary name="Sources across the watchlist">
           <SourcesGrid
             items={watchlistItems}
-            title={`What is live across ${watchlistName}`}
-            empty="No countries on this watchlist yet. Add some from the watchlist in the corner."
+            title={t('compareSourcesTitle', { name: watchlistName })}
+            empty={t('compareSourcesEmpty')}
             onOpenCountry={open('overview')}
           />
         </PanelBoundary>

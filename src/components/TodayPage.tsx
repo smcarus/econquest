@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { DigestPanel } from './DigestPanel';
-import { CalendarClock, ExternalLink, PanelLeft, PanelRight, Ticket, X } from 'lucide-react';
+import { CalendarClock, ExternalLink, PanelLeft, PanelRight, X } from 'lucide-react';
 import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
-import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEngine';
 import { POLITICAL_FISCAL_CATEGORIES, hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
 import { rankDivergences } from '../utils/divergences';
 import { formatAsOf } from '../utils/dataStatus';
@@ -14,6 +13,8 @@ import { WatchAlertsPanel } from './WatchAlertsPanel';
 import { AskCouncilPanel, CouncilAgentsPanel, useCouncilHasQuestion, type FullCouncilStep } from './AskCouncilPanel';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 import { MissingSources, WatchlistTable } from './WatchlistTable';
+import { useT } from '../i18n/useLang';
+import { WORKSPACE } from '../i18n/messages/workspace';
 import { POP_OUT_URL, WATCHLIST_VIEW_KEY, loadView, saveView, type WatchlistView } from '../utils/watchlistView';
 
 /**
@@ -100,10 +101,7 @@ export const TodayPage: React.FC<{
   /** The list shown, so the pop-out opens on the same one. */
   watchlistId?: string;
   watchlistItems: LiveWatchlistItem[];
-  stagedTickets: StagedTradeTicketSpec[];
   onOpenCountry: (item: LiveWatchlistItem, sectionId?: string) => void;
-  onStageTicket: (ticket: StagedTradeTicketSpec) => void;
-  onOpenTickets: () => void;
   onOpenWatchlistManager: () => void;
   /** Opens Reports on the council brief just saved. */
   onSendCouncilToReports?: () => void;
@@ -123,10 +121,7 @@ export const TodayPage: React.FC<{
   watchlistName,
   watchlistId,
   watchlistItems,
-  stagedTickets,
   onOpenCountry,
-  onStageTicket,
-  onOpenTickets,
   onOpenWatchlistManager,
   onSendCouncilToReports,
   fullCouncil,
@@ -185,6 +180,7 @@ export const TodayPage: React.FC<{
 
   // Your inputs, and the "Uses:" line on each panel that links back to them.
   const server = useServerInputs();
+  const t = useT(WORKSPACE);
   const chips = workspaceInputs({
     watchlistName,
     watchlistCount: watchlistItems.length,
@@ -193,7 +189,7 @@ export const TodayPage: React.FC<{
     liveCount,
     aiProvider,
     ...server,
-  });
+  }, t);
   const [highlight, setHighlight] = useState<InputId | null>(null);
   // The Briefing side panel: closed by default so the chat fills the page; remembered.
   const [briefing, setBriefingState] = useState<boolean>(() => {
@@ -264,15 +260,15 @@ export const TodayPage: React.FC<{
       aria-expanded={briefing}
       aria-controls="ws-briefing"
       data-briefing-toggle="true"
-      aria-label="Briefing"
-      title={`Your inputs, watchlist, what moved, the next two weeks and watch alerts${toFix > 0 ? `. ${toFix} ${toFix === 1 ? 'input needs' : 'inputs need'} setup.` : ''}`}
+      aria-label={t('briefing')}
+      title={`${t('briefingTitle')}${toFix > 0 ? (toFix === 1 ? t('briefingNeedsOne') : t('briefingNeedsMany', { n: toFix })) : ''}`}
     >
-      <PanelRight className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Briefing</span>
+      <PanelRight className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{t('briefing')}</span>
       {toFix > 0 && (
         <span className="ml-0.5 inline-flex items-center gap-1" data-briefing-setup={toFix}>
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" aria-hidden />
-          <span className={`hidden sm:inline text-xs ${briefing ? 'text-amber-100' : 'text-amber-700 dark:text-amber-400'}`}>{toFix} to set up</span>
-          <span className="sr-only sm:hidden">{`${toFix} ${toFix === 1 ? 'input needs' : 'inputs need'} setup`}</span>
+          <span className={`hidden sm:inline text-xs ${briefing ? 'text-amber-100' : 'text-amber-700 dark:text-amber-400'}`}>{t('toSetUp', { n: toFix })}</span>
+          <span className="sr-only sm:hidden">{toFix === 1 ? t('needsOneSr') : t('needsManySr', { n: toFix })}</span>
         </span>
       )}
     </button>
@@ -286,28 +282,28 @@ export const TodayPage: React.FC<{
       aria-expanded={agentsOpen}
       aria-controls="ws-agents"
       data-agents-toggle="true"
-      aria-label="Agents"
-      title="The agents working on your question, each with its live status"
+      aria-label={t('agents')}
+      title={t('agentsTitle')}
     >
-      <PanelLeft className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Agents</span>
+      <PanelLeft className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{t('agents')}</span>
     </button>
   );
 
   return (
-    <div className="space-y-4" data-no-stat-ref="true">
+    <div className="space-y-4">
       {/* Workspace is a chat page: the conversation fills the screen, input box at the bottom. Everything else sits in Briefing. */}
       <div className="flex gap-4 h-[calc(100dvh-9.5rem)] lg:h-[calc(100dvh-7.5rem)]">
         {agentsOpen && (
           <aside
             id="ws-agents"
-            aria-label="Agents"
+            aria-label={t('agents')}
             data-agents-panel="true"
             className="fixed inset-0 z-30 overflow-y-auto bg-slate-50 dark:bg-[#0B0F17] p-3 space-y-3 lg:static lg:z-auto lg:p-0 lg:pr-4 lg:bg-transparent lg:w-[20rem] lg:shrink-0 lg:border-r lg:border-slate-200 lg:dark:border-slate-800"
           >
             <div className="flex items-center justify-between">
-              <h2 className="ui-section-title">Agents</h2>
-              <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setAgentsOpen(false)} aria-label="Close Agents" data-agents-close="true">
-                <X className="w-3.5 h-3.5" /> Close
+              <h2 className="ui-section-title">{t('agents')}</h2>
+              <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setAgentsOpen(false)} aria-label={t('closeAgents')} data-agents-close="true">
+                <X className="w-3.5 h-3.5" /> {t('close')}
               </button>
             </div>
             <PanelBoundary name="Agents">
@@ -330,14 +326,14 @@ export const TodayPage: React.FC<{
         {briefing && (
           <aside
             id="ws-briefing"
-            aria-label="Briefing"
+            aria-label={t('briefing')}
             data-briefing="true"
             className="fixed inset-0 z-30 overflow-y-auto bg-slate-50 dark:bg-[#0B0F17] p-3 space-y-4 lg:static lg:z-auto lg:p-0 lg:bg-transparent lg:w-[24rem] lg:shrink-0"
           >
             <div className="flex items-center justify-between">
-              <h2 className="ui-section-title">Briefing</h2>
-              <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setBriefing(false)} aria-label="Close Briefing" data-briefing-close="true">
-                <X className="w-3.5 h-3.5" /> Close
+              <h2 className="ui-section-title">{t('briefing')}</h2>
+              <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setBriefing(false)} aria-label={t('closeBriefing')} data-briefing-close="true">
+                <X className="w-3.5 h-3.5" /> {t('close')}
               </button>
             </div>
           <div id="ws-inputs" className="scroll-mt-4">
@@ -349,9 +345,9 @@ export const TodayPage: React.FC<{
           </div>
           <div id="ws-watchlist" className="scroll-mt-4">
           <Card
-            title="Watchlist"
+            title={t('watchlist')}
             icon={<span className="w-2 h-2 rounded-full bg-blue-600" />}
-            note={`${watchlistName}. Press a country to open it; pop out for every column.`}
+            note={t('watchlistNote', { name: watchlistName })}
 
             uses={uses('watchlist')}
             className={`transition-shadow ${lit('watchlist')}`}
@@ -360,17 +356,17 @@ export const TodayPage: React.FC<{
                 <button
                   type="button"
                   onClick={popOut}
-                  title="Open the full watchlist in its own window, with your choice of columns"
+                  title={t('popOutTitle')}
                   className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline whitespace-nowrap"
                 >
-                  <ExternalLink className="w-3.5 h-3.5" /> Pop out
+                  <ExternalLink className="w-3.5 h-3.5" /> {t('popOut')}
                 </button>
                 <button
                   type="button"
                   onClick={onOpenWatchlistManager}
                   className="text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline whitespace-nowrap"
                 >
-                  Edit
+                  {t('edit')}
                 </button>
               </div>
             }
@@ -398,15 +394,15 @@ export const TodayPage: React.FC<{
 
           <div id="tool-calendar" className="scroll-mt-4">
           <Card
-            title="Next two weeks"
+            title={t('nextTwoWeeks')}
             icon={<CalendarClock className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
-            note="Official central bank, statistics and election dates. Each row links to its source."
+            note={t('calendarNote')}
             uses={uses('calendar')}
             className={`transition-shadow ${lit('calendar')}`}
           >
             {upcoming.length === 0 ? (
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                No scheduled decisions or releases in the next 14 days.
+                {t('noEvents')}
               </p>
             ) : (
               <ul className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -426,7 +422,7 @@ export const TodayPage: React.FC<{
                           target="_blank"
                           rel="noreferrer"
                           className="hover:underline"
-                          title={ev.primarySource ? 'Official source' : 'Secondary source quoting the official schedule'}
+                          title={ev.primarySource ? t('officialSource') : t('secondaryQuoting')}
                         >
                           {ev.sourceName}
                         </a>
@@ -434,7 +430,7 @@ export const TodayPage: React.FC<{
                     </div>
                     <div className="text-right shrink-0">
                       <div className="text-xs font-medium text-slate-900 dark:text-white">
-                        {ev.daysUntil === 0 ? 'Today' : ev.daysUntil === 1 ? 'Tomorrow' : `In ${ev.daysUntil} days`}
+                        {ev.daysUntil === 0 ? t('today') : ev.daysUntil === 1 ? t('tomorrow') : t('inDays', { n: ev.daysUntil })}
                       </div>
                       <div className="text-xs text-slate-500 dark:text-slate-400">
                         {new Date(`${ev.date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
@@ -446,16 +442,16 @@ export const TodayPage: React.FC<{
             )}
             {noSchedule.length > 0 && (
               <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                No official schedule on file for {noSchedule.map((w) => w.countryName).join(', ')}.
+                {t('noSchedule', { list: noSchedule.map((w) => w.countryName).join(', ') })}
               </p>
             )}
             <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800" data-political-fiscal="true">
-              <h4 className="text-sm font-medium text-slate-900 dark:text-white">Elections, budgets and IMF, next 12 months</h4>
+              <h4 className="text-sm font-medium text-slate-900 dark:text-white">{t('pfTitle')}</h4>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Countries where data and price disagree come first. Budget dates are the latest the constitution allows.
+                {t('pfNote')}
               </p>
               {politicalFiscal.length === 0 ? (
-                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">None on file for this watchlist.</p>
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t('pfNone')}</p>
               ) : (
                 <ul className="mt-1 divide-y divide-slate-100 dark:divide-slate-800">
                   {(showAllPf ? politicalFiscal : politicalFiscal.slice(0, PF_SHOWN)).map((ev) => (
@@ -469,13 +465,13 @@ export const TodayPage: React.FC<{
                           {byIso.get(ev.iso3)?.countryName || ev.iso3}: {ev.title}
                         </button>
                         <div className="text-xs text-slate-500 dark:text-slate-400">
-                          {flaggedIsos.has(ev.iso3) && <span className="text-blue-700 dark:text-blue-300">Data and price disagree · </span>}
+                          {flaggedIsos.has(ev.iso3) && <span className="text-blue-700 dark:text-blue-300">{t('disagree')}</span>}
                           <a
                             href={ev.sourceUrl}
                             target="_blank"
                             rel="noreferrer"
                             className="hover:underline"
-                            title={ev.primarySource ? 'Official source' : 'Secondary source'}
+                            title={ev.primarySource ? t('officialSource') : t('secondarySource')}
                           >
                             {ev.sourceName}
                           </a>
@@ -483,11 +479,11 @@ export const TodayPage: React.FC<{
                       </div>
                       <div className="text-right shrink-0 text-xs">
                         <div className="font-medium text-slate-900 dark:text-white">
-                          {ev.dateKind === 'legal_deadline' ? 'By ' : ''}
+                          {ev.dateKind === 'legal_deadline' ? t('by') : ''}
                           {new Date(`${ev.date}T12:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
                         </div>
                         <div className="text-slate-500 dark:text-slate-400">
-                          {ev.daysUntil === 0 ? 'Today' : ev.daysUntil === 1 ? 'Tomorrow' : `In ${ev.daysUntil} days`}
+                          {ev.daysUntil === 0 ? t('today') : ev.daysUntil === 1 ? t('tomorrow') : t('inDays', { n: ev.daysUntil })}
                         </div>
                       </div>
                     </li>
@@ -496,7 +492,7 @@ export const TodayPage: React.FC<{
               )}
               {politicalFiscal.length > PF_SHOWN && (
                 <button type="button" className="mt-2 text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline" onClick={() => setShowAllPf((v) => !v)} data-pf-toggle="true">
-                  {showAllPf ? 'Show fewer' : `Show all ${politicalFiscal.length}`}
+                  {showAllPf ? t('showFewer') : t('showAll', { n: politicalFiscal.length })}
                 </button>
               )}
             </div>
@@ -513,50 +509,6 @@ export const TodayPage: React.FC<{
         )}
       </div>
 
-      {!coreOnly && (
-      <Card
-        title="Waiting for you"
-        icon={<Ticket className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
-        note="Trade tickets staged for the investment committee."
-        action={
-          stagedTickets.length > 0 ? (
-            <button
-              type="button"
-              onClick={onOpenTickets}
-              className="text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline whitespace-nowrap"
-            >
-              Open IC tickets
-            </button>
-          ) : undefined
-        }
-      >
-        {stagedTickets.length === 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            No staged tickets.
-          </p>
-        ) : (
-          <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-            {stagedTickets.slice(0, 5).map((t) => (
-              <li key={t.ticketId} className="py-2 flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-sm font-medium text-slate-900 dark:text-white">{t.strategyTitle}</div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">
-                    {t.countryName} · conviction {t.convictionScore0To100}/100
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => openIso(t.iso3, t.targetSectionId)}
-                  className="ui-btn"
-                >
-                  Open desk
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
-      )}
     </div>
   );
 };

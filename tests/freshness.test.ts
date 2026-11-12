@@ -56,7 +56,7 @@ test('figures without a date are not judged, and a missing row gives nothing', (
 test('fresher inflation sources are named only where one exists', () => {
   assert.match(fresherCpi('BRA') || '', /IPCA/);
   assert.match(fresherCpi('MEX') || '', /Banxico/);
-  assert.equal(fresherCpi('EGY'), undefined);
+  assert.match(fresherCpi('EGY') || '', /IMF monthly consumer prices/);
 });
 
 test('the Central Bank Agent says when the inflation it used is older than usual', () => {

@@ -3,8 +3,8 @@
  * Review 2022): the share of articles in leading newspapers about geopolitical tensions, monthly
  * from 1985 (1900 for the historical series), with a country index (GPRC_XXX) for 44 countries.
  *
- * Read from the authors' monthly file saved in data/local/gpr/ as .xlsx or .csv (the site's .xls
- * has to be saved in one of those two forms first). Columns are found by name: a "month" column,
+ * Read from the authors' monthly file saved in data/local/gpr/ as published (.xls, fetched by
+ * `npm run gpr:pull`), or as .xlsx or .csv. Columns are found by name: a "month" column,
  * GPR (world) and GPRC_<ISO3> (country). Nothing is fetched.
  *
  * Description, not a tested signal. Browser-safe, pure.

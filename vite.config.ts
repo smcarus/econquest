@@ -9,6 +9,10 @@ export default defineConfig(() => {
     resolve: {
       alias: {
         '@': path.resolve(import.meta.dirname, '.'),
+        // jsPDF's optional helpers for doc.html() and SVG images, which the app never calls (size review K1).
+        html2canvas: path.resolve(import.meta.dirname, 'src/vendor/pdfExtrasStub.ts'),
+        dompurify: path.resolve(import.meta.dirname, 'src/vendor/pdfExtrasStub.ts'),
+        canvg: path.resolve(import.meta.dirname, 'src/vendor/pdfExtrasStub.ts'),
       },
     },
     server: {

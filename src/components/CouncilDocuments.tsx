@@ -1,11 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Copy, Download, FileText, Trash2, X } from 'lucide-react';
 import { useResearchLibrary } from './SavedResearch';
+import { AgentBadge } from './AgentBadge';
+import { useHelpLevel } from './HelpLevel';
+import { agentBadgeTip } from '../utils/agentBadges';
 import type { LiveWatchlistItem } from '../types/council';
 import type { FigureTag } from '../utils/askCouncil';
 import { lazyNamed } from './LazyDesk';
 import { explainInChat } from '../utils/explainHandoff';
 import { documentMarkdown, documentSections, type AgentDocument, type CouncilDocument, type CoverageLevel, type SynthesisDocument } from '../utils/agentDocument';
+import { useLang, useT, useTx } from '../i18n/useLang';
+import { CHAT } from '../i18n/messages/chat';
 
 /**
  * Council chat shows each agent's standard document (and the synthesis document) as a card, like
@@ -52,22 +57,27 @@ function downloadMarkdown(d: CouncilDocument) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-const Card: React.FC<{ onOpen: () => void; title: string; meta: React.ReactNode; kind: string; strong?: boolean }> = ({ onOpen, title, meta, kind, strong }) => (
+const Card: React.FC<{ onOpen: () => void; title: string; meta: React.ReactNode; kind: string; strong?: boolean }> = ({ onOpen, title, meta, kind, strong }) => {
+  const tx = useTx();
+  const helpLevel = useHelpLevel();
+  return (
   <button
     type="button"
     onClick={onOpen}
+    title={agentBadgeTip(kind, title, helpLevel, tx)}
     data-council-doc-card={kind}
     className={`flex items-start gap-2 text-left border px-2.5 py-2 min-w-0 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 ${
       strong ? 'border-slate-400 dark:border-slate-500' : 'border-slate-200 dark:border-slate-700'
     }`}
   >
-    <FileText className="w-4 h-4 mt-0.5 shrink-0 text-slate-500 dark:text-slate-400" aria-hidden />
+    <AgentBadge id={kind} size="sm" />
     <span className="min-w-0">
       <span className="block text-sm font-medium text-slate-900 dark:text-white truncate">{title}</span>
       <span className="block text-xs text-slate-500 dark:text-slate-400">{meta}</span>
     </span>
   </button>
-);
+  );
+};
 
 /** One card per document: the synthesis first, then each agent. */
 export const DocumentCards: React.FC<{
@@ -85,20 +95,22 @@ export const DocumentCards: React.FC<{
 }> = ({ agents, synthesis, writing, onOpen, onSaveAll, savedIds, note }) => {
   const all = [...(synthesis && !writing ? [synthesis] : []), ...agents];
   const allSaved = all.length > 0 && all.every((d) => savedIds?.has(d.id));
+  const t = useT(CHAT);
+  const tx = useTx();
   return (
   <div className="space-y-1.5" data-council-documents={agents.length}>
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <div className="ui-label">Documents{note ? <> · {note}</> : null}</div>
+      <div className="ui-label">{t('dc_documents')}{note ? <> · {note}</> : null}</div>
       {onSaveAll && all.length > 0 && (
         <button type="button" className="text-xs text-blue-700 dark:text-blue-300 hover:underline disabled:text-slate-500 disabled:no-underline" onClick={onSaveAll} disabled={allSaved || writing} data-council-docs-save-all="true">
-          {allSaved ? 'All saved to Reports' : 'Save all to Reports'}
+          {allSaved ? t('dc_allSaved') : t('dc_saveAll')}
         </button>
       )}
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
       {writing ? (
         <div className="border border-dashed border-slate-300 dark:border-slate-600 px-2.5 py-2 text-xs text-slate-500 dark:text-slate-400" data-council-doc-card="synthesis-writing">
-          Synthesis document: being written from the agent documents…
+          {t('dc_writing')}
         </div>
       ) : (
         synthesis && (
@@ -106,8 +118,8 @@ export const DocumentCards: React.FC<{
             kind="synthesis"
             strong
             onOpen={() => onOpen(synthesis)}
-            title="Synthesis"
-            meta={synthesis.status === 'written' ? `reads ${synthesis.agents.length} agent ${synthesis.agents.length === 1 ? 'document' : 'documents'}` : 'not written: no AI summary'}
+            title={t('dc_synthesis')}
+            meta={synthesis.status === 'written' ? (synthesis.agents.length === 1 ? t('dc_reads1') : t('dc_reads', { n: synthesis.agents.length })) : t('dc_notWritten')}
           />
         )
       )}
@@ -116,11 +128,11 @@ export const DocumentCards: React.FC<{
           key={d.id}
           kind={d.agentId}
           onOpen={() => onOpen(d)}
-          title={`${d.agentName} Agent`}
+          title={tx(`${d.agentName} Agent`)}
           meta={
             <>
-              {d.findings.length} {d.findings.length === 1 ? 'finding' : 'findings'} · {d.missing.length} {d.missing.length === 1 ? 'gap' : 'gaps'} ·{' '}
-              <span className={COVERAGE_CLASS[d.coverage.level]}>coverage {d.coverage.level}</span>
+              {d.findings.length === 1 ? t('dc_finding1') : t('dc_findings', { n: d.findings.length })} · {d.missing.length === 1 ? t('dc_gap1') : t('dc_gaps', { n: d.missing.length })} ·{' '}
+              <span className={COVERAGE_CLASS[d.coverage.level]}>{t('dc_coverage', { level: t(`dc_cov_${d.coverage.level}`) })}</span>
             </>
           }
         />
@@ -169,7 +181,9 @@ function Lines({ lines }: { lines: string[] }) {
 }
 
 function AgentFindings({ d, items, onOpenCountry, onExplained }: { d: AgentDocument; items: LiveWatchlistItem[]; onOpenCountry: (it: LiveWatchlistItem) => void; onExplained?: () => void }) {
-  if (!d.findings.length) return <p>No reading from the figures on hand.</p>;
+  const t = useT(CHAT);
+  const tx = useTx();
+  if (!d.findings.length) return <p>{t('dc_noReading')}</p>;
   return (
     <ul className="space-y-3">
       {d.findings.map((f) => {
@@ -184,13 +198,13 @@ function AgentFindings({ d, items, onOpenCountry, onExplained }: { d: AgentDocum
               <span className="font-medium text-slate-900 dark:text-white">{f.subject}</span>
             )}
             <span>: {f.reading}</span>
-            {f.calls.length > 0 && <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Call on {f.calls.join('; ')}</p>}
+            {f.calls.length > 0 && <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{t('dc_callOn', { list: f.calls.join('; ') })}</p>}
             {f.figures.length > 0 && (
               <table className="mt-1 w-full text-xs">
                 <tbody>
                   {f.figures.map((g, i) => (
                     <tr key={`${g.label}-${i}`} className="border-t border-slate-100 dark:border-slate-800 align-top">
-                      <td className="py-0.5 pr-2 text-slate-600 dark:text-slate-400">{g.label}</td>
+                      <td className="py-0.5 pr-2 text-slate-600 dark:text-slate-400">{tx(g.label)}</td>
                       <td className="py-0.5 pr-2 tabular-nums text-slate-900 dark:text-slate-100 whitespace-nowrap">{g.value}</td>
                       <td className={`py-0.5 pr-2 whitespace-nowrap ${TAG_CLASS[g.tag]}`}>{g.tagText}</td>
                       <td className="py-0.5 text-slate-500 dark:text-slate-400">{g.ref ? `[${g.ref}]` : g.source}</td>
@@ -199,14 +213,14 @@ function AgentFindings({ d, items, onOpenCountry, onExplained }: { d: AgentDocum
                           <button
                             type="button"
                             className="text-blue-700 dark:text-blue-300 hover:underline"
-                            title="Ask the council what this figure means and why it is where it is"
+                            title={t('dc_explainFig')}
                             data-explain-figure={g.label}
                             onClick={() => {
                               explainInChat({ kind: 'figure', label: g.label, value: g.value, source: g.source, asOf: `read ${d.askedAt.slice(0, 10)}`, iso3: f.iso3, countryName: f.subject });
                               onExplained();
                             }}
                           >
-                            Explain
+                            {t('dc_explain')}
                           </button>
                         </td>
                       )}
@@ -235,6 +249,9 @@ export const DocumentViewer: React.FC<{
 }> = ({ doc, items, onOpenCountry, onClose, actions }) => {
   const [copied, setCopied] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const t = useT(CHAT);
+  const tx = useTx();
+  const lang = useLang();
   useEffect(() => {
     closeRef.current?.focus();
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -250,28 +267,32 @@ export const DocumentViewer: React.FC<{
       /* clipboard blocked */
     }
   };
-  const heading = doc.kind === 'agent' ? `${doc.agentName} Agent` : 'Synthesis';
+  const heading = doc.kind === 'agent' ? tx(`${doc.agentName} Agent`) : t('dc_synthesis');
   return (
     <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-slate-900/40 sm:p-6" onClick={onClose} data-council-doc-viewer={doc.kind === 'agent' ? doc.agentId : 'synthesis'}>
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={`${heading} document`}
+        aria-label={t('dc_docAria', { heading })}
         className="w-full sm:max-w-3xl max-h-full flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-          <div className="min-w-0">
+          <div className="min-w-0 flex items-start gap-2">
+            <AgentBadge id={doc.kind === 'agent' ? doc.agentId : 'synthesis'} className="mt-0.5" />
+            <div className="min-w-0">
             <div className="text-base font-semibold text-slate-900 dark:text-white">{heading}</div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">Standard council document · template v{doc.version}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">{t('dc_template', { version: doc.version })}</div>
+            {lang !== 'en' && <div className="text-xs text-slate-500 dark:text-slate-400">{t('dc_englishNote')}</div>}
+            </div>
           </div>
-          <button ref={closeRef} type="button" className="ui-btn" onClick={onClose} aria-label="Close document">
+          <button ref={closeRef} type="button" className="ui-btn" onClick={onClose} aria-label={t('dc_close')}>
             <X className="w-4 h-4" aria-hidden />
           </button>
         </div>
         <div className="overflow-y-auto px-4 py-3 space-y-4 text-sm text-slate-800 dark:text-slate-200">
           {doc.kind === 'agent' && doc.chart && (
-            <React.Suspense fallback={<p className="text-xs text-slate-500 dark:text-slate-400">Drawing the chart…</p>}>
+            <React.Suspense fallback={<p className="text-xs text-slate-500 dark:text-slate-400">{t('dc_drawing')}</p>}>
               <CouncilChartCard result={doc.chart} />
             </React.Suspense>
           )}
@@ -285,10 +306,10 @@ export const DocumentViewer: React.FC<{
         <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-t border-slate-200 dark:border-slate-700">
           {actions}
           <button type="button" className="ui-btn" onClick={() => downloadMarkdown(doc)}>
-            <Download className="w-4 h-4" aria-hidden /> Download .md
+            <Download className="w-4 h-4" aria-hidden /> {t('dc_download')}
           </button>
           <button type="button" className="ui-btn" onClick={() => void copy()}>
-            <Copy className="w-4 h-4" aria-hidden /> {copied ? 'Copied' : 'Copy'}
+            <Copy className="w-4 h-4" aria-hidden /> {copied ? t('dc_copied') : t('dc_copy')}
           </button>
         </div>
       </div>
@@ -297,11 +318,14 @@ export const DocumentViewer: React.FC<{
 };
 
 /** A Save to Reports button for the viewer. */
-export const SaveToReportsButton: React.FC<{ saved: boolean; onSave: () => void }> = ({ saved, onSave }) => (
+export const SaveToReportsButton: React.FC<{ saved: boolean; onSave: () => void }> = ({ saved, onSave }) => {
+  const t = useT(CHAT);
+  return (
   <button type="button" className="ui-btn ui-btn-primary" onClick={onSave} disabled={saved} data-council-doc-save="true">
-    <FileText className="w-4 h-4" aria-hidden /> {saved ? 'Saved to Reports' : 'Save to Reports'}
+    <FileText className="w-4 h-4" aria-hidden /> {saved ? t('dc_savedReports') : t('dc_saveReports')}
   </button>
-);
+  );
+};
 
 /**
  * Reports > Council documents: the agent and synthesis documents saved from Council chat, kept in
@@ -311,6 +335,8 @@ export const SavedCouncilDocuments: React.FC<{ items: LiveWatchlistItem[]; onOpe
   const lib = useResearchLibrary();
   const [open, setOpen] = useState<CouncilDocument | null>(null);
   const close = React.useCallback(() => setOpen(null), []);
+  const t = useT(CHAT);
+  const tx = useTx();
   const groups: Array<{ key: string; question: string; askedAt: string; scope: string; docs: typeof lib.councilDocs }> = [];
   for (const d of lib.councilDocs) {
     const key = `${d.askedAt}|${d.question}`;
@@ -322,21 +348,21 @@ export const SavedCouncilDocuments: React.FC<{ items: LiveWatchlistItem[]; onOpe
   return (
     <section className="ui-panel p-4 space-y-3" data-saved-council-docs={lib.councilDocs.length}>
       <div>
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Council documents</h3>
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t('dc_savedTitle')}</h3>
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          Agent and synthesis documents you saved from Council chat, each in the standard template. Kept on this computer in data/local/research.json.
+          {t('dc_savedIntro')}
         </p>
       </div>
       {lib.error && <p className="text-xs text-amber-700 dark:text-amber-400">{lib.error}</p>}
       {!groups.length ? (
-        <p className="text-sm text-slate-600 dark:text-slate-300">None saved yet. Choose Save to Reports under a council answer in Council chat, or inside any document it opens.</p>
+        <p className="text-sm text-slate-600 dark:text-slate-300">{t('dc_none')}</p>
       ) : (
         <ul className="space-y-3">
           {groups.map((g) => (
             <li key={g.key} className="border-t border-slate-200 dark:border-slate-700 pt-2">
               <p className="text-sm font-medium text-slate-900 dark:text-white">{g.question}</p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Asked {g.askedAt.slice(0, 16).replace('T', ' ')} UTC about {g.scope}
+                {t('dc_asked', { when: g.askedAt.slice(0, 16).replace('T', ' '), scope: tx(g.scope) })}
               </p>
               <ul className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                 {g.docs.map((d) => (
@@ -349,11 +375,11 @@ export const SavedCouncilDocuments: React.FC<{ items: LiveWatchlistItem[]; onOpe
                     >
                       <FileText className="w-4 h-4 mt-0.5 shrink-0 text-slate-500 dark:text-slate-400" aria-hidden />
                       <span className="min-w-0">
-                        <span className="block text-sm text-slate-900 dark:text-white truncate">{d.author}</span>
-                        <span className="block text-xs text-slate-500 dark:text-slate-400">{d.status}</span>
+                        <span className="block text-sm text-slate-900 dark:text-white truncate">{tx(d.author)}</span>
+                        <span className="block text-xs text-slate-500 dark:text-slate-400">{tx(d.status)}</span>
                       </span>
                     </button>
-                    <button type="button" className="ui-btn border-l-0" onClick={() => void lib.deleteCouncilDoc(d.id)} aria-label={`Delete ${d.author} document`} title="Delete from Reports">
+                    <button type="button" className="ui-btn border-l-0" onClick={() => void lib.deleteCouncilDoc(d.id)} aria-label={t('dc_delete', { author: tx(d.author) })} title={t('dc_deleteTitle')}>
                       <Trash2 className="w-4 h-4" aria-hidden />
                     </button>
                   </li>

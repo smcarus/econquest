@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { ChartGuide, RangeNote, useShowRanges } from './HelpLevel';
 import { TrendingUp } from 'lucide-react';
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { ForecastOutcome, ForecastId } from '../utils/forecasts';
 import type { NowcastOutcome } from '../utils/nowcast';
 import { explainInChat } from '../utils/explainHandoff';
+import { useT, useTx } from '../i18n/useLang';
+import { PANELS } from '../i18n/messages/panels';
 
 /**
  * Country Research > History & data > Nowcast and forecasts: the app's estimate of quarters and
@@ -52,8 +55,12 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
   const [fc, setFc] = useState<ForecastReply | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [measure, setMeasure] = useState<ForecastId>('gdp_qoq');
-  // A forecast that failed its pre-registered test is not drawn unless asked for (honest labels).
+  // A forecast that failed its pre-registered test is not drawn unless asked for (accurate labels).
   const [showFailed, setShowFailed] = useState(false);
+  const t = useT(PANELS);
+  const ranges = useShowRanges();
+  const tx = useTx();
+  const status = (s: Validation['status']) => t(`fc_s_${s}`);
 
   useEffect(() => {
     let live = true;
@@ -67,7 +74,7 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
         setNow(n);
         setFc(f);
       })
-      .catch((e: Error) => live && setError(`Nowcasts and forecasts could not be read (${e.message}).`));
+      .catch((e: Error) => live && setError(e.message));
     return () => {
       live = false;
     };
@@ -131,44 +138,45 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
   };
 
   return (
-    <section className="ui-panel" data-forecast-panel="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
+    <section className="ui-panel" data-forecast-panel="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          Nowcast and forecasts, {countryName}
+          {t('fc_title', { country: countryName })}
           {forecast?.ok && (
             <button type="button" className="ui-btn ml-auto text-xs" data-explain-panel="true" onClick={explain}>
-              Explain
+              {t('c_explain')}
             </button>
           )}
         </h2>
-        <p className="ui-label">Nowcast: the app's estimate of periods not published yet. Forecast: the next quarters, with 50/70/90% bands. App estimates, not validated advice.</p>
+        <p className="ui-label">{t('fc_intro')}</p>
+        <ChartGuide id="forecast" className="pt-1" />
       </header>
       <div className="p-4 space-y-3">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Measure">
+        <div className="flex flex-wrap gap-2" role="group" aria-label={t('fc_measure')}>
           {MEASURES.map((x) => (
             <button key={x.id} type="button" className="ui-pill" aria-pressed={measure === x.id} onClick={() => {
                 setMeasure(x.id);
                 setShowFailed(false);
               }}>
-              {x.label}
+              {t(`fc_m_${x.id}`)}
             </button>
           ))}
         </div>
-        {!fc && !error && <p className="ui-body">Loading…</p>}
-        {error && <p className="text-sm text-amber-700 dark:text-amber-400">{error}</p>}
+        {!fc && !error && <p className="ui-body">{t('c_loading')}</p>}
+        {error && <p className="text-sm text-amber-700 dark:text-amber-400">{t('c_couldNotRead', { what: t('fc_what'), error })}</p>}
         {fc && (
           <>
             <ul className="text-sm space-y-1" data-forecast-status="true">
               {statuses.map((s) => (
                 <li key={s.id} className={s.v.status === 'passed' ? 'text-emerald-700 dark:text-emerald-400' : s.v.status === 'failed' ? 'text-red-700 dark:text-red-400' : 'text-slate-600 dark:text-slate-300'}>
-                  {s.id.includes('nowcast') ? 'Nowcast' : 'Forecast'}: {STATUS_TEXT[s.v.status]}
+                  {s.id.includes('nowcast') ? t('fc_nowcast') : t('fc_forecast')}: {status(s.v.status)}
                 </li>
               ))}
             </ul>
             {nowcast && !nowcast.ok && (
               <p className="text-sm text-amber-700 dark:text-amber-400" data-missing="true">
-                Nowcast Missing: {nowcast.reason}
+                {t('fc_nowcastMissing', { reason: tx(nowcast.reason) })}
               </p>
             )}
             {nowcast?.ok && (
@@ -177,27 +185,27 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
                   const b = p.bands.find((x) => x.level === 70);
                   return (
                     <p key={p.period}>
-                      <strong>Nowcast {p.period}{nowcastFailed ? ' (failed its out-of-sample test)' : ''}:</strong> {f1(p.mean)}%{b ? ` (70% band ${f1(b.lo)} to ${f1(b.hi)})` : ''}. <span className="text-slate-500 dark:text-slate-400">{p.how}</span>
+                      <strong>{t('fc_nowcastFor', { period: p.period, failed: nowcastFailed ? t('fc_failedTest') : '' })}</strong> {f1(p.mean)}%{b && ranges ? t('fc_band70', { lo: f1(b.lo), hi: f1(b.hi) }) : ''}. <span className="text-slate-500 dark:text-slate-400">{tx(p.how)}</span>
                     </p>
                   );
                 })}
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Last published: {nowcast.lastPublished.period} {f1(nowcast.lastPublished.value)}%.
+                  {t('fc_lastPublished', { period: nowcast.lastPublished.period, value: f1(nowcast.lastPublished.value) })}
                 </p>
               </div>
             )}
             {forecast && !forecast.ok && (
               <p className="text-sm text-amber-700 dark:text-amber-400" data-missing="true">
-                Forecast Missing: {forecast.reason}
+                {t('fc_forecastMissing', { reason: tx(forecast.reason) })}
               </p>
             )}
             {forecast?.ok && forecastFailed && (
               <div className="text-sm text-red-700 dark:text-red-400 flex flex-wrap items-center gap-2" data-forecast-failed="true">
                 <span>
-                  This forecast failed its pre-registered out-of-sample test, so {showFailed ? 'it is shown as an illustration only' : 'it is not drawn'}. Published figures{forecast.imf ? ' and the IMF projection' : ''} are shown.
+                  {t(showFailed ? 'fc_failedShown' : 'fc_failedHidden', { imf: forecast.imf ? t('fc_andImf') : '' })}
                 </span>
                 <button type="button" className="ui-btn text-xs" aria-pressed={showFailed} onClick={() => setShowFailed((v) => !v)}>
-                  {showFailed ? 'Hide the failed forecast' : 'Show it anyway'}
+                  {showFailed ? t('fc_hideFailed') : t('fc_showAnyway')}
                 </button>
               </div>
             )}
@@ -210,26 +218,28 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
                       <XAxis dataKey="period" tick={{ fontSize: 12 }} minTickGap={24} />
                       <YAxis tick={{ fontSize: 12 }} width={44} />
                       <Tooltip
-                        formatter={(v: unknown, name: unknown) => (Array.isArray(v) ? [`${f1(v[0])} to ${f1(v[1])}`, String(name ?? '')] : [f1(v as number), String(name ?? '')])}
+                        formatter={(v: unknown, name: unknown) => (Array.isArray(v) ? [t('c_range', { from: f1(v[0]), to: f1(v[1]) }), String(name ?? '')] : [f1(v as number), String(name ?? '')])}
                       />
-                      <Area dataKey="b90" name="90% band" stroke="none" fill="#3b82f6" fillOpacity={0.12} isAnimationActive={false} />
-                      <Area dataKey="b70" name="70% band" stroke="none" fill="#3b82f6" fillOpacity={0.18} isAnimationActive={false} />
-                      <Area dataKey="b50" name="50% band" stroke="none" fill="#3b82f6" fillOpacity={0.25} isAnimationActive={false} />
-                      <Line dataKey="actual" name="Published" stroke="#64748b" dot={false} strokeWidth={2} isAnimationActive={false} />
-                      <Line dataKey="mean" name={forecastFailed ? 'App forecast (failed test)' : 'App forecast'} stroke="#2563eb" strokeDasharray="5 4" dot={false} strokeWidth={2} isAnimationActive={false} />
-                      <Line dataKey="nowcast" name={nowcastFailed ? 'App nowcast (failed test)' : 'App nowcast'} stroke="none" dot={{ r: 4, fill: '#7c3aed', stroke: '#7c3aed' }} activeDot={false} isAnimationActive={false} />
-                      <Line dataKey="imf" name="IMF projection (yearly)" stroke="none" dot={{ r: 5, fill: '#d97706', stroke: '#d97706' }} activeDot={false} isAnimationActive={false} />
+                      {ranges && <Area dataKey="b90" name={t('fc_b90')} stroke="none" fill="#3b82f6" fillOpacity={0.12} isAnimationActive={false} />}
+                      {ranges && <Area dataKey="b70" name={t('fc_b70')} stroke="none" fill="#3b82f6" fillOpacity={0.18} isAnimationActive={false} />}
+                      {ranges && <Area dataKey="b50" name={t('fc_b50')} stroke="none" fill="#3b82f6" fillOpacity={0.25} isAnimationActive={false} />}
+                      <Line dataKey="actual" name={t('fc_published')} stroke="#64748b" dot={false} strokeWidth={2} isAnimationActive={false} />
+                      <Line dataKey="mean" name={forecastFailed ? t('fc_appForecastFailed') : t('fc_appForecast')} stroke="#2563eb" strokeDasharray="5 4" dot={false} strokeWidth={2} isAnimationActive={false} />
+                      <Line dataKey="nowcast" name={nowcastFailed ? t('fc_appNowcastFailed') : t('fc_appNowcast')} stroke="none" dot={{ r: 4, fill: '#7c3aed', stroke: '#7c3aed' }} activeDot={false} isAnimationActive={false} />
+                      <Line dataKey="imf" name={t('fc_imfYearly')} stroke="none" dot={{ r: 5, fill: '#d97706', stroke: '#d97706' }} activeDot={false} isAnimationActive={false} />
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
+                {ranges && drawForecast && <p className="text-xs text-slate-500 dark:text-slate-400" data-range-note="true">{t('fc_rangeNote', { sigma: forecast.fit.sigma })}</p>}
+                <RangeNote />
                 {forecast.imf && (
                   <div className="overflow-x-auto" data-imf-compare="true">
                     <table className="w-full text-sm tabular-nums">
                       <thead>
                         <tr className="text-left text-slate-500 dark:text-slate-400">
-                          <th className="py-1 pr-3">Year</th>
-                          {drawForecast && <th className="py-1 pr-3">App (same yearly basis)</th>}
-                          <th className="py-1 pr-3">IMF projection</th>
+                          <th className="py-1 pr-3">{t('c_year')}</th>
+                          {drawForecast && <th className="py-1 pr-3">{t('fc_appYearly')}</th>}
+                          <th className="py-1 pr-3">{t('fc_imf')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -242,28 +252,28 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
                         ))}
                       </tbody>
                     </table>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{forecast.imf.note}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{tx(forecast.imf.note)}</p>
+                    <RangeNote none="noRangeImf" className="text-xs text-slate-500 dark:text-slate-400 mt-1" />
                   </div>
                 )}
-                {forecast.caveats.length > 0 && <p className="text-xs text-slate-500 dark:text-slate-400">{forecast.caveats.join(' ')}</p>}
+                {forecast.caveats.length > 0 && <p className="text-xs text-slate-500 dark:text-slate-400">{forecast.caveats.map(tx).join(' ')}</p>}
                 <details className="text-xs text-slate-500 dark:text-slate-400">
-                  <summary className="cursor-pointer">Method and sources</summary>
-                  {nowcast?.ok && <p className="mt-1">Nowcast: {nowcast.method} Fit {nowcast.fit.from} to {nowcast.fit.to}, {nowcast.fit.n} observations{nowcast.fit.r2 !== undefined ? `, R² ${nowcast.fit.r2}` : ''}.</p>}
+                  <summary className="cursor-pointer">{t('c_methodSources')}</summary>
+                  {nowcast?.ok && <p className="mt-1">{t('fc_nowcastMethod', { method: nowcast.method, from: nowcast.fit.from, to: nowcast.fit.to, n: nowcast.fit.n, r2: nowcast.fit.r2 !== undefined ? `, R² ${nowcast.fit.r2}` : '' })}</p>}
                   <p className="mt-1">
-                    Forecast: {forecast.method} Fit {forecast.fit.from} to {forecast.fit.to}, {forecast.fit.n} observations, residual s.d. {forecast.fit.sigma}.
+                    {t('fc_forecastMethod', { method: forecast.method, from: forecast.fit.from, to: forecast.fit.to, n: forecast.fit.n, sigma: forecast.fit.sigma })}
                   </p>
                   <ul className="mt-1 list-disc pl-4">
                     {[...(nowcast?.ok ? nowcast.inputs : []), ...forecast.inputs].map((i, k) => (
                       <li key={k}>
-                        {i.label}: {i.source}, newest {i.newest}
-                        {i.pulledAt ? `, saved ${i.pulledAt.slice(0, 10)}` : ''}
+                        {t('fc_input', { label: tx(i.label), source: i.source, newest: i.newest, saved: i.pulledAt ? t('fc_saved', { date: i.pulledAt.slice(0, 10) }) : '' })}
                       </li>
                     ))}
-                    {forecast.imf && <li>{forecast.imf.label}{forecast.imf.vintage ? `, saved ${forecast.imf.vintage.slice(0, 10)}` : ''}</li>}
+                    {forecast.imf && <li>{tx(forecast.imf.label)}{forecast.imf.vintage ? t('fc_saved', { date: forecast.imf.vintage.slice(0, 10) }) : ''}</li>}
                   </ul>
                   {statuses.map((s) => (
                     <p key={s.id} className="mt-1">
-                      {s.id}: {s.v.verdict}
+                      {s.id}: {tx(s.v.verdict)}
                     </p>
                   ))}
                   {[...(fc.history.problems || [])].map((p) => (

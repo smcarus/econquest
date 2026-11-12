@@ -26,7 +26,9 @@ test('series rows are long format with unit, source and the source that day', ()
   ]);
   assert.equal(rows.length, 1);
   assert.equal(rows[0].length, SERIES_HEADER.length);
-  assert.deepEqual(rows[0], ['BRA', 'debt_gdp', 'Government debt', '% of GDP', 'per pull', '2026-11-05', 78.1, 'Saved pulls', 'IMF WEO', '']);
+  assert.deepEqual(rows[0].slice(0, 10), ['BRA', 'debt_gdp', 'Government debt', '% of GDP', 'per pull', '2026-11-05', 78.1, 'Saved pulls', 'IMF WEO', '']);
+  // Then what it measures and whose figure it is (data plan G6); seasonal adjustment (G7), measure (G8); no base year or currency for a share of GDP.
+  assert.deepEqual(rows[0].slice(10), ['General government gross debt, as % of GDP (IMF WEO GGXWDG_NGDP)', 'General government (central, state and local government and social security)', 'Not applicable: one figure per year', 'Share of GDP or GNI (nominal over nominal)', null, null]);
 });
 
 test('figures: live values with source and period; everything else Missing with a reason and no number', () => {

@@ -22,6 +22,9 @@ const dnsFail = () => {
 /** Answers like the real sources, for Brazil and the US. */
 const healthy: FetchFn = async (url) => {
   if (url.includes('api.worldbank.org/v2/country/BRA/indicator/FI.RES.TOTL.MO')) return json([{ page: 1 }, [{ date: '2025', value: null }, { date: '2024', value: 5.94 }]]);
+  if (url.includes('api.worldbank.org/v2/country/BRA/indicator/GC.TAX.TOTL.GD.ZS')) return json([{ page: 1 }, [{ date: '2024', value: null }, { date: '2023', value: 14.9 }]]);
+  if (url.includes('api.worldbank.org/v2/country/BRA/indicator/TX.VAL.FUEL.ZS.UN')) return json([{ page: 1 }, [{ date: '2024', value: 5.1 }]]);
+  if (url.includes('api.worldbank.org/v2/country/BRA/indicator/BX.TRF.PWKR.DT.GD.ZS')) return json([{ page: 1 }, [{ date: '2025', value: null }, { date: '2024', value: 0.29 }]]);
   if (url.includes('api.worldbank.org/v2/sources/6')) return json({ source: [{ data: [] }] });
   if (url.includes('api.imf.org') || url.includes('datamapper/api/v1/NGDPD')) return imfFetch()(url);
   if (url.includes('imf.org')) return json({ values: { GGXWDG_NGDP: { BRA: { '2025': 91.4 } } } });

@@ -1,12 +1,28 @@
 import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
+import {
+  chinaSource,
+  chinaValue,
+  COMMON_FRAMEWORK_AS_OF,
+  COMMON_FRAMEWORK_SOURCE,
+  DSA_NOT_READ,
+  dsaSource,
+  dsaValue,
+  DSSI_NOT_READ,
+  DSSI_SOURCE,
+  licDebtReading,
+  type LicDebtReading,
+} from './lowIncomeDebt';
 import { toLive } from './liveFigures';
 import { getSnapshotDataStatus } from './dataStatus';
 import { formatPeriod } from './officialYields';
 import { yieldSourceNote } from './watchlistYield';
 import { upcomingOfficialEvents } from '../data/officialCalendar';
 import { quarterLabel } from './debtSchedule';
+import { UST_AUCTION_SOURCE, ustAuctionValue, ustDemandReading } from './treasuryAuctions';
 import {
   calendarSection,
+  joinMeaning,
+  MEANS,
   groupLines,
   pct,
   pts,
@@ -14,6 +30,7 @@ import {
   missingNote,
   noSourceRow,
   missingRow,
+  type BriefRow,
   sourcesSection,
   when,
   type CountryBrief,
@@ -40,6 +57,8 @@ export function accessBand(cdsBps: number): { label: string; open: boolean } {
 const EVENT_SHORT: Record<string, string> = {
   MPC_DECISION: 'rate decision',
   CPI_RELEASE: 'CPI',
+  GDP_RELEASE: 'GDP',
+  ACTIVITY_RELEASE: 'activity figures',
   INFLATION_REPORT: 'inflation report',
 };
 
@@ -56,6 +75,8 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
   const band = cds !== undefined ? accessBand(cds) : undefined;
   const events = upcomingOfficialEvents([run.iso3], 60, now);
   const ds = open.debtSchedule;
+  // United States only: the latest Treasury auctions, carried on its watchlist row from the daily download.
+  const ustAuctions = peersIn.find((p) => p.iso3 === run.iso3)?.ustAuctions;
   const qeds = ds?.qeds;
   const qedsPeak = qeds ? qeds.buckets.reduce((a, b) => (b.usdBn > a.usdBn ? b : a), qeds.buckets[0]) : undefined;
   const thisYear = now.getUTCFullYear();
@@ -117,13 +138,18 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
   ].sort((a, b) => b.y - a.y);
 
   const j: string[] = [];
-  if (band && cds !== undefined) j.push(`Market access is ${band.label} (5Y CDS ${Math.round(cds)} bps${y10 !== undefined ? `, 10Y yield ${pct(y10, 2)}` : ''}).`);
-  else if (y10 !== undefined) j.push(`The 10Y yield is ${pct(y10, 2)}. Market access is not judged without a CDS figure.`);
+  if (band && cds !== undefined)
+    j.push(
+      `Market access is ${band.label} (5Y CDS ${Math.round(cds)} bps${y10 !== undefined ? `, 10Y yield ${pct(y10, 2)}` : ''}).${MEANS}CDS is what markets charge to insure against this government not paying; ${
+        band.open ? 'at this level it can usually still sell new bonds, at a cost that rises with the CDS price.' : 'at this level markets are pricing a real chance of default, and new bonds are hard to sell at any bearable price.'
+      }`
+    );
+  else if (y10 !== undefined) j.push(`The 10Y yield is ${pct(y10, 2)}. Market access is not judged without a CDS figure (the market price of insuring against default).`);
   if (qeds && qedsPeak) {
     j.push(
       `Government external debt due in the 12 months from the end of ${quarterLabel(qeds.asOf)} is $${qeds.next12mUsdBn.toFixed(1)} bn (QEDS); the heaviest quarter is ${
         qedsPeak.label === 'Next 3 months' ? 'the first three months' : `${qedsPeak.label} ahead`
-      } ($${qedsPeak.usdBn.toFixed(1)} bn).`
+      } ($${qedsPeak.usdBn.toFixed(1)} bn).${MEANS}This is what must be repaid to foreign lenders, or borrowed again, over the year.`
     );
   }
   if (idsYear?.debtServiceUsdBn !== undefined)
@@ -140,7 +166,9 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
     j.push(
       `The BIS counts ${bn(bis.intl.outstandingUsdBn)} of government bonds in international markets at the end of ${quarterLabel(bis.intl.asOf)}${
         parts.length ? `, ${parts.join(' and ')}` : ''
-      }${bis.all ? `; all government debt securities, domestic included, come to ${bn(bis.all.outstandingUsdBn)}` : ''}.`
+      }${bis.all ? `; all government debt securities, domestic included, come to ${bn(bis.all.outstandingUsdBn)}` : ''}.${
+        fxShare !== undefined && fxShare > 0 ? `${MEANS}Bonds in foreign currency get heavier to repay if the local currency falls.` : ''
+      }`
     );
   } else if (bis?.all) {
     j.push(`The BIS counts ${bn(bis.all.outstandingUsdBn)} of government debt securities in all markets at the end of ${quarterLabel(bis.all.asOf)}.`);
@@ -150,10 +178,10 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
       ? `Avoid pricing around ${events
           .slice(0, 3)
           .map((e) => `${formatPeriod(e.date)} (${EVENT_SHORT[e.category] || e.title})`)
-          .join(', ')}.`
+          .join(', ')}: announcements on those days can move bond prices, so new bonds are usually not sold just before them.`
       : 'No official rate decisions or data releases on file in the next 60 days.'
   );
-  if (others.length && y10 !== undefined) j.push(`It pays more than ${cheaperThan} of ${others.length} watchlist peers with an official 10-year yield.`);
+  if (others.length && y10 !== undefined) j.push(`It pays more than ${cheaperThan} of ${others.length} watchlist peers with an official 10-year yield.${MEANS}Paying more than similar governments usually means markets see more risk, or expect higher inflation, in this country.`);
   j.push(
     signals.length
       ? `Signs of distress: ${signals.join('; ')}.${unchecked.length ? ` Not checked, figures missing: ${unchecked.join(', ')}.` : ''}`
@@ -182,6 +210,30 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
           liveRow(status, 'Policy rate', 'market.policyRatePct', (v) => pct(v, 2), open),
         ],
       },
+      ...(run.iso3 === 'USA'
+        ? [
+            {
+              title: 'Recent US Treasury auctions',
+              rows: ustAuctions?.latest.length
+                ? ustAuctions.latest.map((a) => {
+                    const reading = ustDemandReading(a);
+                    return {
+                      label: `${a.label} auction${a.reopening ? ' (reopening)' : ''}, ${a.date}`,
+                      value: `${ustAuctionValue(a)}${reading ? `; ${reading}` : ''}`,
+                      source: UST_AUCTION_SOURCE,
+                      verified: true,
+                    };
+                  })
+                : [
+                    missingRow('Treasury auctions', {
+                      kind: 'unreachable',
+                      short: 'US Treasury Fiscal Data not saved yet',
+                      help: 'The auctions come from the free US Treasury Fiscal Data API and are saved by the daily download (Menu > Offline data > Download all country data, or npm run go -- daily). Nothing is shown until that copy exists.',
+                    }),
+                  ],
+            },
+          ]
+        : []),
       {
         title: 'Financing need',
         rows: [
@@ -211,6 +263,7 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
           liveRow(status, 'Debt / GDP', 'imf.debtToGdpPct', (v) => pct(v), open),
         ],
       },
+      { title: 'Debt relief and lending from China', rows: licDebtRows(open.licDebt ?? licDebtReading(run.iso3, null)) },
       {
         title: 'Execution window, next 60 days',
         rows: events.length
@@ -229,11 +282,46 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
   return brief;
 }
 
+/**
+ * Low-income country debt (U1, src/utils/lowIncomeDebt.ts): the debt-distress rating, DSSI, the
+ * Common Framework and lending from China, each with its source and date, or Missing with the reason.
+ */
+export function licDebtRows(r: LicDebtReading): BriefRow[] {
+  const read = (f: { source: string; read: string }) => `${f.source}${f.read ? `, read ${f.read}` : ''}`;
+  const dsaLabel = 'Risk of debt distress (IMF/World Bank)';
+  const dssiLabel = 'Debt Service Suspension Initiative (2020-21)';
+  const china = 'Official lending from China';
+  return [
+    r.dsa
+      ? { label: dsaLabel, value: dsaValue(r.dsa), source: dsaSource(), verified: true }
+      : r.dsaNone
+        ? missingRow(dsaLabel, { kind: 'unreachable', short: 'No published DSA', help: 'The country is on the IMF\'s list of low-income countries but has never published a debt sustainability analysis, so there is no rating.' })
+      : r.dsaListRead
+        ? { label: dsaLabel, value: 'Not on the IMF low-income list', source: dsaSource(), verified: true }
+        : missingRow(dsaLabel, { kind: 'setup', short: 'IMF list not read yet', help: DSA_NOT_READ }),
+    r.dssi !== undefined
+      ? { label: dssiLabel, value: r.dssi ? 'Took part' : 'Did not take part', source: read(DSSI_SOURCE), verified: true }
+      : missingRow(dssiLabel, { kind: 'setup', short: 'Country table not typed yet', help: DSSI_NOT_READ }),
+    {
+      label: 'Common Framework',
+      value: r.commonFramework ? `Applied for a debt treatment (as of ${COMMON_FRAMEWORK_AS_OF})` : `Not among the four countries that applied (as of ${COMMON_FRAMEWORK_AS_OF})`,
+      source: read(COMMON_FRAMEWORK_SOURCE),
+      verified: true,
+    },
+    r.china
+      ? { label: china, value: chinaValue(r.china), source: chinaSource(r.china), verified: true }
+      : r.chinaMissing?.short.startsWith('No loans')
+        ? { label: china, value: 'None recorded', source: `AidData file; ${r.chinaMissing.short.toLowerCase()}`, verified: true, help: r.chinaMissing.help }
+        : missingRow(china, { kind: 'setup', short: r.chinaMissing?.short || 'AidData file not downloaded', help: r.chinaMissing?.help || '' }),
+  ];
+}
+
 /** Section ids and headings for the banker's issuer note, in order. */
 export const BANKER_SECTIONS: Record<string, string> = {
   summary: 'Summary',
   access: 'Market access',
   need: 'Financing need',
+  relief: 'Debt relief and lending from China',
   window: 'Execution window',
   peers: 'Pricing against peers',
   restructuring: 'Restructuring watch',
@@ -254,27 +342,34 @@ export function buildBankerSections(
     out.push({
       id: 'summary',
       heading: BANKER_SECTIONS.summary,
-      lines: [b.headline, ...(b.sampleWarning ? [`**Note:** ${b.sampleWarning}`] : []), ...b.judgements.map((x) => `- ${x}`)],
+      lines: [b.headline, ...(b.sampleWarning ? [`**Note:** ${b.sampleWarning}`] : []), ...b.judgements.map((x) => `- ${joinMeaning(x)}`)],
     });
   }
   const groups: Array<[string, string]> = [
     ['access', 'Market access'],
     ['need', 'Financing need'],
+    ['relief', 'Debt relief and lending from China'],
     ['window', 'Execution window'],
     ['peers', 'Peers by 10Y yield'],
   ];
   for (const [id, title] of groups) if (include(id)) out.push({ id, heading: BANKER_SECTIONS[id], lines: groupLines(byTitle(title)) });
   if (include('restructuring')) {
-    const dsa = run.openData.dsaAnalytics;
+    // The debt sustainability view on IMF history (src/utils/debtSustainability.ts), when it has run.
+    const dsa = peers.find((p) => p.iso3 === run.iso3)?.debtSustainability;
+    const gap = dsa?.stabilisingPb !== undefined && dsa.projectedPb !== undefined ? dsa.stabilisingPb - dsa.projectedPb : undefined;
     out.push({
       id: 'restructuring',
       heading: BANKER_SECTIONS.restructuring,
       lines: [
         b.judgements[b.judgements.length - 1],
-        `- Interest rate minus growth: ${pts(dsa.rMinusGDifferentialPct)} (model, from figures above)`,
-        `- Fiscal gap to stabilise debt: ${dsa.fiscalConsolidationGapPct.toFixed(1)} pts of GDP (model, from figures above)`,
+        dsa?.rMinusG !== undefined
+          ? `- Interest rate minus growth: ${pts(dsa.rMinusG)} (debt sustainability view on IMF figures, ${dsa.year})`
+          : '- Interest rate minus growth: Missing (the debt sustainability view needs the saved IMF history: Menu > Offline data > Download all)',
+        gap !== undefined
+          ? `- Primary balance gap to hold debt steady: ${gap.toFixed(1)} pts of GDP (needed ${dsa!.stabilisingPb!.toFixed(1)}, IMF projection ${dsa!.projectedPb!.toFixed(1)})`
+          : '- Primary balance gap to hold debt steady: Missing (needs the debt sustainability view)',
         ...(run.openData.monetaryAndMarket.cds5YSpreadBps >= 400
-          ? ['The Restructuring tab on the Country page has the NPV and collective action clause tools for this credit.']
+          ? ['The restructuring calculator under Model sandboxes on the country page values a deal on terms you enter.']
           : []),
       ],
     });

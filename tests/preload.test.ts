@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   EMPTY_PRELOAD_STATE,
   PRELOAD_FRESH_MS,
@@ -84,7 +84,7 @@ test('npm run preload offline: says the feeds cannot be reached and downloads no
   try {
     const r = spawnSync(process.execPath, ['--import', 'tsx', path.join(rootDir, 'server.ts'), '--preload', '--countries=MEX'], {
       cwd: rootDir,
-      env: { ...process.env, NODE_OPTIONS: `--import ${path.join(rootDir, 'tests/helpers/offline-fetch.mjs')}`, DATA_DIR: dataDir, OFFLINE_PROBE: 'down' },
+      env: { ...process.env, NODE_OPTIONS: `--import ${pathToFileURL(path.join(rootDir, 'tests/helpers/offline-fetch.mjs')).href}`, DATA_DIR: dataDir, OFFLINE_PROBE: 'down' },
       encoding: 'utf8',
       timeout: 60_000,
     });
@@ -97,17 +97,17 @@ test('npm run preload offline: says the feeds cannot be reached and downloads no
 });
 
 test('npm run preload: a step that never answers is recorded as not saved and the run moves on', () => {
-  // 10 s: the history step makes one request per official figure with a 200 ms gap (28 figures, about 6 s offline).
+  // 15 s: the history step makes one request per official figure with a 200 ms gap (51 figures since G16 and G17, about 11 s offline). Three steps wait on BIS, so the run takes about 70 s.
   const dataDir = mkdtempSync(path.join(tmpdir(), 'econquest-preload-hang-'));
   try {
     const r = spawnSync(process.execPath, ['--import', 'tsx', path.join(rootDir, 'server.ts'), '--preload', '--countries=MEX'], {
       cwd: rootDir,
-      env: { ...process.env, NODE_OPTIONS: `--import ${path.join(rootDir, 'tests/helpers/offline-fetch.mjs')}`, DATA_DIR: dataDir, OFFLINE_HANG: 'stats.bis.org/api', PRELOAD_STEP_TIMEOUT_S: '10' },
+      env: { ...process.env, NODE_OPTIONS: `--import ${pathToFileURL(path.join(rootDir, 'tests/helpers/offline-fetch.mjs')).href}`, DATA_DIR: dataDir, OFFLINE_HANG: 'stats.bis.org/api', PRELOAD_STEP_TIMEOUT_S: '15' },
       encoding: 'utf8',
-      timeout: 90_000,
+      timeout: 150_000,
     });
     assert.equal(r.status, 0, r.stderr.slice(-1500));
-    assert.match(r.stdout, /FAIL BIS central bank policy rates.*took longer than 10 s; moved on/);
+    assert.match(r.stdout, /FAIL BIS central bank policy rates.*took longer than 15 s; moved on/);
     assert.match(r.stdout, /\[preload\] finished:/);
     const state = JSON.parse(readFileSync(path.join(dataDir, 'local', 'preload.json'), 'utf8'));
     assert.equal(state.steps['world:bis'].outcome, 'failed');
@@ -123,14 +123,14 @@ test('npm run preload: runs offline against fixtures, saves progress, and a seco
   const run = () =>
     spawnSync(process.execPath, ['--import', 'tsx', path.join(root, 'server.ts'), '--preload', '--countries=MEX'], {
       cwd: root,
-      env: { ...process.env, NODE_OPTIONS: `--import ${path.join(root, 'tests/helpers/offline-fetch.mjs')}`, DATA_DIR: dataDir, COMTRADE_API_KEY: '', GEMINI_API_KEY: '' },
+      env: { ...process.env, NODE_OPTIONS: `--import ${pathToFileURL(path.join(root, 'tests/helpers/offline-fetch.mjs')).href}`, DATA_DIR: dataDir, COMTRADE_API_KEY: '', GEMINI_API_KEY: '' },
       encoding: 'utf8',
       timeout: 90_000,
     });
   try {
     const first = run();
     assert.equal(first.status, 0, first.stderr.slice(-2000));
-    assert.match(first.stdout, /\[preload\] finished: \d+ of 18 steps saved/);
+    assert.match(first.stdout, /\[preload\] finished: \d+ of 31 steps saved/);
     // No key: the free preview route is tried, not skipped (the stand-in feeds refuse it).
     assert.match(first.stdout, /FAIL UN Comtrade trade partners \(UN Comtrade did not answer \(free preview route/);
     assert.ok(existsSync(path.join(dataDir, 'history', 'MEX.json')));

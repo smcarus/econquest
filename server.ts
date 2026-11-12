@@ -1,9 +1,20 @@
 // Reads .env and the data folder before anything else (src/server/config.ts).
 import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, SCHEDULED_JOBS_FILE, LAST_ALERT_FILE, DATA_DIR, DATA_HEALTH_FILES, ENV_FILE_KEYS, FIGURE_WATCH_FILES, RESEARCH_FILE, REVIEW_FILE, SETTINGS_FILE, SIGNOFF_FILE, SPEC_DIR, VALIDATION_FILE, WATCH_RULES_FILE, WORKSPACE_FILE, savedSettings, setSavedSettings } from './src/server/config';
 import { geminiModel } from './src/utils/geminiModel';
-import { registerAnalysisRoutes } from './src/server/routes/analysis';
+import { refreshModelHistory, registerAnalysisRoutes } from './src/server/routes/analysis';
+import { FILE_PULLS, dailyDue, dailyFilePath, formatDaily, interestingLines, readDaily, sweepNote, testsDue, writeDaily, type DailyRun, type DailyStep } from './src/utils/dailyRun';
+import { spawn } from 'child_process';
 import { registerReviewRoutes } from './src/server/routes/reviews';
 import { registerIdeaRoutes } from './src/server/routes/ideas';
+import { registerFeedbackRoutes } from './src/server/routes/feedback';
+import { mountEngineRoutes } from './src/server/engineRoutes';
+import { ENGINE_ROUTES } from './src/engine/routeTable';
+import { createNodePlatform } from './src/platform/node';
+import { secretBoxFromEnv } from './src/utils/secretBox';
+import type { Caller } from './src/engine/routes';
+import { registerOwnSeriesRoutes } from './src/server/routes/ownSeries';
+import { ownSeriesViewsFor, OWN_NO_COUNTRY } from './src/engine/ownSeries';
+import { registerQuestRoutes } from './src/server/routes/quests';
 import { forwardSummary } from './src/utils/forwardRecord';
 import { SPIKE_METHOD, spikeMonths, spikeSentence } from './src/utils/unrestSpikes';
 import { forwardFilePath, loadForward } from './src/utils/forwardRecordStore';
@@ -22,6 +33,8 @@ import { AuthStore } from './src/utils/authStore';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { refusal, requiredRole, roleAtLeast } from './src/utils/permissions';
 import { CSRF_HEADER, csrfMatches, csrfToken, isAiCall, isWrite, LIMITS, RateLimiter, SECURITY_HEADERS } from './src/utils/requestLimits';
+import { apiKeyFrom, DATA_API_LIMIT, isDataApiRead, keyMatches } from './src/server/dataApi';
+import { registerUserTestRoutes } from './src/server/routes/userTests';
 import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, ROLES, type Account, type Role } from './src/utils/auth';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
@@ -47,15 +60,32 @@ import { crashSentence } from './src/utils/fxFactors';
 import { loadWeoVintages } from './src/utils/weoVintagesStore';
 import { areaSeries } from './src/utils/oecdSdmx';
 import { cpiFor } from './src/utils/oecdInflation';
-import { CBPOL_AREA, cbpolMissing, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
+import { CBPOL_AREA, CBPOL_NOT_PULLED, cbpolMissing, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './src/utils/refereeModel';
 import { formatDuration, isCouncilTiming, stepTiming, timingTable, totalMs, type CouncilTiming, type StepTiming } from './src/utils/councilTiming';
-import { EXPLAIN_INSTRUCTION, checkExplain, cleanFocus, explainTask, focusAsText, lensCoverage, LENS_ORDER, type ExplainPlan, type LensId, type RawExplain } from './src/utils/explain';
+import { glossaryMarkdown } from './src/data/glossary';
+import { EXPLAIN_INSTRUCTION, explainInstruction, checkExplain, cleanFocus, explainTask, focusAsText, lensCoverage, LENS_ORDER, type ExplainPlan, type LensId, type RawExplain } from './src/utils/explain';
 import { documentsAsText, isCouncilDocument, toAgentDocuments, type AgentDocument, type CouncilDocument } from './src/utils/agentDocument';
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, synthesisTask, isDocFinding, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult, planCouncil, runCouncil, type SavedCouncilBrief } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
+import { distTaxFromSnapshot } from './src/utils/distributionTaxes';
+import { peopleFromSnapshot } from './src/utils/peopleLiving';
+import { tradeMixFromSnapshot } from './src/utils/tradeMix';
+import { climateFromSnapshot } from './src/utils/climateEnergy';
+import { loadOwidEnergy, fetchOwidEnergyPull } from './src/server/feeds/owidEnergy';
+import { loadWages, fetchWagesPull, loadHousePrices, fetchHousePricesPull, loadPrivateDebt, fetchPrivateDebtPull } from './src/server/feeds/wagesHousing';
+import { sectorBalances } from './src/utils/sectorBalances';
+import { activitySnapshot } from './src/utils/monthlyIndicators';
+import { fetchMonthlyIndicators, loadMonthlyIndicators } from './src/server/feeds/monthlyIndicators';
+import { fetchGovLevels, loadGovLevels } from './src/server/feeds/govLevels';
+import { fetchEuroFirstPublished, fetchUkFirstPublished } from './src/server/feeds/firstPublished';
+import { debtStructureFromSnapshot } from './src/utils/debtStructure';
+import { licDebtReading, type LicDebtReading } from './src/utils/lowIncomeDebt';
+import { aiddataData } from './src/utils/aiddataStore';
+import { investorBaseData } from './src/utils/investorBaseStore';
+import { investorBaseReading } from './src/utils/investorBase';
 import { politicsFromSnapshot } from './src/utils/politicsEvents';
 import { acledReadingFor, forgetAcled } from './src/server/feeds/acled';
 import { ACLED_SHORT, acledCountryName } from './src/utils/acled';
@@ -79,18 +109,22 @@ import { toLive } from './src/utils/liveFigures';
 import { EVENT_LABEL, openIssues, watchFigures, type FigureEventKind } from './src/utils/figureWatch';
 import { readEvents, readLedger, saveWatch } from './src/utils/figureWatchStore';
 import { DEFAULT_WATCHLISTS } from './src/data/presetsAndBaselines';
+import { defaultProvider, isLightMode, LIGHT_GDELT_NOTE, lightModeCountries, skipGdeltRaw } from './src/utils/lightMode';
 import { isModelPlaceholder, MODEL_FIELD_MISSING } from './src/utils/councilResult';
-import { loadWatchRules, saveWatchRules } from './src/utils/watchRulesStore';
 import { FIGURE_LIST, FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
 import { SHARE_MODE_KEY, shareModeFromValue, withholdForSharing } from './src/utils/shareMode';
+import { isPaidSeriesId, listPaidMappings, paidSeriesFor, paidVendorFromEnv, paidWithheldRows, PAID_MAPPINGS_FILE, PAID_WITHHELD_REASON, withholdPaidRows } from './src/engine/paidData';
+import { fetchSubscription, paidVisibleTo, registerSubscriptionRoutes } from './src/server/routes/subscriptions';
 import { tableWorkbook } from './src/utils/xlsxExport';
 import { PANEL_FIGURES, PANEL_LATEST_HEADER, panelHistoryRows, panelLatest, panelLatestRows, parseCountries, parseFigureIds, type PanelCountryData } from './src/utils/panelTable';
 import { ISO_NUMERIC_TO_ISO3 } from './src/data/worldCountries';
 import { stressWorldSeries } from './src/utils/stressIndices';
 import { spfWorldSeries } from './src/utils/inflationSurveys';
+import { chokepointWorldSeries } from './src/utils/portWatch';
+import { ustAuctionSummary } from './src/utils/treasuryAuctions';
+import { euSurveySummary } from './src/utils/euSurveys';
 import { commoditySeries, countrySeries, seriesSummary, type ArchivedSnapshot, type Series } from './src/utils/seriesHistory';
 import { archiveRoot, archivedDayOnOrBefore, keepDaysFromEnv, listArchivedCountries, listArchivedDays, pruneArchive, readArchivedPull, writeArchivedPull } from './src/utils/pullArchive';
-import { parseRules } from './src/utils/watchRules';
 import { checkDeskText, checkSupremeText, runScores } from './src/utils/runFigureCheck';
 import {
   API_KEY_IDS,
@@ -107,18 +141,23 @@ import {
 import { checkConnections, describeNetworkError, isFailure, type ConnectionReport } from './src/utils/connectionCheck';
 import { notify, readLastAlert, testAlertRoute } from './src/server/alerts';
 import { backtestRegressionAlert, backtestRegressions, dataCheckAlert, jobFailedAlert } from './src/utils/alertEvents';
+import { calendarHealth, localDay } from './src/utils/calendarHealth';
+import { inflationHealth } from './src/utils/inflationHealth';
+import { OFFICIAL_CALENDAR } from './src/data/officialCalendar';
 import { checkTime, clockIn, nightlyDue, recordFromReport, sourceHealth, TRIGGER_LABEL, type CheckTrigger } from './src/utils/dataHealth';
 import type { BacktestResult } from './src/utils/backtest';
-import { closeInterrupted, describeSchedule, downloadSummary, jobDue, JOBS, type JobId, markFinished, markSkipped, markStarted, parseSchedule, readJobs, testsSummary, type TestsPart, writeJobs } from './src/utils/scheduledJobs';
+import { closeInterrupted, describeSchedule, downloadSummary, jobDue, JOBS, type JobId, markFinished, markSkipped, jobScheduleFrom, markStarted, readJobs, testsSummary, type TestsPart, writeJobs } from './src/utils/scheduledJobs';
 import { appendCheck, readChecks, readState, saveState } from './src/utils/dataHealthStore';
 import express from 'express';
 import fs from 'fs';
+import os from 'os';
+import { pathToFileURL } from 'url';
+import { installDownloadCounter } from './src/utils/downloadCounter';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { ThinkingLevel, Type } from '@google/genai';
 import {
   SOVEREIGN_CATALOG,
-  buildAnnotatedChartsForSovereign,
   buildBaselineOpenData,
   buildDefaultAssessmentRun,
   buildOfficialCatalystCalendar,
@@ -133,13 +172,11 @@ import {
   IntegrationBroadcastScope,
   OpenDataSnapshot,
   PipelineStageTelemetry,
-  PolicyDocumentCategory,
   PredictionEventCategory,
   RawVenueEventContract,
   SupremeCouncilOutput,
   WatchlistItem,
 } from './src/types/council.ts';
-import { computeDeterministicDocumentAnalysis } from './src/utils/portfolioAndFundingEngine.ts';
 import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
 import { councilInputs, MISSING_FIGURES_RULE } from './src/utils/councilInputs.ts';
 import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
@@ -158,13 +195,14 @@ import { sanctionsData, sanctionsDir } from './src/utils/sanctionsStore.ts';
 import { countryRiskScorecard, scorecardSentence, ECONOMY_IDS, SCORECARD_METHOD, WGI_IDS, type ScorecardInputs } from './src/utils/countryRiskScorecard.ts';
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { US_10Y_SERIES } from './src/utils/officialYields.ts';
-import { fetchCftcPull, fetchTicPull, fetchCbpolPull } from './src/server/feeds/positioning';
+import { fetchCftcPull, fetchTicPull, fetchCbpolPull, fetchUstAuctionPull, loadUstAuctions } from './src/server/feeds/positioning';
+import { fetchGovSpendingPull } from './src/server/feeds/govSpending';
 import { gdeltPausedUntil, gdeltFetch, GDELT_REFRESH_MS } from './src/server/feeds/gdelt';
-import { fetchImfPull, fetchCoferPull } from './src/server/feeds/imf';
+import { fetchImfPull, fetchCoferPull, fetchImfCpiPull, loadImfCpi } from './src/server/feeds/imf';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
-import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, forgetNationalCpi, fetchMonthlyActivity } from './src/server/feeds/oecd';
+import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, forgetNationalCpi, fetchMonthlyActivity, fetchEuSurveyPull, loadEuSurveys } from './src/server/feeds/oecd';
 import { commodityMemory, fetchCommodities, forgetCommodityPulls } from './src/server/feeds/commodities';
-import { officialYieldCache, fetchOfficial10YYield, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, loadFxHistory, pullFxHistory, fetchFxHistory, fetchFxExtra, loadFxExtra, fetchBisCreditCycle, fetchIdsCreditors, fetchSovereignDefaults, fetchInflationExpectations, fetchInflationSurveys, fetchStressPulls, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds, fetchFedBalanceSheet } from './src/server/feeds/rates';
+import { officialYieldCache, fetchOfficial10YYield, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, loadFxHistory, pullFxHistory, fetchFxHistory, fetchFxExtra, loadFxExtra, fetchBisCreditCycle, fetchIdsCreditors, fetchSovereignDefaults, fetchInflationExpectations, fetchInflationSurveys, fetchStressPulls, fetchPortWatchChokepoints, fetchPortWatchPorts, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds, fetchFedBalanceSheet } from './src/server/feeds/rates';
 import { fetchTradeExposure } from './src/server/feeds/markets';
 import { serverGuiRuntimeConfig, setServerGuiRuntimeConfig, latestRunsByIso3, sseClients, integrationDeliveryLog, computeHmacSha256, buildTopLevelIntegrationPayload, dispatchTopLevelIntegrationEvent, interpolateIsoTemplate, extractMappedTelemetryFromPayload, DEFAULT_SERVER_API_CONNECTORS, DEFAULT_INTEGRATION_CONFIG } from './src/server/integrations';
 import { fetchLiveOpenDataSnapshotNetwork } from './src/server/snapshot/network';
@@ -193,6 +231,8 @@ async function fetchMarketEdgeAnchors(): Promise<MarketEdgeAnchorsReply> {
 }
 
 const SNAPSHOT_DIR = path.join(DATA_DIR, 'live');
+/** The device services the shared engine uses on this computer (src/platform/node.ts). */
+const enginePlatform = createNodePlatform({ dataDir: DATA_DIR, secretBox: secretBoxFromEnv(process.env).box });
 const SNAPSHOT_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
 /** A pull that came back short (a feed failed, or nothing answered) is tried again after an hour. */
 const SNAPSHOT_RETRY_MS = 60 * 60 * 1000;
@@ -438,15 +478,29 @@ function savePreloadState(): void {
 }
 /**
  * Every country the app covers, or only those named with --countries=BRA,TUR (terminal) or
- * PRELOAD_COUNTRIES in .env.
+ * PRELOAD_COUNTRIES in .env. In light mode (LIGHT_MODE=on) without either, only the countries on
+ * the watchlist (src/utils/lightMode.ts).
  */
 function preloadCountries(): Array<{ iso3: string; countryName: string }> {
   const arg = process.argv.find((a) => a.startsWith('--countries='))?.slice('--countries='.length) || process.env.PRELOAD_COUNTRIES || '';
   const only = new Set(arg.split(',').map((x) => x.trim().toUpperCase()).filter(Boolean));
+  if (!only.size && isLightMode(process.env)) for (const iso3 of lightModeCountries(workspaceValuesOnDisk(), DEFAULT_WATCHLISTS, new Set(SOVEREIGN_CATALOG.map((c) => c.iso3)))) only.add(iso3);
   return SOVEREIGN_CATALOG.filter((c) => !only.size || only.has(c.iso3)).map((c) => ({ iso3: c.iso3, countryName: c.countryName }));
 }
+/** The shared workspace and every account's own, for the light-mode country list. */
+function workspaceValuesOnDisk(): Array<Record<string, string | undefined>> {
+  const files = [WORKSPACE_FILE];
+  try {
+    const users = path.join(DATA_DIR, 'local', 'users');
+    for (const id of fs.readdirSync(users)) files.push(path.join(users, id, 'workspace.json'));
+  } catch {
+    // no accounts
+  }
+  return files.filter((f) => fs.existsSync(f)).map((f) => loadWorkspace(f).values);
+}
 function preloadPlan(): PreloadStep[] {
-  return planPreload(preloadCountries());
+  const plan = planPreload(preloadCountries());
+  return skipGdeltRaw(process.env) ? plan.filter((s) => s.id !== 'world:gdelt_raw') : plan;
 }
 
 /**
@@ -496,6 +550,95 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       return had(await fetchCftcPull(), 'CFTC');
     case 'world:tic':
       return had(await fetchTicPull(), 'US Treasury');
+    case 'world:paid_data': {
+      // Your data subscription (src/engine/paidData.ts): off, or no adapter yet, counts as done with nothing to fetch.
+      const got = await fetchSubscription(enginePlatform, process.env);
+      return { outcome: got.ok ? 'done' : 'failed', note: got.note };
+    }
+    case 'world:imf_cpi': {
+      const got = await fetchImfCpiPull({ force: true });
+      if (!got) return { outcome: 'failed', note: 'The IMF did not answer for monthly consumer prices (npm run check:imf shows why)' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const months = Object.values(got.series).map((s) => s.points[s.points.length - 1]?.period || '');
+      const note = `${Object.keys(got.series).length} countries to ${months.sort().pop() || '?'}`;
+      return fresh ? { outcome: 'done', note } : { outcome: 'failed', note: `The IMF did not answer; kept the copy from ${got.pulledAt.slice(0, 10)} (${note})` };
+    }
+    case 'world:eu_surveys': {
+      const got = await fetchEuSurveyPull({ force: true });
+      if (!got) return { outcome: 'failed', note: 'Eurostat did not answer for the EU business surveys' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const months = Object.values(got.series).flatMap((s) => Object.values(s).map((p) => p[p.length - 1]?.period || ''));
+      const note = `${Object.keys(got.series).length} countries to ${months.sort().pop() || '?'}`;
+      return fresh ? { outcome: 'done', note } : { outcome: 'failed', note: `Eurostat did not answer; kept the copy from ${got.pulledAt.slice(0, 10)} (${note})` };
+    }
+    case 'world:owid_energy': {
+      const got = await fetchOwidEnergyPull();
+      if (!got) return { outcome: 'failed', note: 'Our World in Data did not answer for the energy file' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const note = `${Object.keys(got.countries).length} countries${got.file === 'legacy' ? ' (older file, no longer updated)' : ''}`;
+      return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}, downloaded again after a week` };
+    }
+    case 'world:ilostat_wages': {
+      const got = await fetchWagesPull();
+      if (!got) return { outcome: 'failed', note: 'ILOSTAT did not answer for average monthly earnings' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const note = `${Object.keys(got.countries).length} countries`;
+      return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}, downloaded again after a week` };
+    }
+    case 'world:bis_property': {
+      const got = await fetchHousePricesPull();
+      if (!got) return { outcome: 'failed', note: 'The BIS did not answer for residential property prices' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const quarters = Object.values(got.countries).map((c) => c.quarter).sort();
+      const note = `${Object.keys(got.countries).length} countries to ${quarters.pop() || '?'}`;
+      return fresh ? { outcome: 'done', note } : { outcome: 'done', note: `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
+    }
+    case 'world:bis_private_debt': {
+      const got = await fetchPrivateDebtPull();
+      if (!got) return { outcome: 'failed', note: 'The BIS did not answer for household and company debt' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const quarters = Object.values(got.countries).map((c) => c.quarter).sort();
+      const note = `${Object.keys(got.countries).length} countries to ${quarters.pop() || '?'}`;
+      return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
+    }
+    case 'world:monthly_activity': {
+      const got = await fetchMonthlyIndicators();
+      if (!got) return { outcome: 'failed', note: 'None of Eurostat, FRED, the ONS or the BCB answered for monthly activity' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const note = `${Object.keys(got.countries).length} countries`;
+      return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
+    }
+    case 'world:gov_levels': {
+      const got = await fetchGovLevels();
+      if (!got) return { outcome: 'failed', note: 'Neither Eurostat nor the IMF GFS (DBnomics) answered for levels of government' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const sub = Object.values(got.countries).filter((c) => c.spending && (c.spending.pct.state !== undefined || c.spending.pct.local !== undefined)).length;
+      const note = `${Object.keys(got.countries).length} countries, ${sub} with state or local spending`;
+      return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
+    }
+    case 'world:first_published_ea': {
+      const got = await fetchEuroFirstPublished();
+      if (!got) return { outcome: 'failed', note: 'The ECB Data Portal did not answer for euro area figures as first published' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const releases = got.series.reduce((n, s) => n + s.rows.length, 0);
+      const note = `${got.series.length} euro area series, ${releases} published values`;
+      return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
+    }
+    case 'world:first_published_uk': {
+      const got = await fetchUkFirstPublished();
+      if (!got) return { outcome: 'failed', note: 'The ONS did not let the app download the GDP revision triangle, and no copy is saved in data/local/ons-triangles' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const releases = got.series.reduce((n, s) => n + s.rows.length, 0);
+      const note = `UK GDP growth, ${releases} published values`;
+      return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
+    }
+    case 'world:ust_auctions': {
+      const got = await fetchUstAuctionPull({ force: true });
+      if (!got) return { outcome: 'failed', note: 'US Treasury Fiscal Data did not answer' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const note = `${got.auctions.length} auctions to ${got.auctions[got.auctions.length - 1]?.date || '?'}`;
+      return fresh ? { outcome: 'done', note } : { outcome: 'failed', note: `US Treasury Fiscal Data did not answer; kept the copy from ${got.pulledAt.slice(0, 10)} (${note})` };
+    }
     case 'world:imf_external':
       return had(await fetchImfPull(), 'IMF');
     case 'world:cofer':
@@ -507,6 +650,7 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       return { outcome: 'done', note: m?.eia ? undefined : 'EIA needs a key in Settings; Pink Sheet saved' };
     }
     case 'world:gdelt_raw': {
+      if (skipGdeltRaw(process.env)) return { outcome: 'skipped', note: LIGHT_GDELT_NOTE };
       const cfg = gdeltRawConfig(process.env);
       const label = preloadState.current?.label || step.label;
       let lastSave = 0;
@@ -539,6 +683,12 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       const n = Object.keys(file.countries || {}).length;
       const route = keyed ? '' : ' (free preview route; a UN Comtrade key in Menu > Settings is faster)';
       return n ? { outcome: 'done', note: `${n} countries saved${route}` } : { outcome: 'failed', note: `UN Comtrade did not answer${route}` };
+    }
+    case 'world:gov_spending': {
+      // Annual tables, kept a week: a pull within the week answers from the saved copy.
+      const got = await fetchGovSpendingPull();
+      const n = Object.keys(got?.byCountry || {}).length;
+      return n ? { outcome: 'done', note: `${n} countries, pulled ${got!.pulledAt.slice(0, 10)}` } : { outcome: 'failed', note: 'Eurostat and DBnomics (IMF COFOG) did not answer' };
     }
     case 'world:hc_spread': {
       const got = await fetchHcSpreadUncached();
@@ -716,6 +866,203 @@ function knownOffline(): boolean {
 }
 
 /** npm run preload: the same run in the terminal, without starting the web server. */
+/**
+ * `npm run daily` (src/utils/dailyRun.ts): the daily start-up run that `npm run go` and the Mac
+ * double-click file start in the background. At most once every 20 hours unless `-- --force`.
+ * Runs as its own process beside the app; everything it fetches is saved in data/, where the app
+ * reads it.
+ */
+function runScript(script: string, args: string[] = [], opts: { quiet?: boolean } = {}): Promise<{ code: number; output: string; bytes?: number }> {
+  // Each script counts what it downloads (scripts/count-downloads.ts) and leaves the figure here.
+  const countFile = path.join(os.tmpdir(), `econquest-download-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}.txt`);
+  const readCount = (): number | undefined => {
+    try {
+      const n = Number(fs.readFileSync(countFile, 'utf8'));
+      fs.rmSync(countFile, { force: true });
+      return Number.isFinite(n) ? n : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, ['--import', 'tsx', '--import', pathToFileURL(path.join(APP_ROOT, 'scripts', 'count-downloads.ts')).href, path.join(APP_ROOT, 'scripts', script), ...args], {
+      cwd: APP_ROOT,
+      env: { ...process.env, DATA_DIR, ECONQUEST_DOWNLOAD_COUNT_FILE: countFile },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let output = '';
+    const take = (b: Buffer) => {
+      const t = b.toString();
+      output += t;
+      if (!opts.quiet) for (const line of t.split(/\r?\n/)) if (line.trim()) console.log(`  ${line}`);
+    };
+    child.stdout.on('data', take);
+    child.stderr.on('data', take);
+    child.on('error', (e) => resolve({ code: 1, output: `${output}\n${e.message}`, bytes: readCount() }));
+    child.on('close', (code) => resolve({ code: code ?? 1, output, bytes: readCount() }));
+  });
+}
+
+async function runDailyCli(): Promise<void> {
+  const file = dailyFilePath(DATA_DIR);
+  const force = process.argv.includes('--force');
+  const due = dailyDue(readDaily(file), new Date(), force);
+  if (!due.due) {
+    console.log(`[daily] Not run: ${due.reason}. (npm run daily -- --force runs it again.)`);
+    process.exit(0);
+  }
+  const run: DailyRun = { startedAt: new Date().toISOString(), where: process.env.ECONQUEST_WHERE || 'this computer', steps: [], downloadedBytes: 0 };
+  const save = () => writeDaily(file, { last: run });
+  // What this process downloads (feeds, histories, tests); scripts report their own (runScript).
+  const counter = installDownloadCounter();
+  let countedSoFar = 0;
+  const add = (step: DailyStep, scriptBytes?: number) => {
+    const here = counter.total() - countedSoFar;
+    countedSoFar = counter.total();
+    step.bytes = here + (scriptBytes ?? 0);
+    run.downloadedBytes = (run.downloadedBytes ?? 0) + step.bytes;
+    run.steps.push(step);
+    save();
+    console.log(`[daily] ${step.outcome === 'done' ? 'OK' : step.outcome === 'failed' ? 'FAILED' : 'SKIPPED'}: ${step.label}${step.note ? `: ${step.note}` : ''}${step.bytes ? ` (${formatBytes(step.bytes)} downloaded)` : ''}`);
+  };
+  save();
+  console.log(`[daily] Starting (${due.reason}). Safe to stop: the next start carries on.`);
+
+  // 1. Every free feed for every country.
+  console.log('[daily] 1/5 Free feeds for every country (Download all)');
+  const preloadFrom = new Date().toISOString();
+  await startPreload({ log: (line) => console.log(`  ${line}`) });
+  {
+    const sum = downloadSummary(preloadState, preloadFrom);
+    const problems = summarisePreload(preloadPlan(), preloadState).problems.map((p) => `${p.outcome === 'skipped' ? 'Needs setup' : 'Failed'}: ${p.label}${p.note ? `: ${p.note}` : ''}`);
+    add({ id: 'feeds', label: 'Free feeds for every country', outcome: preloadState.endedEarly ? 'failed' : 'done', note: sum.summary, details: problems });
+  }
+  const offline = !!preloadState.endedEarly && /cannot be reached/.test(preloadState.endedEarly);
+  if (offline) run.offline = true;
+
+  // 2. Files that used to be downloaded by hand.
+  console.log('[daily] 2/5 Files: IMF WEO editions, sanctions lists, GPR index, UCDP');
+  for (const f of FILE_PULLS) {
+    if (offline) {
+      add({ id: f.id, label: f.label, outcome: 'skipped', note: 'offline' });
+      continue;
+    }
+    console.log(`  -- ${f.label}`);
+    const r = await runScript(f.script, f.args);
+    const got = interestingLines(r.output);
+    add({
+      id: f.id,
+      label: f.label,
+      outcome: r.code === 0 ? 'done' : 'failed',
+      note: got.saved.length ? `${got.saved.length} new file${got.saved.length === 1 ? '' : 's'}${got.problems.length ? `, ${got.problems.length} not saved` : ''}` : got.problems.length ? `${got.problems.length} not saved` : 'up to date',
+      details: got.problems,
+    }, r.bytes);
+  }
+
+  // 3. Nowcasts and forecasts: the long histories (weekly), then one of each for every country.
+  console.log('[daily] 3/5 Nowcasts and forecasts');
+  try {
+    const mh = await refreshModelHistory();
+    const app = express();
+    const quickLong = <T,>(p: Promise<T | null>): Promise<T | null> => Promise.race([p.catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 120_000))]);
+    registerAnalysisRoutes(app, {
+      quick: quickLong,
+      seriesFor: () => Promise.reject(new Error('not used by the daily run')),
+      fetchOfficialHistory,
+      loadOfficialHistory,
+      outputGapFrom,
+      dsaFrom,
+    });
+    const server = await new Promise<import('http').Server>((resolve) => {
+      const srv = app.listen(0, '127.0.0.1', () => resolve(srv));
+    });
+    const port = (server.address() as import('net').AddressInfo).port;
+    const countries = preloadCountries();
+    let nowOk = 0;
+    let fcOk = 0;
+    const missing: string[] = [];
+    for (const c of countries) {
+      try {
+        const now = await (await fetch(`http://127.0.0.1:${port}/api/nowcast/${c.iso3}`)).json();
+        const fc = await (await fetch(`http://127.0.0.1:${port}/api/forecast/${c.iso3}`)).json();
+        if (now?.gdp?.ok || now?.cpi?.ok) nowOk++;
+        const fcN = (fc?.forecasts || []).filter((x: any) => x.ok).length;
+        if (fcN) fcOk++;
+        const why = [
+          ...(now?.gdp && !now.gdp.ok ? [`GDP nowcast: ${now.gdp.reason}`] : []),
+          ...(now?.cpi && !now.cpi.ok ? [`inflation nowcast: ${now.cpi.reason}`] : []),
+          ...(fc?.forecasts || []).filter((x: any) => !x.ok).map((x: any) => `${String(x.id).replace(/_/g, ' ')} forecast: ${x.reason}`),
+        ];
+        if (why.length) missing.push(`${c.countryName}: ${why.join('; ')}`);
+      } catch (e: any) {
+        missing.push(`${c.countryName}: ${e?.message || e}`);
+      }
+    }
+    server.close();
+    const hist = mh.history ? `long histories ${mh.pulled ? 'downloaded now' : `from ${mh.history.pulledAt.slice(0, 10)}`}` : 'long histories could not be downloaded (nothing saved yet)';
+    add({
+      id: 'nowcasts',
+      label: 'Nowcasts and forecasts',
+      outcome: mh.history && (nowOk || fcOk) ? 'done' : 'failed',
+      note: `${sweepNote(countries.length, nowOk, 'nowcasts')}, ${sweepNote(countries.length, fcOk, 'forecasts')}; ${hist}`,
+      details: [...mh.problems, ...missing.map((m) => `Missing: ${m}`)],
+    });
+  } catch (e: any) {
+    add({ id: 'nowcasts', label: 'Nowcasts and forecasts', outcome: 'failed', note: String(e?.message || e).slice(0, 200) });
+  }
+
+  // 4. Pre-registered tests, weekly; a missed week is caught up here.
+  console.log('[daily] 4/5 Pre-registered tests (weekly)');
+  {
+    const jobs = readJobs(SCHEDULED_JOBS_FILE);
+    const last = jobs.backtests?.runs.at(-1);
+    if (jobSchedule('backtests').kind === 'off') {
+      add({ id: 'tests', label: 'Pre-registered tests', outcome: 'skipped', note: 'switched off (SCHEDULE_BACKTESTS=off)' });
+    } else if (offline) {
+      add({ id: 'tests', label: 'Pre-registered tests', outcome: 'skipped', note: 'offline' });
+    } else if (!testsDue(last?.startedAt, new Date())) {
+      add({ id: 'tests', label: 'Pre-registered tests', outcome: 'skipped', note: `last run ${last!.startedAt.slice(0, 10)}, less than 7 days ago${last?.summary ? ` (${last.summary})` : ''}` });
+    } else {
+      const now = new Date();
+      writeJobs(SCHEDULED_JOBS_FILE, markStarted(jobs, 'backtests', clockIn(now, SCHEDULE_TZ).day, now.toISOString()));
+      const r = await runScheduledJob('backtests').catch((e: any) => ({ ok: false, summary: `Failed: ${e?.message || String(e)}` }));
+      writeJobs(SCHEDULED_JOBS_FILE, markFinished(readJobs(SCHEDULED_JOBS_FILE), 'backtests', new Date().toISOString(), r.ok, `${r.summary} (daily start-up run)`));
+      add({ id: 'tests', label: 'Pre-registered tests (backtests, forecast evaluations, currency signal tests)', outcome: r.ok ? 'done' : 'failed', note: r.summary });
+    }
+  }
+
+  // 5. Connection check: which sources need a key or a file from you.
+  console.log('[daily] 5/5 Connection check');
+  {
+    const r = await runScript('check-connections.ts', ['--json'], { quiet: true });
+    try {
+      // The JSON report starts with a line that is just "{"; warnings may come before or between.
+      const startAt = r.output.search(/^\{\s*$/m);
+      const rep = JSON.parse(r.output.slice(startAt, r.output.lastIndexOf('}') + 1));
+      const rows: Array<{ name: string; state: string; detail?: string; setup?: string }> = rep.results || [];
+      const by = (st: string[]) => rows.filter((x) => st.includes(x.state));
+      const ok = by(['connected']).length;
+      const setup = by(['needs_setup']);
+      const fail = by(['no_answer', 'refused', 'bad_reply']);
+      add({
+        id: 'check',
+        label: 'Connection check',
+        outcome: fail.length ? 'failed' : 'done',
+        note: `${ok} connected, ${setup.length} need a key or file from you, ${fail.length} did not answer`,
+        details: [...setup.map((x) => `Needs setup: ${x.name}: ${x.detail || ''}${x.setup ? ` (${x.setup})` : ''}`), ...fail.map((x) => `No answer: ${x.name}: ${x.detail || ''}`)],
+      }, r.bytes);
+    } catch {
+      add({ id: 'check', label: 'Connection check', outcome: 'failed', note: 'the check did not finish' }, r.bytes);
+    }
+  }
+
+  run.finishedAt = new Date().toISOString();
+  save();
+  console.log('');
+  console.log(formatDaily(run, { full: true }));
+  process.exit(0);
+}
+
 async function runPreloadCli(): Promise<void> {
   const fresh = process.argv.includes('--fresh');
   console.log('Downloading every free feed for every country into data/ (live, history, archive).');
@@ -841,9 +1188,64 @@ function withUcdp(snapshot: OpenDataSnapshot): OpenDataSnapshot {
   } catch (err: any) {
     console.warn(`[UCDP] could not read data/local/ucdp: ${err?.message || err}`);
   }
-  if (reading) return withGdeltDaily({ ...snapshot, ucdp: reading });
+  if (reading) return withGdeltDaily(withLicDebt({ ...snapshot, ucdp: reading }));
   const { ucdp: _drop, ...rest } = snapshot;
-  return withGdeltDaily(rest as OpenDataSnapshot);
+  return withGdeltDaily(withLicDebt(rest as OpenDataSnapshot));
+}
+/** Low-income country debt (U1): typed rows and the AidData file in data/local/aiddata/. */
+function licDebtFor(iso3: string): LicDebtReading {
+  let aid = null;
+  try {
+    aid = aiddataData(DATA_DIR);
+  } catch (err: any) {
+    console.warn(`[AidData] could not read data/local/aiddata: ${err?.message || err}`);
+  }
+  return licDebtReading(iso3, aid);
+}
+function withLicDebt(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  return withWagesHousing(withEnergyMix(withComtradeProfile(withInvestorBase({ ...snapshot, licDebt: licDebtFor(snapshot.iso3) }))));
+}
+/** Wages (ILOSTAT), house prices (BIS, G22) and household and company debt (BIS, G40) from the copies the daily run saved. */
+function withWagesHousing(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  const w = loadWages();
+  const h = loadHousePrices();
+  const d = loadPrivateDebt();
+  const wr = w?.countries[snapshot.iso3];
+  const hr = h?.countries[snapshot.iso3];
+  const dr = d?.countries[snapshot.iso3];
+  const ma = loadMonthlyIndicators();
+  const gl = loadGovLevels();
+  const glr = gl?.countries[snapshot.iso3];
+  return {
+    ...snapshot,
+    ...(gl ? { govLevels: { pulledAt: gl.pulledAt, ...(glr ? { reading: glr } : {}) } } : {}),
+    ...(ma ? { monthlyActivity: activitySnapshot(ma, snapshot.iso3) } : {}),
+    ...(d ? { privateDebt: { pulledAt: d.pulledAt, ...(dr ? { reading: dr } : {}) } } : {}),
+    ...(w ? { wages: { pulledAt: w.pulledAt, ...(wr ? { reading: wr } : {}) } } : {}),
+    ...(h ? { housePrices: { pulledAt: h.pulledAt, ...(hr ? { reading: hr } : {}) } } : {}),
+  };
+}
+/** The energy mix from the Our World in Data copy the daily run saved on this computer (G20). */
+function withEnergyMix(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  const pull = loadOwidEnergy();
+  if (!pull) return snapshot;
+  const mix = pull.countries[snapshot.iso3];
+  return { ...snapshot, energyMix: { pulledAt: pull.pulledAt, file: pull.file, ...(mix ? { mix } : {}) } };
+}
+/** The UN Comtrade profile saved for this country (export concentration, top export markets), when pulled. */
+function withComtradeProfile(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  const e = comtradeMemory?.file.countries[snapshot.iso3];
+  return e ? { ...snapshot, comtrade: { ...e.profile, pulledAt: e.pulledAt } } : snapshot;
+}
+/** Who holds government debt (G19): the IMF investor base workbook in data/local/imf-investor-base/. */
+function withInvestorBase(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  let data = null;
+  try {
+    data = investorBaseData(DATA_DIR);
+  } catch (err: any) {
+    console.warn(`[IMF investor base] could not read data/local/imf-investor-base: ${err?.message || err}`);
+  }
+  return { ...snapshot, investorBase: investorBaseReading(snapshot.iso3, data) };
 }
 /** GDELT 1.0 monthly history (data/live/gdelt-daily/), laid over like the 2.0 files. */
 function withGdeltDaily(snapshot: OpenDataSnapshot): OpenDataSnapshot {
@@ -954,7 +1356,7 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
   }
 
   const hcPull = await fetchHcSpread().catch(() => null);
-  const [effr, tradeAll, cftc, tic, cbpol, cli, cpi, nationalCpi, comtrade, imf, cofer, commodities] = await Promise.all([
+  const [effr, tradeAll, cftc, tic, cbpol, cli, cpi, nationalCpi, comtrade, imf, cofer, commodities, govSpending] = await Promise.all([
     fetchEffr(),
     Promise.race([fetchTradeExposure(), new Promise<Map<string, TradeExposure>>((resolve) => setTimeout(() => resolve(new Map()), 8000))]),
     // CFTC positioning: don't hold the watchlist for it; the pull fills the cache for next time.
@@ -971,7 +1373,11 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
     Promise.race([fetchCoferPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
     // Commodity prices for the spillover scenarios: don't hold the watchlist for the Pink Sheet download.
     Promise.race([fetchCommodities(), new Promise<CommodityReply | null>((resolve) => setTimeout(() => resolve(null), 3000))]),
+    // Government spending by purpose (Eurostat and IMF COFOG): annual; the first pull fills the cache.
+    Promise.race([fetchGovSpendingPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
   ]);
+  // IMF monthly CPI: the copy the daily run saved (no page waits on the IMF).
+  const imfCpi = loadImfCpi();
   const cftcWeeks = new Map<string, CftcWeek[]>(Object.entries(cftc?.weeks || {}));
   const items = await Promise.all(
     [...(extra.length ? [] : SOVEREIGN_CATALOG), ...extra].map(async (catItem) => {
@@ -999,8 +1405,8 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
         const ust = ticHoldingFor(catItem.iso3, tic?.table);
         const bisRate = policyRateFor(catItem.iso3, cbpol);
         const lead = cliFor(catItem.iso3, cli?.series);
-        // Monthly inflation: a national or Eurostat series where it is at least as new as the OECD's.
-        const prices = cpiFor(catItem.iso3, mergeNationalCpi(cpi?.series, nationalCpi?.series || {}));
+        // Monthly inflation: the freshest of national or Eurostat, IMF monthly CPI and the OECD copy.
+        const prices = cpiFor(catItem.iso3, mergeNationalCpi(cpi?.series, nationalCpi?.series || {}, imfCpi?.series || {}));
         const record: SignalRecord = {};
         {
           const pts = areaSeries(catItem.iso3, cli?.series);
@@ -1017,6 +1423,16 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
           ...(effr ? { usFedFundsPct: effr.pct, usFedFundsDate: effr.date, ...(effr.source ? { usFedFundsSource: effr.source } : {}) } : {}),
           ...(pos && cftc ? { cftc: { ...pos, pulledAt: cftc.pulledAt } } : {}),
           ...(ust && tic ? { tic: { ...ust, pulledAt: tic.pulledAt } } : {}),
+          // The United States' latest Treasury auctions, from the copy the daily run saved (no page waits on Fiscal Data).
+          ...((() => {
+            const a = catItem.iso3 === 'USA' ? ustAuctionSummary(loadUstAuctions()) : undefined;
+            return a ? { ustAuctions: a } : {};
+          })()),
+          // EU members' business and consumer surveys, from the copy the daily run saved.
+          ...((() => {
+            const s = euSurveySummary(catItem.iso3, loadEuSurveys());
+            return s ? { euSurveys: s } : {};
+          })()),
           ...(lead && cli ? { oecdCli: { ...lead, pulledAt: cli.pulledAt } } : cli ? { oecdCliPulledAt: cli.pulledAt } : {}),
           ...(Object.keys(record).length ? { signalRecord: record } : {}),
           ...(snap.gdeltPull && (snap.liveFields || {})['gdelt.averageTone'] ? { gdelt: snap.gdeltPull } : {}),
@@ -1026,6 +1442,9 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
           ...((() => {
             const base = tradeAll.get(catItem.iso3);
             const trade = enrichTrade(base && Object.keys(base).length ? base : undefined, comtrade?.countries[catItem.iso3]?.profile, commodities?.moves);
+            // Net energy imports (G18) for the Hormuz scenario's working, when the World Bank answered.
+            const energy = tradeMixFromSnapshot(snap)?.netEnergyImportsPct;
+            if (trade && energy) Object.assign(trade, { netEnergyImportsPct: energy.value, netEnergyYear: energy.year });
             return trade ? { trade } : {};
           })()),
           ...watchlistYieldFields(snap, fetchedOfficial),
@@ -1047,13 +1466,14 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
                 const est = outputGapFrom(loadOfficialHistory(catItem.iso3));
                 return est.ok ? { outputGap: { pct: est.latest.central, year: est.latest.year, source: 'estimate' as const, low: est.latest.low, high: est.latest.high } } : {};
               })()),
+          ...(govSpending?.byCountry[catItem.iso3] ? { govSpending: govSpending.byCountry[catItem.iso3] } : {}),
           ...((() => {
             const d = dsaFrom(loadOfficialHistory(catItem.iso3));
             return d.ok ? { debtSustainability: dsaSummary(d) } : {};
           })()),
           // The OECD's monthly figure, where it has one, is fresher than the IMF's annual one.
           ...(prices && (cpi || nationalCpi)
-            ? { cpiInflationPct: prices.yoyPct, cpiSource: 'oecd' as const, cpiMonth: prices.month, oecdCpi: { ...prices, pulledAt: (prices.basis === 'national' ? nationalCpi?.pulledAt : cpi?.pulledAt) || new Date().toISOString() } }
+            ? { cpiInflationPct: prices.yoyPct, cpiSource: 'oecd' as const, cpiMonth: prices.month, oecdCpi: { ...prices, pulledAt: (prices.basis === 'national' ? nationalCpi?.pulledAt : prices.basis === 'imf' ? imfCpi?.pulledAt : cpi?.pulledAt) || new Date().toISOString() } }
             : cpi
               ? { oecdCpiPulledAt: cpi.pulledAt }
               : {}),
@@ -1082,6 +1502,47 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
           ...((() => {
             const fiscal = fiscalFromSnapshot(snap);
             return fiscal ? { fiscal } : {};
+          })()),
+          licDebt: licDebtFor(snap.iso3),
+          investorBase: withInvestorBase(snap).investorBase,
+          ...((() => {
+            const distTax = distTaxFromSnapshot(snap);
+            return distTax ? { distTax } : {};
+          })()),
+          ...((() => {
+            const people = peopleFromSnapshot(snap);
+            return people ? { people } : {};
+          })()),
+          ...((() => {
+            const tradeMix = tradeMixFromSnapshot(snap);
+            return tradeMix ? { tradeMix } : {};
+          })()),
+          ...((() => {
+            const climate = climateFromSnapshot(snap);
+            const e = withEnergyMix(snap).energyMix;
+            return { ...(climate ? { climate } : {}), ...(e?.mix ? { energyMix: e } : {}) };
+          })()),
+          ...((() => {
+            const x = withWagesHousing(snap);
+            // Sector balances (G40): government, private (remainder) and foreign, only when both IMF figures are live for the same year.
+            const lf = snap.liveFields || {};
+            const yrs = snap.imfIndicators?.years || {};
+            const sb =
+              lf['imf.overallBalancePct'] && lf['imf.currentAccountImfPct'] && lf['imf.overallBalancePct'] !== 'AI estimate' && lf['imf.currentAccountImfPct'] !== 'AI estimate'
+                ? sectorBalances(snap.imfIndicators?.overallBalancePct, snap.imfIndicators?.currentAccountImfPct, yrs['imf.overallBalancePct'], yrs['imf.currentAccountImfPct'])
+                : undefined;
+            return {
+              ...(x.wages?.reading ? { wages: x.wages } : {}),
+              ...(x.housePrices?.reading ? { housePrices: x.housePrices } : {}),
+              ...(x.privateDebt?.reading ? { privateDebt: x.privateDebt } : {}),
+              ...(sb ? { sectorBalances: sb } : {}),
+              ...(x.govLevels?.reading ? { govLevels: x.govLevels } : {}),
+              ...(x.monthlyActivity && (x.monthlyActivity.ip || x.monthlyActivity.retail || x.monthlyActivity.unemp) ? { monthlyActivity: x.monthlyActivity } : {}),
+            };
+          })()),
+          ...((() => {
+            const debtStructure = debtStructureFromSnapshot(snap);
+            return debtStructure ? { debtStructure } : {};
           })()),
           ...((() => {
             const politics = politicsFromSnapshot(snap);
@@ -1405,13 +1866,14 @@ async function explainAnswers(
   const coverage = lensCoverage(opts.explain.lenses, answers);
   try {
     const prompt = (earlierAsText(opts.earlier || []) + focusAsText(opts.explain.focus) + councilDocsText(question, answers, opts)).slice(0, 22000) + explainTask(question, coverage);
-    if (opts.trace) Object.assign(opts.trace, { system: EXPLAIN_INSTRUCTION, prompt, template: EXPLAIN_INSTRUCTION + '\n' + explainTask('{question}', []) });
+    const system = explainInstruction(opts.explain.helpLevel ?? 1);
+    if (opts.trace) Object.assign(opts.trace, { system, prompt, template: system + '\n' + explainTask('{question}', []) });
     const step = await executeResilientLlmStep<RawExplain>({
       stepName: 'COUNCIL_SYNTHESIS',
       providerMode: opts.runtimeConfig?.providerMode || 'gemini',
       runtimeConfig: opts.runtimeConfig || {},
       thinkingLevel: ThinkingLevel.LOW,
-      systemInstruction: EXPLAIN_INSTRUCTION,
+      systemInstruction: system,
       prompt,
       temperature: COUNCIL_TEMPERATURE,
       seed: COUNCIL_SEED,
@@ -1465,7 +1927,8 @@ function explainFromBody(body: any): ExplainPlan | undefined {
   if (!e || typeof e !== 'object') return undefined;
   const lenses: LensId[] = (Array.isArray(e.lenses) ? (e.lenses as unknown[]) : []).filter((l): l is LensId => LENS_ORDER.includes(l as LensId));
   const focus = cleanFocus(e.focus);
-  return { lenses: lenses.length ? [...new Set(lenses)] : LENS_ORDER, named: Boolean(e.named) && lenses.length > 0, ...(focus ? { focus } : {}) };
+  const helpLevel = e.helpLevel === 0 || e.helpLevel === 2 ? e.helpLevel : undefined;
+  return { lenses: lenses.length ? [...new Set(lenses)] : LENS_ORDER, named: Boolean(e.named) && lenses.length > 0, ...(focus ? { focus } : {}), ...(helpLevel !== undefined ? { helpLevel } : {}) };
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -1596,16 +2059,28 @@ const NIGHTLY_CHECK_TIME = checkTime(process.env.DATA_CHECK_TIME);
 const NIGHTLY_CHECK_TZ = (process.env.DATA_CHECK_TZ || '').trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 
 /** One run of the data connection check, saved to the data health history. */
+/** Your subscription's mapped series (src/engine/paidData.ts), for the connection check: codes only, no figures. */
+function paidMappingsText(): string | null {
+  try {
+    return fs.readFileSync(path.join(DATA_DIR, PAID_MAPPINGS_FILE), 'utf8');
+  } catch {
+    return null;
+  }
+}
+
 async function runConnectionCheck(trigger: CheckTrigger): Promise<ConnectionReport> {
   const report = await checkConnections({
     ucdp: () => ucdpData(DATA_DIR),
     acledFiles: () => acledFileData(DATA_DIR),
+    aiddata: () => aiddataData(DATA_DIR),
+    investorBase: () => investorBaseData(DATA_DIR),
+    paidMappingsText: paidMappingsText,
     env: process.env,
     keySources: keySources(ENV_FILE_KEYS, savedSettings),
     // GDELT goes through the same 5-second queue as the app, so the check cannot trip its limit.
     fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltFetch(u, i) : fetch(u, i)),
     ai: {
-      provider: serverGuiRuntimeConfig.providerMode || process.env.DEFAULT_AI_PROVIDER,
+      provider: serverGuiRuntimeConfig.providerMode || defaultProvider(process.env),
       ollamaBaseUrl: serverGuiRuntimeConfig.ollamaBaseUrl,
       ollamaQuickModel: serverGuiRuntimeConfig.ollamaQuickModel,
       ollamaDeepModel: serverGuiRuntimeConfig.ollamaDeepModel,
@@ -1680,7 +2155,7 @@ const SIGNAL_RESULT_FILE = path.join(DATA_DIR, 'local', 'validation', 'signals.j
 
 /** Scheduled jobs (src/utils/scheduledJobs.ts): time zone for SCHEDULE_DOWNLOAD_ALL and SCHEDULE_BACKTESTS. */
 const SCHEDULE_TZ = (process.env.SCHEDULE_TZ || '').trim() || NIGHTLY_CHECK_TZ;
-const jobSchedule = (id: JobId) => parseSchedule(process.env[JOBS[id].env]);
+const jobSchedule = (id: JobId) => jobScheduleFrom(id, process.env).schedule;
 const jobRunning: Partial<Record<JobId, boolean>> = {};
 
 async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: string }> {
@@ -1904,7 +2379,7 @@ Country figures (only those a live feed, an official series or your own data fil
 ${councilInputs(targetRun.openData).lines.join('\n')}
 ${MISSING_FIGURES_RULE}
 - Counterfactual Shocks Applied: Brent +$${cro.counterfactualShocks?.brentCrudeShockUsd || 0}/bbl, Fed +${cro.counterfactualShocks?.fedTerminalRateShockBps || 0}bps, Chokepoint -${cro.counterfactualShocks?.chokepointTransitDropPct || 0}%, Fiscal Slippage +${cro.counterfactualShocks?.domesticFiscalSlippagePctGdp || 0}% GDP
-- Chief Risk Officer Directives: "${cro.croNotes}"`;
+- Chief Risk Officer Directives: ${cro.croNotes?.trim() ? `"${cro.croNotes}"` : "none given"}`;
 
   let baseOutput: SupremeCouncilOutput =
     targetRun.supremeCouncil || buildDefaultAssessmentRun(targetRun.iso3).supremeCouncil!;
@@ -2317,6 +2792,9 @@ async function startServer() {
     if (mode === 'off' || hit || openPath(req.method, req.path)) return next();
     // The integration API keeps its own key check when that is switched on in Settings.
     if (req.path.startsWith('/api/v1/integration/') && (serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG).requireApiKey) return next();
+    // Scripts reading data (docs/DATA_API.md): the same key, sent in a header, opens the read-only data addresses.
+    const integration = serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG;
+    if (integration.requireApiKey && isDataApiRead(req.method, req.path) && keyMatches(apiKeyFrom(req.headers), integration.apiKey)) return next();
     res.status(401).json({ error: mode === 'setup' ? 'Create the first admin account to start using the app.' : 'Sign in to use the app.', signIn: true, mode });
   });
   // Roles (src/utils/permissions.ts): one table for every API call. Sign-in off = the single user.
@@ -2343,9 +2821,27 @@ async function startServer() {
     }
     next();
   });
+  // Data reads that come from no signed-in account (scripts, or the single user with sign-in off): one
+  // limit per address, so a script in a loop cannot slow the app (src/server/dataApi.ts).
+  app.use((req, res, next) => {
+    if (signedIn(res) || !isDataApiRead(req.method, req.path)) return next();
+    const wait = limiter.take(`data:${req.socket.remoteAddress || 'unknown'}`, DATA_API_LIMIT);
+    if (!wait) return next();
+    res.setHeader('Retry-After', String(wait));
+    res.status(429).json({ error: `Too many data requests from this address. Try again in ${wait} seconds (docs/DATA_API.md).` });
+  });
   // Changes that were limited to "the computer running the app" before accounts existed: a signed-in
   // account (whose role the table above has checked) may make them from anywhere.
   const trusted = (req: express.Request, res: express.Response) => Boolean(signedIn(res)) || isLocalRequest(req.socket.remoteAddress, process.env);
+  /** Who is asking, in the shared engine's terms (src/engine/routes.ts). */
+  const callerFor = (req: express.Request, res: express.Response): Caller => {
+    const who = signedIn(res);
+    return {
+      trusted: trusted(req, res),
+      account: who ? { id: who.id, username: who.username, displayName: who.displayName, role: who.role } : null,
+      from: req.socket.remoteAddress || 'an unknown address',
+    };
+  };
   // Each account's own workspace (holdings, watchlists, added countries); the shared file while
   // sign-in is off. The first admin starts from the shared file, which held the single user's lists.
   workspaceFileForAccount = (account: Account | null): string => {
@@ -2566,9 +3062,8 @@ async function startServer() {
       const snapshot = await fetchLiveOpenDataSnapshot(iso3, countryName, {
         forceRefresh: req.query.refresh === '1',
       });
-      const charts = buildAnnotatedChartsForSovereign(snapshot);
       const run = buildDefaultAssessmentRun(iso3, snapshot);
-      res.json({ snapshot, charts, run });
+      res.json({ snapshot, charts: [], run });
     } catch (error: any) {
       res.status(500).json({ error: error?.message || 'Failed to fetch open data snapshot' });
     }
@@ -2579,9 +3074,8 @@ async function startServer() {
     try {
       const iso3 = String(req.params.iso3 || req.query.iso3 || 'BRA').toUpperCase();
       const snapshot = await fetchLiveOpenDataSnapshot(iso3);
-      const charts = buildAnnotatedChartsForSovereign(snapshot);
       const run = buildDefaultAssessmentRun(iso3, snapshot);
-      res.json({ snapshot, charts, run });
+      res.json({ snapshot, charts: [], run });
     } catch (error: any) {
       res.status(500).json({ error: error?.message || 'Failed to fetch open data snapshot' });
     }
@@ -2660,11 +3154,14 @@ async function startServer() {
     const report = await checkConnections({
       ucdp: () => ucdpData(DATA_DIR),
       acledFiles: () => acledFileData(DATA_DIR),
+      aiddata: () => aiddataData(DATA_DIR),
+      investorBase: () => investorBaseData(DATA_DIR),
+      paidMappingsText: paidMappingsText,
       env,
       only: [field.checkId],
       keySources: sources,
       ai: {
-        provider: serverGuiRuntimeConfig.providerMode || process.env.DEFAULT_AI_PROVIDER,
+        provider: serverGuiRuntimeConfig.providerMode || defaultProvider(process.env),
         ollamaBaseUrl: serverGuiRuntimeConfig.ollamaBaseUrl,
         ollamaQuickModel: serverGuiRuntimeConfig.ollamaQuickModel,
         ollamaDeepModel: serverGuiRuntimeConfig.ollamaDeepModel,
@@ -2711,7 +3208,7 @@ async function startServer() {
     res.json({ ...state, canChange: true });
   });
   // Every other step that calls an AI model is refused while exam mode is on.
-  const EXAM_BLOCKED = /^\/api\/(council\/(phase1-and-cascade|rerun|analyze-policy-document)|ai\/try-model|morning-brief\/run|reviews\/[^/]+\/(diagnose|options|memo))$/;
+  const EXAM_BLOCKED = /^\/api\/(council\/(phase1-and-cascade|rerun)|ai\/try-model|morning-brief\/run|reviews\/[^/]+\/(diagnose|options|memo))$/;
   app.use((req, res, next) => {
     if (req.method === 'POST' && EXAM_BLOCKED.test(req.path) && loadExamMode().on) return res.status(409).json({ error: 'Exam mode is on: steps that use an AI model are switched off (Menu > Exam mode).' });
     next();
@@ -2798,6 +3295,7 @@ async function startServer() {
     const fwd = loadForward(forwardFilePath(DATA_DIR));
     res.json({ ...v, specs, running: validationRunning, file: 'data/local/validation/results.json', forecasts, forecastTests, forward: forwardSummary(fwd.lines), forwardCheck: { chainOk: fwd.chainOk, badLines: fwd.badLines, lines: fwd.lines.length, file: 'data/local/validation/forward.jsonl' } });
   });
+  registerUserTestRoutes(app, { dataDir: DATA_DIR, specDir: SPEC_DIR, refuseRemoteChange, signedIn, local: backtestLocal, audit: (summary, detail) => appendAudit(AUDIT_FILES, { kind: 'validation', summary, detail }) });
   app.post('/api/validation/run', async (req, res) => {
     if (refuseRemoteChange(req, res)) return;
     if (validationRunning) return res.status(409).json({ error: 'The backtests are already running.' });
@@ -2975,7 +3473,7 @@ async function startServer() {
   const quick = <T,>(p: Promise<T | null>): Promise<T | null> =>
     Promise.race([p.catch(() => null), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]);
   async function seriesFor(iso3: string) {
-    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna, activity, fxHistory, fxExtra, bisCredit, idsCreditors, sovereignDefaults, inflationExpectations, inflationSurveys] = await Promise.all([
+    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna, activity, fxHistory, fxExtra, bisCredit, idsCreditors, sovereignDefaults, inflationExpectations, inflationSurveys, portWatch] = await Promise.all([
       quick(fetchCbpolPull()), quick(fetchCliPull()), quick(fetchCpiPull()), quick(fetchNationalCpi()), quick(fetchCftcPull()), quick(fetchTicPull()),
       // Saved history answers at once; a first download that takes longer than 8 s finishes in the background.
       quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
@@ -2990,19 +3488,21 @@ async function startServer() {
       quick(fetchSovereignDefaults()),
       iso3.toUpperCase() === 'USA' ? quick(fetchInflationExpectations()) : Promise.resolve(null),
       iso3.toUpperCase() === 'BRA' ? quick(fetchInflationSurveys()) : Promise.resolve(null),
+      quick(fetchPortWatchPorts(iso3)),
     ]);
-    const merged = mergeNationalCpi(cpi?.series, nationalCpi?.series || {});
+    const imfCpi = loadImfCpi();
+    const merged = mergeNationalCpi(cpi?.series, nationalCpi?.series || {}, imfCpi?.series || {});
     const archive: ArchivedSnapshot[] = listArchivedDays(ARCHIVE_DIR, iso3)
       .map((d) => readArchivedPull<ArchivedSnapshot['snapshot']>(ARCHIVE_DIR, iso3, d))
       .filter((x): x is NonNullable<typeof x> => Boolean(x))
       .map((x) => ({ date: x.date, pulledAt: x.pulledAt, snapshot: x.snapshot }));
-    return countrySeries(iso3, {
+    const set = countrySeries(iso3, {
       cbpol,
       cli,
       qna,
       activity,
       cpiOecdAnswered: Boolean(cpi),
-      cpi: merged ? { pulledAt: [cpi?.pulledAt, nationalCpi?.pulledAt].filter(Boolean).sort().pop() || '', series: merged } : null,
+      cpi: merged ? { pulledAt: [cpi?.pulledAt, nationalCpi?.pulledAt, imfCpi?.pulledAt].filter(Boolean).sort().pop() || '', series: merged } : null,
       cftc,
       tic,
       archive,
@@ -3015,27 +3515,44 @@ async function startServer() {
       sovereignDefaults,
       inflationExpectations,
       inflationSurveys,
+      portWatch,
+      ustAuctions: iso3.toUpperCase() === 'USA' ? loadUstAuctions() : null,
+      euSurveys: loadEuSurveys(),
+      monthlyIndicators: loadMonthlyIndicators(),
       currency: SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3.toUpperCase())?.currencyCode,
     });
+    // Your own series for this country, after the feeds' and labelled "Your file" (Menu > Your data).
+    const own = await ownSeriesViewsFor(enginePlatform, iso3).catch(() => []);
+    return { ...set, series: [...set.series, ...own] };
   }
   async function worldSeries(): Promise<Series[]> {
     await quick(fetchCommodities());
     const m = commodityMemory;
     const prices = [...Object.values(m?.pink?.series || {}), ...Object.values(m?.eia?.series || {})];
     // Stress and supply chain indices (src/utils/stressIndices.ts), chartable and testable like prices.
-    const [pulls, surveys] = await Promise.all([quick(fetchStressPulls()), quick(fetchInflationSurveys())]);
-    const extra = [...stressWorldSeries(pulls), ...spfWorldSeries(surveys)].filter((x): x is Series => 'points' in x);
-    return [...commoditySeries(prices, { pink_sheet: m?.pink?.pulledAt, eia: m?.eia?.pulledAt }), ...extra];
+    const [pulls, surveys, chokepoints] = await Promise.all([quick(fetchStressPulls()), quick(fetchInflationSurveys()), quick(fetchPortWatchChokepoints())]);
+    const extra = [...stressWorldSeries(pulls), ...spfWorldSeries(surveys), ...chokepointWorldSeries(chokepoints)].filter((x): x is Series => 'points' in x);
+    // Your own series not about one country (Menu > Your data: "Not about one country").
+    const own = await ownSeriesViewsFor(enginePlatform, OWN_NO_COUNTRY).catch(() => []);
+    return [...commoditySeries(prices, { pink_sheet: m?.pink?.pulledAt, eia: m?.eia?.pulledAt }), ...extra, ...own];
   }
   // Fed balance sheet (H.4.1) from FRED: Research > Compare countries > Markets & signals.
   app.get('/api/fed-balance-sheet', async (_req, res) => {
     res.json(await fetchFedBalanceSheet());
   });
-  app.get('/api/series/world', async (_req, res) => {
-    const series = await worldSeries();
-    res.json({ series: series.map(seriesSummary), missing: series.some((x) => x.id.startsWith('commodity_')) ? [] : [{ id: 'commodities', label: 'Commodity prices', reason: 'The World Bank Pink Sheet has not answered yet' }] });
+  app.get('/api/series/world', async (req, res) => {
+    const [series, paid] = await Promise.all([worldSeries(), paidFor(req, 'WLD')]);
+    const missing = series.some((x) => x.id.startsWith('commodity_')) ? [] : [{ id: 'commodities', label: 'Commodity prices', reason: 'The World Bank Pink Sheet has not answered yet' }];
+    res.json({ series: [...series, ...paid.series].map(seriesSummary), missing: [...missing, ...paid.missing] });
   });
   app.get('/api/series/world/:id', async (req, res) => {
+    if (isPaidSeriesId(req.params.id)) {
+      const paid = await paidFor(req, 'WLD');
+      const one = paid.series.find((x) => x.id === req.params.id);
+      if (one) return res.json(one);
+      const miss = paid.missing.find((m) => m.id === req.params.id);
+      return res.status(miss?.reason === PAID_WITHHELD_REASON ? 403 : 404).json({ error: 'NO_SERIES', message: miss ? `${miss.label}: Missing. ${miss.reason}.` : `No series ${req.params.id} for world prices.`, reason: miss?.reason ?? null });
+    }
     const hit = (await worldSeries()).find((s) => s.id === req.params.id);
     if (!hit) return res.status(404).json({ error: 'NO_SERIES', message: `No series ${req.params.id} for world prices.` });
     res.json(hit);
@@ -3071,14 +3588,36 @@ async function startServer() {
     res.send(episodeMarkdown(ep, name, 'error' in replay ? replay : { replay, policySource: policy?.source ?? null }, { teacher }));
   });
   registerIdeaRoutes(app, { quick, seriesFor, refuseRemoteChange, signedIn });
+  registerFeedbackRoutes(app, { refuseRemoteChange });
+  registerOwnSeriesRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
+  // Your paid data subscription (src/engine/paidData.ts): its figures show only on this computer's
+  // own screens, beside (never inside) seriesFor, so nothing built from seriesFor (downloads, the
+  // council, Quests, panels) can carry them.
+  const paidPlatform = registerSubscriptionRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
+  const paidFor = async (req: express.Request, iso3: string) => {
+    const vendor = paidVendorFromEnv(process.env);
+    if (!vendor) return { series: [], missing: [] };
+    const got = await paidSeriesFor(paidPlatform, iso3, vendor).catch(() => ({ series: [], missing: [] }));
+    if (paidVisibleTo(req, process.env)) return got;
+    // Another computer or a script: the series are named, their figures withheld.
+    return { series: [], missing: [...got.series, ...got.missing].map((x) => ({ id: x.id, label: x.label, reason: PAID_WITHHELD_REASON })) };
+  };
+  registerQuestRoutes(app, { seriesFor, refuseRemoteChange, signedIn, loadOfficialHistory });
   registerAnalysisRoutes(app, { quick, seriesFor, fetchOfficialHistory, loadOfficialHistory, outputGapFrom, dsaFrom, examOn: () => loadExamMode().on });
   app.get('/api/series/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-    const set = await seriesFor(iso3);
-    res.json({ iso3, series: set.series.map(seriesSummary), missing: set.missing });
+    const [set, paid] = await Promise.all([seriesFor(iso3), paidFor(req, iso3)]);
+    res.json({ iso3, series: [...set.series, ...paid.series].map(seriesSummary), missing: [...set.missing, ...paid.missing] });
   });
   app.get('/api/series/:iso3/:id', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (isPaidSeriesId(req.params.id)) {
+      const paid = await paidFor(req, iso3);
+      const hit = paid.series.find((x) => x.id === req.params.id);
+      if (hit) return res.json({ iso3, ...hit });
+      const miss = paid.missing.find((m) => m.id === req.params.id);
+      return res.status(miss?.reason === PAID_WITHHELD_REASON ? 403 : 404).json({ error: 'NO_SERIES', message: miss ? `${miss.label}: Missing. ${miss.reason}.` : `No series ${req.params.id}.`, reason: miss?.reason ?? null });
+    }
     const set = await seriesFor(iso3);
     const hit = set.series.find((s) => s.id === req.params.id);
     if (hit) return res.json({ iso3, ...hit });
@@ -3092,7 +3631,9 @@ async function startServer() {
   // Sharing mode (Menu > Sharing mode, src/utils/shareMode.ts): values whose source's terms do not let
   // them be passed on for free are held back from every table download.
   const sendTable = (req: express.Request, res: express.Response, name: string, header: string[], allRows: TableCell[][]) => {
-    const rows = shareModeFromValue(loadWorkspace(workspaceFor(res)).values[SHARE_MODE_KEY]) ? withholdForSharing(header, allRows) : allRows;
+    // Your subscription's figures never leave in a download, sharing mode or not (src/engine/paidData.ts).
+    const safe = withholdPaidRows(header, allRows);
+    const rows = shareModeFromValue(loadWorkspace(workspaceFor(res)).values[SHARE_MODE_KEY]) ? withholdForSharing(header, safe) : safe;
     if (req.params.fmt === 'xlsx') {
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.attachment(name.replace(/\.csv$/, '.xlsx'));
@@ -3108,10 +3649,17 @@ async function startServer() {
   app.get('/api/export/:iso3/series.:fmt(csv|xlsx)', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const set = await seriesFor(iso3);
-    sendTable(req, res, exportFileName(iso3, 'series'), SERIES_HEADER, seriesRows(iso3, set.series));
+    // Your subscription's series are named, with "Withheld: your subscription data" and no figures.
+    const withheld = paidWithheldRows(SERIES_HEADER, iso3, await listPaidMappings(paidPlatform), paidVendorFromEnv(process.env));
+    sendTable(req, res, exportFileName(iso3, 'series'), SERIES_HEADER, [...seriesRows(iso3, set.series), ...withheld]);
   });
   app.get('/api/export/:iso3/series/:id.:fmt(csv|xlsx)', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (isPaidSeriesId(req.params.id)) {
+      const withheld = paidWithheldRows(SERIES_HEADER, iso3, await listPaidMappings(paidPlatform), paidVendorFromEnv(process.env)).filter((r) => r[1] === req.params.id);
+      if (!withheld.length) return res.status(404).json({ error: 'NO_SERIES', message: `No series ${req.params.id}.` });
+      return sendTable(req, res, exportFileName(iso3, req.params.id), SERIES_HEADER, withheld);
+    }
     const set = await seriesFor(iso3);
     const hit = set.series.find((s) => s.id === req.params.id);
     if (!hit) {
@@ -3320,19 +3868,8 @@ async function startServer() {
     });
   });
 
-  app.get('/api/watch-rules', (_req, res) => res.json({ rules: loadWatchRules(WATCH_RULES_FILE), file: 'data/local/watch-rules.json' }));
-  app.put('/api/watch-rules', (req, res) => {
-    if (trusted(req, res) === false) {
-      return res.status(403).json({ error: `Watch alerts can only be changed from the computer running the app (this request came from ${req.socket.remoteAddress || 'an unknown address'}).` });
-    }
-    const rules = parseRules(req.body);
-    try {
-      saveWatchRules(WATCH_RULES_FILE, rules);
-      res.json({ ok: true, rules });
-    } catch (error: any) {
-      res.status(500).json({ error: `Could not save the watch alerts file (${error?.code || error?.message || 'unknown error'}).` });
-    }
-  });
+  // Watch alerts come from the shared engine's route table (same code as the phone app).
+  mountEngineRoutes(app, ENGINE_ROUTES, { platform: enginePlatform }, callerFor);
   app.put('/api/settings/keys/:id', async (req, res) => {
     if (refuseRemote(req, res)) return;
     const next = withKey(savedSettings, req.params.id, req.body?.value);
@@ -3403,7 +3940,7 @@ async function startServer() {
     res.json({
       timeZone: SCHEDULE_TZ,
       jobs: (Object.keys(JOBS) as JobId[]).map((id) => {
-        const schedule = jobSchedule(id);
+        const { schedule, fromDefault } = jobScheduleFrom(id, process.env);
         return {
           id,
           label: JOBS[id].label,
@@ -3411,6 +3948,7 @@ async function startServer() {
           env: JOBS[id].env,
           on: schedule.kind === 'daily' || schedule.kind === 'weekly',
           schedule: describeSchedule(schedule, SCHEDULE_TZ),
+          fromDefault,
           running: Boolean(jobRunning[id]),
           lastSkipped: jobs[id]?.lastSkipped || null,
           runs: [...(jobs[id]?.runs || [])].reverse().slice(0, 10),
@@ -3448,6 +3986,17 @@ async function startServer() {
     });
   });
   // Data health: values the IMF or World Bank revised in the saved yearly history (data/history/).
+  // The official calendar against today (src/utils/calendarHealth.ts): old checks, schedules running out.
+  app.get('/api/data/health/calendar', (_req, res) => {
+    res.json(calendarHealth(OFFICIAL_CALENDAR, SOVEREIGN_CATALOG.map((c) => c.iso3), localDay()));
+  });
+  // Every country's monthly inflation with its source and age (src/utils/inflationHealth.ts): old OECD copies flagged.
+  app.get('/api/data/health/inflation', async (_req, res) => {
+    const quick = <T,>(p: Promise<T>) => Promise.race([p, new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000))]);
+    const [cpi, nationalCpi] = await Promise.all([quick(fetchCpiPull()), quick(fetchNationalCpi())]);
+    const merged = mergeNationalCpi(cpi?.series, (nationalCpi ?? nationalCpiMemory?.pull)?.series || {}, loadImfCpi()?.series || {});
+    res.json(inflationHealth(SOVEREIGN_CATALOG.map((c) => c.iso3), (iso3) => cpiFor(iso3, merged)));
+  });
   app.get('/api/data/health/revisions', (req, res) => {
     const only = typeof req.query.iso3 === 'string' ? req.query.iso3.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3) : '';
     const projections = req.query.projections === '1';
@@ -3495,7 +4044,7 @@ async function startServer() {
     try {
       const pull = await fetchCbpolPull();
       const now = new Date();
-      const rows = Object.keys(CBPOL_AREA).map((iso3) => {
+      const rows = [...Object.keys(CBPOL_AREA), ...CBPOL_NOT_PULLED].map((iso3) => {
         const rate = policyRateFor(iso3, pull, now);
         return rate ? { iso3, rate } : { iso3, missing: cbpolMissing(iso3, !!pull) };
       });
@@ -3551,9 +4100,8 @@ async function startServer() {
         process.env.OLLAMA_BASE_URL?.includes('http://ollama')
     );
     res.json({
-      providerMode: (serverGuiRuntimeConfig.providerMode ||
-        process.env.DEFAULT_AI_PROVIDER ||
-        'gemini') as AIRuntimeConfig['providerMode'],
+      providerMode: (serverGuiRuntimeConfig.providerMode || defaultProvider(process.env)) as AIRuntimeConfig['providerMode'],
+      lightMode: isLightMode(process.env),
       ollamaBaseUrl:
         serverGuiRuntimeConfig.ollamaBaseUrl ||
         process.env.OLLAMA_BASE_URL ||
@@ -3562,6 +4110,7 @@ async function startServer() {
         serverGuiRuntimeConfig.ollamaQuickModel || process.env.OLLAMA_QUICK_MODEL || 'qwen2.5:7b',
       ollamaDeepModel:
         refereeModelOrDefault(serverGuiRuntimeConfig.ollamaDeepModel) || refereeModelOrDefault(process.env.OLLAMA_DEEP_MODEL) || DEFAULT_REFEREE_MODEL,
+      allowSmallReferee: serverGuiRuntimeConfig.allowSmallReferee ?? process.env.OLLAMA_ALLOW_SMALL_REFEREE === 'on',
       openAiBaseUrl:
         serverGuiRuntimeConfig.openAiBaseUrl ||
         process.env.OPENAI_COMPATIBLE_BASE_URL ||
@@ -3606,6 +4155,7 @@ async function startServer() {
       if (incoming.ollamaBaseUrl) process.env.OLLAMA_BASE_URL = incoming.ollamaBaseUrl;
       if (incoming.ollamaQuickModel) process.env.OLLAMA_QUICK_MODEL = incoming.ollamaQuickModel;
       if (incoming.ollamaDeepModel) process.env.OLLAMA_DEEP_MODEL = incoming.ollamaDeepModel;
+      if (typeof incoming.allowSmallReferee === 'boolean') process.env.OLLAMA_ALLOW_SMALL_REFEREE = incoming.allowSmallReferee ? 'on' : 'off';
       if (incoming.providerMode) process.env.DEFAULT_AI_PROVIDER = incoming.providerMode;
 
       const dockerCfg = incoming.dockerGuiConfig || {
@@ -3615,7 +4165,7 @@ async function startServer() {
         ollamaPort: 11434,
         containerName: 'econquest-sovereign-council',
         keepAlive: '24h',
-        corsOrigins: '*',
+        corsOrigins: '',
         autoPullOnBoot: true,
       };
 
@@ -3626,8 +4176,10 @@ async function startServer() {
         `OLLAMA_BASE_URL=${incoming.ollamaBaseUrl || 'http://host.docker.internal:11434'}`,
         `OLLAMA_QUICK_MODEL=${incoming.ollamaQuickModel || 'qwen2.5:7b'}`,
         `OLLAMA_DEEP_MODEL=${refereeModelOrDefault(incoming.ollamaDeepModel) || DEFAULT_REFEREE_MODEL}`,
+        `OLLAMA_ALLOW_SMALL_REFEREE=${serverGuiRuntimeConfig.allowSmallReferee ? 'on' : 'off'}`,
         `OLLAMA_KEEP_ALIVE=${dockerCfg.keepAlive || '24h'}`,
-        `OLLAMA_ORIGINS=${dockerCfg.corsOrigins || '*'}`,
+        // The pages never call Ollama themselves (the server does), so no web origin is let in unless set.
+        ...(dockerCfg.corsOrigins ? [`OLLAMA_ORIGINS=${dockerCfg.corsOrigins}`] : []),
         `OPENAI_COMPATIBLE_BASE_URL=${incoming.openAiBaseUrl || 'http://localhost:8000/v1'}`,
         `OPENAI_COMPATIBLE_MODEL=${incoming.openAiModel || 'gpt-4o'}`,
       ].join('\n');
@@ -3978,7 +4530,6 @@ async function startServer() {
       baseRun.policyDocumentTitle = policyDocumentText ? policyDocumentTitle || 'Document added by the user' : undefined;
       baseRun.policyDocumentSnippet = policyDocumentText ? policyDocumentText.slice(0, 600) : undefined;
       baseRun.openData = liveSnapshot;
-      baseRun.charts = buildAnnotatedChartsForSovereign(liveSnapshot);
 
       const providerMode = runtimeConfig.providerMode || 'gemini';
       const enableSearch = runtimeConfig.enableSearchGrounding !== false;
@@ -5002,246 +5553,6 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
     res.json({ original: { snapshot: summariseSnapshot(first), brief: first.output.brief, provider: first.output.provider }, rerun: out, comparison });
   });
 
-  app.post('/api/council/analyze-policy-document', async (req, res) => {
-    try {
-      const {
-        iso3 = 'BRA',
-        documentTitle = 'Institutional Policy Document',
-        documentText = '',
-        documentCategory,
-        openData,
-        runtimeConfig = {},
-      } = req.body || {};
-
-      const snapshot: OpenDataSnapshot =
-        openData && openData.iso3
-          ? openData
-          : await fetchLiveOpenDataSnapshot(String(iso3));
-
-      const deterministicBaseline = computeDeterministicDocumentAnalysis(
-        snapshot,
-        String(documentTitle),
-        String(documentText),
-        documentCategory as PolicyDocumentCategory | undefined
-      );
-
-      const docStep = await executeResilientLlmStep<any>({
-        stepName: 'POLICY_DOCUMENT_INTELLIGENCE',
-        providerMode: runtimeConfig.providerMode || 'gemini',
-        runtimeConfig,
-        thinkingLevel: ThinkingLevel.LOW,
-        systemInstruction:
-          'You are an Institutional Sovereign Credit, Central Bank MPC, and IMF Article IV Document Analyst. Extract quantitative monetary stance, fiscal slippage risk, IMF tranche disbursement probability, verbatim clause telemetry, and calibrated macro shock vectors in strict JSON. Never invent notional dollar amounts; express all metrics in basis points (bps), percentages (% of GDP), or months of import cover.',
-        prompt: `Analyze the following sovereign policy or legal document for ${snapshot.countryName} (${snapshot.iso3}):
-Title: ${documentTitle}
-Category: ${deterministicBaseline.documentCategory}
-Country figures (only live feeds, official series and your own data; nothing built in):
-${councilInputs(snapshot).lines.join('\n')}
-${MISSING_FIGURES_RULE}
-
-Document Text:
-"""
-${String(documentText).slice(0, 12000)}
-"""`,
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            executiveSynthesis: { type: Type.STRING },
-            hawkishDovishStanceScore: {
-              type: Type.NUMBER,
-              description: '-100 (Ultra-Dovish) to +100 (Ultra-Hawkish)',
-            },
-            monetaryStanceLabel: { type: Type.STRING },
-            fiscalSlippageRiskScore: {
-              type: Type.NUMBER,
-              description: '0 (Strict Rule Compliance) to 100 (Severe Slippage)',
-            },
-            imfProgramTrancheDisbursementProbPct: {
-              type: Type.NUMBER,
-              description: '0 to 100%',
-            },
-            cacVotingThresholdType: { type: Type.STRING },
-            extractedClauses: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  categoryLabel: { type: Type.STRING },
-                  verbatimQuote: { type: Type.STRING },
-                  quantitativeMetricExtracted: { type: Type.STRING },
-                  directionalSignal: {
-                    type: Type.STRING,
-                    description:
-                      'HAWKISH_TIGHTENING, DOVISH_ACCOMMODATIVE, FISCAL_CONSOLIDATION, FISCAL_SLIPPAGE_RISK, CREDITOR_FRIENDLY, or RESTRUCTURING_RISK',
-                  },
-                  impactScoreBps: { type: Type.NUMBER },
-                  confidencePct: { type: Type.NUMBER },
-                },
-                required: [
-                  'categoryLabel',
-                  'verbatimQuote',
-                  'quantitativeMetricExtracted',
-                  'directionalSignal',
-                  'impactScoreBps',
-                ],
-              },
-            },
-            calibratedShockVector: {
-              type: Type.OBJECT,
-              properties: {
-                policyRateDeltaBps: { type: Type.NUMBER },
-                primaryFiscalBalanceDeltaPctGdp: { type: Type.NUMBER },
-                sovereignSpreadShockBps: { type: Type.NUMBER },
-                energyAndCpiShockPct: { type: Type.NUMBER },
-                fxReserveAdequacyDeltaMonths: { type: Type.NUMBER },
-                politicalWillDeltaPoints: { type: Type.NUMBER },
-                rationaleSummary: { type: Type.STRING },
-              },
-              required: [
-                'policyRateDeltaBps',
-                'primaryFiscalBalanceDeltaPctGdp',
-                'sovereignSpreadShockBps',
-                'rationaleSummary',
-              ],
-            },
-          },
-          required: [
-            'executiveSynthesis',
-            'hawkishDovishStanceScore',
-            'fiscalSlippageRiskScore',
-            'imfProgramTrancheDisbursementProbPct',
-          ],
-        },
-        fallbackValue: deterministicBaseline,
-      });
-
-      const aiData = docStep.data || {};
-      const validSignals = [
-        'HAWKISH_TIGHTENING',
-        'DOVISH_ACCOMMODATIVE',
-        'FISCAL_CONSOLIDATION',
-        'FISCAL_SLIPPAGE_RISK',
-        'CREDITOR_FRIENDLY',
-        'RESTRUCTURING_RISK',
-      ];
-
-      // Blend AI score with econometric Taylor-Rule & Debt/GDP anchor so outputs remain bounded
-      const blendedHawk =
-        typeof aiData.hawkishDovishStanceScore === 'number'
-          ? Math.max(
-              -98,
-              Math.min(
-                98,
-                Math.round(
-                  aiData.hawkishDovishStanceScore * 0.65 +
-                    deterministicBaseline.hawkishDovishStanceScore * 0.35
-                )
-              )
-            )
-          : deterministicBaseline.hawkishDovishStanceScore;
-
-      const blendedSlippage =
-        typeof aiData.fiscalSlippageRiskScore === 'number'
-          ? Math.max(
-              5,
-              Math.min(
-                98,
-                Math.round(
-                  aiData.fiscalSlippageRiskScore * 0.65 +
-                    deterministicBaseline.fiscalSlippageRiskScore * 0.35
-                )
-              )
-            )
-          : deterministicBaseline.fiscalSlippageRiskScore;
-
-      const blendedImfProb =
-        typeof aiData.imfProgramTrancheDisbursementProbPct === 'number'
-          ? Math.max(
-              5,
-              Math.min(
-                98,
-                Math.round(
-                  aiData.imfProgramTrancheDisbursementProbPct * 0.65 +
-                    deterministicBaseline.imfProgramTrancheDisbursementProbPct * 0.35
-                )
-              )
-            )
-          : deterministicBaseline.imfProgramTrancheDisbursementProbPct;
-
-      const clauses =
-        Array.isArray(aiData.extractedClauses) && aiData.extractedClauses.length > 0
-          ? aiData.extractedClauses.slice(0, 5).map((c: any, idx: number) => ({
-              clauseId: `AI-CL-${idx + 1}`,
-              categoryLabel: String(c.categoryLabel || 'Policy Clause Telemetry'),
-              verbatimQuote: String(c.verbatimQuote || ''),
-              quantitativeMetricExtracted: String(c.quantitativeMetricExtracted || ''),
-              directionalSignal: validSignals.includes(String(c.directionalSignal))
-                ? c.directionalSignal
-                : deterministicBaseline.extractedClauses[0]?.directionalSignal ||
-                  'HAWKISH_TIGHTENING',
-              impactScoreBps: Math.max(-250, Math.min(250, Math.round(Number(c.impactScoreBps || 25)))),
-              confidencePct: Math.max(60, Math.min(99, Math.round(Number(c.confidencePct || 91)))),
-            }))
-          : deterministicBaseline.extractedClauses;
-
-      const rawShock = aiData.calibratedShockVector || {};
-      const baseShock = deterministicBaseline.calibratedShockVector;
-
-      const result = {
-        ...deterministicBaseline,
-        analyzedAt: new Date().toISOString(),
-        providerUsed: docStep.usedFallback
-          ? deterministicBaseline.providerUsed
-          : `Hybrid ${docStep.providerUsed} + Econometric Taylor/QPC Anchor`,
-        isAiEnhanced: !docStep.usedFallback,
-        executiveSynthesis: aiData.executiveSynthesis || deterministicBaseline.executiveSynthesis,
-        hawkishDovishStanceScore: blendedHawk,
-        monetaryStanceLabel:
-          aiData.monetaryStanceLabel || deterministicBaseline.monetaryStanceLabel,
-        fiscalSlippageRiskScore: blendedSlippage,
-        imfProgramTrancheDisbursementProbPct: blendedImfProb,
-        cacVotingThresholdType:
-          aiData.cacVotingThresholdType || deterministicBaseline.cacVotingThresholdType,
-        extractedClauses: clauses,
-        calibratedShockVector: {
-          policyRateDeltaBps:
-            typeof rawShock.policyRateDeltaBps === 'number'
-              ? Math.max(-300, Math.min(400, Math.round(rawShock.policyRateDeltaBps)))
-              : baseShock.policyRateDeltaBps,
-          primaryFiscalBalanceDeltaPctGdp:
-            typeof rawShock.primaryFiscalBalanceDeltaPctGdp === 'number'
-              ? Number(
-                  Math.max(-3.5, Math.min(3.5, rawShock.primaryFiscalBalanceDeltaPctGdp)).toFixed(2)
-                )
-              : baseShock.primaryFiscalBalanceDeltaPctGdp,
-          sovereignSpreadShockBps:
-            typeof rawShock.sovereignSpreadShockBps === 'number'
-              ? Math.max(-180, Math.min(350, Math.round(rawShock.sovereignSpreadShockBps)))
-              : baseShock.sovereignSpreadShockBps,
-          energyAndCpiShockPct:
-            typeof rawShock.energyAndCpiShockPct === 'number'
-              ? Number(Math.max(-5, Math.min(25, rawShock.energyAndCpiShockPct)).toFixed(1))
-              : baseShock.energyAndCpiShockPct,
-          fxReserveAdequacyDeltaMonths:
-            typeof rawShock.fxReserveAdequacyDeltaMonths === 'number'
-              ? Number(Math.max(-2.5, Math.min(2.5, rawShock.fxReserveAdequacyDeltaMonths)).toFixed(2))
-              : baseShock.fxReserveAdequacyDeltaMonths,
-          politicalWillDeltaPoints:
-            typeof rawShock.politicalWillDeltaPoints === 'number'
-              ? Math.max(-25, Math.min(25, Math.round(rawShock.politicalWillDeltaPoints)))
-              : baseShock.politicalWillDeltaPoints,
-          rationaleSummary: String(rawShock.rationaleSummary || baseShock.rationaleSummary),
-        },
-      };
-
-      res.json({ analysis: result });
-    } catch (err: any) {
-      res.status(500).json({
-        error: err?.message || 'Failed to analyze policy document',
-      });
-    }
-  });
-
   // ---------------------------------------------------------------------------
   // GET /api/data/prediction-markets
   // Live Dual-Venue Polymarket Gamma + Kalshi v2 Event Contracts (Zero Notional)
@@ -5419,6 +5730,7 @@ ${String(documentText).slice(0, 12000)}
     try {
       const readmePath = path.join(__dirname, 'README.md');
       const manualPath = path.join(__dirname, 'docs', 'USER_MANUAL.md');
+      const glossaryContent = glossaryMarkdown();
       const logoPath = path.join(
         __dirname,
         'src',
@@ -5454,6 +5766,12 @@ ${String(documentText).slice(0, 12000)}
             lines: manualContent.split('\n').length,
             bytes: Buffer.byteLength(manualContent, 'utf-8'),
           },
+          glossary: {
+            path: 'docs/GLOSSARY.md',
+            content: glossaryContent,
+            lines: glossaryContent.split('\n').length,
+            bytes: Buffer.byteLength(glossaryContent, 'utf-8'),
+          },
         },
       });
     } catch (err: any) {
@@ -5476,10 +5794,13 @@ ${String(documentText).slice(0, 12000)}
       const report = await checkConnections({
         ucdp: () => ucdpData(DATA_DIR),
         acledFiles: () => acledFileData(DATA_DIR),
+      aiddata: () => aiddataData(DATA_DIR),
+      investorBase: () => investorBaseData(DATA_DIR),
+        paidMappingsText: paidMappingsText,
         env: process.env,
         fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltFetch(u, i) : fetch(u, i)),
         ai: {
-          provider: serverGuiRuntimeConfig.providerMode || process.env.DEFAULT_AI_PROVIDER,
+          provider: serverGuiRuntimeConfig.providerMode || defaultProvider(process.env),
           ollamaBaseUrl: serverGuiRuntimeConfig.ollamaBaseUrl,
           ollamaQuickModel: serverGuiRuntimeConfig.ollamaQuickModel,
           ollamaDeepModel: serverGuiRuntimeConfig.ollamaDeepModel,
@@ -5884,7 +6205,7 @@ ${String(documentText).slice(0, 12000)}
     setInterval(() => void morningTick(), 60_000).unref();
     // Nightly data check: once a day after DATA_CHECK_TIME, kept in the data health history.
     setInterval(() => void nightlyCheckTick(), 60_000).unref();
-    // Scheduled jobs (SCHEDULE_DOWNLOAD_ALL, SCHEDULE_BACKTESTS): off unless set; checked every minute.
+    // Scheduled jobs: the pre-registered tests weekly by default, Download all only when set; checked every minute.
     writeJobs(SCHEDULED_JOBS_FILE, closeInterrupted(readJobs(SCHEDULED_JOBS_FILE), new Date().toISOString()));
     if ((Object.keys(JOBS) as JobId[]).some((id) => jobSchedule(id).kind !== 'off')) setInterval(scheduledJobsTick, 60_000).unref();
     // GDELT raw files: weekly top-up once a first pull exists, checked hourly.
@@ -5924,4 +6245,5 @@ ${String(documentText).slice(0, 12000)}
 }
 
 if (process.argv.includes('--preload')) void runPreloadCli();
+else if (process.argv.includes('--daily')) void runDailyCli();
 else startServer();

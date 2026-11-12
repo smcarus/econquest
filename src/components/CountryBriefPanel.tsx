@@ -7,29 +7,16 @@ import { bankerBrief } from '../utils/bankerNote';
 import { officialBrief } from '../utils/officialNote';
 import { explainInChat } from '../utils/explainHandoff';
 import type { BriefGroup } from '../utils/countryNotes';
+import { figureHelp, panelIntro, type GlossaryEntry } from '../data/glossary';
+import { splitMeaning } from '../utils/countryNotes';
+import { useHelpLevel } from './HelpLevel';
+import { showFigureHelp, showGuides, showMissingHelp } from '../utils/helpLevel';
+import { useT, useTx } from '../i18n/useLang';
+import { BRIEF } from '../i18n/messages/brief';
 
 export type BriefView = 'economist' | 'banker' | 'official';
 
-const VIEW_INFO: Record<BriefView, { label: string; title: string; note: string; cta: string }> = {
-  economist: {
-    label: 'Economy',
-    title: 'Economist brief',
-    note: 'Growth, inflation and policy, the fiscal path and the external position.',
-    cta: 'Write the country note',
-  },
-  banker: {
-    label: 'Issuer',
-    title: 'Issuer brief',
-    note: 'Market access, financing need, when to go to market, and pricing against peers.',
-    cta: 'Write the issuer note',
-  },
-  official: {
-    label: 'Sustainability',
-    title: 'Debt sustainability brief',
-    note: 'Debt path, a five-year projection with standard shocks, the adjustment that would stabilise debt, and the external position.',
-    cta: 'Write the assessment',
-  },
-};
+const VIEWS: BriefView[] = ['economist', 'banker', 'official'];
 
 /**
  * The start view for a role on the Country page: the figures that role works from, each with
@@ -44,29 +31,29 @@ export const CountryBriefPanel: React.FC<{
 }> = ({ run, peers, view: initialView, onWriteNote }) => {
   const [view, setView] = useState<BriefView>(initialView);
   const brief: CountryBrief = useMemo(
-    () => (view === 'banker' ? bankerBrief(run, peers) : view === 'official' ? officialBrief(run) : economistBrief(run)),
+    () => (view === 'banker' ? bankerBrief(run, peers) : view === 'official' ? officialBrief(run) : economistBrief(run, undefined, peers)),
     [run, peers, view]
   );
-  const info = VIEW_INFO[view];
+  const t = useT(BRIEF);
 
   return (
-    <div className="space-y-3" data-no-stat-ref="true" data-no-provenance-overlay="true">
+    <div className="space-y-3">
       <section className="ui-panel">
         <header className="ui-panel-header flex flex-wrap items-start justify-between gap-2">
           <div>
-            <h2 className="ui-section-title">{info.title}</h2>
-            <p className="ui-label">{info.note}</p>
+            <h2 className="ui-section-title">{t(`title_${view}`)}</h2>
+            <p className="ui-label">{t(`note_${view}`)}</p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
-            <div role="tablist" aria-label="Brief view" className="flex gap-1">
-              {(Object.keys(VIEW_INFO) as BriefView[]).map((v) => (
+            <div role="tablist" aria-label={t('viewAria')} className="flex gap-1">
+              {VIEWS.map((v) => (
                 <button key={v} type="button" role="tab" aria-selected={view === v} className="ui-pill" onClick={() => setView(v)}>
-                  {VIEW_INFO[v].label}
+                  {t(`view_${v}`)}
                 </button>
               ))}
             </div>
             <button type="button" className="ui-btn ui-btn-primary" onClick={() => onWriteNote(view)}>
-              <FileText className="w-3.5 h-3.5" /> {info.cta}
+              <FileText className="w-3.5 h-3.5" /> {t(`cta_${view}`)}
             </button>
           </div>
         </header>
@@ -78,22 +65,41 @@ export const CountryBriefPanel: React.FC<{
 };
 
 /** Headline, sample warning and observations, inside a brief panel. */
-export const BriefSummary: React.FC<{ brief: CountryBrief }> = ({ brief }) => (
+export const BriefSummary: React.FC<{ brief: CountryBrief }> = ({ brief }) => {
+  const level = useHelpLevel();
+  const t = useT(BRIEF);
+  const tx = useTx();
+  return (
   <div className="p-4 space-y-2">
-    <p className="text-sm font-medium text-slate-900 dark:text-white">{brief.headline}</p>
+    <p className="text-sm font-medium text-slate-900 dark:text-white">{tx(brief.headline)}</p>
     {brief.sampleWarning && (
       <p className="text-xs px-2 py-1.5 border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300">
-        {brief.sampleWarning}
+        {tx(brief.sampleWarning)}
       </p>
     )}
     <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700 dark:text-slate-300">
-      {brief.judgements.map((j) => (
-        <li key={j}>{j}</li>
-      ))}
+      {brief.judgements.map((j) => {
+        const { fact, meaning } = splitMeaning(j);
+        return (
+          <li key={j}>
+            {tx(fact)}
+            {meaning && showGuides(level) && (
+              <span className="block text-slate-600 dark:text-slate-400" data-meaning="true">
+                <span className="font-medium">{t('whatItMeans')}</span>
+                {tx(meaning)}
+              </span>
+            )}
+          </li>
+        );
+      })}
     </ul>
-    <p className="ui-label">These observations are simple rules on the live figures below, not a forecast. Missing figures are left out of them. Hover a missing figure for what would fill it.</p>
+    <p className="ui-label">
+      {t('rulesNote')}
+      {showGuides(level) ? t('rulesGuides') : t('rulesHover')}
+    </p>
   </div>
-);
+  );
+};
 
 type BriefRow = BriefGroup['rows'][number];
 
@@ -116,54 +122,106 @@ const EXPLAIN_LINK = 'text-xs text-blue-700 dark:text-blue-300 hover:underline s
 const EXPLAIN_ROW_LINK = 'text-xs text-blue-700 dark:text-blue-300 hover:underline sm:opacity-0 sm:group-hover/row:opacity-100 focus:opacity-100';
 
 /**
+ * "What is this?" under a figure label: the plain-words glossary entry for the figure (what it is,
+ * why it matters, how to read it). Closed by default so the table stays short; tap to open.
+ */
+/** "Why missing?" under a Missing value: the reason in full, visible on a phone as well as on hover. */
+export const MissingHelp: React.FC<{ help?: string }> = ({ help }) => {
+  const t = useT(BRIEF);
+  const tx = useTx();
+  return help ? (
+    <details className="mt-0.5 text-xs font-normal text-left" data-missing-help="true">
+      <summary className="cursor-pointer text-amber-700 dark:text-amber-400 hover:underline w-fit ml-auto">{t('whyMissing')}</summary>
+      <p className="mt-1 max-w-prose text-slate-600 dark:text-slate-300">{tx(help)}</p>
+    </details>
+  ) : null;
+};
+
+export const FigureHelp: React.FC<{ entry: GlossaryEntry }> = ({ entry }) => {
+  const t = useT(BRIEF);
+  const tx = useTx();
+  return (
+  <details className="mt-0.5 text-xs font-normal" data-figure-help={entry.id}>
+    <summary className="cursor-pointer text-blue-700 dark:text-blue-300 hover:underline w-fit">{t('whatIsThis')}</summary>
+    <div className="mt-1 space-y-1 text-slate-600 dark:text-slate-300 max-w-prose text-left">
+      <p>
+        <strong className="font-medium text-slate-800 dark:text-slate-100">{tx(entry.term)}.</strong> {tx(entry.what)}
+      </p>
+      <p>{tx(entry.why)}</p>
+      {entry.read && (
+        <p>
+          <span className="font-medium text-slate-800 dark:text-slate-100">{t('howToRead')}</span>
+          {tx(entry.read)}
+        </p>
+      )}
+      {entry.limits && <p className="text-slate-500 dark:text-slate-400">{tx(entry.limits)}</p>}
+    </div>
+  </details>
+  );
+};
+
+/**
  * The figure tables of a brief, each row with its source under the label. With a country, each
  * figure and each panel gets an Explain link (shown on hover on a wide screen) into Council chat.
  */
-export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: string; countryName: string } }> = ({ brief, country }) => (
+export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: string; countryName: string } }> = ({ brief, country }) => {
+  const level = useHelpLevel();
+  const t = useT(BRIEF);
+  const tx = useTx();
+  const help = (label: string) => {
+    const e = figureHelp(label);
+    return e && showFigureHelp(e, level) ? <FigureHelp entry={e} /> : null;
+  };
+  return (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
     {brief.groups.map((g) => (
       <section key={g.title} className="ui-panel group">
         <header className="ui-panel-header flex items-start justify-between gap-2">
           <h3 className="ui-section-title flex flex-wrap items-center gap-2">
-            {g.title}
+            {tx(g.title)}
             <PanelValidationBadge title={g.title} />
           </h3>
           {country && g.rows.some((r) => !r.missing) && (
-            <button type="button" className={EXPLAIN_LINK} onClick={() => explainPanel(g, country)} title="Ask the council what this panel shows and what it means" data-explain-panel={g.title}>
-              Explain
+            <button type="button" className={EXPLAIN_LINK} onClick={() => explainPanel(g, country)} title={t('explainPanelTitle')} data-explain-panel={g.title}>
+              {t('explain')}
             </button>
           )}
         </header>
+        {showGuides(level) && panelIntro(g.title) && <p className="px-4 pt-2 ui-label" data-panel-intro="true">{tx(panelIntro(g.title) ?? '')}</p>}
         <table className="w-full text-sm">
-          <caption className="sr-only">{g.title}</caption>
+          <caption className="sr-only">{tx(g.title)}</caption>
           <tbody>
             {g.rows.map((r) =>
               r.value.length > 60 ? (
                 // A sentence, not a figure: label, then the text under it, left-aligned.
-                <tr key={`${r.label}-${r.value}`} className="border-b border-slate-100 dark:border-slate-800 last:border-0" title={r.help} data-missing={r.missing ? 'true' : undefined}>
+                <tr key={`${r.label}-${r.value}`} className="border-b border-slate-100 dark:border-slate-800 last:border-0" title={r.help ? tx(r.help) : undefined} data-missing={r.missing ? 'true' : undefined}>
                   <td colSpan={2} className="px-4 py-1.5 text-left">
-                    <span className="text-slate-600 dark:text-slate-400">{r.label}</span>
-                    <span className="block text-xs text-slate-500 dark:text-slate-400">{r.source}</span>
-                    <span className={`block mt-0.5 ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}`}>{r.value}</span>
+                    <span className="text-slate-600 dark:text-slate-400">{tx(r.label)}</span>
+                    <span className="block text-xs text-slate-500 dark:text-slate-400">{tx(r.source)}</span>
+                    <span className={`block mt-0.5 ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}`}>{tx(r.value)}</span>
+                    {r.missing && showMissingHelp(level) && <MissingHelp help={r.help} />}
+                    {help(r.label)}
                   </td>
                 </tr>
               ) : (
-              <tr key={`${r.label}-${r.value}`} className="group/row border-b border-slate-100 dark:border-slate-800 last:border-0" title={r.help} data-missing={r.missing ? 'true' : undefined}>
+              <tr key={`${r.label}-${r.value}`} className="group/row border-b border-slate-100 dark:border-slate-800 last:border-0" title={r.help ? tx(r.help) : undefined} data-missing={r.missing ? 'true' : undefined}>
                 <th scope="row" className="px-4 py-1.5 text-left font-normal text-slate-600 dark:text-slate-400">
-                  {r.label}
+                  {tx(r.label)}
                   <span
                     className={`block text-xs ${
                       r.verified ? 'text-emerald-700 dark:text-emerald-400' : r.missing ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'
                     }`}
                   >
-                    {r.source}
+                    {tx(r.source)}
                   </span>
+                  {help(r.label)}
                 </th>
                 <td className={`px-4 py-1.5 text-right align-top [font-variant-numeric:tabular-nums] ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'font-medium text-slate-900 dark:text-white'}`}>
-                  {r.value}
+                  {tx(r.value)}
+                  {r.missing && showMissingHelp(level) && <MissingHelp help={r.help} />}
                   {country && !r.missing && (
-                    <button type="button" className={`block ml-auto font-normal ${EXPLAIN_ROW_LINK}`} onClick={() => explainRow(r, country)} title="Ask the council what this figure means and why it is where it is" data-explain-row={r.label}>
-                      Explain
+                    <button type="button" className={`block ml-auto font-normal ${EXPLAIN_ROW_LINK}`} onClick={() => explainRow(r, country)} title={t('explainRowTitle')} data-explain-row={r.label}>
+                      {t('explain')}
                     </button>
                   )}
                 </td>
@@ -176,3 +234,4 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
     ))}
   </div>
 );
+};

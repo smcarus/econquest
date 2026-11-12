@@ -11,21 +11,34 @@
  * Used by GET /api/data/connections (the Tools page) and by `npm run check:data` in a terminal.
  * Keys and passwords are never put in a row: only whether they are set.
  */
+import { EMISSIONS_CODE, OWID_ENERGY_URL, energyColumns } from './climateEnergy';
+import { dbnomicsLevelsUrl, imfLevelSeriesId } from './govLevels';
+import { ECB_RTD_SERIES, ecbRtdUrl, parseEcbHistory } from './ecbRealTime';
+import { latestEditionUri, ONS_TRIANGLE_PAGE } from './onsTriangles';
+import { bcbActivityUrl, eurostatActivityUrl, monthText, onsActivityUrl, parseBcbActivity, parseEurostatActivity, parseOnsSeries } from './monthlyIndicators';
+import { BIS_PRIVATE_DEBT_SAMPLE_URL, parseBisPrivateDebtAll } from './sectorBalances';
+import { BIS_PROPERTY_SAMPLE_URL, iloEarningsSampleUrl, parseBisPropertyAll, parseIloEarnings, quarterLabel, wageReading } from './wagesHousing';
+import { debtStructureUrl, parseDebtStructure, currencyValue } from './debtStructure';
+import { INVESTOR_BASE_SETUP_HELP, investorBaseValue } from './investorBase';
 import { ECB_SPF_SERIES, ecbSpfUrl, FOCUS_URL, parseEcbCsv, parseFocus12m } from './inflationSurveys';
 import { gscpiFromBytes, GSCPI_URLS } from './stressIndices';
+import { chokepointsUrl, parsePortWatchStats } from './portWatch';
 import { bcrpEmbigUrl, describeBcrpReply, parseBcrpEmbig } from './hardCurrencySpread';
 import { geminiModel } from './geminiModel';
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './refereeModel';
 import { TIC_URL, formatMonth, parseTicTable, ticHoldingFor } from './ticHoldings';
+import { latestUstAuctions, parseUstAuctions, ustAuctionsUrl } from './treasuryAuctions';
 import { IMF_MEASURES, IMF_SDMX_HOST, formatImfPeriod, pullImfExternal } from './imfReserves';
 import { cliFor, cliUrl, parseCli } from './oecdCli';
 import { formatQuarter, parseQna, qnaReading, qnaUrl } from './oecdQna';
 import { BCB_IBCBR_SA, bcbSgsSinceUrl, eurostatIpUrl, parseEurostatIp, parseIbcBr } from './monthlyActivity';
+import { EU_SURVEY_INDICATORS, euSurveyUrl, parseEuSurvey } from './euSurveys';
 import { OECD_HEADERS, isBotCheck } from './oecdSdmx';
 import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
 import { ACLED_TOKEN_URL, acledReadUrl, acledTokenBody, parseAcledPage } from './acled';
 import { BANXICO_CPI_SERIES, banxicoHeaders, banxicoSeriesUrl, BCB_IPCA_12M, bcbSgsUrl, eurostatHicpUrl, EVDS_CPI_DEFAULT_SERIES, evdsCpiUrl, parseBanxicoMonthly, parseEvdsCpiYoy, parseBcbSgs, parseEurostatHicp } from './nationalCpi';
 import { coferLine, pullCofer } from './imfCofer';
+import { pullImfCpi } from './imfCpi';
 import { CFTC_CURRENCY_CODES, cftcUrl, parseCftcRows, positioningFor } from './cftcPositioning';
 import { BIS_ISO2, bisIntlUrl, parseBisIntl } from './bisDebtSecurities';
 import { CBPOL_AREA, cbpolDailyUrl, parseCbpolCsv, policyRateFor } from './bisPolicyRates';
@@ -44,10 +57,13 @@ import {
   parseTesouroDiretoLatest,
 } from './officialYields';
 import { lsegSnapshotUrl, lsegTokenRequest, ownCdsSettings, parseLsegSnapshot, parseOwnCdsCsv } from './ownCds';
+import { paidVendorFromEnv, parsePaidMappings } from '../engine/paidData';
+import { macrobondCredentials, macrobondFetchUrl, macrobondTokenBody, MACROBOND_AUTH_URL, readMacrobondSeries, readMacrobondToken } from '../engine/macrobond';
 import { parseWitsShare, witsUrl } from './scenarioExposure';
 import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, eiaSpotUrl, findPinkSheetUrl, moveSentence, parseEiaSpot, parsePinkSheet, priceMove } from './commodityPrices';
 import { readXlsxSheet } from './xlsxRead';
 import { GDELT_V1_SIZES_URL, parseFileSizes } from './gdeltDaily';
+import { AIDDATA_SETUP_HELP, chinaValue, type AiddataData } from './lowIncomeDebt';
 import { ACLED_AGGREGATED_PAGE, ACLED_FOLDER, acledFileReading, type AcledFileData } from './acledFiles';
 import { UCDP_DATASETS, UCDP_DATASET_IDS, UCDP_DOWNLOADS_PAGE, UCDP_FOLDER, ucdpReading, type UcdpData } from './ucdpConflict';
 import { COMTRADE_REPORTERS, buildProfile, comtradeUrl, comtradeYears, parseComtrade, partnerSentence } from './comtradeTrade';
@@ -112,10 +128,14 @@ export interface CheckOptions {
   ucdp?: () => UcdpData | null;
   /** The ACLED aggregated files in data/local/acled/ (server: acledFileData). */
   acledFiles?: () => AcledFileData | null;
+  aiddata?: () => AiddataData | null;
+  investorBase?: () => import('./investorBaseStore').InvestorBaseData | null;
   /** Only these source ids. */
   only?: string[];
   /** Where each key in `env` came from: 'app' = saved in Menu > Settings > API keys, 'env' = .env. */
   keySources?: Record<string, 'app' | 'env' | 'none'>;
+  /** The text of data/local/paid/mappings.json (your subscription's mapped series); absent = none. */
+  paidMappingsText?: () => string | null;
   /** Pause between the two OECD checks, ms (default 3000; tests set 0). */
   oecdGapMs?: number;
 }
@@ -262,9 +282,25 @@ function setRow(def: Def, state: ConnectionState, detail: string, host: string):
 export const SOURCE_IDS = [
   'worldbank',
   'worldbank_debt',
+  'worldbank_dist',
+  'worldbank_people',
+  'worldbank_trade',
+  'worldbank_climate',
+  'owid_energy',
+  'ilostat_wages',
+  'bis_property',
+  'bis_private_debt',
+  'imf_gov_levels',
+  'eurostat_activity',
+  'ons_activity',
+  'bcb_activity',
+  'ecb_rtd',
+  'ons_triangle',
+  'worldbank_debt_structure',
   'imf',
   'imf_reserves',
   'imf_cofer',
+  'imf_cpi',
   'gdelt',
   'gdelt_v1',
   'polymarket',
@@ -278,6 +314,7 @@ export const SOURCE_IDS = [
   'wits',
   'cftc',
   'tic',
+  'ust_auctions',
   'pink_sheet',
   'oecd_cli',
   'oecd_cpi',
@@ -287,6 +324,7 @@ export const SOURCE_IDS = [
   'eurostat_hicp',
   'bcb_ibcbr',
   'eurostat_ip',
+  'eu_surveys',
   'comtrade',
   'fred_csv',
   'fred_api',
@@ -294,13 +332,17 @@ export const SOURCE_IDS = [
   'ecb_spf',
   'bcb_focus',
   'nyfed_gscpi',
+  'imf_portwatch',
   'evds',
   'banxico',
   'ucdp',
   'acled',
   'acled_files',
+  'aiddata_file',
+  'imf_investor_base',
   'eia',
   'own_cds',
+  'paid_data',
   'gemini',
   'ollama',
   'openai_compatible',
@@ -339,6 +381,229 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
         const rows = (parseJson(r.text) as unknown[])?.[1];
         const row = Array.isArray(rows) ? (rows as Array<{ value?: unknown; date?: string }>).find((x) => typeof x?.value === 'number') : undefined;
         return row ? `${SAMPLE_NAME} reserves ${fmt(Number(row.value))} months of imports (${row.date})` : null;
+      }
+    )
+  );
+
+  add('worldbank_dist', () =>
+    httpCheck(
+      { id: 'worldbank_dist', name: 'World Bank inequality, taxes and tariffs', group: 'free', feeds: 'Gini index, central government tax revenue and its split, applied tariffs (country brief, Fiscal & Debt Agent)' },
+      fetchFn,
+      `https://api.worldbank.org/v2/country/${SAMPLE_ISO3}/indicator/GC.TAX.TOTL.GD.ZS?format=json&per_page=8`,
+      T,
+      (r) => {
+        const rows = (parseJson(r.text) as unknown[])?.[1];
+        const row = Array.isArray(rows) ? (rows as Array<{ value?: unknown; date?: string }>).find((x) => typeof x?.value === 'number') : undefined;
+        if (row) return `${SAMPLE_NAME} tax revenue ${fmt(Number(row.value))}% of GDP, central government (${row.date})`;
+        return Array.isArray(rows) ? `Answered (no recent tax revenue figure for ${SAMPLE_NAME})` : null;
+      }
+    )
+  );
+
+  add('worldbank_climate', () =>
+    httpCheck(
+      { id: 'worldbank_climate', name: 'World Bank emissions and renewables', group: 'free', feeds: 'Greenhouse gas emissions per person, renewable share of energy use (country brief)' },
+      fetchFn,
+      `https://api.worldbank.org/v2/country/${SAMPLE_ISO3}/indicator/${EMISSIONS_CODE}?format=json&per_page=10`,
+      T,
+      (r) => {
+        const rows = (parseJson(r.text) as unknown[])?.[1];
+        const row = Array.isArray(rows) ? (rows as Array<{ value?: unknown; date?: string }>).find((x) => typeof x?.value === 'number') : undefined;
+        if (row) return `${SAMPLE_NAME} greenhouse gas emissions ${fmt(Number(row.value))} tonnes CO2e per person (${row.date})`;
+        return Array.isArray(rows) ? `Answered (no recent emissions figure for ${SAMPLE_NAME})` : null;
+      }
+    )
+  );
+
+  // The first few kilobytes are enough to see that the file answers and still has the energy mix columns.
+  add('owid_energy', () =>
+    httpCheck(
+      { id: 'owid_energy', name: 'Our World in Data energy file', group: 'free', feeds: 'Energy mix: coal, oil, gas, nuclear and renewables shares (country brief, Global Spillover Agent); downloaded weekly to this computer, not shipped' },
+      fetchFn,
+      OWID_ENERGY_URL,
+      T,
+      (r) => (energyColumns((r.text || '').split('\n')[0] || '') ? 'Energy file answered with the coal, oil, gas, nuclear and renewables share columns' : null),
+      { headers: { Range: 'bytes=0-16383' } },
+      'It answered, but the first line has no coal, oil and gas share columns. Our World in Data may have renamed them again.'
+    )
+  );
+
+  add('ilostat_wages', () =>
+    httpCheck(
+      { id: 'ilostat_wages', name: 'ILOSTAT earnings', group: 'free', feeds: 'Nominal and real wage growth (country brief, Central Bank and Politics agents)' },
+      fetchFn,
+      iloEarningsSampleUrl(SAMPLE_ISO3, new Date().getUTCFullYear() - 8),
+      T,
+      (r) => {
+        const parsed = parseIloEarnings(r.text || '');
+        if (!parsed) return null;
+        const w = parsed[SAMPLE_ISO3] && wageReading(parsed[SAMPLE_ISO3], undefined);
+        if (!w) return `Answered (no earnings for ${SAMPLE_NAME} in local currency, all activities)`;
+        return `${SAMPLE_NAME} average monthly earnings ${fmt(w.monthly, 0)} in local currency (${w.year})${w.nominalGrowthPct !== undefined ? `, ${w.nominalGrowthPct > 0 ? '+' : ''}${fmt(w.nominalGrowthPct)}% on a year earlier` : ''}`;
+      },
+      undefined,
+      'It answered, but not with the ILOSTAT columns the app reads (ref_area, classif1, time, obs_value). ILOSTAT may have changed its layout, or the indicator id.'
+    )
+  );
+
+  add('bis_property', () =>
+    httpCheck(
+      { id: 'bis_property', name: 'BIS residential property prices', group: 'free', feeds: 'Real and nominal house prices (country brief, History & data, Central Bank agent)' },
+      fetchFn,
+      BIS_PROPERTY_SAMPLE_URL,
+      T,
+      (r) => {
+        const all = parseBisPropertyAll(r.text || '');
+        const h = all[SAMPLE_ISO3];
+        if (!h) return Object.keys(all).length ? 'Answered (no row for the sample country)' : null;
+        const v = (x?: number) => (x === undefined ? 'n/a' : `${x > 0 ? '+' : ''}${fmt(x)}%`);
+        return `${SAMPLE_NAME} house prices ${v(h.realYoyPct)} real, ${v(h.nominalYoyPct)} nominal on a year earlier (${quarterLabel(h.quarter)})`;
+      }
+    )
+  );
+
+  // Levels of government (G42 step 1): state and local spending for every BIS country, which also
+  // says how many publish them (the coverage that decides the per-state screen).
+  add('imf_gov_levels', () => {
+    const iso2s = Object.values(BIS_ISO2);
+    const ids = iso2s.flatMap((i) => [imfLevelSeriesId(i, 'state', 'spending'), imfLevelSeriesId(i, 'local', 'spending'), imfLevelSeriesId(i, 'central', 'spending')]);
+    return httpCheck(
+      { id: 'imf_gov_levels', name: 'IMF GFS by level of government (via DBnomics)', group: 'free', feeds: 'Revenue and spending by level of government (country brief, Fiscal Agent)' },
+      fetchFn,
+      dbnomicsLevelsUrl(ids),
+      T,
+      (r) => {
+        const docs = (JSON.parse(r.text || '') as { series?: { docs?: Array<{ series_code?: string; value?: unknown[] }> } })?.series?.docs;
+        if (!Array.isArray(docs)) return null;
+        const has = (d: { value?: unknown[] }) => Array.isArray(d.value) && d.value.some((v) => typeof v === 'number');
+        const sub = new Set(docs.filter((d) => /\.S131[23]\./.test(String(d.series_code)) && has(d)).map((d) => String(d.series_code).split('.')[1]));
+        const central = new Set(docs.filter((d) => /\.S1311\./.test(String(d.series_code)) && has(d)).map((d) => String(d.series_code).split('.')[1]));
+        return `Central government spending for ${central.size} of ${iso2s.length} countries; state or local spending for ${sub.size}${sub.size ? ` (${[...sub].sort().join(', ')})` : ''}`;
+      }
+    );
+  });
+
+  // Monthly activity (G41): one sample per source the daily run reads (FRED has its own row).
+  const actSample = (s: { points: { period: string; value: number }[] } | null | undefined, what: string, unit = '') => {
+    const last = s?.points[s.points.length - 1];
+    return last ? `${what} ${fmt(last.value)}${unit} (${monthText(last.period)})` : null;
+  };
+  add('eurostat_activity', () =>
+    httpCheck(
+      { id: 'eurostat_activity', name: 'Eurostat monthly activity (industrial production, retail trade, unemployment)', group: 'free', feeds: 'Monthly activity for EU members and Turkey (country brief, History & data, Central Bank agent)' },
+      fetchFn,
+      eurostatActivityUrl('retail', ['DE'], '2025-01'),
+      T,
+      (r) => actSample(parseEurostatActivity('retail', JSON.parse(r.text || ''), ['DEU']).DEU, 'Germany retail trade volume index')
+    )
+  );
+  add('ons_activity', () =>
+    httpCheck(
+      { id: 'ons_activity', name: 'ONS monthly activity (index of production, retail sales, unemployment)', group: 'free', feeds: 'Monthly activity for the United Kingdom (country brief, History & data, Central Bank agent)' },
+      fetchFn,
+      onsActivityUrl('retail'),
+      T,
+      (r) => actSample(parseOnsSeries('retail', JSON.parse(r.text || '')), 'UK retail sales volume index')
+    )
+  );
+  add('bcb_activity', () =>
+    httpCheck(
+      { id: 'bcb_activity', name: 'IBGE monthly activity through BCB SGS (industrial production, retail sales, unemployment)', group: 'free', feeds: 'Monthly activity for Brazil (country brief, History & data, Central Bank agent)' },
+      fetchFn,
+      bcbActivityUrl('unemp'),
+      T,
+      (r) => actSample(parseBcbActivity('unemp', JSON.parse(r.text || '')), 'Brazil unemployment rate', '%')
+    )
+  );
+
+  // Figures as first published (G12, G13). The ECB row reads euro area GDP with its revision
+  // history; the ONS row checks the GDP revision triangle's page lists a file (the file itself can be
+  // refused to programs, in which case a copy saved by hand in data/local/ons-triangles is read).
+  add('ecb_rtd', () =>
+    httpCheck(
+      { id: 'ecb_rtd', name: 'ECB Euro Area Real-Time Database (figures as first published)', group: 'free', feeds: 'Euro area figures as first published (History & data on euro members\' pages)' },
+      fetchFn,
+      ecbRtdUrl(ECB_RTD_SERIES[0].id, '2023'),
+      T,
+      (r) => {
+        const rows = parseEcbHistory(r.text || '');
+        if (!rows.length) return null;
+        const periods = new Set(rows.map((x) => x.date));
+        return `Euro area GDP: ${rows.length} published values for ${periods.size} quarters since 2023, first change recorded ${rows.map((x) => x.from).sort()[0]}`;
+      }
+    )
+  );
+  add('ons_triangle', () =>
+    httpCheck(
+      { id: 'ons_triangle', name: 'ONS GDP revision triangle (UK GDP as first published)', group: 'free', feeds: 'UK GDP as first published (History & data on the UK page)' },
+      fetchFn,
+      `${ONS_TRIANGLE_PAGE}/data`,
+      T,
+      (r) => {
+        const edition = latestEditionUri(JSON.parse(r.text || ''));
+        return edition ? `Latest edition listed: ${edition.split('/').pop()}` : null;
+      }
+    )
+  );
+
+  add('bis_private_debt', () =>
+    httpCheck(
+      { id: 'bis_private_debt', name: 'BIS total credit (household and company debt)', group: 'free', feeds: 'Household and company debt, % of GDP (country brief, History & data, Fiscal Agent)' },
+      fetchFn,
+      BIS_PRIVATE_DEBT_SAMPLE_URL,
+      T,
+      (r) => {
+        const all = parseBisPrivateDebtAll(r.text || '');
+        const d = all[SAMPLE_ISO3];
+        if (!d) return Object.keys(all).length ? 'Answered (no row for the sample country)' : null;
+        const v = (x?: number) => (x === undefined ? 'n/a' : `${fmt(x)}% of GDP`);
+        return `${SAMPLE_NAME} household debt ${v(d.householdPct)}, company debt ${v(d.corporatePct)} (${d.quarter.replace(/^(\d{4})Q/, '$1 Q')})`;
+      },
+      undefined,
+      'It answered, but not with the BIS total credit columns the app reads (BORROWERS_CTY, TC_BORROWERS, TC_LENDERS, TIME_PERIOD, OBS_VALUE). The BIS may have changed the series key.'
+    )
+  );
+
+  add('worldbank_trade', () =>
+    httpCheck(
+      { id: 'worldbank_trade', name: 'World Bank trade and energy', group: 'free', feeds: 'Goods exports and imports by group, net energy imports (country brief, Hormuz scenario)' },
+      fetchFn,
+      `https://api.worldbank.org/v2/country/${SAMPLE_ISO3}/indicator/TX.VAL.FUEL.ZS.UN?format=json&per_page=8`,
+      T,
+      (r) => {
+        const rows = (parseJson(r.text) as unknown[])?.[1];
+        const row = Array.isArray(rows) ? (rows as Array<{ value?: unknown; date?: string }>).find((x) => typeof x?.value === 'number') : undefined;
+        if (row) return `${SAMPLE_NAME} fuel ${fmt(Number(row.value))}% of goods exports (${row.date})`;
+        return Array.isArray(rows) ? `Answered (no recent fuel export share for ${SAMPLE_NAME})` : null;
+      }
+    )
+  );
+
+  add('worldbank_people', () =>
+    httpCheck(
+      { id: 'worldbank_people', name: 'World Bank people and living standards', group: 'free', feeds: 'Poverty rates, remittances, labour force participation, youth unemployment, age dependency (country brief, council)' },
+      fetchFn,
+      `https://api.worldbank.org/v2/country/${SAMPLE_ISO3}/indicator/BX.TRF.PWKR.DT.GD.ZS?format=json&per_page=8`,
+      T,
+      (r) => {
+        const rows = (parseJson(r.text) as unknown[])?.[1];
+        const row = Array.isArray(rows) ? (rows as Array<{ value?: unknown; date?: string }>).find((x) => typeof x?.value === 'number') : undefined;
+        if (row) return `${SAMPLE_NAME} remittances received ${fmt(Number(row.value))}% of GDP (${row.date})`;
+        return Array.isArray(rows) ? `Answered (no recent remittances figure for ${SAMPLE_NAME})` : null;
+      }
+    )
+  );
+
+  add('worldbank_debt_structure', () =>
+    httpCheck(
+      { id: 'worldbank_debt_structure', name: 'World Bank debt structure (IDS currency mix, interest burden)', group: 'free', feeds: 'Currency mix and maturity of new loans of public external debt, interest as % of revenue (country brief, Fiscal & Debt Agent)' },
+      fetchFn,
+      debtStructureUrl(SAMPLE_ISO3),
+      T,
+      (r) => {
+        const d = parseDebtStructure(parseJson(r.text), '');
+        if (d?.currency) return `${SAMPLE_NAME} public external debt: ${currencyValue(d.currency)}`;
+        return d ? `Answered (no currency split for ${SAMPLE_NAME})` : null;
       }
     )
   );
@@ -445,6 +710,24 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     const status = r.httpStatus && r.httpStatus >= 400 ? r.httpStatus : Number(/HTTP (\d{3})/.exec(r.note)?.[1] ?? 0) || undefined;
     const state: ConnectionState = status ? 'refused' : /no answer within|fetch failed|request failed/i.test(r.note) ? 'no_answer' : 'bad_reply';
     return { ...setRow(def, state, r.note, IMF_SDMX_HOST), latencyMs, ...(status ? { httpStatus: status } : {}), setup };
+  });
+
+  add('imf_cpi', async () => {
+    const def: Def = { id: 'imf_cpi', name: 'IMF monthly consumer prices (api.imf.org)', group: 'free', feeds: 'Monthly inflation, all items, year on year, for countries outside the EU when fresher than the OECD copy' };
+    const t0 = Date.now();
+    let r: Awaited<ReturnType<typeof pullImfCpi>>;
+    try {
+      r = await pullImfCpi({ fetchFn, env, timeoutMs: Math.max(T, 30000) }, 'USA');
+    } catch (err) {
+      return { ...setRow(def, 'no_answer', describeNetworkError(err, Math.max(T, 30000)), IMF_SDMX_HOST), latencyMs: Date.now() - t0 };
+    }
+    const latencyMs = Date.now() - t0;
+    const setup = 'If the IMF codes are not matched by name, set IMF_CPI_KEY in .env to the series key ({ISO3} for the country); npm run check:imf prints the codes.';
+    const last = r.series?.points[r.series.points.length - 1];
+    if (last) return { ...setRow(def, 'connected', `Answered in ${latencyMs} ms. ${r.step.note}.`, IMF_SDMX_HOST), latencyMs, sample: `United States inflation ${fmt(last.value, 1)}% y/y (${formatMonth(last.period)})`, setup };
+    const status = Number(/HTTP (\d{3})/.exec(r.step.note)?.[1] ?? 0) || undefined;
+    const state: ConnectionState = status ? 'refused' : /no answer within|fetch failed|request failed/i.test(r.step.note) ? 'no_answer' : 'bad_reply';
+    return { ...setRow(def, state, r.step.note, IMF_SDMX_HOST), latencyMs, ...(status ? { httpStatus: status } : {}), setup };
   });
 
   add('gdelt', () =>
@@ -631,6 +914,22 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       },
       undefined,
       'Treasury answered, but the table was not in the layout the app reads (a Country row with YYYY-MM months). The file may have changed.'
+    )
+  );
+
+  add('ust_auctions', () =>
+    httpCheck(
+      { id: 'ust_auctions', name: 'US Treasury auctions (Fiscal Data)', group: 'free', feeds: 'Bid-to-cover, high yield and amounts at each auction of US bills, notes and bonds (United States page)' },
+      fetchFn,
+      ustAuctionsUrl(now, 1),
+      Math.max(T, 20000),
+      (r) => {
+        const a = parseUstAuctions(parseJson(r.text));
+        const ten = latestUstAuctions(a ? { pulledAt: '', auctions: a } : null).find((x) => x.tenor === '10y');
+        return a?.length ? `${a.length} auctions in the last year${ten ? `; 10-year note on ${ten.date}: bid-to-cover ${ten.bidToCover.toFixed(2)}` : ''}` : null;
+      },
+      undefined,
+      'Fiscal Data answered, but without held auctions in the layout the app reads (auction_date, security_type, original_security_term, bid_to_cover_ratio). The dataset may have changed.'
     )
   );
 
@@ -822,6 +1121,22 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     )
   );
 
+  add('eu_surveys', () =>
+    httpCheck(
+      { id: 'eu_surveys', name: 'EU business and consumer surveys (Eurostat)', group: 'free', feeds: 'Economic sentiment, industry, services and consumer confidence and employment expectations for EU members (not a PMI)' },
+      fetchFn,
+      euSurveyUrl(EU_SURVEY_INDICATORS[0], ['DE'], `${year - 1}-01`),
+      T,
+      (r) => {
+        const s = parseEuSurvey(parseJson(r.text), ['DEU']).DEU;
+        const last = s?.[s.length - 1];
+        return last ? `Germany economic sentiment ${fmt(last.value, 1)} (${formatMonth(last.period)}, long-term average = 100)` : null;
+      },
+      {},
+      'Eurostat answered, but not with the ei_bssi_m_r2 sentiment index the app reads (BS-ESI-I, SA).'
+    )
+  );
+
   add('eurostat_hicp', () =>
     httpCheck(
       { id: 'eurostat_hicp', name: 'Eurostat HICP', group: 'free', feeds: 'Monthly inflation for EU members (Poland on the default lists), fresher than the OECD mirror' },
@@ -959,6 +1274,26 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     } catch (e) {
       return setRow(def, 'no_answer', (e as Error).message || 'No answer', 'www.newyorkfed.org');
     }
+  });
+
+  add('imf_portwatch', async () => {
+    let lastText: string | undefined;
+    const res = await httpCheck(
+      { id: 'imf_portwatch', name: 'IMF PortWatch', group: 'free', feeds: 'Ships through eight chokepoints (world series) and each country\'s port activity, monthly averages of daily data' },
+      fetchFn,
+      chokepointsUrl(),
+      Math.max(T, 25000),
+      (r) => {
+        lastText = r.text;
+        const map = parsePortWatchStats(JSON.parse(r.text || 'null'), ['ships', 'volume']);
+        const suez = map.get('chokepoint1');
+        const last = suez?.[suez.length - 1];
+        return last ? `Suez Canal ${fmt(last.sums.ships / last.lastDay, 1)} ships/day (${last.month}, to day ${last.lastDay}), ${map.size} chokepoints, ${suez!.length} months` : null;
+      },
+      {},
+      'PortWatch answered, but without the monthly sums (portid, year, month, ships) the app asks for.'
+    );
+    return res.state === 'bad_reply' || res.state === 'refused' ? { ...res, detail: `${res.detail}${replyStart(lastText)}` } : res;
   });
 
   // ---- Free with your own key -----------------------------------------------------------------
@@ -1103,6 +1438,60 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     return { ...setRow(def, 'connected', `Read ${read.join('; ')}.`, host), ...(sample ? { sample } : {}), ...(skipped ? { warning: skipped } : {}) };
   });
 
+  add('aiddata_file', async () => {
+    const def: Def = {
+      id: 'aiddata_file',
+      name: 'AidData China lending file (downloaded)',
+      group: 'free',
+      feeds: 'Official loan commitments from China by borrowing country, for the issuer brief and the Fiscal & Debt Agent',
+      setup: AIDDATA_SETUP_HELP,
+    };
+    const host = 'your files';
+    if (!opts.aiddata) return setRow(def, 'optional', 'The folder data/local/aiddata/ was not checked from here.', host);
+    let data: AiddataData | null;
+    try {
+      data = opts.aiddata();
+    } catch (err: any) {
+      return setRow(def, 'bad_reply', `The AidData folder could not be read (${err?.message || err}).`, host);
+    }
+    const skipped = data?.skipped.length ? `Not read: ${data.skipped.map((s) => `${s.file} (${s.reason})`).join('; ')}.` : '';
+    if (!data?.table) return setRow(def, 'optional', `No AidData file in data/local/aiddata/.${skipped ? ` ${skipped}` : ''}`, host);
+    const t = data.table;
+    const first = [...t.countries.entries()].sort((a, b) => b[1].totalUsdBn - a[1].totalUsdBn)[0];
+    return {
+      ...setRow(def, 'connected', `Read ${t.file}: loans to ${t.countries.size} countries, to ${t.fileLastYear}.`, host),
+      ...(first ? { sample: `${first[0]}: ${chinaValue(first[1])}` } : {}),
+      ...(skipped ? { warning: skipped } : {}),
+    };
+  });
+
+  add('imf_investor_base', async () => {
+    const def: Def = {
+      id: 'imf_investor_base',
+      name: 'IMF sovereign debt investor base (downloaded)',
+      group: 'free',
+      feeds: 'Who holds government debt (foreign, central bank, banks, others), for the country brief and the Fiscal & Debt Agent',
+      setup: INVESTOR_BASE_SETUP_HELP,
+    };
+    const host = 'your files';
+    if (!opts.investorBase) return setRow(def, 'optional', 'The folder data/local/imf-investor-base/ was not checked from here.', host);
+    let data: import('./investorBaseStore').InvestorBaseData | null;
+    try {
+      data = opts.investorBase();
+    } catch (err: any) {
+      return setRow(def, 'bad_reply', `The investor base folder could not be read (${err?.message || err}).`, host);
+    }
+    const skipped = data?.skipped.length ? `Not read: ${data.skipped.map((x) => `${x.file} (${x.reason})`).join('; ')}.` : '';
+    if (!data?.table) return setRow(def, 'optional', `No IMF investor base file in data/local/imf-investor-base/.${skipped ? ` ${skipped}` : ''}`, host);
+    const t = data.table;
+    const sample = t.countries.get('BRA') ?? [...t.countries.values()][0];
+    return {
+      ...setRow(def, 'connected', `Read ${t.file}${t.version ? ` (version of ${t.version})` : ''}: ${t.countries.size} countries, to ${t.lastYear}.`, host),
+      ...(sample ? { sample: `${t.countries.get('BRA') ? 'BRA' : [...t.countries.keys()][0]}: ${investorBaseValue(sample, t.lastYear)}` } : {}),
+      ...(skipped ? { warning: skipped } : {}),
+    };
+  });
+
   add('eia', async () => {
     const def: Def = {
       id: 'eia',
@@ -1212,6 +1601,55 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       const first = [...q.values()][0];
       return `${q.size} of ${Object.keys(cfg.lseg!.rics).length} RICs priced; ${first.iso3} ${fmt(first.bps)} bp`;
     }, { headers: { Authorization: `Bearer ${token}` } }, 'LSEG answered but none of the RICs in LSEG_CDS_RICS had a price. Check the RICs against your entitlement.');
+  });
+
+  // Your paid data subscription (src/engine/paidData.ts): never fetches a figure here and never
+  // prints a sign-in detail, only whether it is switched on, set up and how many series are mapped.
+  add('paid_data', async () => {
+    const def: Def = {
+      id: 'paid_data',
+      name: 'Your data subscription (Macrobond, Haver, Moody\'s)',
+      group: 'own_account',
+      feeds: 'Series you map from a paid data service you already subscribe to; never passed on',
+      setup: 'Menu > Settings > Your subscriptions, or PAID_DATA_VENDOR in .env with the vendor\'s sign-in details. Then map the vendor series codes you want there.',
+    };
+    const vendor = paidVendorFromEnv(env);
+    const raw = (env.PAID_DATA_VENDOR || '').trim().toLowerCase();
+    if (!vendor) {
+      if (raw && raw !== 'off') return setRow(def, 'needs_setup', `PAID_DATA_VENDOR is "${raw}"; it must be off, macrobond, haver or moodys.`, 'your subscription');
+      return setRow(def, 'off', 'Off. The app uses free sources only.', 'your subscription');
+    }
+    const mapped = parsePaidMappings(opts.paidMappingsText?.() ?? null).filter((m) => m.vendor === vendor.id).length;
+    const series = `${mapped} series mapped`;
+    const missingCreds = vendor.credentialIds.filter((k) => !(env[k] || '').trim());
+    if (missingCreds.length) return setRow(def, 'needs_setup', `Switched on for ${vendor.name} (${series}), but ${missingCreds.join(' and ')} ${missingCreds.length > 1 ? 'are' : 'is'} not set.`, 'your subscription');
+    if (!vendor.adapterBuilt)
+      return setRow(def, 'needs_setup', `Switched on for ${vendor.name} (${series}), but the app cannot fetch from ${vendor.name} yet: that part is planned as data plan change ${vendor.plannedIn}. Nothing is fetched until then.`, 'your subscription');
+    // Macrobond (src/engine/macrobond.ts): sign in, then read the first mapped series. Only counts
+    // and dates are reported: never a figure, the client ID or the secret.
+    const creds = macrobondCredentials(env)!;
+    const host = 'apiauth.macrobondfinancial.com';
+    const disc = await probe(fetchFn, `${MACROBOND_AUTH_URL}.well-known/openid-configuration`, T);
+    if (disc.networkError) return { ...setRow(def, 'no_answer', `Macrobond sign-in: ${disc.networkError}`, host), latencyMs: disc.latencyMs };
+    const tokenUrl = String((parseJson(disc.text) as { token_endpoint?: unknown })?.token_endpoint || '');
+    if (!disc.ok || !/^https:\/\//.test(tokenUrl)) return setRow(def, 'bad_reply', `Macrobond's sign-in address lookup did not give a token address (HTTP ${disc.status}).`, host);
+    const tok = await probe(fetchFn, tokenUrl, T, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: macrobondTokenBody(creds) });
+    if (tok.networkError) return { ...setRow(def, 'no_answer', `Macrobond sign-in: ${tok.networkError}`, host), latencyMs: tok.latencyMs };
+    const signed = readMacrobondToken(tok.status ?? 0, tok.text ?? '', now.getTime());
+    if ('error' in signed) return { ...setRow(def, signed.badCredentials ? 'needs_setup' : 'refused', `${signed.error}.`, host), httpStatus: tok.status };
+    const first = parsePaidMappings(opts.paidMappingsText?.() ?? null).find((m) => m.vendor === vendor.id);
+    if (!first) return setRow(def, 'needs_setup', `Signed in to ${vendor.name}, but no series are mapped yet. Map them under Menu > Settings > Your subscriptions.`, host);
+    const got = await probe(fetchFn, macrobondFetchUrl([first.code]), T, { headers: { Authorization: `Bearer ${signed.token}`, Accept: 'application/json' } });
+    const apiHost = 'api.macrobondfinancial.com';
+    if (got.networkError) return { ...setRow(def, 'no_answer', `Macrobond series: ${got.networkError}`, apiHost), latencyMs: got.latencyMs };
+    if (!got.ok) return { ...setRow(def, got.status === 401 || got.status === 403 ? 'needs_setup' : 'refused', `Signed in, but Macrobond refused series ${first.code} (HTTP ${got.status}).${got.status === 403 ? ' Your licence may not cover it.' : ''}`, apiHost), httpStatus: got.status };
+    const body = parseJson(got.text);
+    const read = readMacrobondSeries(Array.isArray(body) ? body[0] : null, first.freq);
+    if ('error' in read) return setRow(def, 'bad_reply', `Signed in; series ${first.code}: ${read.error}.`, apiHost);
+    return {
+      ...setRow(def, 'connected', `Signed in to ${vendor.name}; ${series}. The figures stay on this computer.`, apiHost),
+      sample: `${first.code}: ${read.points.length} values, ${read.points[0]!.date} to ${read.points[read.points.length - 1]!.date} (figures not shown)`,
+    };
   });
 
   // ---- AI models ---------------------------------------------------------------------------------

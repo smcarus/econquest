@@ -1,0 +1,38 @@
+/** French for src/i18n/messages/brief.ts. Formal "vous" throughout. Not yet checked by a native speaker. */
+import type { Messages } from '../lang';
+import type { BRIEF } from '../messages/brief';
+
+export const BRIEF_FR: Messages<typeof BRIEF> = {
+  view_economist: "Économie",
+  title_economist: "Note de l'économiste",
+  note_economist: "Croissance, inflation et politique monétaire, trajectoire budgétaire et position extérieure.",
+  cta_economist: "Rédiger la note pays",
+  view_banker: "Émetteur",
+  title_banker: "Note sur l'émetteur",
+  note_banker: "Accès au marché, besoin de financement, moment pour aller sur le marché, et prix par rapport aux pairs.",
+  cta_banker: "Rédiger la note émetteur",
+  view_official: "Soutenabilité",
+  title_official: "Note sur la soutenabilité de la dette",
+  note_official: "Trajectoire de la dette, une projection à cinq ans avec des chocs standard, l'ajustement qui stabiliserait la dette, et la position extérieure.",
+  cta_official: "Rédiger l'évaluation",
+  viewAria: "Vue de la note",
+  whatItMeans: "Ce que cela signifie : ",
+  rulesNote: "Ces observations sont de simples règles appliquées aux chiffres en direct ci-dessous, pas une prévision ni un conseil. Les chiffres manquants en sont exclus.",
+  rulesGuides: " « Qu'est-ce que c'est ? » explique un chiffre avec des mots simples, et « Pourquoi manquant ? » indique pourquoi un chiffre est absent et ce qui permettrait de le renseigner. Le bouton d'aide en haut règle le niveau d'explication.",
+  rulesHover: " Survolez un chiffre manquant pour en voir la raison.",
+  whyMissing: "Pourquoi manquant ?",
+  whatIsThis: "Qu'est-ce que c'est ?",
+  howToRead: "Comment le lire : ",
+  explain: "Expliquer",
+  explainPanelTitle: "Demander au conseil ce que montre ce panneau et ce que cela signifie",
+  explainRowTitle: "Demander au conseil ce que signifie ce chiffre et pourquoi il se situe là",
+  marketEdgeNote: "Ce que fait l'économie, ce que les marchés intègrent dans les prix, et où les deux divergent.",
+  sec_economy: "Économie et politique",
+  sec_markets: "Marchés et positionnement",
+  sec_risks: "Risques et liens",
+  emptyOne: "Pas encore disponible : 1 panneau n'a pas de chiffres pour {country}",
+  emptyMany: "Pas encore disponible : {n} panneaux n'ont pas de chiffres pour {country}",
+  emptyOpen: "{list}. Ouvrez pour voir ce dont chacun a besoin.",
+  compareLine: "{country} face au reste de votre liste de suivi et aux marchés de référence se trouve dans Recherche › Comparer des pays.",
+  openCompare: "Ouvrir Comparer",
+};

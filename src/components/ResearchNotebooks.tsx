@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BookOpen, Download, Plus, Trash2 } from 'lucide-react';
+import { useT, useTx } from '../i18n/useLang';
+import { TOOLS } from '../i18n/messages/tools';
 import { suggestedTopics, type Notebook } from '../utils/researchLibrary';
 import { useResearchLibrary } from './SavedResearch';
 
@@ -20,6 +22,8 @@ export const ResearchNotebooks: React.FC<{ countries?: Country[] }> = ({ countri
   const [open, setOpen] = useState<Notebook | null>(null);
   const [notes, setNotes] = useState('');
   const [notesSaved, setNotesSaved] = useState(true);
+  const t = useT(TOOLS);
+  const tx = useTx();
 
   const names = Object.fromEntries(countries.map((c) => [c.iso3, c.countryName]));
   const topics = suggestedTopics(lib.briefs, lib.notebooks, names).slice(0, 4);
@@ -60,18 +64,18 @@ export const ResearchNotebooks: React.FC<{ countries?: Country[] }> = ({ countri
   };
 
   return (
-    <section className="ui-panel" data-research-notebooks="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
+    <section className="ui-panel" data-research-notebooks="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          Research notebooks
+          {t('nb_title')}
         </h2>
         <p className="ui-label">
-          Group saved council conversations and documents by topic, add your notes, and download the lot as one Markdown file. Kept on this computer in data/local/research.json.
+          {t('nb_intro')}
         </p>
       </header>
       <div className="p-4 space-y-3">
-        {lib.error && <p className="text-xs text-amber-700 dark:text-amber-400">{lib.error}</p>}
+        {lib.error && <p className="text-xs text-amber-700 dark:text-amber-400">{tx(lib.error)}</p>}
 
         <form
           className="flex flex-wrap items-center gap-2"
@@ -81,27 +85,27 @@ export const ResearchNotebooks: React.FC<{ countries?: Country[] }> = ({ countri
           }}
         >
           <label className="sr-only" htmlFor="notebook-title">
-            New notebook title
+            {t('nb_newTitle')}
           </label>
           <input
             id="notebook-title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="New notebook, e.g. Brazil fiscal"
+            placeholder={t('nb_placeholder')}
             maxLength={120}
             className="flex-1 min-w-[12rem] px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
           />
           <button type="submit" className="ui-btn" disabled={!title.trim()}>
-            <Plus className="w-3.5 h-3.5" /> Start notebook
+            <Plus className="w-3.5 h-3.5" /> {t('nb_start')}
           </button>
         </form>
 
         {topics.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5" data-notebook-topics="true">
-            <span className="text-xs text-slate-500 dark:text-slate-400">From your saved conversations:</span>
-            {topics.map((t) => (
-              <button key={t.iso3} type="button" className="ui-pill" onClick={() => void create(t.title, t.briefIds)}>
-                + {t.title} ({t.briefIds.length} conversations)
+            <span className="text-xs text-slate-500 dark:text-slate-400">{t('nb_fromSaved')}</span>
+            {topics.map((tp) => (
+              <button key={tp.iso3} type="button" className="ui-pill" onClick={() => void create(tp.title, tp.briefIds)}>
+                {t('nb_topic', { title: tp.title, n: tp.briefIds.length })}
               </button>
             ))}
           </div>
@@ -109,7 +113,7 @@ export const ResearchNotebooks: React.FC<{ countries?: Country[] }> = ({ countri
 
         {lib.notebooks.length === 0 && !lib.error && (
           <p className="ui-body">
-            No notebooks yet. Save a conversation from Council chat on Workspace, then start a notebook here and tick what belongs in it.
+            {t('nb_none')}
           </p>
         )}
 
@@ -125,19 +129,20 @@ export const ResearchNotebooks: React.FC<{ countries?: Country[] }> = ({ countri
                 >
                   <span className="text-sm text-slate-900 dark:text-white">{n.title}</span>
                   <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
-                    {n.briefIds.length} conversation{n.briefIds.length === 1 ? '' : 's'} · {n.docIds.length} document{n.docIds.length === 1 ? '' : 's'}
-                    {n.notesChars ? ' · notes' : ''} · changed {day(n.updatedAt)}
+                    {t('nb_counts', { c: n.briefIds.length, d: n.docIds.length })}
+                    {n.notesChars ? t('nb_notesTag') : ''}
+                    {t('nb_changed', { date: day(n.updatedAt) })}
                   </span>
                 </button>
                 {openId === n.id && (
                   <div className="px-2 pb-3 pt-1 space-y-3 border-t border-slate-100 dark:border-slate-800">
                     {!open ? (
-                      <p className="text-xs text-slate-500">Opening…</p>
+                      <p className="text-xs text-slate-500">{t('nb_opening')}</p>
                     ) : (
                       <>
                         <div>
                           <label className="ui-label block mb-1" htmlFor={`nb-notes-${n.id}`}>
-                            Your notes
+                            {t('nb_notes')}
                           </label>
                           <textarea
                             id={`nb-notes-${n.id}`}
@@ -149,20 +154,20 @@ export const ResearchNotebooks: React.FC<{ countries?: Country[] }> = ({ countri
                             onBlur={() => void saveNotes()}
                             rows={5}
                             maxLength={20000}
-                            placeholder="What you think, what to check next, what would change your mind."
+                            placeholder={t('nb_notesPlaceholder')}
                             className="w-full px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                           />
                           <div className="flex items-center gap-2">
                             <button type="button" className="ui-btn" disabled={notesSaved} onClick={() => void saveNotes()}>
-                              {notesSaved ? 'Notes saved' : 'Save notes'}
+                              {notesSaved ? t('nb_notesSaved') : t('nb_saveNotes')}
                             </button>
                           </div>
                         </div>
 
                         <fieldset>
-                          <legend className="ui-label mb-1">Saved conversations in this notebook</legend>
+                          <legend className="ui-label mb-1">{t('nb_conversations')}</legend>
                           {lib.briefs.length === 0 ? (
-                            <p className="text-xs text-slate-500 dark:text-slate-400">No saved conversations yet.</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{t('nb_noConversations')}</p>
                           ) : (
                             <ul className="max-h-48 overflow-auto space-y-0.5">
                               {lib.briefs.map((b) => (
@@ -186,7 +191,7 @@ export const ResearchNotebooks: React.FC<{ countries?: Country[] }> = ({ countri
 
                         {lib.docs.length > 0 && (
                           <fieldset>
-                            <legend className="ui-label mb-1">Saved documents in this notebook</legend>
+                            <legend className="ui-label mb-1">{t('nb_documents')}</legend>
                             <div className="flex flex-wrap gap-1.5">
                               {lib.docs.map((d) => (
                                 <label key={d.id} className="ui-pill inline-flex items-center gap-1 cursor-pointer">
@@ -200,7 +205,7 @@ export const ResearchNotebooks: React.FC<{ countries?: Country[] }> = ({ countri
 
                         <div className="flex flex-wrap gap-2">
                           <a className="ui-btn inline-flex" href={`/api/export/notebook/${encodeURIComponent(open.id)}.md`} download onClick={() => void saveNotes()}>
-                            <Download className="w-3.5 h-3.5" /> Download notebook (Markdown)
+                            <Download className="w-3.5 h-3.5" /> {t('nb_download')}
                           </a>
                           <button
                             type="button"
@@ -209,11 +214,11 @@ export const ResearchNotebooks: React.FC<{ countries?: Country[] }> = ({ countri
                               if (await lib.deleteNotebook(open.id)) void show(null);
                             }}
                           >
-                            <Trash2 className="w-3.5 h-3.5" /> Delete notebook
+                            <Trash2 className="w-3.5 h-3.5" /> {t('nb_delete')}
                           </button>
                         </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                          The download holds your notes, each conversation as its full council brief with sources and references, and the opening of each document. Deleting the notebook keeps the conversations and documents.
+                          {t('nb_footer')}
                         </p>
                       </>
                     )}

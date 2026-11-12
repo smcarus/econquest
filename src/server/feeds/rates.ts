@@ -19,9 +19,11 @@ import { lsegSnapshotUrl, lsegTokenRequest, type OwnCdsQuote, ownCdsSettings, pa
 import { type DebtSchedule, idsUrl, parseIds, parseQeds, qedsUrl } from '../../utils/debtSchedule';
 import { writeFileAtomic } from '../../utils/atomicWrite';
 import { CBPOL_DATASET, parseCbpolCsv } from '../../utils/bisPolicyRates';
+import { bisPrivateDebtUrl, parseBisPrivateDebt } from '../../utils/sectorBalances';
 import { type BisCreditCycle, bisCreditGapUrl, bisDsrUrl, bisPropertyUrl, parseBisCreditGap, parseBisDsr, parseBisProperty } from '../../utils/bisCreditCycle';
 import { bocBoeEditions, bocBoeUrl, parseBocBoeCsv, type SovereignDefaults } from '../../utils/sovereignDefaults';
 import { idsChinaUrl, idsCreditorsUrl, type IdsCreditors, parseIdsCreditors } from '../../utils/idsCreditors';
+import { chokepointsUrl, parsePortWatchStats, type PortWatchChokepoints, type PortWatchPorts, portsUrl, type PwMonth } from '../../utils/portWatch';
 import { type AlfredSeries, alfredUrl, parseAlfred } from '../../utils/alfredVintages';
 import { ECB_SPF_SERIES, ecbSpfUrl, FOCUS_URL, type InflationSurveys, parseEcbCsv, parseFocus12m } from '../../utils/inflationSurveys';
 import { gscpiFromBytes, GSCPI_URLS, STRESS_INDICES, type StressPulls } from '../../utils/stressIndices';
@@ -136,14 +138,15 @@ export async function fetchBisCreditCycle(iso3: string): Promise<BisCreditCycle 
   if (!iso2) return null;
   const hit = bisCreditCache.get(iso3);
   if (hit && Date.now() - hit.at < (hit.value ? 12 : 1) * 60 * 60 * 1000) return hit.value;
-  const [gapCsv, dsrCsv, sppCsv] = await Promise.all([
+  const [gapCsv, dsrCsv, sppCsv, tcCsv] = await Promise.all([
     fetchTextWithTimeout(bisCreditGapUrl(iso2)),
     fetchTextWithTimeout(bisDsrUrl(iso2)),
     fetchTextWithTimeout(bisPropertyUrl(iso2)),
+    fetchTextWithTimeout(bisPrivateDebtUrl(iso2)),
   ]);
   const value: BisCreditCycle | null =
-    gapCsv || dsrCsv || sppCsv
-      ? { fetchedAt: new Date().toISOString(), ...parseBisCreditGap(gapCsv), ...parseBisDsr(dsrCsv), ...parseBisProperty(sppCsv) }
+    gapCsv || dsrCsv || sppCsv || tcCsv
+      ? { fetchedAt: new Date().toISOString(), ...parseBisCreditGap(gapCsv), ...parseBisDsr(dsrCsv), ...parseBisProperty(sppCsv), ...parseBisPrivateDebt(tcCsv) }
       : null;
   bisCreditCache.set(iso3, { at: Date.now(), value });
   return value;
@@ -828,5 +831,45 @@ export async function fetchReerLong(iso3: string): Promise<Array<{ period: strin
   const pts = csv ? parseReerMonthly(csv) : [];
   const value = pts.length ? pts : null;
   reerLongCache.set(iso2, { at: Date.now(), value });
+  return value;
+}
+
+/**
+ * IMF PortWatch (src/utils/portWatch.ts): monthly sums for the chosen chokepoints, and for one
+ * country's ports. PortWatch updates weekly, so each is kept a day (an hour after a miss).
+ */
+async function portWatchStats(url: string, fields: string[]): Promise<{ map: Map<string, PwMonth[]> } | { reason: string }> {
+  try {
+    const res = await fetchWithTimeout(url, 25000);
+    if (!res.ok) return { reason: `IMF PortWatch answered HTTP ${res.status}` };
+    const json = (await res.json()) as { error?: { message?: string } };
+    if (json?.error) return { reason: `IMF PortWatch refused the query (${String(json.error.message || 'error').slice(0, 120)})` };
+    return { map: parsePortWatchStats(json, fields) };
+  } catch {
+    return { reason: 'IMF PortWatch did not answer' };
+  }
+}
+
+let chokepointsCache: { at: number; value: PortWatchChokepoints } | null = null;
+export async function fetchPortWatchChokepoints(): Promise<PortWatchChokepoints> {
+  const hit = chokepointsCache;
+  if (hit && Date.now() - hit.at < (hit.value.reason ? 1 : 24) * 60 * 60 * 1000) return hit.value;
+  const got = await portWatchStats(chokepointsUrl(), ['ships', 'volume']);
+  const fetchedAt = new Date().toISOString();
+  const value: PortWatchChokepoints =
+    'reason' in got ? { fetchedAt, byId: {}, reason: got.reason } : got.map.size ? { fetchedAt, byId: Object.fromEntries(got.map) } : { fetchedAt, byId: {}, reason: 'IMF PortWatch answered without chokepoint rows the app reads' };
+  chokepointsCache = { at: Date.now(), value };
+  return value;
+}
+
+const portsCache = new Map<string, { at: number; value: PortWatchPorts }>();
+export async function fetchPortWatchPorts(iso3: string): Promise<PortWatchPorts> {
+  const code = String(iso3 || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+  const hit = portsCache.get(code);
+  if (hit && Date.now() - hit.at < (hit.value.reason ? 1 : 24) * 60 * 60 * 1000) return hit.value;
+  const got = await portWatchStats(portsUrl(code), ['calls', 'imports', 'exports']);
+  const fetchedAt = new Date().toISOString();
+  const value: PortWatchPorts = 'reason' in got ? { iso3: code, fetchedAt, months: [], reason: got.reason } : { iso3: code, fetchedAt, months: got.map.get('') || [] };
+  portsCache.set(code, { at: Date.now(), value });
   return value;
 }

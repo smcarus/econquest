@@ -149,8 +149,9 @@ globalThis.fetch = async (input, init = {}) => {
       'FREQ,ADJUSTMENT,REF_AREA,COUNTERPART_AREA,REF_SECTOR,COUNTERPART_SECTOR,CONSOLIDATION,ACCOUNTING_ENTRY,STO,INSTR_ASSET,MATURITY,EXPENDITURE,UNIT_MEASURE,CURRENCY_DENOM,VALUATION,PRICES,TRANSFORMATION,CUST_BREAKDOWN,TITLE,UNIT_MULT,TIME_PERIOD,OBS_VALUE,OBS_STATUS';
     return new Response(`${head}\nQ,N,ID,XW,S13,S1,N,L,LE,F3,T,_Z,USD,_T,N,V,N,_T,"Indonesia - Debt sec, issued by gen govt",9,2026-Q1,507.4643714097,A\n`, { status: 200 });
   }
-  // World Bank WDI trade shares (one call per indicator, all countries): Turkey and Egypt only.
-  if (url.includes('api.worldbank.org') && /\/indicator\/(TM\.VAL\.FUEL|TX\.VAL\.FUEL|NE\.IMP\.GNFS|NE\.EXP\.GNFS)/.test(url)) {
+  // World Bank WDI trade shares (one call per indicator, many countries at once): Turkey and Egypt only.
+  // The one-country calls of the brief's Trade group (G18) are left to fail, as offline.
+  if (url.includes('api.worldbank.org') && url.includes('mrnev=1') && /\/indicator\/(TM\.VAL\.FUEL|TX\.VAL\.FUEL|NE\.IMP\.GNFS|NE\.EXP\.GNFS)/.test(url)) {
     const code = url.match(/\/indicator\/([A-Z.]+)/)[1];
     const v = { 'TM.VAL.FUEL.ZS.UN': [20, 15], 'TX.VAL.FUEL.ZS.UN': [5, 10], 'NE.IMP.GNFS.ZS': [35, 25], 'NE.EXP.GNFS.ZS': [30, 15] }[code];
     const row = (iso, value) => ({ indicator: { id: code }, countryiso3code: iso, date: '2025', value });

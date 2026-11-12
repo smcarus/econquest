@@ -6,6 +6,7 @@
  * Browser-safe; the server builds the files and the browser only links to them.
  */
 import type { OpenDataSnapshot } from '../types/council';
+import { TAG_COLUMNS, seriesTags, tagCells } from './seriesDefinitions';
 import { getSnapshotDataStatus } from './dataStatus';
 import { pathMissing } from './countryNotes';
 import { ARCHIVE_FIGURES, snapshotValue, type Series } from './seriesHistory';
@@ -30,13 +31,15 @@ export function toCsv(header: string[], rows: Cell[][]): string {
 }
 
 /** Long format: one row per observation, every row self-describing. */
-export const SERIES_HEADER = ['iso3', 'series_id', 'series', 'unit', 'frequency', 'date', 'value', 'source', 'source_that_day', 'pulled_at'];
+export const SERIES_HEADER = ['iso3', 'series_id', 'series', 'unit', 'frequency', 'date', 'value', 'source', 'source_that_day', 'pulled_at', ...TAG_COLUMNS];
 
 export function seriesRows(iso3: string, series: Series[]): Cell[][] {
   const rows: Cell[][] = [];
   for (const s of series) {
+    // What the series measures (data plan G6), the same on every row so each row stands alone.
+    const tags = tagCells(seriesTags(s));
     for (const p of s.points) {
-      rows.push([iso3, s.id, s.label, s.unit, s.freq, p.date, p.value, s.source, p.note ?? '', s.pulledAt ?? '']);
+      rows.push([iso3, s.id, s.label, s.unit, s.freq, p.date, p.value, s.source, p.note ?? '', s.pulledAt ?? '', ...tags]);
     }
   }
   return rows;
@@ -51,6 +54,36 @@ export const FIGURE_LIST: Array<{ field: string; label: string; unit: string }> 
   { field: 'market.hcBondSpreadBps', label: 'USD bond spread over US Treasuries (not CDS)', unit: 'bp' },
   { field: 'imf.debtToGdpForecast2027Pct', label: 'Government debt, 2027 forecast', unit: '% of GDP' },
   { field: 'market.policyRatePct', label: 'Policy rate', unit: '%' },
+  // G16 (src/utils/distributionTaxes.ts): the year of each sits in the source column.
+  { field: 'wb.giniIndex', label: 'Inequality (Gini index)', unit: 'index (0 = equal, 100 = one person has all)' },
+  { field: 'wb.taxRevenuePctGdp', label: 'Tax revenue, central government', unit: '% of GDP' },
+  { field: 'wb.taxIncomePctRevenue', label: 'Taxes on income and profits', unit: '% of revenue' },
+  { field: 'wb.taxGoodsPctRevenue', label: 'Taxes on goods and services', unit: '% of revenue' },
+  { field: 'wb.taxTradePctRevenue', label: 'Taxes on trade', unit: '% of revenue' },
+  { field: 'wb.tariffWeightedPct', label: 'Applied tariff, weighted mean', unit: '%' },
+  { field: 'wb.tariffSimplePct', label: 'Applied tariff, simple mean', unit: '%' },
+  // G17 (src/utils/peopleLiving.ts): the year of each sits in the source column; the survey year for poverty.
+  { field: 'wb.povertyLowestPct', label: 'Poverty rate, lowest international line', unit: '% of people' },
+  { field: 'wb.povertyLowerMiddlePct', label: 'Poverty rate, lower-middle-income line', unit: '% of people' },
+  { field: 'wb.povertyUpperMiddlePct', label: 'Poverty rate, upper-middle-income line', unit: '% of people' },
+  { field: 'wb.remittancesPctGdp', label: 'Remittances received', unit: '% of GDP' },
+  { field: 'wb.labourParticipationPct', label: 'Labour force participation (ILO modelled estimate)', unit: '% of people aged 15 and over' },
+  { field: 'wb.youthUnemploymentPct', label: 'Youth unemployment (ILO modelled estimate)', unit: '% of workers aged 15-24' },
+  { field: 'wb.ageDependencyRatio', label: 'Age dependency ratio', unit: 'per 100 people aged 15-64' },
+  // G19 (src/utils/debtStructure.ts).
+  { field: 'wb.interestPctRevenue', label: 'Interest payments, central government', unit: '% of revenue' },
+  // G18 (src/utils/tradeMix.ts): the year of each sits in the source column.
+  { field: 'wb.exportFuelPct', label: 'Fuel exports', unit: '% of goods exports' },
+  { field: 'wb.exportOresMetalsPct', label: 'Ores and metals exports', unit: '% of goods exports' },
+  { field: 'wb.exportFoodPct', label: 'Food exports', unit: '% of goods exports' },
+  { field: 'wb.exportManufPct', label: 'Manufactures exports', unit: '% of goods exports' },
+  { field: 'wb.importFuelPct', label: 'Fuel imports', unit: '% of goods imports' },
+  { field: 'wb.importOresMetalsPct', label: 'Ores and metals imports', unit: '% of goods imports' },
+  { field: 'wb.importFoodPct', label: 'Food imports', unit: '% of goods imports' },
+  { field: 'wb.importManufPct', label: 'Manufactures imports', unit: '% of goods imports' },
+  { field: 'wb.ghgPerHeadT', label: 'Greenhouse gas emissions per person', unit: 'tonnes CO2 equivalent' },
+  { field: 'wb.renewableSharePct', label: 'Renewable share of energy use', unit: '% of final energy consumption' },
+  { field: 'wb.netEnergyImportsPct', label: 'Net energy imports', unit: '% of energy use (negative = net exporter)' },
 ];
 
 function periodFor(snapshot: OpenDataSnapshot, field: string): string {
@@ -58,6 +91,8 @@ function periodFor(snapshot: OpenDataSnapshot, field: string): string {
   if (field === 'market.cds5YSpreadBps') return snapshot.ownCds5Y?.date ?? '';
   if (field === 'market.hcBondSpreadBps') return snapshot.hcBondSpread?.period ?? '';
   if (field === 'market.policyRatePct') return snapshot.bisPolicyRate?.date ?? '';
+  // G16 figures carry their year in the source tag ("World Bank, 2022"); the survey year for the Gini.
+  if (/^wb\.(gini|tax|tariff|poverty|remittances|labour|youth|ageDependency|interest|export|import|netEnergy|ghg|renewable)/.test(field)) return /(?:19|20)\d{2}/.exec(snapshot.liveFields?.[field] || '')?.[0] ?? '';
   const years = (snapshot.imfIndicators as { years?: Record<string, string> })?.years;
   return years?.[field] ?? '';
 }

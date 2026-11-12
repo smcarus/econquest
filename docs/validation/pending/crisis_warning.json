@@ -1,0 +1,33 @@
+{
+  "id": "crisis_warning",
+  "version": 1,
+  "registeredOn": "2026-11-11",
+  "registeredBy": "Sam (owner) chose to pre-register G23 before the tool is built (efficient build order, 2026-11-09); registered before any run and before the runner exists",
+  "plannedStep": "G23 Crisis early-warning",
+  "hypothesis": "A country-quarter in which the BIS credit-to-GDP gap is above 10 percentage points (the Basel III countercyclical buffer threshold; Drehmann and Juselius 2014) is followed by the start of a systemic banking crisis in that country within the next 12 quarters more often than country-quarters in general.",
+  "method": "crisis_warning",
+  "framework": 2,
+  "params": {
+    "gapThresholdPts": 10,
+    "horizonQuarters": 12,
+    "releaseLagQuarters": 2,
+    "excludeQuartersInCrisis": true,
+    "resampleBlock": "calendar year",
+    "resamples": 4000,
+    "seed": 20261111
+  },
+  "data": {
+    "signal": "BIS credit-to-GDP gap (WS_CREDIT_GAP, series C), as the app already reads it",
+    "outcome": "Start year of a systemic banking crisis, Laeven and Valencia (2018, IMF Working Paper 18/206), Table of crisis dates; a crisis start year counts from its first quarter",
+    "universe": "Every country with both a BIS credit gap and a Laeven-Valencia record"
+  },
+  "sample": { "from": "1980-Q1", "to": "last crisis-date year in the Laeven-Valencia file" },
+  "passMark": { "minCases": 30, "minLiftPts": 5, "maxPValue": 0.05, "minYears": 15 },
+  "knownLimits": [
+    "The Laeven-Valencia dates end in 2017 in the 2018 update; no crises after that are scored unless a newer edition is read (a newer edition would be a new version of this test).",
+    "Systemic crises are rare and many start in 2007-2008, so the result leans on one global episode; resampling whole years counts that cluster as one block, not many.",
+    "The BIS gap is a one-sided HP filter (lambda 400,000), but the series on file is today's vintage: credit and GDP revisions since each quarter are not removed. The two-quarter release lag is applied on top.",
+    "Quarters already inside a crisis are left out, so the test asks about onsets only.",
+    "Licence for the Laeven-Valencia file not confirmed (IMF working paper; no dataset terms found on 2026-11-11). The runner is built only once the licence row is settled."
+  ]
+}

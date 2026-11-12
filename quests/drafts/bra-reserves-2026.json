@@ -1,0 +1,39 @@
+{
+  "id": "bra-reserves-2026",
+  "version": 1,
+  "registeredOn": "2026-11-07",
+  "opensOn": "2026-12-01",
+  "author": "smcarus",
+  "type": "forecast",
+  "title": "Will Brazil's reserves cover more months of imports in 2026 than in 2025?",
+  "summary": "Give the probability that the World Bank's reserves in months of imports for Brazil is higher for 2026 than for 2025, both as first read on or after 1 September 2027.",
+  "countries": [
+    "BRA"
+  ],
+  "topics": [
+    "external"
+  ],
+  "region": "Americas",
+  "closesOn": "2027-01-31",
+  "rule": {
+    "kind": "direction",
+    "ref": {
+      "country": "BRA",
+      "series": "reserves_months"
+    },
+    "from": {
+      "period": "2025",
+      "on": "2027-09-01"
+    },
+    "to": {
+      "period": "2026",
+      "on": "2027-09-01"
+    },
+    "op": "higher"
+  },
+  "fallback": "unresolvable",
+  "knownLimits": [
+    "The World Bank may not have published 2026 by the settle date; then the Quest is Unresolvable.",
+    "Both years are read from the same download, so a revision to 2025 counts."
+  ]
+}

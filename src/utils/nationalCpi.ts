@@ -28,8 +28,17 @@ export const BCB_LONG = 'Banco Central do Brasil, IPCA 12-month inflation (SGS 1
 export const EUROSTAT_SHORT = 'Eurostat HICP';
 export const EUROSTAT_LONG = 'Eurostat HICP, annual rate of change (prc_hicp_minr, all items)';
 
-export function bcbSgsUrl(code: number, last = 24): string {
-  return `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${code}/dados/ultimos/${last}?formato=json`;
+/**
+ * BCB SGS by date range: the first of the month `months` months back up to today. The "last N" form
+ * (/dados/ultimos/N) refused N=24 with HTTP 400 on 2026-11-05 and N=3 by 2026-11-11, while the date
+ * range form still answered (checked in a browser on Sam's Mac, 2026-11-11).
+ */
+export function bcbSgsUrl(code: number, months = 24, now: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - months, 1));
+  const from = `01/${pad(start.getUTCMonth() + 1)}/${start.getUTCFullYear()}`;
+  const to = `${pad(now.getUTCDate())}/${pad(now.getUTCMonth() + 1)}/${now.getUTCFullYear()}`;
+  return `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${code}/dados?formato=json&dataInicial=${from}&dataFinal=${to}`;
 }
 
 /** BCB SGS reply: [{"data":"01/09/2026","valor":"4.58"}, ...] oldest first. */
@@ -88,16 +97,22 @@ export function parseEurostatHicp(json: unknown): Record<string, { period: strin
 export type CpiSeriesWithSource = Record<string, { basis: CpiBasis; points: { period: string; value: number }[]; short?: string; long?: string }>;
 
 /**
- * Puts each national series in place of the OECD one for its country when it is at least as new.
- * Keys are ISO3 (the OECD reply also keys countries by ISO3).
+ * One series per country, the freshest of the sources it has (plan G3: national or Eurostat, then
+ * IMF monthly CPI, then the OECD copy). The newest month wins; on the same month the order of
+ * preference decides (national, IMF, OECD). Each country's series comes whole from one source,
+ * never stitched from two, and carries that source's label. Keys are ISO3.
  */
-export function mergeNationalCpi(oecd: CpiSeries | null | undefined, national: Record<string, NationalCpiSeries>): CpiSeriesWithSource | null {
+export function mergeNationalCpi(oecd: CpiSeries | null | undefined, national: Record<string, NationalCpiSeries>, imf: Record<string, NationalCpiSeries> = {}): CpiSeriesWithSource | null {
   const out: CpiSeriesWithSource = { ...(oecd || {}) };
-  for (const [iso3, n] of Object.entries(national)) {
-    if (!n.points.length) continue;
-    const mine = n.points[n.points.length - 1].period;
-    const theirs = out[iso3]?.points?.[out[iso3].points.length - 1]?.period;
-    if (!theirs || mine >= theirs) out[iso3] = { basis: 'national', points: n.points, short: n.short, long: n.long };
+  const lastOf = (pts?: { period: string }[]) => pts?.[pts.length - 1]?.period;
+  // IMF first, then national, so a national series wins a tie with the IMF.
+  for (const [basis, src] of [['imf', imf], ['national', national]] as const) {
+    for (const [iso3, n] of Object.entries(src)) {
+      if (!n?.points?.length) continue;
+      const mine = lastOf(n.points)!;
+      const theirs = lastOf(out[iso3]?.points);
+      if (!theirs || mine >= theirs) out[iso3] = { basis, points: n.points, short: n.short, long: n.long };
+    }
   }
   return Object.keys(out).length ? out : null;
 }

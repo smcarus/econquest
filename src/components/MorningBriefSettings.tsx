@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Play } from 'lucide-react';
+import { useLang, useT, useTx } from '../i18n/useLang';
+import { MENU } from '../i18n/messages/menu';
 import { DEFAULT_QUESTIONS, MAX_QUESTIONS, type MorningBriefFile, type MorningBriefSettings as Settings } from '../utils/morningBrief';
 
 /**
@@ -19,6 +21,9 @@ const browserZone = () => {
 };
 
 export const MorningBriefSettings: React.FC = () => {
+  const t = useT(MENU);
+  const lang = useLang();
+  const tx = useTx();
   const [reply, setReply] = useState<Reply | null>(null);
   const [draft, setDraft] = useState<Settings | null>(null);
   const [error, setError] = useState('');
@@ -33,9 +38,9 @@ export const MorningBriefSettings: React.FC = () => {
       setReply(r);
       setDraft({ ...r.settings, timeZone: r.settings.enabled ? r.settings.timeZone : browserZone() });
     } catch (e) {
-      setError(`The app server did not answer (${e instanceof Error ? e.message : String(e)}).`);
+      setError(t('c_serverDown', { detail: e instanceof Error ? e.message : String(e) }));
     }
-  }, []);
+  }, [t]);
   useEffect(() => {
     void load();
   }, [load]);
@@ -54,7 +59,7 @@ export const MorningBriefSettings: React.FC = () => {
       if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
       setReply((r) => (r ? { ...r, ...body } : r));
       setDraft(body.settings);
-      setSaved('Saved.');
+      setSaved(t('mb_saved'));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -75,7 +80,7 @@ export const MorningBriefSettings: React.FC = () => {
     }
   };
 
-  if (!reply || !draft) return <p className="text-sm text-slate-500">{error || 'Loading…'}</p>;
+  if (!reply || !draft) return <p className="text-sm text-slate-500">{error || t('c_loading')}</p>;
   const qs = draft.questions.length ? draft.questions : [''];
   const setQ = (i: number, v: string) => setDraft({ ...draft, questions: qs.map((q, j) => (j === i ? v : q)) });
   const last = reply.lastRun;
@@ -83,22 +88,21 @@ export const MorningBriefSettings: React.FC = () => {
   return (
     <div className="space-y-5" data-morning-brief="true">
       <p className="text-xs text-slate-600 dark:text-slate-400">
-        At the time you set, the council answers your standing questions about a watchlist from the app's figures, your AI model writes the summary, and each one is saved to saved research
-        (Reports) with what moved since the same question last ran. The app must be running then; if it was closed, the brief runs when it next starts that day.
+        {t('mb_intro')}
       </p>
 
       <div className="flex flex-wrap items-end gap-3">
         <label className="inline-flex items-center gap-2 text-sm">
           <input type="checkbox" checked={draft.enabled} onChange={(e) => setDraft({ ...draft, enabled: e.target.checked })} />
-          Run every day
+          {t('mb_daily')}
         </label>
         <label className="text-xs text-slate-600 dark:text-slate-400">
-          At
-          <input type="time" className={`${FIELD} ml-2`} value={draft.time} onChange={(e) => setDraft({ ...draft, time: e.target.value })} aria-label="Time of the morning brief" />
+          {t('mb_at')}
+          <input type="time" className={`${FIELD} ml-2`} value={draft.time} onChange={(e) => setDraft({ ...draft, time: e.target.value })} aria-label={t('mb_timeAria')} />
         </label>
         <label className="text-xs text-slate-600 dark:text-slate-400">
-          Watchlist
-          <select className={`${FIELD} ml-2`} value={draft.watchlistId || reply.watchlists[0]?.id || ''} onChange={(e) => setDraft({ ...draft, watchlistId: e.target.value })} aria-label="Watchlist for the morning brief">
+          {t('mb_watchlist')}
+          <select className={`${FIELD} ml-2`} value={draft.watchlistId || reply.watchlists[0]?.id || ''} onChange={(e) => setDraft({ ...draft, watchlistId: e.target.value })} aria-label={t('mb_watchlistAria')}>
             {reply.watchlists.map((w) => (
               <option key={w.id} value={w.id}>
                 {w.name} ({w.countries})
@@ -108,34 +112,35 @@ export const MorningBriefSettings: React.FC = () => {
         </label>
       </div>
       <p className="text-xs text-slate-500 dark:text-slate-400" data-morning-next="true">
-        Next: {reply.next}. Times are read in {browserZone()}.
+        {t('mb_next', { when: tx(reply.next), zone: browserZone() })}
       </p>
 
       <div>
-        <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Standing questions</h4>
+        <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('mb_questions')}</h4>
+        {lang !== 'en' && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{t('mb_qNote')}</p>}
         <div className="mt-2 space-y-2">
           {qs.map((q, i) => (
-            <input key={i} className={`${FIELD} block w-full`} value={q} maxLength={300} placeholder="A question for the council" onChange={(e) => setQ(i, e.target.value)} aria-label={`Question ${i + 1}`} />
+            <input key={i} className={`${FIELD} block w-full`} value={q} maxLength={300} placeholder={t('mb_qPh')} onChange={(e) => setQ(i, e.target.value)} aria-label={t('mb_qAria', { n: i + 1 })} />
           ))}
         </div>
         <div className="mt-2 flex flex-wrap gap-2">
           {qs.length < MAX_QUESTIONS && (
             <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setDraft({ ...draft, questions: [...qs, ''] })}>
-              Add a question
+              {t('mb_add')}
             </button>
           )}
           <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setDraft({ ...draft, questions: DEFAULT_QUESTIONS })}>
-            Use the starting questions
+            {t('mb_defaults')}
           </button>
         </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" className="ui-btn ui-btn-primary" onClick={() => void save({ ...draft, questions: qs.map((q) => q.trim()).filter(Boolean) })}>
-          Save
+          {t('c_save')}
         </button>
         <button type="button" className="ui-btn inline-flex items-center gap-1.5" onClick={() => void runNow()} disabled={running || reply.running}>
-          <Play className="w-3.5 h-3.5" aria-hidden /> {running || reply.running ? 'Running…' : 'Run now'}
+          <Play className="w-3.5 h-3.5" aria-hidden /> {running || reply.running ? t('mb_running') : t('mb_run')}
         </button>
         {saved && <span className="text-xs text-emerald-700 dark:text-emerald-400" role="status">{saved}</span>}
       </div>
@@ -143,7 +148,7 @@ export const MorningBriefSettings: React.FC = () => {
       {last && (
         <div data-morning-last="true">
           <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-            Last brief: {new Date(last.at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })} ({last.trigger === 'manual' ? 'run by hand' : 'scheduled'}), {last.watchlist}, {last.countries} countries
+            {t('mb_last', { when: new Date(last.at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }), how: last.trigger === 'manual' ? t('mb_manual') : t('mb_scheduled'), watchlist: last.watchlist, n: last.countries })}
           </h4>
           <ul className="mt-1 space-y-1">
             {last.results.map((r, i) => (
@@ -152,13 +157,13 @@ export const MorningBriefSettings: React.FC = () => {
               </li>
             ))}
           </ul>
-          <p className="mt-1 text-xs text-slate-500">Open them under Reports &gt; Saved research, where each starts with "Morning brief:".</p>
+          <p className="mt-1 text-xs text-slate-500">{t('mb_open')}</p>
         </div>
       )}
 
       {error && (
         <p className="text-xs text-rose-700 dark:text-rose-400" role="alert">
-          {error}
+          {tx(error)}
         </p>
       )}
     </div>

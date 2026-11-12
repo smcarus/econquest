@@ -1,4 +1,6 @@
 import React from 'react';
+import { useT, useTx } from '../i18n/useLang';
+import { REPORTS } from '../i18n/messages/reports';
 
 /**
  * A workflow page (Portfolio, Reports): a title, an optional summary panel, then tabs.
@@ -94,7 +96,7 @@ interface WorkspacePageProps {
   ariaLabel: string;
 }
 
-export const WorkspacePage: React.FC<WorkspacePageProps> = ({
+export const WorkspacePage: React.FC<WorkspacePageProps> = function WorkspacePage({
   title,
   subtitle,
   tabs,
@@ -106,7 +108,9 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   actions,
   summary,
   ariaLabel,
-}) => {
+}) {
+  const t = useT(REPORTS);
+  const tx = useTx();
   const tab: WorkspaceTab | undefined = tabs.find((t) => t.id === activeTabId) || tabs[0];
   const desk = tab ? (tab.desks.includes(activeDesk) ? activeDesk : tab.desks[0]) : undefined;
 
@@ -123,15 +127,15 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
         {summary && <div className="mt-3">{summary}</div>}
         {tabs.length > 1 && tab && (
         <nav className="mt-3 flex gap-1 ui-scroll-x border-t border-slate-100 dark:border-slate-800" aria-label={ariaLabel}>
-          {tabs.map((t) => (
+          {tabs.map((tb) => (
             <button
-              key={t.id}
+              key={tb.id}
               type="button"
-              onClick={() => onChangeTab(t.id)}
-              aria-current={t.id === tab.id ? 'page' : undefined}
+              onClick={() => onChangeTab(tb.id)}
+              aria-current={tb.id === tab.id ? 'page' : undefined}
               className="ui-tab"
             >
-              {t.label}
+              {tx(tb.label)}
             </button>
           ))}
         </nav>
@@ -142,9 +146,9 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
       {tab && desk && (
       <>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        {tabs.length > 1 && <p className="ui-label">{tab.hint}</p>}
+        {tabs.length > 1 && <p className="ui-label">{tx(tab.hint)}</p>}
         {tab.desks.length > 1 && (
-          <div className="flex flex-wrap gap-1.5" role="tablist" aria-label={`${tab.label} tools`}>
+          <div className="flex flex-wrap gap-1.5" role="tablist" aria-label={t('rp_tools', { tab: tx(tab.label) })}>
             {tab.desks.map((d) => (
               <button
                 key={d}
@@ -154,7 +158,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
                 onClick={() => onChangeDesk(d)}
                 className="ui-pill"
               >
-                {deskLabel(d)}
+                {tx(deskLabel(d))}
               </button>
             ))}
           </div>

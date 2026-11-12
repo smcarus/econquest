@@ -9,11 +9,16 @@
  *
  * Browser-safe.
  */
+import { isOwnSource } from '../engine/ownSeries';
 import { DATA_LICENCES, LICENCE_STATUS_LABEL, type LicenceRow, type LicenceShare, type LicenceStatus } from '../data/dataLicences';
 
 /** Register id and the words in a source text that name it. */
 const SOURCE_PATTERNS: Array<[string, RegExp]> = [
-  ['imf', /\bIMF\b|World Economic Outlook|Fiscal Monitor|\bCOFER\b|DataMapper/i],
+  ['imf_portwatch', /PortWatch/i],
+  ['imf_lic_dsa', /LIC DSAs/i],
+  ['aiddata', /AidData/i],
+  ['dssi_cf', /Paris Club|Debt Service Suspension/i],
+  ['imf', /\bIMF\b(?! PortWatch)|World Economic Outlook|Fiscal Monitor|\bCOFER\b|DataMapper/i],
   ['comtrade', /Comtrade/i],
   ['wits', /\bWITS\b/],
   ['bis', /\bBIS\b/],
@@ -23,8 +28,10 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['fred', /\bFRED\b/],
   ['oecd', /\bOECD\b(?! via FRED)|DBnomics/i],
   ['eurostat', /Eurostat|\bHICP\b/i],
+  ['ons', /\bONS\b|Office for National Statistics/],
   ['cftc', /\bCFTC\b/i],
   ['tic', /\bTIC\b|Treasury International Capital/],
+  ['us_fiscal_data', /Fiscal Data|Treasury Securities Auctions/i],
   ['eia', /\bEIA\b/],
   ['gdelt', /GDELT/i],
   ['ucdp', /\bUCDP\b|Uppsala Conflict/i],
@@ -43,6 +50,9 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['acled', /\bACLED\b/],
   ['evds', /\bEVDS\b|\bTCMB\b/],
   ['own', /\byour (own|holdings|connector)\b|\bLSEG\b|\byour \S+ data\b/i],
+  ['imf_investor_base', /Investor Base/i],
+  ['owid_energy', /Our World in Data energy|Energy Institute/i],
+  ['ilostat', /ILOSTAT/i],
   ['pinksheet', /Pink Sheet|pink_sheet/i],
   ['worldbank', /World Bank|\bWGI\b|\bWDI\b|\bIDS\b|\bQEDS\b/],
 ];
@@ -91,6 +101,7 @@ export function shareForSource(source: string | undefined): { share: LicenceShar
 
 /** Short text for a table cell or a references line. */
 export function licenceLabelForSource(source: string | undefined): string {
+  if (isOwnSource(source)) return 'Your own file: terms as you stated them, not checked by the app';
   const lic = licenceForSource(source);
   return lic ? lic.label : 'Not in the licence register';
 }

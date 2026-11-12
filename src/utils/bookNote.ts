@@ -1,5 +1,4 @@
 import type { LiveWatchlistItem } from '../types/council';
-import type { StagedTradeTicketSpec } from './nssYieldCurveAndCatalystEngine';
 import { summariseBook, type Holding } from './holdings';
 import { missingReason, toLive, type FigureKey } from './liveFigures';
 import { cdsSourceNote, yieldSourceNote } from './watchlistYield';
@@ -12,7 +11,7 @@ import { missingRow, when, type BriefGroup, type BriefRow, type CountryBrief, ty
  * at equal weight when nothing is imported, and say which.
  *
  * Every judgement is a stated rule on the figures shown. Rows come in with built-in figures already
- * removed (toLive), so a country without your own CDS or an official yield simply
+ * removed (toLive), so a country without your own CDS or an official yield
  * has no value for it: averages use only the countries that have one and say what share of the book
  * that is, and nothing is filled in (Sam, 2026-11-04).
  */
@@ -152,7 +151,7 @@ const basisNote = (v: BookView) =>
  * Portfolio manager: the book as a whole.
  * ------------------------------------------------------------------------------------------ */
 
-export function pmBookBrief(v: BookView, tickets: StagedTradeTicketSpec[], now: Date = new Date()): CountryBrief {
+export function pmBookBrief(v: BookView, now: Date = new Date()): CountryBrief {
   if (!v.lines.length) return { headline: 'No holdings and an empty watchlist.', judgements: [], groups: [] };
   const f = facts(v, now);
   const top3 = [...v.lines].sort((a, b) => b.weight - a.weight).slice(0, 3).map((l) => `${l.countryName} ${pct0(l.weight)}`);
@@ -183,10 +182,6 @@ export function pmBookBrief(v: BookView, tickets: StagedTradeTicketSpec[], now: 
   }
   if (v.fromHoldings && v.dv01UsdK !== undefined)
     j.push(`A 10 bp widening in all spreads would cost about ${usd(Math.abs(v.dv01UsdK * 10) / 1000)} on the credit positions with a duration.`);
-  if (tickets.length) {
-    const names = [...new Set(tickets.map((t) => t.countryName))];
-    j.push(`${tickets.length} staged trade ${tickets.length === 1 ? 'idea' : 'ideas'}, in ${names.join(', ')}; they are not in the weights above until booked.`);
-  }
   if (v.uncovered.length) j.push(`The app does not cover ${v.uncovered.join(', ')}: these count in notional but have no figures.`);
 
   const book: BriefRow[] = [
@@ -233,17 +228,15 @@ export const BOOK_SECTIONS: Record<string, string> = {
   concentration: 'Concentration',
   figures: 'Figures by country',
   events: 'Next 30 days',
-  trades: 'Staged trade ideas',
   method: 'Method and sources',
 };
 
 export function buildBookSections(
   v: BookView,
-  tickets: StagedTradeTicketSpec[],
   include: (id: string) => boolean,
   now: Date = new Date()
 ): NoteSection[] {
-  const brief = pmBookBrief(v, tickets, now);
+  const brief = pmBookBrief(v, now);
   const f = facts(v, now);
   const out: NoteSection[] = [];
   const add = (id: string, lines: string[]) => include(id) && out.push({ id, heading: BOOK_SECTIONS[id], lines });
@@ -275,12 +268,6 @@ export function buildBookSections(
     f.events.length
       ? f.events.map((e) => `- ${e.date}: ${e.title} (${pct0(e.weight)} of the book; source: ${e.sourceName})`)
       : ['No official events on file for these countries in the next 30 days.']
-  );
-  add(
-    'trades',
-    tickets.length
-      ? tickets.map((t) => `- **${t.strategyTitle}** (${t.countryName}). Entry ${t.entrySpreadOrYieldBps} bps, target ${t.targetSpreadOrYieldBps}, stop ${t.stopLossSpreadOrYieldBps}; conviction ${t.convictionScore0To100}/100.`)
-      : ['No staged trade tickets.']
   );
   add('method', [
     'CDS bands: under 200 bps investment grade-like, 200 to 400 high yield, 400 to 1,000 stressed, 1,000 and over distressed.',

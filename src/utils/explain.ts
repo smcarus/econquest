@@ -18,6 +18,7 @@
  *
  * Browser-safe.
  */
+import { figureHelp } from '../data/glossary';
 import { CDS_HIDDEN } from './cdsHidden';
 import { COUNCIL_AGENTS, AGENT_ORDER, isDocFinding, sentenceCheck, type AgentAnswer, type CoreAgentId, type CouncilBrief, type CouncilPlan } from './askCouncil';
 import type { Contradiction } from './stanceCheck';
@@ -37,7 +38,7 @@ export const LENSES: Record<LensId, { label: string; agents: CoreAgentId[]; word
   fiscal: {
     label: 'Public finances',
     agents: ['fiscal'],
-    words: /fiscal|budget|\bdebt\b|deficit|\btax(?:es)?\b|spending|public finances?|government borrowing|sustainab/i,
+    words: /fiscal|budget|\bdebt\b|deficit|\btax(?:es)?\b|spending|public finances?|government borrowing|sustainab|defen[cs]e|military|reallocat|stimulus|austerity|public investment|infrastructure/i,
     asks: 'what it means for the government: debt path, interest costs, refinancing, room in the budget',
   },
   micro: {
@@ -83,6 +84,12 @@ const EXPLAIN_RE = new RegExp(
     '\\bso what\\b',
     '\\bwhy (?:does|do) (?:it|this|that) matter\\b',
     '\\bwhat (?:does|would) (?:it|this|that) mean for\\b',
+    // What-if policy questions (Sam, 2026-11-08): answered as an explanation of knock-on effects.
+    '\\bwhat (?:would|will|could|might) happen\\b',
+    '\\bwhat happens (?:if|when)\\b',
+    '\\bwhat if\\b',
+    '\\b(?:if|suppose|imagine)\\b.{0,160}?\\b(?:were|was|is|are|got|gets|being) (?:cut|halved|doubled|tripled|raised|lowered|increased|reduced|slashed|scrapped|removed|reallocated|redirected|abolished|frozen|spent|moved)\\b',
+    '\\b(?:effects?|impacts?|consequences?) of (?:cutting|halving|doubling|raising|lowering|increasing|reducing|slashing|scrapping|reallocating|redirecting|abolishing|freezing)\\b',
   ].join('|'),
   'i'
 );
@@ -156,7 +163,26 @@ export function focusAsText(f: ExplainFocus | undefined): string {
     ...(f.detail || []).map((d) => `- ${d}`),
     '',
   ];
+  const defs = plainDefinitions([f.label, ...(f.detail || [])]);
+  if (defs.length) lines.push('Plain definitions of the terms above, for wording only (they are not figures):', ...defs, '');
   return lines.join('\n');
+}
+
+/**
+ * Glossary definitions (src/data/glossary.ts) for the terms in the given labels, one line each.
+ * Only definitions without digits, so nothing here can be quoted as a figure.
+ */
+export function plainDefinitions(labels: string[], max = 4): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const l of labels) {
+    const e = figureHelp(l.split(':')[0]);
+    if (!e || seen.has(e.id) || /\d/.test(e.what)) continue;
+    seen.add(e.id);
+    out.push(`- ${e.term}: ${e.what}`);
+    if (out.length >= max) break;
+  }
+  return out;
 }
 
 export interface ExplainPlan {
@@ -164,6 +190,8 @@ export interface ExplainPlan {
   /** True when the question named the lenses; false when every lens was asked for. */
   named: boolean;
   focus?: ExplainFocus;
+  /** The reader's help level (src/utils/helpLevel.ts): 0 off, 1 key help (default), 2 full help. */
+  helpLevel?: 0 | 1 | 2;
 }
 
 const MAX_AGENTS = 6;
@@ -210,8 +238,8 @@ export function lensCoverage(lenses: LensId[], answers: AgentAnswer[]): Array<{ 
   });
 }
 
-export const EXPLAIN_INSTRUCTION = [
-  'You are the synthesis agent of a sovereign research council: a senior economist explaining a number or a pattern to a policy reader who is not a specialist.',
+const EXPLAIN_PARTS = [
+  'You are the synthesis agent of a sovereign research council: a senior economist explaining a number or a pattern to a reader with no training in economics (a student, a journalist, a citizen, an official from another field).',
   'You receive one standard document per agent (findings with the agent\'s call, each figure with its tag and source, missing data, coverage), and sometimes the exact figure or chart the user pressed Explain on.',
   'Explain; do not rank or list. Say what the number is, why it is where it is, and what it means through each lens you are given.',
   'Keep data apart from interpretation. Facts state what the figures are, quoting them as written with what they measure and the period. Reasons, lens readings and what to watch are your interpretation: connect the figures with standard economics (for example a high real rate means tight policy, which slows credit and supports the currency; a weak currency raises import prices for households and firms).',
@@ -220,8 +248,35 @@ export const EXPLAIN_INSTRUCTION = [
   'Write a lens only from the agents named for it. If a lens has no figures, leave it out; the app says it is missing.',
   'Each finding states the agent\'s stance in fixed words (policy tight, neutral or loose; ' + (CDS_HIDDEN ? 'cheap, in line or rich against peers' : 'CDS cheap, in line or rich') + '; real exchange rate strong, near average or weak). Use those words; never describe a stance differently.',
   'Passages from the Policy Document Agent are quotes from the user\'s documents: name the document, and do not treat its forecasts as data.',
-  'Plain English, full sentences, short. No advice to buy or sell.',
-].join(' ');
+  'Write so that reader understands on first reading. Short sentences, one idea each, everyday words. The first time you use a technical term (for example primary balance, real interest rate, current account, spread, carry, output gap), say what it means in a few plain words in brackets, using the plain definitions given when there are any. Write out an abbreviation the first time (International Monetary Fund, not IMF alone).',
+  'Where the figures allow, say what the reading means in daily life: prices in shops, the cost of loans and mortgages, jobs, the value of savings and of the currency, and how much room the government has to spend. Say it is a reading of the figures, not a measured effect.',
+  'If the figures cannot answer part of the question, say so plainly rather than guess.',
+  'No advice to buy or sell.',
+];
+export const EXPLAIN_INSTRUCTION = EXPLAIN_PARTS.join(' ');
+
+/**
+ * The instruction for the reader's help level. Level 1 is EXPLAIN_INSTRUCTION. Level 0 is for a
+ * reader who knows the terms: no definitions. Level 2 defines every term and adds daily-life
+ * readings throughout. The data rules are the same at every level.
+ */
+export function explainInstruction(level: 0 | 1 | 2 = 1): string {
+  if (level === 1) return EXPLAIN_INSTRUCTION;
+  if (level === 0)
+    return EXPLAIN_PARTS.map((p) =>
+      p.startsWith('You are the synthesis agent')
+        ? p.replace(/a reader with no training in economics \([^)]*\)/, 'an economist or market professional')
+        : p.startsWith('Write so that reader')
+          ? 'Write concisely for a reader who knows the terms: do not define them, and use standard abbreviations.'
+          : p.startsWith('Where the figures allow, say what the reading means in daily life')
+            ? 'Where it helps, add at most one sentence on what the reading means for households and firms, as a reading of the figures.'
+            : p,
+    ).join(' ');
+  return (
+    EXPLAIN_INSTRUCTION +
+    ' Define every technical term and every abbreviation the first time it appears, however common. In each lens, add what it means for households and firms where the figures allow.'
+  );
+}
 
 /** Goes after the documents: the lenses, the shape of the answer, and the question last. */
 export function explainTask(question: string, coverage: ReturnType<typeof lensCoverage>): string {

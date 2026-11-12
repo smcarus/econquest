@@ -326,6 +326,7 @@ export function dsaSummary(r: DsaResult): DsaSummary {
     ...(r.stabilisingPb !== undefined ? { stabilisingPb: r.stabilisingPb } : {}),
     ...(r.projectedPb !== undefined ? { projectedPb: r.projectedPb } : {}),
     ...(r.rMinusG !== undefined ? { rMinusG: r.rMinusG } : {}),
+    ...(r.baselineInputs ? { inputs: r.baselineInputs } : {}),
     method: r.method,
   };
 }

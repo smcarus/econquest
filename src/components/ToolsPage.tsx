@@ -6,6 +6,9 @@ import { HIDDEN_GROUPS, READY_BY_ID, READY_TOOLS, TOOL_CATEGORIES, type ReadyToo
 import { getSnapshotDataStatus } from '../utils/dataStatus';
 import { DSA_INPUTS } from '../utils/officialNote';
 import { DataConnectionsPanel } from './DataConnectionsPanel';
+import { useT, useTx } from '../i18n/useLang';
+import { TOOLS, type ToolsT } from '../i18n/messages/tools';
+
 
 /**
  * Tools: the analysis tools that run on live and official data, in drill-down groups by what you want to do,
@@ -19,7 +22,8 @@ interface Status {
   text: string;
 }
 
-function toolStatus(tool: ReadyTool, items: LiveWatchlistItem[], run: CouncilAssessmentRun): Status | undefined {
+function toolStatus(tool: ReadyTool, items: LiveWatchlistItem[], run: CouncilAssessmentRun, t: ToolsT): Status | undefined {
+  const country = run.countryName;
   const n = items.length;
   const count = (f: (i: LiveWatchlistItem) => unknown) => items.filter((i) => f(i) !== undefined).length;
   const status = getSnapshotDataStatus(run.openData);
@@ -27,28 +31,28 @@ function toolStatus(tool: ReadyTool, items: LiveWatchlistItem[], run: CouncilAss
     case 'marketedge': {
       const y = count((i) => i.yield10YPct);
       const c = count((i) => i.cds5YBps);
-      return { ok: y > 0 || c > 0, text: CDS_HIDDEN ? `${y} of ${n} with an official yield` : `${y} of ${n} with an official yield, ${c} of ${n} with your CDS` };
+      return { ok: y > 0 || c > 0, text: CDS_HIDDEN ? t('tl_s_yield', { y, n }) : t('tl_s_yieldCds', { y, n, c }) };
     }
     case 'divergences':
     case 'ask_council': {
       const live = items.filter((i) => i.yield10YPct !== undefined || i.cpiInflationPct !== undefined || i.reerGapPct !== undefined).length;
-      return { ok: live > 0, text: live ? `Live figures for ${live} of ${n} countries` : 'No live figures yet: press Refresh now under Research > One country' };
+      return { ok: live > 0, text: live ? t('tl_s_live', { live, n }) : t('tl_s_noLive') };
     }
     case 'scenarios':
-      return { ok: true, text: 'Runs on the World Bank and WITS trade data on file' };
+      return { ok: true, text: t('tl_s_trade') };
     case 'economist_brief':
       return status.isFeedLive('imf')
-        ? { ok: true, text: `IMF figures live for ${run.countryName}` }
-        : { ok: false, text: `IMF did not answer for ${run.countryName}: figures read Missing` };
+        ? { ok: true, text: t('tl_s_imfLive', { country }) }
+        : { ok: false, text: t('tl_s_imfDown', { country }) };
     case 'issuer_brief':
       return run.openData.debtSchedule?.qeds
-        ? { ok: true, text: `QEDS repayments live for ${run.countryName}` }
-        : { ok: false, text: `QEDS did not answer for ${run.countryName}: repayments read Missing` };
+        ? { ok: true, text: t('tl_s_qedsLive', { country }) }
+        : { ok: false, text: t('tl_s_qedsDown', { country }) };
     case 'sustainability': {
       const missing = DSA_INPUTS.filter((p) => !status.isLive(p)).length;
       return missing
-        ? { ok: false, text: `${missing} of ${DSA_INPUTS.length} inputs missing for ${run.countryName}: no projection yet` }
-        : { ok: true, text: `All inputs live for ${run.countryName}` };
+        ? { ok: false, text: t('tl_s_dsaMissing', { m: missing, n: DSA_INPUTS.length, country }) }
+        : { ok: true, text: t('tl_s_dsaLive', { country }) };
     }
     default:
       return undefined;
@@ -80,21 +84,25 @@ function saveOpenGroups(ids: Set<string>) {
   }
 }
 
-const ToolRow: React.FC<{ t: ReadyTool; s?: Status; showSources: boolean; onOpen: (target: ToolTarget) => void }> = ({ t, s, showSources, onOpen }) => (
+const ToolRow: React.FC<{ t: ReadyTool; s?: Status; showSources: boolean; onOpen: (target: ToolTarget) => void }> = ({ t, s, showSources, onOpen }) => {
+  const tt = useT(TOOLS);
+  const tx = useTx();
+  return (
   <li className="py-2.5" data-tool={t.id}>
     <button
       type="button"
       onClick={() => onOpen(t.target)}
       className="group inline-flex items-center gap-1 text-sm font-semibold text-slate-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-300 text-left"
     >
-      {t.title}
+      {tx(t.title)}
       <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-700 dark:group-hover:text-blue-300" aria-hidden />
     </button>
-    <p className="text-sm text-slate-600 dark:text-slate-300">{t.what}</p>
-    {showSources && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Sources: {t.sources}</p>}
+    <p className="text-sm text-slate-600 dark:text-slate-300">{tx(t.what)}</p>
+    {showSources && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{tt('tl_sources', { sources: tx(t.sources) })}</p>}
     {s && <StatusLine s={s} />}
   </li>
-);
+  );
+};
 
 export const ToolsPage: React.FC<{
   run: CouncilAssessmentRun;
@@ -104,7 +112,9 @@ export const ToolsPage: React.FC<{
   /** Drawn inside the Settings window, which already carries the title. */
   inDialog?: boolean;
 }> = ({ run, items, watchlistName, onOpen, inDialog = false }) => {
-  const statuses = useMemo(() => Object.fromEntries(READY_TOOLS.map((t) => [t.id, toolStatus(t, items, run)])), [items, run]);
+  const t = useT(TOOLS);
+  const tx = useTx();
+  const statuses = useMemo(() => Object.fromEntries(READY_TOOLS.map((tool) => [tool.id, toolStatus(tool, items, run, t)])), [items, run, t]);
   const hiddenCount = HIDDEN_GROUPS.reduce((a, g) => a + g.desks.length, 0);
   const [showSources, setShowSources] = useState(false);
   const [open, setOpen] = useState<Set<string>>(loadOpenGroups);
@@ -124,32 +134,31 @@ export const ToolsPage: React.FC<{
   };
 
   return (
-    <div className="space-y-5" data-no-stat-ref="true" data-no-provenance-overlay="true">
+    <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           {inDialog ? (
-            <h3 className="ui-section-title">Tools</h3>
+            <h3 className="ui-section-title">{t('tl_title')}</h3>
           ) : (
-            <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Tools</h1>
+            <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{t('tl_title')}</h1>
           )}
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Grouped by what you want to do: open a group to see its tools. Every tool runs on live feeds, official series or your own files; a figure without a source reads Missing.
-            Status is for {watchlistName} and {run.countryName}.
+            {t('tl_intro', { watchlist: watchlistName, country: run.countryName })}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button type="button" className="ui-pill" onClick={() => setAll(!allOpen)} data-toggle-all-groups="true">
-            {allOpen ? 'Close all' : 'Open all'}
+            {allOpen ? t('tl_closeAll') : t('tl_openAll')}
           </button>
           <button type="button" className="ui-pill" aria-pressed={showSources} onClick={() => setShowSources((v) => !v)} data-show-sources="true">
-            {showSources ? 'Hide sources' : 'Show sources'}
+            {showSources ? t('tl_hideSources') : t('tl_showSources')}
           </button>
         </div>
       </div>
 
       <div className="ui-panel divide-y divide-slate-200 dark:divide-slate-800" data-ready-tools="true">
         {TOOL_CATEGORIES.map((c) => {
-          const tools = READY_TOOLS.filter((t) => t.category === c.id);
+          const tools = READY_TOOLS.filter((tool) => tool.category === c.id);
           const isOpen = open.has(c.id);
           return (
             <section key={c.id} aria-labelledby={`tools-${c.id}`} data-tool-category={c.id}>
@@ -166,17 +175,17 @@ export const ToolsPage: React.FC<{
                   aria-hidden
                 />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-base font-semibold text-slate-900 dark:text-white">{c.title}</span>
-                  <span className="block text-xs text-slate-500 dark:text-slate-400">{c.purpose}</span>
+                  <span className="block text-base font-semibold text-slate-900 dark:text-white">{tx(c.title)}</span>
+                  <span className="block text-xs text-slate-500 dark:text-slate-400">{tx(c.purpose)}</span>
                 </span>
                 <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap mt-1">
-                  {tools.length} {tools.length === 1 ? 'tool' : 'tools'}
+                  {t('tl_count', { n: tools.length })}
                 </span>
               </button>
               {isOpen && (
                 <ul id={`tools-${c.id}-list`} className="pl-10 pr-4 pb-2 divide-y divide-slate-100 dark:divide-slate-800">
-                  {tools.map((t) => (
-                    <ToolRow key={t.id} t={t} s={statuses[t.id]} showSources={showSources} onOpen={onOpen} />
+                  {tools.map((tool) => (
+                    <ToolRow key={tool.id} t={tool} s={statuses[tool.id]} showSources={showSources} onOpen={onOpen} />
                   ))}
                 </ul>
               )}
@@ -188,42 +197,41 @@ export const ToolsPage: React.FC<{
       <section aria-labelledby="tools-setup" className="space-y-3">
         <div>
           <h2 id="tools-setup" className="text-base font-semibold text-slate-900 dark:text-white">
-            Set up
+            {t('tl_setup')}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Which data sources answer, and the older desks waiting for live inputs.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{t('tl_setupIntro')}</p>
         </div>
         <DataConnectionsPanel startCollapsed />
 
         <details className="ui-panel" data-hidden-desks="true">
           <summary className="ui-panel-header cursor-pointer">
-            <span className="ui-section-title">Hidden until they have live inputs ({hiddenCount})</span>
+            <span className="ui-section-title">{t('tl_hidden', { n: hiddenCount })}</span>
             <span className="ui-label block">
-              Older desks that compute from built-in example figures. Each comes back once the data it needs is connected; where a ready tool answers the
-              same question, it is linked.
+              {t('tl_hiddenIntro')}
             </span>
           </summary>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-4 p-4">
             {HIDDEN_GROUPS.map((g) => (
               <div key={g.title}>
-                <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">{g.title}</h3>
+                <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">{tx(g.title)}</h3>
                 <ul className="divide-y divide-slate-100 dark:divide-slate-800">
                   {g.desks.map((d) => {
                     const cover = d.coveredBy ? READY_BY_ID[d.coveredBy] : undefined;
                     return (
                       <li key={d.id} className="py-1.5 text-sm">
                         <div className="flex items-baseline justify-between gap-3">
-                          <span className="text-slate-800 dark:text-slate-200">{d.label}</span>
+                          <span className="text-slate-800 dark:text-slate-200">{tx(d.label)}</span>
                           {cover && (
                             <button
                               type="button"
                               onClick={() => onOpen(cover.target)}
                               className="text-xs text-blue-700 dark:text-blue-300 hover:underline whitespace-nowrap"
                             >
-                              Use {cover.title}
+                              {t('tl_use', { tool: tx(cover.title) })}
                             </button>
                           )}
                         </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">{d.needs.startsWith('Covered') ? d.needs : `Needs: ${d.needs}`}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">{d.needs.startsWith('Covered') ? tx(d.needs) : t('tl_needs', { needs: tx(d.needs) })}</div>
                       </li>
                     );
                   })}

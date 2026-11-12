@@ -1,0 +1,10 @@
+# Every text file keeps Unix line endings on every checkout, Windows included. Files whose bytes are
+# hashed (the pre-registered tests in docs/validation/, recorded replies) then match on every
+# computer, and a Docker image built from a Windows checkout holds the same files as one built on a
+# Mac.
+* text=auto eol=lf
+
+# Windows start scripts keep Windows line endings on every checkout, so cmd.exe and PowerShell
+# read them as written.
+*.bat text eol=crlf
+*.ps1 text eol=crlf

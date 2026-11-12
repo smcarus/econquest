@@ -40,8 +40,21 @@ import { claimAnswer } from './claimCheck';
 import { ucdpFigures, ucdpMissing } from './ucdpConflict';
 import { v1Figures, v1Missing } from './gdeltDaily';
 import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, formatUsd, rawGdeltFigures, acledFigures, stabilityBand, toneBand } from './politicsEvents';
+import { chinaSource, chinaValue, COMMON_FRAMEWORK_AS_OF, COMMON_FRAMEWORK_SOURCE, DISTRESS_LABEL, DSSI_SOURCE, dsaSource, dsaValue } from './lowIncomeDebt';
+import { foreignShare, investorBaseSource, investorBaseValue } from './investorBase';
+import { IDS_STRUCTURE_SOURCE, INTEREST_CENTRAL_NOTE, INTEREST_SOURCE, currencyValue, usdShare } from './debtStructure';
+import { ILO_MODEL_NOTE, PEOPLE_SOURCE, POVERTY_SOURCE, povertyValue } from './peopleLiving';
+import { readingValue } from './monthlyIndicators';
+import { LEVEL_TABLE_LABEL, LEVELS_NOTE, levelsValue } from './govLevels';
+import { PRIVATE_DEBT_SOURCE, SECTOR_RULE, balanceValue, quarterText } from './sectorBalances';
+import { HOUSE_PRICES_SOURCE, REAL_WAGES_SOURCE, WAGES_SOURCE, housePriceValue, wageGrowthValue } from './wagesHousing';
+import { ENERGY_MIX_SOURCE, ENERGY_MIX_TERMS_NOTE, energyMixValue } from './climateEnergy';
+import { CONCENTRATION_SOURCE, ENERGY_SOURCE, EXPORT_FIELDS, GROUP_LABEL, TRADE_GROUPS_NOTE, TRADE_MIX_SOURCE, concentrationValue, netEnergyValue, shareSplitValue, topPartnersValue } from './tradeMix';
+import { GINI_SOURCE, TARIFF_LAG_NOTE, TARIFF_SOURCE, TAX_CENTRAL_NOTE, TAX_SOURCE, giniValue, type DistTaxFigures } from './distributionTaxes';
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
-import { TNM_CITATION, multiplierView } from './fiscalMultipliers';
+import { IMF_ADVANCED, TNM_CITATION, multiplierView } from './fiscalMultipliers';
+import { parseWhatIf, runWhatIf, whatIfSentence, whatIfSetup } from './fiscalWhatIf';
+import { sectorLine, sectorsInQuestion } from './govSpending';
 import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
 import type { DebateResult } from './agentDebate';
 import { changeLines } from './whatChanged';
@@ -93,7 +106,7 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
   fiscal: {
     name: 'Fiscal & Debt',
     covers: 'government debt and the IMF projection of it, primary balance and the balance that would hold debt steady, external debt falling due in the next year and how far reserves cover it (IMF WEO, World Bank QEDS and IDS, BIS)',
-    topic: /\bdebt|fiscal|deficit|primary (?:balance|surplus)|sustainab|solvenc|amorti[sz]|refinanc|roll-?over|maturit|eurobond|debt service|borrowing|austerity|consolidation|imf program/i,
+    topic: /\bdebt|fiscal|deficit|primary (?:balance|surplus)|sustainab|solvenc|amorti[sz]|refinanc|roll-?over|maturit|eurobond|debt service|borrowing|austerity|consolidation|imf program|defen[cs]e (?:budget|spending)|military (?:budget|spending)|government spending|public spending|spend(?:s|ing)? on\b/i,
   },
   politics: {
     name: 'Politics & Events',
@@ -108,17 +121,17 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
   fx: {
     name: 'FX Valuation',
     covers: 'real exchange rate against its 10-year average, FX volatility, CFTC futures positioning, US Treasury holdings (TIC), the currency\'s share of world reserves (IMF COFER)',
-    topic: /\bfx\b|currenc|exchange rate|\breer\b|positioning|\bcftc\b|crowded|speculat|hedge funds?|\btic\b|\bcofer\b|reserve currenc|de-?dollari|treasur(?:y|ies) holdings|holdings of (?:us )?treasur|reserve manag|lira|rand|peso|rupiah|zloty|pound|sterling|\byen\b|devalu|deprecia|apprecia|volatil/i,
+    topic: /\bfx\b|currenc|exchange rate|\breer\b|positioning|\bcftc\b|crowded|speculat|hedge funds?|\btic\b|\bcofer\b|reserve currenc|de-?dollari|treasur(?:y|ies) holdings|holdings of (?:us )?treasur|reserve manag|lira|rand|peso|rupiah|zloty|pound|sterling|\byen\b|devalu|deprecia|apprecia|volatil|remittance/i,
   },
   spill: {
     name: 'Global Spillover',
     covers: 'Hormuz, Taiwan Strait and Russia shocks through trade; growth cycle from the OECD leading indicator',
-    topic: /hormuz|taiwan|china|russia|ukrain|\boil\b|energy|gulf|iran|shock|spillover|scenario|trade|\bwar\b|sanction|conflict|geopolit|leading indicator|\bcli\b|\boecd\b|growth|cycle|slowdown|recession|downturn|recovery|momentum/i,
+    topic: /hormuz|taiwan|china|russia|ukrain|\boil\b|energy|climate|emission|renewabl|export|commodit|gulf|iran|shock|spillover|scenario|trade|\bwar\b|sanction|conflict|geopolit|leading indicator|\bcli\b|\boecd\b|growth|cycle|slowdown|recession|downturn|recovery|momentum/i,
   },
   calendar: {
     name: 'Calendar',
     covers: 'rate decisions, CPI releases, elections, budget deadlines, IMF dates',
-    topic: /\bwhen\b|\bnext\b|calendar|election|budget|\bimf\b|\bdates?\b|upcoming|meeting|decision|catalyst|deadline|this (?:week|month|year)|coming/i,
+    topic: /\bwhen\b|\bnext\b|calendar|election|budget (?:dates?|deadlines?|votes?|releases?|days?|announcements?|statements?)|\bimf\b|\bdates?\b|upcoming|meeting|decision|catalyst|deadline|this (?:week|month|year)|coming/i,
   },
   timing: {
     name: TIMING_AGENT_NAME,
@@ -491,6 +504,15 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
           : { label: `Output gap ${og.year}`, value: `${sgn(og.pct)}% of potential GDP`, source: 'IMF WEO', tag: 'official' },
       );
     }
+    // Wages and house prices (G22, src/utils/wagesHousing.ts): pressure on prices from pay and housing, with year or quarter.
+    const wg = it.wages?.reading && wageGrowthValue(it.wages.reading, 'nominal');
+    if (wg) figures.push({ label: 'Wage growth, nominal', value: wg, source: WAGES_SOURCE, tag: 'official' });
+    const hp = it.housePrices?.reading && housePriceValue(it.housePrices.reading, 'real');
+    if (hp) figures.push({ label: 'House prices, real', value: hp, source: `${HOUSE_PRICES_SOURCE}, after inflation`, tag: 'official' });
+    // Monthly activity (G41, src/utils/monthlyIndicators.ts): the latest month of output and joblessness.
+    const ma = it.monthlyActivity;
+    if (ma?.ip) figures.push({ label: 'Industrial production', value: readingValue('ip', ma.ip), source: ma.ip.long, tag: 'official' });
+    if (ma?.unemp) figures.push({ label: 'Unemployment rate, monthly', value: readingValue('unemp', ma.unemp), source: ma.unemp.long, tag: 'official' });
     const stanceText = policyStance(real, gap);
     const ext = imfFigures(it);
     findings.push({
@@ -506,7 +528,9 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
 }
 
 /** Fiscal & Debt Agent: debt level and path, primary balance against the debt-stabilising one, and external debt falling due. */
-function fiscalAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
+function fiscalAgent(countries: LiveWatchlistItem[], question = ''): Omit<AgentAnswer, 'why'> {
+  const whatIf = parseWhatIf(question);
+  const named = sectorsInQuestion(question);
   const findings: AgentFinding[] = [];
   const missing: string[] = [];
   const bn = (v: number) => `$${v >= 100 ? v.toFixed(0) : v.toFixed(1)}bn`;
@@ -600,8 +624,8 @@ function fiscalAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
       missing.push(`${it.countryName}: no debt sustainability view (needs the saved IMF history with Fiscal Monitor balances; see Research > History & data)`);
     }
     // Fiscal multiplier: a cited reference range (src/utils/fiscalMultipliers.ts), never an estimate.
-    if (f.debtPctGdp) {
-      const mv = multiplierView({ iso3: it.iso3, debtPctGdp: f.debtPctGdp, outputGap: it.outputGap, ...(it.policyRateSource === 'bis' && it.policyRatePct !== undefined ? { policyRatePct: it.policyRatePct } : {}) });
+    const mv = f.debtPctGdp ? multiplierView({ iso3: it.iso3, debtPctGdp: f.debtPctGdp, outputGap: it.outputGap, ...(it.policyRateSource === 'bis' && it.policyRatePct !== undefined ? { policyRatePct: it.policyRatePct } : {}) }) : undefined;
+    if (mv) {
       figures.push({
         label: 'Fiscal multiplier, first year (reference range)',
         value: `${mv.guide.low}-${mv.guide.high} (${mv.guide.bucket} bucket, normal times)`,
@@ -609,7 +633,107 @@ function fiscalAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
         tag: 'model',
       });
     }
+    if (f.defencePctGdp) {
+      figures.push({ label: 'Military spending', value: `${f.defencePctGdp.value.toFixed(1)}% of GDP`, source: `World Bank (SIPRI), ${f.defencePctGdp.year}`, tag: 'official' });
+    }
+    // Debt structure (src/utils/debtStructure.ts): interest burden and currency mix of external debt; only when live.
+    const dsx = it.debtStructure;
+    if (dsx?.interestPctRevenue) {
+      figures.push({ label: 'Interest payments, central government', value: `${p1(dsx.interestPctRevenue.value)} of revenue`, source: `${INTEREST_SOURCE}, ${dsx.interestPctRevenue.year}; ${INTEREST_CENTRAL_NOTE}`, tag: 'official' });
+    }
+    if (dsx?.currency) {
+      figures.push({ label: 'Public external debt by currency', value: currencyValue(dsx.currency), source: IDS_STRUCTURE_SOURCE, tag: 'official' });
+      const usd = usdShare(dsx);
+      if (usd !== undefined && usd >= 50) parts.push(`${usd.toFixed(0)}% of its public external debt is in US dollars (World Bank IDS, ${dsx.currency.year}), so a weaker currency raises the cost of paying it.`);
+    }
+    // Who holds government debt (src/utils/investorBase.ts): the IMF investor base workbook, when it is on this computer.
+    const ib = it.investorBase;
+    if (ib?.state === 'found' && ib.holders) {
+      figures.push({ label: 'Who holds government debt', value: investorBaseValue(ib.holders, ib.lastYear ?? 0), source: investorBaseSource(ib), tag: 'official' });
+      const fs = foreignShare(ib.holders);
+      parts.push(`Foreign investors hold ${fs.toFixed(0)}% of its government debt (IMF investor base, ${ib.holders.year})${fs >= 30 ? ', so a change in global appetite for its bonds matters' : ''}.`);
+    }
+    if (dsx?.newLoanMaturity) figures.push({ label: 'Maturity of new public external loans', value: `${dsx.newLoanMaturity.years.toFixed(1)} years (${dsx.newLoanMaturity.year})`, source: `${IDS_STRUCTURE_SOURCE}; new loans that year, all lenders`, tag: 'official' });
+    // Distribution and taxes (src/utils/distributionTaxes.ts): World Bank figures, each with its year; only when live.
+    const dt = it.distTax;
+    if (dt?.taxRevenuePctGdp) figures.push({ label: 'Tax revenue, central government', value: `${p1(dt.taxRevenuePctGdp.value)} of GDP`, source: `${TAX_SOURCE}, ${dt.taxRevenuePctGdp.year}; ${TAX_CENTRAL_NOTE}`, tag: 'official' });
+    const split: Array<[keyof DistTaxFigures, string]> = [
+      ['taxIncomePctRevenue', 'Taxes on income, profits and capital gains'],
+      ['taxGoodsPctRevenue', 'Taxes on goods and services'],
+      ['taxTradePctRevenue', 'Taxes on international trade'],
+    ];
+    for (const [k, label] of split) {
+      const x = dt?.[k];
+      if (x) figures.push({ label, value: `${p1(x.value)} of central government revenue`, source: `${TAX_SOURCE}, ${x.year}`, tag: 'official' });
+    }
+    if (dt?.tariffWeightedPct) figures.push({ label: 'Applied tariff, weighted by imports', value: p2(dt.tariffWeightedPct.value), source: `${TARIFF_SOURCE}, ${dt.tariffWeightedPct.year}; ${TARIFF_LAG_NOTE}`, tag: 'official' });
+    if (dt?.tariffSimplePct) figures.push({ label: 'Applied tariff, simple mean', value: p2(dt.tariffSimplePct.value), source: `${TARIFF_SOURCE}, ${dt.tariffSimplePct.year}; ${TARIFF_LAG_NOTE}`, tag: 'official' });
+    if (dt?.gini) figures.push({ label: 'Inequality (Gini index, 0 = equal, 100 = one person has all)', value: giniValue(dt.gini), source: `${GINI_SOURCE}; income and consumption Ginis are not directly comparable`, tag: 'official' });
+    // Low-income country debt (src/utils/lowIncomeDebt.ts): typed facts with source and date, AidData sums; only what is on hand.
+    const lic = it.licDebt;
+    if (lic?.dsa) {
+      figures.push({ label: 'Risk of debt distress (IMF/World Bank)', value: dsaValue(lic.dsa), source: dsaSource(), tag: 'official' });
+      parts.push(`The IMF and World Bank rate its risk of debt distress ${DISTRESS_LABEL[lic.dsa.rating].toLowerCase()}.`);
+      if (lic.dsa.rating === 'in_distress') weight = Math.max(weight, 0.9);
+      else if (lic.dsa.rating === 'high') weight = Math.max(weight, 0.7);
+    }
+    if (lic?.dssi) figures.push({ label: 'Debt Service Suspension Initiative (2020-21)', value: 'Took part', source: `${DSSI_SOURCE.source}, read ${DSSI_SOURCE.read}`, tag: 'official' });
+    if (lic?.commonFramework) {
+      figures.push({ label: 'Common Framework', value: `Applied for a debt treatment (as of ${COMMON_FRAMEWORK_AS_OF})`, source: `${COMMON_FRAMEWORK_SOURCE.source}, read ${COMMON_FRAMEWORK_SOURCE.read}`, tag: 'official' });
+      parts.push('It applied for a debt treatment under the G20 Common Framework.');
+    }
+    if (lic?.china) figures.push({ label: 'Official lending from China', value: chinaValue(lic.china), source: chinaSource(lic.china), tag: 'official' });
+    // Spending on the sectors the question names (src/utils/govSpending.ts: Eurostat or IMF COFOG).
+    for (const sec of named) {
+      if (sec.code === 'GF02' && f.defencePctGdp) continue;
+      const line = sectorLine(it.iso3, it.countryName, sec.code, it.govSpending ? { [it.iso3]: it.govSpending } : undefined);
+      if ('missing' in line) missing.push(line.missing);
+      else figures.push({ label: `Government spending on ${sec.label.toLowerCase()}`, value: line.value, source: line.source, tag: 'official' });
+    }
+    // What-if on a spending line (src/utils/fiscalWhatIf.ts): the debt identity re-run with the change.
+    if (whatIf) {
+      const setup = whatIfSetup(it, whatIf);
+      const { spend, respendLabel, sector: sec } = setup;
+      const run = setup.inputs ? runWhatIf(setup.inputs) : null;
+      if (run && spend) {
+        figures.push({ label: `What-if: ${sec.label.toLowerCase()} spending ${whatIf.said}`, value: `${spend.pct.toFixed(1)}% to ${run.newSpendPct.toFixed(1)}% of GDP (${sgn(-run.cutPp)} pts)`, source: `${spend.source}, ${spend.year}, changed as the question says`, tag: 'model' });
+        const range = (a: number, b: number) => (a === b ? `${sgn(a)}%` : `${sgn(a)}% to ${sgn(b)}%`);
+        for (const r of run.runs) {
+          const how = r.use === 'respend' ? `spent on ${respendLabel}` : 'kept to cut the deficit';
+          figures.push(
+            { label: `What-if, money ${how}: first-year growth effect`, value: range(r.growth.low, r.growth.high), source: run.method, tag: 'model' },
+            { label: `What-if, money ${how}: output level by ${r.level.year}`, value: range(r.level.low, r.level.high), source: 'spending change x the published output path for each year', tag: 'model' },
+            ...(r.feedback ? [{ label: `What-if, money ${how}: budget response to output in ${r.level.year}`, value: `${range(r.feedback.low, r.feedback.high).replace(/%/g, '')} pts of GDP`, source: setup.semiElasticity?.source || '', tag: 'model' as const }] : []),
+            { label: `What-if, money ${how}: debt in ${r.debtEnd.year}`, value: r.debtEnd.low === r.debtEnd.high ? `${p1(r.debtEnd.low)} of GDP` : `${p1(r.debtEnd.low)} to ${p1(r.debtEnd.high)} of GDP`, source: `against ${p1(r.debtEnd.baseline)} on the IMF baseline; debt identity re-run with the change`, tag: 'model' }
+          );
+          parts.push(whatIfSentence(r, run.cutPp, respendLabel));
+        }
+        if (run.runs.some((r) => r.use === 'respend') && setup.sameRespend) {
+          parts.push(`The cited range does not tell ${sec.label.toLowerCase()} apart from other spending, so respending nets to about zero here; saying where the money goes (public investment, for example) uses a different published path.`);
+        }
+        if (whatIf.destination === 'investment' && !IMF_ADVANCED.has(it.iso3)) {
+          parts.push('The public investment path is an advanced-economy estimate.');
+        }
+        if (!setup.semiElasticity) {
+          missing.push(`${it.countryName}: the what-if leaves out the budget's response to output, as no published semi-elasticity is in the app (European Commission and OECD tables cover EU and OECD members)`);
+        }
+      } else if (setup.cannotRun) {
+        missing.push(setup.cannotRun);
+      }
+    }
     if (!f.extDue12m && !f.intlBonds && !f.idsNext) missing.push(`${it.countryName}: no external debt falling due (World Bank QEDS, IDS and BIS did not answer or have no series)`);
+    // Sector balances and private debt (G40, src/utils/sectorBalances.ts): who is borrowing, with the year or quarter.
+    const sb = it.sectorBalances;
+    if (sb) {
+      figures.push({ label: 'Private sector balance (remainder)', value: balanceValue(sb.privatePct, sb.year), source: `current account minus government balance, IMF ${sb.year}; ${SECTOR_RULE}`, tag: 'model' });
+      parts.push(`In ${sb.year} the private sector ${sb.privatePct >= 0 ? 'saved more than it invested' : 'invested more than it saved'} (${balanceValue(sb.privatePct, sb.year).replace(/ \(\d{4}\)$/, '')}), and the rest of the world ${sb.foreignPct > 0 ? 'lent the country' : 'borrowed from the country'} ${Math.abs(sb.foreignPct).toFixed(1)}% of GDP.`);
+    }
+    // Revenue and spending by level of government (G42, src/utils/govLevels.ts).
+    const gs = it.govLevels?.reading?.spending;
+    if (gs && (gs.pct.state !== undefined || gs.pct.local !== undefined)) figures.push({ label: 'Spending by level of government', value: levelsValue(gs), source: `${LEVEL_TABLE_LABEL[gs.table]}; ${LEVELS_NOTE}`, tag: 'official' });
+    const pd = it.privateDebt?.reading;
+    if (pd?.householdPct !== undefined) figures.push({ label: 'Household debt', value: `${pd.householdPct.toFixed(1)}% of GDP (${quarterText(pd.quarter)})`, source: PRIVATE_DEBT_SOURCE, tag: 'official' });
+    if (pd?.corporatePct !== undefined) figures.push({ label: 'Company debt', value: `${pd.corporatePct.toFixed(1)}% of GDP (${quarterText(pd.quarter)})`, source: PRIVATE_DEBT_SOURCE, tag: 'official' });
     if (!figures.length) continue;
     findings.push({
       iso3: it.iso3,
@@ -687,6 +811,13 @@ function politicsAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'>
       parts.push(...c.sentences);
       if (c.rising) weight = Math.max(weight, 0.5);
     } else if (p.acledMissing) missing.push(`${it.countryName}: ACLED conflict events ${p.acledMissing.replace(/^Missing: /, 'missing: ')}`);
+    // People (src/utils/peopleLiving.ts): hardship that can feed unrest; World Bank figures with their years, only when live.
+    const pe = it.people;
+    if (pe?.povertyLowestPct) figures.push({ label: 'Poverty rate, lowest international line', value: povertyValue(pe.povertyLowestPct), source: POVERTY_SOURCE, tag: 'official' });
+    if (pe?.youthUnemploymentPct) figures.push({ label: 'Youth unemployment (ages 15-24)', value: p1(pe.youthUnemploymentPct.value), source: `${PEOPLE_SOURCE}, ${pe.youthUnemploymentPct.year}; ${ILO_MODEL_NOTE}`, tag: 'official' });
+    // Real wages (G22): falling pay after inflation can feed unrest.
+    const rw = it.wages?.reading && wageGrowthValue(it.wages.reading, 'real');
+    if (rw) figures.push({ label: 'Wage growth, real', value: rw, source: REAL_WAGES_SOURCE, tag: 'model' });
     for (const h of p.headlines || []) {
       figures.push({ label: 'Headline', value: h.title, source: `${h.source}${h.publishedAt ? `, ${h.publishedAt.slice(0, 10)}` : ''} (GDELT, pulled ${p.headlinesPulledAt || ''})`, tag: 'live' });
     }
@@ -814,6 +945,12 @@ function fxAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
       });
       parts.push(`Central banks hold ${share.pct.toFixed(1)}% of world allocated FX reserves in the ${ccyName(ownCcy)} (IMF COFER, ${formatImfPeriod(it.cofer.period)}).`);
     }
+    // Remittances (src/utils/peopleLiving.ts): a steady inflow of foreign currency; World Bank, with its year.
+    const rem = it.people?.remittancesPctGdp;
+    if (rem) {
+      figures.push({ label: 'Remittances received', value: `${p1(rem.value)} of GDP`, source: `${PEOPLE_SOURCE}, ${rem.year}; money sent home by people working abroad`, tag: 'official' });
+      parts.push(`Money sent home by people working abroad equals ${p1(rem.value)} of GDP (World Bank, ${rem.year}), a foreign currency inflow that supports the currency.`);
+    }
     if (!parts.length) {
       missing.push(`${it.countryName}: no BIS real exchange rate, ECB rate, CFTC positioning or TIC holdings`);
       continue;
@@ -880,6 +1017,18 @@ function spillAgent(countries: LiveWatchlistItem[], question: string): Omit<Agen
         });
       }
     }
+    // Trade and commodity exposure (G18, src/utils/tradeMix.ts): which prices and buyers matter; only live figures.
+    const tm = it.tradeMix;
+    const xs = tm ? shareSplitValue(tm, EXPORT_FIELDS) : undefined;
+    if (xs) figures.push({ label: 'Goods exports by group', value: xs, source: `${TRADE_MIX_SOURCE}; ${TRADE_GROUPS_NOTE}`, tag: 'official' });
+    if (tm?.netEnergyImportsPct) figures.push({ label: 'Net energy imports', value: netEnergyValue(tm.netEnergyImportsPct), source: ENERGY_SOURCE, tag: 'official' });
+    const big = tm ? EXPORT_FIELDS.map((k) => ({ k, v: tm[k] })).find((x) => x.k !== 'exportManufPct' && x.v && x.v.value >= 50) : undefined;
+    if (big?.v) parts.push(`${GROUP_LABEL[big.k][0].toUpperCase()}${GROUP_LABEL[big.k].slice(1)}: ${big.v.value.toFixed(0)}% of its goods exports (World Bank, ${big.v.year}), so its export income rises and falls with that price.`);
+    if (it.comtrade?.topExportPartners?.length) figures.push({ label: 'Top five export markets', value: topPartnersValue(it.comtrade), source: `UN Comtrade ${it.comtrade.year}; share of goods exports`, tag: 'official' });
+    if (it.comtrade?.exportHhi) figures.push({ label: 'Export concentration (app calculation)', value: concentrationValue(it.comtrade.exportHhi, it.comtrade.productYear), source: CONCENTRATION_SOURCE, tag: 'model' });
+    // Energy mix (G20, src/utils/climateEnergy.ts): how much of the country's energy is oil and gas, from the copy on this computer.
+    const mixNow = it.energyMix?.mix;
+    if (mixNow) figures.push({ label: 'Energy mix', value: energyMixValue(mixNow), source: `${ENERGY_MIX_SOURCE}; ${ENERGY_MIX_TERMS_NOTE}`, tag: 'official' });
     let cycle = 0;
     if (cli) {
       figures.push({ label: 'OECD leading indicator', value: cli.level.toFixed(2), source: `${CLI_LABEL}, ${formatMonth(cli.month)}`, tag: 'official' });
@@ -1048,7 +1197,7 @@ export function runCouncil(question: string, plan: CouncilPlan, all: LiveWatchli
       id === 'cb'
         ? cbAgent(plan.countries)
         : id === 'fiscal'
-          ? fiscalAgent(plan.countries)
+          ? fiscalAgent(plan.countries, question)
           : id === 'politics'
             ? politicsAgent(plan.countries)
             : id === 'rv'
