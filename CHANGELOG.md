@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Crisis early-warning (G23, Research > History & data, also in Tools): the BIS credit-to-GDP gap
+  against the Basel III lines of 2 and 10 points, past spells above 10 points, three-year change in
+  private credit to GDP, and the private debt service ratio and real house price growth against
+  their own average. No probability; marked Not validated. The pre-registered `crisis_warning` test
+  stays in docs/validation/pending until the licence for the Laeven-Valencia crisis dates is
+  confirmed, then its runner is built. English, Spanish and French.
 - Behavioural Finance Agent (G32) in Council chat: describes herding and sentiment, never forecasts.
   Crowded CFTC positioning (pointing to the crowding rule's own badge), Polymarket crowd odds as
   market prices, and for EU members the European Commission's consumer confidence, economic

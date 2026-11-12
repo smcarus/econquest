@@ -40,6 +40,7 @@ const EventStudyPanel = lazyNamed(() => import('./EventStudyPanel'), 'EventStudy
 const BeerPanel = lazyNamed(() => import('./BeerPanel'), 'BeerPanel');
 const LocalProjectionsPanel = lazyNamed(() => import('./LocalProjectionsPanel'), 'LocalProjectionsPanel');
 const ReserveAdequacyPanel = lazyNamed(() => import('./ReserveAdequacyPanel'), 'ReserveAdequacyPanel');
+const CrisisWarningPanel = lazyNamed(() => import('./CrisisWarningPanel'), 'CrisisWarningPanel');
 const RiskScorecardPanel = lazyNamed(() => import('./RiskScorecardPanel'), 'RiskScorecardPanel');
 const UnitConverterPanel = lazyNamed(() => import('./UnitConverterPanel'), 'UnitConverterPanel');
 const ExercisesPanel = lazyNamed(() => import('./ExercisesPanel'), 'ExercisesPanel');
@@ -407,6 +408,12 @@ export const CountryPage: React.FC<{
           <PanelBoundary name="Reserve adequacy">
             <React.Suspense fallback={<DeskLoading />}>
               <ReserveAdequacyPanel key={`ara-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-crisis-warning" className="scroll-mt-4" />
+          <PanelBoundary name="Crisis early-warning">
+            <React.Suspense fallback={<DeskLoading />}>
+              <CrisisWarningPanel key={`cw-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
             </React.Suspense>
           </PanelBoundary>
           <div id="tool-fiscal-reaction" className="scroll-mt-4" />

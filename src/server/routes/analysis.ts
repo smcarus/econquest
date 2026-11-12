@@ -13,6 +13,8 @@ import { multiplierView } from '../../utils/fiscalMultipliers';
 import { localProjections, lpSentence } from '../../utils/localProjections';
 import { ruleFamily, ruleFamilySentence, RULE_FAMILY_METHOD, type RuleFamilyInputs } from '../../utils/ruleFamily';
 import { reserveAdequacy, reserveAdequacySentence } from '../../utils/reserveAdequacy';
+import { crisisSentence, crisisWarning, CRISIS_NOT_RUN } from '../../utils/crisisWarning';
+import { BIS_ISO2 } from '../../utils/bisDebtSecurities';
 import { vintageLabel, weoVintageReply, WEO_VINTAGE_CODES } from '../../utils/weoVintages';
 import { fetchWithTimeout } from '../http';
 import { OFFICIAL_FIGURES, officialSeries, type OfficialHistoryFile } from '../../utils/officialHistory';
@@ -33,7 +35,7 @@ import path from 'path';
 import { SOVEREIGN_CATALOG } from '../../data/presetsAndBaselines.ts';
 import { oecdFetch, fetchQnaPull, fetchNationalCpi, fetchMonthlyActivity } from '../feeds/oecd';
 import { GSCPI_SOURCE, STRESS_INDICES, stressIndex } from '../../utils/stressIndices';
-import { fetchDebtSchedule, fetchFxHistory, fetchPolicyDaily, fetchReerLong, fetchStressPulls, fetchAlfred, loadFxHistory } from '../feeds/rates';
+import { fetchBisCreditCycle, fetchDebtSchedule, fetchFxHistory, fetchPolicyDaily, fetchReerLong, fetchStressPulls, fetchAlfred, loadFxHistory } from '../feeds/rates';
 import { beer, beerSentence } from '../../utils/beer';
 import { EVENT_METHOD, eventSentence, eventStudy } from '../../utils/eventStudy';
 import { fxDailySeries } from '../../utils/fxHistory';
@@ -276,6 +278,15 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const r = reserveAdequacy({ reservesUsd: pick('reserves_usd'), shortTermDebtUsd: pick('short_term_debt_usd'), broadMoneyGdp: pick('broad_money_gdp'), exportsUsd: pick('exports_usd'), gdpUsd: pick('gdp_usd'), reservesMonths: pick('reserves_months') });
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: reserveAdequacySentence(r, name) } : {}) });
+  });
+  // Crisis early-warning (G23, src/utils/crisisWarning.ts): the BIS credit cycle against the Basel III lines.
+  app.get('/api/crisis-warning/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const covered = Boolean(BIS_ISO2[iso3]);
+    const cycle = covered ? await quick(fetchBisCreditCycle(iso3)) : null;
+    const r = crisisWarning(cycle, covered);
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: crisisSentence(r, name), notValidated: CRISIS_NOT_RUN } : {}) });
   });
   // Local projections (src/utils/localProjections.ts): inflation after a policy rate change, reduced form.
   app.get('/api/local-projections/:iso3', async (req, res) => {

@@ -38,6 +38,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Sanctions lists | Research | Description, not a tested signal | None |
 | Geopolitical risk VaR | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
+| Crisis early-warning (credit gap) | Research | Not validated | None |
 | Inflation after rate changes (local projections) | Research | Description, not a tested signal | None |
 | Policy rule family | Research | Backtest too few cases | v1, 2026-11-07, method 2 |
 | Debt fan chart (bootstrap of past shocks) | Research | Forecast evaluation too few cases | debt_fan_coverage v1, 2026-11-07 |
@@ -464,6 +465,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: a ratio against a published metric, no forward call.
 - **Limits:** Upper bound; FX regime not chosen, both weightings shown; annual data.
 - **Code:** `src/utils/reserveAdequacy.ts`
+
+### Crisis early-warning (credit gap)
+
+- **Says:** Where the country stands on the measures that have often come before banking crises: lending running far ahead of the economy, the share of income going on debt payments, and house prices.
+- **Rule:** BIS credit-to-GDP gap against the Basel III lines of 2 and 10 points, past spells above 10, private credit to GDP over 3 years, private debt service ratio and real house price growth against their own average.
+- **Reads:** BIS credit-to-GDP gaps, debt service ratios and residential property prices
+- **Shows in:** Country Research > History & data (Crisis early-warning)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered on 11 November 2026 before the tool existed (docs/validation/pending/crisis_warning.json): a gap above 10 points followed by the start of a systemic banking crisis within 12 quarters more often than usual; at least 30 cases over 15 years, lift 5 points, p at or below 0.05 with whole years resampled. The runner waits for the licence of the Laeven-Valencia crisis dates.
+- **Limits:** BIS reporting countries only; today's vintage of the gap, not real-time; no probability is given; debt service and house prices have no set threshold.
+- **Code:** `src/utils/crisisWarning.ts`
 
 ### Inflation after rate changes (local projections)
 
