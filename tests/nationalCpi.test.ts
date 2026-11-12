@@ -28,7 +28,12 @@ test('BCB SGS rows read into months, oldest first; blanks and bad rows skipped',
   ]);
   assert.deepEqual(parseBcbSgs([{ data: '01/10/2026', valor: '' }, { data: 'x', valor: '1' }]), []);
   assert.deepEqual(parseBcbSgs({}), []);
-  assert.equal(bcbSgsUrl(13522, 3), 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.13522/dados/ultimos/3?formato=json');
+  const now = new Date('2026-11-11T15:00:00Z');
+  assert.equal(bcbSgsUrl(13522, 3, now), 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.13522/dados?formato=json&dataInicial=01/08/2026&dataFinal=11/11/2026');
+  // Across a year end, and the default of 24 months.
+  assert.equal(bcbSgsUrl(13522, 24, now), 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.13522/dados?formato=json&dataInicial=01/11/2024&dataFinal=11/11/2026');
+  assert.match(bcbSgsUrl(13522, 3, new Date('2026-02-05T00:00:00Z')), /dataInicial=01\/11\/2025&dataFinal=05\/02\/2026$/);
+  assert.doesNotMatch(bcbSgsUrl(13522), /ultimos/);
 });
 
 test('Eurostat JSON-stat: a month with no value is skipped, not read as zero', () => {

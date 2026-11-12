@@ -860,7 +860,7 @@
   },
   {
    "method": "GET",
-   "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.13522/dados/ultimos/3?formato=json",
+   "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.13522/dados?formato=json&dataInicial=01/08/2026&dataFinal=05/11/2026",
    "status": 200,
    "contentType": "application/json; charset=utf-8",
    "bytes": 112,

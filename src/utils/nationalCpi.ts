@@ -28,8 +28,17 @@ export const BCB_LONG = 'Banco Central do Brasil, IPCA 12-month inflation (SGS 1
 export const EUROSTAT_SHORT = 'Eurostat HICP';
 export const EUROSTAT_LONG = 'Eurostat HICP, annual rate of change (prc_hicp_minr, all items)';
 
-export function bcbSgsUrl(code: number, last = 24): string {
-  return `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${code}/dados/ultimos/${last}?formato=json`;
+/**
+ * BCB SGS by date range: the first of the month `months` months back up to today. The "last N" form
+ * (/dados/ultimos/N) refused N=24 with HTTP 400 on 2026-11-05 and N=3 by 2026-11-11, while the date
+ * range form still answered (checked in a browser on Sam's Mac, 2026-11-11).
+ */
+export function bcbSgsUrl(code: number, months = 24, now: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - months, 1));
+  const from = `01/${pad(start.getUTCMonth() + 1)}/${start.getUTCFullYear()}`;
+  const to = `${pad(now.getUTCDate())}/${pad(now.getUTCMonth() + 1)}/${now.getUTCFullYear()}`;
+  return `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${code}/dados?formato=json&dataInicial=${from}&dataFinal=${to}`;
 }
 
 /** BCB SGS reply: [{"data":"01/09/2026","valor":"4.58"}, ...] oldest first. */
