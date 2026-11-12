@@ -49,6 +49,7 @@ export const SHELL_ES: Messages<typeof SHELL> = {
   examTitle: 'Activado: sin resúmenes ni pasos de IA para nadie que use esta aplicación; el chat del consejo muestra solo cifras, y las preguntas hechas y los países abiertos van al registro de auditoría.',
   about: 'Acerca de y licencias de datos',
   manual: 'Manual de usuario',
+  worked: 'Ejemplos resueltos',
   helpOff: 'Ayuda desactivada',
   helpOffNote: 'Solo cifras y fuentes, sin explicaciones ni rangos de previsión.',
   helpKey: 'Ayuda clave',

@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Worked examples (W1, Menu > Worked examples): four guided case studies for the open country, from
+  a question to a memo draft using the app's own screens: debt sustainability, inflation and
+  interest rates, the currency, and a policy review. Figures are the ones saved on the computer,
+  with source and year, or Missing; the short working (debt-stabilising primary balance, real policy
+  rate, reserves against three months of imports, the budget with a spending plan) is done only when
+  every input is live. Each step opens its screen; the memo can be copied or downloaded as Markdown.
+  English, Spanish and French.
 - Light mode for a modest laptop (U3, `LIGHT_MODE=on`, docs/INSTALL.md "On a modest laptop"): no
   AI model on the computer (the council uses your own Gemini key, or stays off and says so; the
   referee rule is unchanged), no GDELT 15-minute news files unless `GDELT_RAW_WEEKS` is set (about
