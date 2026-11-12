@@ -151,6 +151,9 @@ const BY_ID: Record<string, Def> = {
   debt_service_ratio: d('Interest and principal paid by households and non-financial firms, as % of their income (BIS)', 'privateNonFin'),
   house_prices_real_yoy: d('Residential property prices deflated by consumer prices, change on a year earlier (BIS)', 'households'),
   house_prices_nominal_yoy: d('Residential property prices in local currency, change on a year earlier (BIS)', 'households'),
+  industrial_production: d('Output of mining, manufacturing and utilities (industry excluding construction), volume index, from the statistics office or central bank named in the source', 'industry'),
+  retail_sales: d('Retail sales, volume index (the United States: retail and food services sales in US dollars, not adjusted for prices), from the statistics office named in the source', 'wholeEconomy'),
+  unemployment_monthly: d('Unemployed people as % of the labour force, monthly (the UK and Brazil: three months to the month), from the statistics office named in the source', 'country'),
   household_debt: d('Credit to households from all lenders, % of GDP, market value, break-adjusted (BIS total credit)', 'householdSector'),
   corporate_debt: d('Credit to non-financial companies from all lenders, % of GDP, market value, break-adjusted (BIS total credit)', 'nonFinFirms'),
   current_account_imf: d('Current account balance, % of GDP (IMF WEO BCA_NGDPD)', 'allSectors'),
@@ -333,6 +336,13 @@ const PER_PULL_NOTE = 'One point per saved download: the figure as the app saw i
 
 function seasonalFor(s: { id: string; source?: string; freq?: string }): string {
   if (s.id === 'activity_monthly') return /IBC-Br|Banco Central do Brasil/i.test(s.source || '') ? SEASONAL.sa : SEASONAL.sca;
+  // Monthly activity (G41): as each source is asked for it; the BCB copies of IBGE series do not say.
+  if (s.id === 'industrial_production' || s.id === 'retail_sales' || s.id === 'unemployment_monthly') {
+    const src = s.source || '';
+    if (/BCB SGS/.test(src)) return SEASONAL.notStated;
+    if (/^Eurostat/.test(src)) return s.id === 'unemployment_monthly' ? SEASONAL.sa : SEASONAL.sca;
+    return SEASONAL.sa;
+  }
   const key = SEASONAL_BY_ID[s.id] ?? SEASONAL_BY_PATTERN.find((p) => p.re.test(s.id))?.key;
   if (key) return SEASONAL[key];
   // Yearly official figures (IMF, World Bank, BIS yearly, defaults): one figure per year.
@@ -503,6 +513,9 @@ const UNITS_BY_PATTERN: Array<{ re: RegExp; units: Units }> = [
 function unitsFor(s: { id: string; source?: string }): Units | undefined {
   // The activity index: IBC-Br is based 2002 = 100, Eurostat's industrial production 2021 = 100.
   if (s.id === 'activity_monthly') return ['index', undefined, /IBC-Br|Banco Central do Brasil/i.test(s.source || '') ? '2002' : '2021'];
+  if (s.id === 'retail_sales' && /RSAFS/.test(s.source || '')) return ['nominal', 'usdMarket'];
+  if (s.id === 'industrial_production' || s.id === 'retail_sales') return ['index'];
+  if (s.id === 'unemployment_monthly') return ['ratio'];
   return UNITS_BY_ID[s.id] ?? UNITS_BY_PATTERN.find((p) => p.re.test(s.id))?.units;
 }
 

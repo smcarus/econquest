@@ -211,4 +211,8 @@ export const DEFINITIONS_TEXT_ES: Record<string, string> = {
   "Current account balance, % of GDP (IMF WEO BCA_NGDPD)": "Saldo de la cuenta corriente, % del PIB (FMI WEO BCA_NGDPD)",
   "Households and firms: saving minus investment, % of GDP, worked out as current account minus government balance (remainder of the identity)": "Hogares y empresas: ahorro menos inversión, % del PIB, calculado como cuenta corriente menos saldo del gobierno (resto de la identidad)",
   "Rest of the world lending to the country, % of GDP: minus the current account": "Préstamos del resto del mundo al país, % del PIB: la cuenta corriente con el signo cambiado",
+  // G41: monthly activity
+  "Output of mining, manufacturing and utilities (industry excluding construction), volume index, from the statistics office or central bank named in the source": "Producción de la minería, la industria manufacturera y los suministros (industria sin construcción), índice de volumen, de la oficina de estadística o el banco central indicado en la fuente",
+  "Retail sales, volume index (the United States: retail and food services sales in US dollars, not adjusted for prices), from the statistics office named in the source": "Ventas minoristas, índice de volumen (Estados Unidos: ventas minoristas y de servicios de comida en dólares, sin ajustar por precios), de la oficina de estadística indicada en la fuente",
+  "Unemployed people as % of the labour force, monthly (the UK and Brazil: three months to the month), from the statistics office named in the source": "Personas desempleadas en % de la población activa, mensual (Reino Unido y Brasil: tres meses hasta el mes indicado), de la oficina de estadística indicada en la fuente",
 };

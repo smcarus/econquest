@@ -77,6 +77,8 @@ import { climateFromSnapshot } from './src/utils/climateEnergy';
 import { loadOwidEnergy, fetchOwidEnergyPull } from './src/server/feeds/owidEnergy';
 import { loadWages, fetchWagesPull, loadHousePrices, fetchHousePricesPull, loadPrivateDebt, fetchPrivateDebtPull } from './src/server/feeds/wagesHousing';
 import { sectorBalances } from './src/utils/sectorBalances';
+import { activitySnapshot } from './src/utils/monthlyIndicators';
+import { fetchMonthlyIndicators, loadMonthlyIndicators } from './src/server/feeds/monthlyIndicators';
 import { debtStructureFromSnapshot } from './src/utils/debtStructure';
 import { licDebtReading, type LicDebtReading } from './src/utils/lowIncomeDebt';
 import { aiddataData } from './src/utils/aiddataStore';
@@ -580,6 +582,13 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
       const quarters = Object.values(got.countries).map((c) => c.quarter).sort();
       const note = `${Object.keys(got.countries).length} countries to ${quarters.pop() || '?'}`;
+      return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
+    }
+    case 'world:monthly_activity': {
+      const got = await fetchMonthlyIndicators();
+      if (!got) return { outcome: 'failed', note: 'None of Eurostat, FRED, the ONS or the BCB answered for monthly activity' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const note = `${Object.keys(got.countries).length} countries`;
       return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
     }
     case 'world:ust_auctions': {
@@ -1162,8 +1171,10 @@ function withWagesHousing(snapshot: OpenDataSnapshot): OpenDataSnapshot {
   const wr = w?.countries[snapshot.iso3];
   const hr = h?.countries[snapshot.iso3];
   const dr = d?.countries[snapshot.iso3];
+  const ma = loadMonthlyIndicators();
   return {
     ...snapshot,
+    ...(ma ? { monthlyActivity: activitySnapshot(ma, snapshot.iso3) } : {}),
     ...(d ? { privateDebt: { pulledAt: d.pulledAt, ...(dr ? { reading: dr } : {}) } } : {}),
     ...(w ? { wages: { pulledAt: w.pulledAt, ...(wr ? { reading: wr } : {}) } } : {}),
     ...(h ? { housePrices: { pulledAt: h.pulledAt, ...(hr ? { reading: hr } : {}) } } : {}),
@@ -1480,6 +1491,7 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
               ...(x.housePrices?.reading ? { housePrices: x.housePrices } : {}),
               ...(x.privateDebt?.reading ? { privateDebt: x.privateDebt } : {}),
               ...(sb ? { sectorBalances: sb } : {}),
+              ...(x.monthlyActivity && (x.monthlyActivity.ip || x.monthlyActivity.retail || x.monthlyActivity.unemp) ? { monthlyActivity: x.monthlyActivity } : {}),
             };
           })()),
           ...((() => {
@@ -3460,6 +3472,7 @@ async function startServer() {
       portWatch,
       ustAuctions: iso3.toUpperCase() === 'USA' ? loadUstAuctions() : null,
       euSurveys: loadEuSurveys(),
+      monthlyIndicators: loadMonthlyIndicators(),
       currency: SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3.toUpperCase())?.currencyCode,
     });
     // Your own series for this country, after the feeds' and labelled "Your file" (Menu > Your data).

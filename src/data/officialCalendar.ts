@@ -22,7 +22,7 @@
  * Menu > Data health > Calendar flags sources read long ago and schedules running out.
  */
 
-export type OfficialEventCategory = 'MPC_DECISION' | 'CPI_RELEASE' | 'GDP_RELEASE' | 'INFLATION_REPORT' | 'ELECTION' | 'BUDGET' | 'IMF_PROGRAMME';
+export type OfficialEventCategory = 'MPC_DECISION' | 'CPI_RELEASE' | 'GDP_RELEASE' | 'ACTIVITY_RELEASE' | 'INFLATION_REPORT' | 'ELECTION' | 'BUDGET' | 'IMF_PROGRAMME';
 
 /** Elections, budgets and IMF programme dates: the political and fiscal calendar. */
 export const POLITICAL_FISCAL_CATEGORIES: OfficialEventCategory[] = ['ELECTION', 'BUDGET', 'IMF_PROGRAMME'];
@@ -112,6 +112,17 @@ const NBS_SRC = STAT('NBS regular press release calendar 2026 (dates preliminary
 const SBJ_SRC = STAT('Statistics Bureau of Japan CPI release schedule', 'https://www.stat.go.jp/english/data/cpi/1582.html');
 const ESRI_SRC = STAT('Cabinet Office (ESRI) GDP release schedule', 'https://www.esri.cao.go.jp/en/sna/kouhyou/kouhyou_top.html');
 const ABS_SRC = STAT('ABS release calendar (rolling six months)', 'https://www.abs.gov.au/release-calendar/future-releases');
+
+/*
+ * Monthly activity release dates (data batch G41), read 2026-11-12 from each office's own schedule:
+ * industrial production (Federal Reserve G.17), retail sales (Census Bureau advance report) and the
+ * employment report (BLS). Eurostat, the ONS and IBGE: see RELEASE_GAPS.
+ */
+const R12 = '2026-11-12';
+const ACT = (sourceName: string, sourceUrl: string) => ({ sourceName, sourceUrl, primarySource: true, retrieved: R12 });
+const G17_SRC = ACT('Federal Reserve G.17 release dates', 'https://www.federalreserve.gov/releases/g17/release_dates.htm');
+const MARTS_SRC = ACT('Census Bureau retail trade release schedule', 'https://www.census.gov/retail/release_schedule.html');
+const EMPSIT_SRC = ACT('BLS Employment Situation release schedule', 'https://www.bls.gov/schedule/news_release/empsit.htm');
 
 type Row = [iso3: string, category: OfficialEventCategory, title: string, date: string];
 
@@ -328,6 +339,35 @@ export const OFFICIAL_CALENDAR: OfficialCalendarEvent[] = [
     ['USA', 'CPI_RELEASE', 'BLS CPI, April 2027', '2027-05-12'],
     ['USA', 'CPI_RELEASE', 'BLS CPI, May 2027', '2027-06-10'],
   ]),
+  ...rows(G17_SRC, [
+    ['USA', 'ACTIVITY_RELEASE', 'Fed industrial production (G.17)', '2026-11-17'],
+    ['USA', 'ACTIVITY_RELEASE', 'Fed industrial production (G.17)', '2026-12-16'],
+    ['USA', 'ACTIVITY_RELEASE', 'Fed industrial production (G.17)', '2027-01-15'],
+    ['USA', 'ACTIVITY_RELEASE', 'Fed industrial production (G.17)', '2027-02-17'],
+    ['USA', 'ACTIVITY_RELEASE', 'Fed industrial production (G.17)', '2027-03-15'],
+    ['USA', 'ACTIVITY_RELEASE', 'Fed industrial production (G.17)', '2027-04-15'],
+    ['USA', 'ACTIVITY_RELEASE', 'Fed industrial production (G.17)', '2027-05-17'],
+    ['USA', 'ACTIVITY_RELEASE', 'Fed industrial production (G.17)', '2027-06-16'],
+  ]),
+  ...rows(MARTS_SRC, [
+    ['USA', 'ACTIVITY_RELEASE', 'Census retail sales (advance), October 2026', '2026-11-17'],
+    ['USA', 'ACTIVITY_RELEASE', 'Census retail sales (advance), November 2026', '2026-12-16'],
+    ['USA', 'ACTIVITY_RELEASE', 'Census retail sales (advance), December 2026', '2027-01-15'],
+    ['USA', 'ACTIVITY_RELEASE', 'Census retail sales (advance), January 2027', '2027-02-17'],
+    ['USA', 'ACTIVITY_RELEASE', 'Census retail sales (advance), February 2027', '2027-03-16'],
+    ['USA', 'ACTIVITY_RELEASE', 'Census retail sales (advance), March 2027', '2027-04-16'],
+    ['USA', 'ACTIVITY_RELEASE', 'Census retail sales (advance), April 2027', '2027-05-14'],
+    ['USA', 'ACTIVITY_RELEASE', 'Census retail sales (advance), May 2027', '2027-06-16'],
+  ]),
+  ...rows(EMPSIT_SRC, [
+    ['USA', 'ACTIVITY_RELEASE', 'BLS employment report, November 2026', '2026-12-04'],
+    ['USA', 'ACTIVITY_RELEASE', 'BLS employment report, December 2026', '2027-01-08'],
+    ['USA', 'ACTIVITY_RELEASE', 'BLS employment report, January 2027', '2027-02-05'],
+    ['USA', 'ACTIVITY_RELEASE', 'BLS employment report, February 2027', '2027-03-05'],
+    ['USA', 'ACTIVITY_RELEASE', 'BLS employment report, March 2027', '2027-04-02'],
+    ['USA', 'ACTIVITY_RELEASE', 'BLS employment report, April 2027', '2027-05-07'],
+    ['USA', 'ACTIVITY_RELEASE', 'BLS employment report, May 2027', '2027-06-04'],
+  ]),
   ...rows(BEA_SRC, [
     ['USA', 'GDP_RELEASE', 'BEA GDP advance estimate, Q4 2026', '2027-01-28'],
     ['USA', 'GDP_RELEASE', 'BEA GDP advance estimate, Q1 2027', '2027-04-29'],
@@ -420,7 +460,7 @@ export function hasOfficialSchedule(iso3: string): boolean {
 }
 
 /** The two statistics releases the calendar tracks per country (data plan G10). */
-export type ReleaseCategory = 'CPI_RELEASE' | 'GDP_RELEASE';
+export type ReleaseCategory = 'CPI_RELEASE' | 'GDP_RELEASE' | 'ACTIVITY_RELEASE';
 
 /**
  * Why a country has no CPI or GDP release date on file, where the office's calendar was looked
@@ -444,13 +484,20 @@ export const RELEASE_GAPS: Record<string, Partial<Record<ReleaseCategory, string
   SAU: { CPI_RELEASE: "GASTAT's release calendar refused an automated reader.", GDP_RELEASE: "GASTAT's release calendar refused an automated reader." },
 };
 
+// Monthly activity (G41), read 2026-11-12: Eurostat publishes the EU members' figures together.
+const EUROSTAT_GAP = "Eurostat's release calendar builds its list in the browser, so its dates could not be read.";
+for (const iso3 of ['DEU', 'FRA', 'ITA', 'POL']) (RELEASE_GAPS[iso3] ||= {}).ACTIVITY_RELEASE = EUROSTAT_GAP;
+(RELEASE_GAPS.GBR ||= {}).ACTIVITY_RELEASE = "The ONS release calendar lists only the newest items without a search, so these releases' dates could not be read.";
+(RELEASE_GAPS.BRA ||= {}).ACTIVITY_RELEASE = "IBGE's release calendar refused an automated reader.";
+
+const NOT_CHECKED_ACTIVITY = 'No monthly activity source is connected for this country, so no release dates are tracked.';
 const NOT_CHECKED = 'No release dates on file: this statistics office has not been checked yet.';
 
 /** Why there is no upcoming release date for a country, in plain words. */
 export function releaseGap(iso3: string, category: ReleaseCategory, now: Date = new Date()): string {
   const listed = OFFICIAL_CALENDAR.some((e) => e.iso3 === iso3 && e.category === category);
   if (listed && !nextOfficialEvent(iso3, category, now)) return 'Every listed date has passed: the next dates still need reading from the office\'s calendar.';
-  return RELEASE_GAPS[iso3]?.[category] ?? NOT_CHECKED;
+  return RELEASE_GAPS[iso3]?.[category] ?? (category === 'ACTIVITY_RELEASE' ? NOT_CHECKED_ACTIVITY : NOT_CHECKED);
 }
 
 /** Short label for how firm a date is, for display next to it. */

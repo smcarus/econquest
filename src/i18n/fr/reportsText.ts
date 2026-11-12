@@ -112,4 +112,6 @@ export const REPORTS_TEXT_FR: Record<string, string> = {
   "Climate and energy": "Climat et énergie",
   // G40: sector balances and private debt
   "Sector balances and private debt": "Soldes sectoriels et dette privée",
+  // G41: monthly activity
+  "Monthly activity": "Activité mensuelle",
 };

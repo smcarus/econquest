@@ -66,6 +66,16 @@ The share of people living on less than a fixed amount a day, the poverty line. 
 
 **Limits.** It comes from household surveys that many countries run only every few years, so the latest figure can be old. The World Bank moves the lines from time to time when it updates price comparisons, so figures from before and after a change are not directly comparable.
 
+### Industrial production, retail sales and the monthly unemployment rate
+
+Three figures published every month. Industrial production measures how much mines, factories and power plants turn out. Retail sales measure how much shops sell. The unemployment rate is the share of people who want a job and are looking for one but do not have one.
+
+**Why it matters.** GDP comes out only every three months and late. These monthly figures arrive four to eight weeks after the month, so they show sooner whether the economy is speeding up or slowing down. Central banks and markets react to them.
+
+**How to read it.** Industrial production up 2% on a year earlier means factories produced 2% more than in the same month last year. A change on the month of -0.5% is a small fall from the month before; single months jump around, so look at several. An unemployment rate rising from 4.1% to 4.6% in a year usually means the economy is cooling.
+
+**Limits.** From Eurostat (EU members and Turkey), the US Federal Reserve, Census Bureau and BLS, the UK Office for National Statistics and Brazil's IBGE; other countries read Missing. US retail sales are in dollars and include price rises; the others are volumes. The UK and Brazil unemployment rates cover three months to the month named. For Brazil the source does not say whether the series are seasonally adjusted, so no change on the month is shown.
+
 ### Wage growth, nominal and real
 
 How much average monthly pay of employees changed on the year before. Nominal growth is the change in money terms. Real growth takes out inflation: it is how much more (or less) that pay can buy.

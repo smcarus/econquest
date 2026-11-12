@@ -58,6 +58,7 @@ const EVENT_SHORT: Record<string, string> = {
   MPC_DECISION: 'rate decision',
   CPI_RELEASE: 'CPI',
   GDP_RELEASE: 'GDP',
+  ACTIVITY_RELEASE: 'activity figures',
   INFLATION_REPORT: 'inflation report',
 };
 
