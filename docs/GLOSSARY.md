@@ -798,6 +798,8 @@ Using only the figures that had actually been published on a given past date. Of
 
 **Why it matters.** Testing a signal with today's revised figures, or with figures that were not yet published at the time, makes it look better than it could really have been. The app applies the delay before a figure could be used.
 
+**Limits.** Figures as first published come from ALFRED for the United States (with your FRED key), the ECB real-time database for the euro area (GDP, HICP inflation, unemployment; revisions as far back as the ECB recorded them) and the ONS revision triangle for UK GDP (since 1992, each publication dated the last day of its month because the file gives only the month). Other countries have only the IMF forecast editions.
+
 ### Backtest
 
 Checking how a rule or signal would have done in the past, using the data that was available at the time.

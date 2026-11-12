@@ -912,7 +912,8 @@ export const GLOSSARY: GlossaryEntry[] = [
     group: 'methods',
     what: 'Using only the figures that had actually been published on a given past date. Official figures come out weeks or months after the period they describe, and are often revised later.',
     why: 'Testing a signal with today\'s revised figures, or with figures that were not yet published at the time, makes it look better than it could really have been. The app applies the delay before a figure could be used.',
-    match: [/vintage/i, /ALFRED/],
+    limits: 'Figures as first published come from ALFRED for the United States (with your FRED key), the ECB real-time database for the euro area (GDP, HICP inflation, unemployment; revisions as far back as the ECB recorded them) and the ONS revision triangle for UK GDP (since 1992, each publication dated the last day of its month because the file gives only the month). Other countries have only the IMF forecast editions.',
+    match: [/vintage/i, /ALFRED/, /as first published/i],
   },
   {
     id: 'backtest',

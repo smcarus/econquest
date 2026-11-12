@@ -74,6 +74,8 @@ export const WORLD_STEPS: PreloadStep[] = [
   { id: 'world:bis_private_debt', kind: 'world', label: 'Household and company debt (BIS total credit)' },
   { id: 'world:monthly_activity', kind: 'world', label: 'Industrial production, retail sales and monthly unemployment' },
   { id: 'world:gov_levels', kind: 'world', label: 'Revenue and spending by level of government (Eurostat, IMF GFS)' },
+  { id: 'world:first_published_ea', kind: 'world', label: 'Euro area figures as first published (ECB real-time database)' },
+  { id: 'world:first_published_uk', kind: 'world', label: 'UK GDP as first published (ONS revision triangle)' },
   { id: 'world:gov_spending', kind: 'world', label: 'Government spending by sector (Eurostat and IMF COFOG via DBnomics)' },
   { id: 'world:hc_spread', kind: 'world', label: 'USD bond spreads over Treasuries (central bank of Peru, J.P. Morgan EMBI Global, monthly)' },
   { id: 'world:fx_history', kind: 'world', label: 'Daily exchange rates since 1999 (ECB reference rates via Frankfurter)' },

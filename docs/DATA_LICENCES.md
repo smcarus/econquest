@@ -180,7 +180,7 @@ From the terms:
 
 ### ECB statistics: euro reference rates (through Frankfurter), Survey of Professional Forecasters
 
-- **Used for:** Daily exchange rate history per US dollar since 1999; FX volatility; last year's closing rate for the year-to-date move; Survey of Professional Forecasters inflation expectations (ECB Data Portal, dataset SPF, quarterly world series)
+- **Used for:** Daily exchange rate history per US dollar since 1999; FX volatility; last year's closing rate for the year-to-date move; Survey of Professional Forecasters inflation expectations (ECB Data Portal, dataset SPF, quarterly world series); euro area GDP, HICP inflation and unemployment as first published (ECB Euro Area Real-Time Database, dataset RTD, with its revision history)
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. Free reuse with the source quoted and the figures unmodified.
 - **Terms read:** [ECB statistics reuse policy](https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html); [Frankfurter licence](https://frankfurter.dev/license/) (checked 2026-11-06)
@@ -285,7 +285,7 @@ From the terms:
 
 ### Office for National Statistics (UK)
 
-- **Used for:** UK monthly activity: index of production (K222), retail sales volume (J5EK) and the unemployment rate (MGSX)
+- **Used for:** UK monthly activity: index of production (K222), retail sales volume (J5EK) and the unemployment rate (MGSX); UK GDP as first published (GDP revision triangle, ABMI)
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. Open Government Licence v3.0 with ONS named.
 - **Terms read:** [ONS licences](https://www.ons.gov.uk/methodology/geography/licences); [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/) (checked 2026-11-12)

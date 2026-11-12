@@ -202,7 +202,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'ecb',
     name: 'ECB statistics: euro reference rates (through Frankfurter), Survey of Professional Forecasters',
-    usedFor: 'Daily exchange rate history per US dollar since 1999; FX volatility; last year\'s closing rate for the year-to-date move; Survey of Professional Forecasters inflation expectations (ECB Data Portal, dataset SPF, quarterly world series)',
+    usedFor: 'Daily exchange rate history per US dollar since 1999; FX volatility; last year\'s closing rate for the year-to-date move; Survey of Professional Forecasters inflation expectations (ECB Data Portal, dataset SPF, quarterly world series); euro area GDP, HICP inflation and unemployment as first published (ECB Euro Area Real-Time Database, dataset RTD, with its revision history)',
     terms: [
       { label: 'ECB statistics reuse policy', url: 'https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html' },
       { label: 'Frankfurter licence', url: 'https://frankfurter.dev/license/' },
@@ -324,7 +324,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'ons',
     name: 'Office for National Statistics (UK)',
-    usedFor: 'UK monthly activity: index of production (K222), retail sales volume (J5EK) and the unemployment rate (MGSX)',
+    usedFor: 'UK monthly activity: index of production (K222), retail sales volume (J5EK) and the unemployment rate (MGSX); UK GDP as first published (GDP revision triangle, ABMI)',
     terms: [
       { label: 'ONS licences', url: 'https://www.ons.gov.uk/methodology/geography/licences' },
       { label: 'Open Government Licence v3.0', url: 'https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/' },

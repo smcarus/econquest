@@ -80,6 +80,7 @@ import { sectorBalances } from './src/utils/sectorBalances';
 import { activitySnapshot } from './src/utils/monthlyIndicators';
 import { fetchMonthlyIndicators, loadMonthlyIndicators } from './src/server/feeds/monthlyIndicators';
 import { fetchGovLevels, loadGovLevels } from './src/server/feeds/govLevels';
+import { fetchEuroFirstPublished, fetchUkFirstPublished } from './src/server/feeds/firstPublished';
 import { debtStructureFromSnapshot } from './src/utils/debtStructure';
 import { licDebtReading, type LicDebtReading } from './src/utils/lowIncomeDebt';
 import { aiddataData } from './src/utils/aiddataStore';
@@ -598,6 +599,22 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
       const sub = Object.values(got.countries).filter((c) => c.spending && (c.spending.pct.state !== undefined || c.spending.pct.local !== undefined)).length;
       const note = `${Object.keys(got.countries).length} countries, ${sub} with state or local spending`;
+      return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
+    }
+    case 'world:first_published_ea': {
+      const got = await fetchEuroFirstPublished();
+      if (!got) return { outcome: 'failed', note: 'The ECB Data Portal did not answer for euro area figures as first published' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const releases = got.series.reduce((n, s) => n + s.rows.length, 0);
+      const note = `${got.series.length} euro area series, ${releases} published values`;
+      return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
+    }
+    case 'world:first_published_uk': {
+      const got = await fetchUkFirstPublished();
+      if (!got) return { outcome: 'failed', note: 'The ONS did not let the app download the GDP revision triangle, and no copy is saved in data/local/ons-triangles' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const releases = got.series.reduce((n, s) => n + s.rows.length, 0);
+      const note = `UK GDP growth, ${releases} published values`;
       return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
     }
     case 'world:ust_auctions': {

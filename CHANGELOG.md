@@ -5,6 +5,17 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Euro area and UK figures as first published (G12, G13): Research > History & data on euro
+  members' pages now shows every release of euro area GDP growth, HICP inflation and unemployment
+  from the ECB Euro Area Real-Time Database (its revision history), and the UK page shows every
+  publication of quarterly GDP growth since 1992 from the ONS revision triangle. Both use the same
+  panel as US data as first published: every release of a period, and what was known on a chosen
+  day. The ONS gives only the month of each publication, so each is dated the last day of its
+  month. When the ONS refuses the download, a copy of abmi.zip saved in data/local/ons-triangles/
+  is read. Two new weekly daily-run steps save gzipped copies. `npm run check:vintages` prints both
+  sources' layouts; two Data health rows. Licence check: ECB statistics reuse policy (free reuse
+  with the source quoted) and the ONS Open Government Licence v3.0. Spanish and French text.
+
 - Revenue and spending by level of government (G42, step 1): two new rows under "Fiscal and debt"
   in the country brief and note show central, state, local and social security revenue and
   spending as % of GDP, with the share done by state and local governments, for the latest year.

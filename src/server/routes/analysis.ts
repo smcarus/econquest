@@ -2,6 +2,9 @@ import type { Express } from 'express';
 import { DATA_DIR } from '../config';
 import { loadWeoVintages } from '../../utils/weoVintagesStore';
 import { ALFRED_SERIES, ALFRED_SOURCE, alfredReply } from '../../utils/alfredVintages';
+import { ECB_RTD_SERIES, ECB_RTD_SOURCE } from '../../utils/ecbRealTime';
+import { fetchEuroFirstPublished, fetchUkFirstPublished } from '../feeds/firstPublished';
+import { ONS_TRIANGLE_SERIES, ONS_TRIANGLE_SETUP_HELP, ONS_TRIANGLE_SOURCE } from '../../utils/onsTriangles';
 import { BOHN_REFERENCES, bohnSentence, bohnTest } from '../../utils/bohnTest';
 import { grossFinancingNeed, gfnSentence } from '../../utils/grossFinancingNeed';
 import { debtFan, debtFanSentence } from '../../utils/debtFan';
@@ -532,6 +535,24 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const period = typeof req.query.period === 'string' ? req.query.period : undefined;
     const asOf = typeof req.query.asOf === 'string' ? req.query.asOf : undefined;
     res.json({ ...alfredReply(def, got, period, asOf), choices: ALFRED_SERIES.map((d) => ({ id: d.id, label: d.label })) });
+  });
+  // Euro area and UK figures as first published (G12 ECB real-time database, src/utils/ecbRealTime.ts;
+  // G13 ONS revision triangle, src/utils/onsTriangles.ts). ?area=ea (default) or uk.
+  app.get('/api/first-published', async (req, res) => {
+    const uk = req.query.area === 'uk';
+    const defs = uk ? ONS_TRIANGLE_SERIES : ECB_RTD_SERIES;
+    const choices = defs.map((d) => ({ id: d.id, label: d.label }));
+    const def = defs.find((d) => d.id === req.query.series) || defs[0];
+    const file = await (uk ? fetchUkFirstPublished() : fetchEuroFirstPublished());
+    const source = uk ? ONS_TRIANGLE_SOURCE : ECB_RTD_SOURCE;
+    if (!file) {
+      const reason = uk ? ONS_TRIANGLE_SETUP_HELP : 'Euro area figures as first published have not been downloaded yet, or the ECB Data Portal did not answer';
+      return res.json({ ok: false, series: def.id, reason, source, choices });
+    }
+    const period = typeof req.query.period === 'string' ? req.query.period : undefined;
+    const asOf = typeof req.query.asOf === 'string' ? req.query.asOf : undefined;
+    const s = file.series.find((x) => x.id === def.id) || null;
+    res.json({ ...alfredReply(def, s, period, asOf, file.source || source, uk ? 'ONS' : 'ECB'), pulledAt: file.pulledAt, choices });
   });
   // Past IMF WEO editions you saved in data/local/weo-vintages/ (src/utils/weoVintages.ts). Read again
   // when ?fresh=1, so files added while the app runs are picked up.
