@@ -87,6 +87,12 @@ npm run users -- disable <username>
 
 Under Docker: `docker compose exec econquest npm run users -- list`.
 
+## Release review
+
+The review done before the public release (dependencies, routes, file permissions, backups, the
+local AI model and the Windows start scripts), with what it found and fixed, is in
+[SECURITY_REVIEW.md](SECURITY_REVIEW.md).
+
 ## Not yet (planned, in order)
 
 1. HTTPS through a reverse proxy in the compose stack.

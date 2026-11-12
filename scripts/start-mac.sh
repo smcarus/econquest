@@ -55,8 +55,8 @@ if curl -sSf http://localhost:11434/api/tags >/dev/null 2>&1; then
   echo "[INFO] Launching EconQuest container connected to Host Ollama (${OLLAMA_BASE_URL})..."
   docker compose up -d --build
 elif command -v ollama >/dev/null 2>&1; then
-  echo "[INFO] Native macOS Ollama CLI found. Starting 'ollama serve' with OLLAMA_ORIGINS=*..."
-  OLLAMA_ORIGINS="*" nohup ollama serve >/tmp/econquest-ollama.log 2>&1 &
+  echo "[INFO] Native macOS Ollama CLI found. Starting 'ollama serve'..."
+  nohup ollama serve >/tmp/econquest-ollama.log 2>&1 &
   sleep 3
   export OLLAMA_BASE_URL="http://host.docker.internal:11434"
   ollama pull "${QUICK_MODEL}" || true
