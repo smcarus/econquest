@@ -31,7 +31,8 @@ to the next language, and the choice is kept in this browser. Each language down
 pick it, so English readers download none of them and a reader of one language downloads no other.
 Spanish and French cover the whole app. Portuguese arrives in parts: so far the app frame, Workspace,
 Council chat, the reasons a figure is Missing, the Research pages, one country's briefs and its
-panels; screens not yet translated show in English. Spanish
+panels, the watchlist, Your data, Your tests, Holdings, Tools and Compare countries; screens not yet
+translated show in English. Spanish
 and French use the formal "you" (usted, vous); Portuguese uses the polite "você", as Brazilian
 software and official sites do. The council's agents still read questions in English, so in the other
 languages the chat asks you to type questions in English for now, and the suggested questions stay in
