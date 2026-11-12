@@ -793,6 +793,20 @@ becomes the problem). Six steps, in order:
 2. **Diagnose.** Twelve standard indicators from that saved pull, each numbered [1] to [12] with its
    source and period, or Missing with the reason, plus the real policy rate and r minus g when their
    inputs are live.
+   **Precedents** (G34), shown after Diagnose: other countries whose yearly figures were closest to
+   this country's, and what followed in the next three years. Pick at least two figures (debt, inflation,
+   reserves in months of imports, current account, growth, primary balance) and press *Find
+   precedents*. The app takes the newest year before the As of year in which this country has every
+   picked figure, then compares it with every other country and year from 1980 that has them all and
+   at least three later years before the As of year. Each figure is clipped at the 1st and 99th
+   percentile, so a hyperinflation does not swamp the scale, and put in standard units; the distance is
+   the root mean square of the differences. Each country appears once, in its closest year; ties go by
+   country code, then year. The eight closest are shown with average growth over the next three years,
+   inflation, current account and reserves three years later, the change in debt and in the primary
+   balance, and the change in the currency against the dollar, each read from that country's saved
+   history (a gap reads Missing), with the median and how many precedents had the figure. IMF programme
+   dates (MONA) and crisis dates (Laeven and Valencia) read Missing until the IMF confirms their terms.
+   Nothing is saved and the memo does not change. This is a description, not a tested signal.
 3. **Options.** Add up to four options of your own if you like, then *Ask the council*. It ranks
    options for the goal from the frame and diagnosis only, at temperature 0, each with how it works,
    time to effect, trade-offs, who bears the cost, what must be true and risks, and one sentence from

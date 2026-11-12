@@ -5,6 +5,7 @@ import { refreshModelHistory, registerAnalysisRoutes } from './src/server/routes
 import { FILE_PULLS, dailyDue, dailyFilePath, formatDaily, interestingLines, readDaily, sweepNote, testsDue, writeDaily, type DailyRun, type DailyStep } from './src/utils/dailyRun';
 import { spawn } from 'child_process';
 import { registerReviewRoutes } from './src/server/routes/reviews';
+import type { HistoryInput } from './src/utils/precedentFinder';
 import { registerIdeaRoutes } from './src/server/routes/ideas';
 import { registerFeedbackRoutes } from './src/server/routes/feedback';
 import { mountEngineRoutes } from './src/server/engineRoutes';
@@ -323,6 +324,29 @@ function loadOfficialHistory(iso3: string): OfficialHistoryFile | null {
   } catch {
     return null;
   }
+}
+/** Every saved history file, for the precedent finder (G34); read again at most every five minutes. */
+let allHistoriesCache: { at: number; value: { histories: HistoryInput[]; pulledAt?: string } } | null = null;
+function allHistories(): { histories: HistoryInput[]; pulledAt?: string } {
+  if (allHistoriesCache && Date.now() - allHistoriesCache.at < 5 * 60 * 1000) return allHistoriesCache.value;
+  let codes: string[] = [];
+  try {
+    codes = fs.readdirSync(HISTORY_DIR).map((n) => /^([A-Z0-9]+)\.json$/.exec(n)?.[1]).filter((c): c is string => Boolean(c));
+  } catch {
+    // no history downloaded yet
+  }
+  const names = new Map(SOVEREIGN_CATALOG.map((c) => [c.iso3, c.countryName]));
+  const histories: HistoryInput[] = [];
+  let pulledAt: string | undefined;
+  for (const iso3 of codes.sort()) {
+    const file = loadOfficialHistory(iso3);
+    if (!file) continue;
+    histories.push({ iso3, name: names.get(iso3) || iso3, series: file.series });
+    if (!pulledAt || file.pulledAt > pulledAt) pulledAt = file.pulledAt;
+  }
+  const value = { histories, pulledAt };
+  allHistoriesCache = { at: Date.now(), value };
+  return value;
 }
 async function downloadOfficialHistory(iso3: string): Promise<OfficialHistoryFile | null> {
   const prev = loadOfficialHistory(iso3);
@@ -3266,7 +3290,7 @@ async function startServer() {
       res.status(500).json({ error: `Could not save the workspace file (${error?.code || error?.message || 'unknown error'}).` });
     }
   });
-  registerReviewRoutes(app, { refuseRemoteChange, signedIn, archivedSnapshot: (iso3, date) => archivedSnapshot(iso3, date), seriesFor, fetchLiveOpenDataSnapshot, reviewOptionsStep, withModelFigures });
+  registerReviewRoutes(app, { refuseRemoteChange, signedIn, archivedSnapshot: (iso3, date) => archivedSnapshot(iso3, date), seriesFor, fetchLiveOpenDataSnapshot, reviewOptionsStep, withModelFigures, allHistories });
   // Pre-registered backtests: the tests as registered (with their hashes) and the latest verdicts.
   app.get('/api/validation', (_req, res) => {
     const v = loadValidation(VALIDATION_FILE);
