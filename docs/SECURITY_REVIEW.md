@@ -97,8 +97,17 @@ patterns finds only one made-up test value (`tests/userSettings.test.ts`).
 ## Still open
 
 - **First real run on Windows.** The fixes above come from reading the scripts; this review was done
-  without a Windows computer. Before the public release, someone runs
-  `scripts\start-windows.bat` on Windows 10 or 11 with Docker Desktop, once with Ollama installed and
-  once without. A one-off check on a GitHub Windows runner can parse the script with Windows
-  PowerShell 5.1 and run the test suite on Windows, but it cannot start Docker Desktop.
+  without a Windows computer. Two checks before the public release (Sam chose both):
+  1. **GitHub Windows check** (`.github/workflows/windows-check.yml`, run by hand from Actions >
+     Windows check). It parses the start script with Windows PowerShell 5.1, checks it was checked
+     out with Windows line endings, and runs the type check and tests on Windows. It cannot start
+     Docker Desktop.
+  2. **A person's run** on Windows 10 or 11 with Docker Desktop (WSL 2):
+     - Without Ollama: double-click `scripts\start-windows.bat`. The app should open at
+       http://localhost:3737 with the bundled model container. The first start downloads the models
+       and takes a long time.
+     - With the Ollama app running: run it again. It should say it found Ollama on
+       http://localhost:11434.
+     - With Docker Desktop closed: it should stop at once with "Docker Desktop is not running".
+     - Send back the window's text for any step that does not do this.
 - **Review again** at checkpoint CP1, or before any change that opens the app to a network by default.
