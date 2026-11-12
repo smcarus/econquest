@@ -122,13 +122,18 @@ test('runBacktests pulls the histories once, judges each registered test and sav
       throw new Error('HTTP 503');
     },
   });
-  const core = urls.filter((u) => !u.includes('NGDP_RPCH') && !u.includes('ec.europa.eu'));
+  const core = urls.filter((u) => !u.includes('NGDP_RPCH') && !u.includes('ec.europa.eu') && !u.includes('fred.stlouisfed.org'));
   assert.equal(core.length, 4, 'BIS, leading indicator, CFTC and consumer prices, each once');
   // inflation_expectations_lead (G32): the EC price-expectations survey and HICP, each once; no successor HICP pull when the first fails.
   const eurostat = urls.filter((u) => u.includes('ec.europa.eu'));
   assert.deepEqual(eurostat.map((u) => u.match(/data\/(\w+)\?/)![1]), ['ei_bsco_m', 'prc_hicp_manr']);
   assert.ok(out.problems.some((p) => /consumer survey \(ei_bsco_m, BS-PT-NY\) did not answer/.test(p)));
   assert.equal(out.results.inflation_expectations_lead, undefined, 'no verdict without the survey and HICP');
+  // yield_curve_recession (G25): each FRED 10-year series once, from 1990; no verdict when FRED does not answer.
+  const fred = urls.filter((u) => u.includes('fred.stlouisfed.org'));
+  assert.equal(fred.length, new Set(fred).size);
+  assert.ok(fred.length >= 30 && fred.every((u) => u.includes('cosd=1990-01-01')));
+  assert.ok(out.problems.some((p) => /FRED 10-year yields did not answer/.test(p)));
   const growth = urls.filter((u) => u.includes('NGDP_RPCH'));
   assert.equal(new Set(growth).size, growth.length, 'IMF real growth once per country (Taylor gap v2 output gap)');
   assert.ok(out.problems.some((p) => /IMF real GDP growth did not answer/.test(p)));

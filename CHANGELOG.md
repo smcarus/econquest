@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Yield curve and financial conditions (G25, Research > History & data, also in Tools): the 10-year
+  government bond yield minus the policy rate each month, past spells with the curve inverted,
+  calendar-year averages, and a financial conditions index (policy rate, 10-year yield, spread over
+  US Treasuries, real effective exchange rate; z-scores against the country's own history since
+  1990, fixed equal weights; description only). The pre-registered `yield_curve_recession` test
+  moved unchanged to docs/validation/preregistered and now runs with the other backtests (FRED
+  10-year yields, BIS policy rates, IMF real GDP growth outturns). No recession figure is shown
+  until it passes; after that only its historical hit rate. English, Spanish and French.
 - External sustainability (G24, Research > History & data, also in Tools): external debt as % of
   GDP, a year of external debt service against reserves and exports, and the debt-stabilising
   non-interest current account d × (i − g) ÷ (1 + g) on five-year averages, beside the actual one.

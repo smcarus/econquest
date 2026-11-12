@@ -21,8 +21,8 @@
 import type { BacktestMethod, BacktestSpec } from './backtest';
 
 /** The test methods an entry can use, with the settings each reads (from the app's registered tests). */
-/** expectations_direction (G32) is a hit-rate test with its own pass mark, so Quest entries cannot use it yet. */
-export type QuestMethod = Exclude<BacktestMethod, 'expectations_direction'>;
+/** expectations_direction (G32) and yield_curve_recession (G25) have their own data and pass marks, so Quest entries cannot use them yet. */
+export type QuestMethod = Exclude<BacktestMethod, 'expectations_direction' | 'yield_curve_recession'>;
 export const SIGNAL_METHODS: Record<QuestMethod, { label: string; params: string[]; /** Reads files on the owner's computer (GDELT, UCDP), not a feed. */ local?: boolean }> = {
   cli_turn_policy: { label: 'OECD leading-indicator turns before policy-rate moves', params: ['confirmMonths', 'publicationLagMonths', 'windowMonths'] },
   cftc_crowding: { label: 'Crowded futures positioning that unwinds', params: ['lookbackWeeks', 'minLookbackWeeks', 'highPct', 'lowPct', 'windowWeeks', 'unwindPts', 'minGapWeeks'] },
