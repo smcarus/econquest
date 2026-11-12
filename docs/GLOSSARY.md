@@ -280,6 +280,16 @@ Everything the US Federal Reserve owns (mainly government bonds) and owes (mainl
 
 ## Government budget and debt
 
+### Revenue and spending by level of government
+
+How much of the money the state raises and spends goes through each level: central government, state or regional governments, local governments (cities, towns, districts) and social security funds, each as % of GDP.
+
+**Why it matters.** In federal countries such as the United States, Germany, Brazil or India, states and cities spend a large part of the budget and can borrow on their own. A national budget cut or a debt problem can look very different once the other levels are counted, and policies such as schools or health are often run locally.
+
+**How to read it.** Central 18%, state 10%, local 5% of GDP with "state and local 30% of the levels' total" means nearly a third of spending is done below central government. A country with no state or local figures is usually run from the centre, or only reports central government.
+
+**Limits.** From Eurostat (EU members) and the IMF Government Finance Statistics, yearly and usually two or three years behind. Each level is counted before money passed between levels (grants to states, for example) is netted out, so the levels add up to more than general government; the share below central government is worked out from that sum and labelled so. Many countries report only central government to the IMF.
+
 ### Risk of debt distress (IMF/World Bank rating)
 
 A rating the IMF and World Bank give each low-income country after a debt sustainability analysis: low, moderate, high, or already in debt distress.

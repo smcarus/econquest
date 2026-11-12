@@ -119,7 +119,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'imf',
     name: 'IMF (World Economic Outlook, Fiscal Monitor, International Liquidity, Balance of Payments, COFER, Consumer Price Index)',
-    usedFor: 'Debt/GDP, inflation, growth, primary balance, output gap, reserves, current account, imports, COFER shares, monthly consumer prices (CPI dataset), government spending by function (GFS COFOG, read through DBnomics)',
+    usedFor: 'Debt/GDP, inflation, growth, primary balance, output gap, reserves, current account, imports, COFER shares, monthly consumer prices (CPI dataset), government spending by function (GFS COFOG, read through DBnomics); revenue and spending by level of government (GFS main aggregates by sub-sector, GFSMAB, read through DBnomics)',
     terms: [{ label: 'Copyright and Usage (Special Terms for Statistical Data)', url: 'https://www.imf.org/en/About/copyright-and-terms' }],
     status: 'permission',
     display: 'Allowed with attribution: the IMF lets users publish and distribute its Data.',
@@ -307,12 +307,12 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'eurostat',
     name: 'Eurostat HICP, government expenditure by function (COFOG) and EU business and consumer surveys',
-    usedFor: 'Monthly inflation for EU members (Poland on the defaults); government spending by function, % of GDP (gov_10a_exp); the European Commission\'s business and consumer surveys as Eurostat republishes them (ei_bssi_m_r2, ei_bsee_m_r2); monthly industrial production, retail trade volume and unemployment rate (sts_inpr_m, sts_trtu_m, une_rt_m)',
+    usedFor: 'Monthly inflation for EU members (Poland on the defaults); government spending by function, % of GDP (gov_10a_exp); revenue and spending by level of government (gov_10a_main); the European Commission\'s business and consumer surveys as Eurostat republishes them (ei_bssi_m_r2, ei_bsee_m_r2); monthly industrial production, retail trade volume and unemployment rate (sts_inpr_m, sts_trtu_m, une_rt_m)',
     terms: [{ label: 'Eurostat copyright and reuse', url: 'https://ec.europa.eu/eurostat/about-us/policies/copyright' }],
     status: 'open',
     display: 'Allowed without a licence if Eurostat is named and any change to the data is stated.',
     commercial: 'Allowed for EU, EFTA and candidate countries (the app reads EU and EFTA members only).',
-    attribution: 'Source: Eurostat (prc_hicp_minr, gov_10a_exp, ei_bssi_m_r2, ei_bsee_m_r2, sts_inpr_m, sts_trtu_m, une_rt_m); surveys by the European Commission (DG ECFIN).',
+    attribution: 'Source: Eurostat (prc_hicp_minr, gov_10a_exp, gov_10a_main, ei_bssi_m_r2, ei_bsee_m_r2, sts_inpr_m, sts_trtu_m, une_rt_m); surveys by the European Commission (DG ECFIN).',
     quotes: [
       'Eurostat has a policy of encouraging free re-use of its data, both for non-commercial and commercial purposes.',
       'when re-use involves modifications to the data or text, this must be stated clearly to the end user of the information.',
@@ -875,8 +875,8 @@ export const PLANNED_LICENCES: PlannedLicenceRow[] = [
   {
     id: 'imf_gfs_fsi',
     name: 'IMF Government Finance Statistics and Financial Soundness Indicators',
-    plannedFor: 'G28 Bank-sovereign links; G42 Sub-national revenue',
-    usedFor: 'Revenue and spending by level of government; bank capital, asset quality and holdings of government debt',
+    plannedFor: 'G28 Bank-sovereign links (GFS by level of government is in use since G42, under the IMF row)',
+    usedFor: 'Bank capital, asset quality and holdings of government debt',
     terms: [{ label: 'IMF Copyright and Usage (Special Terms for Statistical Data)', url: 'https://www.imf.org/en/About/copyright-and-terms' }],
     status: 'permission',
     display: 'Allowed with attribution: GFS is named in the IMF\'s statistical data terms.',

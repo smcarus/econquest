@@ -79,6 +79,7 @@ import { loadWages, fetchWagesPull, loadHousePrices, fetchHousePricesPull, loadP
 import { sectorBalances } from './src/utils/sectorBalances';
 import { activitySnapshot } from './src/utils/monthlyIndicators';
 import { fetchMonthlyIndicators, loadMonthlyIndicators } from './src/server/feeds/monthlyIndicators';
+import { fetchGovLevels, loadGovLevels } from './src/server/feeds/govLevels';
 import { debtStructureFromSnapshot } from './src/utils/debtStructure';
 import { licDebtReading, type LicDebtReading } from './src/utils/lowIncomeDebt';
 import { aiddataData } from './src/utils/aiddataStore';
@@ -589,6 +590,14 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       if (!got) return { outcome: 'failed', note: 'None of Eurostat, FRED, the ONS or the BCB answered for monthly activity' };
       const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
       const note = `${Object.keys(got.countries).length} countries`;
+      return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
+    }
+    case 'world:gov_levels': {
+      const got = await fetchGovLevels();
+      if (!got) return { outcome: 'failed', note: 'Neither Eurostat nor the IMF GFS (DBnomics) answered for levels of government' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const sub = Object.values(got.countries).filter((c) => c.spending && (c.spending.pct.state !== undefined || c.spending.pct.local !== undefined)).length;
+      const note = `${Object.keys(got.countries).length} countries, ${sub} with state or local spending`;
       return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
     }
     case 'world:ust_auctions': {
@@ -1172,8 +1181,11 @@ function withWagesHousing(snapshot: OpenDataSnapshot): OpenDataSnapshot {
   const hr = h?.countries[snapshot.iso3];
   const dr = d?.countries[snapshot.iso3];
   const ma = loadMonthlyIndicators();
+  const gl = loadGovLevels();
+  const glr = gl?.countries[snapshot.iso3];
   return {
     ...snapshot,
+    ...(gl ? { govLevels: { pulledAt: gl.pulledAt, ...(glr ? { reading: glr } : {}) } } : {}),
     ...(ma ? { monthlyActivity: activitySnapshot(ma, snapshot.iso3) } : {}),
     ...(d ? { privateDebt: { pulledAt: d.pulledAt, ...(dr ? { reading: dr } : {}) } } : {}),
     ...(w ? { wages: { pulledAt: w.pulledAt, ...(wr ? { reading: wr } : {}) } } : {}),
@@ -1491,6 +1503,7 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
               ...(x.housePrices?.reading ? { housePrices: x.housePrices } : {}),
               ...(x.privateDebt?.reading ? { privateDebt: x.privateDebt } : {}),
               ...(sb ? { sectorBalances: sb } : {}),
+              ...(x.govLevels?.reading ? { govLevels: x.govLevels } : {}),
               ...(x.monthlyActivity && (x.monthlyActivity.ip || x.monthlyActivity.retail || x.monthlyActivity.unemp) ? { monthlyActivity: x.monthlyActivity } : {}),
             };
           })()),

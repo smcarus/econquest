@@ -37,7 +37,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | New York Fed markets data | Allowed with conditions | Free sharing allowed | Allowed for personal or business purposes; reference rates (SOFR, EFFR and others) must carry the New York Fed's notice. | Allowed for business purposes; no general ban on data. | "© <year> Federal Reserve Bank of New York. Content from the New York Fed subject to the Terms of Use at newyorkfed.org." For SOFR and EFFR also: "The <rate> is subject to the Terms of Use posted at newyorkfed.org. The New York Fed is not responsible for publication of the <rate> by <publisher>, does not sanction or endorse any particular republication, and has no liability for your use." |
 | FRED (St. Louis Fed): 10Y government yields from the OECD; St. Louis Fed and Chicago Fed stress indices; US inflation expectations | Permission needed for client or commercial use | Sharing unclear | The series are labelled "Copyrighted: Citation Required" (owner: OECD). FRED's terms say to contact the data owner before any use beyond personal use, and that FRED cannot give that permission. | Unclear in FRED's own terms (one section allows reports to clients with attribution for citation-required series; others require the owner's permission). | OECD (year), Main Economic Indicators, long-term interest rates, retrieved from FRED, Federal Reserve Bank of St. Louis. With the FRED API key: "This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis." |
 | OECD leading indicators and consumer prices (via DBnomics) | Terms not confirmed | Sharing unclear | DBnomics passes on the OECD's own licence. The OECD terms page could not be read past its navigation, so the OECD data licence is not confirmed here. | Not confirmed. | OECD (year), <dataset name>, <data source>, via DBnomics (citation form quoted on FRED's OECD series notes). |
-| Eurostat HICP, government expenditure by function (COFOG) and EU business and consumer surveys | Open with attribution | Free sharing allowed | Allowed without a licence if Eurostat is named and any change to the data is stated. | Allowed for EU, EFTA and candidate countries (the app reads EU and EFTA members only). | Source: Eurostat (prc_hicp_minr, gov_10a_exp, ei_bssi_m_r2, ei_bsee_m_r2, sts_inpr_m, sts_trtu_m, une_rt_m); surveys by the European Commission (DG ECFIN). |
+| Eurostat HICP, government expenditure by function (COFOG) and EU business and consumer surveys | Open with attribution | Free sharing allowed | Allowed without a licence if Eurostat is named and any change to the data is stated. | Allowed for EU, EFTA and candidate countries (the app reads EU and EFTA members only). | Source: Eurostat (prc_hicp_minr, gov_10a_exp, gov_10a_main, ei_bssi_m_r2, ei_bsee_m_r2, sts_inpr_m, sts_trtu_m, une_rt_m); surveys by the European Commission (DG ECFIN). |
 | Office for National Statistics (UK) | Open with attribution | Free sharing allowed | Open Government Licence v3.0: reuse is allowed with ONS named as the source. | Allowed ("whether commercially or privately", ONS licences page; "exploit the Information commercially and non-commercially", OGL v3.0). | Source: Office for National Statistics licensed under the Open Government Licence v.3.0 |
 | CFTC Commitments of Traders | Open with attribution | Free sharing allowed | Public domain. | Allowed. | Source: CFTC Commitments of Traders (acknowledgement requested). |
 | US Treasury TIC (major foreign holders) | Terms not confirmed | Sharing unclear | No terms, licence or copyright statement was found on the TIC or Treasury site-policy pages. | Not stated. | Source: US Treasury, Treasury International Capital (TIC) system. |
@@ -102,7 +102,7 @@ From the terms:
 
 ### IMF (World Economic Outlook, Fiscal Monitor, International Liquidity, Balance of Payments, COFER, Consumer Price Index)
 
-- **Used for:** Debt/GDP, inflation, growth, primary balance, output gap, reserves, current account, imports, COFER shares, monthly consumer prices (CPI dataset), government spending by function (GFS COFOG, read through DBnomics)
+- **Used for:** Debt/GDP, inflation, growth, primary balance, output gap, reserves, current account, imports, COFER shares, monthly consumer prices (CPI dataset), government spending by function (GFS COFOG, read through DBnomics); revenue and spending by level of government (GFS main aggregates by sub-sector, GFSMAB, read through DBnomics)
 - **Status:** Permission needed for client or commercial use
 - **Free non-commercial sharing:** Free sharing allowed. IMF Data may be published and distributed with attribution; only commercial reuse needs permission.
 - **Terms read:** [Copyright and Usage (Special Terms for Statistical Data)](https://www.imf.org/en/About/copyright-and-terms) (checked 2026-11-06)
@@ -269,13 +269,13 @@ From the terms:
 
 ### Eurostat HICP, government expenditure by function (COFOG) and EU business and consumer surveys
 
-- **Used for:** Monthly inflation for EU members (Poland on the defaults); government spending by function, % of GDP (gov_10a_exp); the European Commission's business and consumer surveys as Eurostat republishes them (ei_bssi_m_r2, ei_bsee_m_r2); monthly industrial production, retail trade volume and unemployment rate (sts_inpr_m, sts_trtu_m, une_rt_m)
+- **Used for:** Monthly inflation for EU members (Poland on the defaults); government spending by function, % of GDP (gov_10a_exp); revenue and spending by level of government (gov_10a_main); the European Commission's business and consumer surveys as Eurostat republishes them (ei_bssi_m_r2, ei_bsee_m_r2); monthly industrial production, retail trade volume and unemployment rate (sts_inpr_m, sts_trtu_m, une_rt_m)
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. Free reuse with Eurostat named.
 - **Terms read:** [Eurostat copyright and reuse](https://ec.europa.eu/eurostat/about-us/policies/copyright) (checked 2026-11-06)
 - **Show to others:** Allowed without a licence if Eurostat is named and any change to the data is stated.
 - **Commercial use:** Allowed for EU, EFTA and candidate countries (the app reads EU and EFTA members only).
-- **Credit:** Source: Eurostat (prc_hicp_minr, gov_10a_exp, ei_bssi_m_r2, ei_bsee_m_r2, sts_inpr_m, sts_trtu_m, une_rt_m); surveys by the European Commission (DG ECFIN).
+- **Credit:** Source: Eurostat (prc_hicp_minr, gov_10a_exp, gov_10a_main, ei_bssi_m_r2, ei_bsee_m_r2, sts_inpr_m, sts_trtu_m, une_rt_m); surveys by the European Commission (DG ECFIN).
 
 From the terms:
 
@@ -713,7 +713,7 @@ Read in the licence sweep of 11 November 2026, before the steps that need them a
 | Source | Planned for | Status | Free non-commercial sharing | Credit |
 | --- | --- | --- | --- | --- |
 | Penn World Table (Groningen Growth and Development Centre) | G27 Growth accounting | Open with attribution | Free sharing allowed | Feenstra, Robert C., Robert Inklaar and Marcel P. Timmer (2015), "The Next Generation of the Penn World Table", American Economic Review, 105(10), 3150-3182. |
-| IMF Government Finance Statistics and Financial Soundness Indicators | G28 Bank-sovereign links; G42 Sub-national revenue | Permission needed for client or commercial use | Free sharing allowed | Source: International Monetary Fund, <database name>, <link to the dataset>. |
+| IMF Government Finance Statistics and Financial Soundness Indicators | G28 Bank-sovereign links (GFS by level of government is in use since G42, under the IMF row) | Permission needed for client or commercial use | Free sharing allowed | Source: International Monetary Fund, <database name>, <link to the dataset>. |
 | IMF Monitoring of Fund Arrangements (MONA) | G34 Precedent finder | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, Monitoring of Fund Arrangements (MONA) database. |
 | IMF Fiscal Rules Dataset, 1985-2024 | G35 Fiscal rules check | Terms not confirmed | Sharing unclear | "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page. |
 | IMF External Balance Assessment (EBA) | G24 External sustainability | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, External Balance Assessment. |
@@ -740,8 +740,8 @@ From the terms:
 
 ### IMF Government Finance Statistics and Financial Soundness Indicators
 
-- **Planned for:** G28 Bank-sovereign links; G42 Sub-national revenue
-- **Will be used for:** Revenue and spending by level of government; bank capital, asset quality and holdings of government debt
+- **Planned for:** G28 Bank-sovereign links (GFS by level of government is in use since G42, under the IMF row)
+- **Will be used for:** Bank capital, asset quality and holdings of government debt
 - **Status:** Permission needed for client or commercial use
 - **Free non-commercial sharing:** Free sharing allowed. IMF Data may be published and distributed with attribution.
 - **Terms read:** [IMF Copyright and Usage (Special Terms for Statistical Data)](https://www.imf.org/en/About/copyright-and-terms) (checked 2026-11-11)

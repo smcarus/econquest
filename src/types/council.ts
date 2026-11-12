@@ -512,6 +512,8 @@ export interface OpenDataSnapshot {
   privateDebt?: { pulledAt: string; reading?: import('../utils/sectorBalances').PrivateDebtReading };
   /** Industrial production, retail sales and monthly unemployment, latest month, from the copy the daily run saved (utils/monthlyIndicators.ts). */
   monthlyActivity?: import('../utils/monthlyIndicators').MonthlyActivitySnapshot;
+  /** Revenue and spending by level of government from the copy the daily run saved (utils/govLevels.ts); reading absent when neither table has the country. */
+  govLevels?: { pulledAt: string; reading?: import('../utils/govLevels').GovLevelsReading };
   livePlumbingOverrides?: {
     usSofrRatePct?: number;
     usEffrRatePct?: number;
@@ -685,6 +687,8 @@ export interface WatchlistItem {
   privateDebt?: { pulledAt: string; reading?: import('../utils/sectorBalances').PrivateDebtReading };
   /** Industrial production, retail sales and monthly unemployment, latest month (utils/monthlyIndicators.ts). */
   monthlyActivity?: import('../utils/monthlyIndicators').MonthlyActivitySnapshot;
+  /** Revenue and spending by level of government (utils/govLevels.ts), only when the copy has the country. */
+  govLevels?: { pulledAt: string; reading?: import('../utils/govLevels').GovLevelsReading };
   /** Government, private and foreign balances for one year (utils/sectorBalances.ts), only from live IMF figures. */
   sectorBalances?: import('../utils/sectorBalances').SectorBalances;
   /** GDELT tone and headlines, WGI political stability and Polymarket odds, live only (utils/politicsEvents.ts). */

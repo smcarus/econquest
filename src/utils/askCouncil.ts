@@ -45,6 +45,7 @@ import { foreignShare, investorBaseSource, investorBaseValue } from './investorB
 import { IDS_STRUCTURE_SOURCE, INTEREST_CENTRAL_NOTE, INTEREST_SOURCE, currencyValue, usdShare } from './debtStructure';
 import { ILO_MODEL_NOTE, PEOPLE_SOURCE, POVERTY_SOURCE, povertyValue } from './peopleLiving';
 import { readingValue } from './monthlyIndicators';
+import { LEVEL_TABLE_LABEL, LEVELS_NOTE, levelsValue } from './govLevels';
 import { PRIVATE_DEBT_SOURCE, SECTOR_RULE, balanceValue, quarterText } from './sectorBalances';
 import { HOUSE_PRICES_SOURCE, REAL_WAGES_SOURCE, WAGES_SOURCE, housePriceValue, wageGrowthValue } from './wagesHousing';
 import { ENERGY_MIX_SOURCE, ENERGY_MIX_TERMS_NOTE, energyMixValue } from './climateEnergy';
@@ -727,6 +728,9 @@ function fiscalAgent(countries: LiveWatchlistItem[], question = ''): Omit<AgentA
       figures.push({ label: 'Private sector balance (remainder)', value: balanceValue(sb.privatePct, sb.year), source: `current account minus government balance, IMF ${sb.year}; ${SECTOR_RULE}`, tag: 'model' });
       parts.push(`In ${sb.year} the private sector ${sb.privatePct >= 0 ? 'saved more than it invested' : 'invested more than it saved'} (${balanceValue(sb.privatePct, sb.year).replace(/ \(\d{4}\)$/, '')}), and the rest of the world ${sb.foreignPct > 0 ? 'lent the country' : 'borrowed from the country'} ${Math.abs(sb.foreignPct).toFixed(1)}% of GDP.`);
     }
+    // Revenue and spending by level of government (G42, src/utils/govLevels.ts).
+    const gs = it.govLevels?.reading?.spending;
+    if (gs && (gs.pct.state !== undefined || gs.pct.local !== undefined)) figures.push({ label: 'Spending by level of government', value: levelsValue(gs), source: `${LEVEL_TABLE_LABEL[gs.table]}; ${LEVELS_NOTE}`, tag: 'official' });
     const pd = it.privateDebt?.reading;
     if (pd?.householdPct !== undefined) figures.push({ label: 'Household debt', value: `${pd.householdPct.toFixed(1)}% of GDP (${quarterText(pd.quarter)})`, source: PRIVATE_DEBT_SOURCE, tag: 'official' });
     if (pd?.corporatePct !== undefined) figures.push({ label: 'Company debt', value: `${pd.corporatePct.toFixed(1)}% of GDP (${quarterText(pd.quarter)})`, source: PRIVATE_DEBT_SOURCE, tag: 'official' });

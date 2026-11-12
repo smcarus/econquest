@@ -14,6 +14,7 @@ import { INVESTOR_BASE_SETUP_HELP, investorBaseSource, investorBaseValue } from 
 import { CONCENTRATION_SOURCE, ENERGY_SOURCE, EXPORT_FIELDS, IMPORT_FIELDS, TRADE_GROUPS_NOTE, TRADE_MIX_SOURCE, concentrationValue, netEnergyValue, shareSplitValue, topPartnersValue, tradeMixFromSnapshot } from './tradeMix';
 import { comtradeMissing, HHI_MIN_COVERAGE_PCT } from './comtradeTrade';
 import { PRIVATE_DEBT_NOT_COVERED_HELP, PRIVATE_DEBT_SETUP_HELP, PRIVATE_DEBT_SOURCE, SECTOR_RULE, SECTOR_SOURCE, SECTOR_YEARS_HELP, balanceValue, quarterText, sectorBalances } from './sectorBalances';
+import { GOV_LEVELS_CENTRAL_ONLY_HELP, GOV_LEVELS_NOT_COVERED_HELP, GOV_LEVELS_SETUP_HELP, LEVEL_LABEL, LEVEL_TABLE_LABEL, LEVELS_NOTE, levelsValue } from './govLevels';
 import { ACTIVITY_NOT_COVERED_HELP, ACTIVITY_NOT_IN_ANSWER_HELP, ACTIVITY_SETUP_HELP, activitySourceOf, INDICATOR_IDS, INDICATOR_LABEL, readingValue, SOURCE_NAME } from './monthlyIndicators';
 import { HOUSE_PRICES_NOT_COVERED_HELP, HOUSE_PRICES_SETUP_HELP, HOUSE_PRICES_SOURCE, REAL_WAGES_SOURCE, WAGES_GROWTH_HELP, WAGES_NOT_COVERED_HELP, WAGES_SETUP_HELP, WAGES_SOURCE, housePriceValue, wageGrowthValue } from './wagesHousing';
 import { CLIMATE_RISK_HELP, EMISSIONS_SOURCE, ENERGY_MIX_LEGACY_NOTE, ENERGY_MIX_NOT_COVERED_HELP, ENERGY_MIX_SETUP_HELP, ENERGY_MIX_SOURCE, ENERGY_MIX_TERMS_NOTE, RENEWABLE_SOURCE, climateFromSnapshot, energyMixValue } from './climateEnergy';
@@ -354,6 +355,22 @@ export function wagesHousingRows(open: CouncilAssessmentRun['openData']): BriefR
 }
 
 /**
+ * Revenue and spending by level of government (G42 step 1, src/utils/govLevels.ts), under Fiscal
+ * and debt: each level as % of GDP and the state and local share, or Missing with a reason.
+ */
+export function govLevelRows(open: CouncilAssessmentRun['openData']): BriefRow[] {
+  const g = open.govLevels;
+  return (['spending', 'revenue'] as const).map((m) => {
+    const label = LEVEL_LABEL[m];
+    const f = g?.reading?.[m];
+    if (!g) return missingRow(label, { kind: 'setup', short: 'Eurostat and IMF files not downloaded yet', help: GOV_LEVELS_SETUP_HELP });
+    if (!f) return missingRow(label, { kind: 'unreachable', short: 'Not in the Eurostat or IMF figures', help: GOV_LEVELS_NOT_COVERED_HELP });
+    if (f.pct.state === undefined && f.pct.local === undefined) return missingRow(label, { kind: 'unreachable', short: 'No state or local figures published', help: GOV_LEVELS_CENTRAL_ONLY_HELP });
+    return { label, value: levelsValue(f), source: `official, ${LEVEL_TABLE_LABEL[f.table]}; ${LEVELS_NOTE} (pulled ${g.pulledAt.slice(0, 10)})`, verified: true };
+  });
+}
+
+/**
  * Monthly activity (G41, src/utils/monthlyIndicators.ts): industrial production, retail sales and
  * the monthly unemployment rate, latest month, or Missing with a reason.
  */
@@ -597,6 +614,7 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
         netInterestRow(status, open),
         liveRow(status, 'Revenue', 'imf.revenuePct', (v) => `${pct(v)} of GDP`, open),
         liveRow(status, 'Expenditure', 'imf.expenditurePct', (v) => `${pct(v)} of GDP`, open),
+        ...govLevelRows(open),
         ...debtStructureRows(status, open),
         noSourceRow('Balance that keeps debt stable', 'Needs the average interest rate on government debt, which no connected source provides yet.'),
         liveRow(status, '10Y government yield', 'market.sovereign10YBondYieldPct', (v) => pct(v, 2), open),

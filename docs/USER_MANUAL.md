@@ -404,6 +404,14 @@ The sections are Summary (the brief), Markets & signals (MarketEdge), History & 
   are in dollars, so they include price rises. For Brazil the source does not say whether the
   series are seasonally adjusted, so no change on the month is shown. *Next monthly activity
   release* gives the next date from the office's own calendar where it could be read.
+
+  Under *Fiscal and debt*, *Spending by level of government* and *Revenue by level of government*
+  show how much goes through central government, state or regional governments, local governments
+  and social security funds, each as % of GDP, and the share done by state and local governments.
+  Money passed from one level to another is counted at both, so the levels add up to more than the
+  general government total; the share is worked out from that sum and labelled so. The figures come
+  from Eurostat and the IMF and are usually two or three years old. Countries that report only
+  central government read Missing.
   The *Climate and energy* group shows greenhouse gas emissions per person (World Bank, from the EU's
   EDGAR database, leaving out land use and forests) and the renewable share of final energy use
   (World Bank), each with its year, and the energy mix: the shares of coal, oil, gas, nuclear and
