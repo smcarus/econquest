@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Portuguese, part 3 (U2): the watchlist (also popped out), Your data, the small gap model, Your
+  tests, My holdings and the book briefs, the Tools page and its tool panels, and Compare countries.
+  The tool, compare and chat-card coverage tests now check Portuguese as well, and a new check keeps
+  the spaces at the start and end of each Portuguese message, which put back three spaces part 2
+  had dropped in the panels. Not yet checked by a native speaker.
 - Portuguese, part 2 (U2): the Research scope bar, section names and Sources, one country's three
   briefs with their figure names, reasons and meanings, and every panel on one country's other tabs,
   including the sentences the app writes from the data. The brief and panel coverage tests now check

@@ -5,7 +5,7 @@ import { ALL_CATALOGS } from '../src/i18n/messages';
 import { ES } from '../src/i18n/es';
 
 /** Words spelled the same in Portuguese and English; anything else left identical is untranslated. */
-const SAME_IN_PORTUGUESE = new Set(['Menu', 'Offline', 'Quests', 'Markdown', 'Bootstrap', 'Cascade', 'Instrument', 'AI: Gemini', '{n} pt', '{n} pts', '{value} pts']);
+const SAME_IN_PORTUGUESE = new Set(['Menu', 'Offline', 'Quests', 'Markdown', 'Bootstrap', 'Cascade', 'Instrument', 'AI: Gemini', '{n} pt', '{n} pts', '{value} pts', 'BIS ({name}), {date}']);
 /** Words spelled the same in French and English; anything else left identical is untranslated. */
 const SAME_IN_FRENCH = new Set(['Question {n}', 'momentum', 'macro', 'Document', '1 question', '{n} questions', 'Stable', '{n} pts', 'Sections', 'Markdown', 'Bootstrap', 'Notes', 'Communication', 'stable', 'Concentration', 'Options', 'Instrument', 'Type', 'Date', 'Sanctions', 'Question', 'Menu', 'Agents', '1 position', '{n} positions', '1 document', '{n} documents', 'Inflation', 'Cycle', 'Question', 'Instructions', '{n} pages, ', '1 page, ', 'Tests', 'Image', 'Documents', '{num} passages', '1 passage', 'Cascade',
   'Articles', 'Coefficient', 'Date', 'Excel', 'Inflation {inf}, {basis}{gap}', 'Option', 'Point', 'Programmes', 'Sanctions', 'Sources',
@@ -314,6 +314,10 @@ test('Holdings and Tools: tool names, briefs, signals and tool reasons the app b
   const fx = (x: string) => translateText(x, 'fr');
   const noFrench = s.filter((x) => !keep.has(x) && !SAME_IN_FRENCH.has(x) && !/^[\d.%$,mm −-]+$/.test(x) && (fx(x) === x || / the | your | of the /.test(fx(x))));
   assert.deepEqual(noFrench, [], 'tool text with no French');
+  { const { PT, PT_TEXT } = await import('../src/i18n/pt'); attachLanguage('pt', PT, PT_TEXT); }
+  const px = (x: string) => translateText(x, 'pt');
+  const noPortuguese = s.filter((x) => !keep.has(x) && !SAME_IN_PORTUGUESE.has(x) && !/^[\d.%$,mm −-]+$/.test(x) && (px(x) === x || / the | your | of the /.test(px(x))));
+  assert.deepEqual(noPortuguese, [], 'tool text with no Portuguese');
 });
 
 test('Compare countries: divergence lines, quadrants, MarketEdge notes, scenarios, leads and the Fed balance sheet have Spanish', async () => {
@@ -357,6 +361,10 @@ test('Compare countries: divergence lines, quadrants, MarketEdge notes, scenario
   const fx = (x: string) => translateText(x, 'fr');
   const noFrench = s.filter((x) => x !== 'BIS' && !SAME_IN_FRENCH.has(x) && (fx(x) === x || / the | your | of the | since /.test(fx(x))));
   assert.deepEqual(noFrench, [], 'compare text with no French');
+  { const { PT, PT_TEXT } = await import('../src/i18n/pt'); attachLanguage('pt', PT, PT_TEXT); }
+  const px = (x: string) => translateText(x, 'pt');
+  const noPortuguese = s.filter((x) => x !== 'BIS' && !SAME_IN_PORTUGUESE.has(x) && (px(x) === x || / the | your | of the | since /.test(px(x))));
+  assert.deepEqual(noPortuguese, [], 'compare text with no Portuguese');
 });
 
 test('Menu dialogs: every key and setting in Settings has Spanish and French, and so do backup and morning brief lines', async () => {
@@ -436,6 +444,10 @@ test('Council chat cards: assumptions, re-run notes, explanation lenses, chart c
   const fx = (x: string) => translateText(x, 'fr');
   const noFrench = s.filter((x) => !SAME_IN_FRENCH.has(x) && fx(x) === x);
   assert.deepEqual(noFrench, [], 'chat card text with no French');
+  { const { PT, PT_TEXT } = await import('../src/i18n/pt'); attachLanguage('pt', PT, PT_TEXT); }
+  const px = (x: string) => translateText(x, 'pt');
+  const noPortuguese = s.filter((x) => !SAME_IN_PORTUGUESE.has(x) && px(x) === x);
+  assert.deepEqual(noPortuguese, [], 'chat card text with no Portuguese');
   const { splitSettingsLinks } = await import('../src/utils/settingsLinks');
   const parts = splitSettingsLinks(tx('No AI model answered: no model is set up. Set it up or test it under Menu > Settings > AI model.'));
   assert.ok(parts.some((p) => typeof p !== 'string' && p.page === 'ai'), 'the Spanish Settings link still opens the AI model page');
@@ -541,7 +553,7 @@ test('the French file is its own download: it imports nothing from the Spanish',
 
 // Portuguese (U2, Brazilian, polite "você"). Areas arrive in parts like the French; an area not
 // translated yet shows in English, but every area that is here must be complete.
-const PT_AREAS = ['shell', 'common', 'workspace', 'council', 'chat', 'research', 'brief', 'panels'];
+const PT_AREAS = ['shell', 'common', 'workspace', 'council', 'chat', 'research', 'brief', 'panels', 'watchlist', 'ownData', 'gapModel', 'yourTests', 'tools'];
 
 test('every Portuguese message file is complete, keeps every placeholder and matches an English file', async () => {
   const { PT } = await import('../src/i18n/pt');
@@ -555,6 +567,8 @@ test('every Portuguese message file is complete, keeps every placeholder and mat
       if (en === '') continue;
       assert.ok(tr && tr.trim(), `${area}.${key} has no Portuguese`);
       assert.deepEqual(placeholders(tr), placeholders(en), `${area}.${key} changes the placeholders`);
+      assert.equal(/^\s/.test(tr), /^\s/.test(en), `${area}.${key} loses or adds a leading space`);
+      assert.equal(/\s$/.test(tr), /\s$/.test(en), `${area}.${key} loses or adds a trailing space`);
       if (en.length > 3 && !SAME_IN_PORTUGUESE.has(en) && !/^AI: /.test(en)) assert.notEqual(tr, en, `${area}.${key} is still English`);
     }
     for (const key of Object.keys(pt)) assert.ok(key in c!.en, `${area}.${key} is in Portuguese only`);

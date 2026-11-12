@@ -16,6 +16,14 @@ import { BRIEF_PT } from './brief';
 import { BRIEF_TEXT_PT } from './briefText';
 import { PANELS_PT } from './panels';
 import { PANEL_TEXT_PT } from './panelText';
+import { WATCHLIST_PT } from './watchlist';
+import { OWN_DATA_PT } from './ownData';
+import { GAP_MODEL_PT } from './gapModel';
+import { YOUR_TESTS_PT } from './yourTests';
+import { TOOLS_PT } from './tools';
+import { TOOL_TEXT_PT } from './toolText';
+import { TOOLS_CATALOG_PT } from './toolsCatalog';
+import { COMPARE_TEXT_PT } from './compareText';
 
 export const PT: Record<string, Record<string, string>> = {
   shell: SHELL_PT,
@@ -26,7 +34,12 @@ export const PT: Record<string, Record<string, string>> = {
   research: RESEARCH_PT,
   brief: BRIEF_PT,
   panels: PANELS_PT,
+  watchlist: WATCHLIST_PT,
+  ownData: OWN_DATA_PT,
+  gapModel: GAP_MODEL_PT,
+  yourTests: YOUR_TESTS_PT,
+  tools: TOOLS_PT,
 };
 
 /** Sentences built in English elsewhere and swapped at display time (translateText in ../lang.ts). */
-export const PT_TEXT: Record<string, string> = { ...MISSING_PT, ...BRIEF_TEXT_PT, ...PANEL_TEXT_PT, ...CHAT_TEXT_PT };
+export const PT_TEXT: Record<string, string> = { ...COMPARE_TEXT_PT, ...MISSING_PT, ...BRIEF_TEXT_PT, ...PANEL_TEXT_PT, ...TOOL_TEXT_PT, ...TOOLS_CATALOG_PT, ...CHAT_TEXT_PT };
