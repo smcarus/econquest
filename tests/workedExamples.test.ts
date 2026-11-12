@@ -6,6 +6,8 @@ import { WORKED_TEXT_ES } from '../src/i18n/es/workedText';
 import { WORKED_TEXT_FR } from '../src/i18n/fr/workedText';
 import { ES_TEXT } from '../src/i18n/es';
 import { FR_TEXT } from '../src/i18n/fr';
+import { WORKED_TEXT_PT } from '../src/i18n/pt/workedText';
+import { PT_TEXT } from '../src/i18n/pt';
 import type { OpenDataSnapshot } from '../src/types/council';
 
 /** A snapshot whose built-in numbers are all 99, with only the fields in `live` marked live. */
@@ -100,15 +102,18 @@ test('the memo draft holds the question, every figure or Missing, the working an
   assert.doesNotMatch(md, /99/);
 });
 
-test('every worked-example sentence has Spanish and French, and the app uses them', () => {
+test('every worked-example sentence has Spanish, French and Portuguese, and the app uses them', () => {
   for (const s of workedTexts()) {
     assert.ok(WORKED_TEXT_ES[s] || ES_TEXT[s], `es: ${s}`);
     assert.ok(WORKED_TEXT_FR[s] || FR_TEXT[s], `fr: ${s}`);
     assert.equal(ES_TEXT[s] !== undefined, true, `es merged: ${s}`);
     assert.equal(FR_TEXT[s] !== undefined, true, `fr merged: ${s}`);
+    assert.ok(WORKED_TEXT_PT[s], `pt: ${s}`);
+    assert.equal(PT_TEXT[s] !== undefined, true, `pt merged: ${s}`);
   }
   for (const v of Object.values(WORKED_TEXT_ES)) assert.doesNotMatch(v, /\b(tú|tienes|puedes|abre|mira)\b/i, `usted form: ${v}`);
   for (const v of Object.values(WORKED_TEXT_FR)) assert.doesNotMatch(v, /\b(tu|tes|ton|ouvre|regarde)\b/i, `vous form: ${v}`);
+  for (const v of Object.values(WORKED_TEXT_PT)) assert.doesNotMatch(v, /\b(tu|teu|tua|teus|tuas|contigo)\b/i, `você form: ${v}`);
 });
 
 test('Menu > Worked examples is wired in the app', () => {

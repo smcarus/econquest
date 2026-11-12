@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Portuguese, part 4 (U2): the Menu dialogs and Settings (keys, accounts, sign-in, add a country,
+  idea journal, data connections, offline data, user manual and glossary), the help at Key help and
+  Full help with the whole glossary and chart guides, the definition tags, Worked examples, and the
+  Reports pages (teaching episodes, saved research, policy reviews, behavioural check, expert review
+  and the memo builder). Portuguese now covers the whole app, like Spanish and French. The Settings,
+  help, Reports, definition and worked-example coverage tests now check Portuguese as well. Not yet
+  checked by a native speaker.
 - Portuguese, part 3 (U2): the watchlist (also popped out), Your data, the small gap model, Your
   tests, My holdings and the book briefs, the Tools page and its tool panels, and Compare countries.
   The tool, compare and chat-card coverage tests now check Portuguese as well, and a new check keeps

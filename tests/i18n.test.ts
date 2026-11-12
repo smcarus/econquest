@@ -5,7 +5,7 @@ import { ALL_CATALOGS } from '../src/i18n/messages';
 import { ES } from '../src/i18n/es';
 
 /** Words spelled the same in Portuguese and English; anything else left identical is untranslated. */
-const SAME_IN_PORTUGUESE = new Set(['Menu', 'Offline', 'Quests', 'Markdown', 'Bootstrap', 'Cascade', 'Instrument', 'AI: Gemini', '{n} pt', '{n} pts', '{value} pts', 'BIS ({name}), {date}']);
+const SAME_IN_PORTUGUESE = new Set(['Menu', 'Offline', 'Quests', 'Markdown', 'Bootstrap', 'Cascade', 'Instrument', 'AI: Gemini', '{n} pt', '{n} pts', '{value} pts', 'BIS ({name}), {date}', 'carry', 'macro', 'Hash', 'Fiscal', 'Spread', 'Backtest', 'CDS (credit default swap)', ' · hash ']);
 /** Words spelled the same in French and English; anything else left identical is untranslated. */
 const SAME_IN_FRENCH = new Set(['Question {n}', 'momentum', 'macro', 'Document', '1 question', '{n} questions', 'Stable', '{n} pts', 'Sections', 'Markdown', 'Bootstrap', 'Notes', 'Communication', 'stable', 'Concentration', 'Options', 'Instrument', 'Type', 'Date', 'Sanctions', 'Question', 'Menu', 'Agents', '1 position', '{n} positions', '1 document', '{n} documents', 'Inflation', 'Cycle', 'Question', 'Instructions', '{n} pages, ', '1 page, ', 'Tests', 'Image', 'Documents', '{num} passages', '1 passage', 'Cascade',
   'Articles', 'Coefficient', 'Date', 'Excel', 'Inflation {inf}, {basis}{gap}', 'Option', 'Point', 'Programmes', 'Sanctions', 'Sources',
@@ -367,7 +367,7 @@ test('Compare countries: divergence lines, quadrants, MarketEdge notes, scenario
   assert.deepEqual(noPortuguese, [], 'compare text with no Portuguese');
 });
 
-test('Menu dialogs: every key and setting in Settings has Spanish and French, and so do backup and morning brief lines', async () => {
+test('Menu dialogs: every key and setting in Settings has Spanish, French and Portuguese, and so do backup and morning brief lines', async () => {
   const { attachLanguage, translateText } = await import('../src/i18n/lang');
   const { ES, ES_TEXT } = await import('../src/i18n/es');
   attachLanguage('es', ES, ES_TEXT);
@@ -389,9 +389,13 @@ test('Menu dialogs: every key and setting in Settings has Spanish and French, an
   attachLanguage('fr', FR, FR_TEXT);
   const fx = (x: string) => translateText(x, 'fr');
   assert.deepEqual(s.filter((x) => !SAME_IN_FRENCH.has(x) && fx(x) === x), [], 'Settings text with no French');
+  const { PT, PT_TEXT } = await import('../src/i18n/pt');
+  attachLanguage('pt', PT, PT_TEXT);
+  const px = (x: string) => translateText(x, 'pt');
+  assert.deepEqual(s.filter((x) => !SAME_IN_PORTUGUESE.has(x) && px(x) === x), [], 'Settings text with no Portuguese');
 });
 
-test('help and glossary: every glossary entry, chart guide, panel introduction and the glossary page have Spanish and French', async () => {
+test('help and glossary: every glossary entry, chart guide, panel introduction and the glossary page have Spanish, French and Portuguese', async () => {
   const { attachLanguage, translateText } = await import('../src/i18n/lang');
   const { ES, ES_TEXT } = await import('../src/i18n/es');
   attachLanguage('es', ES, ES_TEXT);
@@ -407,6 +411,11 @@ test('help and glossary: every glossary entry, chart guide, panel introduction a
   attachLanguage('fr', FR, FR_TEXT);
   const fx = (x: string) => translateText(x, 'fr');
   assert.deepEqual(s.filter((x) => !SAME_IN_FRENCH.has(x) && fx(x) === x), [], 'help text with no French');
+  const { PT, PT_TEXT } = await import('../src/i18n/pt');
+  attachLanguage('pt', PT, PT_TEXT);
+  const px = (x: string) => translateText(x, 'pt');
+  assert.deepEqual(s.filter((x) => !SAME_IN_PORTUGUESE.has(x) && px(x) === x), [], 'help text with no Portuguese');
+  assert.ok(glossaryMarkdown(px).startsWith('# Glossário'), 'the glossary page title is Portuguese');
   const page = glossaryMarkdown(tx);
   assert.ok(page.startsWith('# Glosario'), 'the glossary page title is Spanish');
   assert.ok(!page.includes('**Why it matters.**'), 'the glossary page labels are Spanish');
@@ -453,7 +462,7 @@ test('Council chat cards: assumptions, re-run notes, explanation lenses, chart c
   assert.ok(parts.some((p) => typeof p !== 'string' && p.page === 'ai'), 'the Spanish Settings link still opens the AI model page');
 });
 
-test('Reports pages: review steps, levers, lenses, memo types and section headings have Spanish', async () => {
+test('Reports pages: review steps, levers, lenses, memo types and section headings have Spanish, French and Portuguese', async () => {
   const { attachLanguage, translateText } = await import('../src/i18n/lang');
   const { ES, ES_TEXT } = await import('../src/i18n/es');
   attachLanguage('es', ES, ES_TEXT);
@@ -483,6 +492,10 @@ test('Reports pages: review steps, levers, lenses, memo types and section headin
   attachLanguage('fr', FR, FR_TEXT);
   const fx = (x: string) => translateText(x, 'fr');
   assert.deepEqual([...new Set(s)].filter((x) => !SAME_IN_FRENCH.has(x) && fx(x) === x), [], 'Reports text with no French');
+  const { PT, PT_TEXT } = await import('../src/i18n/pt');
+  attachLanguage('pt', PT, PT_TEXT);
+  const px = (x: string) => translateText(x, 'pt');
+  assert.deepEqual([...new Set(s)].filter((x) => !SAME_IN_PORTUGUESE.has(x) && px(x) === x), [], 'Reports text with no Portuguese');
 });
 
 // French (FR1 to FR4). Areas arrive in parts; an area not translated yet shows in English, but
@@ -553,7 +566,7 @@ test('the French file is its own download: it imports nothing from the Spanish',
 
 // Portuguese (U2, Brazilian, polite "você"). Areas arrive in parts like the French; an area not
 // translated yet shows in English, but every area that is here must be complete.
-const PT_AREAS = ['shell', 'common', 'workspace', 'council', 'chat', 'research', 'brief', 'panels', 'watchlist', 'ownData', 'gapModel', 'yourTests', 'tools'];
+const PT_AREAS = ['shell', 'common', 'workspace', 'council', 'chat', 'research', 'brief', 'panels', 'watchlist', 'ownData', 'gapModel', 'yourTests', 'tools', 'menu', 'reports'];
 
 test('every Portuguese message file is complete, keeps every placeholder and matches an English file', async () => {
   const { PT } = await import('../src/i18n/pt');
