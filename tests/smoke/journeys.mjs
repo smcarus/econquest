@@ -205,7 +205,7 @@ try {
     await page.keyboard.press('Escape');
   });
 
-  await step('language: French loads on its own, then back to English', async () => {
+  await step('language: French, then Portuguese load on their own, then back to English', async () => {
     await page.keyboard.press('Escape');
     const button = page.locator('button[data-lang]');
     await button.click();
@@ -215,6 +215,12 @@ try {
     await page.getByRole('button', { name: 'Recherche', exact: true }).first().waitFor({ timeout: 15_000 });
     const lang = await page.evaluate(() => document.documentElement.lang);
     if (lang !== 'fr') throw new Error(`the page says lang="${lang}", not "fr"`);
+    await noCrash(page);
+    await button.click();
+    await page.waitForSelector('button[data-lang="pt"]', { timeout: 10_000 });
+    await page.getByRole('button', { name: 'Pesquisa', exact: true }).first().waitFor({ timeout: 15_000 });
+    const lang2 = await page.evaluate(() => document.documentElement.lang);
+    if (lang2 !== 'pt') throw new Error(`the page says lang="${lang2}", not "pt"`);
     await noCrash(page);
     await button.click();
     await page.getByRole('button', { name: 'Research', exact: true }).first().waitFor({ timeout: 10_000 });
