@@ -13,6 +13,7 @@ import { LENSES, LENS_LABEL, LEVER_LABEL, MAX_USER_OPTIONS, type OptionsStep, ty
 import { withNotice } from '../utils/disclaimer';
 import { useLang, useT, useTx } from '../i18n/useLang';
 import { REPORTS } from '../i18n/messages/reports';
+import { BehaviouralCheck } from './BehaviouralCheck';
 
 /**
  * Reports > Policy reviews: a guided, repeatable case file for one country and one problem.
@@ -21,7 +22,7 @@ import { REPORTS } from '../i18n/messages/reports';
  */
 
 type Country = { iso3: string; countryName: string };
-type Opened = { review: PolicyReview; states: Record<ReviewStep, StepState>; changed: ReviewStep[] };
+type Opened = { review: PolicyReview; states: Record<ReviewStep, StepState>; changed: ReviewStep[]; changedBehaviour?: boolean };
 
 const INPUT = 'w-full px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white';
 const today = () => new Date().toISOString().slice(0, 10);
@@ -902,6 +903,12 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                   {t('pr_savedLine', { when: r.steps.evidence.savedAt.slice(0, 16).replace('T', ' ') })}{t('pr_hash')}<span className="font-code">{short(r.steps.evidence.hash)}</span>
                 </p>
               )}
+            </section>
+
+            <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="behaviour">
+              <h4 className="ui-section-title">4b. {t('bc_title')}</h4>
+              <p className="ui-label">{t('bc_hint')}</p>
+              <BehaviouralCheck review={r} optionsState={opened!.states.options} changed={opened!.changedBehaviour} onSaved={apply} />
             </section>
 
             <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="memo">

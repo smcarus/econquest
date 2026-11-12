@@ -802,6 +802,18 @@ becomes the problem). Six steps, in order:
 4. **Evidence.** Charts and tests (Taylor gap, real rate, does the policy rate lead inflation, r minus
    g, leading indicator), past policy-rate moves with inflation a year later, and the validation status
    of each signal the options lean on. Every series is cut at the As of day.
+   **Behavioural check** (G33), shown under Evidence: for each option, where it depends on how people
+   behave: take-up of a benefit, the response to a tax change, trust in an inflation target, defaults
+   and automatic enrolment, removing something people already have (losses and framing), and acting
+   now for a gain later. Fixed word rules read the option's saved text, so the same options always
+   give the same flags; no AI writes them. Each flag asks the question to check and cites published
+   studies and official reviews from a fixed list (for example the World Bank's World Development
+   Report 2015 "Mind, Society, and Behavior" and the OECD's 2017 "Behavioural Insights and Public
+   Policy"), with full citations and links. The app holds no effect sizes: add one only from a source
+   you can cite, with the page or table. Sizes are saved beside the steps (hashed and written to the
+   audit log); they do not change the memo, and they read Out of date when the options are run again.
+   *Copy as text* copies the flags, citations and your sizes. Description, not a tested signal. The
+   terms are explained in the glossary group Behavioural economics.
 5. **Recommendation memo.** Pick the option, add your reasoning, what to watch and a review date. The
    memo is assembled from the steps above with no AI, cites every figure by number, and opens with
    "Research, not validated advice" until the signals behind it pass their backtests. Mark it Reviewed

@@ -8,6 +8,7 @@ import { createHash } from 'crypto';
 import { canonicalJson } from './auditLog';
 import { writeFileAtomic } from './atomicWrite';
 import type { OutcomeCheck, UnsavedCheck } from './outcomeChecks';
+import { BEHAVIOUR_TEMPLATE_VERSION, type BehaviourEffect, type BehaviourRecord } from './behaviouralCheck';
 import { MAX_REVIEWS, MAX_RUNS, REVIEW_STEPS, REVIEW_TEMPLATE_VERSION, canSaveStep, frameTitle, prevStep, type PolicyReview, type ReviewFile, type ReviewFrame, type ReviewRun, type ReviewStep, type ReviewStepRecord } from './policyReview';
 
 export function stepHash(step: ReviewStep, content: unknown, basedOn: string | undefined): string {
@@ -72,6 +73,26 @@ export function verifyOutcomeChecks(review: PolicyReview): number[] {
 function isReview(v: unknown): v is PolicyReview {
   const r = v as PolicyReview;
   return Boolean(r && typeof r.id === 'string' && r.id && typeof r.title === 'string' && r.steps && typeof r.steps === 'object' && Array.isArray(r.runs));
+}
+
+/** Behavioural check (G33): hash of the entries and the Options step they were made against. */
+export function behaviourHash(rec: Pick<BehaviourRecord, 'templateVersion' | 'optionsHash' | 'effects'>): string {
+  return createHash('sha256').update(canonicalJson({ templateVersion: rec.templateVersion, optionsHash: rec.optionsHash, effects: rec.effects })).digest('hex');
+}
+
+/** Saves the user's effect sizes beside the steps, tied to the Options step saved now. Needs a saved Options step. */
+export function saveBehaviour(review: PolicyReview, effects: BehaviourEffect[], now: Date = new Date()): { review: PolicyReview } | { error: string } {
+  const options = review.steps.options;
+  if (!options) return { error: 'Options must be done first.' };
+  const at = now.toISOString();
+  const base = { templateVersion: BEHAVIOUR_TEMPLATE_VERSION, optionsHash: options.hash, effects };
+  const behaviour: BehaviourRecord = { ...base, savedAt: at, hash: behaviourHash(base) };
+  return { review: { ...review, updatedAt: at, behaviour } };
+}
+
+/** True when the saved entries no longer match their hash (edited outside the app). */
+export function behaviourChanged(review: PolicyReview): boolean {
+  return Boolean(review.behaviour && behaviourHash(review.behaviour) !== review.behaviour.hash);
 }
 
 export function reviewFilePath(dataDir: string): string {

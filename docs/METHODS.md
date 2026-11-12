@@ -40,6 +40,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
 | External sustainability | Research | Description, not a tested signal | None |
 | Central bank word count | Research | Description, not a tested signal | None |
+| Behavioural policy check | Research | Description, not a tested signal | None |
 | Who pays for a policy | Research | Description, not a tested signal | None |
 | Debt restructuring calculator | Research | Description, not a tested signal | None |
 | Banks and the government | Research | Description, not a tested signal | None |
@@ -497,6 +498,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal. Whether the net index moves before policy rate changes would need its own pre-registered test before any badge.
 - **Limits:** The dictionary was built for Riksbank minutes translated from Swedish; English only; counts wording, not meaning (negation and context are not read); the app downloads no statements.
 - **Code:** `src/utils/cbWords.ts, src/server/feeds/cbStatements.ts`
+
+### Behavioural policy check
+
+- **Says:** Where a policy option depends on how people behave (take-up, response to a tax, trust in a target, defaults, losses, acting now for a gain later), with published studies from a fixed list.
+- **Rule:** Fixed word rules over each option saved in a policy review (title, how it works, effect, trade-offs, who bears the cost, what must be true, risks). Each flag cites studies from src/data/behaviouralEvidence.ts with full citations. Effect sizes only as entered by the user with a source.
+- **Reads:** The saved Options step of a policy review; effect sizes and sources typed by the user
+- **Shows in:** Reports > Policy reviews (Behavioural check, between Evidence and the memo)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: it points to published work and makes no forward call.
+- **Limits:** Word rules can miss a behaviour described in other words, or flag a word used in another sense; the studies come from particular countries and schemes and may not carry over; no AI writes evidence and no size is built in.
+- **Code:** `src/utils/behaviouralCheck.ts, src/data/behaviouralEvidence.ts`
 
 ### Who pays for a policy
 

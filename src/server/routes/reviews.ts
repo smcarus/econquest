@@ -19,10 +19,11 @@ import { buildOutcomes } from '../../utils/reviewOutcomes';
 import { cutAt, EPISODE_METHOD, EVIDENCE_TEMPLATE_VERSION, isResearchOnly, packRequests, pastEpisodes, perOption, runAnalysis, signalsFor, type EvidenceStep } from '../../utils/reviewEvidence';
 import { OPTIONS_INSTRUCTION, OPTIONS_TEMPLATE_VERSION, optionsPrompt, parseUserOptions, unassessedOptions, type OptionsStep } from '../../utils/reviewOptions';
 import { frameOf, parseFrame, summarise as summariseReview, stepStates, REVIEW_TEMPLATE_VERSION } from '../../utils/policyReview';
-import { appendOutcomeCheck, deleteReview, loadReviews, newReview, putReview, saveStep, verifyOutcomeChecks, verifyReview } from '../../utils/policyReviewStore';
+import { appendOutcomeCheck, behaviourChanged, saveBehaviour, deleteReview, loadReviews, newReview, putReview, saveStep, verifyOutcomeChecks, verifyReview } from '../../utils/policyReviewStore';
 import { dueChecks, judgeCheck, nextCheck, tallyChecks, tallySentence, OUTCOME_CHECK_CAVEAT, VERDICT_LABEL } from '../../utils/outcomeChecks';
 import { figureRows } from '../../utils/csvExport';
 import { listArchivedDays } from '../../utils/pullArchive';
+import { parseEffects } from '../../utils/behaviouralCheck';
 import express from 'express';
 
 type FetchedSeriesLike = { id: string; label: string; unit: string; freq: string; source: string; points: Array<{ date: string; value: number }> };
@@ -156,7 +157,7 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
   app.get('/api/reviews/:id', (req, res) => {
     const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
     if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
-    res.json({ review: r, states: stepStates(r), changed: verifyReview(r), changedChecks: verifyOutcomeChecks(r), nextCheck: nextCheck(r, new Date().toISOString().slice(0, 10)) });
+    res.json({ review: r, states: stepStates(r), changed: verifyReview(r), changedChecks: verifyOutcomeChecks(r), changedBehaviour: behaviourChanged(r), nextCheck: nextCheck(r, new Date().toISOString().slice(0, 10)) });
   });
   const writeReview = (res: express.Response, review: Parameters<typeof putReview>[1]): boolean => {
     try {
@@ -302,6 +303,25 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
       kind: 'research',
       summary: `Evidence for policy review "${out.review.title}"`,
       detail: { id: r.id, step: 'evidence', hash: out.review.steps.evidence?.hash, asOf: frame.asOf, analyses: analyses.map((a) => ({ id: a.id, tests: a.tests.length, missing: a.missing.length, inputs: a.inputs })), episodes: items.length, signals: signals.map((s) => `${s.id}: ${s.statusLabel}`), researchOnly: content.researchOnly },
+    });
+    res.json({ review: out.review, states: stepStates(out.review) });
+  });
+  // Behavioural check (G33): the flags are worked out in the browser from the saved options; only the
+  // effect sizes the user enters, each with its source, are saved here, beside the steps.
+  app.post('/api/reviews/:id/behaviour', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    if (stepStates(r).options !== 'done') return res.status(400).json({ error: 'Options must be done first (and run again if out of date).' });
+    const parsed = parseEffects(req.body?.effects, (r.steps.options!.content as OptionsStep).options);
+    if ('errors' in parsed) return res.status(400).json({ error: parsed.errors.join(' ') });
+    const out = saveBehaviour(r, parsed.effects);
+    if ('error' in out) return res.status(400).json({ error: out.error });
+    if (!writeReview(res, out.review)) return;
+    appendAudit(AUDIT_FILES, {
+      kind: 'research',
+      summary: `Behavioural check sizes for policy review "${out.review.title}" (${parsed.effects.length} entered)`,
+      detail: { id: r.id, step: 'behaviour', hash: out.review.behaviour!.hash, optionsHash: out.review.behaviour!.optionsHash, effects: parsed.effects.map((e) => `option ${e.rank}, ${e.channel}: ${e.effect} (${e.source})`) },
     });
     res.json({ review: out.review, states: stepStates(out.review) });
   });
