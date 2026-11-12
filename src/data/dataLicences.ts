@@ -263,7 +263,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'fred',
     name: 'FRED (St. Louis Fed): 10Y government yields from the OECD; St. Louis Fed and Chicago Fed stress indices; US inflation expectations',
-    usedFor: 'US data as first published and as known on a past day (ALFRED vintages of GDPC1 real GDP, CPIAUCSL CPI and UNRATE unemployment, with your FRED API key; government statistics from BEA and BLS); US inflation expectations: 5- and 10-year breakevens and the 5y5y forward (T5YIE, T10YIE, T5YIFR, computed by the St. Louis Fed from US Treasury yields, labelled "Copyrighted: Citation Required") and the Cleveland Fed 1- and 10-year expected inflation (EXPINF1YR, EXPINF10YR, labelled "Public Domain: Citation Requested"); St. Louis Fed Financial Stress Index (STLFSI4, the default stress factor in the global shock scenarios; owned by the St. Louis Fed itself, labelled "Copyrighted: Citation Required"); Chicago Fed NFCI and adjusted NFCI (NFCI, ANFCI, alternative stress factors and world series; owned by the Federal Reserve Bank of Chicago, labelled "Copyrighted: Citation Required"); 10Y yields for the US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, the Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries (all OECD series on FRED)',
+    usedFor: 'US monthly activity: industrial production (INDPRO, Federal Reserve), retail and food services sales (RSAFS, Census Bureau) and the unemployment rate (UNRATE, BLS); US data as first published and as known on a past day (ALFRED vintages of GDPC1 real GDP, CPIAUCSL CPI and UNRATE unemployment, with your FRED API key; government statistics from BEA and BLS); US inflation expectations: 5- and 10-year breakevens and the 5y5y forward (T5YIE, T10YIE, T5YIFR, computed by the St. Louis Fed from US Treasury yields, labelled "Copyrighted: Citation Required") and the Cleveland Fed 1- and 10-year expected inflation (EXPINF1YR, EXPINF10YR, labelled "Public Domain: Citation Requested"); St. Louis Fed Financial Stress Index (STLFSI4, the default stress factor in the global shock scenarios; owned by the St. Louis Fed itself, labelled "Copyrighted: Citation Required"); Chicago Fed NFCI and adjusted NFCI (NFCI, ANFCI, alternative stress factors and world series; owned by the Federal Reserve Bank of Chicago, labelled "Copyrighted: Citation Required"); 10Y yields for the US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, the Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries (all OECD series on FRED)',
     terms: [
       { label: 'FRED legal', url: 'https://fred.stlouisfed.org/legal/' },
       { label: 'FRED API terms', url: 'https://fred.stlouisfed.org/docs/api/terms_of_use.html' },
@@ -307,12 +307,12 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'eurostat',
     name: 'Eurostat HICP, government expenditure by function (COFOG) and EU business and consumer surveys',
-    usedFor: 'Monthly inflation for EU members (Poland on the defaults); government spending by function, % of GDP (gov_10a_exp); the European Commission\'s business and consumer surveys as Eurostat republishes them (ei_bssi_m_r2, ei_bsee_m_r2)',
+    usedFor: 'Monthly inflation for EU members (Poland on the defaults); government spending by function, % of GDP (gov_10a_exp); the European Commission\'s business and consumer surveys as Eurostat republishes them (ei_bssi_m_r2, ei_bsee_m_r2); monthly industrial production, retail trade volume and unemployment rate (sts_inpr_m, sts_trtu_m, une_rt_m)',
     terms: [{ label: 'Eurostat copyright and reuse', url: 'https://ec.europa.eu/eurostat/about-us/policies/copyright' }],
     status: 'open',
     display: 'Allowed without a licence if Eurostat is named and any change to the data is stated.',
     commercial: 'Allowed for EU, EFTA and candidate countries (the app reads EU and EFTA members only).',
-    attribution: 'Source: Eurostat (prc_hicp_minr, gov_10a_exp, ei_bssi_m_r2, ei_bsee_m_r2); surveys by the European Commission (DG ECFIN).',
+    attribution: 'Source: Eurostat (prc_hicp_minr, gov_10a_exp, ei_bssi_m_r2, ei_bsee_m_r2, sts_inpr_m, sts_trtu_m, une_rt_m); surveys by the European Commission (DG ECFIN).',
     quotes: [
       'Eurostat has a policy of encouraging free re-use of its data, both for non-commercial and commercial purposes.',
       'when re-use involves modifications to the data or text, this must be stated clearly to the end user of the information.',
@@ -320,6 +320,27 @@ export const DATA_LICENCES: LicenceRow[] = [
     share: 'allowed',
     shareNote: 'Free reuse with Eurostat named.',
     checked: D,
+  },
+  {
+    id: 'ons',
+    name: 'Office for National Statistics (UK)',
+    usedFor: 'UK monthly activity: index of production (K222), retail sales volume (J5EK) and the unemployment rate (MGSX)',
+    terms: [
+      { label: 'ONS licences', url: 'https://www.ons.gov.uk/methodology/geography/licences' },
+      { label: 'Open Government Licence v3.0', url: 'https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/' },
+    ],
+    status: 'open',
+    display: 'Open Government Licence v3.0: reuse is allowed with ONS named as the source.',
+    commercial: 'Allowed ("whether commercially or privately", ONS licences page; "exploit the Information commercially and non-commercially", OGL v3.0).',
+    attribution: 'Source: Office for National Statistics licensed under the Open Government Licence v.3.0',
+    quotes: [
+      'if you wish to use or re-use ONS material, whether commercially or privately',
+      'you may do so freely without a specific application for a licence, subject to the conditions of the Open Government Licence',
+      'If you are reproducing ONS content you must include a source accreditation to ONS.',
+    ],
+    share: 'allowed',
+    shareNote: 'Open Government Licence v3.0 with ONS named.',
+    checked: '2026-11-12',
   },
   {
     id: 'cftc',
@@ -562,7 +583,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'bcb',
     name: 'Banco Central do Brasil (SGS 13522, IPCA 12 months; Focus market expectations)',
-    usedFor: 'Brazil\'s IPCA inflation over 12 months; Focus survey median IPCA expected over the next 12 months (Olinda OData, Expectativas)',
+    usedFor: 'Brazil\'s IPCA inflation over 12 months; IBGE monthly industrial production, retail sales volume and unemployment rate as the BCB republishes them (SGS 21859, 1455, 24369); Focus survey median IPCA expected over the next 12 months (Olinda OData, Expectativas)',
     terms: [
       { label: 'Open data portal: about', url: 'https://dadosabertos.bcb.gov.br/pages/sobre-o-portal' },
       { label: 'Focus dataset page (licence: ODbL)', url: 'https://dadosabertos.bcb.gov.br/dataset/expectativas-mercado' },

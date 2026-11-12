@@ -44,6 +44,7 @@ import { chinaSource, chinaValue, COMMON_FRAMEWORK_AS_OF, COMMON_FRAMEWORK_SOURC
 import { foreignShare, investorBaseSource, investorBaseValue } from './investorBase';
 import { IDS_STRUCTURE_SOURCE, INTEREST_CENTRAL_NOTE, INTEREST_SOURCE, currencyValue, usdShare } from './debtStructure';
 import { ILO_MODEL_NOTE, PEOPLE_SOURCE, POVERTY_SOURCE, povertyValue } from './peopleLiving';
+import { readingValue } from './monthlyIndicators';
 import { PRIVATE_DEBT_SOURCE, SECTOR_RULE, balanceValue, quarterText } from './sectorBalances';
 import { HOUSE_PRICES_SOURCE, REAL_WAGES_SOURCE, WAGES_SOURCE, housePriceValue, wageGrowthValue } from './wagesHousing';
 import { ENERGY_MIX_SOURCE, ENERGY_MIX_TERMS_NOTE, energyMixValue } from './climateEnergy';
@@ -507,6 +508,10 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
     if (wg) figures.push({ label: 'Wage growth, nominal', value: wg, source: WAGES_SOURCE, tag: 'official' });
     const hp = it.housePrices?.reading && housePriceValue(it.housePrices.reading, 'real');
     if (hp) figures.push({ label: 'House prices, real', value: hp, source: `${HOUSE_PRICES_SOURCE}, after inflation`, tag: 'official' });
+    // Monthly activity (G41, src/utils/monthlyIndicators.ts): the latest month of output and joblessness.
+    const ma = it.monthlyActivity;
+    if (ma?.ip) figures.push({ label: 'Industrial production', value: readingValue('ip', ma.ip), source: ma.ip.long, tag: 'official' });
+    if (ma?.unemp) figures.push({ label: 'Unemployment rate, monthly', value: readingValue('unemp', ma.unemp), source: ma.unemp.long, tag: 'official' });
     const stanceText = policyStance(real, gap);
     const ext = imfFigures(it);
     findings.push({

@@ -32,6 +32,7 @@ import { focusSeries, type InflationSurveys } from './inflationSurveys';
 import { portActivitySeries, type PortWatchPorts } from './portWatch';
 import { ustAuctionSeries, type UstAuctionPull } from './treasuryAuctions';
 import { euSurveySeries, type EuSurveyPull } from './euSurveys';
+import { monthlyIndicatorSeries, type MonthlyIndicatorsPull } from './monthlyIndicators';
 import { impliedDefaultSeries } from './impliedDefault';
 import { BIS_ISO2 } from './bisDebtSecurities';
 import { seriesTags, type SeriesTags } from './seriesDefinitions';
@@ -122,6 +123,8 @@ export interface SeriesInputs {
   ustAuctions?: UstAuctionPull | null;
   /** EU business and consumer surveys (src/utils/euSurveys.ts), the saved copy; EU members only. */
   euSurveys?: EuSurveyPull | null;
+  /** Industrial production, retail sales and monthly unemployment (src/utils/monthlyIndicators.ts), the saved copy. */
+  monthlyIndicators?: MonthlyIndicatorsPull | null;
   /** The country's currency (ISO 4217), for the daily exchange rate. */
   currency?: string;
 }
@@ -380,6 +383,7 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
     ...portActivitySeries(code, inputs.portWatch),
     ...ustAuctionSeries(code, inputs.ustAuctions),
     ...euSurveySeries(code, inputs.euSurveys),
+    ...monthlyIndicatorSeries(code, inputs.monthlyIndicators),
     ...ARCHIVE_FIGURES.map((f) => figureHistory(f, inputs)),
     ...OFFICIAL_FIGURES.filter((o) => !ARCHIVE_FIGURES.some((f) => f.id === o.id)).map((o) => officialSeries(inputs.official, o)),
   ];

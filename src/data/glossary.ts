@@ -148,6 +148,17 @@ export const GLOSSARY: GlossaryEntry[] = [
     match: [/^Top (five )?export markets/],
   },
   {
+    id: 'monthly_activity',
+    key: true,
+    term: 'Industrial production, retail sales and the monthly unemployment rate',
+    group: 'economy',
+    what: 'Three figures published every month. Industrial production measures how much mines, factories and power plants turn out. Retail sales measure how much shops sell. The unemployment rate is the share of people who want a job and are looking for one but do not have one.',
+    why: 'GDP comes out only every three months and late. These monthly figures arrive four to eight weeks after the month, so they show sooner whether the economy is speeding up or slowing down. Central banks and markets react to them.',
+    read: 'Industrial production up 2% on a year earlier means factories produced 2% more than in the same month last year. A change on the month of -0.5% is a small fall from the month before; single months jump around, so look at several. An unemployment rate rising from 4.1% to 4.6% in a year usually means the economy is cooling.',
+    limits: 'From Eurostat (EU members and Turkey), the US Federal Reserve, Census Bureau and BLS, the UK Office for National Statistics and Brazil\'s IBGE; other countries read Missing. US retail sales are in dollars and include price rises; the others are volumes. The UK and Brazil unemployment rates cover three months to the month named. For Brazil the source does not say whether the series are seasonally adjusted, so no change on the month is shown.',
+    match: [/^Industrial production/, /^Retail sales/, /^Unemployment rate, monthly/, /^Next monthly activity release/],
+  },
+  {
     id: 'wage_growth',
     key: true,
     term: 'Wage growth, nominal and real',
@@ -983,6 +994,7 @@ export const GLOSSARY: GlossaryEntry[] = [
 /** Plain-words introductions for the panels in the Research briefs, keyed by panel title (prefix match). */
 export const PANEL_INTROS: Array<{ title: RegExp; intro: string }> = [
   { title: /^Growth and inflation/, intro: 'How fast the economy is growing, how fast prices are rising, how many people are out of work, whether pay keeps up with prices, and how house prices are moving. Together they show whether ordinary living standards are improving and whether the central bank is likely to act.' },
+  { title: /^Monthly activity/, intro: 'How the economy did last month: factory output, shop sales and the share of people out of work. These arrive well before the quarterly GDP figure, so they are the first sign of a turn.' },
   { title: /^Monetary policy/, intro: 'What the central bank is doing with interest rates, how that compares with inflation, and when it next decides. A rate well above inflation holds the economy back to cool prices; a rate below inflation gives it a push.' },
   { title: /^Fiscal and debt/, intro: 'The government\'s budget and how much it owes. A deficit adds to debt; interest payments take money away from other spending. The question is whether the debt can keep being paid without a crisis.' },
   { title: /^External position/, intro: 'How the country pays its way with the rest of the world: whether it earns more abroad than it spends, how much foreign currency the central bank holds for emergencies, and how much the country owes abroad.' },

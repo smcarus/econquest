@@ -14,6 +14,7 @@ import { INVESTOR_BASE_SETUP_HELP, investorBaseSource, investorBaseValue } from 
 import { CONCENTRATION_SOURCE, ENERGY_SOURCE, EXPORT_FIELDS, IMPORT_FIELDS, TRADE_GROUPS_NOTE, TRADE_MIX_SOURCE, concentrationValue, netEnergyValue, shareSplitValue, topPartnersValue, tradeMixFromSnapshot } from './tradeMix';
 import { comtradeMissing, HHI_MIN_COVERAGE_PCT } from './comtradeTrade';
 import { PRIVATE_DEBT_NOT_COVERED_HELP, PRIVATE_DEBT_SETUP_HELP, PRIVATE_DEBT_SOURCE, SECTOR_RULE, SECTOR_SOURCE, SECTOR_YEARS_HELP, balanceValue, quarterText, sectorBalances } from './sectorBalances';
+import { ACTIVITY_NOT_COVERED_HELP, ACTIVITY_NOT_IN_ANSWER_HELP, ACTIVITY_SETUP_HELP, activitySourceOf, INDICATOR_IDS, INDICATOR_LABEL, readingValue, SOURCE_NAME } from './monthlyIndicators';
 import { HOUSE_PRICES_NOT_COVERED_HELP, HOUSE_PRICES_SETUP_HELP, HOUSE_PRICES_SOURCE, REAL_WAGES_SOURCE, WAGES_GROWTH_HELP, WAGES_NOT_COVERED_HELP, WAGES_SETUP_HELP, WAGES_SOURCE, housePriceValue, wageGrowthValue } from './wagesHousing';
 import { CLIMATE_RISK_HELP, EMISSIONS_SOURCE, ENERGY_MIX_LEGACY_NOTE, ENERGY_MIX_NOT_COVERED_HELP, ENERGY_MIX_SETUP_HELP, ENERGY_MIX_SOURCE, ENERGY_MIX_TERMS_NOTE, RENEWABLE_SOURCE, climateFromSnapshot, energyMixValue } from './climateEnergy';
 
@@ -353,6 +354,23 @@ export function wagesHousingRows(open: CouncilAssessmentRun['openData']): BriefR
 }
 
 /**
+ * Monthly activity (G41, src/utils/monthlyIndicators.ts): industrial production, retail sales and
+ * the monthly unemployment rate, latest month, or Missing with a reason.
+ */
+export function monthlyActivityRows(iso3: string, open: CouncilAssessmentRun['openData']): BriefRow[] {
+  const src = activitySourceOf(iso3);
+  const ma = open.monthlyActivity;
+  return INDICATOR_IDS.map((id) => {
+    const label = INDICATOR_LABEL[id];
+    const r = ma?.[id];
+    if (r) return { label, value: readingValue(id, r), source: `official, ${r.long} (pulled ${ma!.pulledAt.slice(0, 10)})`, verified: true };
+    if (!src) return missingRow(label, { kind: 'setup', short: 'No monthly source for this country', help: ACTIVITY_NOT_COVERED_HELP });
+    if (!ma) return missingRow(label, { kind: 'setup', short: `${SOURCE_NAME[src]} not downloaded yet`, help: ACTIVITY_SETUP_HELP });
+    return missingRow(label, { kind: 'unreachable', short: `Not in the ${SOURCE_NAME[src]} answer`, help: ACTIVITY_NOT_IN_ANSWER_HELP });
+  });
+}
+
+/**
  * Sector balances and private debt (G40, src/utils/sectorBalances.ts): government balance (IMF
  * Fiscal Monitor), private balance (the remainder) and foreign balance (minus the IMF current
  * account), for the same year; household and company debt (BIS total credit). Missing with a reason.
@@ -551,6 +569,10 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
       ],
     },
     {
+      title: 'Monthly activity',
+      rows: [...monthlyActivityRows(run.iso3, open), ...(activitySourceOf(run.iso3) ? [releaseRow('Next monthly activity release', 'ACTIVITY_RELEASE')] : [])],
+    },
+    {
       title: 'Monetary policy',
       rows: [
         liveRow(status, 'Policy rate', 'market.policyRatePct', (v) => pct(v, 2), open),
@@ -715,6 +737,7 @@ export function calendarSection(run: CouncilAssessmentRun, heading: string, now:
 export const ECONOMIST_SECTIONS: Record<string, string> = {
   summary: 'Summary',
   growth: 'Growth and inflation',
+  activity: 'Monthly activity',
   policy: 'Monetary policy',
   fiscal: 'Fiscal and debt',
   external: 'External position',
@@ -737,6 +760,7 @@ export function buildEconomistSections(run: CouncilAssessmentRun, include: (id: 
   }
   const groups: Array<[string, string]> = [
     ['growth', 'Growth and inflation'],
+    ['activity', 'Monthly activity'],
     ['policy', 'Monetary policy'],
     ['fiscal', 'Fiscal and debt'],
     ['external', 'External position'],

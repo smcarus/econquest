@@ -28,6 +28,7 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['fred', /\bFRED\b/],
   ['oecd', /\bOECD\b(?! via FRED)|DBnomics/i],
   ['eurostat', /Eurostat|\bHICP\b/i],
+  ['ons', /\bONS\b|Office for National Statistics/],
   ['cftc', /\bCFTC\b/i],
   ['tic', /\bTIC\b|Treasury International Capital/],
   ['us_fiscal_data', /Fiscal Data|Treasury Securities Auctions/i],

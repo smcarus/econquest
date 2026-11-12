@@ -29,6 +29,7 @@ export const CATEGORY_TEXT: Record<OfficialEventCategory, string> = {
   MPC_DECISION: 'Central bank decisions',
   CPI_RELEASE: 'CPI releases',
   GDP_RELEASE: 'GDP releases',
+  ACTIVITY_RELEASE: 'Monthly activity releases',
   INFLATION_REPORT: 'Inflation reports',
   ELECTION: 'Elections',
   BUDGET: 'Budget deadlines',
@@ -88,7 +89,7 @@ export function calendarHealth(events: OfficialCalendarEvent[], countries: strin
     if (ageDays > STALE_DAYS) flags.push('old_check');
     if (!future.length) flags.push('ended');
     // Elections and IMF programme ends are one-off dates: only the scheduled series run out.
-    else if (['MPC_DECISION', 'CPI_RELEASE', 'GDP_RELEASE', 'INFLATION_REPORT'].includes(g[0].category) && dayNum(lastDate) - t <= RUNNING_OUT_DAYS) flags.push('running_out');
+    else if (['MPC_DECISION', 'CPI_RELEASE', 'GDP_RELEASE', 'ACTIVITY_RELEASE', 'INFLATION_REPORT'].includes(g[0].category) && dayNum(lastDate) - t <= RUNNING_OUT_DAYS) flags.push('running_out');
     rows.push({
       iso3: g[0].iso3,
       category: g[0].category,

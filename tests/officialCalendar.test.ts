@@ -13,7 +13,8 @@ test('every calendar entry is a real date with a source', () => {
 });
 
 test('no duplicate entries', () => {
-  const keys = OFFICIAL_CALENDAR.map((e) => `${e.iso3}|${e.category}|${e.date}`);
+  // Two different releases on one day (US industrial production and retail sales) are not duplicates.
+  const keys = OFFICIAL_CALENDAR.map((e) => `${e.iso3}|${e.category}|${e.date}|${e.title.replace(/,.*$/, '')}`);
   assert.equal(new Set(keys).size, keys.length);
 });
 

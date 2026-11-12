@@ -5,6 +5,20 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Monthly activity (G41): a new group "Monthly activity" in the country brief and note with
+  industrial production, retail sales and the monthly unemployment rate, each for the latest month
+  with the change on a year earlier (and on the month for the indexes). Sources: Eurostat for EU
+  members and Turkey; the Federal Reserve (industrial production), Census Bureau (retail sales, in
+  dollars) and BLS (unemployment) through FRED for the United States; the ONS for the United
+  Kingdom; IBGE through the Banco Central do Brasil for Brazil. Other countries read Missing with
+  the reason; the IMF has no free monthly series the app could confirm. A new daily-run step saves
+  one copy for all of them. The release calendar gains monthly activity dates for the United States
+  (Fed G.17, Census retail sales, BLS employment report), read from each office's own page; the
+  Eurostat, ONS and IBGE calendars could not be read and say so. History & data gains three monthly
+  charts with CSV. The Central Bank Agent quotes industrial production and the monthly unemployment
+  rate. Data health rows for Eurostat, ONS and BCB activity; an ONS licence row (Open Government
+  Licence v3.0); a glossary entry; Spanish and French text.
+
 - Sector balances and private debt (G40): a new group "Sector balances and private debt" in the
   country brief and note. The government balance (IMF Fiscal Monitor), the private sector balance
   and the foreign balance sit side by side for the same year. The private balance is worked out as

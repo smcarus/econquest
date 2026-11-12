@@ -12,6 +12,7 @@
  * Keys and passwords are never put in a row: only whether they are set.
  */
 import { EMISSIONS_CODE, OWID_ENERGY_URL, energyColumns } from './climateEnergy';
+import { bcbActivityUrl, eurostatActivityUrl, monthText, onsActivityUrl, parseBcbActivity, parseEurostatActivity, parseOnsSeries } from './monthlyIndicators';
 import { BIS_PRIVATE_DEBT_SAMPLE_URL, parseBisPrivateDebtAll } from './sectorBalances';
 import { BIS_PROPERTY_SAMPLE_URL, iloEarningsSampleUrl, parseBisPropertyAll, parseIloEarnings, quarterLabel, wageReading } from './wagesHousing';
 import { debtStructureUrl, parseDebtStructure, currencyValue } from './debtStructure';
@@ -286,6 +287,9 @@ export const SOURCE_IDS = [
   'ilostat_wages',
   'bis_property',
   'bis_private_debt',
+  'eurostat_activity',
+  'ons_activity',
+  'bcb_activity',
   'worldbank_debt_structure',
   'imf',
   'imf_reserves',
@@ -449,6 +453,39 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
         const v = (x?: number) => (x === undefined ? 'n/a' : `${x > 0 ? '+' : ''}${fmt(x)}%`);
         return `${SAMPLE_NAME} house prices ${v(h.realYoyPct)} real, ${v(h.nominalYoyPct)} nominal on a year earlier (${quarterLabel(h.quarter)})`;
       }
+    )
+  );
+
+  // Monthly activity (G41): one sample per source the daily run reads (FRED has its own row).
+  const actSample = (s: { points: { period: string; value: number }[] } | null | undefined, what: string, unit = '') => {
+    const last = s?.points[s.points.length - 1];
+    return last ? `${what} ${fmt(last.value)}${unit} (${monthText(last.period)})` : null;
+  };
+  add('eurostat_activity', () =>
+    httpCheck(
+      { id: 'eurostat_activity', name: 'Eurostat monthly activity (industrial production, retail trade, unemployment)', group: 'free', feeds: 'Monthly activity for EU members and Turkey (country brief, History & data, Central Bank agent)' },
+      fetchFn,
+      eurostatActivityUrl('retail', ['DE'], '2025-01'),
+      T,
+      (r) => actSample(parseEurostatActivity('retail', JSON.parse(r.text || ''), ['DEU']).DEU, 'Germany retail trade volume index')
+    )
+  );
+  add('ons_activity', () =>
+    httpCheck(
+      { id: 'ons_activity', name: 'ONS monthly activity (index of production, retail sales, unemployment)', group: 'free', feeds: 'Monthly activity for the United Kingdom (country brief, History & data, Central Bank agent)' },
+      fetchFn,
+      onsActivityUrl('retail'),
+      T,
+      (r) => actSample(parseOnsSeries('retail', JSON.parse(r.text || '')), 'UK retail sales volume index')
+    )
+  );
+  add('bcb_activity', () =>
+    httpCheck(
+      { id: 'bcb_activity', name: 'IBGE monthly activity through BCB SGS (industrial production, retail sales, unemployment)', group: 'free', feeds: 'Monthly activity for Brazil (country brief, History & data, Central Bank agent)' },
+      fetchFn,
+      bcbActivityUrl('unemp'),
+      T,
+      (r) => actSample(parseBcbActivity('unemp', JSON.parse(r.text || '')), 'Brazil unemployment rate', '%')
     )
   );
 

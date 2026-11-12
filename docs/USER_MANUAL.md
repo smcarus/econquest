@@ -394,6 +394,16 @@ The sections are Summary (the brief), Markets & signals (MarketEdge), History & 
   world is lending to the country. All three use the same IMF year, or read Missing. *Household
   debt* and *Company debt* are credit from all lenders as % of GDP from the BIS (Bank for
   International Settlements), for about 40 economies, with the quarter.
+
+  The group *Monthly activity* shows how the economy did last month, well before the quarterly
+  GDP figure. *Industrial production* is the output of mines, factories and utilities; *Retail
+  sales* is what shops sold; both show the change on a year earlier and on the month before.
+  *Unemployment rate, monthly* gives the latest month and the rate a year earlier. The figures come
+  from Eurostat (EU members and Turkey), the US Federal Reserve, Census Bureau and BLS, the UK
+  Office for National Statistics and Brazil's IBGE; other countries read Missing. US retail sales
+  are in dollars, so they include price rises. For Brazil the source does not say whether the
+  series are seasonally adjusted, so no change on the month is shown. *Next monthly activity
+  release* gives the next date from the office's own calendar where it could be read.
   The *Climate and energy* group shows greenhouse gas emissions per person (World Bank, from the EU's
   EDGAR database, leaving out land use and forests) and the renewable share of final energy use
   (World Bank), each with its year, and the energy mix: the shares of coal, oil, gas, nuclear and

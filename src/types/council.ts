@@ -510,6 +510,8 @@ export interface OpenDataSnapshot {
   housePrices?: { pulledAt: string; reading?: import('../utils/wagesHousing').HousePriceReading };
   /** Household and company debt from the BIS copy the daily run saved (utils/sectorBalances.ts); reading absent when the BIS has none. */
   privateDebt?: { pulledAt: string; reading?: import('../utils/sectorBalances').PrivateDebtReading };
+  /** Industrial production, retail sales and monthly unemployment, latest month, from the copy the daily run saved (utils/monthlyIndicators.ts). */
+  monthlyActivity?: import('../utils/monthlyIndicators').MonthlyActivitySnapshot;
   livePlumbingOverrides?: {
     usSofrRatePct?: number;
     usEffrRatePct?: number;
@@ -681,6 +683,8 @@ export interface WatchlistItem {
   housePrices?: { pulledAt: string; reading?: import('../utils/wagesHousing').HousePriceReading };
   /** Household and company debt (BIS, utils/sectorBalances.ts), only when the copy has the country. */
   privateDebt?: { pulledAt: string; reading?: import('../utils/sectorBalances').PrivateDebtReading };
+  /** Industrial production, retail sales and monthly unemployment, latest month (utils/monthlyIndicators.ts). */
+  monthlyActivity?: import('../utils/monthlyIndicators').MonthlyActivitySnapshot;
   /** Government, private and foreign balances for one year (utils/sectorBalances.ts), only from live IMF figures. */
   sectorBalances?: import('../utils/sectorBalances').SectorBalances;
   /** GDELT tone and headlines, WGI political stability and Polymarket odds, live only (utils/politicsEvents.ts). */
