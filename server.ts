@@ -86,6 +86,7 @@ import { debtStructureFromSnapshot } from './src/utils/debtStructure';
 import { licDebtReading, type LicDebtReading } from './src/utils/lowIncomeDebt';
 import { aiddataData } from './src/utils/aiddataStore';
 import { investorBaseData } from './src/utils/investorBaseStore';
+import { fiscalRulesData } from './src/utils/fiscalRulesStore';
 import { investorBaseReading } from './src/utils/investorBase';
 import { politicsFromSnapshot } from './src/utils/politicsEvents';
 import { acledReadingFor, forgetAcled } from './src/server/feeds/acled';
@@ -2098,6 +2099,7 @@ async function runConnectionCheck(trigger: CheckTrigger): Promise<ConnectionRepo
     acledFiles: () => acledFileData(DATA_DIR),
     aiddata: () => aiddataData(DATA_DIR),
     investorBase: () => investorBaseData(DATA_DIR),
+    fiscalRules: () => fiscalRulesData(DATA_DIR),
     paidMappingsText: paidMappingsText,
     env: process.env,
     keySources: keySources(ENV_FILE_KEYS, savedSettings),
@@ -3180,6 +3182,7 @@ async function startServer() {
       acledFiles: () => acledFileData(DATA_DIR),
       aiddata: () => aiddataData(DATA_DIR),
       investorBase: () => investorBaseData(DATA_DIR),
+    fiscalRules: () => fiscalRulesData(DATA_DIR),
       paidMappingsText: paidMappingsText,
       env,
       only: [field.checkId],
@@ -5820,6 +5823,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
         acledFiles: () => acledFileData(DATA_DIR),
       aiddata: () => aiddataData(DATA_DIR),
       investorBase: () => investorBaseData(DATA_DIR),
+    fiscalRules: () => fiscalRulesData(DATA_DIR),
         paidMappingsText: paidMappingsText,
         env: process.env,
         fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltFetch(u, i) : fetch(u, i)),

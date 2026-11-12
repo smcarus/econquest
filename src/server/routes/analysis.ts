@@ -20,6 +20,8 @@ import { fetchInflationDrivers } from '../feeds/inflationDrivers';
 import { fetchPwt } from '../feeds/pwt';
 import { bankSovereign, bsSentence, type YearValue } from '../../utils/bankSovereign';
 import { incidenceContext } from '../../utils/policyIncidence';
+import { fiscalRulesCheck, frSentence } from '../../utils/fiscalRules';
+import { fiscalRulesInput } from '../../utils/fiscalRulesStore';
 import { cbwSentence, CBW_METHOD, CBW_REFERENCE } from '../../utils/cbWords';
 import { readCbStatements } from '../feeds/cbStatements';
 import { investorBaseData } from '../../utils/investorBaseStore';
@@ -399,6 +401,26 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     });
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: bsSentence(r, name) } : {}) });
+  });
+  // Fiscal rules check (G35, src/utils/fiscalRules.ts): treaty limits against the saved IMF history, national rules from the IMF workbook the user saved.
+  app.get('/api/fiscal-rules/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    const pick = (id: string): YearValue[] | undefined => {
+      if (!file) return undefined;
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
+    };
+    let imf: ReturnType<typeof fiscalRulesInput> = { table: null };
+    try {
+      imf = fiscalRulesInput(DATA_DIR);
+    } catch (err: any) {
+      imf = { table: null, reason: `The folder data/local/imf-fiscal-rules/ could not be read (${err?.message || err})` };
+    }
+    const r = fiscalRulesCheck(iso3, new Date().getUTCFullYear(), { debt_gdp: pick('debt_gdp'), overall_balance: pick('overall_balance') }, imf);
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ ...r, sentence: frSentence(r, name), historySaved: Boolean(file) });
   });
   // Who pays for a policy (src/utils/policyIncidence.ts): the saved context; the incidence itself is worked out in the browser on shares the user types.
   app.get('/api/policy-incidence/:iso3', async (req, res) => {

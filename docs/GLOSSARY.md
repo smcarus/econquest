@@ -360,6 +360,16 @@ Everything the government owes, divided by the size of the economy in a year.
 
 **Limits.** The IMF figure is general government gross debt: it does not subtract the government's own savings, and it may not include debts of state companies.
 
+### Fiscal rule
+
+A lasting limit on the government's budget, written in law or a treaty: for example a ceiling on debt, a floor under the deficit, or a cap on spending growth.
+
+**Why it matters.** Rules are meant to stop debt from creeping up year after year and to make plans believable. Whether a country is near or past its limit shapes what it can do next.
+
+**How to read it.** The Fiscal rules panel under History & data shows the EU, WAEMU and CEMAC treaty limits with the latest IMF figure and the room left (negative means the limit is missed), and the national rules from the IMF Fiscal Rules Dataset you save, with the year each started.
+
+**Limits.** The treaty bodies test their own figures, which can differ a little from the IMF ones. Many rules have escape clauses for recessions or disasters. National numeric limits are not checked, because the IMF describes them only in text.
+
 ### Primary balance
 
 The government's budget result before interest payments on its debt: revenue minus spending, leaving interest out.

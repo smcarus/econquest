@@ -67,6 +67,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | Our World in Data energy file (Energy Institute Statistical Review of World Energy) | Permission needed for client or commercial use | Do not pass on | Not allowed without the Energy Institute's permission: its terms allow private, non-commercial use only. Our World in Data's CC BY covers its own work, not the Energy Institute's figures. | Not allowed without the Energy Institute's permission. | Energy Institute - Statistical Review of World Energy (year); Our World in Data energy dataset. |
 | Penn World Table (Groningen Growth and Development Centre) | Open with attribution | Free sharing allowed | Allowed under CC BY 4.0. | Allowed (CC BY 4.0 sets no commercial limit). | Feenstra, Robert C., Robert Inklaar and Marcel P. Timmer (2015), "The Next Generation of the Penn World Table", American Economic Review, 105(10), 3150-3182. |
 | IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies (Arslanalp and Tsuda) | Permission needed for client or commercial use | Free sharing allowed | Allowed with credit under the IMF data terms; the workbook itself states no terms. | Needs permission: email copyright@imf.org. | Source: International Monetary Fund, Sovereign Debt Investor Base for Emerging Markets and Developing Economies; Arslanalp and Tsuda (2014), IMF Working Paper WP/14/39. |
+| IMF Fiscal Rules Dataset, 1985-2024 | Terms not confirmed | Sharing unclear | Not stated on the dataset page. | Not stated on the dataset page. | "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page. |
 | DSSI and Common Framework status (World Bank, Paris Club) | Terms not confirmed | Sharing unclear | Not stated on either page. | Not stated. | World Bank, COVID-19 Debt Service Suspension Initiative; Paris Club, Common Framework. |
 
 ## Sources
@@ -706,6 +707,17 @@ From the terms:
 
 > The dataset can be quoted as "Sovereign investor base estimates by Arslanalp and Tsuda (2014)".
 
+### IMF Fiscal Rules Dataset, 1985-2024
+
+- **Used for:** National fiscal rules by country and year (expenditure, revenue, budget balance, debt) in the Fiscal rules check, from the workbook you put in data/local/imf-fiscal-rules/
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No terms on the dataset page. The workbook is not shipped.
+- **Terms read:** [Fiscal Rules Dataset page (version 1.0 update, 25 September 2025)](https://www.imf.org/en/topics/fiscal-policies/fiscal-rules-dataset) (checked 2026-11-11)
+- **Show to others:** Not stated on the dataset page.
+- **Commercial use:** Not stated on the dataset page.
+- **Credit:** "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page.
+- **Open question:** The page gives a citation but no terms. Read only from the workbook the user downloads and saves (G35, built 12 November 2026 on the maintainer's choice); nothing from it is shipped. Probably under the general IMF statistical data terms; confirm with copyright@imf.org with the other IMF questions.
+
 ### DSSI and Common Framework status (World Bank, Paris Club)
 
 - **Used for:** Which countries applied to the Common Framework (and, once typed, which took part in the Debt Service Suspension Initiative), typed by hand with source and date (issuer brief, Fiscal & Debt Agent)
@@ -731,7 +743,6 @@ Read in the licence sweep of 11 November 2026, before the steps that need them a
 | --- | --- | --- | --- | --- |
 | IMF Government Finance Statistics and Financial Soundness Indicators | G28 Bank-sovereign links (GFS by level of government is in use since G42, under the IMF row) | Permission needed for client or commercial use | Free sharing allowed | Source: International Monetary Fund, <database name>, <link to the dataset>. |
 | IMF Monitoring of Fund Arrangements (MONA) | G34 Precedent finder | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, Monitoring of Fund Arrangements (MONA) database. |
-| IMF Fiscal Rules Dataset, 1985-2024 | G35 Fiscal rules check | Terms not confirmed | Sharing unclear | "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page. |
 | IMF External Balance Assessment (EBA) | G24 External sustainability | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, External Balance Assessment. |
 | Laeven and Valencia, Systemic Banking Crises database (2018 update) | G23 Crisis early-warning; G34 Precedent finder | Terms not confirmed | Sharing unclear | Laeven, Luc and Fabian Valencia (2018), "Systemic Banking Crises Revisited", IMF Working Paper 18/206. |
 | Database of Political Institutions 2020 (Inter-American Development Bank) | G36 Political feasibility | Terms not confirmed | Sharing unclear | Database of Political Institutions 2020 (DPI2020), Inter-American Development Bank; take the full citation from the download page when it is found. |
@@ -768,18 +779,6 @@ From the terms:
 - **Commercial use:** Not stated on the MONA page.
 - **Credit:** Source: International Monetary Fund, Monitoring of Fund Arrangements (MONA) database.
 - **Before building:** The MONA page has no terms. It is probably covered by the general IMF statistical data terms (publish with attribution, commercial use needs permission), but the page does not say so. Ask copyright@imf.org or treat as the main IMF row only after confirming.
-
-### IMF Fiscal Rules Dataset, 1985-2024
-
-- **Planned for:** G35 Fiscal rules check
-- **Will be used for:** National and supranational fiscal rules by country and year (123 economies)
-- **Status:** Terms not confirmed
-- **Free non-commercial sharing:** Sharing unclear. No terms on the dataset page.
-- **Terms read:** [Fiscal Rules Dataset page (version 1.0 update, 25 September 2025)](https://www.imf.org/en/topics/fiscal-policies/fiscal-rules-dataset) (checked 2026-11-11)
-- **Show to others:** Not stated on the dataset page.
-- **Commercial use:** Not stated on the dataset page.
-- **Credit:** "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page.
-- **Before building:** The page gives a citation but no terms. Probably under the general IMF statistical data terms; confirm before building G35.
 
 ### IMF External Balance Assessment (EBA)
 
@@ -867,4 +866,5 @@ From the terms:
 26. **IMF list of low-income country debt sustainability analyses** (Terms not confirmed): The list itself states no terms (copy read 2026-11-11, given by the maintainer). The general IMF copyright and usage page did not load from the build computer; the question is in the email to copyright@imf.org.
 27. **Our World in Data energy file (Energy Institute Statistical Review of World Energy)** (Permission needed for client or commercial use): The energy mix shares come from the Energy Institute, whose website terms allow private, non-commercial use only. The maintainer chose (2026-11-11, personal non-commercial use) to have each computer download the file itself and never ship it. Do not show these figures to others or use them commercially without the Energy Institute's permission; ask the Energy Institute before any wider use.
 28. **IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies (Arslanalp and Tsuda)** (Permission needed for client or commercial use): The workbook (version of 6 November 2026, read 2026-11-11, given by the maintainer) and the working paper state no terms; the paper PDF is marked "Not for Redistribution", so neither is shipped with the app. The general IMF statistical data terms are taken to apply (publish with credit; commercial reuse needs permission). Confirm with copyright@imf.org with the other IMF questions.
-29. **DSSI and Common Framework status (World Bank, Paris Club)** (Terms not confirmed): Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.
+29. **IMF Fiscal Rules Dataset, 1985-2024** (Terms not confirmed): The page gives a citation but no terms. Read only from the workbook the user downloads and saves (G35, built 12 November 2026 on the maintainer's choice); nothing from it is shipped. Probably under the general IMF statistical data terms; confirm with copyright@imf.org with the other IMF questions.
+30. **DSSI and Common Framework status (World Bank, Paris Club)** (Terms not confirmed): Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.

@@ -41,6 +41,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | External sustainability | Research | Description, not a tested signal | None |
 | Central bank word count | Research | Description, not a tested signal | None |
 | Behavioural policy check | Research | Description, not a tested signal | None |
+| Fiscal rules check | Research | Description, not a tested signal | None |
 | Who pays for a policy | Research | Description, not a tested signal | None |
 | Debt restructuring calculator | Research | Description, not a tested signal | None |
 | Banks and the government | Research | Description, not a tested signal | None |
@@ -510,6 +511,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: it points to published work and makes no forward call.
 - **Limits:** Word rules can miss a behaviour described in other words, or flag a word used in another sense; the studies come from particular countries and schemes and may not carry over; no AI writes evidence and no size is built in.
 - **Code:** `src/utils/behaviouralCheck.ts, src/data/behaviouralEvidence.ts`
+
+### Fiscal rules check
+
+- **Says:** Which fiscal rules bind the country and whether the latest figures meet the treaty limits (EU, WAEMU, CEMAC).
+- **Rule:** Treaty limits typed from the legal texts, checked against the latest year before the current year in the saved IMF history: room = limit - debt for a debt ceiling, balance - limit for a deficit floor. National rules (expenditure, revenue, budget balance, debt) and the year each started are read from the IMF Fiscal Rules Dataset workbook the user saves.
+- **Reads:** IMF WEO GGXWDG_NGDP, IMF Fiscal Monitor GGXCNL_G01_GDP_PT; TFEU Protocol 12, WAEMU Additional Act 01/2015, CEMAC convergence criteria; IMF Fiscal Rules Dataset 1985-2024 from data/local/imf-fiscal-rules/
+- **Shows in:** Country Research > History & data (Fiscal rules)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: a comparison of published figures with published limits, no forward call.
+- **Limits:** The treaty tests use the bodies' own figures (Eurostat, WAEMU, CEMAC), which can differ from the IMF ones; the EU debt rule also allows debt above 60% that falls at a satisfactory pace, which is not judged; the CEMAC reference balance has no series; national numeric limits are not checked.
+- **Code:** `src/utils/fiscalRules.ts`
 
 ### Who pays for a policy
 

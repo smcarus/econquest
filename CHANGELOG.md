@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Fiscal rules check (G35): Research > History & data shows the EU, WAEMU and CEMAC treaty limits
+  that bind a country, checked against the latest saved IMF debt and overall balance before the
+  current year, with the room left, and the national rules (expenditure, revenue, budget balance,
+  debt) and since when, from the IMF Fiscal Rules Dataset you save in `data/local/imf-fiscal-rules/`.
+  The IMF has not confirmed reuse terms, so nothing from it is shipped; without the file the national
+  part reads Missing. New Data health row `imf_fiscal_rules`; route `GET /api/fiscal-rules/:iso3`.
 - Precedent finder (G34): Policy review shows, after Diagnose, the eight countries whose yearly
   figures were closest to the review country's on the figures you pick, and what followed over the
   next three years (growth, inflation, debt, primary balance, current account, reserves, currency),
