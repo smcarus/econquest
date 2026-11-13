@@ -13,7 +13,7 @@ import { describeNetworkError } from '../../utils/connectionCheck';
 import { fetchWithTimeout } from '../http';
 import { parseTicTable, TIC_URL, type TicTable } from '../../utils/ticHoldings';
 import { writeFileAtomic } from '../../utils/atomicWrite';
-import { parseUstAuctions, type UstAuction, type UstAuctionPull, ustAuctionsUrl } from '../../utils/treasuryAuctions';
+import { parseAnnouncedUstAuctions, parseUstAuctions, type UstAnnouncedAuction, type UstAuction, type UstAuctionPull, ustAuctionsUrl } from '../../utils/treasuryAuctions';
 
 /**
  * CFTC currency futures positioning (src/utils/cftcPositioning.ts). Weekly: positions as of
@@ -223,9 +223,14 @@ export async function fetchUstAuctionPull(opts: { force?: boolean } = {}): Promi
   if (ustAuctionInFlight) return ustAuctionInFlight;
   ustAuctionInFlight = (async () => {
     let auctions: UstAuction[] | null = null;
+    let announced: UstAnnouncedAuction[] = [];
     try {
       const res = await fetchWithTimeout(ustAuctionsUrl(), 30000);
-      if (res.ok) auctions = parseUstAuctions(await res.json());
+      if (res.ok) {
+        const json = await res.json();
+        auctions = parseUstAuctions(json);
+        announced = parseAnnouncedUstAuctions(json);
+      }
       else console.warn(`[Fiscal Data] Treasury auctions refused (HTTP ${res.status})`);
     } catch (e) {
       console.warn(`[Fiscal Data] Treasury auctions: ${describeNetworkError(e, 30000)}`);
@@ -235,7 +240,7 @@ export async function fetchUstAuctionPull(opts: { force?: boolean } = {}): Promi
       ustAuctionMemory = { pull: prev, triedAt: Date.now() };
       return prev;
     }
-    const fresh: UstAuctionPull = { pulledAt: new Date().toISOString(), auctions };
+    const fresh: UstAuctionPull = { pulledAt: new Date().toISOString(), auctions, ...(announced.length ? { announced } : {}) };
     ustAuctionMemory = { pull: fresh, triedAt: Date.now() };
     try {
       fs.mkdirSync(path.dirname(ustAuctionFile()), { recursive: true });

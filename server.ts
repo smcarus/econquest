@@ -37,6 +37,12 @@ import { CSRF_HEADER, csrfMatches, csrfToken, isAiCall, isWrite, LIMITS, RateLim
 import { apiKeyFrom, DATA_API_LIMIT, isDataApiRead, keyMatches } from './src/server/dataApi';
 import { normaliseCountryQuery, normaliseCountryUrl } from './src/server/countryCodes';
 import { iso2For } from './src/data/iso3166Alpha2';
+import type { ValueBadge } from './src/utils/consoleEvents';
+import { entryBadge, validationHolm, type ValidationReply } from './src/utils/validationGrades';
+import { MODEL_REGISTER } from './src/data/modelRegister';
+import { EventHub, WebhookStore, emitEvents, eventFiles } from './src/server/eventBus';
+import { badgeChangeInputs, councilRunInput, dailyRunInputs, figureEventInputs, releaseUpcomingInputs, sanctionsChangeInputs, sanctionsCounts, signalChangeInputs, type SignalStates } from './src/server/eventSources';
+import { registerConsoleEventRoutes } from './src/server/routes/consoleEvents';
 import { LEGACY_SCOPES, TOKEN_PREFIX, publicToken, scopeFor, scopeRefusal, tokenOnly, type Scope } from './src/utils/apiTokens';
 import { ApiTokenStore, apiTokensFile } from './src/utils/apiTokenStore';
 import { registerUserTestRoutes } from './src/server/routes/userTests';
@@ -217,6 +223,16 @@ import { callOllamaOrOpenAICompatible, sanitizeAndParseJson, NO_MODEL_DESK, NO_M
 
 const __dirname = APP_ROOT;
 let validationRunning = false;
+// Events for outside systems (console integration item 4, src/server/eventBus.ts).
+const EVENT_FILES = eventFiles(DATA_DIR);
+const SIGNAL_STATE_FILE = path.join(DATA_DIR, 'local', 'events', 'signal-states.json');
+function readSignalStates(): SignalStates | null {
+  try {
+    return JSON.parse(fs.readFileSync(SIGNAL_STATE_FILE, 'utf8')) as SignalStates;
+  } catch {
+    return null;
+  }
+}
 
 /** MarketEdge benchmarks always on screen (see src/utils/marketEdgeAnchors.ts). */
 async function fetchMarketEdgeAnchors(): Promise<MarketEdgeAnchorsReply> {
@@ -972,6 +988,7 @@ async function runDailyCli(): Promise<void> {
 
   // 2. Files that used to be downloaded by hand.
   console.log('[daily] 2/5 Files: IMF WEO editions, sanctions lists, GPR index, UCDP');
+  const sanctionsBefore = sanctionsCounts(sanctionsData(DATA_DIR));
   for (const f of FILE_PULLS) {
     if (offline) {
       add({ id: f.id, label: f.label, outcome: 'skipped', note: 'offline' });
@@ -988,6 +1005,8 @@ async function runDailyCli(): Promise<void> {
       details: got.problems,
     }, r.bytes);
   }
+
+  emitEvents(EVENT_FILES, sanctionsChangeInputs(sanctionsBefore, sanctionsCounts(sanctionsData(DATA_DIR))));
 
   // 3. Nowcasts and forecasts: the long histories (weekly), then one of each for every country.
   console.log('[daily] 3/5 Nowcasts and forecasts');
@@ -1088,6 +1107,7 @@ async function runDailyCli(): Promise<void> {
 
   run.finishedAt = new Date().toISOString();
   save();
+  emitEvents(EVENT_FILES, [...dailyRunInputs(run), ...releaseUpcomingInputs(new Date(), loadUstAuctions()?.announced)]);
   console.log('');
   console.log(formatDaily(run, { full: true }));
   process.exit(0);
@@ -1596,8 +1616,18 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
   try {
     const { ledger, events } = watchFigures(readLedger(FIGURE_WATCH_FILES), items.map((r) => toLive(r)));
     saveWatch(FIGURE_WATCH_FILES, ledger, events);
+    emitEvents(EVENT_FILES, figureEventInputs(events));
   } catch (e) {
     console.error('[figure-watch]', e);
+  }
+  // Signal states (policy cycle, CFTC positioning, growth and inflation regime): a change is an event.
+  try {
+    const { states, inputs } = signalChangeInputs(readSignalStates(), items.map((r) => toLive(r)), modelBadgesNow());
+    fs.mkdirSync(path.dirname(SIGNAL_STATE_FILE), { recursive: true });
+    writeFileAtomic(SIGNAL_STATE_FILE, JSON.stringify(states));
+    emitEvents(EVENT_FILES, inputs);
+  } catch (e) {
+    console.error('[events] signal states:', e);
   }
   return items;
 }
@@ -2201,6 +2231,7 @@ async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: strin
   // passing test's forward record (data/local/validation/forward.jsonl) grows without a hand run.
   // One part failing does not stop the others.
   validationRunning = true;
+  const badgesBefore = modelBadgesNow();
   try {
     const parts: TestsPart[] = [];
     const regressedAll: Parameters<typeof backtestRegressionAlert>[0] = [];
@@ -2252,10 +2283,47 @@ async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: strin
     // Server alert when a test that passed (same id and version) does not pass now.
     const regressed = backtestRegressionAlert(regressedAll.sort((a, b) => a.id.localeCompare(b.id)));
     if (regressed) void notify(regressed, LAST_ALERT_FILE);
+    emitEvents(EVENT_FILES, badgeChangeInputs(badgesBefore, modelBadgesNow(), Object.fromEntries(MODEL_REGISTER.map((m) => [m.id, m.name])), startedAt));
     return testsSummary(parts, startedAt);
   } finally {
     validationRunning = false;
   }
+}
+
+/** What /api/validation answers: every recorded verdict, the specs, forecast and signal tests, and the forward record. */
+function validationReplyNow() {
+  const v = loadValidation(VALIDATION_FILE);
+  const specs = loadSpecs(SPEC_DIR).map((s) => ({ file: s.file, hash: s.hash, problem: s.problem, ...(s.spec ? { id: s.spec.id, version: s.spec.version, registeredOn: s.spec.registeredOn, hypothesis: s.spec.hypothesis, passMark: s.spec.passMark, params: s.spec.params, sample: s.spec.sample, knownLimits: s.spec.knownLimits, framework: s.spec.framework === 2 ? 2 : 1, retestOf: s.spec.retestOf } : {}) }));
+  const fv = loadForecastValidation(path.join(DATA_DIR, 'local', 'validation', 'forecasts.json'));
+  const forecasts = Object.fromEntries(Object.values(fv.results).map((r) => [r.id, { id: r.id, status: r.status, verdict: r.verdict, specVersion: r.specVersion, specHash: r.specHash, ranAt: r.ranAt }]));
+  // Every forecast evaluation version run, for the Holm correction across all tests on record:
+  // its p is its own p where it has one (fan coverage), else the largest horizon p (every horizon
+  // must pass); its alpha the registered pass mark.
+  const fSpecs = loadSpecs(path.join(APP_ROOT, 'docs', 'validation', 'forecasts'));
+  const forecastTests = Object.values({ ...fv.versions, ...Object.fromEntries(Object.values(fv.results).map((r) => [`${r.id} v${r.specVersion}`, r])) }).map((r) => ({
+    id: r.id,
+    version: r.specVersion,
+    status: r.status,
+    p: r.pValue ?? (r.horizons?.length ? Math.max(...r.horizons.map((h) => h.pValue)) : 1),
+    alpha: Number((fSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.1,
+  }));
+  // Currency factor tests (npm run signals:evaluate) sit beside the forecast evaluations: same
+  // verdict shape for the register, and their p enters the same Holm family.
+  const sv = loadSignalValidation(path.join(DATA_DIR, 'local', 'validation', 'signals.json'));
+  const sSpecs = loadSpecs(path.join(APP_ROOT, 'docs', 'validation', 'signals'));
+  for (const r of Object.values(sv.results)) forecasts[r.id] = { id: r.id, status: r.status, verdict: r.verdict, specVersion: r.specVersion, specHash: r.specHash, ranAt: r.ranAt, ...(r.crash ? { crash: crashSentence(r.crash) } : {}) };
+  for (const r of Object.values({ ...sv.versions, ...Object.fromEntries(Object.values(sv.results).map((r) => [`${r.id} v${r.specVersion}`, r])) })) {
+    forecastTests.push({ id: r.id, version: r.specVersion, status: r.status, p: r.pValue, alpha: Number((sSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.05 });
+  }
+  const fwd = loadForward(forwardFilePath(DATA_DIR));
+  return { ...v, specs, running: validationRunning, file: 'data/local/validation/results.json', forecasts, forecastTests, forward: forwardSummary(fwd.lines), forwardCheck: { chainOk: fwd.chainOk, badLines: fwd.badLines, lines: fwd.lines.length, file: 'data/local/validation/forward.jsonl' } };
+}
+
+/** The badge of every registered model and signal now (src/utils/validationGrades.ts). */
+function modelBadgesNow(): Record<string, ValueBadge> {
+  const v = validationReplyNow() as unknown as ValidationReply;
+  const holmMap = validationHolm(v);
+  return Object.fromEntries(MODEL_REGISTER.map((m) => [m.id, entryBadge(m.id, m.status, v, holmMap)]));
 }
 
 /** Checked every minute; starts each switched-on job once per day or week after its set time. */
@@ -3192,6 +3260,50 @@ async function startServer() {
   });
   app.use(express.json({ limit: '5mb' }));
 
+  // Console events (item 4): catch-up, live stream and signed webhooks. Events are written to
+  // data/local/events/events.jsonl by this server and by the daily download; the hub reads new
+  // lines, sends them to the live streams and delivers them to webhooks with retries.
+  const consoleWebhooks = new WebhookStore(EVENT_FILES, secretBoxFromEnv(process.env).box);
+  const consoleUrlProblem = (u: string) => outboundUrlProblem(u, PORT);
+  const consoleStream = registerConsoleEventRoutes(app, { files: EVENT_FILES, webhooks: consoleWebhooks, urlProblem: consoleUrlProblem });
+  const consoleHub = new EventHub({
+    files: EVENT_FILES,
+    webhooks: consoleWebhooks,
+    urlProblem: consoleUrlProblem,
+    broadcast: (e) => {
+      consoleStream.broadcast(e);
+      // The older integration stream gets the same events, named by type.
+      const frame = `id: ${e.id}\nevent: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`;
+      sseClients.forEach((c) => {
+        try {
+          c.write(frame);
+        } catch {
+          sseClients.delete(c);
+        }
+      });
+    },
+  });
+  consoleHub.start();
+  const consolePollMs = Math.max(200, Number(process.env.EVENTS_POLL_MS) || 3000);
+  setInterval(() => {
+    try {
+      if (consoleHub.pull().length) void consoleHub.deliver().catch(() => undefined);
+    } catch (err) {
+      console.warn(`[events] could not read new events: ${(err as Error)?.message || err}`);
+    }
+  }, consolePollMs).unref();
+  setInterval(() => void consoleHub.deliver().catch(() => undefined), 10_000).unref();
+  // Releases due tomorrow: checked hourly; each release is sent once (idempotency key).
+  const announceReleases = () => {
+    try {
+      emitEvents(EVENT_FILES, releaseUpcomingInputs(new Date(), loadUstAuctions()?.announced));
+    } catch {
+      /* the calendar files are missing: nothing to announce */
+    }
+  };
+  setTimeout(announceReleases, 30_000).unref();
+  setInterval(announceReleases, 3_600_000).unref();
+
   // 1. Live Open Data & Grounded Market Telemetry Snapshot Endpoint
   app.get('/api/data/sovereign-snapshot', async (req, res) => {
     try {
@@ -3408,40 +3520,16 @@ async function startServer() {
   });
   registerReviewRoutes(app, { refuseRemoteChange, signedIn, archivedSnapshot: (iso3, date) => archivedSnapshot(iso3, date), seriesFor, fetchLiveOpenDataSnapshot, reviewOptionsStep, withModelFigures, allHistories, politicalInputs: (iso3) => ({ dpi: dpiInput(DATA_DIR), gdelt: gdeltDailySeries(DATA_DIR, iso3) }) });
   // Pre-registered backtests: the tests as registered (with their hashes) and the latest verdicts.
-  app.get('/api/validation', (_req, res) => {
-    const v = loadValidation(VALIDATION_FILE);
-    const specs = loadSpecs(SPEC_DIR).map((s) => ({ file: s.file, hash: s.hash, problem: s.problem, ...(s.spec ? { id: s.spec.id, version: s.spec.version, registeredOn: s.spec.registeredOn, hypothesis: s.spec.hypothesis, passMark: s.spec.passMark, params: s.spec.params, sample: s.spec.sample, knownLimits: s.spec.knownLimits, framework: s.spec.framework === 2 ? 2 : 1, retestOf: s.spec.retestOf } : {}) }));
-    const fv = loadForecastValidation(path.join(DATA_DIR, 'local', 'validation', 'forecasts.json'));
-    const forecasts = Object.fromEntries(Object.values(fv.results).map((r) => [r.id, { id: r.id, status: r.status, verdict: r.verdict, specVersion: r.specVersion, specHash: r.specHash, ranAt: r.ranAt }]));
-    // Every forecast evaluation version run, for the Holm correction across all tests on record:
-    // its p is its own p where it has one (fan coverage), else the largest horizon p (every horizon
-    // must pass); its alpha the registered pass mark.
-    const fSpecs = loadSpecs(path.join(APP_ROOT, 'docs', 'validation', 'forecasts'));
-    const forecastTests = Object.values({ ...fv.versions, ...Object.fromEntries(Object.values(fv.results).map((r) => [`${r.id} v${r.specVersion}`, r])) }).map((r) => ({
-      id: r.id,
-      version: r.specVersion,
-      status: r.status,
-      p: r.pValue ?? (r.horizons?.length ? Math.max(...r.horizons.map((h) => h.pValue)) : 1),
-      alpha: Number((fSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.1,
-    }));
-    // Currency factor tests (npm run signals:evaluate) sit beside the forecast evaluations: same
-    // verdict shape for the register, and their p enters the same Holm family.
-    const sv = loadSignalValidation(path.join(DATA_DIR, 'local', 'validation', 'signals.json'));
-    const sSpecs = loadSpecs(path.join(APP_ROOT, 'docs', 'validation', 'signals'));
-    for (const r of Object.values(sv.results)) forecasts[r.id] = { id: r.id, status: r.status, verdict: r.verdict, specVersion: r.specVersion, specHash: r.specHash, ranAt: r.ranAt, ...(r.crash ? { crash: crashSentence(r.crash) } : {}) };
-    for (const r of Object.values({ ...sv.versions, ...Object.fromEntries(Object.values(sv.results).map((r) => [`${r.id} v${r.specVersion}`, r])) })) {
-      forecastTests.push({ id: r.id, version: r.specVersion, status: r.status, p: r.pValue, alpha: Number((sSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.05 });
-    }
-    const fwd = loadForward(forwardFilePath(DATA_DIR));
-    res.json({ ...v, specs, running: validationRunning, file: 'data/local/validation/results.json', forecasts, forecastTests, forward: forwardSummary(fwd.lines), forwardCheck: { chainOk: fwd.chainOk, badLines: fwd.badLines, lines: fwd.lines.length, file: 'data/local/validation/forward.jsonl' } });
-  });
+  app.get('/api/validation', (_req, res) => res.json(validationReplyNow()));
   registerUserTestRoutes(app, { dataDir: DATA_DIR, specDir: SPEC_DIR, refuseRemoteChange, signedIn, local: backtestLocal, audit: (summary, detail) => appendAudit(AUDIT_FILES, { kind: 'validation', summary, detail }) });
   app.post('/api/validation/run', async (req, res) => {
     if (refuseRemoteChange(req, res)) return;
     if (validationRunning) return res.status(409).json({ error: 'The backtests are already running.' });
     validationRunning = true;
+    const badgesBefore = modelBadgesNow();
     try {
       const out = await runBacktests({ specDir: SPEC_DIR, resultFile: VALIDATION_FILE, onResult: auditBacktestResult, local: backtestLocal });
+      emitEvents(EVENT_FILES, badgeChangeInputs(badgesBefore, modelBadgesNow(), Object.fromEntries(MODEL_REGISTER.map((m) => [m.id, m.name])), new Date().toISOString()));
       res.json(out);
     } catch (error: any) {
       res.status(500).json({ error: `The backtests could not run (${error?.message || 'unknown error'}).` });
@@ -5405,6 +5493,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       };
 
       latestRunsByIso3.set(updatedRun.iso3, updatedRun);
+      emitEvents(EVENT_FILES, [councilRunInput({ iso3: updatedRun.iso3, countryName: updatedRun.countryName })]);
       const intCfg = serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG;
       if (intCfg.autoBroadcastOnRun) {
         void dispatchTopLevelIntegrationEvent(
@@ -6253,6 +6342,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       }
     });
     sseClients.clear();
+    consoleStream.close();
     httpServer.close(() => {
       console.log('[shutdown] stopped cleanly');
       process.exit(0);

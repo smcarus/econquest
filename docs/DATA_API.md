@@ -233,3 +233,77 @@ The ID is part of each entry's hash, so it cannot be changed afterwards without 
 noticing. A malformed ID is refused with `400 BAD_CORRELATION_ID`. Without the header, the reply
 carries an ID the app made, which is not written to the log.
 
+
+### Events and webhooks
+
+The app sends an event when something an outside system may act on happens. Every event has the
+same envelope:
+
+| Field | What it holds |
+| --- | --- |
+| `id` | `evt_...`, increasing. Use it with `after=` or `Last-Event-ID` to miss nothing. |
+| `type` | One of the types below. |
+| `entity` | What it is about: a country (with `iso2` and `iso3`), a model, a source or the app, plus `indicator` where there is one. |
+| `severity` | `info`, `warning` or `critical`. |
+| `occurred_at` | When the app noticed it. |
+| `as_of` | The period or date the value refers to. |
+| `source` | Where the value comes from, named as the data-licence register names it. |
+| `evidence_url` | Where to read the value behind the event. A relative address is on this server. |
+| `shareable` | `true` only when the licence register lets the value be passed on. An unchecked source is `false`. |
+| `badge` | `official` for a published figure; for a signal or model, its validation badge (`validated`, `provisional`, `under_review`, `review_due`, `withdrawn`) or `not_validated`. |
+| `idempotency_key` | The same for the same happening, so a receiver can drop repeats. |
+| `summary`, `data` | A plain sentence and the values behind it. |
+
+| Type | When |
+| --- | --- |
+| `signal_state_changed` | The policy cycle, CFTC positioning or growth-and-inflation regime of a country moves to another state. |
+| `threshold_crossed` | One of your indicator watches fires (item 5). |
+| `badge_changed` | A pre-registered test run changes a model's badge. |
+| `figure_revised` | A watched figure is revised. |
+| `data_stale`, `feed_failed` | A watched figure goes out of date or Missing; a step of the daily download fails. |
+| `sanctions_list_changed` | A saved OFAC or UN list changes. |
+| `release_upcoming` | The day before a central bank decision, CPI or GDP release (official calendars) or a US Treasury auction (announced on Fiscal Data). |
+| `council_run_finished` | A council run on a country finishes. |
+| `daily_download_ready` | The daily download finishes. |
+
+Three ways to receive them, all with a token that has `read:events` (or the legacy key):
+
+- **Catch up:** GET `/api/v1/events?after=<id>` (or `since=<ISO time>`), with optional
+  `types=` and `countries=` (comma-separated). Oldest first, up to `limit` (200, at most 1000).
+- **Live:** GET `/api/v1/events/stream`, server-sent events with the same filters. On reconnect,
+  send `Last-Event-ID` and missed events come first. The older `/api/v1/integration/stream`
+  carries the same events too.
+- **Webhooks:** `POST /api/v1/webhooks` with `{ "url": "...", "types": [...], "countries": [...], "name": "..." }`.
+  The reply holds a secret (`whsec_...`) shown once. Each delivery is a POST of one event with
+  these headers:
+
+  | Header | Value |
+  | --- | --- |
+  | `X-EconQuest-Event` | The type |
+  | `X-EconQuest-Event-Id` | The event id |
+  | `X-EconQuest-Delivery-Id` | The same on every retry of one delivery |
+  | `X-EconQuest-Attempt` | 1, 2, ... |
+  | `X-EconQuest-Timestamp` | Unix seconds |
+  | `X-EconQuest-Signature-256` | `sha256=` + HMAC-SHA256 of `<timestamp>.<body>` with the secret |
+  | `Idempotency-Key` | The event's `idempotency_key` |
+
+  Check the signature, refuse old timestamps, and answer 2xx within 8 seconds. Anything else is
+  retried after 30 s, 2 min, 10 min, 1 h and 6 h, then given up. GET `/api/v1/events/deliveries`
+  lists every attempt. GET `/api/v1/webhooks` lists yours; `DELETE /api/v1/webhooks/<id>` removes
+  one. Secrets are encrypted on disk when `ECONQUEST_SECRET_KEY` is set and never written to the
+  audit log or backups. Adding and removing webhooks is in the audit log.
+
+Checking a delivery in Python:
+
+```python
+import hmac, hashlib, time
+def verified(secret: str, headers, body: bytes) -> bool:
+    ts = headers["X-EconQuest-Timestamp"]
+    if abs(time.time() - int(ts)) > 300:
+        return False
+    mac = hmac.new(secret.encode(), ts.encode() + b"." + body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest("sha256=" + mac, headers["X-EconQuest-Signature-256"])
+```
+
+Events are kept in `data/local/events/` (the last 5,000). The daily download writes its own events
+there and the server sends them on within a few seconds.

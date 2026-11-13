@@ -9,10 +9,15 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { createServer } from 'node:http';
+import { createHmac } from 'node:crypto';
+import { emitEvents, eventFiles } from '../src/server/eventBus';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const port = 4400 + Math.floor(Math.random() * 400);
 const base = `http://127.0.0.1:${port}`;
+/** A webhook receiver this test runs; the server may reach it and nothing else. */
+const receiverPort = port + 400;
 let server: ChildProcess;
 let dataDir: string;
 let log = '';
@@ -36,6 +41,8 @@ before(async () => {
       ECONQUEST_SECRET_KEY: 'test-master-key-that-is-long-enough-1234',
       GEMINI_API_KEY: '',
       SMCR_INTEGRATION_API_KEY: 'smcr_data_api_test_key',
+      OFFLINE_PASS: `http://127.0.0.1:${receiverPort}/`,
+      EVENTS_POLL_MS: '300',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -186,6 +193,78 @@ test('scoped API tokens: made by the admin, limited to their scopes, revocable, 
   assert.ok(uses.some((e) => /^Refused an unknown or revoked API token/.test(e.summary)));
   const stored = readFileSync(path.join(dataDir, 'local', 'api-tokens.json'), 'utf8');
   assert.ok(!stored.includes(secret.slice(17)), 'only the hash is stored');
+});
+
+test('events: a read:events token adds a webhook, gets a signed delivery, and can catch up and stream', async () => {
+  const made = await (await post('/api/settings/api-tokens', { name: 'Event console', scopes: ['read:events'] }, adminCookie)).json();
+  const bearer = { Authorization: `Bearer ${made.secret}`, 'Content-Type': 'application/json' };
+  const got: { headers: Record<string, string | string[] | undefined>; body: string }[] = [];
+  const receiver = createServer((req, res) => {
+    let body = '';
+    req.on('data', (d) => (body += d));
+    req.on('end', () => {
+      got.push({ headers: req.headers, body });
+      res.writeHead(200).end('ok');
+    });
+  });
+  await new Promise<void>((r) => receiver.listen(receiverPort, '127.0.0.1', () => r()));
+  try {
+    const bad = await fetch(`${base}/api/v1/webhooks`, { method: 'POST', headers: bearer, body: JSON.stringify({ url: 'ftp://x' }) });
+    assert.equal(bad.status, 400);
+    const add = await fetch(`${base}/api/v1/webhooks`, { method: 'POST', headers: bearer, body: JSON.stringify({ url: `http://127.0.0.1:${receiverPort}/hook`, types: ['daily_download_ready'], countries: [], name: 'Console' }) });
+    assert.equal(add.status, 201);
+    const hook = await add.json();
+    assert.match(hook.secret, /^whsec_/);
+    assert.equal(hook.webhook.secret, undefined, 'the stored secret is never listed');
+    const listed = await (await fetch(`${base}/api/v1/webhooks`, { headers: bearer })).json();
+    assert.deepEqual(listed.webhooks.map((w: { id: string }) => w.id), [hook.webhook.id]);
+    // The live stream, opened before the event, gets it too.
+    const ctl = new AbortController();
+    const stream = await fetch(`${base}/api/v1/events/stream?types=daily_download_ready`, { headers: bearer, signal: ctl.signal });
+    assert.equal(stream.headers.get('content-type'), 'text/event-stream');
+    const reader = stream.body!.getReader();
+    // The daily download (a separate process) writes the event; the server picks it up.
+    const run = { startedAt: '2026-11-13T06:00:00.000Z', finishedAt: '2026-11-13T06:20:00.000Z', steps: [{ id: 'imf', label: 'IMF', outcome: 'done' }] };
+    emitEvents(eventFiles(dataDir), [{ type: 'daily_download_ready', entity: { kind: 'app', name: 'Daily download' }, as_of: '2026-11-13', source: 'EconQuest daily download', summary: 'Daily download finished; every step done.', data: run, discriminator: run.startedAt }]);
+    // A second write of the same happening is dropped (idempotency key).
+    emitEvents(eventFiles(dataDir), [{ type: 'daily_download_ready', entity: { kind: 'app', name: 'Daily download' }, as_of: '2026-11-13', source: 'EconQuest daily download', summary: 'again', discriminator: run.startedAt }]);
+    let text = '';
+    const deadline = Date.now() + 15_000;
+    while ((!got.length || !text.includes('daily_download_ready')) && Date.now() < deadline) {
+      const chunk = await Promise.race([reader.read(), new Promise<null>((r) => setTimeout(() => r(null), 500))]);
+      if (chunk && 'value' in chunk && chunk.value) text += new TextDecoder().decode(chunk.value);
+    }
+    ctl.abort();
+    assert.equal(got.length, 1, 'one delivery');
+    const h = got[0]!.headers;
+    const expected = `sha256=${createHmac('sha256', hook.secret).update(`${h['x-econquest-timestamp']}.${got[0]!.body}`).digest('hex')}`;
+    assert.equal(h['x-econquest-signature-256'], expected, 'signed with the webhook secret');
+    const e = JSON.parse(got[0]!.body);
+    assert.equal(h['idempotency-key'], e.idempotency_key);
+    assert.equal(e.type, 'daily_download_ready');
+    for (const k of ['id', 'entity', 'severity', 'occurred_at', 'as_of', 'source', 'evidence_url', 'shareable', 'badge']) assert.ok(k in e, `envelope has ${k}`);
+    assert.equal(e.shareable, true);
+    assert.match(text, /event: daily_download_ready/);
+    // Catch-up by id and the delivery log.
+    const all = await (await fetch(`${base}/api/v1/events?types=daily_download_ready`, { headers: bearer })).json();
+    assert.equal(all.events.length, 1);
+    assert.equal((await (await fetch(`${base}/api/v1/events?after=${e.id}`, { headers: bearer })).json()).events.length, 0);
+    assert.equal((await fetch(`${base}/api/v1/events?types=nonsense`, { headers: bearer })).status, 400);
+    const log = await (await fetch(`${base}/api/v1/events/deliveries`, { headers: bearer })).json();
+    assert.equal(log.deliveries[0].ok, true);
+    assert.equal(log.deliveries[0].status, 200);
+    // Another token cannot see or remove it; the owner can.
+    assert.equal((await fetch(`${base}/api/v1/webhooks/${hook.webhook.id}`, { method: 'DELETE', headers: { 'X-SMCR-API-Key': 'smcr_data_api_test_key' } })).status, 404);
+    assert.equal((await fetch(`${base}/api/v1/webhooks/${hook.webhook.id}`, { method: 'DELETE', headers: bearer })).status, 200);
+    const stored = readFileSync(eventFiles(dataDir).webhooks, 'utf8');
+    assert.ok(!stored.includes(hook.secret), 'the secret is encrypted on disk');
+    await new Promise((r) => setTimeout(r, 300));
+    const audit = readFileSync(path.join(dataDir, 'local', 'audit', 'audit-log.jsonl'), 'utf8');
+    assert.ok(!audit.includes(hook.secret), 'the secret never reaches the audit log');
+    assert.ok(audit.trim().split('\n').some((l) => JSON.parse(l).summary?.startsWith('Added the webhook "Console"')), 'adding is audited');
+  } finally {
+    receiver.close();
+  }
 });
 
 test('wrong passwords are refused, then locked out; the right one signs in', async () => {
