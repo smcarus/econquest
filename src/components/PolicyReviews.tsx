@@ -15,6 +15,7 @@ import { useLang, useT, useTx } from '../i18n/useLang';
 import { REPORTS } from '../i18n/messages/reports';
 import { BehaviouralCheck } from './BehaviouralCheck';
 import { PrecedentFinder } from './PrecedentFinder';
+import { ReviewPeers } from './ReviewPeers';
 import { PoliticalFeasibility } from './PoliticalFeasibility';
 import { ExpertReviewForm } from './ExpertReviewForm';
 
@@ -867,6 +868,14 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                 <h4 className="ui-section-title">2b. {t('pc_title')}</h4>
                 <p className="ui-label">{t('pc_hint')}</p>
                 <PrecedentFinder review={r} countryName={name(frame.iso3)} />
+              </section>
+            )}
+
+            {frame && diagnosis && opened!.states.diagnose === 'done' && (
+              <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="peers">
+                <h4 className="ui-section-title">2c. {t('pe_title')}</h4>
+                <p className="ui-label">{t('pe_hint')}</p>
+                <ReviewPeers review={r} iso3={frame.iso3} countries={countries} countryName={name} />
               </section>
             )}
 

@@ -60,6 +60,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Food prices and food security | Research | Description, not a tested signal | None |
 | Natural disasters | Research | Description, not a tested signal | None |
 | Policy review watch | Research | Description, not a tested signal | None |
+| Peer comparison for a policy review | Research | Description, not a tested signal | None |
 | Trade-off chart | Research | Description, not a tested signal | None |
 | Global shock scenarios | Research | Description, not a tested signal | None |
 | Currency carry | Research | Signal test passed | v1, 2026-11-07 |
@@ -784,6 +785,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: a comparison of saved figures with the triggers you wrote.
 - **Limits:** Only the standard diagnosis indicators can be checked; annual figures change once a year and may be revised; a crossed trigger says look again, not that the recommendation failed or worked.
 - **Code:** `src/utils/reviewWatch.ts, src/components/ReviewWatchPanel.tsx`
+
+### Peer comparison for a policy review
+
+- **Says:** The review country's diagnosis figures beside the same figures for up to six peer countries, as each stood on the review's As of day.
+- **Rule:** Each peer's diagnosis is built from its saved pull on or before the As of day, the same way as the review's own; the peer median uses peers with the figure (two or more); rank counts how many countries with the figure have a higher value, plus one.
+- **Reads:** Your policy review; saved pulls of the peer countries you pick
+- **Shows in:** Reports > Policy reviews > Peers (after Diagnose)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: saved figures side by side.
+- **Limits:** Only countries the app has saved figures for on or before the As of day can be compared; figures may be from different periods across countries (each cell shows its period on hover); being above or below peers is not good or bad by itself.
+- **Code:** `src/utils/reviewPeers.ts, src/components/ReviewPeers.tsx`
 
 ### Trade-off chart
 

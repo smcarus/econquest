@@ -20,6 +20,7 @@ import { buildDiagnosis, type Diagnosis } from '../../utils/reviewDiagnosis';
 import { buildMemo, parseMemoInputs, type MemoStep } from '../../utils/reviewMemo';
 import { buildOutcomes } from '../../utils/reviewOutcomes';
 import { reviewWatch } from '../../utils/reviewWatch';
+import { parsePeerList, peerTable } from '../../utils/reviewPeers';
 import { cutAt, EPISODE_METHOD, EVIDENCE_TEMPLATE_VERSION, isResearchOnly, packRequests, pastEpisodes, perOption, runAnalysis, signalsFor, type EvidenceStep } from '../../utils/reviewEvidence';
 import { OPTIONS_INSTRUCTION, OPTIONS_TEMPLATE_VERSION, optionsPrompt, parseUserOptions, unassessedOptions, type OptionsStep } from '../../utils/reviewOptions';
 import { frameOf, parseFrame, summarise as summariseReview, stepStates, REVIEW_TEMPLATE_VERSION } from '../../utils/policyReview';
@@ -338,6 +339,21 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
       detail: { id: r.id, step: 'evidence', hash: out.review.steps.evidence?.hash, asOf: frame.asOf, analyses: analyses.map((a) => ({ id: a.id, tests: a.tests.length, missing: a.missing.length, inputs: a.inputs })), episodes: items.length, signals: signals.map((s) => `${s.id}: ${s.statusLabel}`), researchOnly: content.researchOnly },
     });
     res.json({ review: out.review, states: stepStates(out.review) });
+  });
+  // Peer comparison (PC2, src/utils/reviewPeers.ts): the diagnosis figures of peer countries the user picks, each
+  // from its saved pull on or before the review's As of day. Read only; nothing is saved and the steps do not change.
+  app.get('/api/reviews/:id/peers', (req, res) => {
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    const frame = r && frameOf(r);
+    if (!r || !frame) return res.status(404).json({ error: 'No policy review with that id.' });
+    if (stepStates(r).diagnose !== 'done') return res.status(400).json({ error: 'Run Diagnose first.' });
+    const peers = parsePeerList(req.query.iso3, frame.iso3).map((iso3) => {
+      const past = archivedSnapshot(iso3, frame.asOf);
+      if (!past) return { iso3, diagnosis: null, reason: `no saved pull on or before ${frame.asOf}` };
+      const pulledAt = new Date(past.pulledAt).toISOString();
+      return { iso3, diagnosis: withModelFigures(buildDiagnosis(figureRows({ ...past.snapshot, fetchedAt: pulledAt }), { iso3, asOf: frame.asOf, pullDate: past.date, pulledAt, incomplete: past.incomplete })) };
+    });
+    res.json(peerTable(r.steps.diagnose!.content as Diagnosis, peers));
   });
   // Precedent finder (G34): other countries that matched on the chosen figures, and what followed.
   // Worked out on request from the saved yearly histories; nothing is saved and the steps do not change.

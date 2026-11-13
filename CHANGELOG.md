@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Peer comparison for a policy review (PC2): after Diagnose, pick up to six watchlist countries (or
+  the same region) to see each diagnosis figure beside the same figure for each peer, each from its
+  saved pull on or before the review's As of day, with the peer median and the review country's rank.
+  Not saved in the review. Route `GET /api/reviews/:id/peers?iso3=` (read only).
 - Policy review watch (PC1): the start page checks the triggers in each policy review memo's "what
   to watch" list ("above 8", "below 3", "target 4", "rises", "falls", also in Spanish, French and
   Portuguese) against the latest saved figures for the country, lists each as Crossed or Not crossed,
