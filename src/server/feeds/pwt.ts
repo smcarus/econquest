@@ -12,7 +12,7 @@ import { fetchWithTimeout } from '../http';
 import { writeFileAtomic } from '../../utils/atomicWrite';
 import { readXlsxSheet } from '../../utils/xlsxRead';
 import { describeNetworkError } from '../../utils/connectionCheck';
-import { parsePwtRows, PWT_EDITION, PWT_URL, type PwtFile } from '../../utils/growthAccounting';
+import { parsePwtRows, PWT_EDITION, PWT_FILE_NAME, PWT_URL, type PwtFile } from '../../utils/growthAccounting';
 
 const RETRY_MS = 6 * 60 * 60 * 1000;
 const TIMEOUT_MS = 180_000;
@@ -100,7 +100,7 @@ export async function fetchPwt(dataDir = DATA_DIR): Promise<PwtFile | null> {
       }
       try {
         fs.mkdirSync(pwtDir(dataDir), { recursive: true });
-        fs.writeFileSync(path.join(pwtDir(dataDir), path.basename(PWT_URL)), buf);
+        fs.writeFileSync(path.join(pwtDir(dataDir), PWT_FILE_NAME), buf);
       } catch {
         // the table below is enough
       }

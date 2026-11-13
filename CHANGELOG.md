@@ -5,6 +5,8 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Penn World Table: the workbook now downloads from DataverseNL, where the GGDC page links it;
+  the old www.rug.nl address answered 404.
 - UCDP: Gleditsch-Ward codes 54 (Dominica) and 80 (Belize) now map to their countries; the
   connection check no longer lists them as codes without a country.
 - Documentation brought up to date with the console integration (#512 to #526) and the planned
