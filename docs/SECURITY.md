@@ -87,6 +87,42 @@ npm run users -- disable <username>
 
 Under Docker: `docker compose exec econquest npm run users -- list`.
 
+## Sign-in through an OIDC provider
+
+A server with several people on it can let them sign in with an account they already have at an
+OpenID Connect provider (Google, Microsoft Entra ID, Okta, Keycloak, Authentik and others), beside
+the local accounts. It is off unless `OIDC_ISSUER` and `OIDC_CLIENT_ID` are set (see `.env.example`).
+
+1. Register the app with the provider as a web application, with the callback address
+   `https://<your host>/api/auth/oidc/callback` (or set `OIDC_REDIRECT_URI` to the exact address).
+2. Set `OIDC_ISSUER` (for Google `https://accounts.google.com`; for Microsoft
+   `https://login.microsoftonline.com/<tenant id>/v2.0`), `OIDC_CLIENT_ID`, and `OIDC_CLIENT_SECRET`
+   unless the provider registered a public client.
+3. Say who may sign in: `OIDC_ALLOWED_EMAILS` (whole addresses, or `@example.org` for everyone at a
+   domain) and `OIDC_ADMIN_EMAILS`. Others on the list get `OIDC_DEFAULT_ROLE` (viewer unless set);
+   an admin can change the role in Menu > Users. An email on neither list is refused, whatever the
+   provider says.
+4. Restart. The sign-in page shows "Sign in with <OIDC_NAME>" above the username and password.
+
+How it is checked:
+
+- The authorization code flow with PKCE (S256), a random state tied to the browser by a 10-minute
+  cookie, and a nonce. A sign-in that was not started in the same browser, or took longer than 10
+  minutes, is refused.
+- The ID token's signature is checked against the keys the provider publishes (RS256, PS256, ES256
+  and the larger sizes; never `none` or a shared-secret algorithm), then its issuer, audience, expiry
+  and nonce. Keys are fetched again once when a token names a new key, so a key change at the
+  provider needs no restart.
+- Only a verified email (`email_verified`) counts. At the first sign-in an account is made with the
+  provider and the person's id there (`sub`); later sign-ins use that link, so a changed email at
+  the provider does not move anyone to another account. A disabled account stays disabled.
+- OIDC accounts have no password here: password sign-in, password change and password reset do not
+  apply to them. Sessions, roles, CSRF, the audit log and API tokens work as for local accounts.
+- With no accounts yet, an email in `OIDC_ADMIN_EMAILS` may create the first admin account by
+  signing in; the setup code still works for a local admin.
+- Every OIDC sign-in, new account and refusal (with the reason: not on the list, no verified email,
+  disabled, expired, or a failed check) is in the audit log. The provider's tokens are not kept.
+
 ## Audit seal and locked copies
 
 Each audit entry is chained to the one before it by a SHA-256 hash, so a line changed or removed
@@ -125,4 +161,4 @@ local AI model and the Windows start scripts), with what it found and fixed, is 
 
 1. HTTPS through a reverse proxy in the compose stack.
 
-Accounts record a provider (`local` today) so Google or Microsoft sign-in can be added later.
+Accounts record a provider: `local` (password kept here) or `oidc` (see "Sign-in through an OIDC provider").
