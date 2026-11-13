@@ -239,7 +239,7 @@ export function exportHerfindahl(rows: ComtradeRow[], totalExports: number): Com
 }
 
 const r1 = (v: number) => Number(v.toFixed(1));
-const bn = (v: number) => Number((v / 1e9).toFixed(2));
+const bn = (v: number) => Number((v / 1e9).toFixed(6));
 
 /** Partner name from Comtrade's description, else the app's own list. */
 const nameOf = (r: ComtradeRow) => (r.partnerCode === 490 ? 'Taiwan' : r.partnerName && !/^other asia/i.test(r.partnerName) ? r.partnerName : PARTNER_NAMES[r.partnerCode] || `Partner ${r.partnerCode}`);

@@ -98,6 +98,9 @@ const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.le
 export function commodityTerms(series: Partial<Record<CtId, YearValue[]>>, moves: PriceMove[] | null, beforeYear: number, historySaved = true): CommodityTerms {
   const m = Object.fromEntries(CT_IDS.map((id) => [id, byYear(series[id], beforeYear)])) as Record<CtId, Map<number, number>>;
   const out: CommodityTerms = { groups: [], sources: CT_SOURCES, method: CT_METHOD };
+  // Unrounded exports and imports as % of GDP for the effect; the rounded ones are for display.
+  let xGdp: number | undefined;
+  let mGdp: number | undefined;
   const noHistory = 'No saved World Bank history for this country yet (Data health > World Bank)';
 
   // Share year: the latest year with all three export shares.
@@ -113,8 +116,10 @@ export function commodityTerms(series: Partial<Record<CtId, YearValue[]>>, moves
     const x = m.merch_exports_usd.get(my);
     const im = m.merch_imports_usd.get(my);
     if (gdp && gdp > 0 && x !== undefined && im !== undefined) {
-      out.exportsPctGdp = r1((x / gdp) * 100);
-      out.importsPctGdp = r1((im / gdp) * 100);
+      xGdp = (x / gdp) * 100;
+      mGdp = (im / gdp) * 100;
+      out.exportsPctGdp = r1(xGdp);
+      out.importsPctGdp = r1(mGdp);
     } else out.effectMissing = 'No goods exports, imports or GDP in US dollars for the year of the trade shares';
   }
 
@@ -122,6 +127,7 @@ export function commodityTerms(series: Partial<Record<CtId, YearValue[]>>, moves
   if (!byCode.size) out.pricesMissing = 'The World Bank Pink Sheet has not answered yet';
   else out.pricesAsOf = [...byCode.values()].map((v) => v.asOf).sort().pop();
 
+  const raw: number[] = [];
   for (const g of GROUP_IDS) {
     const prices = GROUP_PRICES[g]
       .map((c) => byCode.get(c))
@@ -139,13 +145,14 @@ export function commodityTerms(series: Partial<Record<CtId, YearValue[]>>, moves
       ...(xs !== undefined ? { exportShare: r1(xs) } : {}),
       ...(ms !== undefined ? { importShare: r1(ms) } : {}),
     };
-    if (m12 !== undefined && xs !== undefined && ms !== undefined && out.exportsPctGdp !== undefined && out.importsPctGdp !== undefined) {
-      view.effectPctGdp = r2((xs / 100) * out.exportsPctGdp * (m12 / 100) - (ms / 100) * out.importsPctGdp * (m12 / 100));
+    if (m12 !== undefined && xs !== undefined && ms !== undefined && xGdp !== undefined && mGdp !== undefined) {
+      const e = (xs / 100) * xGdp * (m12 / 100) - (ms / 100) * mGdp * (m12 / 100);
+      raw.push(e);
+      view.effectPctGdp = r2(e);
     }
     out.groups.push(view);
   }
-  const effects = out.groups.flatMap((g) => (g.effectPctGdp !== undefined ? [g.effectPctGdp] : []));
-  if (effects.length === GROUP_IDS.length) out.netEffectPctGdp = r2(effects.reduce((a, b) => a + b, 0));
+  if (raw.length === GROUP_IDS.length) out.netEffectPctGdp = r2(raw.reduce((a, b) => a + b, 0));
 
   const totYears = [...m.terms_of_trade.keys()].sort((a, b) => a - b);
   const ty = totYears[totYears.length - 1];
