@@ -29,11 +29,20 @@ const LAST_USED_EVERY_MS = 60_000;
 
 export class ApiTokenStore {
   private tokens: ApiToken[] | null = null;
+  /** The file's change time when read: a token made or revoked from the command line (npm run tokens) is seen at once. */
+  private mtimeMs = -1;
 
   constructor(private readonly file: string) {}
 
   private load(): ApiToken[] {
-    if (this.tokens) return this.tokens;
+    let mtimeMs = -1;
+    try {
+      mtimeMs = fs.statSync(this.file).mtimeMs;
+    } catch {
+      /* no file yet */
+    }
+    if (this.tokens && mtimeMs === this.mtimeMs) return this.tokens;
+    this.mtimeMs = mtimeMs;
     try {
       const parsed = JSON.parse(fs.readFileSync(this.file, 'utf8'));
       this.tokens = Array.isArray(parsed?.tokens)
@@ -52,6 +61,11 @@ export class ApiTokenStore {
       fs.chmodSync(this.file, 0o600);
     } catch {
       /* not every file system keeps modes */
+    }
+    try {
+      this.mtimeMs = fs.statSync(this.file).mtimeMs;
+    } catch {
+      /* read again next time */
     }
   }
 

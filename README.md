@@ -560,6 +560,8 @@ currencies, US rates, per-country fiscal shocks) or replay a past crisis (1997, 
 portfolio it sends (`POST /api/v1/scenarios`); results are per position, labelled hypothetical, with Missing moves explained.
 The audit log can be sealed (`AUDIT_SEAL_KEY`: an HMAC on every entry) and copied entry by entry to an S3-compatible
 bucket with object lock (`AUDIT_BUCKET_URL`); see "Audit seal and locked copies" in [docs/SECURITY.md](docs/SECURITY.md).
+Running it as a service for another system (reverse proxy and TLS, `ALLOWED_HOSTS`, service tokens with
+`npm run tokens`, `/healthz` and `/readyz`, and `DAILY_DOWNLOAD_DEADLINE`) is covered in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ### Network
 

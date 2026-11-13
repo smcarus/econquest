@@ -49,6 +49,7 @@ import { buildCountrySnapshot } from './src/server/countrySnapshot';
 import { registerConsoleHoldingsRoutes } from './src/server/routes/consoleHoldings';
 import { registerExclusionRoutes } from './src/server/routes/consoleExclusions';
 import { registerConsoleScenarioRoutes } from './src/server/routes/consoleScenarios';
+import { deadlineInputs, parseDeadline } from './src/utils/dailyDeadline';
 import { monthlyAverages, readReplayFile, type ReplayFile } from './src/utils/scenarioReplay';
 import { fxDailySeries, fxHistoryPulledAt } from './src/utils/fxHistory';
 import { loadWatchRules as loadWatchRuleFile } from './src/utils/watchRulesStore';
@@ -1129,7 +1130,7 @@ async function runDailyCli(): Promise<void> {
 
   run.finishedAt = new Date().toISOString();
   save();
-  emitEvents(EVENT_FILES, [...dailyRunInputs(run), ...releaseUpcomingInputs(new Date(), loadUstAuctions()?.announced)]);
+  emitEvents(EVENT_FILES, [...dailyRunInputs(run, DAILY_DEADLINE), ...releaseUpcomingInputs(new Date(), loadUstAuctions()?.announced)]);
   console.log('');
   console.log(formatDaily(run, { full: true }));
   process.exit(0);
@@ -2249,6 +2250,9 @@ const SIGNAL_RESULT_FILE = path.join(DATA_DIR, 'local', 'validation', 'signals.j
 /** Scheduled jobs (src/utils/scheduledJobs.ts): time zone for SCHEDULE_DOWNLOAD_ALL and SCHEDULE_BACKTESTS. */
 const SCHEDULE_TZ = (process.env.SCHEDULE_TZ || '').trim() || NIGHTLY_CHECK_TZ;
 const jobSchedule = (id: JobId) => jobScheduleFrom(id, process.env).schedule;
+/** DAILY_DOWNLOAD_DEADLINE (item 11): the daily download finishes by then, or a feed_failed event says it did not. */
+const DAILY_DEADLINE_PARSED = parseDeadline(process.env.DAILY_DOWNLOAD_DEADLINE, SCHEDULE_TZ);
+const DAILY_DEADLINE = DAILY_DEADLINE_PARSED.deadline;
 const jobRunning: Partial<Record<JobId, boolean>> = {};
 
 async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: string }> {
@@ -3441,6 +3445,20 @@ async function startServer() {
   };
   setTimeout(announceReleases, 30_000).unref();
   setInterval(announceReleases, 3_600_000).unref();
+  // The daily-download deadline (item 11): one feed_failed per day when today's run has not finished by then.
+  if (DAILY_DEADLINE_PARSED.problem) console.warn(`[daily] ${DAILY_DEADLINE_PARSED.problem}`);
+  if (DAILY_DEADLINE) {
+    const deadline = DAILY_DEADLINE;
+    const checkDeadline = () => {
+      try {
+        emitEvents(EVENT_FILES, deadlineInputs(readDaily(dailyFilePath(DATA_DIR)), deadline, new Date()));
+      } catch (err) {
+        console.error('[daily] deadline check:', (err as Error)?.message);
+      }
+    };
+    setInterval(checkDeadline, Math.max(200, Number(process.env.DEADLINE_CHECK_MS) || 60_000)).unref();
+    setTimeout(checkDeadline, 5000).unref();
+  }
 
   // 1. Live Open Data & Grounded Market Telemetry Snapshot Endpoint
   app.get('/api/data/sovereign-snapshot', async (req, res) => {
