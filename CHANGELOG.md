@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Offline download: a country's full World Bank and IMF history now downloads four figures at a
+  time instead of one after another, and that step may take 6 minutes before the run moves on
+  (3 for other steps). On the 13 November run 15 of 22 countries timed out at 3 minutes.
 - Penn World Table: the workbook now downloads from DataverseNL, where the GGDC page links it;
   the old www.rug.nl address answered 404.
 - UCDP: Gleditsch-Ward codes 54 (Dominica) and 80 (Belize) now map to their countries; the

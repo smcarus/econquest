@@ -467,7 +467,7 @@ export const MENU_ES: Partial<Record<Keys, string>> = {
   od_notSaved: 'Sin guardar',
   od_needsSetup: 'Por configurar',
   od_missing: 'Falta',
-  od_foot: 'Tarda unos minutos por país. Un paso que tarda más de 3 minutos aparece como sin guardar y la descarga continúa. Puede cerrar esta ventana; la descarga sigue, y una detenida retoma donde se quedó. Igual que {cmd} en una terminal. Se guarda en data/live, data/history y data/archive; el progreso, en {file}.',
+  od_foot: 'Tarda unos minutos por país. Un paso que tarda más de 3 minutos (6 para el historial completo de un país) aparece como sin guardar y la descarga continúa. Puede cerrar esta ventana; la descarga sigue, y una detenida retoma donde se quedó. Igual que {cmd} en una terminal. Se guarda en data/live, data/history y data/archive; el progreso, en {file}.',
   // User manual window
   mn_title: 'Manual de usuario y glosario',
   mn_manual: 'Manual de usuario',

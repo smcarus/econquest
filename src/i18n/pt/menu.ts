@@ -455,7 +455,7 @@ export const MENU_PT: Messages<typeof MENU> = {
   od_notSaved: "Não salvo",
   od_needsSetup: "Precisa de configuração",
   od_missing: "Ausente",
-  od_foot: "Leva alguns minutos por país. Uma etapa que leva mais de 3 minutos é listada como não salva e a execução segue em frente. Você pode fechar esta janela; o download continua, e um download interrompido recomeça de onde parou. O mesmo que {cmd} em um terminal. Salvo em data/live, data/history e data/archive; progresso em {file}.",
+  od_foot: "Leva alguns minutos por país. Uma etapa que leva mais de 3 minutos (6 para o histórico completo de um país) é listada como não salva e a execução segue em frente. Você pode fechar esta janela; o download continua, e um download interrompido recomeça de onde parou. O mesmo que {cmd} em um terminal. Salvo em data/live, data/history e data/archive; progresso em {file}.",
   mn_title: "Manual do usuário e glossário",
   mn_manual: "Manual do usuário",
   mn_manualNote: "Como usar cada parte do app, passo a passo.",
