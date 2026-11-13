@@ -53,6 +53,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Policy rule family | Research | Backtest too few cases | v1, 2026-11-07, method 2 |
 | Debt fan chart (bootstrap of past shocks) | Research | Forecast evaluation too few cases | debt_fan_coverage v1, 2026-11-07 |
 | Costed fiscal options | Research | Description, not a tested signal | None |
+| Trade-off chart | Research | Description, not a tested signal | None |
 | Global shock scenarios | Research | Description, not a tested signal | None |
 | Currency carry | Research | Signal test passed | v1, 2026-11-07 |
 | Currency value (five-year real depreciation) | Research | Signal test failed | v1, 2026-11-07 |
@@ -692,6 +693,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: a stated what-if on stated assumptions, not a forecast or a recommendation.
 - **Limits:** Multiplier range is a guide, not estimated for the country; no confidence or interest-rate feedback.
 - **Code:** `src/utils/costedOptions.ts`
+
+### Trade-off chart
+
+- **Says:** The costed options and the what-if results you kept, side by side on two axes you pick (for example debt at the horizon against output lost).
+- **Rule:** Each item drawn from its low-multiplier end to its high-multiplier end; figures as computed by the costed options and the what-if calculator, nothing re-estimated.
+- **Reads:** Costed fiscal options; what-if results kept from Council chat
+- **Shows in:** Country Research > History & data (Debt sustainability, trade-off chart)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: the app's own calculations on stated assumptions, not a forecast or a recommendation.
+- **Limits:** Only as good as the multiplier ranges behind each item; items ending in different years are flagged; kept what-ifs live in page memory only.
+- **Code:** `src/utils/tradeOff.ts, src/components/TradeOffChart.tsx`
 
 ### Global shock scenarios
 

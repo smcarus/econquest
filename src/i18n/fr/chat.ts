@@ -120,6 +120,9 @@ export const CHAT_FR: Messages<typeof CHAT> = {
   wi_level: 'Variation du niveau de production (%)',
   wi_how: 'Comment ce calcul est fait',
   wi_note: "Le propre calcul de l'application sur les données du FMI et des fourchettes publiées, pas une prévision. Chaque fourchette va du multiplicateur publié le plus bas au plus élevé ; ce n'est pas une bande de probabilité, et l'effet réel peut se situer en dehors.",
+  wi_keep: "Garder pour le graphique des arbitrages",
+  wi_kept: "Gardé : voir le graphique des arbitrages sous Soutenabilité de la dette",
+  wi_keptLabel: "Simulation : {line} réduit de {pct} %, {use}",
   // Sign-off
   so_draft: 'Brouillon',
   so_reviewed: 'Relu',

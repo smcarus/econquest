@@ -120,6 +120,9 @@ export const CHAT_ES: Partial<Record<Keys, string>> = {
   wi_level: 'Variación del nivel de producción (%)',
   wi_how: 'Cómo se calcula',
   wi_note: 'Cálculo propio de la app con datos del FMI y rangos publicados, no un pronóstico. Cada rango va del multiplicador publicado más bajo al más alto; no es una banda de probabilidad y el efecto real puede quedar fuera de él.',
+  wi_keep: "Guardar para el gráfico de disyuntivas",
+  wi_kept: "Guardado: vea el gráfico de disyuntivas en Sostenibilidad de la deuda",
+  wi_keptLabel: "Hipótesis: {line} recortado un {pct}%, {use}",
   // Sign-off
   so_draft: 'Borrador',
   so_reviewed: 'Revisado',

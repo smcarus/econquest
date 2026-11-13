@@ -3,6 +3,8 @@ import type { LiveWatchlistItem } from '../types/council';
 import { COFOG_SECTORS } from '../utils/govSpending';
 import { runWhatIf, whatIfSetup, type WhatIfChoices, type WhatIfQuestion, type WhatIfUse } from '../utils/fiscalWhatIf';
 import { useT, useTx } from '../i18n/useLang';
+import { itemFromWhatIf } from '../utils/tradeOff';
+import { keepWhatIf } from '../utils/tradeOffStore';
 import { CHAT } from '../i18n/messages/chat';
 
 /**
@@ -25,6 +27,7 @@ export const WhatIfCard: React.FC<{ question: WhatIfQuestion; item: LiveWatchlis
   const [own, setOwn] = useState(false);
   const [cutOwn, setCutOwn] = useState({ low: 0.4, high: 0.6 });
   const [respendOwn, setRespendOwn] = useState({ low: 0.4, high: 0.6 });
+  const [keptIds, setKeptIds] = useState<string[]>([]);
   const t = useT(CHAT);
   const tx = useTx();
   const to = t('wi_to2');
@@ -119,6 +122,28 @@ export const WhatIfCard: React.FC<{ question: WhatIfQuestion; item: LiveWatchlis
                   debtYear: r.debtEnd.year,
                   baseline: r.debtEnd.baseline.toFixed(1),
                 })}
+              </div>
+              <div>
+                {(() => {
+                  const sectorLabel = tx(COFOG_SECTORS.find((s) => s.code === sectorCode)?.label ?? sectorCode).toLowerCase();
+                  const id = `wi-${sectorCode}-${sharePct}-${r.use}-${where}-${own ? `${cutOwn.low}-${cutOwn.high}-${respendOwn.low}-${respendOwn.high}` : 'pub'}`;
+                  const label = t('wi_keptLabel', { line: sectorLabel, pct: String(sharePct), use: r.use === 'respend' ? t('wi_runRespend', { label: tx(setup.respendLabel ?? '') }) : t('wi_runDeficit') });
+                  const done = keptIds.includes(id);
+                  return (
+                    <button
+                      type="button"
+                      className="ui-btn ui-btn-ghost text-xs"
+                      data-whatif-keep={r.use}
+                      disabled={done}
+                      onClick={() => {
+                        keepWhatIf(item.iso3, itemFromWhatIf(id, label, r));
+                        setKeptIds((k) => [...k, id]);
+                      }}
+                    >
+                      {done ? t('wi_kept') : t('wi_keep')}
+                    </button>
+                  );
+                })()}
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs [font-variant-numeric:tabular-nums]">
