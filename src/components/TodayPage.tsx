@@ -10,6 +10,10 @@ import { UsesLine, WorkspaceInputs, useServerInputs } from './WorkspaceInputs';
 import { workspaceInputs, type InputId, type PanelId } from '../utils/workspaceInputs';
 import { useMarketEdgeAnchors } from './MarketEdgeScreen';
 import { WatchAlertsPanel } from './WatchAlertsPanel';
+import { lazyNamed } from './LazyDesk';
+
+// Policy review watch (PC1) loads on its own so it adds nothing to start-up.
+const ReviewWatchPanel = lazyNamed(() => import('./ReviewWatchPanel'), 'ReviewWatchPanel');
 import { AskCouncilPanel, CouncilAgentsPanel, useCouncilHasQuestion, type FullCouncilStep } from './AskCouncilPanel';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 import { MissingSources, WatchlistTable } from './WatchlistTable';
@@ -503,6 +507,13 @@ export const TodayPage: React.FC<{
         <div id="tool-watch-alerts" className={`scroll-mt-4 transition-shadow ${lit('alerts')}`}>
           <PanelBoundary name="Watch alerts">
             <WatchAlertsPanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} uses={uses('alerts')} />
+          </PanelBoundary>
+        </div>
+        <div id="tool-review-watch" className="scroll-mt-4">
+          <PanelBoundary name="Policy review watch">
+            <React.Suspense fallback={null}>
+              <ReviewWatchPanel countryName={(iso3) => byIso.get(iso3)?.countryName || iso3} />
+            </React.Suspense>
           </PanelBoundary>
         </div>
           </aside>

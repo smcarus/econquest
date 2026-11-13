@@ -494,6 +494,7 @@ const MemoForm: React.FC<{ options: OptionsStep; initial: MemoInputs; busy: bool
       </label>
       <fieldset className="sm:col-span-2 space-y-1.5">
         <legend className="ui-label mb-1">{t('pr_watch')}</legend>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{t('pr_triggerHelp')}</p>
         {m.watch.map((w, i) => (
           <div key={i} className="grid gap-1.5 sm:grid-cols-[1fr_1fr_auto]">
             <input className={INPUT} value={w.indicator} maxLength={120} placeholder={t('pr_watchPh')} aria-label={t('pr_watchN', { n: i + 1 })} onChange={(e) => setM({ ...m, watch: m.watch.map((x, j) => (j === i ? { ...x, indicator: e.target.value } : x)) })} />
@@ -607,6 +608,12 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
     const pick = () => {
       const p = takeReviewPrefill();
       if (!p) return;
+      if (p.openId) {
+        setCreating(false);
+        void open(p.openId);
+        document.getElementById('tool-policy-reviews')?.scrollIntoView({ block: 'start' });
+        return;
+      }
       setOpened(null);
       setPrefill({ frame: { ...emptyFrame(p.iso3 || defaultIso3), problem: (p.problem || '').slice(0, 600) }, previousId: p.previousId });
       setCreating(true);

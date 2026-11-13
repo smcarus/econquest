@@ -59,6 +59,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Aid received | Research | Description, not a tested signal | None |
 | Food prices and food security | Research | Description, not a tested signal | None |
 | Natural disasters | Research | Description, not a tested signal | None |
+| Policy review watch | Research | Description, not a tested signal | None |
 | Trade-off chart | Research | Description, not a tested signal | None |
 | Global shock scenarios | Research | Description, not a tested signal | None |
 | Currency carry | Research | Signal test passed | v1, 2026-11-07 |
@@ -771,6 +772,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: event counts and sums from the file, not a forecast.
 - **Limits:** EM-DAT terms forbid passing the data on, so nothing shipped or fetched; free accounts are for universities, non-profit research, public bodies and media; only events meeting EM-DAT's entry criteria are listed; many events have no damage figure, so damage is understated; years before 2000 left out.
 - **Code:** `src/utils/disasters.ts, src/utils/disasterStore.ts, src/components/DisastersPanel.tsx`
+
+### Policy review watch
+
+- **Says:** Which figures a policy review memo said to watch have crossed their trigger, using the latest saved figures for the country.
+- **Rule:** Reads each trigger in a fixed set of wordings (above X, below X, target X, rises, falls, also in Spanish, French and Portuguese); above and below compare the latest figure with X; target counts as met when the figure reaches X in the goal's direction; rises and falls compare with the figure the review started from. Other wording is not checked.
+- **Reads:** Your policy reviews (data/local/reviews.json); the latest saved pull for each review country
+- **Shows in:** Today (Policy review watch)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: a comparison of saved figures with the triggers you wrote.
+- **Limits:** Only the standard diagnosis indicators can be checked; annual figures change once a year and may be revised; a crossed trigger says look again, not that the recommendation failed or worked.
+- **Code:** `src/utils/reviewWatch.ts, src/components/ReviewWatchPanel.tsx`
 
 ### Trade-off chart
 
