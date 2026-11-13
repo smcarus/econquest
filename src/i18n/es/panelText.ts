@@ -779,4 +779,7 @@ export const PANEL_TEXT_ES: Record<string, string> = {
   "The World Bank Pink Sheet has not answered yet": "El Pink Sheet del Banco Mundial aún no ha respondido",
   "The World Bank publishes no terms of trade index for this country": "El Banco Mundial no publica un índice de términos de intercambio para este país",
   "World Bank Commodity Price Data (Pink Sheet) and World Development Indicators (UN Comtrade, WTO); IMF World Economic Outlook for GDP in US dollars; CC BY 4.0 (World Bank)": "Datos de precios de materias primas del Banco Mundial (Pink Sheet) e Indicadores del Desarrollo Mundial (UN Comtrade, OMC); Perspectivas de la Economía Mundial del FMI para el PIB en dólares; CC BY 4.0 (Banco Mundial)",
+  // PA4 aid received
+  "The World Bank publishes no development aid figure for this country (countries that do not receive aid have none)": "El Banco Mundial no publica ninguna cifra de ayuda para el desarrollo para este país (los países que no reciben ayuda no tienen ninguna)",
+  "World Bank World Development Indicators (from OECD Development Assistance Committee figures; IMF for government spending and imports), CC BY 4.0": "Indicadores del Desarrollo Mundial del Banco Mundial (a partir de cifras del Comité de Ayuda al Desarrollo de la OCDE; FMI para el gasto público y las importaciones), CC BY 4.0",
 };

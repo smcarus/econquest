@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Aid received (PA4): Research > History & data shows net development aid the country receives (World
+  Bank, from OECD DAC figures) in US dollars, as % of GNI, central government spending, imports and
+  investment, per person, from six large donors with their share, and the last ten years with the
+  distance below the highest. Eleven new saved World Bank series; route `GET /api/aid/:iso3`.
 - Commodity prices and terms of trade (PA3): Research > History & data shows the country's shares of
   fuel, ores and metals and food in goods exports and imports, how World Bank Pink Sheet prices for
   each group moved over 1 and 12 months, the rough effect on income as % of GDP if prices hold for a

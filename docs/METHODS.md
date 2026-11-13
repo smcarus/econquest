@@ -56,6 +56,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Remittances | Research | Description, not a tested signal | None |
 | Financial inclusion | Research | Description, not a tested signal | None |
 | Commodity prices and terms of trade | Research | Description, not a tested signal | None |
+| Aid received | Research | Description, not a tested signal | None |
 | Trade-off chart | Research | Description, not a tested signal | None |
 | Global shock scenarios | Research | Description, not a tested signal | None |
 | Currency carry | Research | Signal test passed | v1, 2026-11-07 |
@@ -732,6 +733,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: arithmetic on published shares and prices, not a forecast.
 - **Limits:** Quantities held fixed; each group uses a few world prices, not the country's own basket; farm raw materials and gold left out; trade shares are a year or more old.
 - **Code:** `src/utils/commodityTerms.ts, src/components/CommodityTermsPanel.tsx`
+
+### Aid received
+
+- **Says:** How much net development aid a country receives, against GNI, government spending, imports and investment, per person, from six large donors, and over the last ten years.
+- **Rule:** Latest year of net aid in US dollars, ratios for that same year; change on the year; distance below the highest of the last ten years; six donors and their share of all aid in the latest donor year.
+- **Reads:** World Bank (from OECD DAC): DT.ODA.ODAT.CD, DT.ODA.ODAT.GN.ZS, DT.ODA.ODAT.PC.ZS, DT.ODA.ODAT.XP.ZS, DT.ODA.ODAT.MP.ZS, DT.ODA.ODAT.GI.ZS, DC.DAC.USAL.CD, DC.DAC.DEUL.CD, DC.DAC.GBRL.CD, DC.DAC.FRAL.CD, DC.DAC.JPNL.CD, DC.DAC.CECL.CD
+- **Shows in:** Country Research > History & data (Aid received)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published aid figures, not a forecast.
+- **Limits:** Net figures can be negative; published with a lag of a year or more, so recent cuts by donors may not show yet; only six donors listed one by one.
+- **Code:** `src/utils/aidReceived.ts, src/components/AidPanel.tsx`
 
 ### Trade-off chart
 

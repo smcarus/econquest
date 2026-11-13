@@ -49,6 +49,7 @@ const FiscalRulesPanel = lazyNamed(() => import('./FiscalRulesPanel'), 'FiscalRu
 const RemittancesPanel = lazyNamed(() => import('./RemittancesPanel'), 'RemittancesPanel');
 const FinancialInclusionPanel = lazyNamed(() => import('./FinancialInclusionPanel'), 'FinancialInclusionPanel');
 const CommodityTermsPanel = lazyNamed(() => import('./CommodityTermsPanel'), 'CommodityTermsPanel');
+const AidPanel = lazyNamed(() => import('./AidPanel'), 'AidPanel');
 const CbWordsPanel = lazyNamed(() => import('./CbWordsPanel'), 'CbWordsPanel');
 const InflationDriversPanel = lazyNamed(() => import('./InflationDriversPanel'), 'InflationDriversPanel');
 const YieldCurvePanel = lazyNamed(() => import('./YieldCurvePanel'), 'YieldCurvePanel');
@@ -498,6 +499,12 @@ export const CountryPage: React.FC<{
           <PanelBoundary name="Commodity prices and terms of trade">
             <React.Suspense fallback={<DeskLoading />}>
               <CommodityTermsPanel key={`ct-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-aid" className="scroll-mt-4" />
+          <PanelBoundary name="Aid received">
+            <React.Suspense fallback={<DeskLoading />}>
+              <AidPanel key={`ad-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
             </React.Suspense>
           </PanelBoundary>
           <div id="tool-fiscal-reaction" className="scroll-mt-4" />
