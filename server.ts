@@ -41,7 +41,9 @@ import type { ValueBadge } from './src/utils/consoleEvents';
 import { entryBadge, validationHolm, type ValidationReply } from './src/utils/validationGrades';
 import { MODEL_REGISTER } from './src/data/modelRegister';
 import { EventHub, WebhookStore, emitEvents, eventFiles } from './src/server/eventBus';
-import { badgeChangeInputs, councilRunInput, dailyRunInputs, figureEventInputs, releaseUpcomingInputs, sanctionsChangeInputs, sanctionsCounts, signalChangeInputs, type SignalStates } from './src/server/eventSources';
+import { badgeChangeInputs, councilRunInput, dailyRunInputs, figureEventInputs, releaseUpcomingInputs, sanctionsChangeInputs, sanctionsCounts, signalChangeInputs, type SignalStates, watchCrossingInputs, type WatchStates } from './src/server/eventSources';
+import { registerConsoleWatchRoutes } from './src/server/routes/consoleWatches';
+import { loadWatchRules as loadWatchRuleFile } from './src/utils/watchRulesStore';
 import { registerConsoleEventRoutes } from './src/server/routes/consoleEvents';
 import { LEGACY_SCOPES, TOKEN_PREFIX, publicToken, scopeFor, scopeRefusal, tokenOnly, type Scope } from './src/utils/apiTokens';
 import { ApiTokenStore, apiTokensFile } from './src/utils/apiTokenStore';
@@ -226,6 +228,14 @@ let validationRunning = false;
 // Events for outside systems (console integration item 4, src/server/eventBus.ts).
 const EVENT_FILES = eventFiles(DATA_DIR);
 const SIGNAL_STATE_FILE = path.join(DATA_DIR, 'local', 'events', 'signal-states.json');
+const WATCH_STATE_FILE = path.join(DATA_DIR, 'local', 'events', 'watch-states.json');
+function readWatchStates(): WatchStates | null {
+  try {
+    return JSON.parse(fs.readFileSync(WATCH_STATE_FILE, 'utf8')) as WatchStates;
+  } catch {
+    return null;
+  }
+}
 function readSignalStates(): SignalStates | null {
   try {
     return JSON.parse(fs.readFileSync(SIGNAL_STATE_FILE, 'utf8')) as SignalStates;
@@ -1628,6 +1638,15 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
     emitEvents(EVENT_FILES, inputs);
   } catch (e) {
     console.error('[events] signal states:', e);
+  }
+  // Indicator watches you set (item 5): a crossing is a threshold_crossed event.
+  try {
+    const { states, inputs } = watchCrossingInputs(loadWatchRuleFile(WATCH_RULES_FILE), items.map((r) => toLive(r)), readWatchStates());
+    fs.mkdirSync(path.dirname(WATCH_STATE_FILE), { recursive: true });
+    writeFileAtomic(WATCH_STATE_FILE, JSON.stringify(states));
+    emitEvents(EVENT_FILES, inputs);
+  } catch (e) {
+    console.error('[events] watches:', e);
   }
   return items;
 }
@@ -3266,12 +3285,16 @@ async function startServer() {
   const consoleWebhooks = new WebhookStore(EVENT_FILES, secretBoxFromEnv(process.env).box);
   const consoleUrlProblem = (u: string) => outboundUrlProblem(u, PORT);
   const consoleStream = registerConsoleEventRoutes(app, { files: EVENT_FILES, webhooks: consoleWebhooks, urlProblem: consoleUrlProblem });
+  registerConsoleWatchRoutes(app, { rulesFile: WATCH_RULES_FILE, readStates: readWatchStates });
   const consoleHub = new EventHub({
     files: EVENT_FILES,
     webhooks: consoleWebhooks,
     urlProblem: consoleUrlProblem,
     broadcast: (e) => {
       consoleStream.broadcast(e);
+      // After a daily download, rebuild the watchlist from the saved files: the figure watch, the
+      // signal states and your indicator watches are checked then.
+      if (e.type === 'daily_download_ready') void fetchLiveWatchlistCatalog([], true).catch((err) => console.error('[events] watchlist rebuild:', err));
       // The older integration stream gets the same events, named by type.
       const frame = `id: ${e.id}\nevent: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`;
       sseClients.forEach((c) => {

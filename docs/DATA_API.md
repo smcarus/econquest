@@ -257,7 +257,7 @@ same envelope:
 | Type | When |
 | --- | --- |
 | `signal_state_changed` | The policy cycle, CFTC positioning or growth-and-inflation regime of a country moves to another state. |
-| `threshold_crossed` | One of your indicator watches fires (item 5). |
+| `threshold_crossed` | One of your indicator watches is crossed (see "Indicator watches" below). |
 | `badge_changed` | A pre-registered test run changes a model's badge. |
 | `figure_revised` | A watched figure is revised. |
 | `data_stale`, `feed_failed` | A watched figure goes out of date or Missing; a step of the daily download fails. |
@@ -307,3 +307,31 @@ def verified(secret: str, headers, body: bytes) -> bool:
 
 Events are kept in `data/local/events/` (the last 5,000). The daily download writes its own events
 there and the server sends them on within a few seconds.
+
+### Indicator watches
+
+A watch is a threshold you choose on one figure, for one country or for every watchlist country
+(`*`). None is built in. POST `/api/v1/watches` with
+`{ "country": "MX", "metric": "policy_rate", "op": ">=", "value": 7, "note": "..." }`.
+GET `/api/v1/watches` lists yours with their last check, and the figures a watch can use with their
+unit, source and shareable flag:
+
+| Metric | Figure | Source |
+| --- | --- | --- |
+| `yield_level` | 10-year yield, % | Official 10-year yields (only official or your own upload; never a sample or estimate) |
+| `yield_3m_bps` | 10-year yield change over 3 months, bps | The same |
+| `policy_rate` | Policy rate, % | BIS central bank policy rates |
+| `cli_level` | OECD composite leading indicator | OECD |
+| `cftc_percentile` | CFTC positioning percentile over 3 years | CFTC Traders in Financial Futures |
+| `tone_shift` | GDELT news tone shift | GDELT |
+| `reserves_12m_pct` | Reserves change over 12 months, % | IMF International Reserves |
+| `shock_alerts` | Number of shock early-warning alerts | The app's stated rules (badge `not_validated`) |
+| `odds_1w_pts` | Largest weekly Polymarket odds move, points | Polymarket |
+
+Watches are checked each time the watchlist is rebuilt from saved data, which happens after every
+daily download. When the figure is on the far side of your threshold and was not at the last check
+(including the first check after the watch was made), a `threshold_crossed` event goes to the stream
+and to your webhooks, with the value, its date (`as_of`) and its source. It fires again only after
+the figure has gone back. A country with no figure never fires. DELETE `/api/v1/watches/<id>` removes
+one. These are the same rules as Menu > Watch alerts; a token sees only the watches it made. Adding
+and removing them is in the audit log.

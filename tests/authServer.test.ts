@@ -267,6 +267,59 @@ test('events: a read:events token adds a webhook, gets a signed delivery, and ca
   }
 });
 
+test('watches: a token sets a threshold, and after the daily download the crossing arrives as a signed threshold_crossed event', async () => {
+  const made = await (await post('/api/settings/api-tokens', { name: 'Watch console', scopes: ['read:events'] }, adminCookie)).json();
+  const bearer = { Authorization: `Bearer ${made.secret}`, 'Content-Type': 'application/json' };
+  const got: { headers: Record<string, string | string[] | undefined>; body: string }[] = [];
+  const receiver = createServer((req, res) => {
+    let body = '';
+    req.on('data', (d) => (body += d));
+    req.on('end', () => {
+      got.push({ headers: req.headers, body });
+      res.writeHead(200).end('ok');
+    });
+  });
+  await new Promise<void>((r) => receiver.listen(receiverPort, '127.0.0.1', () => r()));
+  try {
+    const empty = await (await fetch(`${base}/api/v1/watches`, { headers: bearer })).json();
+    assert.deepEqual(empty.watches, [], 'no watch is built in');
+    assert.ok(empty.metrics.some((m: { id: string; source: string }) => m.id === 'policy_rate' && m.source));
+    const bad = await fetch(`${base}/api/v1/watches`, { method: 'POST', headers: bearer, body: JSON.stringify({ country: 'MX', metric: 'policy_rate', op: '>=' }) });
+    assert.equal(bad.status, 400, 'the threshold is yours to set');
+    assert.equal((await fetch(`${base}/api/v1/watches`, { method: 'POST', headers: bearer, body: JSON.stringify({ country: 'Atlantis', metric: 'policy_rate', op: '>=', value: 1 }) })).status, 400);
+    const add = await fetch(`${base}/api/v1/watches`, { method: 'POST', headers: bearer, body: JSON.stringify({ country: 'MX', metric: 'policy_rate', op: '>=', value: 1, note: 'Banxico above 1%' }) });
+    assert.equal(add.status, 201);
+    const watch = (await add.json()).watch;
+    assert.equal(watch.country, 'MEX', 'alpha-2 accepted');
+    const hook = await (await fetch(`${base}/api/v1/webhooks`, { method: 'POST', headers: bearer, body: JSON.stringify({ url: `http://127.0.0.1:${receiverPort}/watch`, types: ['threshold_crossed'] }) })).json();
+    // The daily download finishes (written by its own process); the server rebuilds the watchlist and checks the watch.
+    emitEvents(eventFiles(dataDir), [{ type: 'daily_download_ready', entity: { kind: 'app', name: 'Daily download' }, as_of: '2026-11-13', source: 'EconQuest daily download', summary: 'Daily download finished.', discriminator: 'watch-test' }]);
+    const deadline = Date.now() + 40_000;
+    while (!got.length && Date.now() < deadline) await new Promise((r) => setTimeout(r, 300));
+    assert.equal(got.length, 1, `one delivery\n${log.slice(-2000)}`);
+    const e = JSON.parse(got[0]!.body);
+    assert.equal(e.type, 'threshold_crossed');
+    assert.equal(e.entity.iso3, 'MEX');
+    assert.equal(e.entity.iso2, 'MX');
+    assert.equal(e.entity.id, watch.id);
+    assert.equal(e.source, 'BIS central bank policy rates');
+    assert.ok(e.as_of, 'the date of the figure');
+    assert.equal(typeof e.shareable, 'boolean');
+    assert.equal(e.data.threshold, 1);
+    const ts = String(got[0]!.headers['x-econquest-timestamp']);
+    assert.equal(got[0]!.headers['x-econquest-signature-256'], `sha256=${createHmac('sha256', hook.secret).update(`${ts}.${got[0]!.body}`).digest('hex')}`);
+    const listed = await (await fetch(`${base}/api/v1/watches`, { headers: bearer })).json();
+    assert.equal(listed.watches[0].last_check[0].crossed, true);
+    // Another caller does not see it and cannot remove it; the owner can.
+    assert.deepEqual((await (await fetch(`${base}/api/v1/watches`, { headers: { 'X-SMCR-API-Key': 'smcr_data_api_test_key' } })).json()).watches, []);
+    assert.equal((await fetch(`${base}/api/v1/watches/${watch.id}`, { method: 'DELETE', headers: { 'X-SMCR-API-Key': 'smcr_data_api_test_key' } })).status, 404);
+    assert.equal((await fetch(`${base}/api/v1/watches/${watch.id}`, { method: 'DELETE', headers: bearer })).status, 200);
+    await fetch(`${base}/api/v1/webhooks/${hook.webhook.id}`, { method: 'DELETE', headers: bearer });
+  } finally {
+    receiver.close();
+  }
+});
+
 test('wrong passwords are refused, then locked out; the right one signs in', async () => {
   const bad = await post('/api/auth/sign-in', { username: 'sam', password: 'not the password at all' });
   assert.equal(bad.status, 401);

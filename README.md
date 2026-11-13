@@ -549,7 +549,9 @@ log. `SMCR_INTEGRATION_API_KEY` still works as a legacy key with the three read 
 `X-Correlation-Id` header, which is sent back and written into the audit log entries it makes. Events (signal and badge changes,
 revisions, stale or failed feeds, sanctions list changes, releases due tomorrow, council runs and
 the daily download) can be read after an id, streamed live, or sent to webhooks signed with HMAC-SHA256
-and retried with backoff; see "Events and webhooks" in [docs/DATA_API.md](docs/DATA_API.md).
+and retried with backoff; see "Events and webhooks" in [docs/DATA_API.md](docs/DATA_API.md). An outside
+system can also set its own indicator watches (none is built in); a crossing after the daily download
+sends a `threshold_crossed` event.
 
 ### Network
 
