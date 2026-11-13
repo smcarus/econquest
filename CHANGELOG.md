@@ -5,6 +5,8 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- UCDP: Gleditsch-Ward codes 54 (Dominica) and 80 (Belize) now map to their countries; the
+  connection check no longer lists them as codes without a country.
 - Documentation brought up to date with the console integration (#512 to #526) and the planned
   state. The plain-language guide docs/HOW_IT_WORKS.md joins the repository (it was only on the
   project website), brought up to 13 November with a section on crisis replays; the methodology moves
