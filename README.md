@@ -539,6 +539,11 @@ council on that country, and never sends built-in figures. Set `SMCR_INTEGRATION
 `SMCR_WEBHOOK_HMAC_SECRET` in `.env` to fix the key and signing secret. The same key lets a script
 read the [data API](docs/DATA_API.md) addresses, and only those, on a copy with sign-in on.
 
+An outside portfolio system can name countries by ISO alpha-2 or alpha-3 (every answer carries
+both) and positions by ISIN, LEI, CIK or ticker plus its own entity ID, which comes back unchanged.
+See "Connecting an outside portfolio system" in [docs/DATA_API.md](docs/DATA_API.md) and the
+address list in [docs/openapi.json](docs/openapi.json).
+
 ### Network
 
 `npm run dev` listens on 127.0.0.1, so only this computer can open the app. Docker publishes on

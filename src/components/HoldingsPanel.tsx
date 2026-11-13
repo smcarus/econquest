@@ -13,6 +13,7 @@ import {
   newHoldingId,
   parseHoldingsCsv,
 } from '../utils/holdings';
+import { idsLabel } from '../utils/securityIds';
 
 interface HoldingsPanelProps {
   holdings: Holding[];
@@ -256,7 +257,10 @@ export const HoldingsPanel: React.FC<HoldingsPanelProps> = ({ holdings, countrie
                 {holdings.map((h) => (
                   <tr key={h.id} className="border-b border-slate-50 dark:border-slate-800/60">
                     <td className="py-1.5 pr-3 whitespace-nowrap">{countries.find((c) => c.iso3 === h.iso3)?.countryName || h.iso3}</td>
-                    <td className="py-1.5 pr-3">{h.instrument}</td>
+                    <td className="py-1.5 pr-3">
+                      {h.instrument}
+                      {idsLabel(h) && <span className="block text-[11px] font-mono text-slate-500 dark:text-slate-400 break-all">{idsLabel(h)}</span>}
+                    </td>
                     <td className="py-1.5 pr-3 whitespace-nowrap">{tx(ASSET_CLASS_LABEL[h.assetClass])}</td>
                     <td className="py-1.5 pr-3">{h.side === 'LONG' ? t('ho_long') : t('ho_short')}</td>
                     <td className="py-1.5 pr-3 text-right ui-num">{h.notionalUsdMm.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>

@@ -35,6 +35,8 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { refusal, requiredRole, roleAtLeast } from './src/utils/permissions';
 import { CSRF_HEADER, csrfMatches, csrfToken, isAiCall, isWrite, LIMITS, RateLimiter, SECURITY_HEADERS } from './src/utils/requestLimits';
 import { apiKeyFrom, DATA_API_LIMIT, isDataApiRead, keyMatches } from './src/server/dataApi';
+import { normaliseCountryQuery, normaliseCountryUrl } from './src/server/countryCodes';
+import { iso2For } from './src/data/iso3166Alpha2';
 import { registerUserTestRoutes } from './src/server/routes/userTests';
 import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, ROLES, type Account, type Role } from './src/utils/auth';
 import { mergeLastGood } from './src/utils/snapshotMerge';
@@ -2752,6 +2754,18 @@ async function startServer() {
     next();
   });
 
+  // Countries by ISO alpha-2 or alpha-3 (src/server/countryCodes.ts): "BR" in an address or in
+  // iso3= / countries= becomes "BRA" before any route or check sees it.
+  app.use((req, _res, next) => {
+    const nextUrl = normaliseCountryUrl(req.url);
+    if (nextUrl !== req.url) {
+      req.url = nextUrl;
+      const q = normaliseCountryQuery(req.query as Record<string, unknown>);
+      if (q) req.query = q as typeof req.query;
+    }
+    next();
+  });
+
   // All state lives under DATA_DIR (one mounted volume in Docker). Stop at once with a clear
   // sentence if it cannot be written, instead of failing later on the first save.
   const dataProblem = dataDirProblem(DATA_DIR);
@@ -3637,20 +3651,20 @@ async function startServer() {
   app.get('/api/series/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const [set, paid] = await Promise.all([seriesFor(iso3), paidFor(req, iso3)]);
-    res.json({ iso3, series: [...set.series, ...paid.series].map(seriesSummary), missing: [...set.missing, ...paid.missing] });
+    res.json({ iso2: iso2For(iso3), iso3, series: [...set.series, ...paid.series].map(seriesSummary), missing: [...set.missing, ...paid.missing] });
   });
   app.get('/api/series/:iso3/:id', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (isPaidSeriesId(req.params.id)) {
       const paid = await paidFor(req, iso3);
       const hit = paid.series.find((x) => x.id === req.params.id);
-      if (hit) return res.json({ iso3, ...hit });
+      if (hit) return res.json({ iso2: iso2For(iso3), iso3, ...hit });
       const miss = paid.missing.find((m) => m.id === req.params.id);
       return res.status(miss?.reason === PAID_WITHHELD_REASON ? 403 : 404).json({ error: 'NO_SERIES', message: miss ? `${miss.label}: Missing. ${miss.reason}.` : `No series ${req.params.id}.`, reason: miss?.reason ?? null });
     }
     const set = await seriesFor(iso3);
     const hit = set.series.find((s) => s.id === req.params.id);
-    if (hit) return res.json({ iso3, ...hit });
+    if (hit) return res.json({ iso2: iso2For(iso3), iso3, ...hit });
     const miss = set.missing.find((m) => m.id === req.params.id);
     res.status(404).json({ error: 'NO_SERIES', message: miss ? `${miss.label}: Missing. ${miss.reason}.` : `No series ${req.params.id}.`, reason: miss?.reason ?? null });
   });
@@ -3660,7 +3674,12 @@ async function startServer() {
   type TableCell = string | number | null | undefined;
   // Sharing mode (Menu > Sharing mode, src/utils/shareMode.ts): values whose source's terms do not let
   // them be passed on for free are held back from every table download.
-  const sendTable = (req: express.Request, res: express.Response, name: string, header: string[], allRows: TableCell[][]) => {
+  const sendTable = (req: express.Request, res: express.Response, name: string, headerIn: string[], rowsIn: TableCell[][]) => {
+    // Tables keyed by country carry its ISO alpha-2 code too, as the last column so scripts that
+    // read columns by position keep working (src/data/iso3166Alpha2.ts).
+    const withIso2 = headerIn[0] === 'iso3' && !headerIn.includes('iso2');
+    const header = withIso2 ? [...headerIn, 'iso2'] : headerIn;
+    const allRows = withIso2 ? rowsIn.map((r) => [...r, iso2For(String(r[0] ?? '')) ?? '']) : rowsIn;
     // Your subscription's figures never leave in a download, sharing mode or not (src/engine/paidData.ts).
     const safe = withholdPaidRows(header, allRows);
     const rows = shareModeFromValue(loadWorkspace(workspaceFor(res)).values[SHARE_MODE_KEY]) ? withholdForSharing(header, safe) : safe;
@@ -3717,7 +3736,7 @@ async function startServer() {
       const rows = panelHistoryRows(data, figures);
       return res.json({ mode: 'history', figures: PANEL_FIGURES.filter((f) => figures.includes(f.id)), rowCount: rows.length, preview: rows.slice(0, 50) });
     }
-    res.json({ mode: 'latest', figures: PANEL_FIGURES.filter((f) => figures.includes(f.id)), cells: panelLatest(data, figures) });
+    res.json({ mode: 'latest', figures: PANEL_FIGURES.filter((f) => figures.includes(f.id)), cells: panelLatest(data, figures).map((c) => ({ iso2: iso2For(c.iso3), ...c })) });
   });
   app.get('/api/export/panel.:fmt(csv|xlsx)', async (req, res) => {
     const figures = parseFigureIds(req.query.figures);
@@ -5896,139 +5915,14 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
     });
   };
 
-  // A. OpenAPI 3.1.0 Specification for External Applications & SDK Generators
+  // A. OpenAPI description of every outside address (docs/openapi.json, kept by hand with the docs;
+  // tests/openapi.test.ts checks it parses and covers the documented addresses).
   app.get('/api/v1/integration/openapi.json', (_req, res) => {
-    const spec = {
-      openapi: '3.1.0',
-      info: {
-        title: 'EconQuest Sovereign & Macro Council Top-Level Integration API',
-        version: '1.0.0',
-        description:
-          'Institutional SMCR-1.0 REST Pull API, Outbound HMAC-SHA256 Webhook Bus, and Real-Time SSE Event Stream for consuming Geopolitical, Sovereign Credit, and Macroeconomic Desk outputs, 9 sub-agent reports, quantitative suites, and Supreme Council verdicts.',
-      },
-      servers: [
-        {
-          url: 'http://localhost:3000',
-          description: 'Local Self-Hosted Docker / Node.js Instance',
-        },
-      ],
-      components: {
-        securitySchemes: {
-          SmcrApiKey: {
-            type: 'apiKey',
-            in: 'header',
-            name: 'X-SMCR-API-Key',
-            description: 'Optional API key configured in the Top-Level Integration GUI tab.',
-          },
-        },
-      },
-      paths: {
-        '/api/v1/integration/desks/{iso3}': {
-          get: {
-            summary: 'Pull Granular Desk Outputs, Sub-Agents & Quant Suites by ISO3',
-            parameters: [
-              {
-                name: 'iso3',
-                in: 'path',
-                required: true,
-                schema: { type: 'string', example: 'BRA' },
-              },
-              {
-                name: 'desk',
-                in: 'query',
-                required: false,
-                schema: {
-                  type: 'string',
-                  enum: ['all', 'geopolitical', 'sovereign', 'macro'],
-                  default: 'all',
-                },
-              },
-              {
-                name: 'includeSubAgents',
-                in: 'query',
-                required: false,
-                schema: { type: 'boolean', default: true },
-              },
-              {
-                name: 'includeQuant',
-                in: 'query',
-                required: false,
-                schema: { type: 'boolean', default: true },
-              },
-            ],
-            responses: {
-              '200': {
-                description: 'SMCR-1.0 Desk Output Envelope with HMAC-SHA256 signature.',
-              },
-            },
-          },
-        },
-        '/api/v1/integration/bundle/{iso3}': {
-          get: {
-            summary:
-              'Pull Complete SMCR-1.0 Bundle (All 3 Desks + 9 Sub-Agents + CRO Gate + Supreme Council + Quant Suites)',
-            parameters: [
-              {
-                name: 'iso3',
-                in: 'path',
-                required: true,
-                schema: { type: 'string', example: 'BRA' },
-              },
-            ],
-            responses: {
-              '200': {
-                description: 'Full SMCR-1.0 Sovereign Assessment Bundle.',
-              },
-            },
-          },
-        },
-        '/api/v1/integration/publish': {
-          post: {
-            summary:
-              'Broadcast Desk or Bundle Outputs to Outbound Webhooks and Real-Time SSE Subscribers',
-            requestBody: {
-              required: true,
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                    properties: {
-                      iso3: { type: 'string', example: 'BRA' },
-                      scope: {
-                        type: 'string',
-                        enum: [
-                          'all_desks_bundle',
-                          'geopolitical_desk',
-                          'sovereign_desk',
-                          'macro_desk',
-                          'supreme_council',
-                        ],
-                      },
-                    },
-                  },
-                },
-              },
-            },
-            responses: {
-              '200': {
-                description: 'Dispatched with HMAC-SHA256 delivery receipts.',
-              },
-            },
-          },
-        },
-        '/api/v1/integration/stream': {
-          get: {
-            summary: 'Subscribe to Real-Time Server-Sent Events (SSE) Stream of Desk Outputs',
-            responses: {
-              '200': {
-                description: 'text/event-stream emitting SMCR-1.0 JSON events.',
-              },
-            },
-          },
-        },
-      },
-    };
-    res.json(spec);
+    try {
+      res.type('application/json').send(fs.readFileSync(path.join(__dirname, 'docs', 'openapi.json'), 'utf-8'));
+    } catch {
+      res.status(500).json({ error: 'NO_OPENAPI', message: 'docs/openapi.json is missing from this copy of the app.' });
+    }
   });
 
   // B. Pull Granular Desk Outputs (GET /api/v1/integration/desks/:iso3)
