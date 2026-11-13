@@ -913,6 +913,15 @@ export const GLOSSARY: GlossaryEntry[] = [
     match: [/\bGPR\b/, /geopolitical risk/i],
   },
   {
+    id: 'capital_openness',
+    term: "Capital account openness (Chinn-Ito index)",
+    group: 'risk',
+    what: "An index by economists Menzie Chinn and Hiro Ito of how freely money can move in and out of a country under its laws, from 0 (closed) to 1 (open), built from the IMF's yearly report on exchange rules.",
+    why: "Capital controls decide whether foreign investors can take their money out and whether people and firms can borrow or invest abroad, which matters in a crisis.",
+    read: "Higher means fewer legal limits. It measures the rules on paper, not how much money actually moves.",
+    match: [/Chinn-Ito/i, /\bKAOPEN\b/, /capital account openness/i],
+  },
+  {
     id: 'sanctions',
     term: 'Sanctions',
     group: 'risk',

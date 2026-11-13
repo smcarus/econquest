@@ -513,6 +513,14 @@ export const GLOSSARY_ES: Record<string, string> = {
     "Las lecturas más altas han tendido a coincidir con menos inversión y más tensión en los mercados.",
   "Higher means more press coverage of geopolitical threats than usual.":
     "Más alto significa más cobertura en prensa de amenazas geopolíticas de lo habitual.",
+  "Capital account openness (Chinn-Ito index)":
+    "Apertura de la cuenta de capital (índice de Chinn-Ito)",
+  "An index by economists Menzie Chinn and Hiro Ito of how freely money can move in and out of a country under its laws, from 0 (closed) to 1 (open), built from the IMF's yearly report on exchange rules.":
+    "Un índice de los economistas Menzie Chinn y Hiro Ito sobre la libertad con que el dinero puede entrar y salir de un país según sus leyes, de 0 (cerrada) a 1 (abierta), elaborado a partir del informe anual del FMI sobre normas cambiarias.",
+  "Capital controls decide whether foreign investors can take their money out and whether people and firms can borrow or invest abroad, which matters in a crisis.":
+    "Los controles de capital deciden si los inversionistas extranjeros pueden retirar su dinero y si las personas y empresas pueden endeudarse o invertir en el exterior, lo que importa en una crisis.",
+  "Higher means fewer legal limits. It measures the rules on paper, not how much money actually moves.":
+    "Más alto significa menos límites legales. Mide las normas sobre el papel, no cuánto dinero se mueve realmente.",
   "Sanctions":
     "Sanciones",
   "Restrictions a government (such as the US, EU or UK) or the UN places on dealing with named countries, companies or people.":

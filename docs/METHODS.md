@@ -440,9 +440,9 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### Country risk scorecard
 
-- **Says:** Governance, armed conflict, unrest and the economy side by side, each figure with its source and year.
+- **Says:** Governance, armed conflict, unrest, geopolitical risk, capital account openness and the economy side by side, each figure with its source and year.
 - **Rule:** Six World Bank WGI estimates against the world average; UCDP/PRIO conflicts and UCDP deaths for the latest coded year; GDELT 1.0 unrest spikes; the Caldara-Iacoviello Geopolitical Risk index; IMF and World Bank debt, growth, inflation, current account, reserves and external debt. No overall score.
-- **Reads:** World Bank WGI, UCDP/PRIO and UCDP, GDELT 1.0 event files, Caldara-Iacoviello GPR file, IMF WEO, World Bank Open Data
+- **Reads:** World Bank WGI, UCDP/PRIO and UCDP, GDELT 1.0 event files, Caldara-Iacoviello GPR file, Chinn-Ito capital account openness file, IMF WEO, World Bank Open Data
 - **Shows in:** Country Research > History & data (Country risk scorecard)
 - **Use:** Research
 - **Status:** Description, not a tested signal
@@ -984,6 +984,7 @@ These show where things stand on a stated method and make no call a backtest cou
 - Armed conflict: UCDP/PRIO conflicts located in the country (and how many at war level), and UCDP best estimates of state-based, non-state and one-sided deaths, for the latest year UCDP has coded, with the three years before.
 - Unrest: protests and violence as a share of the country's GDELT 1.0 events in the latest complete month, as z-scores against the previous 24 months, and the spike episodes of the last 24 months (see Unrest spikes).
 - Geopolitical risk: the Caldara and Iacoviello Geopolitical Risk index (AER 2022), the share of articles in ten leading newspapers about adverse geopolitical events and threats, for the country (44 countries covered) and the world, read from the authors' monthly file in data/local/gpr/ (fetched as published by the daily start-up run or npm run gpr:pull, or saved there by you as .xls, .xlsx or .csv). Latest month, where it sits among all months on file, and the 12-month and all-time means.
+- Capital account: the Chinn-Ito index (Chinn and Ito 2006, Journal of Development Economics 81(1)), openness in law from the IMF AREAER, read from the authors' file in data/local/chinn-ito/ (fetched by the daily start-up run or npm run chinn-ito:pull). The latest year on file, scaled 0 (least open) to 1 (most open), where it sits among all countries that year, the change over five years, and the index as published.
 - Economy: government debt, real growth, inflation (IMF WEO, latest outturn year, projections left out), current account, reserves in months of imports and external debt (World Bank), against five years earlier.
 - No overall score: any weighting of the pillars would be a guess, and one number would look more certain than the figures are.
 - **Limits:** WGI and UCDP are yearly and lag a year or more. WGI estimates are built from surveys and expert ratings and carry wide margins of error; small changes are within them. GDELT counts news reports, which rise with media attention. Figures not on file are listed as missing with the reason.

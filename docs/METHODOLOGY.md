@@ -120,7 +120,7 @@ what each fills, its address, how long it is cached and how to set it up is in
 | --- | --- |
 | Free feeds, no key | World Bank (indicators, governance, debt statistics, Pink Sheet commodity prices, remittances and remittance prices, Global Findex, aid received as republished from the OECD DAC, food security), IMF (World Economic Outlook, reserves and balance of payments, COFER), BIS (policy rates, real exchange rates, debt securities, credit gap), OECD (via DBnomics), ECB reference rates, Eurostat, CFTC Commitments of Traders, US Treasury, New York Fed, UN Comtrade, WITS, national central banks (for example BCB, BCRP), GDELT, Polymarket and Kalshi odds |
 | Free with the user's own key | FRED and ALFRED (St. Louis Fed), US EIA |
-| Free files the user downloads | IMF WEO past editions, Caldara-Iacoviello Geopolitical Risk index, OFAC and UN sanctions lists, UCDP conflict data (one release ships with the code under CC BY 4.0), ACLED aggregated files. Read from `data/local/` and never shipped, because their terms are unconfirmed or forbid passing them on: FAOSTAT Consumer Price Indices, EM-DAT disasters (each user's own account), IMF Fiscal Rules Dataset, Database of Political Institutions 2020, IMF investor base workbook, central bank statements the user saves. The full table is in [INSTALL.md](./INSTALL.md#files-you-save-yourself) |
+| Free files the user downloads | IMF WEO past editions, Caldara-Iacoviello Geopolitical Risk index, Chinn-Ito capital account openness index, OFAC and UN sanctions lists, UCDP conflict data (one release ships with the code under CC BY 4.0), ACLED aggregated files. Read from `data/local/` and never shipped, because their terms are unconfirmed or forbid passing them on: FAOSTAT Consumer Price Indices, EM-DAT disasters (each user's own account), IMF Fiscal Rules Dataset, Database of Political Institutions 2020, IMF investor base workbook, central bank statements the user saves. The full table is in [INSTALL.md](./INSTALL.md#files-you-save-yourself) |
 | The user's own paid data (off by default) | Their own CDS file or their own LSEG account |
 
 Prediction-market odds (Polymarket, Kalshi) are shown as market prices, labelled as such, and are
@@ -534,6 +534,8 @@ version number.
   (2011). *Supervisory Guidance on Model Risk Management* (SR 11-7 / OCC 2011-12).
 - Caldara, D. and Iacoviello, M. (2022). Measuring geopolitical risk. *American Economic Review*,
   112(4), 1194-1225.
+- Chinn, M. D. and Ito, H. (2006). What matters for financial development? Capital controls,
+  institutions, and interactions. *Journal of Development Economics*, 81(1), 163-192.
 - CFA Institute. *Global Investment Performance Standards (GIPS)*, 2020 edition.
 - Diebold, F. X. and Mariano, R. S. (1995). Comparing predictive accuracy. *Journal of Business &
   Economic Statistics*, 13(3), 253-263.

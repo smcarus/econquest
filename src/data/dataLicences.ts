@@ -509,6 +509,28 @@ export const DATA_LICENCES: LicenceRow[] = [
     checked: D,
   },
   {
+    id: 'chinn_ito',
+    name: 'Chinn-Ito financial openness index (KAOPEN)',
+    usedFor: 'Capital account openness by country and year since 1970 (file fetched into data/local/chinn-ito/ by the daily download or npm run chinn-ito:pull, or saved there by you), in the country risk scorecard, History & data and the country snapshot of the data API',
+    terms: [
+      { label: 'The Chinn-Ito Index page', url: 'https://web.pdx.edu/~ito/Chinn-Ito_website.htm' },
+      { label: 'Readme for the 2023 update', url: 'https://web.pdx.edu/~ito/Readme_kaopen2023.pdf' },
+    ],
+    status: 'conditions',
+    display: 'Shown in the app with the citation the authors ask for (Sam decided on 13 November 2026 to use it with that citation). The authors give no licence and the readme says "All rights reserved", so the file itself is never re-published.',
+    commercial: 'Not addressed by the authors.',
+    attribution: 'Chinn, Menzie D. and Hiro Ito (2006), "What Matters for Financial Development? Capital Controls, Institutions, and Interactions", Journal of Development Economics 81(1), 163-192.',
+    quotes: [
+      'When you use the index, please acknowledge the following paper as the data source:',
+      'All rights reserved.',
+      'the index is not associated with the Fund.',
+    ],
+    flag: 'No licence text: only a request to cite Chinn and Ito (2006) and "All rights reserved". The file stays on this computer and out of the public export; ask the authors (contact on the index page) before passing the file or bulk values on.',
+    share: 'unclear',
+    shareNote: 'The authors ask for a citation and reserve all rights; passing values on to others is not addressed.',
+    checked: '2026-11-13',
+  },
+  {
     id: 'polymarket',
     name: 'Polymarket',
     usedFor: 'Prediction-market odds',

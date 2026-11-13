@@ -672,12 +672,13 @@ country without armed conflict is followed by conflict the next year is the pre-
 the UCDP files are on disk. UCDP is yearly, so the test can only ask about the next calendar year.
 Until it passes, the badge says it is not validated.
 
-**Country risk scorecard.** Research > History & data puts five sets of figures side by side, each
+**Country risk scorecard.** Research > History & data puts six sets of figures side by side, each
 with its source and year: the six World Bank governance indicators (0 is the world average, 1 is one
 standard deviation, with the change over five years), armed conflict and deaths from UCDP for the
 latest year it has coded, this month's unrest reading from the GDELT files, the Caldara-Iacoviello geopolitical risk
 index for the country and the world (the daily start-up run fetches their monthly file into `data/local/gpr/`),
-and the economy (debt,
+how open the capital account is in law (the Chinn-Ito index, 0 closed to 1 open, credited to Chinn and Ito 2006;
+the daily start-up run fetches it into `data/local/chinn-ito/`), and the economy (debt,
 growth, inflation, current account, reserves, external debt). There is no overall score, because
 any weighting of them would be a guess. A figure that is not on file is listed as Missing with
 the reason. The six governance indicators download with the rest of the country's official history,

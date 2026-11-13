@@ -338,6 +338,25 @@ file as published (`data_gpr_export.xls`) into `data/local/gpr/` when the saved 
 days old; `npm run gpr:pull` does the same by hand. A download is kept only if it reads as the GPR
 table. You can also save the file there yourself as .xls, .xlsx or .csv; the newest file is used.
 
+### Capital account openness (Chinn-Ito index)
+
+The country risk scorecard, History & data and the data API's country snapshot read the Chinn-Ito
+financial openness index (KAOPEN) from <https://web.pdx.edu/~ito/Chinn-Ito_website.htm>: how open
+each country's capital account is in law, yearly from 1970 for about 180 countries, built from the
+IMF's yearly report on exchange arrangements and restrictions (AREAER). Two series: the index as
+published and the authors' version scaled from 0 (least open) to 1 (most open). The daily start-up
+run fetches the newest `kaopen_<year>.xls` linked from the page into `data/local/chinn-ito/` when the
+saved copy is more than 30 days old; `npm run chinn-ito:pull` does the same by hand. You can also
+save the file there yourself as .xls, .xlsx or .csv.
+
+Terms: the authors ask that the index be credited to Chinn, Menzie D. and Hiro Ito (2006), "What
+Matters for Financial Development? Capital Controls, Institutions, and Interactions", Journal of
+Development Economics 81(1), 163-192, and the readme says "All rights reserved"; there is no
+licence. The app shows the figures with that citation and never re-publishes the file, and the
+values are marked not shareable in sharing mode. The Fernández, Klein, Rebucci, Schindler and Uribe
+(2016) capital control dataset was also checked on 13 November 2026: its page could not be read and
+no terms were found, so it is not used.
+
 ### Sanctions lists (OFAC, UN)
 
 Country Research > History & data > Sanctions lists reads files you download into
@@ -574,7 +593,8 @@ the background once the app is up; the app can be used straight away. It runs at
 2. Files: past IMF WEO editions (`npm run weo:pull`, tried at most once a week because the IMF
    often refuses automated downloads with HTTP 403; then they have to be downloaded by hand from the
    IMF WEO database page into `data/local/weo-vintages/`), the OFAC and UN sanctions lists
-   (`sanctions:pull`), the Geopolitical Risk index (`gpr:pull`), newer UCDP files (`ucdp:pull`) and
+   (`sanctions:pull`), the Geopolitical Risk index (`gpr:pull`), the Chinn-Ito capital account openness index
+   (`chinn-ito:pull`, at most once every 30 days), newer UCDP files (`ucdp:pull`) and
    the monthly series behind the scenario replays (`replays:pull`: OECD 10Y yields and Fed H.10
    exchange rates from FRED since 1990, BCRP EMBI spreads since 2016, into `data/local/replays/`,
    at most once every 6 days).
