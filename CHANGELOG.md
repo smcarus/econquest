@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Trade-off chart (G37): under Debt sustainability, the costed options and any what-if results
+  kept from Council chat (new button Keep for the trade-off chart) on two axes you pick, such as
+  debt at the horizon against output lost. Each item is a line from the low to the high published
+  multiplier; items with no figure for an axis are left off with the reason. Kept results live in
+  the page's memory only.
 - Political feasibility (G36): Policy review shows, beside the options, the next and last election
   on file in the official calendar, checks and balances, fractionalisation, polarisation and years
   left in the term from the Database of Political Institutions file you save in `data/local/dpi/`,
