@@ -269,6 +269,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-remittances' },
   },
   {
+    id: 'financial_inclusion',
+    category: 'history',
+    title: "Financial inclusion",
+    what: "Who has a bank or mobile money account (World Bank Global Findex, latest survey), the gaps between women and men and between poorer and richer households in the same survey, bank branches and cash machines per 100,000 adults, and credit to households and firms as % of GDP.",
+    sources: "World Bank Global Findex and WDI (IMF Financial Access Survey, IMF IFS)",
+    target: { area: 'country', tab: 'history', anchor: 'tool-financial-inclusion' },
+  },
+  {
     id: 'policy_incidence',
     category: 'history',
     title: 'Who pays for a policy',

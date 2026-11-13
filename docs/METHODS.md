@@ -54,6 +54,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Debt fan chart (bootstrap of past shocks) | Research | Forecast evaluation too few cases | debt_fan_coverage v1, 2026-11-07 |
 | Costed fiscal options | Research | Description, not a tested signal | None |
 | Remittances | Research | Description, not a tested signal | None |
+| Financial inclusion | Research | Description, not a tested signal | None |
 | Trade-off chart | Research | Description, not a tested signal | None |
 | Global shock scenarios | Research | Description, not a tested signal | None |
 | Currency carry | Research | Signal test passed | v1, 2026-11-07 |
@@ -706,6 +707,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: published figures side by side, not a forecast.
 - **Limits:** Money sent outside banks is often not counted; yearly figures only; what moved together in years exports fell is not what caused it.
 - **Code:** `src/utils/remittances.ts, src/components/RemittancesPanel.tsx`
+
+### Financial inclusion
+
+- **Says:** Who has a bank or mobile money account, the gaps by sex and household income, bank branches and cash machines, and credit to households and firms.
+- **Rule:** Latest Global Findex survey year; gaps in points within that survey; change since the previous survey; latest published year for branches, cash machines and private credit.
+- **Reads:** World Bank: FX.OWN.TOTL.ZS, FX.OWN.TOTL.FE.ZS, FX.OWN.TOTL.MA.ZS, FX.OWN.TOTL.40.ZS, FX.OWN.TOTL.60.ZS, FB.CBK.BRCH.P5, FB.ATM.TOTL.P5, FS.AST.PRVT.GD.ZS
+- **Shows in:** Country Research > History & data (Financial inclusion)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published survey and access figures, not a forecast.
+- **Limits:** Findex is a survey about every three years; an account is not proof it is used; credit counts domestic lenders only.
+- **Code:** `src/utils/financialInclusion.ts, src/components/FinancialInclusionPanel.tsx`
 
 ### Trade-off chart
 

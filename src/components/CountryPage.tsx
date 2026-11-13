@@ -47,6 +47,7 @@ const RestructuringCalcPanel = lazyNamed(() => import('./RestructuringCalcPanel'
 const PolicyIncidencePanel = lazyNamed(() => import('./PolicyIncidencePanel'), 'PolicyIncidencePanel');
 const FiscalRulesPanel = lazyNamed(() => import('./FiscalRulesPanel'), 'FiscalRulesPanel');
 const RemittancesPanel = lazyNamed(() => import('./RemittancesPanel'), 'RemittancesPanel');
+const FinancialInclusionPanel = lazyNamed(() => import('./FinancialInclusionPanel'), 'FinancialInclusionPanel');
 const CbWordsPanel = lazyNamed(() => import('./CbWordsPanel'), 'CbWordsPanel');
 const InflationDriversPanel = lazyNamed(() => import('./InflationDriversPanel'), 'InflationDriversPanel');
 const YieldCurvePanel = lazyNamed(() => import('./YieldCurvePanel'), 'YieldCurvePanel');
@@ -484,6 +485,12 @@ export const CountryPage: React.FC<{
           <PanelBoundary name="Remittances">
             <React.Suspense fallback={<DeskLoading />}>
               <RemittancesPanel key={`rm-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-financial-inclusion" className="scroll-mt-4" />
+          <PanelBoundary name="Financial inclusion">
+            <React.Suspense fallback={<DeskLoading />}>
+              <FinancialInclusionPanel key={`fi-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
             </React.Suspense>
           </PanelBoundary>
           <div id="tool-fiscal-reaction" className="scroll-mt-4" />
