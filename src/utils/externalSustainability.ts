@@ -139,13 +139,16 @@ export function externalSustainability(inp: EsInputs): ExternalSustainabilityOut
     }
     if (used.length >= 3) {
       const avg = (a: number[]) => a.reduce((s, v) => s + v, 0) / a.length;
+      // Computed from unrounded inputs; only the figures shown are rounded.
       const debtPct = pct(debt.get(last), gdp.get(last))!;
-      const interestRatePct = r1(avg(iList));
-      const usdGrowthPct = r1(avg(gList));
-      const requiredPct = debtStabilisingNica(debtPct, interestRatePct, usdGrowthPct);
+      const iAvg = avg(iList);
+      const gAvg = avg(gList);
+      const interestRatePct = r1(iAvg);
+      const usdGrowthPct = r1(gAvg);
+      const requiredPct = debtStabilisingNica((debt.get(last)! / gdp.get(last)!) * 100, iAvg, gAvg);
       const c = ca.get(last);
-      const ip = pct(int.get(last), gdp.get(last));
-      const actualPct = c !== undefined && ip !== undefined ? r1(c + ip) : undefined;
+      const iv = int.get(last);
+      const actualPct = c !== undefined && iv !== undefined ? r1(c + (iv / gdp.get(last)!) * 100) : undefined;
       stabilising = {
         debtPct,
         year: last,
