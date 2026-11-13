@@ -542,7 +542,10 @@ read the [data API](docs/DATA_API.md) addresses, and only those, on a copy with 
 An outside portfolio system can name countries by ISO alpha-2 or alpha-3 (every answer carries
 both) and positions by ISIN, LEI, CIK or ticker plus its own entity ID, which comes back unchanged.
 See "Connecting an outside portfolio system" in [docs/DATA_API.md](docs/DATA_API.md) and the
-address list in [docs/openapi.json](docs/openapi.json).
+address list in [docs/openapi.json](docs/openapi.json). It signs in with a named, revocable API token made
+in Menu > Settings > API tokens, limited to the scopes it needs (`read:data`, `read:council`,
+`read:events`, `write:holdings`, `write:exclusions`, `run:scenarios`); every use is in the audit
+log. `SMCR_INTEGRATION_API_KEY` still works as a legacy key with the three read scopes.
 
 ### Network
 

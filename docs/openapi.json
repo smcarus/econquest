@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "EconQuest API",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Addresses an outside system can call over HTTP: the data API (series, panels and tables, docs/DATA_API.md) and the integration API (council output, webhooks and the event stream). Every country is named by ISO 3166 alpha-2 and alpha-3; either code is accepted wherever an address names a country. Values without a source read Missing with the reason; nothing is estimated."
   },
   "servers": [
@@ -18,6 +18,12 @@
         "in": "header",
         "name": "X-SMCR-API-Key",
         "description": "The integration key (SMCR_INTEGRATION_API_KEY), when key checks are switched on in Settings. Authorization: Bearer <key> also works. Never in the address."
+      },
+      "ApiToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "eqt_<id>_<secret>",
+        "description": "A scoped API token made in Menu > Settings > API tokens, sent as Authorization: Bearer <token> (or X-SMCR-API-Key). Each address names the scope it needs in x-scope. Scopes: read:data, read:council, read:events, write:holdings, write:exclusions, run:scenarios. The legacy integration key has the three read scopes."
       }
     },
     "parameters": {
@@ -164,14 +170,26 @@
         "responses": {
           "200": {
             "description": "iso2, iso3, series (id, label, unit, frequency, source, first and last date, latest value) and missing (id, label, reason)."
+          },
+          "401": {
+            "description": "INVALID_TOKEN (unknown or revoked), or sign-in is on and no token or key was sent."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
           }
         },
         "security": [
           {},
           {
+            "ApiToken": [
+              "read:data"
+            ]
+          },
+          {
             "SmcrApiKey": []
           }
-        ]
+        ],
+        "x-scope": "read:data"
       }
     },
     "/api/series/{iso3}/{id}": {
@@ -200,14 +218,26 @@
           },
           "404": {
             "description": "NO_SERIES with the reason it is Missing."
+          },
+          "401": {
+            "description": "INVALID_TOKEN (unknown or revoked), or sign-in is on and no token or key was sent."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
           }
         },
         "security": [
           {},
           {
+            "ApiToken": [
+              "read:data"
+            ]
+          },
+          {
             "SmcrApiKey": []
           }
-        ]
+        ],
+        "x-scope": "read:data"
       }
     },
     "/api/panel": {
@@ -250,14 +280,26 @@
         "responses": {
           "200": {
             "description": "Latest mode: cells with iso2, iso3, figure, value, unit, status, period, source and reason if Missing."
+          },
+          "401": {
+            "description": "INVALID_TOKEN (unknown or revoked), or sign-in is on and no token or key was sent."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
           }
         },
         "security": [
           {},
           {
+            "ApiToken": [
+              "read:data"
+            ]
+          },
+          {
             "SmcrApiKey": []
           }
-        ]
+        ],
+        "x-scope": "read:data"
       }
     },
     "/api/export/{iso3}/figures.csv": {
@@ -282,14 +324,26 @@
         "responses": {
           "200": {
             "description": "CSV. Tables keyed by country end with an iso2 column."
+          },
+          "401": {
+            "description": "INVALID_TOKEN (unknown or revoked), or sign-in is on and no token or key was sent."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
           }
         },
         "security": [
           {},
           {
+            "ApiToken": [
+              "read:data"
+            ]
+          },
+          {
             "SmcrApiKey": []
           }
-        ]
+        ],
+        "x-scope": "read:data"
       }
     },
     "/api/v1/integration/desks/{iso3}": {
@@ -339,6 +393,12 @@
           },
           "404": {
             "description": "NO_COUNCIL_RUN: no council run on that country yet."
+          },
+          "401": {
+            "description": "INVALID_TOKEN (unknown or revoked), or sign-in is on and no token or key was sent."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
           }
         },
         "tags": [
@@ -347,9 +407,15 @@
         "security": [
           {},
           {
+            "ApiToken": [
+              "read:council"
+            ]
+          },
+          {
             "SmcrApiKey": []
           }
-        ]
+        ],
+        "x-scope": "read:council"
       }
     },
     "/api/v1/integration/bundle/{iso3}": {
@@ -369,14 +435,26 @@
           },
           "404": {
             "description": "NO_COUNCIL_RUN: no council run on that country yet."
+          },
+          "401": {
+            "description": "INVALID_TOKEN (unknown or revoked), or sign-in is on and no token or key was sent."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
           }
         },
         "security": [
           {},
           {
+            "ApiToken": [
+              "read:council"
+            ]
+          },
+          {
             "SmcrApiKey": []
           }
-        ]
+        ],
+        "x-scope": "read:council"
       }
     },
     "/api/v1/integration/publish": {
@@ -421,7 +499,8 @@
           {
             "SmcrApiKey": []
           }
-        ]
+        ],
+        "description": "Not open to tokens."
       }
     },
     "/api/v1/integration/stream": {
@@ -433,14 +512,26 @@
         "responses": {
           "200": {
             "description": "text/event-stream of JSON events."
+          },
+          "401": {
+            "description": "INVALID_TOKEN (unknown or revoked), or sign-in is on and no token or key was sent."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
           }
         },
         "security": [
           {},
           {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
             "SmcrApiKey": []
           }
-        ]
+        ],
+        "x-scope": "read:events"
       }
     }
   }

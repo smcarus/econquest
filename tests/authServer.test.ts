@@ -139,6 +139,53 @@ test('scripts: with the integration key switched on, the key opens the data addr
   }
 });
 
+test('scoped API tokens: made by the admin, limited to their scopes, revocable, every use audited', async () => {
+  const read = (p: string, headers: Record<string, string> = {}) => fetch(`${base}${p}`, { headers });
+  const made = await post('/api/settings/api-tokens', { name: 'Portfolio console', scopes: ['read:data'] }, adminCookie);
+  assert.equal(made.status, 200);
+  const body = await made.json();
+  const secret: string = body.secret;
+  assert.match(secret, /^eqt_[0-9a-f]{12}_[A-Za-z0-9_-]{43}$/);
+  assert.equal(body.created.hash, undefined, 'the hash is never sent');
+  assert.equal((await post('/api/settings/api-tokens', { name: 'x', scopes: ['read:everything'] }, adminCookie)).status, 400);
+  assert.equal((await post('/api/settings/api-tokens', { name: 'Portfolio console', scopes: ['read:data'] }, adminCookie)).status, 400, 'names are unique');
+  const bearer = { Authorization: `Bearer ${secret}` };
+  // With sign-in required and the integration key off, the token alone opens what its scope allows.
+  assert.equal((await read('/api/series/BRA', bearer)).status, 200);
+  assert.equal((await read('/api/series/BR', { 'X-SMCR-API-Key': secret })).status, 200);
+  const council = await read('/api/v1/integration/bundle/BRA', bearer);
+  assert.equal(council.status, 403);
+  assert.match((await council.json()).message, /needs the read:council scope/);
+  assert.equal((await read('/api/audit', bearer)).status, 403, 'not other reads');
+  assert.equal((await read('/api/settings/api-tokens', bearer)).status, 403, 'a token cannot make tokens');
+  // Console addresses answer tokens only.
+  const noToken = await read('/api/v1/holdings');
+  assert.equal(noToken.status, 401);
+  assert.equal((await noToken.json()).error, 'TOKEN_REQUIRED');
+  assert.equal((await read('/api/v1/holdings', bearer)).status, 403, 'needs write:holdings');
+  // The legacy integration key still opens the read scopes, not the write ones.
+  assert.notEqual((await read('/api/v1/countries/BRA', { 'X-SMCR-API-Key': 'smcr_data_api_test_key' })).status, 401);
+  assert.equal((await read('/api/v1/holdings', { 'X-SMCR-API-Key': 'smcr_data_api_test_key' })).status, 401);
+  // Revoked: refused at once.
+  const list = await (await fetch(`${base}/api/settings/api-tokens`, { headers: { Cookie: adminCookie } })).json();
+  const id = list.tokens.find((t: { name: string }) => t.name === 'Portfolio console').id;
+  assert.ok(list.tokens[0].lastUsedAt, 'last use recorded');
+  assert.equal((await post(`/api/settings/api-tokens/${id}/revoke`, {}, adminCookie)).status, 200);
+  assert.equal((await read('/api/series/BRA', bearer)).status, 401);
+  await new Promise((r) => setTimeout(r, 200));
+  const raw = readFileSync(path.join(dataDir, 'local', 'audit', 'audit-log.jsonl'), 'utf8');
+  assert.ok(!raw.includes(secret) && !raw.includes(secret.slice(17)), 'the secret never reaches the audit log');
+  const lines = raw.trim().split('\n').map((l) => JSON.parse(l));
+  const uses = lines.filter((e) => e.kind === 'api');
+  assert.ok(uses.some((e) => e.summary === 'API token "Portfolio console": GET /api/series/BRA (200)' && e.by?.username === 'token:Portfolio console'));
+  assert.ok(uses.some((e) => /refused: GET \/api\/v1\/integration\/bundle\/BRA needs read:council/.test(e.summary)));
+  assert.ok(uses.some((e) => /^Made the API token "Portfolio console"/.test(e.summary)));
+  assert.ok(uses.some((e) => /^Revoked the API token "Portfolio console"/.test(e.summary)));
+  assert.ok(uses.some((e) => /^Refused an unknown or revoked API token/.test(e.summary)));
+  const stored = readFileSync(path.join(dataDir, 'local', 'api-tokens.json'), 'utf8');
+  assert.ok(!stored.includes(secret.slice(17)), 'only the hash is stored');
+});
+
 test('wrong passwords are refused, then locked out; the right one signs in', async () => {
   const bad = await post('/api/auth/sign-in', { username: 'sam', password: 'not the password at all' });
   assert.equal(bad.status, 401);
