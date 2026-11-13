@@ -7,6 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { checkLog, nextEntry, type AuditActor, type AuditCheck, type AuditEntry, type AuditInput } from './auditLog';
 import { writeFileAtomic } from './atomicWrite';
+import { checkSeals, sealOf, type SealCheck, type SealKey } from './auditSeal';
 
 export interface AuditFiles {
   log: string;
@@ -69,12 +70,19 @@ export function setAuditCorrelation(fn: () => string | undefined): void {
   currentCorrelation = fn;
 }
 
+/** The seal key (AUDIT_SEAL_KEY), set by the server at start; null leaves new entries unsealed. */
+let sealKey: SealKey | null = null;
+export function setAuditSealKey(key: SealKey | null): void {
+  sealKey = key;
+}
+
 /** Append one entry. Never throws: a log that cannot be written must not stop the app answering. */
 export function appendAudit(files: AuditFiles, input: AuditInput, at: Date = new Date()): AuditEntry | null {
   try {
     const by = input.by ?? currentActor();
     const correlationId = input.correlationId ?? currentCorrelation();
-    const entry = nextEntry(lastEntry(files), { ...input, ...(by ? { by } : {}), ...(correlationId ? { correlationId } : {}) }, at);
+    const plain = nextEntry(lastEntry(files), { ...input, ...(by ? { by } : {}), ...(correlationId ? { correlationId } : {}) }, at);
+    const entry: AuditEntry = sealKey ? { ...plain, seal: sealOf(sealKey, plain.hash), sealKey: sealKey.id } : plain;
     fs.mkdirSync(path.dirname(files.log), { recursive: true });
     fs.appendFileSync(files.log, JSON.stringify(entry) + '\n', { mode: 0o600 });
     lastByFile.set(files.log, { seq: entry.seq, hash: entry.hash });
@@ -86,8 +94,9 @@ export function appendAudit(files: AuditFiles, input: AuditInput, at: Date = new
   }
 }
 
-export function readAudit(files: AuditFiles): { check: AuditCheck; entries: AuditEntry[] } {
-  return checkLog(readLines(files), readHead(files));
+export function readAudit(files: AuditFiles): { check: AuditCheck; entries: AuditEntry[]; seals: SealCheck } {
+  const r = checkLog(readLines(files), readHead(files));
+  return { ...r, seals: checkSeals(r.entries, sealKey) };
 }
 
 /** The raw file, for the JSON Lines download. */

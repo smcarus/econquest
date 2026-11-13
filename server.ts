@@ -116,7 +116,9 @@ import { addBrief, addCouncilDoc, addDoc, addEpisode, addNotebook, briefId, isBr
 import { episodeFileName, episodeMarkdown } from './src/utils/episodeHandout';
 import { notebookFileName, notebookMarkdown } from './src/utils/notebookExport';
 import { loadLibrary, saveLibrary } from './src/utils/researchStore';
-import { appendAudit, rawAudit, readAudit, setAuditActor, setAuditCorrelation } from './src/utils/auditStore';
+import { appendAudit, rawAudit, readAudit, setAuditActor, setAuditCorrelation, setAuditSealKey } from './src/utils/auditStore';
+import { sealKeyFrom, sealKeyProblem } from './src/utils/auditSeal';
+import { bucketConfigFromEnv, bucketStateFile, readBucketState, shipAudit } from './src/server/auditBucket';
 import { defaultFetcher, loadSpecs, loadValidation, runBacktests } from './src/utils/backtestRun';
 import { loadSignOffs, recordFor, reportHash, signOffView } from './src/utils/signoff';
 import { buildDiagnosis, DIAGNOSIS_FIELDS, type Diagnosis } from './src/utils/reviewDiagnosis';
@@ -2859,6 +2861,12 @@ async function startServer() {
   // for the reply only (and the audit entry stays without).
   const correlationStore = new AsyncLocalStorage<string>();
   setAuditCorrelation(() => correlationStore.getStore());
+  // Audit seal and locked bucket copies (item 10). Keys come from the environment only.
+  {
+    const problem = sealKeyProblem(process.env.AUDIT_SEAL_KEY);
+    if (problem) console.warn(`[audit] ${problem}`);
+    setAuditSealKey(sealKeyFrom(process.env.AUDIT_SEAL_KEY));
+  }
   app.use((req, res, next) => {
     const raw = req.headers[CORRELATION_HEADER];
     const given = (Array.isArray(raw) ? raw[0] : raw)?.trim();
@@ -3220,13 +3228,38 @@ async function startServer() {
     });
     next();
   });
+  const auditBucket = bucketConfigFromEnv(process.env);
+  if (auditBucket.problem) console.warn(`[audit] ${auditBucket.problem}`);
+  const auditBucketState = bucketStateFile(DATA_DIR);
+  const auditBucketView = () => {
+    if (!auditBucket.config) return { on: false, ...(auditBucket.problem ? { problem: auditBucket.problem } : {}) };
+    const st = readBucketState(auditBucketState);
+    return { on: true, where: `${auditBucket.config.url.host}${auditBucket.config.url.pathname}/${auditBucket.config.prefix}`, lockMode: auditBucket.config.lockMode, retainDays: auditBucket.config.retainDays, ...st };
+  };
+  if (auditBucket.config) {
+    const cfg = auditBucket.config;
+    let shipping = false;
+    const tick = async () => {
+      if (shipping) return;
+      shipping = true;
+      try {
+        await shipAudit(cfg, rawAudit(AUDIT_FILES).split('\n'), auditBucketState);
+      } catch (e) {
+        console.warn(`[audit] bucket copy: ${(e as Error)?.message || e}`);
+      } finally {
+        shipping = false;
+      }
+    };
+    setInterval(() => void tick(), Math.max(200, Number(process.env.AUDIT_BUCKET_POLL_MS) || 5000)).unref();
+    void tick();
+  }
   app.get('/api/audit', (req, res) => {
-    const { check, entries } = readAudit(AUDIT_FILES);
+    const { check, entries, seals } = readAudit(AUDIT_FILES);
     const kind = typeof req.query.kind === 'string' && req.query.kind in AUDIT_KIND_LABEL ? (req.query.kind as AuditKind) : null;
     const q = typeof req.query.q === 'string' ? req.query.q.trim().toLowerCase().slice(0, 100) : '';
     const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 200));
     const hits = entries.filter((e) => (!kind || e.kind === kind) && (!q || JSON.stringify(e).toLowerCase().includes(q)));
-    res.json({ check, total: hits.length, entries: hits.slice(-limit).reverse(), kinds: AUDIT_KIND_LABEL, file: 'data/local/audit/audit-log.jsonl' });
+    res.json({ check, seals, bucket: auditBucketView(), total: hits.length, entries: hits.slice(-limit).reverse(), kinds: AUDIT_KIND_LABEL, file: 'data/local/audit/audit-log.jsonl' });
   });
   app.get('/api/audit/export.:fmt(csv|jsonl)', (req, res) => {
     const stamp = new Date().toISOString().slice(0, 10);
@@ -3235,8 +3268,9 @@ async function startServer() {
       res.attachment(`econquest-audit-log-${stamp}.jsonl`);
       return res.send(rawAudit(AUDIT_FILES));
     }
-    const { check, entries } = readAudit(AUDIT_FILES);
-    const note = check.ok ? `Checked: ${check.entries} entries, chain intact, last hash ${check.lastHash ?? '-'}` : `CHECK FAILED: ${check.problem}`;
+    const { check, entries, seals } = readAudit(AUDIT_FILES);
+    const sealNote = !seals.ok ? `; SEAL CHECK FAILED: ${seals.problem}` : seals.keySet ? `; ${seals.sealed} sealed with key ${seals.keyId}, ${seals.unsealed} unsealed` : '; not sealed (no AUDIT_SEAL_KEY)';
+    const note = (check.ok ? `Checked: ${check.entries} entries, chain intact, last hash ${check.lastHash ?? '-'}` : `CHECK FAILED: ${check.problem}`) + sealNote;
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.attachment(`econquest-audit-log-${stamp}.csv`);
     res.send(toCsv(AUDIT_HEADER, [...auditRows(entries), ['', '', 'Check', '', note, '', '', '', '', '']]));

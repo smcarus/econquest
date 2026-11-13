@@ -75,6 +75,9 @@ export interface AuditEntry extends AuditInput {
   /** Hash of the entry before; GENESIS for the first. */
   prev: string;
   hash: string;
+  /** HMAC of `hash` under AUDIT_SEAL_KEY (src/utils/auditSeal.ts), and which key; not part of the hash. */
+  seal?: string;
+  sealKey?: string;
 }
 
 export const GENESIS = 'GENESIS';
@@ -156,7 +159,7 @@ export function checkLog(lines: string[], head?: { seq: number; hash: string } |
     const expectSeq = last ? last.seq + 1 : 1;
     if (e.seq !== expectSeq) return fail(i + 1, `entry ${expectSeq} is missing (line ${i + 1} is entry ${e.seq})`);
     if (e.prev !== (last ? last.hash : GENESIS)) return fail(i + 1, `entry ${e.seq} does not follow the one before it`);
-    const { hash, ...rest } = e;
+    const { hash, seal: _seal, sealKey: _sealKey, ...rest } = e;
     if (entryHash(rest) !== hash) return fail(i + 1, `entry ${e.seq} was changed after it was written`);
     entries.push(e);
     last = e;

@@ -87,6 +87,34 @@ npm run users -- disable <username>
 
 Under Docker: `docker compose exec econquest npm run users -- list`.
 
+## Audit seal and locked copies
+
+Each audit entry is chained to the one before it by a SHA-256 hash, so a line changed or removed
+afterwards shows in Menu > Audit log. Two settings protect against someone who can edit the file
+and rewrites the whole chain from some point on:
+
+- **Seal.** With `AUDIT_SEAL_KEY` set (at least 32 characters, for example the output of
+  `openssl rand -hex 32`), every new entry also carries an HMAC-SHA256 of its hash under that key.
+  Without the key nobody can make a matching seal, so a rewritten chain fails the seal check.
+  Keep the key in the server's environment or a secrets manager, not in `data/`: a key stored next
+  to the log protects nothing. Entries written before the key was set read "not sealed", not broken.
+  Changing the key starts a new run of seals; older ones are counted as "sealed with an earlier key".
+- **Locked copies.** With `AUDIT_BUCKET_URL` and its keys set, each entry is also sent, in order, to
+  an S3-compatible bucket as its own object (`econquest-audit/0000000001.json`, ...) with an
+  object-lock retention date, so it cannot be changed or deleted before that date even by the
+  account that wrote it (`COMPLIANCE`, the default) or only with a special permission
+  (`GOVERNANCE`). The bucket must be created with object lock turned on (Amazon S3, MinIO,
+  Backblaze B2 and Wasabi support it). Give the access key `s3:PutObject` and
+  `s3:PutObjectRetention` on the prefix and nothing else. A failed upload is tried again (5 seconds,
+  doubling to 10 minutes) and named in Menu > Audit log until it goes through; what has gone up is in
+  `data/local/audit/bucket-state.json`.
+
+To check the log against the bucket, download the objects and compare each with the line of the
+same number in an export (Menu > Audit log > JSON Lines): they must be byte for byte the same.
+
+The keys are read from the environment only. They are never written to the audit log, to settings
+or to backups.
+
 ## Release review
 
 The review done before the public release (dependencies, routes, file permissions, backups, the
