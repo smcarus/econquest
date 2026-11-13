@@ -57,6 +57,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Financial inclusion | Research | Description, not a tested signal | None |
 | Commodity prices and terms of trade | Research | Description, not a tested signal | None |
 | Aid received | Research | Description, not a tested signal | None |
+| Food prices and food security | Research | Description, not a tested signal | None |
 | Trade-off chart | Research | Description, not a tested signal | None |
 | Global shock scenarios | Research | Description, not a tested signal | None |
 | Currency carry | Research | Signal test passed | v1, 2026-11-07 |
@@ -745,6 +746,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: published aid figures, not a forecast.
 - **Limits:** Net figures can be negative; published with a lag of a year or more, so recent cuts by donors may not show yet; only six donors listed one by one.
 - **Code:** `src/utils/aidReceived.ts, src/components/AidPanel.tsx`
+
+### Food prices and food security
+
+- **Says:** How fast food prices rise against all prices, how many people are undernourished or food insecure, net food imports as % of GDP, and world prices of staple foods.
+- **Rule:** FAOSTAT food and general consumer price indices, each month over the same month a year earlier, values flagged estimated or imputed left out; latest World Bank year for food security; food share of goods imports times goods imports minus the same for exports, over GDP, one year; Pink Sheet 1- and 12-month moves for rice, wheat, maize, soybeans, palm oil and sugar.
+- **Reads:** FAOSTAT Consumer Price Indices (your file in data/local/fao-cpi/); World Bank: SN.ITK.DEFC.ZS, SN.ITK.MSFI.ZS, SN.ITK.SVFI.ZS, TX.VAL.FOOD.ZS.UN, TM.VAL.FOOD.ZS.UN, TX.VAL.MRCH.CD.WT, TM.VAL.MRCH.CD.WT; IMF WEO NGDPD; World Bank Pink Sheet
+- **Shows in:** Country Research > History & data (Food prices and food security)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published indices and shares, not a forecast.
+- **Limits:** FAOSTAT terms for this table not confirmed, so nothing shipped; small island states without an ISO numeric match read Missing; food security figures are three-year averages; world prices are in US dollars, local prices also move with the exchange rate.
+- **Code:** `src/utils/foodPrices.ts, src/utils/faoCpiStore.ts, src/components/FoodPricesPanel.tsx`
 
 ### Trade-off chart
 

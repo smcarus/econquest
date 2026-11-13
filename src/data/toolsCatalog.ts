@@ -293,6 +293,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-aid' },
   },
   {
+    id: 'food_prices',
+    category: 'history',
+    title: "Food prices and food security",
+    what: "Food price inflation against all prices (FAOSTAT, from the file you save in data/local/fao-cpi/), undernourishment and food insecurity (World Bank, from FAO), net food imports as % of GDP, and world prices of rice, wheat, maize, soybeans, palm oil and sugar.",
+    sources: "FAOSTAT (your file); World Bank WDI and Pink Sheet; IMF WEO",
+    target: { area: 'country', tab: 'history', anchor: 'tool-food-prices' },
+  },
+  {
     id: 'policy_incidence',
     category: 'history',
     title: 'Who pays for a policy',

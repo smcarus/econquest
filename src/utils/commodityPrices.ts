@@ -58,6 +58,7 @@ export const PINK_COMMODITIES: CommodityDef[] = [
   { code: 'COFFEE_ARABIC', name: 'Coffee (arabica)', unit: '$/kg', heading: 'Coffee, Arabica' },
   { code: 'COCOA', name: 'Cocoa', unit: '$/kg', heading: 'Cocoa' },
   { code: 'SUGAR_WLD', name: 'Sugar (world)', unit: '$/kg', heading: 'Sugar, world' },
+  { code: 'RICE_05', name: 'Rice (Thai 5%)', unit: '$/mt', heading: 'Rice, Thai 5%' },
 ];
 
 export interface PricePoint {

@@ -782,4 +782,18 @@ export const PANEL_TEXT_ES: Record<string, string> = {
   // PA4 aid received
   "The World Bank publishes no development aid figure for this country (countries that do not receive aid have none)": "El Banco Mundial no publica ninguna cifra de ayuda para el desarrollo para este país (los países que no reciben ayuda no tienen ninguna)",
   "World Bank World Development Indicators (from OECD Development Assistance Committee figures; IMF for government spending and imports), CC BY 4.0": "Indicadores del Desarrollo Mundial del Banco Mundial (a partir de cifras del Comité de Ayuda al Desarrollo de la OCDE; FMI para el gasto público y las importaciones), CC BY 4.0",
+  // PA2 food prices
+  "Food price inflation comes from the FAOSTAT Consumer Price Indices (FAO). FAO's statistical databases are CC BY 4.0 by default, but this table is built from IMF, OECD and national figures, so the app ships none of it until its terms are confirmed. To add it: open https://www.fao.org/faostat/en/#data/CP, choose Bulk downloads, \"All Data Normalized\" (a .zip with a .csv inside), and put the .zip or the .csv in data/local/fao-cpi/. The app reads it on this computer; nothing is sent anywhere.": "La inflación de los alimentos proviene de los Índices de Precios al Consumidor de FAOSTAT (FAO). Las bases de datos estadísticas de la FAO son CC BY 4.0 por defecto, pero esta tabla se construye a partir de cifras del FMI, la OCDE y oficinas nacionales, así que la aplicación no incluye nada de ella hasta que se confirmen sus condiciones. Para agregarla: abra https://www.fao.org/faostat/en/#data/CP, elija Bulk downloads, \"All Data Normalized\" (un .zip con un .csv dentro) y ponga el .zip o el .csv en data/local/fao-cpi/. La aplicación lo lee en esta computadora; no se envía nada a ningún lado.",
+  "No FAOSTAT consumer price file in data/local/fao-cpi/ (its terms are not confirmed, so the app ships none of it)": "No hay archivo de precios al consumidor de FAOSTAT en data/local/fao-cpi/ (sus condiciones no están confirmadas, así que la aplicación no incluye nada de él)",
+  "The FAOSTAT file has no food price index for this country": "El archivo de FAOSTAT no tiene índice de precios de los alimentos para este país",
+  "The FAOSTAT file has no two months 12 months apart for this country (values FAO estimated or filled in are left out)": "El archivo de FAOSTAT no tiene dos meses separados por 12 meses para este país (se excluyen los valores que la FAO estimó o completó)",
+  "The World Bank publishes no food security figures for this country": "El Banco Mundial no publica cifras de seguridad alimentaria para este país",
+  "No year with food shares of goods trade, goods trade and GDP in US dollars together": "No hay un año con las partes de los alimentos en el comercio de bienes, el comercio de bienes y el PIB en dólares a la vez",
+  "FAOSTAT Consumer Price Indices (FAO, from your file); World Bank World Development Indicators (from FAO, UN Comtrade, WTO) and Commodity Price Data (Pink Sheet), CC BY 4.0; IMF World Economic Outlook for GDP in US dollars": "Índices de Precios al Consumidor de FAOSTAT (FAO, de su archivo); Indicadores del Desarrollo Mundial del Banco Mundial (de la FAO, UN Comtrade, OMC) y datos de precios de materias primas (Pink Sheet), CC BY 4.0; Perspectivas de la Economía Mundial del FMI para el PIB en dólares",
+  "Rice (Thai 5%)": "Arroz (Tailandia 5%)",
+  "Wheat (US HRW)": "Trigo (EE. UU. HRW)",
+  "Maize": "Maíz",
+  "Soybeans": "Soja",
+  "Palm oil": "Aceite de palma",
+  "Sugar (world)": "Azúcar (mundial)",
 };
