@@ -227,6 +227,10 @@ export interface QueuedDelivery {
 interface Outbox {
   /** Bytes of events.jsonl already read by the server. */
   offset: number;
+  /** The last event read, to carry on after it when the file was trimmed (rewritten shorter). */
+  lastId?: string;
+  /** The file's inode when last read: trimming rewrites the file, so a new inode means trimmed. */
+  ino?: number;
   queue: QueuedDelivery[];
 }
 
@@ -294,10 +298,15 @@ export class EventHub {
   }
 
   private size(): number {
+    return this.stat().size;
+  }
+
+  private stat(): { size: number; ino: number } {
     try {
-      return fs.statSync(this.deps.files.events).size;
+      const st = fs.statSync(this.deps.files.events);
+      return { size: st.size, ino: st.ino };
     } catch {
-      return 0;
+      return { size: 0, ino: 0 };
     }
   }
 
@@ -306,32 +315,42 @@ export class EventHub {
    * later. (Readers can still fetch them from /api/v1/events.)
    */
   start(): void {
-    if (!this.readOutbox()) this.writeOutbox({ offset: this.size(), queue: [] });
+    if (!this.readOutbox()) {
+      const { size, ino } = this.stat();
+      this.writeOutbox({ offset: size, ino, queue: [] });
+    }
   }
 
   /** Read events written since last time; broadcast and queue them. */
   pull(now: Date = new Date()): ConsoleEvent[] {
     const box = this.readOutbox() ?? { offset: 0, queue: [] };
-    const size = this.size();
-    // The file was trimmed (rewritten shorter): carry on from its end.
-    if (size < box.offset) {
-      this.writeOutbox({ ...box, offset: size });
-      return [];
+    const { size, ino } = this.stat();
+    const rewritten = Boolean(box.ino && ino && box.ino !== ino);
+    if (size === box.offset && !rewritten) return [];
+    let events: ConsoleEvent[];
+    let offset: number;
+    if (size < box.offset || rewritten) {
+      // The file was trimmed: carry on after the last event read (all of it if that one is gone).
+      const all = readEvents(this.deps.files);
+      const i = box.lastId ? all.findIndex((e) => e.id === box.lastId) : -1;
+      events = i >= 0 ? all.slice(i + 1) : all.filter((e) => !box.lastId || e.id > box.lastId);
+      offset = size;
+    } else {
+      const fd = fs.openSync(this.deps.files.events, 'r');
+      let text = '';
+      try {
+        const buf = Buffer.alloc(size - box.offset);
+        fs.readSync(fd, buf, 0, buf.length, box.offset);
+        text = buf.toString('utf8');
+      } finally {
+        fs.closeSync(fd);
+      }
+      // Only whole lines: a line still being written is read next time.
+      const end = text.lastIndexOf('\n');
+      if (end < 0) return [];
+      events = parseEvents(text.slice(0, end).split('\n'));
+      offset = box.offset + Buffer.byteLength(text.slice(0, end + 1));
     }
-    if (size === box.offset) return [];
-    const fd = fs.openSync(this.deps.files.events, 'r');
-    let text = '';
-    try {
-      const buf = Buffer.alloc(size - box.offset);
-      fs.readSync(fd, buf, 0, buf.length, box.offset);
-      text = buf.toString('utf8');
-    } finally {
-      fs.closeSync(fd);
-    }
-    // Only whole lines: a line still being written is read next time.
-    const end = text.lastIndexOf('\n');
-    if (end < 0) return [];
-    const events = parseEvents(text.slice(0, end).split('\n'));
     const hooks = this.deps.webhooks.list().filter((w) => !w.disabledAt);
     const queue = [...box.queue];
     for (const e of events) {
@@ -341,7 +360,7 @@ export class EventHub {
         queue.push({ deliveryId: `dlv_${randomBytes(6).toString('hex')}`, eventId: e.id, webhookId: w.id, attempt: 1, dueAt: now.toISOString() });
       }
     }
-    this.writeOutbox({ offset: box.offset + Buffer.byteLength(text.slice(0, end + 1)), queue });
+    this.writeOutbox({ offset, lastId: events.at(-1)?.id ?? box.lastId, ino, queue });
     return events;
   }
 
@@ -368,7 +387,7 @@ export class EventHub {
       }
       const doneIds = new Set(due.map((q) => q.deliveryId));
       const fresh = this.readOutbox() ?? box;
-      this.writeOutbox({ offset: fresh.offset, queue: [...fresh.queue.filter((q) => !doneIds.has(q.deliveryId)), ...later] });
+      this.writeOutbox({ offset: fresh.offset, lastId: fresh.lastId, ino: fresh.ino, queue: [...fresh.queue.filter((q) => !doneIds.has(q.deliveryId)), ...later] });
       if (records.length) {
         fs.appendFileSync(this.deps.files.deliveries, records.map((r) => JSON.stringify(r)).join('\n') + '\n', { mode: 0o600 });
         trim(this.deps.files.deliveries, DELIVERY_KEEP);

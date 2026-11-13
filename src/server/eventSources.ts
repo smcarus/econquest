@@ -9,6 +9,7 @@
  *   sanctions files before and after a pull  -> sanctions_list_changed
  *   official calendar and Treasury auctions  -> release_upcoming (the day before)
  *   a council run                            -> council_run_finished
+ *   your indicator watches                   -> threshold_crossed
  */
 import { countryEntity, type EventInput, type ValueBadge } from '../utils/consoleEvents';
 import type { FigureEvent } from '../utils/figureWatch';
@@ -20,6 +21,7 @@ import { positioningLabel } from '../utils/cftcPositioning';
 import { OFFICIAL_CALENDAR, type OfficialCalendarEvent } from '../data/officialCalendar';
 import { UST_AUCTION_SOURCE, UST_TENORS, type UstAnnouncedAuction } from '../utils/treasuryAuctions';
 import { SANCTIONS_LISTS, type SanctionsData, type SanctionsListId } from '../utils/sanctionsLists';
+import { WATCH_METRICS, metricValue, type WatchMetric, type WatchRule } from '../utils/watchRules';
 
 /** Where each watched figure comes from, named as the licence register knows it. */
 export const FIGURE_SOURCE: Record<string, string> = {
@@ -262,4 +264,98 @@ export function councilRunInput(run: { iso3: string; countryName: string; finish
     data: { ...(run.model ? { model: run.model } : {}) },
     discriminator: at,
   };
+}
+
+/** Where each watch metric comes from, named as the licence register knows it. */
+export const WATCH_SOURCE: Record<WatchMetric, string> = {
+  yield_level: FIGURE_SOURCE.yield!,
+  yield_3m_bps: FIGURE_SOURCE.yield!,
+  policy_rate: FIGURE_SOURCE.policy!,
+  cli_level: FIGURE_SOURCE.cli!,
+  cftc_percentile: 'CFTC Traders in Financial Futures',
+  tone_shift: 'GDELT',
+  reserves_12m_pct: FIGURE_SOURCE.imf_reserves!,
+  shock_alerts: 'EconQuest shock early-warning rules (Country tab)',
+  odds_1w_pts: 'Polymarket',
+};
+
+/** The date a watched figure refers to, from the row it was read from; null when the row has none. */
+export function watchAsOf(it: LiveWatchlistItem, m: WatchMetric): string | null {
+  switch (m) {
+    case 'yield_level':
+    case 'yield_3m_bps':
+      return it.yield10YPeriod ?? null;
+    case 'policy_rate':
+      return it.policyRateDate ? String(it.policyRateDate) : null;
+    case 'cli_level':
+      return it.oecdCli?.month ?? null;
+    case 'cftc_percentile':
+      return it.cftc?.reportDate ?? null;
+    case 'tone_shift':
+      return it.gdelt?.pulledAt ? it.gdelt.pulledAt.slice(0, 10) : null;
+    case 'reserves_12m_pct':
+      return it.imf?.reserves?.period ?? null;
+    case 'shock_alerts':
+      return it.dataAsOf ?? null;
+    case 'odds_1w_pts':
+      return null;
+  }
+}
+
+/**
+ * The value a watch reads, or undefined when no source filled it. Yields count only when they are
+ * official or your own upload: a sample or estimated yield never fires a watch.
+ */
+export function watchValue(it: LiveWatchlistItem, m: WatchMetric): number | undefined {
+  if ((m === 'yield_level' || m === 'yield_3m_bps') && it.yield10YSource !== 'official' && it.yield10YSource !== 'uploaded') return undefined;
+  return metricValue(it, m);
+}
+
+/** The last reading of one watch on one country, keyed "<watch id>:<ISO3>". */
+export interface WatchState {
+  crossed: boolean;
+  value: number | null;
+  asOf: string | null;
+  checkedAt: string;
+}
+export type WatchStates = Record<string, WatchState>;
+
+/**
+ * Checks every watch against the rows. A watch fires (threshold_crossed) when its figure is on the
+ * far side of the threshold and was not at the last check, including the first check after it was
+ * made. It fires again only after the figure has gone back. A country with no figure keeps its last state.
+ */
+export function watchCrossingInputs(rules: WatchRule[], rows: LiveWatchlistItem[], prev: WatchStates | null, now: Date = new Date()): { states: WatchStates; inputs: EventInput[] } {
+  const states: WatchStates = {};
+  const inputs: EventInput[] = [];
+  const checkedAt = now.toISOString();
+  for (const r of rules) {
+    for (const it of rows.filter((x) => r.iso3 === '*' || x.iso3 === r.iso3)) {
+      const key = `${r.id}:${it.iso3}`;
+      const v = watchValue(it, r.metric);
+      if (v === undefined) {
+        if (prev?.[key]) states[key] = prev[key]!;
+        continue;
+      }
+      const crossed = r.op === '>=' ? v >= r.value : v <= r.value;
+      const asOf = watchAsOf(it, r.metric);
+      states[key] = { crossed, value: v, asOf, checkedAt };
+      if (!crossed || prev?.[key]?.crossed) continue;
+      const m = WATCH_METRICS[r.metric];
+      const side = r.op === '>=' ? 'at or above' : 'at or below';
+      inputs.push({
+        type: 'threshold_crossed',
+        entity: { ...countryEntity(it.iso3, it.countryName, r.metric), id: r.id },
+        severity: 'warning',
+        as_of: asOf,
+        source: WATCH_SOURCE[r.metric],
+        evidence_url: countryUrl(it.iso3),
+        badge: r.metric === 'shock_alerts' ? 'not_validated' : 'official',
+        summary: `${it.countryName}: ${m.label} is ${v}${m.unit === '%' ? '%' : m.unit ? ` ${m.unit}` : ''}, ${side} your watch at ${r.value}.`,
+        data: { watch: r.id, metric: r.metric, op: r.op, threshold: r.value, value: v, unit: m.unit, ...(r.note ? { note: r.note } : {}) },
+        discriminator: `${r.id}|${asOf ?? checkedAt.slice(0, 10)}|${v}`,
+      });
+    }
+  }
+  return { states, inputs };
 }

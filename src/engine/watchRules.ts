@@ -42,6 +42,8 @@ export interface WatchRule {
   value: number;
   createdAt: string;
   note?: string;
+  /** Who made it through the API: the token id ("legacy" for the integration key). Absent = made in the app. */
+  owner?: string;
 }
 
 export const MAX_RULES = 100;
@@ -62,6 +64,7 @@ export function parseRule(x: unknown): WatchRule | null {
     value: r.value,
     createdAt: typeof r.createdAt === 'string' ? r.createdAt.slice(0, 30) : new Date().toISOString(),
     ...(typeof r.note === 'string' && r.note.trim() ? { note: r.note.trim().slice(0, 200) } : {}),
+    ...(typeof r.owner === 'string' && /^[\w:-]{1,64}$/.test(r.owner) ? { owner: r.owner } : {}),
   };
 }
 

@@ -4,7 +4,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createHmac } from 'node:crypto';
@@ -202,6 +202,54 @@ test('a refused address is not called', async () => {
     const recs = await hub.deliver();
     assert.equal(called, 0);
     assert.equal(recs[0]!.gaveUp, true);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('watches: fire on crossing (also at the first check), not again until the figure goes back; sample yields never fire', async () => {
+  const { watchCrossingInputs } = await import('../src/server/eventSources');
+  const rule = { id: 'w_1', iso3: 'MEX', metric: 'policy_rate', op: '>=', value: 7, createdAt: '2026-11-13T00:00:00Z' } as const;
+  const row = (rate: number | undefined, date = '2026-11-12') => ({ iso3: 'MEX', countryName: 'Mexico', policyRateSource: 'bis', policyRatePct: rate, policyRateDate: date }) as never;
+  const a = watchCrossingInputs([rule], [row(7.25)], null, new Date('2026-11-13T07:00:00Z'));
+  assert.equal(a.inputs.length, 1);
+  const e = makeEvent(a.inputs[0]!);
+  assert.equal(e.type, 'threshold_crossed');
+  assert.equal(e.entity.iso2, 'MX');
+  assert.equal(e.entity.id, 'w_1');
+  assert.equal(e.as_of, '2026-11-12');
+  assert.equal(e.source, 'BIS central bank policy rates');
+  const b = watchCrossingInputs([rule], [row(7.5, '2026-11-13')], a.states);
+  assert.equal(b.inputs.length, 0, 'still crossed: no new event');
+  const c = watchCrossingInputs([rule], [row(undefined)], b.states);
+  assert.equal(c.inputs.length, 0);
+  assert.equal(c.states['w_1:MEX']!.crossed, true, 'a Missing figure keeps the last state');
+  const d = watchCrossingInputs([rule], [row(6.5)], c.states);
+  assert.equal(d.inputs.length, 0);
+  assert.equal(watchCrossingInputs([rule], [row(7)], d.states).inputs.length, 1, 'fires again after going back');
+  const y = { id: 'w_2', iso3: '*', metric: 'yield_level', op: '>=', value: 1, createdAt: 'x' } as const;
+  assert.equal(watchCrossingInputs([y], [{ iso3: 'BRA', countryName: 'Brazil', yield10YPct: 14, yield10YSource: 'sample' } as never], null).inputs.length, 0);
+  assert.equal(watchCrossingInputs([y], [{ iso3: 'BRA', countryName: 'Brazil', yield10YPct: 14, yield10YSource: 'official', yield10YPeriod: '2026-10' } as never], null).inputs.length, 1);
+});
+
+test('a trimmed events file: the hub carries on after the last event it read, missing none', () => {
+  const dir = tmp();
+  try {
+    const files = eventFiles(dir);
+    const store = new WebhookStore(files, null);
+    const seen: string[] = [];
+    const hub = new EventHub({ files, webhooks: store, urlProblem: () => null, broadcast: (e) => seen.push(e.summary), fetcher: async () => ({ status: 200, text: async () => '' }) });
+    hub.start();
+    emitEvents(files, [{ ...daily('2026-11-01T00:00:00Z'), summary: 'one' }, { ...daily('2026-11-02T00:00:00Z'), summary: 'two' }]);
+    hub.pull();
+    // Another process trims the file to the last event and appends a new one, all shorter than before.
+    // Rewritten like trim() does (a new file renamed over the old one), padded so it is not shorter.
+    const last = readEvents(files).at(-1)!;
+    writeFileSync(`${files.events}.tmp`, '{"padding":"' + 'x'.repeat(400) + '"}\n' + JSON.stringify(last) + '\n');
+    renameSync(`${files.events}.tmp`, files.events);
+    emitEvents(files, [{ ...daily('2026-11-03T00:00:00Z'), summary: '3' }]);
+    hub.pull();
+    assert.deepEqual(seen, ['one', 'two', '3']);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

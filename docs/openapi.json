@@ -288,6 +288,86 @@
             "type": "object"
           }
         }
+      },
+      "Watch": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string",
+            "description": "ISO alpha-3, or * for every watchlist country."
+          },
+          "metric": {
+            "type": "string",
+            "enum": [
+              "yield_level",
+              "yield_3m_bps",
+              "policy_rate",
+              "cli_level",
+              "cftc_percentile",
+              "tone_shift",
+              "reserves_12m_pct",
+              "shock_alerts",
+              "odds_1w_pts"
+            ]
+          },
+          "op": {
+            "type": "string",
+            "enum": [
+              ">=",
+              "<="
+            ]
+          },
+          "value": {
+            "type": "number"
+          },
+          "note": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "shareable": {
+            "type": "boolean"
+          },
+          "last_check": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "iso3": {
+                  "type": "string"
+                },
+                "crossed": {
+                  "type": "boolean"
+                },
+                "value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "as_of": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "checked_at": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "headers": {
@@ -1139,6 +1219,209 @@
           },
           "404": {
             "description": "NO_WEBHOOK: none of yours with that id."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
+      }
+    },
+    "/api/v1/watches": {
+      "get": {
+        "summary": "Your indicator watches, their last check, and the figures a watch can use",
+        "tags": [
+          "Events"
+        ],
+        "x-scope": "read:events",
+        "security": [
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "watches (yours only), metrics (id, label, unit, source, shareable) and max.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "watches": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Watch"
+                      }
+                    },
+                    "metrics": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "max": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
+      },
+      "post": {
+        "summary": "Add a watch: a threshold you choose on one figure",
+        "tags": [
+          "Events"
+        ],
+        "x-scope": "read:events",
+        "security": [
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "country",
+                  "metric",
+                  "op",
+                  "value"
+                ],
+                "properties": {
+                  "country": {
+                    "type": "string",
+                    "description": "ISO alpha-2 or alpha-3, or *."
+                  },
+                  "metric": {
+                    "type": "string",
+                    "enum": [
+                      "yield_level",
+                      "yield_3m_bps",
+                      "policy_rate",
+                      "cli_level",
+                      "cftc_percentile",
+                      "tone_shift",
+                      "reserves_12m_pct",
+                      "shock_alerts",
+                      "odds_1w_pts"
+                    ]
+                  },
+                  "op": {
+                    "type": "string",
+                    "enum": [
+                      ">=",
+                      "<="
+                    ]
+                  },
+                  "value": {
+                    "type": "number"
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The watch. It is checked after each daily download; a crossing sends a threshold_crossed event once, and again only after the figure has gone back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "watch": {
+                      "$ref": "#/components/schemas/Watch"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BAD_WATCH."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
+      }
+    },
+    "/api/v1/watches/{id}": {
+      "delete": {
+        "summary": "Remove one of your watches",
+        "tags": [
+          "Events"
+        ],
+        "x-scope": "read:events",
+        "security": [
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Removed."
+          },
+          "404": {
+            "description": "NO_WATCH: none of yours with that id."
           },
           "401": {
             "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
