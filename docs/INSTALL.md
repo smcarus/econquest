@@ -26,8 +26,8 @@ developer, "From the code" below is the short route.
 | Part | Size | How the figure was found |
 | --- | --- | --- |
 | Docker Desktop | A few GB | Docker's own requirement; check docker.com for the current figure. |
-| The ready-made app (Docker image) | About 0.8 GB once unpacked; the download is about 170 MB | Measured on 13 November 2026: the image built from the repository's Dockerfile is 795 MB unpacked and 169 MB compressed. |
-| From the code instead | About 0.5 GB | Measured on 13 November 2026: installed packages (`node_modules`) 465 MB, built app (`dist`) 7 MB, source code and its history 59 MB. |
+| The ready-made app (Docker image) | About 0.8 GB once unpacked; the download is about 170 MB | Measured on 13 November 2026: the image built from the repository's Dockerfile is 798 MB unpacked and 170 MB compressed. |
+| From the code instead | About 0.5 GB | Measured on 13 November 2026: installed packages (`node_modules`) 465 MB, built app (`dist`) 7 MB, source code and its history 70 MB. |
 | Saved data (the `data/` folder) | About 150 MB after the first few days, growing by about 40 MB a year, plus the options below | Measured on the developer's Mac on 9 November 2026 (details in the next table). |
 | Past IMF World Economic Outlook editions | 2 to 9 MB per edition; about 100 MB for the 14 editions on that Mac | Measured. Every edition since 2007 would be roughly 300 MB (estimate: about 38 editions at an average of 7 MB). |
 | GDELT long history (optional, `npm run gdelt:daily`) | About 5 MB kept on disk from 2016; the download is much larger (below) | Measured: 41 KB per month of history. |
@@ -266,6 +266,41 @@ never put in backups or logs; you type them in again after a restore.
 **A specific version.** To stay on one release instead of always taking the newest, add a line such
 as `ECONQUEST_IMAGE=ghcr.io/e-conquest/econquest:0.1.0` to the `.env` file in your folder.
 [env.example](../deploy/quick-start/env.example) lists every optional setting.
+
+## Files you save yourself
+
+Some sources cannot be downloaded by the app, because they need your own account or because their
+terms are not confirmed or do not allow the app to pass them on. You download these yourself and put
+them in a folder under `data/local/`. Nothing else is needed: the app reads a file the next time the
+page asks for it, and **Menu > Data health** shows whether it was read. Until then the parts that need
+the file read Missing and say where to get it.
+
+| Folder | What to put there | Where to get it | Used for |
+| --- | --- | --- | --- |
+| `data/local/fao-cpi/` | FAOSTAT Consumer Price Indices, bulk download "All Data" or "All Data Normalized" (.zip or .csv) | https://www.fao.org/faostat/en/#data/CP, Bulk downloads | Food price inflation (History & data) |
+| `data/local/emdat/` | EM-DAT public table (.xlsx, or a .csv or .zip of it) | https://public.emdat.be, with your own account (free for non-commercial use by universities, non-profit research bodies, public bodies and the media) | Natural disasters (History & data) |
+| `data/local/imf-fiscal-rules/` | IMF Fiscal Rules Dataset (XLSX) | IMF Fiscal Rules Dataset page | National fiscal rules (Fiscal rules check) |
+| `data/local/dpi/` | Database of Political Institutions 2020 (.csv or .xlsx) | Inter-American Development Bank | Checks and balances (Political feasibility in Policy review) |
+| `data/local/imf-investor-base/` | `wp1439.zip`, the IMF Sovereign Debt Investor Base | imf.org (Arslanalp and Tsuda) | Who holds government debt (History & data) |
+| `data/local/ons-triangles/` | `abmi.zip`, the ONS GDP revision triangle | ons.gov.uk, only if the app's own download is refused | UK GDP as first published |
+| `data/local/weo-vintages/` | Past IMF World Economic Outlook editions | IMF WEO database page | IMF forecasts by edition |
+| `data/local/acled/` | ACLED aggregated files (.xlsx or .csv, zipped or not) | acleddata.com, with your own account | Conflict events |
+| `data/local/aiddata/` | A newer AidData Chinese development finance file (optional) | aiddata.org | China lending; a shipped summary is used otherwise |
+| `data/local/cb-statements/<ISO3>/` | Central bank statements, one text, Markdown or web page file each, named from its date (for example `2026-10-29.txt`) | The central bank's own site | Central bank word count |
+
+[USER_MANUAL.md](./USER_MANUAL.md) explains each panel, and [DATA_LICENCES.md](./DATA_LICENCES.md)
+what each source's terms allow.
+
+**With the ready-made app**, `data/` lives in Docker's storage area, so copy the file in from the
+folder where you saved it, for example for EM-DAT:
+
+```bash
+docker compose exec econquest mkdir -p /app/data/local/emdat
+docker compose cp emdat_public.xlsx econquest:/app/data/local/emdat/
+```
+
+**From the code**, save the file straight into the `data/local/...` folder inside your `econquest`
+folder.
 
 ## If something goes wrong
 

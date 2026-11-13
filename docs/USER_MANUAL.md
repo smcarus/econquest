@@ -200,7 +200,10 @@ full council and saved research.
   frequency, and runs the tests asked for: correlation, regression (scatter with the line), lead/lag
   (which moves first), Granger (does one help predict the other), stationarity (ADF) and trend and
   cycle (HP filter). Each test comes with a plain-English reading and a caution when the sample is
-  short.
+  short. The HP smoothing follows the series' frequency (6.25 yearly, 1,600 quarterly, 129,600
+  monthly, 6.25 × 52⁴ weekly, 6.25 × 252⁴ daily), and the ADF lag is picked by AIC, then the test
+  is run at that lag on every usable row. Year-on-year on a daily series compares each day with the
+  last day on or before the same date a year earlier, at most a week older.
   - *Econometrics lab*: on two series, also ask for "Newey-West errors" (the regression with
     errors robust to autocorrelation), "a VAR" or "impulse responses" (lag by AIC, the first
     series ordered first, 90% bootstrap band), "local projections", "cointegration" (Johansen

@@ -128,6 +128,14 @@ dados. **Atualizar agora** busca de novo os números daquele país.
    reservas, sustentabilidade externa, alerta antecipado de crise, curva de juros, fatores da inflação,
    contabilidade do crescimento, regras de política monetária, "e se" fiscais e um pequeno modelo de hiato
    que você mesmo preenche.
+5. Seguem painéis para países de renda mais baixa: **Remessas** (ao lado de exportações, investimento e
+   ajuda, e o custo de enviar US$ 200 frente à meta de 3% da ONU), **Inclusão financeira** (quem tem
+   conta, por sexo e renda), **Preços de commodities e termos de troca** (o que os últimos movimentos dos
+   preços mundiais significam para o país, em % do PIB), **Ajuda recebida**, **Preços dos alimentos e
+   segurança alimentar** e **Desastres naturais**. A inflação de alimentos e os desastres são lidos de
+   arquivos que você mesmo salva em `data/local/fao-cpi/` e `data/local/emdat/`; até lá essas partes
+   mostram Ausente e dizem onde obter o arquivo ([INSTALL.md](./INSTALL.md#files-you-save-yourself), em
+   inglês).
 
 ![Hiato do produto do Brasil: o meio de três estimativas com uma faixa que mostra a dispersão, tracejado nos anos de projeção do FMI](images/07-output-gap.png)
 
@@ -201,6 +209,20 @@ Para revisar uma política:
    uma checagem comportamental, regras fiscais e viabilidade política, o memorando de recomendação, um
    **resumo de uma página** em PDF para quem não é economista, e o acompanhamento dos resultados, que
    compara a revisão com o que aconteceu em 12 e 24 meses. Cada passo é salvo com sua impressão digital.
+
+![Pares em uma revisão de política: os números do diagnóstico do Brasil ao lado de México, Índia, Indonésia, África do Sul e Turquia, com a mediana dos pares e a posição](images/20-peers.png)
+
+6. Depois do diagnóstico, **Pares** coloca os números do diagnóstico ao lado de até seis países da sua
+   lista de acompanhamento (ou clique em **Mesma região**, depois em **Comparar**), cada um como estava
+   salvo na data da revisão ou antes, com a mediana dos pares e a posição deste país.
+7. No memorando, dê a um número acompanhado um gatilho que o app saiba ler, como "acima de 8", "abaixo
+   de 3", "meta 4", "sobe" ou "cai". **Acompanhamento das revisões de políticas**, abaixo dos alertas de
+   acompanhamento no Briefing do espaço de trabalho, mostra cada um como cruzado ou não cruzado frente
+   aos últimos números salvos; **Abrir revisão** volta para a revisão.
+8. Na data da revisão, **Revisar novamente** inicia uma nova revisão com o mesmo enquadramento e os
+   dados de hoje. A nova revisão abre **O que mudou desde a revisão anterior**: o enquadramento, a opção
+   recomendada por cada memorando, cada número antes e agora, e se o indicador-alvo andou na direção
+   certa.
 
 ## 8. Escolher um modelo de IA
 
