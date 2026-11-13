@@ -817,6 +817,20 @@ becomes the problem). Six steps, in order:
    Each option also gets a **pre-mortem**: how it most likely failed, supposing it had, and one to
    three diagnosis figures that would show that first, each with whether it would rise or fall. An
    option without one is flagged.
+   **Political feasibility** (G36), shown beside the options: how hard any option may be to pass and
+   keep, with three descriptions cut at the As of day. *Elections*: the next election on file in the
+   official calendar and how many days after the As of day it falls (a date marked as the legal
+   deadline can come earlier), and the last one before it. *Checks and balances* from the Database of
+   Political Institutions (DPI2020, Inter-American Development Bank): the political system, the
+   number of veto players (people or bodies that can block a decision; 1 = none beyond the
+   executive), fractionalisation of the legislature, polarisation and years left in the executive's
+   term, for the latest year before the As of year. The DPI's reuse terms are not confirmed, so the
+   app ships none of it: get the DPI2020 data file (.csv or .xlsx) from the IDB and put it in
+   `data/local/dpi/`; Data health shows whether it was read. *Unrest*: protests and violence as a
+   share of the country's GDELT news events in the latest complete month before the As of month,
+   with the percentile against every earlier month saved (24 months needed). GDELT counts news
+   reports, so a month with more coverage can look busier. Each part reads Missing with the reason
+   when it has no data. Nothing is saved and the memo does not change; a description, not a score.
 4. **Evidence.** Charts and tests (Taylor gap, real rate, does the policy rate lead inflation, r minus
    g, leading indicator), past policy-rate moves with inflation a year later, and the validation status
    of each signal the options lean on. Every series is cut at the As of day.

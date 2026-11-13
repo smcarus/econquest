@@ -21,6 +21,7 @@ import { BIS_PROPERTY_SAMPLE_URL, iloEarningsSampleUrl, parseBisPropertyAll, par
 import { debtStructureUrl, parseDebtStructure, currencyValue } from './debtStructure';
 import { INVESTOR_BASE_SETUP_HELP, investorBaseValue } from './investorBase';
 import { FISCAL_RULES_SETUP_HELP, RULE_KINDS, RULE_KIND_NAME } from './fiscalRules';
+import { DPI_SETUP_HELP } from './politicalFeasibility';
 import { ECB_SPF_SERIES, ecbSpfUrl, FOCUS_URL, parseEcbCsv, parseFocus12m } from './inflationSurveys';
 import { gscpiFromBytes, GSCPI_URLS } from './stressIndices';
 import { chokepointsUrl, parsePortWatchStats } from './portWatch';
@@ -134,6 +135,7 @@ export interface CheckOptions {
   aiddata?: () => AiddataData | null;
   investorBase?: () => import('./investorBaseStore').InvestorBaseData | null;
   fiscalRules?: () => import('./fiscalRulesStore').FiscalRulesData | null;
+  dpi?: () => import('./dpiStore').DpiData | null;
   /** Only these source ids. */
   only?: string[];
   /** Where each key in `env` came from: 'app' = saved in Menu > Settings > API keys, 'env' = .env. */
@@ -348,6 +350,7 @@ export const SOURCE_IDS = [
   'aiddata_file',
   'imf_investor_base',
   'imf_fiscal_rules',
+  'dpi',
   'eia',
   'own_cds',
   'paid_data',
@@ -1571,6 +1574,34 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       ...setRow(def, 'connected', `Read ${t.file}: ${t.countries.size} countries, ${t.firstYear}-${t.lastYear}.`, host),
       ...(c ? { sample: `${code} ${c.year}: ${RULE_KINDS.filter((k) => c.has[k]).map((k) => RULE_KIND_NAME[k]).join(', ') || 'no rule'}` } : {}),
       ...(warning ? { warning } : {}),
+    };
+  });
+
+  add('dpi', async () => {
+    const def: Def = {
+      id: 'dpi',
+      name: 'Database of Political Institutions (downloaded)',
+      group: 'free',
+      feeds: 'Checks and balances, fractionalisation, polarisation and years left in the term, for Political feasibility in Policy review',
+      setup: DPI_SETUP_HELP,
+    };
+    const host = 'your files';
+    if (!opts.dpi) return setRow(def, 'optional', 'The folder data/local/dpi/ was not checked from here.', host);
+    let data: import('./dpiStore').DpiData | null;
+    try {
+      data = opts.dpi();
+    } catch (err: any) {
+      return setRow(def, 'bad_reply', `The DPI folder could not be read (${err?.message || err}).`, host);
+    }
+    const skipped = data?.skipped.length ? `Not read: ${data.skipped.map((x) => `${x.file} (${x.reason})`).join('; ')}.` : '';
+    if (!data?.table) return setRow(def, 'optional', `No Database of Political Institutions file in data/local/dpi/.${skipped ? ` ${skipped}` : ''}`, host);
+    const t = data.table;
+    const code = t.countries.has('BRA') ? 'BRA' : [...t.countries.keys()][0];
+    const row = t.countries.get(code)?.slice(-1)[0];
+    return {
+      ...setRow(def, 'connected', `Read ${t.file}: ${t.countries.size} countries, ${t.firstYear}-${t.lastYear}.`, host),
+      ...(row ? { sample: `${code} ${row.year}: ${Object.entries(row.values).map(([k, v]) => `${k} ${v}`).join(', ')}` } : {}),
+      ...(skipped ? { warning: skipped } : {}),
     };
   });
 

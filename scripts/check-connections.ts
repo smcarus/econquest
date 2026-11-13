@@ -23,6 +23,7 @@ import { acledFileData } from '../src/utils/acledFileStore.ts';
 import { aiddataData } from '../src/utils/aiddataStore.ts';
 import { investorBaseData } from '../src/utils/investorBaseStore.ts';
 import { fiscalRulesData } from '../src/utils/fiscalRulesStore.ts';
+import { dpiData } from '../src/utils/dpiStore.ts';
 import { applyKeysToEnv, envKeySnapshot, keySources, loadSettings, settingsFilePath } from '../src/utils/userSettings.ts';
 
 dotenv.config();
@@ -40,6 +41,7 @@ const report = await checkConnections({
   aiddata: () => aiddataData(dataDir),
   investorBase: () => investorBaseData(dataDir),
   fiscalRules: () => fiscalRulesData(dataDir),
+  dpi: () => dpiData(dataDir),
   readFile: (p) => {
     try {
       return { text: fs.readFileSync(p, 'utf8'), modified: fs.statSync(p).mtime };
