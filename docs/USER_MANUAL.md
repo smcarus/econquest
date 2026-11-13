@@ -809,6 +809,14 @@ becomes the problem). Six steps, in order:
 2. **Diagnose.** Twelve standard indicators from that saved pull, each numbered [1] to [12] with its
    source and period, or Missing with the reason, plus the real policy rate and r minus g when their
    inputs are live.
+   **Peers** (PC2), shown after Diagnose: tick up to six countries from your watchlist (or press
+   *Same region*) and press *Compare*. The table sets each diagnosis figure for this country beside the
+   same figure for each peer, each read from that peer's saved figures on or before the review's As of
+   day, so every column shows the data as it stood on the same day. It adds the peers' median (when
+   two or more peers have the figure) and this country's rank among all the countries that have it (1
+   is the highest). A peer with no saved figures on or before that day shows an empty column and says
+   so. The choice of peers is remembered in this browser; nothing is saved in the review, and the memo
+   does not change. A figure above or below its peers is not good or bad by itself.
    **Precedents** (G34), shown after Diagnose: other countries whose yearly figures were closest to
    this country's, and what followed in the next three years. Pick at least two figures (debt, inflation,
    reserves in months of imports, current account, growth, primary balance) and press *Find
