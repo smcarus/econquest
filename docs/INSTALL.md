@@ -26,12 +26,13 @@ developer, "From the code" below is the short route.
 | Part | Size | How the figure was found |
 | --- | --- | --- |
 | Docker Desktop | A few GB | Docker's own requirement; check docker.com for the current figure. |
-| The ready-made app (Docker image) | About 0.6 GB once unpacked; the download is a few hundred MB | Estimate from its parts: runtime packages 410 MB and the built app 6 MB (both measured on 9 November 2026), plus the Node.js base image. |
-| From the code instead | About 0.5 GB | Measured on 9 November 2026: installed packages (`node_modules`) 465 MB, built app (`dist`) 6 MB, source code a few MB. |
+| The ready-made app (Docker image) | About 0.8 GB once unpacked; the download is about 170 MB | Measured on 13 November 2026: the image built from the repository's Dockerfile is 795 MB unpacked and 169 MB compressed. |
+| From the code instead | About 0.5 GB | Measured on 13 November 2026: installed packages (`node_modules`) 465 MB, built app (`dist`) 7 MB, source code and its history 59 MB. |
 | Saved data (the `data/` folder) | About 150 MB after the first few days, growing by about 40 MB a year, plus the options below | Measured on the developer's Mac on 9 November 2026 (details in the next table). |
 | Past IMF World Economic Outlook editions | 2 to 9 MB per edition; about 100 MB for the 14 editions on that Mac | Measured. Every edition since 2007 would be roughly 300 MB (estimate: about 38 editions at an average of 7 MB). |
 | GDELT long history (optional, `npm run gdelt:daily`) | About 5 MB kept on disk from 2016; the download is much larger (below) | Measured: 41 KB per month of history. |
 | Small AI model (qwen2.5:7b, optional) | About 5 GB | Model size published by Ollama. |
+| Mid-size referee (qwen2.5:14b, optional, only with "Allow a 14B referee") | About 9 GB | Model size published by Ollama. |
 | Large AI model (qwen2.5:32b, optional) | About 20 GB | Model size published by Ollama. |
 
 What sits in `data/` (developer's Mac, 9 November 2026, 22 countries):
@@ -61,7 +62,7 @@ network use before and after a run.
 
 | When | What runs | About how much it downloads | How the figure was found |
 | --- | --- | --- | --- |
-| Once, the first time | The ready-made app (Docker image) | A few hundred MB | Estimate from the image's parts (above) |
+| Once, the first time | The ready-made app (Docker image) | About 170 MB | Measured: the compressed image, 13 November 2026 (above) |
 | Once, the first time | First full data download: every free source for every country, 8 weeks of GDELT files, past IMF forecast editions, sanctions, conflict and risk files | About 3.6 to 3.8 GB, most of it GDELT | GDELT: about 3.4 GB for 8 weeks (from GDELT's own file sizes, `npm run gdelt:pull -- --estimate`); IMF editions about 100 MB (measured); the rest as in the daily row |
 | Once, if you choose | AI models through Ollama | About 5 GB (small) and 20 GB (large) | Model sizes published by Ollama |
 | Once, if you choose | GDELT long history (`npm run gdelt:daily`) | About 25 GB from 2016; about 35 GB from 1979 | From GDELT's published file sizes; `npm run gdelt:daily -- --estimate` gives the exact figure |
@@ -142,7 +143,7 @@ curl -fsSLO https://raw.githubusercontent.com/e-conquest/econquest/main/deploy/q
    docker compose up -d
    ```
 
-   The first time, Docker downloads the app (a few hundred megabytes), which takes a few minutes.
+   The first time, Docker downloads the app (about 170 megabytes), which takes a few minutes.
    After that it starts in seconds. The `-d` means it keeps running in the background after you
    close the terminal.
 
@@ -200,11 +201,13 @@ Pick one in Menu > Settings > AI model. You can change your mind at any time.
 
 EconQuest uses two Ollama models. A small one (qwen2.5:7b) answers for each desk; a large one
 (qwen2.5:32b) acts as the referee that weighs the desks' answers, writes the summary and runs the
-debate. The referee is always the large model, because a small one makes too many mistakes.
+debate. The referee is the large model by default, because a small one makes too many mistakes; an
+8B or smaller model is never used as referee. The settings the app uses (temperature, context window,
+time limits) are listed in the [README](../README.md#ai-models-which-to-use-sizes-and-settings).
 
 | Your computer's memory | What works with Ollama |
 | --- | --- |
-| 16 GB | The desk answers; use Gemini for the referee, or run Ollama on a bigger computer |
+| 16 GB | The desk answers; use Gemini for the referee ("Ollama, then Gemini"), or turn on **Allow a 14B referee** and use qwen2.5:14b (about 9 GB), which needs about half the memory of the 32B model; every answer it judges then says "Small referee" |
 | 32 GB or more (or a graphics card with 24 GB) | Everything, including the referee |
 
 To use Ollama on a Mac or Windows PC:

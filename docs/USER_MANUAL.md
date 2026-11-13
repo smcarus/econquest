@@ -935,7 +935,7 @@ hold no figures of their own; the handout reads them from the app's series when 
   *Open this screen* goes there. The last step is a memo draft with the question, the figures, the
   working and space for your own answers: *Copy* or *Download (.md)*, then write the conclusion in
   your own words. To work an example for another country, open that country in Research first. In
-  English, Spanish and French.
+  English, Spanish, French and Portuguese.
 - **Tools**: opens Settings on its Tools tab (section 6). Opening a tool closes Settings and goes to it.
 - **Settings** (⌘, or Ctrl+,): free keys (FRED, EIA, UN Comtrade, Turkey EVDS), your own paid data
   (CDS source Off, My CSV or My LSEG), and the Gemini key. Each key has a Test button. Keys are

@@ -5,6 +5,17 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Documentation: README rewritten to a developer and researcher standard, with recommended AI models
+  by computer size, the referee rules, the model settings the app uses (temperature, seed, context
+  window, time limits), measured download and disk sizes (source 59 MB, Docker image about 170 MB to
+  download and 795 MB unpacked, packages 465 MB, build 6.5 MB, each language about 0.65 MB) beside
+  the existing data estimates, the four languages, and how Quests work. New walk-through guide
+  `docs/GUIDE.md` with 20 screenshots in `docs/images/`, taken from a build replaying the public
+  recorded feed replies. README and guide translated into Spanish, French and Portuguese
+  (`README.es.md`, `README.fr.md`, `README.pt.md`, `docs/GUIDE.*.md`). INSTALL.md image size now
+  measured; ROADMAP and the user manual list Portuguese. The page description in `index.html` no
+  longer names an outside project.
+
 - One-page policy brief (G39): Policy review's memo step has a One-page brief (PDF) button: the
   question, the chosen option, the figures it rests on with sources and ranges, and what to watch,
   on one page for readers who are not economists, with fixed wording in English, Spanish, French or
