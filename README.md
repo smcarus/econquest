@@ -555,7 +555,9 @@ sends a `threshold_crossed` event. `GET /api/v1/countries/<code>/snapshot` retur
 for a country, with source, date, badge and shareable flag, without a council run. With `write:holdings` it
 can send its positions (`PUT` or `POST /api/v1/holdings`), which appear in Holdings marked with the token's name. Names on
 the hidden-names list (Menu > Settings > Hidden names, or `/api/v1/exclusions`) never appear anywhere; only a
-count shows, and the app keeps fingerprints, not names.
+count shows, and the app keeps fingerprints, not names. With `run:scenarios` it can run a shock (emerging-market
+currencies, US rates, per-country fiscal shocks) or replay a past crisis (1997, 1998, 2001, 2008, 2013, 2020, 2022) on a
+portfolio it sends (`POST /api/v1/scenarios`); results are per position, labelled hypothetical, with Missing moves explained.
 
 ### Network
 

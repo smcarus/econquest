@@ -443,6 +443,47 @@ test('hidden names: a write:exclusions token hides a country and a security; the
   await fetch(`${base}/api/v1/holdings`, { method: 'PUT', headers: auth, body: JSON.stringify({ holdings: [] }) });
 });
 
+test('scenario API: a run:scenarios token replays 2008 on a portfolio it sends; nothing is saved; Missing says why', async () => {
+  const made = await (await post('/api/settings/api-tokens', { name: 'Risk console', scopes: ['run:scenarios'] }, adminCookie)).json();
+  const auth = { Authorization: `Bearer ${made.secret}`, 'Content-Type': 'application/json' };
+  // What the daily download would have saved (scripts/replays-pull.ts), as test series.
+  const s = (source: string, months: Record<string, number>) => ({ source, url: 'https://fred.stlouisfed.org/', unit: '', months, pulledAt: '2026-11-13T00:00:00Z' });
+  mkdirSync(path.join(dataDir, 'local', 'replays'), { recursive: true });
+  writeFileSync(path.join(dataDir, 'local', 'replays', 'replay-series.json'), JSON.stringify({ version: 1, savedAt: '2026-11-13T00:00:00Z', series: {
+    IRLTLT01USM156N: s('OECD long-term interest rates (monthly average, via FRED), IRLTLT01USM156N', { '2008-08': 4.0, '2008-11': 3.0 }),
+    EXMXUS: s('Federal Reserve Board H.10 exchange rates (monthly average, via FRED), EXMXUS', { '2008-08': 10, '2008-11': 12.5 }),
+  } }));
+  const list = await (await fetch(`${base}/api/v1/scenarios`, { headers: auth })).json();
+  assert.equal(list.hypothetical, true);
+  assert.equal(list.episodes.length, 7);
+  assert.equal(list.episodes.find((e: { id: string }) => e.id === 'gfc_2008').covered.us_rates, true);
+  const run = (body: unknown) => fetch(`${base}/api/v1/scenarios`, { method: 'POST', headers: auth, body: JSON.stringify(body) });
+  assert.equal((await run({ portfolio: [{ country: 'MX', notional_usd_mm: 0 }], scenario: { kind: 'replay', episode: 'gfc_2008' } })).status, 400);
+  const r = await (await run({ portfolio: [
+    { country: 'MX', type: 'fx', notional_usd_mm: 10, entity_id: 'fx-1' },
+    { country: 'BR', type: 'hc_bond', notional_usd_mm: 10, duration: 8, entity_id: 'bond-1' },
+  ], scenario: { kind: 'replay', episode: 'gfc_2008' } })).json();
+  assert.equal(r.hypothetical, true);
+  const fx = r.positions.find((p: { entity_id: string }) => p.entity_id === 'fx-1');
+  assert.equal(fx.components[0].move, -20);
+  assert.equal(fx.pnl_usd, -2_000_000);
+  assert.match(fx.components[0].source, /H\.10/);
+  assert.equal(fx.components[0].shareable, false);
+  const bond = r.positions.find((p: { entity_id: string }) => p.entity_id === 'bond-1');
+  assert.equal(bond.components[0].pnl_usd, 800_000);
+  assert.equal(bond.components[1].status, 'Missing');
+  assert.ok(bond.components[1].reason);
+  assert.equal(bond.pnl_usd, null);
+  // A shock needs no saved series.
+  const shock = await (await run({ portfolio: [{ country: 'TR', type: 'fx', notional_usd_mm: 1 }], scenario: { kind: 'shock', em_fx_pct: -10 } })).json();
+  assert.equal(shock.totals.pnl_usd, -100_000);
+  // Nothing was saved to the workspace, and other scopes are refused.
+  const ws = await (await fetch(`${base}/api/workspace`, { headers: { Cookie: adminCookie } })).json();
+  assert.ok(!String(ws.values['econquest.holdings.v1'] ?? '').includes('bond-1'));
+  const other = await (await post('/api/settings/api-tokens', { name: 'Reader', scopes: ['read:data'] }, adminCookie)).json();
+  assert.equal((await fetch(`${base}/api/v1/scenarios`, { headers: { Authorization: `Bearer ${other.secret}` } })).status, 403);
+});
+
 test('wrong passwords are refused, then locked out; the right one signs in', async () => {
   const bad = await post('/api/auth/sign-in', { username: 'sam', password: 'not the password at all' });
   assert.equal(bad.status, 401);

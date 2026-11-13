@@ -59,6 +59,7 @@ export const FILE_PULLS: Array<{ id: string; script: string; label: string; args
   { id: 'sanctions', script: 'sanctions-pull.ts', label: 'OFAC and UN sanctions lists' },
   { id: 'gpr', script: 'gpr-pull.ts', label: 'Geopolitical Risk index (Caldara and Iacoviello, monthly)' },
   { id: 'ucdp', script: 'ucdp-pull.ts', label: 'UCDP conflict data (newer yearly release, monthly candidate events)' },
+  { id: 'replays', script: 'replays-pull.ts', label: 'Monthly history for the scenario replays (OECD 10Y yields and Fed H.10 exchange rates via FRED, BCRP EMBIG spreads)' },
 ];
 
 /** Data that cannot be fetched automatically, said plainly instead of pretending. */

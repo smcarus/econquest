@@ -11,6 +11,7 @@
  * Used by GET /api/data/connections (the Tools page) and by `npm run check:data` in a terminal.
  * Keys and passwords are never put in a row: only whether they are set.
  */
+import { parseFredCsvSeries } from './fedBalanceSheet';
 import { EMISSIONS_CODE, OWID_ENERGY_URL, energyColumns } from './climateEnergy';
 import { dbnomicsLevelsUrl, imfLevelSeriesId } from './govLevels';
 import { ECB_RTD_SERIES, ecbRtdUrl, parseEcbHistory } from './ecbRealTime';
@@ -337,6 +338,7 @@ export const SOURCE_IDS = [
   'comtrade',
   'fred_csv',
   'fred_api',
+  'fed_h10',
   'tesouro',
   'ecb_spf',
   'bcb_focus',
@@ -1255,6 +1257,20 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       (r) => {
         const o = parseFredCsvLatest(r.text || '', US_10Y_SERIES);
         return o ? `US 10Y ${fmt(o.valuePct, 2)}% (${o.period})` : null;
+      }
+    )
+  );
+
+  add('fed_h10', () =>
+    httpCheck(
+      { id: 'fed_h10', name: 'Fed H.10 exchange rates (FRED download)', group: 'free', feeds: 'Monthly exchange rates since 1990 for the scenario replays (saved by the daily download)' },
+      fetchFn,
+      fredCsvUrl('EXBZUS', now),
+      T,
+      (r) => {
+        const obs = parseFredCsvSeries(r.text || '');
+        const last = obs[obs.length - 1];
+        return last ? `Brazil ${fmt(last.value, 4)} reais per US dollar (${last.date.slice(0, 7)})` : null;
       }
     )
   );
