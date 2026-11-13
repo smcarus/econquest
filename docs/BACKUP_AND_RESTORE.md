@@ -9,6 +9,13 @@ There are two kinds of backup. Use the first for what you made, the second for t
 | Safe to email or keep in cloud storage | yes | no, keep it private |
 | Restore | Menu > Backup > Restore | copy the folder back while the app is stopped |
 
+**Connections to other programs.** The backup file holds watch alerts, including indicator watches
+another program set, but not API tokens (`data/local/api-tokens.json`), the hidden-names list
+(`data/local/hidden-names.json`), webhooks or the event log (`data/local/events/`). A data folder copy
+holds all of them; keep it private, because it holds the webhook signing secrets. After restoring only
+a backup file on another computer, make new tokens in Menu > Settings > API tokens, give them to the
+other program, and add the hidden names again.
+
 ## Backup file
 
 **Make one:** Menu > Backup > Download. The file is `econquest-backup-<date>.json`.

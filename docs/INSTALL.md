@@ -257,6 +257,7 @@ The full guide to every screen is in Menu > User manual.
 | Update to the newest release | `docker compose pull` then `docker compose up -d` |
 | See what it is doing | `docker compose logs -f econquest` (Ctrl+C to stop watching) |
 | Remove it and everything it saved | `docker compose down -v` (this deletes your saved data and keys; make a backup first) |
+| List, make or revoke API tokens | `docker compose exec econquest npm run tokens -- list` (or `create "<name>" <scopes>`, `revoke <id>`); the same tokens as Menu > Settings > API tokens |
 
 **Your data.** Everything EconQuest saves (settings, keys, downloaded figures, saved research) is
 kept in a Docker storage area that survives restarts and updates. Menu > Settings > Backup downloads
@@ -302,6 +303,40 @@ docker compose cp emdat_public.xlsx econquest:/app/data/local/emdat/
 **From the code**, save the file straight into the `data/local/...` folder inside your `econquest`
 folder.
 
+## Files the app downloads for you
+
+The daily download also saves a few whole files under `data/local/`, because the sources publish them
+as files rather than answering one question at a time. You do not need to do anything; this table is
+here so you know what the folders are. Each one can also be fetched by hand from the code copy.
+
+| Folder | What it holds | How often | By hand |
+| --- | --- | --- | --- |
+| `data/local/replays/` | Monthly history for the past-crisis replays: OECD 10-year government bond yields and Federal Reserve H.10 exchange rates from FRED since 1990, and J.P. Morgan EMBI Global spreads from Peru's central bank since 2016 | Once a week at most | `npm run replays:pull` |
+| `data/local/chinn-ito/` | The Chinn-Ito capital account openness file (`kaopen_<year>.xls`), shown in the country risk scorecard with its citation and never passed on | Once every 30 days at most | `npm run chinn-ito:pull` |
+| `data/local/weo-vintages/` | Past IMF World Economic Outlook editions | Once a week at most | `npm run weo:pull` |
+| `data/local/gpr/` | The Geopolitical Risk index (Caldara and Iacoviello) | Once a week at most | `npm run gpr:pull` |
+| `data/local/sanctions/`, `data/local/ucdp/` | OFAC and UN sanctions lists; newer UCDP conflict files | With each daily download | `npm run sanctions:pull`, `npm run ucdp:pull` |
+
+If a download fails, the copy saved before is kept and nothing is filled in. `npm run check:data`
+then shows which source did not answer (for the two newest, rows `fed_h10` and `chinn_ito`).
+
+## Files that hold your connections
+
+If you connect another program (Menu > Settings > API tokens), the app keeps what it needs in
+`data/local/` as well:
+
+| File or folder | What it holds |
+| --- | --- |
+| `data/local/api-tokens.json` | Each token's name, scopes, owner and dates, and a fingerprint of its secret (never the secret) |
+| `data/local/hidden-names.json` | The hidden-names list, as fingerprints only |
+| `data/local/watch-rules.json` | Watch alerts, including indicator watches set by another program |
+| `data/local/events/` | The event log, webhook addresses and their signing secrets, and the delivery log |
+| `data/local/audit/` | The audit log and, if you use a locked bucket, which entries have been copied there |
+
+The backup file from Menu > Settings > Backup holds the watch alerts but not the tokens, hidden names
+or webhooks. After moving to another computer with a backup file, make new tokens and add the hidden
+names again; a full copy of the `data/` folder keeps them ([BACKUP_AND_RESTORE.md](./BACKUP_AND_RESTORE.md)).
+
 ## If something goes wrong
 
 | What you see | What it usually means, and the fix |
@@ -324,7 +359,19 @@ npm run dev          # http://localhost:3000
 ```
 
 Or build the image yourself: `docker compose up -d --build` in the repository folder (port 3737).
-The [README](../README.md) covers development, tests and the integration API.
+The [README](../README.md) covers development, tests and connecting an outside system.
+
+Useful commands in the code copy, on a computer that reaches the data sources:
+
+| Command | What it does |
+| --- | --- |
+| `npm run go` | Pull the newest code, install, start Ollama and the app |
+| `npm run go -- daily` | Run the daily data download now (log: `data/local/logs/daily.log`) |
+| `npm run go -- status` | What is running and what the last daily download did, with its size |
+| `npm run check:data` | Ask every source now and print one row each: connected, needs setup, or why it failed |
+| `npm run replays:pull` | Save the monthly history for the past-crisis replays (`-- --force` saves it again) |
+| `npm run chinn-ito:pull` | Save the Chinn-Ito file (`-- --force` downloads it again) |
+| `npm run tokens -- list` | List, make or revoke API tokens |
 
 ## Your own cloud server
 
@@ -333,7 +380,11 @@ roughly $5-12 a month; a server that runs the large model itself costs much more
 month without a graphics card, and slow; several hundred with one). Prices are approximate.
 
 Follow [HOME_SERVER.md](HOME_SERVER.md) on the server, and before letting anyone reach it from the
-internet, turn on its **HTTPS and sign-in** section, so only people with an account can open it. Do
+internet, turn on its **HTTPS and sign-in** section, so only people with an account can open it.
+People can sign in with a local password or, if you set it up, with an account they already have at
+an OpenID Connect provider such as Google, Microsoft, Okta or Keycloak ([SECURITY.md](SECURITY.md)).
+If the server is there to feed another system, [DEPLOYMENT.md](DEPLOYMENT.md) covers the reverse
+proxy, service tokens, health checks and an alert when the daily download is late. Do
 not open a copy to the general public: the keys saved in Settings belong to the whole server, so
 every visitor would be using yours, and several free data sources allow personal use but not
 passing their figures on to the public.

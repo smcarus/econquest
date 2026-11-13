@@ -102,6 +102,7 @@ in downloads or shared copies.
 | Learn as you go | Header buttons, **Menu > User manual**, **Menu > Worked examples** | Three help levels, a plain-language glossary, four worked case studies, teaching episodes and exam mode |
 | Bring your own data and tests | **Menu > Your data**, **Menu > Models & validation** | Load your own CSV series; register your own signal or model test under the same strict rules as the app's own |
 | Use the figures in R, Python or Stata | [docs/DATA_API.md](./docs/DATA_API.md) | The same series, panels and tables the screens show, with source and date on every value |
+| Connect a portfolio system | **Menu > Settings > API tokens**, [docs/DATA_API.md](./docs/DATA_API.md) | Another program reads country snapshots and events, sends its positions in, and runs shocks and past-crisis replays on its portfolio, each with a token limited to what you tick ([details](#connecting-an-outside-system)) |
 
 **Council chat** is the heart of the app. The agents are Central Bank, Fiscal & Debt, Politics &
 Events, Relative Value, FX (currencies), Global Spillover, Calendar, Timing and Behavioural Finance,
@@ -375,10 +376,11 @@ All of these are free. A few need a free key, which you add in Menu > Settings.
 | Area | Sources |
 | --- | --- |
 | Growth, debt, budgets, trade | World Bank (indicators and debt statistics), IMF (World Economic Outlook, past editions, reserves, balance of payments, reserve currency shares, government spending by purpose), OECD (leading indicators, prices, quarterly GDP, read through DBnomics), IMF monthly consumer prices, Eurostat (inflation, industrial production, government spending), UN Comtrade and WITS (trade partners) |
-| Interest rates and bonds | BIS (central bank policy rates, debt securities, real exchange rates), FRED (official 10-year yields; free key), New York Fed rates, US Treasury (foreign holders, auctions), Brazil Treasury, Peru's central bank (EMBIG spreads) |
+| Interest rates and bonds | BIS (central bank policy rates, debt securities, real exchange rates), FRED (official 10-year yields; free key), New York Fed rates, US Treasury (foreign holders, auctions), Brazil Treasury, Peru's central bank (EMBIG spreads), and monthly OECD 10-year yields and Federal Reserve H.10 exchange rates from FRED since 1990 for the past-crisis replays |
 | Currencies and commodities | Spot exchange rates (open.er-api.com), ECB reference rates, World Bank commodity prices (Pink Sheet), US EIA oil prices (free key) |
 | Surveys and expectations | EU business and consumer surveys (European Commission, via Eurostat; a free stand-in for paid PMIs, labelled as such), ECB Survey of Professional Forecasters, Brazil's Focus survey, NY Fed supply chain pressure index |
 | Central banks and calendar | Banco Central do Brasil, Banco de México (free token), official central bank decision dates, CPI and GDP release dates from statistics offices' own calendars |
+| Institutions and openness | World Bank Worldwide Governance Indicators, the Chinn-Ito index of capital account openness (downloaded to your computer once a month at most, credited to Chinn and Ito 2006, and never passed on) |
 | Politics, conflict and shipping | GDELT news events, UCDP and ACLED conflict data (ACLED files are downloaded by hand), OFAC and UN sanctions lists, the Geopolitical Risk index, IMF PortWatch (ships through chokepoints and port calls) |
 | Markets and positioning | Kalshi and Polymarket prediction markets, CFTC Commitments of Traders |
 | Lower-income countries | World Bank (remittances and the cost of sending them, Global Findex accounts, aid received as republished from the OECD, food security, commodity trade shares and terms of trade); two files you save yourself: FAOSTAT consumer prices for food price inflation, and EM-DAT natural disasters, downloaded with your own free EM-DAT account (its terms do not allow the app to ship it) |
@@ -410,7 +412,8 @@ saves your holdings, watchlists and settings, without the keys, as one file.
   live predictions ([docs/TRACK_RECORD.md](./docs/TRACK_RECORD.md), [docs/METHODS.md](./docs/METHODS.md)).
 - **An audit log** records what was asked, which figures were used and who signed off a report.
 
-The full method is in [docs/METHODOLOGY.md](./docs/METHODOLOGY.md).
+The full method is in [docs/METHODOLOGY.md](./docs/METHODOLOGY.md); the same in plain words is
+[docs/HOW_IT_WORKS.md](./docs/HOW_IT_WORKS.md).
 
 ---
 
@@ -426,32 +429,54 @@ The full method is in [docs/METHODOLOGY.md](./docs/METHODOLOGY.md).
 | `npm run go -- stop` | Stop the app |
 | `npm run dev` | Only the development app, on http://localhost:3000 |
 | `npm run check:data` | Live check of every source from this computer |
+| `npm run replays:pull` | Save the monthly history the past-crisis replays use (also part of the daily download) |
+| `npm run chinn-ito:pull` | Save the Chinn-Ito capital account openness file (also part of the daily download, at most once every 30 days) |
+| `npm run tokens -- list` | List, make (`create "<name>" <scopes>`) or revoke (`revoke <id>`) API tokens from the command line |
+| `npm run check:success` | Print the public success measures (stars, issues, downloads) and keep each run |
 
 ---
 
 ## Roadmap
 
-Planned work, in order (details and status in [docs/ROADMAP.md](./docs/ROADMAP.md)):
+Where things stand on 13 November 2026 (details and status in [docs/ROADMAP.md](./docs/ROADMAP.md)):
 
-1. **Citations, upkeep and feedback** (done): "Cite this" on every chart, table and answer, a size
-   review, a monthly source check, and checks of past policy reviews against what happened.
-2. **The figures a full terminal needs** (done; revenue by level of government has a second step that waits on the data): inequality, tax revenue and tariffs, low-income
-   country debt, people, trade and debt structure, climate, wages and house prices, sector balances,
-   monthly activity, and euro area and UK figures as first published.
-3. **The public release** at e-conquest/econquest, after a security and Windows check, with a light
-   mode for modest laptops (light mode done; release checks under way).
-4. **Analysis and policy tools** (done; the crisis early-warning test waits on a data licence): crisis early-warning, external sustainability, the yield
-   curve, inflation drivers, growth accounting, a restructuring calculator, behavioural finance, and a
-   fuller policy review with precedents, fiscal rules, political feasibility, a trade-off chart and a
+**Done**
+
+1. **Citations, upkeep and feedback**: "Cite this" on every chart, table and answer, a size review,
+   a monthly source check, and checks of past policy reviews against what happened.
+2. **The figures a full terminal needs**: inequality, tax revenue and tariffs, low-income country
+   debt, people, trade and debt structure, climate, wages and house prices, sector balances, monthly
+   activity, and euro area and UK figures as first published (revenue by state is a second step that
+   waits on a coverage check).
+3. **Analysis and policy tools**: crisis early-warning, external sustainability, the yield curve,
+   inflation drivers, growth accounting, a restructuring calculator, behavioural finance, and a fuller
+   policy review with precedents, fiscal rules, political feasibility, a trade-off chart and a
    one-page brief.
-5. **More languages and teaching**: Portuguese and worked examples (done); Arabic and Swahili
-   (planned); Quests in the classroom with a one-term pilot.
-6. **A phone app** (paused): a free standalone app that uses your own keys.
+4. **Data for lower-income countries** (brought forward on 13 November): remittances, financial
+   inclusion, commodity prices and terms of trade, aid received, food prices and natural disasters.
+5. **Policy review tools** (brought forward on 13 November): peer comparison, watch alerts on the
+   start page, and comparing a review with the earlier one.
+6. **Connecting other systems** (13 November): API tokens, events and webhooks, indicator watches,
+   country snapshots, positions sent in, hidden names, scenarios and crisis replays, a sealed audit
+   log, a deployment guide and OpenID Connect sign-in.
+7. **Languages and teaching**: the whole app in Portuguese, and four worked examples.
 
-Two groups of ideas were brought forward from the parked list on 13 November 2026 and are done: data
-for lower-income countries (remittances, financial inclusion, commodity prices and terms of trade,
-aid received, food prices and natural disasters) and policy review tools (peer comparison, watch
-alerts on the start page, and comparing a review with the earlier one).
+**Next**
+
+- **The public release** at e-conquest/econquest. Light mode and the security review are done; a
+  first start on a Windows computer, a light-mode measurement and a fresh public export remain.
+- **Checkpoint 1**, about four weeks after the public release, is the one review before more work is
+  planned. Real use decides what comes next; no new features are added before it.
+
+**Waiting**
+
+- **Quests in the classroom**: the plan is complete (13 small changes, then a one-term pilot with
+  two professors); building starts when the maintainer says go.
+- **Arabic and Swahili**: planned, paused by the maintainer.
+- **The phone app**: paused until after the public release.
+- **Parked ideas** for checkpoint 1: markets and financing data (exchange rate regimes, central bank
+  balance sheets, dollar funding stress) and teaching and sharing (an offline country report, a
+  macro lab with textbook models, more worked examples).
 
 ---
 
@@ -463,12 +488,14 @@ alerts on the start page, and comparing a review with the earlier one).
 | [docs/INSTALL.md](./docs/INSTALL.md) | Step-by-step install for people new to this, with requirements and sizes |
 | [docs/USER_MANUAL.md](./docs/USER_MANUAL.md) | Every page and panel in detail |
 | [docs/GLOSSARY.md](./docs/GLOSSARY.md) | Every economic, market and testing term in plain words |
+| [docs/HOW_IT_WORKS.md](./docs/HOW_IT_WORKS.md) | How the app works, in plain words: where the figures come from, what the AI does and does not do, how a rule is tested, and one result read step by step |
 | [docs/METHODOLOGY.md](./docs/METHODOLOGY.md) | How data is sourced, how the council is checked, and how models and signals are tested and graded |
 | [docs/METHODS.md](./docs/METHODS.md) | A methods note per model and signal, with its pre-registered backtests and recorded verdicts |
 | [docs/TRACK_RECORD.md](./docs/TRACK_RECORD.md) | Every pre-registered test on record, passed or failed, with the Holm correction |
 | [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md) | Every source, what it fills, how to set it up |
 | [docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md) | What each source's terms allow |
-| [docs/DATA_API.md](./docs/DATA_API.md) | Reading the app's figures from R, Python and Stata |
+| [docs/DATA_API.md](./docs/DATA_API.md), [docs/openapi.json](./docs/openapi.json) | Reading the app's figures from R, Python and Stata, and connecting an outside system (tokens, events, webhooks, snapshots, holdings, hidden names, scenarios) |
+| [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) | Running it as a service for another system: reverse proxy and TLS, service tokens, health checks, the daily-download deadline |
 | [docs/POLICY_REVIEW.md](./docs/POLICY_REVIEW.md) | The policy review steps |
 | [docs/QUESTS.md](./docs/QUESTS.md) | Quests, their rules and the checklist before they are turned on |
 | [docs/ROADMAP.md](./docs/ROADMAP.md) | What is planned next, in order |
@@ -476,7 +503,7 @@ alerts on the start page, and comparing a review with the earlier one).
 | [docs/RISK_AND_COMPLIANCE.md](./docs/RISK_AND_COMPLIANCE.md) | Audit log, model register, report sign-off |
 | [docs/BACKUP_AND_RESTORE.md](./docs/BACKUP_AND_RESTORE.md) | Backups and moving to another computer |
 | [docs/HOME_SERVER.md](./docs/HOME_SERVER.md), [docs/KUBERNETES.md](./docs/KUBERNETES.md) | Running it for a household, team or class |
-| [docs/SECURITY.md](./docs/SECURITY.md), [docs/SECURITY_REVIEW.md](./docs/SECURITY_REVIEW.md) | Accounts, sign-in, sessions, and the security review |
+| [docs/SECURITY.md](./docs/SECURITY.md), [docs/SECURITY_REVIEW.md](./docs/SECURITY_REVIEW.md) | Accounts, sign-in (including OpenID Connect), sessions, the audit seal, and the security review |
 | [docs/DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md) | UI rules for contributors |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | How to contribute, the research rules, and signing off commits |
 
@@ -531,37 +558,52 @@ contributors the same check without a key. Council prompts have their own record
 `NODE_OPTIONS="--import ./tests/helpers/replay-fetch.mjs" REPLAY_DIR=tests/fixtures/recorded-public`),
 so they show only figures whose sources allow passing them on.
 
-### Integration API
+### Connecting an outside system
 
-Other apps can read council output from `/api/v1/integration/*` (desks, bundle, publish, an SSE
-stream, deliveries, and `openapi.json`). It answers `404 NO_COUNCIL_RUN` until you have run the full
-council on that country, and never sends built-in figures. Set `SMCR_INTEGRATION_API_KEY` and
-`SMCR_WEBHOOK_HMAC_SECRET` in `.env` to fix the key and signing secret. The same key lets a script
-read the [data API](docs/DATA_API.md) addresses, and only those, on a copy with sign-in on.
+EconQuest can serve figures and alerts to another program, such as a portfolio console, over HTTP.
+The full reference, with examples, is "Connecting an outside portfolio system" in
+[docs/DATA_API.md](docs/DATA_API.md); every address is in [docs/openapi.json](docs/openapi.json).
 
-An outside portfolio system can name countries by ISO alpha-2 or alpha-3 (every answer carries
-both) and positions by ISIN, LEI, CIK or ticker plus its own entity ID, which comes back unchanged.
-See "Connecting an outside portfolio system" in [docs/DATA_API.md](docs/DATA_API.md) and the
-address list in [docs/openapi.json](docs/openapi.json). It signs in with a named, revocable API token made
-in Menu > Settings > API tokens, limited to the scopes it needs (`read:data`, `read:council`,
-`read:events`, `write:holdings`, `write:exclusions`, `run:scenarios`); every use is in the audit
-log. `SMCR_INTEGRATION_API_KEY` still works as a legacy key with the three read scopes. On a server with several people, they can also sign in through any standard OpenID Connect provider (Google, Microsoft, Okta, Keycloak and others); see [docs/SECURITY.md](docs/SECURITY.md). Any call may carry an
-`X-Correlation-Id` header, which is sent back and written into the audit log entries it makes. Events (signal and badge changes,
-revisions, stale or failed feeds, sanctions list changes, releases due tomorrow, council runs and
-the daily download) can be read after an id, streamed live, or sent to webhooks signed with HMAC-SHA256
-and retried with backoff; see "Events and webhooks" in [docs/DATA_API.md](docs/DATA_API.md). An outside
-system can also set its own indicator watches (none is built in); a crossing after the daily download
-sends a `threshold_crossed` event. `GET /api/v1/countries/<code>/snapshot` returns every saved figure
-for a country, with source, date, badge and shareable flag, without a council run. It includes capital account openness from the Chinn-Ito index (Chinn and Ito 2006), cited and not passed on in sharing mode. With `write:holdings` it
-can send its positions (`PUT` or `POST /api/v1/holdings`), which appear in Holdings marked with the token's name. Names on
-the hidden-names list (Menu > Settings > Hidden names, or `/api/v1/exclusions`) never appear anywhere; only a
-count shows, and the app keeps fingerprints, not names. With `run:scenarios` it can run a shock (emerging-market
-currencies, US rates, per-country fiscal shocks) or replay a past crisis (1997, 1998, 2001, 2008, 2013, 2020, 2022) on a
-portfolio it sends (`POST /api/v1/scenarios`); results are per position, labelled hypothetical, with Missing moves explained.
-The audit log can be sealed (`AUDIT_SEAL_KEY`: an HMAC on every entry) and copied entry by entry to an S3-compatible
-bucket with object lock (`AUDIT_BUCKET_URL`); see "Audit seal and locked copies" in [docs/SECURITY.md](docs/SECURITY.md).
-Running it as a service for another system (reverse proxy and TLS, `ALLOWED_HOSTS`, service tokens with
-`npm run tokens`, `/healthz` and `/readyz`, and `DAILY_DOWNLOAD_DEADLINE`) is covered in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+- **Sign-in with a token.** Make a named API token in **Menu > Settings > API tokens** (or with
+  `npm run tokens`), tick only what it may do (`read:data`, `read:council`, `read:events`,
+  `write:holdings`, `write:exclusions`, `run:scenarios`), and revoke it at any time. The secret is
+  shown once; the app keeps only its fingerprint. Every use is written to the audit log.
+  `SMCR_INTEGRATION_API_KEY` in `.env` still works as a legacy key with the three read scopes.
+- **Names both sides agree on.** Countries by ISO alpha-2 or alpha-3 (every answer carries both);
+  positions by ISIN, LEI, CIK or ticker plus the other system's own entity ID, which comes back
+  unchanged.
+- **Tracing.** Any call may carry an `X-Correlation-Id` header; it is sent back and written into the
+  audit log entries the call makes.
+- **Country snapshot.** `GET /api/v1/countries/<code>/snapshot` returns every saved figure for a
+  country, with source, date, badge and whether it may be passed on, without a council run. It
+  includes capital account openness from the Chinn-Ito index, withheld in sharing mode.
+- **Events and webhooks.** Signal and badge changes, revisions, stale or failed feeds, sanctions list
+  changes, releases due tomorrow, council runs and the daily download can be read after an id,
+  streamed live, or sent to webhooks signed with HMAC-SHA256 and retried with backoff.
+- **Indicator watches.** The other system sets its own thresholds (none is built in); a crossing
+  found after the daily download sends a `threshold_crossed` event.
+- **Positions in.** With `write:holdings`, `PUT` or `POST /api/v1/holdings` sends positions, which
+  appear in Holdings marked "Sent by" and the token's name.
+- **Hidden names.** Countries and securities on the hidden-names list (**Menu > Settings > Hidden
+  names**, or `/api/v1/exclusions`) never appear on any screen, in any reply or in any event; screens
+  show only a count, and the app keeps fingerprints, not the names.
+- **Scenarios.** With `run:scenarios`, `POST /api/v1/scenarios` runs a shock (emerging-market
+  currencies, US rates, per-country fiscal moves) or replays a past crisis (1997, 1998, 2001, 2008,
+  2013, 2020, 2022) on a portfolio sent in the request. Results are per position, labelled
+  hypothetical (a first-order estimate, not a valuation), and a move with no source is Missing with
+  the reason.
+- **Council output.** `/api/v1/integration/*` (desks, bundle, publish, a live stream and
+  deliveries) answers `404 NO_COUNCIL_RUN` until the full council has run on that country, and never
+  sends built-in figures. `SMCR_WEBHOOK_HMAC_SECRET` fixes its signing secret.
+- **Audit seal.** With `AUDIT_SEAL_KEY` set, every audit log entry also carries an HMAC; with
+  `AUDIT_BUCKET_URL`, each entry is copied to an S3-compatible bucket with object lock, so a rewrite
+  of the whole log on this computer can be caught ([docs/SECURITY.md](docs/SECURITY.md)).
+- **Sign-in for people.** On a server with several people, they can sign in through any standard
+  OpenID Connect provider (Google, Microsoft, Okta, Keycloak and others), beside or instead of local
+  passwords ([docs/SECURITY.md](docs/SECURITY.md)).
+- **Running it as a service.** Reverse proxy and TLS, `ALLOWED_HOSTS`, service tokens, `/healthz`
+  and `/readyz`, and `DAILY_DOWNLOAD_DEADLINE` (an alert if the daily download has not finished by a
+  set time) are covered in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ### Network
 

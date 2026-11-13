@@ -108,6 +108,7 @@ les Réglages, et ne sont jamais transmises dans les téléchargements ou les co
 | Apprendre en chemin | Boutons de l'en-tête, **Menu > Manuel d'utilisation**, **Menu > Exemples guidés** | Trois niveaux d'aide, un glossaire en langage clair, quatre cas guidés, des séquences pédagogiques et un mode examen |
 | Utiliser vos propres données et tests | **Menu > Vos données**, **Menu > Modèles et validation** | Chargez vos propres séries CSV ; enregistrez votre propre test de signal ou de modèle selon les mêmes règles strictes que ceux de l'application |
 | Utiliser les chiffres dans R, Python ou Stata | [docs/DATA_API.md](./docs/DATA_API.md) (en anglais) | Les mêmes séries, panels et tableaux qu'à l'écran, avec source et date pour chaque valeur |
+| Connecter un système de portefeuille | **Menu > Réglages > Jetons d’API**, [docs/DATA_API.md](./docs/DATA_API.md) (en anglais) | Un autre programme lit des instantanés de pays et des événements, envoie ses positions et lance des chocs et des rejeux de crises passées sur son portefeuille, chacun avec un jeton limité à ce que vous cochez. Les pays et titres de la liste **Noms masqués** n’apparaissent nulle part |
 
 Le **Chat du conseil** est le cœur de l'application. Les agents sont Banque centrale, Budget et dette,
 Politique et événements, Valeur relative, Change, Contagion mondiale, Calendrier, Timing et Finance
@@ -383,10 +384,11 @@ Toutes sont gratuites. Quelques-unes demandent une clé gratuite, à ajouter dan
 | Domaine | Sources |
 | --- | --- |
 | Croissance, dette, budgets, commerce | Banque mondiale (indicateurs et statistiques de dette), FMI (Perspectives de l'économie mondiale et éditions passées, réserves, balance des paiements, composition des réserves, dépenses publiques par fonction), OCDE (indicateurs avancés, prix, PIB trimestriel, via DBnomics), prix à la consommation mensuels du FMI, Eurostat, UN Comtrade et WITS |
-| Taux et obligations | BRI (taux directeurs, titres de dette, taux de change réels), FRED (rendements officiels à 10 ans ; clé gratuite), Fed de New York, Trésor américain (détenteurs étrangers, adjudications), Trésor brésilien, banque centrale du Pérou (écarts EMBIG) |
+| Taux et obligations | BRI (taux directeurs, titres de dette, taux de change réels), FRED (rendements officiels à 10 ans ; clé gratuite), Fed de New York, Trésor américain (détenteurs étrangers, adjudications), Trésor brésilien, banque centrale du Pérou (écarts EMBIG), et rendements à 10 ans de l’OCDE et taux de change H.10 de la Réserve fédérale, mensuels depuis 1990 via FRED, pour rejouer les crises passées |
 | Change et matières premières | Taux de change au comptant (open.er-api.com), taux de référence de la BCE, prix des matières premières de la Banque mondiale, prix du pétrole de l'EIA (clé gratuite) |
 | Enquêtes et anticipations | Enquêtes auprès des entreprises et des consommateurs de l'UE (Commission européenne, via Eurostat ; substitut gratuit des PMI payants, signalé comme tel), enquête de la BCE auprès des prévisionnistes professionnels, enquête Focus du Brésil, indice de tension des chaînes d'approvisionnement de la Fed de New York |
 | Banques centrales et calendrier | Banco Central do Brasil, Banco de México (jeton gratuit), dates officielles des décisions, dates de publication de l'IPC et du PIB des instituts statistiques |
+| Institutions et ouverture | Indicateurs de gouvernance de la Banque mondiale (WGI), indice d’ouverture du compte de capital de Chinn et Ito (téléchargé sur votre ordinateur au plus une fois par mois, cité comme Chinn et Ito 2006 et jamais retransmis) |
 | Politique, conflits et transport maritime | Actualités GDELT, données de conflit UCDP et ACLED (ACLED se télécharge à la main), listes de sanctions de l'OFAC et de l'ONU, indice de risque géopolitique, IMF PortWatch |
 | Marchés et positionnement | Marchés de prédiction Kalshi et Polymarket, rapport Commitments of Traders de la CFTC |
 | Pays à revenu plus faible | Banque mondiale (envois de fonds et leur coût d'envoi, comptes Global Findex, aide reçue telle que republiée à partir de l'OCDE, sécurité alimentaire, part des matières premières dans les échanges et termes de l’échange) ; deux fichiers que vous enregistrez vous-même : les prix à la consommation de FAOSTAT pour l'inflation alimentaire, et les catastrophes naturelles d'EM-DAT, téléchargées avec votre propre compte EM-DAT gratuit (ses conditions ne permettent pas à l'application de les fournir) |
@@ -415,24 +417,51 @@ La méthode complète est dans [docs/METHODOLOGY.md](./docs/METHODOLOGY.md) (en 
 
 ## Feuille de route
 
-Dans l'ordre (détail dans [docs/ROADMAP.md](./docs/ROADMAP.md), en anglais) :
+Où en est le projet au 13 novembre 2026 (détail dans [docs/ROADMAP.md](./docs/ROADMAP.md), en anglais) :
 
-1. **Citations, maintenance et retours** (fait).
-2. **Les chiffres dont un terminal complet a besoin** (fait ; les recettes par niveau d'administration
-   ont une seconde étape qui attend des données).
-3. **La publication** sur e-conquest/econquest, après une revue de sécurité et un essai sous Windows, avec
-   un mode léger pour les portables modestes (mode léger fait ; revues en cours).
-4. **Outils d'analyse et de politique** (fait ; le test d'alerte précoce de crise attend une licence de
-   données).
-5. **Plus de langues et d'enseignement** : portugais et exemples guidés (fait) ; arabe et swahili
-   (prévus) ; Quêtes en classe avec un pilote d'un semestre.
-6. **Une application mobile** (en pause).
+**Fait**
 
-Le 13 novembre 2026, deux groupes d'idées ont été avancés depuis la liste en attente, et ils sont
-faits : des données pour les pays à revenu plus faible (envois de fonds, inclusion financière, prix des
-matières premières et termes de l’échange, aide reçue, prix alimentaires et catastrophes naturelles) et
-des outils pour la revue de politique (comparaison avec des pairs, alertes sur la page d'accueil et
-comparaison d'une revue avec la précédente).
+1. **Citations, maintenance et retours** : « Citer » sur chaque graphique, tableau et réponse, une revue
+   de taille, un contrôle mensuel des sources et la confrontation des revues de politique passées avec
+   ce qui s’est produit.
+2. **Les chiffres dont un terminal complet a besoin** : inégalités, recettes fiscales et droits de
+   douane, dette des pays à faible revenu, population, commerce et structure de la dette, climat,
+   salaires et prix des logements, soldes sectoriels, activité mensuelle, et chiffres de la zone euro et
+   du Royaume-Uni tels que publiés la première fois (les recettes par État sont une seconde étape qui
+   attend un contrôle de couverture).
+3. **Outils d’analyse et de politique** : alerte précoce de crise, soutenabilité extérieure, courbe des
+   taux, moteurs de l’inflation, comptabilité de la croissance, un calculateur de restructuration, la
+   finance comportementale et une revue de politique plus complète avec précédents, règles
+   budgétaires, faisabilité politique, un graphique d’arbitrages et une note d’une page.
+4. **Des données pour les pays à revenu plus faible** (avancées le 13 novembre) : envois de fonds,
+   inclusion financière, prix des matières premières et termes de l’échange, aide reçue, prix
+   alimentaires et catastrophes naturelles.
+5. **Outils pour la revue de politique** (avancés le 13 novembre) : comparaison avec des pairs, alertes
+   sur la page d’accueil et comparaison d’une revue avec la précédente.
+6. **Connexion avec d’autres systèmes** (13 novembre) : jetons d’API, événements et webhooks,
+   surveillances d’indicateurs, instantanés de pays, positions envoyées de l’extérieur, noms masqués,
+   scénarios et rejeux de crises, un journal d’audit scellé, un guide de déploiement et la connexion
+   par OpenID Connect.
+7. **Langues et enseignement** : toute l’application en portugais et quatre exemples guidés.
+
+**Ensuite**
+
+- **La publication** sur e-conquest/econquest. Le mode léger et la revue de sécurité sont faits ; il
+  reste un premier démarrage sur un ordinateur Windows, une mesure du mode léger et un nouvel export
+  public.
+- **Le point d’étape 1**, environ quatre semaines après la publication, est la seule revue avant de
+  planifier d’autres travaux. L’usage réel décide de la suite ; aucune nouvelle fonction n’est ajoutée
+  avant.
+
+**En attente**
+
+- **Les Quêtes en classe** : le plan est complet (13 petites modifications, puis un pilote d’un semestre
+  avec deux professeurs) ; la construction commence quand le responsable du projet le décide.
+- **Arabe et swahili** : prévus, mis en pause par le responsable du projet.
+- **L’application mobile** : en pause jusqu’après la publication.
+- **Idées en attente** pour le point d’étape 1 : données de marchés et de financement (régimes de change,
+  bilans des banques centrales, tensions sur le financement en dollars) et enseignement et partage (un
+  rapport pays hors ligne, un laboratoire macro avec des modèles de manuel, d’autres exemples guidés).
 
 ---
 
@@ -441,9 +470,9 @@ comparaison d'une revue avec la précédente).
 - [docs/GUIDE.fr.md](./docs/GUIDE.fr.md) : guide pas à pas avec captures, en français
 - En anglais : [INSTALL.md](./docs/INSTALL.md) (installation), [USER_MANUAL.md](./docs/USER_MANUAL.md)
   (manuel), [GLOSSARY.md](./docs/GLOSSARY.md) (glossaire ; aussi dans l'application en français),
-  [METHODOLOGY.md](./docs/METHODOLOGY.md), [METHODS.md](./docs/METHODS.md),
+  [METHODOLOGY.md](./docs/METHODOLOGY.md), [HOW_IT_WORKS.md](./docs/HOW_IT_WORKS.md), [METHODS.md](./docs/METHODS.md),
   [TRACK_RECORD.md](./docs/TRACK_RECORD.md), [DATA_SOURCES.md](./docs/DATA_SOURCES.md),
-  [DATA_LICENCES.md](./docs/DATA_LICENCES.md), [DATA_API.md](./docs/DATA_API.md),
+  [DATA_LICENCES.md](./docs/DATA_LICENCES.md), [DATA_API.md](./docs/DATA_API.md), [DEPLOYMENT.md](./docs/DEPLOYMENT.md),
   [POLICY_REVIEW.md](./docs/POLICY_REVIEW.md), [QUESTS.md](./docs/QUESTS.md),
   [ROADMAP.md](./docs/ROADMAP.md), [HOME_SERVER.md](./docs/HOME_SERVER.md),
   [SECURITY.md](./docs/SECURITY.md), [CONTRIBUTING.md](./CONTRIBUTING.md)
