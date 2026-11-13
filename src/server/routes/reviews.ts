@@ -1,3 +1,6 @@
+import { politicalFeasibility, type DpiTable } from '../../utils/politicalFeasibility';
+import type { V1Series } from '../../utils/gdeltDaily';
+import { OFFICIAL_CALENDAR } from '../../data/officialCalendar';
 import type { UserOption, OptionsStep as OptionsStepT } from '../../utils/reviewOptions';
 import type { ReviewFrame } from '../../utils/policyReview';
 import type { AIRuntimeConfig } from '../../types/council';
@@ -50,10 +53,12 @@ export interface ReviewDeps {
   withModelFigures: (d: Diagnosis) => Diagnosis;
   /** Every country's saved yearly history (data/history/), for the precedent finder. */
   allHistories: () => { histories: HistoryInput[]; pulledAt?: string };
+  /** Saved inputs for Political feasibility: the DPI file and the GDELT monthly series. */
+  politicalInputs: (iso3: string) => { dpi: { table: DpiTable | null; reason?: string }; gdelt: V1Series | null };
 }
 
 export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): void {
-  const { refuseRemoteChange, signedIn, archivedSnapshot, seriesFor, fetchLiveOpenDataSnapshot, reviewOptionsStep, withModelFigures, allHistories } = deps;
+  const { refuseRemoteChange, signedIn, archivedSnapshot, seriesFor, fetchLiveOpenDataSnapshot, reviewOptionsStep, withModelFigures, allHistories, politicalInputs } = deps;
   // Report sign-off: where each saved council conversation stands, and one step at a time.
   app.get('/api/signoffs', (_req, res) => {
     const all = loadSignOffs(SIGNOFF_FILE);
@@ -312,6 +317,15 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
   });
   // Precedent finder (G34): other countries that matched on the chosen figures, and what followed.
   // Worked out on request from the saved yearly histories; nothing is saved and the steps do not change.
+  // Political feasibility (G36, src/utils/politicalFeasibility.ts): elections on file, DPI checks and balances, GDELT unrest, cut at the As of day. Read-only, not saved.
+  app.get('/api/reviews/:id/political', (req, res) => {
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const frame = frameOf(r);
+    if (!frame) return res.status(400).json({ error: 'Save the frame first.' });
+    const { dpi, gdelt } = politicalInputs(frame.iso3);
+    res.json(politicalFeasibility(frame.iso3, frame.asOf, { calendar: OFFICIAL_CALENDAR, dpi, gdelt }));
+  });
   app.get('/api/reviews/:id/precedents', (req, res) => {
     const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
     if (!r) return res.status(404).json({ error: 'No policy review with that id.' });

@@ -68,6 +68,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | Penn World Table (Groningen Growth and Development Centre) | Open with attribution | Free sharing allowed | Allowed under CC BY 4.0. | Allowed (CC BY 4.0 sets no commercial limit). | Feenstra, Robert C., Robert Inklaar and Marcel P. Timmer (2015), "The Next Generation of the Penn World Table", American Economic Review, 105(10), 3150-3182. |
 | IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies (Arslanalp and Tsuda) | Permission needed for client or commercial use | Free sharing allowed | Allowed with credit under the IMF data terms; the workbook itself states no terms. | Needs permission: email copyright@imf.org. | Source: International Monetary Fund, Sovereign Debt Investor Base for Emerging Markets and Developing Economies; Arslanalp and Tsuda (2014), IMF Working Paper WP/14/39. |
 | IMF Fiscal Rules Dataset, 1985-2024 | Terms not confirmed | Sharing unclear | Not stated on the dataset page. | Not stated on the dataset page. | "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page. |
+| Database of Political Institutions 2020 (Inter-American Development Bank) | Terms not confirmed | Sharing unclear | Not stated on the publication page. | Not stated. | Database of Political Institutions 2020 (DPI2020), Inter-American Development Bank (Cruz, Keefer and Scartascini); take the full citation from the download page. |
 | DSSI and Common Framework status (World Bank, Paris Club) | Terms not confirmed | Sharing unclear | Not stated on either page. | Not stated. | World Bank, COVID-19 Debt Service Suspension Initiative; Paris Club, Common Framework. |
 
 ## Sources
@@ -718,6 +719,17 @@ From the terms:
 - **Credit:** "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page.
 - **Open question:** The page gives a citation but no terms. Read only from the workbook the user downloads and saves (G35, built 12 November 2026 on the maintainer's choice); nothing from it is shipped. Probably under the general IMF statistical data terms; confirm with copyright@imf.org with the other IMF questions.
 
+### Database of Political Institutions 2020 (Inter-American Development Bank)
+
+- **Used for:** Checks and balances, fractionalisation, polarisation and years left in the term, for Political feasibility in Policy review, from the file you put in data/local/dpi/
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No licence found. The file is not shipped.
+- **Terms read:** [DPI 2020 publication page (IDB)](https://publications.iadb.org/en/database-political-institutions-2020-dpi2020) (checked 2026-11-11)
+- **Show to others:** Not stated on the publication page.
+- **Commercial use:** Not stated.
+- **Credit:** Database of Political Institutions 2020 (DPI2020), Inter-American Development Bank (Cruz, Keefer and Scartascini); take the full citation from the download page.
+- **Open question:** The IDB page has no licence or data link. Read only from the file the user downloads and saves (G36, built 13 November 2026); nothing from it is shipped. Find the download page in a browser and read its licence before anything built from it is shared.
+
 ### DSSI and Common Framework status (World Bank, Paris Club)
 
 - **Used for:** Which countries applied to the Common Framework (and, once typed, which took part in the Debt Service Suspension Initiative), typed by hand with source and date (issuer brief, Fiscal & Debt Agent)
@@ -745,7 +757,6 @@ Read in the licence sweep of 11 November 2026, before the steps that need them a
 | IMF Monitoring of Fund Arrangements (MONA) | G34 Precedent finder | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, Monitoring of Fund Arrangements (MONA) database. |
 | IMF External Balance Assessment (EBA) | G24 External sustainability | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, External Balance Assessment. |
 | Laeven and Valencia, Systemic Banking Crises database (2018 update) | G23 Crisis early-warning; G34 Precedent finder | Terms not confirmed | Sharing unclear | Laeven, Luc and Fabian Valencia (2018), "Systemic Banking Crises Revisited", IMF Working Paper 18/206. |
-| Database of Political Institutions 2020 (Inter-American Development Bank) | G36 Political feasibility | Terms not confirmed | Sharing unclear | Database of Political Institutions 2020 (DPI2020), Inter-American Development Bank; take the full citation from the download page when it is found. |
 | ND-GAIN Country Index (University of Notre Dame) | G20 Climate and energy | Terms not confirmed | Sharing unclear | Notre Dame Global Adaptation Initiative Country Index (ND-GAIN). (Year). University of Notre Dame. |
 
 ### IMF Government Finance Statistics and Financial Soundness Indicators
@@ -808,18 +819,6 @@ From the terms:
 - **Credit:** Laeven, Luc and Fabian Valencia (2018), "Systemic Banking Crises Revisited", IMF Working Paper 18/206.
 - **Before building:** No data file or terms found on the IMF page. Whether the IMF statistical data terms cover a working paper's crisis dates is not stated. The crisis dates could be typed from the paper's tables with citation; confirm with the IMF before G23 runs.
 
-### Database of Political Institutions 2020 (Inter-American Development Bank)
-
-- **Planned for:** G36 Political feasibility
-- **Will be used for:** Checks and balances, government fractionalisation, election timing
-- **Status:** Terms not confirmed
-- **Free non-commercial sharing:** Sharing unclear. No licence found.
-- **Terms read:** [DPI 2020 publication page (IDB)](https://publications.iadb.org/en/database-political-institutions-2020-dpi2020) (checked 2026-11-11)
-- **Show to others:** Not stated on the publication page.
-- **Commercial use:** Not stated.
-- **Credit:** Database of Political Institutions 2020 (DPI2020), Inter-American Development Bank; take the full citation from the download page when it is found.
-- **Before building:** The IDB page has no licence or data link, and the DPI was not found on data.iadb.org. Find the download page in a browser and read its licence before G36.
-
 ### ND-GAIN Country Index (University of Notre Dame)
 
 - **Planned for:** G20 Climate and energy
@@ -867,4 +866,5 @@ From the terms:
 27. **Our World in Data energy file (Energy Institute Statistical Review of World Energy)** (Permission needed for client or commercial use): The energy mix shares come from the Energy Institute, whose website terms allow private, non-commercial use only. The maintainer chose (2026-11-11, personal non-commercial use) to have each computer download the file itself and never ship it. Do not show these figures to others or use them commercially without the Energy Institute's permission; ask the Energy Institute before any wider use.
 28. **IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies (Arslanalp and Tsuda)** (Permission needed for client or commercial use): The workbook (version of 6 November 2026, read 2026-11-11, given by the maintainer) and the working paper state no terms; the paper PDF is marked "Not for Redistribution", so neither is shipped with the app. The general IMF statistical data terms are taken to apply (publish with credit; commercial reuse needs permission). Confirm with copyright@imf.org with the other IMF questions.
 29. **IMF Fiscal Rules Dataset, 1985-2024** (Terms not confirmed): The page gives a citation but no terms. Read only from the workbook the user downloads and saves (G35, built 12 November 2026 on the maintainer's choice); nothing from it is shipped. Probably under the general IMF statistical data terms; confirm with copyright@imf.org with the other IMF questions.
-30. **DSSI and Common Framework status (World Bank, Paris Club)** (Terms not confirmed): Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.
+30. **Database of Political Institutions 2020 (Inter-American Development Bank)** (Terms not confirmed): The IDB page has no licence or data link. Read only from the file the user downloads and saves (G36, built 13 November 2026); nothing from it is shipped. Find the download page in a browser and read its licence before anything built from it is shared.
+31. **DSSI and Common Framework status (World Bank, Paris Club)** (Terms not confirmed): Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.

@@ -298,6 +298,16 @@ Everything the US Federal Reserve owns (mainly government bonds) and owes (mainl
 
 **Limits.** Net liquidity is a popular market shorthand, not an official Fed measure. The app shows it only when all its parts are for the same Wednesday.
 
+### Checks and balances
+
+The people and bodies that can block or delay a government decision: for example a legislature controlled by another party, a second chamber, or coalition partners. The Database of Political Institutions counts them as veto players.
+
+**Why it matters.** The more veto players, the harder a reform is to pass, but also the harder it is to reverse once passed. Fractionalisation and polarisation work the same way: a split, polarised legislature makes deals harder.
+
+**How to read it.** In Policy review, Political feasibility (beside the options) shows the count for the latest year before the As of year, with fractionalisation, polarisation and years left in the term, from the DPI file you save. 1 means no veto player beyond the executive; higher means more.
+
+**Limits.** The count is a rough guide from one coding team and is published with a delay (the 2020 edition ends in 2020). It leaves out courts, central banks, street protest and informal power.
+
 ## Government budget and debt
 
 ### Revenue and spending by level of government

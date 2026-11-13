@@ -87,6 +87,7 @@ import { licDebtReading, type LicDebtReading } from './src/utils/lowIncomeDebt';
 import { aiddataData } from './src/utils/aiddataStore';
 import { investorBaseData } from './src/utils/investorBaseStore';
 import { fiscalRulesData } from './src/utils/fiscalRulesStore';
+import { dpiData, dpiInput } from './src/utils/dpiStore';
 import { investorBaseReading } from './src/utils/investorBase';
 import { politicsFromSnapshot } from './src/utils/politicsEvents';
 import { acledReadingFor, forgetAcled } from './src/server/feeds/acled';
@@ -2100,6 +2101,7 @@ async function runConnectionCheck(trigger: CheckTrigger): Promise<ConnectionRepo
     aiddata: () => aiddataData(DATA_DIR),
     investorBase: () => investorBaseData(DATA_DIR),
     fiscalRules: () => fiscalRulesData(DATA_DIR),
+    dpi: () => dpiData(DATA_DIR),
     paidMappingsText: paidMappingsText,
     env: process.env,
     keySources: keySources(ENV_FILE_KEYS, savedSettings),
@@ -3183,6 +3185,7 @@ async function startServer() {
       aiddata: () => aiddataData(DATA_DIR),
       investorBase: () => investorBaseData(DATA_DIR),
     fiscalRules: () => fiscalRulesData(DATA_DIR),
+    dpi: () => dpiData(DATA_DIR),
       paidMappingsText: paidMappingsText,
       env,
       only: [field.checkId],
@@ -3293,7 +3296,7 @@ async function startServer() {
       res.status(500).json({ error: `Could not save the workspace file (${error?.code || error?.message || 'unknown error'}).` });
     }
   });
-  registerReviewRoutes(app, { refuseRemoteChange, signedIn, archivedSnapshot: (iso3, date) => archivedSnapshot(iso3, date), seriesFor, fetchLiveOpenDataSnapshot, reviewOptionsStep, withModelFigures, allHistories });
+  registerReviewRoutes(app, { refuseRemoteChange, signedIn, archivedSnapshot: (iso3, date) => archivedSnapshot(iso3, date), seriesFor, fetchLiveOpenDataSnapshot, reviewOptionsStep, withModelFigures, allHistories, politicalInputs: (iso3) => ({ dpi: dpiInput(DATA_DIR), gdelt: gdeltDailySeries(DATA_DIR, iso3) }) });
   // Pre-registered backtests: the tests as registered (with their hashes) and the latest verdicts.
   app.get('/api/validation', (_req, res) => {
     const v = loadValidation(VALIDATION_FILE);
@@ -5824,6 +5827,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       aiddata: () => aiddataData(DATA_DIR),
       investorBase: () => investorBaseData(DATA_DIR),
     fiscalRules: () => fiscalRulesData(DATA_DIR),
+    dpi: () => dpiData(DATA_DIR),
         paidMappingsText: paidMappingsText,
         env: process.env,
         fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltFetch(u, i) : fetch(u, i)),

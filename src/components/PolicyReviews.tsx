@@ -15,6 +15,7 @@ import { useLang, useT, useTx } from '../i18n/useLang';
 import { REPORTS } from '../i18n/messages/reports';
 import { BehaviouralCheck } from './BehaviouralCheck';
 import { PrecedentFinder } from './PrecedentFinder';
+import { PoliticalFeasibility } from './PoliticalFeasibility';
 import { ExpertReviewForm } from './ExpertReviewForm';
 
 /**
@@ -889,6 +890,14 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                 </p>
               )}
             </section>
+
+            {frame && (
+              <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="political">
+                <h4 className="ui-section-title">3b. {t('pf_title')}</h4>
+                <p className="ui-label">{t('pf_hint')}</p>
+                <PoliticalFeasibility review={r} />
+              </section>
+            )}
 
             <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="evidence">
               <div className="flex flex-wrap items-baseline justify-between gap-2">

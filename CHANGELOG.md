@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Political feasibility (G36): Policy review shows, beside the options, the next and last election
+  on file in the official calendar, checks and balances, fractionalisation, polarisation and years
+  left in the term from the Database of Political Institutions file you save in `data/local/dpi/`,
+  and protests and violence in the saved GDELT months, each cut at the As of day. The DPI's reuse
+  terms are not confirmed, so nothing from it is shipped. New Data health row `dpi`; route
+  `GET /api/reviews/:id/political`; glossary entry Checks and balances.
 - Fiscal rules check (G35): Research > History & data shows the EU, WAEMU and CEMAC treaty limits
   that bind a country, checked against the latest saved IMF debt and overall balance before the
   current year, with the room left, and the national rules (expenditure, revenue, budget balance,
