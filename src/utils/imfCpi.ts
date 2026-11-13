@@ -51,7 +51,14 @@ function nameOf(o: unknown): string {
   return '';
 }
 
-/** Reads an SDMX-JSON structure message: every dimension with its codelist. Null for another shape. */
+const clIdOf = (urn: unknown): string | undefined => (typeof urn === 'string' ? /Codelist=[^:]+:([^(]+)\(/.exec(urn)?.[1] : undefined);
+
+/**
+ * Reads an SDMX-JSON structure message: every dimension with its codelist. Null for another shape.
+ * A dimension's codelist is named on the dimension itself (localRepresentation) or, when the data
+ * structure leaves that out, on its concept (coreRepresentation); failing both, the codelist whose
+ * id is CL_ plus the dimension id is used.
+ */
 export function parseImfCpiStructure(json: unknown): ImfCpiStructure | null {
   const root = json as { data?: Record<string, unknown> } & Record<string, unknown>;
   const data = (root?.data ?? root) as Record<string, unknown>;
@@ -60,18 +67,30 @@ export function parseImfCpiStructure(json: unknown): ImfCpiStructure | null {
   const comps = dsds[0].dataStructureComponents as { dimensionList?: { dimensions?: Array<Record<string, unknown>> } } | undefined;
   const defs = [...(comps?.dimensionList?.dimensions ?? [])].sort((a, b) => Number(a.position ?? 0) - Number(b.position ?? 0));
   const lists = (data?.codelists ?? []) as Array<{ id?: string; codes?: unknown[] }>;
+  const concepts = new Map<string, string>();
+  for (const sch of (data?.conceptSchemes ?? []) as Array<{ concepts?: Array<Record<string, unknown>> }>) {
+    for (const c of sch?.concepts ?? []) {
+      const cl = clIdOf((c as { coreRepresentation?: { enumeration?: unknown } }).coreRepresentation?.enumeration);
+      if (c?.id && cl) concepts.set(String(c.id), cl);
+    }
+  }
   const dims: CpiDimension[] = [];
   for (const d of defs) {
     const id = String(d.id ?? '');
     if (!id || id === 'TIME_PERIOD') continue;
-    const urn = (d as { localRepresentation?: { enumeration?: string } }).localRepresentation?.enumeration ?? '';
-    const clId = /Codelist=[^:]+:([^(]+)\(/.exec(urn)?.[1];
-    const list = clId ? lists.find((l) => l.id === clId) : undefined;
+    const local = clIdOf((d as { localRepresentation?: { enumeration?: unknown } }).localRepresentation?.enumeration);
+    const conceptUrn = String((d as { conceptIdentity?: unknown }).conceptIdentity ?? '');
+    const conceptId = /\.([^.()]+)$/.exec(conceptUrn.replace(/\)$/, ''))?.[1] || /\)\.([^.]+)$/.exec(conceptUrn)?.[1] || id;
+    const clId = local ?? concepts.get(conceptId) ?? concepts.get(id);
+    const list = (clId ? lists.find((l) => l.id === clId) : undefined) ?? lists.find((l) => l.id === `CL_${id}`);
     const codes = (list?.codes ?? []).map((c) => ({ id: String((c as { id?: unknown }).id ?? ''), name: nameOf(c) })).filter((c) => c.id);
     dims.push({ id, codes });
   }
   return dims.length ? { dims } : null;
 }
+
+/** How many codes each dimension carried, for the reason line when nothing matched. */
+export const imfCpiCodeCounts = (s: ImfCpiStructure) => s.dims.map((d) => `${d.id} ${d.codes.length}`).join(', ');
 
 const COUNTRY = /^(COUNTRY|REF_AREA|JURISDICTION|ECONOMY)$/;
 const FREQ = /^(FREQUENCY|FREQ)$/;
@@ -152,16 +171,20 @@ export async function pullImfCpi(
       if (!structure) return { series: null, structure: null, step: { iso3, ok: false, note: r.error ? `IMF CPI structure: ${r.error}` : 'IMF CPI structure answered, but without dimensions the app could read.' } };
     }
     const k = imfCpiKey(structure, iso3);
-    if (!k.picked.length) return { series: null, structure, step: { iso3, ok: false, note: `No IMF CPI code name matched "consumer price index", "all items" or "year-over-year". Set ${IMF_CPI_ENV} in .env (dimension order: ${structure.dims.map((d) => d.id).join('.')}).` } };
     key = k.key;
-    how = `IMF CPI ${k.picked.join(', ')}`;
+    // No code name matched (for instance the structure came without its code names): ask for every
+    // monthly series of the country and pick by the names the data itself carries.
+    how = k.picked.length ? `IMF CPI ${k.picked.join(', ')}` : `IMF CPI, every monthly series of the country (no code name matched in the structure; codes read: ${imfCpiCodeCounts(structure)})`;
   }
   const r = await getJson(opts.fetchFn, imfCpiDataUrl(key), t);
   if (!r.json) return { series: null, structure, step: { iso3, ok: false, note: `${how}: ${r.error}` } };
   const all = parseImfData(r.json);
   const picked = pickImfCpiSeries(all);
   const series = picked ? imfCpiSeries(picked) : null;
-  if (!series) return { series: null, structure, step: { iso3, ok: false, note: `${how}: ${all.length ? `${all.length} series came back, none monthly, all items and year-over-year` : 'no series for this country'}.` } };
+  if (!series) {
+    const hint = override ? '' : ` Set ${IMF_CPI_ENV} in .env (dimension order: ${(structure?.dims ?? []).map((d) => d.id).join('.')}).`;
+    return { series: null, structure, step: { iso3, ok: false, note: `${how}: ${all.length ? `${all.length} series came back, none monthly, all items and year-over-year` : 'no series for this country'}.${hint}` } };
+  }
   return { series, structure, step: { iso3, ok: true, note: `${how}; series ${picked!.key}, to ${series.points[series.points.length - 1].period}` } };
 }
 

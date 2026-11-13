@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- IMF monthly consumer prices: on the 13 November run no IMF code name matched for any of the 19
+  countries. The structure reader now also finds a dimension's codelist through its concept, or by
+  the name CL_ plus the dimension; when still nothing matches, the app asks for every monthly
+  series of the country and picks the all-items, year-over-year one by the names in the data. The
+  reason line says how many codes each dimension carried. Not confirmed from the cloud:
+  `npm run check:imf` on the Mac shows what matched.
 - ILOSTAT earnings: ILOSTAT now refuses the indicator id the app used (EAR_4MTH_SEX_ECO_CUR_NB_A,
   "deprecated or invalid"). When it does, the daily run and `npm run check:data` read ILOSTAT's own
   list of indicators and use the yearly average monthly earnings id it offers (local currency
