@@ -151,6 +151,7 @@ export const TOOLS_FR: Messages<typeof TOOLS> = {
   ho_side: "Sens",
   ho_long: "Long",
   ho_short: "Court",
+  ho_fromApi: "Envoyée par {name}",
   ho_notional: "Nominal (M USD)",
   ho_duration: "Duration (années, facultatif)",
   ho_add: "Ajouter",

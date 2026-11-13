@@ -159,6 +159,7 @@ export const TOOLS_ES: Partial<Record<Keys, string>> = {
   ho_side: 'Sentido',
   ho_long: 'Comprada',
   ho_short: 'Vendida',
+  ho_fromApi: 'Enviada por {name}',
   ho_notional: 'Nominal (millones de USD)',
   ho_duration: 'Duración (años, opcional)',
   ho_add: 'Añadir',

@@ -260,6 +260,7 @@ export const HoldingsPanel: React.FC<HoldingsPanelProps> = ({ holdings, countrie
                     <td className="py-1.5 pr-3">
                       {h.instrument}
                       {idsLabel(h) && <span className="block text-[11px] font-mono text-slate-500 dark:text-slate-400 break-all">{idsLabel(h)}</span>}
+                      {h.fromName && <span className="block text-[11px] text-slate-500 dark:text-slate-400">{t('ho_fromApi', { name: h.fromName })}</span>}
                     </td>
                     <td className="py-1.5 pr-3 whitespace-nowrap">{tx(ASSET_CLASS_LABEL[h.assetClass])}</td>
                     <td className="py-1.5 pr-3">{h.side === 'LONG' ? t('ho_long') : t('ho_short')}</td>

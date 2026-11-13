@@ -162,6 +162,7 @@ export const TOOLS = defineMessages('tools', {
   ho_side: 'Side',
   ho_long: 'Long',
   ho_short: 'Short',
+  ho_fromApi: 'Sent by {name}',
   ho_notional: 'Notional (USD mm)',
   ho_duration: 'Duration (years, optional)',
   ho_add: 'Add',

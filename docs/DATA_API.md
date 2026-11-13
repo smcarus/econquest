@@ -356,3 +356,25 @@ exist, `value` is the latest outturn and `projected_to` says how far the project
 from a file you loaded has `origin: "own_file"`, badge `not_validated` and `shareable: false`. With
 sharing mode on, a value whose source does not allow passing it on is held back, with the reason.
 Your paid-subscription figures are never included.
+
+### Sending positions
+
+A token with `write:holdings` sends the positions it holds; they appear in Holdings next to the ones
+added in the app or imported from CSV (the CSV import is unchanged), marked "Sent by" and the
+token's name. They go to the workspace of the account that made the token, or the shared one when
+sign-in is off.
+
+- PUT `/api/v1/holdings` with `{ "holdings": [ ... ] }` replaces this token's positions with
+  exactly these. An empty list removes them all.
+- POST `/api/v1/holdings` adds positions; one with an `entity_id` already sent is updated (its id
+  stays the same). Send `entity_id` on every position if you will update them.
+- GET `/api/v1/holdings` lists what this token sent; DELETE `/api/v1/holdings/<id or entity_id>`
+  removes one.
+
+Each position: `country` (ISO alpha-2 or alpha-3), `notional_usd_mm` (USD millions, not zero; a
+negative number means short), and optionally `instrument`, `type` (`HC_BOND`, `LC_BOND`, `CDS`,
+`FX`, `OTHER`), `side` (`long` or `short`), `duration` (years), `isin`, `lei`, `cik`, `ticker` and
+`entity_id`, checked as described under "Naming positions". A list is all or nothing: if any
+position has a problem, nothing changes and the reply lists every problem. Up to 5,000 positions per
+call. A token never sees or changes positions added in the app or sent by another token. Each change
+is in the audit log with counts, never the positions themselves.

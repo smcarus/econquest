@@ -44,6 +44,7 @@ import { EventHub, WebhookStore, emitEvents, eventFiles } from './src/server/eve
 import { badgeChangeInputs, councilRunInput, dailyRunInputs, figureEventInputs, releaseUpcomingInputs, sanctionsChangeInputs, sanctionsCounts, signalChangeInputs, type SignalStates, watchCrossingInputs, type WatchStates } from './src/server/eventSources';
 import { registerConsoleWatchRoutes } from './src/server/routes/consoleWatches';
 import { buildCountrySnapshot } from './src/server/countrySnapshot';
+import { registerConsoleHoldingsRoutes } from './src/server/routes/consoleHoldings';
 import { loadWatchRules as loadWatchRuleFile } from './src/utils/watchRulesStore';
 import { registerConsoleEventRoutes } from './src/server/routes/consoleEvents';
 import { LEGACY_SCOPES, TOKEN_PREFIX, publicToken, scopeFor, scopeRefusal, tokenOnly, type Scope } from './src/utils/apiTokens';
@@ -2970,7 +2971,7 @@ async function startServer() {
         res.setHeader('Retry-After', String(wait));
         return res.status(429).json({ error: `Too many requests with this token. Try again in ${wait} seconds.` });
       }
-      res.locals.apiToken = { id: token.id, name: token.name, scopes: token.scopes };
+      res.locals.apiToken = { id: token.id, name: token.name, scopes: token.scopes, createdById: token.createdById };
       auditTokenUse(req, res, token, needed);
       return actorStore.run({ id: `token:${token.id}`, username: `token:${token.name}`, name: `API token "${token.name}"` }, next);
     }
@@ -3240,7 +3241,7 @@ async function startServer() {
   app.post('/api/settings/api-tokens', express.json({ limit: '10kb' }), (req, res) => {
     if (refuseRemoteChange(req, res)) return;
     const by = signedIn(res) ? accountName(signedIn(res)) : 'this computer';
-    const made = apiTokens.create({ name: req.body?.name, scopes: req.body?.scopes, createdBy: by });
+    const made = apiTokens.create({ name: req.body?.name, scopes: req.body?.scopes, createdBy: by, createdById: signedIn(res)?.id });
     if ('error' in made) return res.status(400).json({ error: made.error });
     appendAudit(AUDIT_FILES, { kind: 'api', summary: `Made the API token "${made.token.name}" (${made.token.scopes.join(', ')})`, detail: { token: made.token.id, scopes: made.token.scopes } });
     res.json({ ...tokensReply(), created: publicToken(made.token), secret: made.secret });
@@ -3287,6 +3288,16 @@ async function startServer() {
   const consoleUrlProblem = (u: string) => outboundUrlProblem(u, PORT);
   const consoleStream = registerConsoleEventRoutes(app, { files: EVENT_FILES, webhooks: consoleWebhooks, urlProblem: consoleUrlProblem });
   registerConsoleWatchRoutes(app, { rulesFile: WATCH_RULES_FILE, readStates: readWatchStates });
+  registerConsoleHoldingsRoutes(app, {
+    // The account that made the token; a token made with sign-in off (or by a removed account) uses
+    // the first admin's workspace when accounts exist, else the shared one.
+    workspaceForToken: (t) => {
+      const accounts = auth.list();
+      const maker = t.createdById ? accounts.find((a) => a.id === t.createdById) : undefined;
+      const firstAdmin = accounts.filter((a) => a.role === 'admin').sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
+      return workspaceFileForAccount(maker ?? firstAdmin ?? null);
+    },
+  });
   const consoleHub = new EventHub({
     files: EVENT_FILES,
     webhooks: consoleWebhooks,
