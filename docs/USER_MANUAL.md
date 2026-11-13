@@ -852,6 +852,12 @@ becomes the problem). Six steps, in order:
    memo is assembled from the steps above with no AI, cites every figure by number, and opens with
    "Research, not validated advice" until the signals behind it pass their backtests. Mark it Reviewed
    and Approved (with your name and the memo's hash); download Markdown or PDF.
+   **One-page brief (PDF)** (G39) turns the memo into a single page for readers who are not
+   economists: the question and goal, the option chosen and why, the figures it rests on with their
+   sources (a published low and high end, such as the fiscal multiplier, shown as one range), what to
+   watch and when to look again. The fixed wording follows the language you are using (English,
+   Spanish, French or Portuguese); text written in the review is shown as it was saved. The text gets
+   smaller to fit one page; if it still does not fit, the end is cut and the page says so. No AI.
 6. **Track outcomes.** On the review date, *Check outcomes* sets the latest saved figures beside the
    ones the review started from and says whether the goal indicator moved the right way. *Review
    again* starts a new review with the same frame on today's data, linked to this one.

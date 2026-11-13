@@ -319,6 +319,8 @@ export const REPORTS_ES: Partial<Record<Keys, string>> = {
   pr_evidenceFirst: 'Termine antes la evidencia.',
   pr_oodMemo: 'Desactualizado: un paso anterior cambió después de redactar el memorando. Vuelva a redactarlo.',
   pr_memoEnglish: 'El memorando se redacta en inglés, para que se lea igual para todos los que lo firman.',
+  pr_brief: "Nota de una página (PDF)",
+  pr_briefTitle: "Un resumen de una página para lectores que no son economistas: la pregunta, la opción elegida, sus cifras con fuentes y qué vigilar, en el idioma que usted está usando.",
   pr_signoffNote: ' · la firma registra esta huella; un memorando redactado de nuevo aparece como "Cambiado tras la firma".',
   pr_checking: 'Comprobando…',
   pr_checkNow: 'Comprobar ahora (fecha de revisión {date})',

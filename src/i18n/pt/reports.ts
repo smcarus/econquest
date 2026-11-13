@@ -313,6 +313,8 @@ export const REPORTS_PT: Messages<typeof REPORTS> = {
   pr_evidenceFirst: "Termine as Evidências primeiro.",
   pr_oodMemo: "Desatualizado: uma etapa anterior mudou depois que o memorando foi escrito. Escreva-o novamente.",
   pr_memoEnglish: "O memorando é escrito em inglês, para que diga o mesmo a todos que o aprovam.",
+  pr_brief: "Nota de uma página (PDF)",
+  pr_briefTitle: "Um resumo de uma página para leitores que não são economistas: a pergunta, a opção escolhida, seus números com fontes e o que acompanhar, no idioma que você está usando.",
   pr_signoffNote: " · a aprovação registra este hash; um memorando escrito novamente mostra \"Changed after sign-off\".",
   pr_checking: "Verificando…",
   pr_checkNow: "Verificar agora (data de revisão {date})",

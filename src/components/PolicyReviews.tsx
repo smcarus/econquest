@@ -953,6 +953,21 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                     >
                       <Download className="w-3.5 h-3.5" /> PDF
                     </button>
+                    <button
+                      type="button"
+                      className="ui-btn"
+                      data-review-brief="true"
+                      title={t('pr_briefTitle')}
+                      onClick={() =>
+                        run('brief', async () => {
+                          const [{ plainBrief, plainBriefFileName, asBriefLang }, { plainBriefPdf }] = await Promise.all([import('../utils/plainBrief'), import('../utils/plainBriefPdf')]);
+                          const pdf = await plainBriefPdf(plainBrief(r, memo.inputs, asBriefLang(lang)), r.steps.memo!.savedAt, r.steps.memo!.hash);
+                          saveFile(plainBriefFileName(r.title, asBriefLang(lang)), pdf.bytes, 'application/pdf');
+                        })
+                      }
+                    >
+                      <Download className="w-3.5 h-3.5" /> {t('pr_brief')}
+                    </button>
                   </div>
                 )}
               </div>

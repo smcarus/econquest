@@ -315,6 +315,8 @@ export const REPORTS_FR: Messages<typeof REPORTS> = {
   pr_evidenceFirst: "Terminez d'abord les Éléments probants.",
   pr_oodMemo: "Périmé : une étape antérieure a changé après la rédaction de la note. Rédigez-la de nouveau.",
   pr_memoEnglish: "La note est rédigée en anglais, afin qu'elle se lise de la même façon pour tous ceux qui la valident.",
+  pr_brief: "Note d’une page (PDF)",
+  pr_briefTitle: "Un résumé d’une page pour les lecteurs qui ne sont pas économistes : la question, l’option choisie, ses chiffres avec leurs sources et ce qu’il faut surveiller, dans la langue que vous utilisez.",
   pr_signoffNote: " · la validation enregistre cette empreinte ; une note rédigée de nouveau indique « Changed after sign-off ».",
   pr_checking: "Vérification…",
   pr_checkNow: "Vérifier maintenant (date de revue {date})",

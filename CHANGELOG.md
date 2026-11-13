@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- One-page policy brief (G39): Policy review's memo step has a One-page brief (PDF) button: the
+  question, the chosen option, the figures it rests on with sources and ranges, and what to watch,
+  on one page for readers who are not economists, with fixed wording in English, Spanish, French or
+  Portuguese. Built from the saved steps with no AI.
 - Trade-off chart (G37): under Debt sustainability, the costed options and any what-if results
   kept from Council chat (new button Keep for the trade-off chart) on two axes you pick, such as
   debt at the horizon against output lost. Each item is a line from the low to the high published
