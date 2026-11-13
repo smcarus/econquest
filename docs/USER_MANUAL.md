@@ -870,6 +870,15 @@ becomes the problem). Six steps, in order:
    watch and when to look again. The fixed wording follows the language you are using (English,
    Spanish, French or Portuguese); text written in the review is shown as it was saved. The text gets
    smaller to fit one page; if it still does not fit, the end is cut and the page says so. No AI.
+   **Policy review watch** (PC1). Give a watched figure a trigger the app can read, such as "above 8",
+   "below 3", "target 4", "rises" or "falls" (or the same in Spanish, French or Portuguese), and the
+   start page (Today) checks it against the latest saved figures for the country each time it opens.
+   It lists each watched figure as Crossed or Not crossed, with the figure now and when the review
+   started, and *Open review* takes you to the review. "Rises" and "falls" compare with the figure the
+   review started from; "target" counts as met when the figure reaches it in the goal's direction.
+   Other wording stays in the memo but is not checked, and the panel says so. A crossed trigger is a
+   reason to look again before the review date, not a verdict. The panel shows nothing until a memo
+   has a trigger.
 6. **Track outcomes.** On the review date, *Check outcomes* sets the latest saved figures beside the
    ones the review started from and says whether the goal indicator moved the right way. *Review
    again* starts a new review with the same frame on today's data, linked to this one.

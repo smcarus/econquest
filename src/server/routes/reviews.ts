@@ -19,6 +19,7 @@ import { loadSignOffs, recordFor, reportHash, saveSignOff, signOffView, takeStep
 import { buildDiagnosis, type Diagnosis } from '../../utils/reviewDiagnosis';
 import { buildMemo, parseMemoInputs, type MemoStep } from '../../utils/reviewMemo';
 import { buildOutcomes } from '../../utils/reviewOutcomes';
+import { reviewWatch } from '../../utils/reviewWatch';
 import { cutAt, EPISODE_METHOD, EVIDENCE_TEMPLATE_VERSION, isResearchOnly, packRequests, pastEpisodes, perOption, runAnalysis, signalsFor, type EvidenceStep } from '../../utils/reviewEvidence';
 import { OPTIONS_INSTRUCTION, OPTIONS_TEMPLATE_VERSION, optionsPrompt, parseUserOptions, unassessedOptions, type OptionsStep } from '../../utils/reviewOptions';
 import { frameOf, parseFrame, summarise as summariseReview, stepStates, REVIEW_TEMPLATE_VERSION } from '../../utils/policyReview';
@@ -158,6 +159,29 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
     const all = rows.flatMap((x) => x.checks);
     const tally = tallyChecks(all);
     res.json({ rows, tally, sentence: tallySentence(tally), caveat: OUTCOME_CHECK_CAVEAT, file: 'data/local/reviews.json' });
+  });
+  // Watch alerts from policy reviews (PC1, src/utils/reviewWatch.ts): each memo's figures to watch and their
+  // triggers, checked against the latest saved pull for the review's country. Read only; nothing is saved.
+  app.get('/api/reviews/watch', (_req, res) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const latest = new Map<string, Diagnosis | null>();
+    const now = (iso3: string): Diagnosis | null => {
+      if (!latest.has(iso3)) {
+        const past = archivedSnapshot(iso3, today);
+        const pulledAt = past ? new Date(past.pulledAt).toISOString() : '';
+        latest.set(iso3, past ? withModelFigures(buildDiagnosis(figureRows({ ...past.snapshot, fetchedAt: pulledAt }), { iso3, asOf: today, pullDate: past.date, pulledAt, incomplete: past.incomplete })) : null);
+      }
+      return latest.get(iso3)!;
+    };
+    const reviews = loadReviews(REVIEW_FILE).reviews.flatMap((r) => {
+      const frame = frameOf(r);
+      if (!frame || stepStates(r).memo !== 'done') return [];
+      const memo = r.steps.memo!.content as MemoStep;
+      if (!memo.inputs.watch.some((w) => w.trigger)) return [];
+      const w = reviewWatch(frame, r.steps.diagnose!.content as Diagnosis, memo, now(frame.iso3));
+      return w.items.length ? [{ id: r.id, title: r.title, iso3: frame.iso3, ...w }] : [];
+    });
+    res.json({ checkedOn: today, reviews });
   });
   // Policy reviews: a guided case file per country and problem (src/utils/policyReview.ts).
   app.get('/api/reviews', (_req, res) => {

@@ -7,6 +7,8 @@ export interface ReviewPrefill {
   iso3?: string;
   problem?: string;
   previousId?: string;
+  /** Open this saved review instead of starting a new one (Policy review watch on the start page). */
+  openId?: string;
 }
 
 export const START_REVIEW_EVENT = 'econquest:start-policy-review';

@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Policy review watch (PC1): the start page checks the triggers in each policy review memo's "what
+  to watch" list ("above 8", "below 3", "target 4", "rises", "falls", also in Spanish, French and
+  Portuguese) against the latest saved figures for the country, lists each as Crossed or Not crossed,
+  and opens the review. Other wording is kept but not checked. The memo form says which wordings are
+  read. Route `GET /api/reviews/watch` (read only).
 - Natural disasters (PA6): Research > History & data shows floods, storms, droughts, earthquakes and
   other natural disasters since 2000 from the EM-DAT public table you download with your own EM-DAT
   account and save in data/local/emdat/ (EM-DAT's terms do not allow passing it on, so nothing is

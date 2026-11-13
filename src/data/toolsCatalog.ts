@@ -125,6 +125,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'today', anchor: 'tool-calendar' },
   },
   {
+    id: 'review_watch',
+    category: 'monitor',
+    title: "Policy review watch",
+    what: "The figures each policy review memo says to watch, with triggers such as \"above 8\" or \"rises\" checked against the latest saved figures for the country; crossed triggers first, each with a link to open the review.",
+    sources: "Your policy reviews; the latest saved pull for each country",
+    target: { area: 'today', anchor: 'tool-review-watch' },
+  },
+  {
     id: 'economist_brief',
     category: 'country',
     title: 'Country economist brief',
