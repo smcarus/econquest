@@ -261,6 +261,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-fiscal-rules' },
   },
   {
+    id: 'remittances',
+    category: 'history',
+    title: 'Remittances',
+    what: 'Money people working abroad send home: the latest World Bank year in US dollars and % of GDP, beside exports, foreign direct investment and aid in the same year, how it moved in years exports fell, and the cost of sending US$200 against the UN goal of below 3%.',
+    sources: 'World Bank WDI (IMF balance of payments, OECD DAC, Remittance Prices Worldwide)',
+    target: { area: 'country', tab: 'history', anchor: 'tool-remittances' },
+  },
+  {
     id: 'policy_incidence',
     category: 'history',
     title: 'Who pays for a policy',

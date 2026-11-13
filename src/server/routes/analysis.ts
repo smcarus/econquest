@@ -35,6 +35,7 @@ import { BIS_ISO2 } from '../../utils/bisDebtSecurities';
 import { vintageLabel, weoVintageReply, WEO_VINTAGE_CODES } from '../../utils/weoVintages';
 import { fetchWithTimeout } from '../http';
 import { OFFICIAL_FIGURES, officialSeries, type OfficialHistoryFile } from '../../utils/officialHistory';
+import { remittanceProfile, remitSentence, REMIT_IDS } from '../../utils/remittances';
 import { type OutputGapResult } from '../../utils/outputGap';
 import { dsaSentence, type DsaOutcome } from '../../utils/debtSustainability';
 import { parseAsOfDate } from '../../utils/asOf';
@@ -421,6 +422,20 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const r = fiscalRulesCheck(iso3, new Date().getUTCFullYear(), { debt_gdp: pick('debt_gdp'), overall_balance: pick('overall_balance') }, imf);
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     res.json({ ...r, sentence: frSentence(r, name), historySaved: Boolean(file) });
+  });
+  // Remittances (PA1, src/utils/remittances.ts): saved World Bank history only.
+  app.get('/api/remittances/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    const pick = (id: string): YearValue[] | undefined => {
+      if (!file) return undefined;
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
+    };
+    const p = remittanceProfile(Object.fromEntries(REMIT_IDS.map((id) => [id, pick(id)])), new Date().getUTCFullYear(), Boolean(file));
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...p, sentence: remitSentence(p, name) });
   });
   // Who pays for a policy (src/utils/policyIncidence.ts): the saved context; the incidence itself is worked out in the browser on shares the user types.
   app.get('/api/policy-incidence/:iso3', async (req, res) => {
