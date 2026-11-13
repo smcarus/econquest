@@ -1,6 +1,6 @@
 # Roadmap
 
-What is planned for EconQuest, in the order it will be built. Last updated 12 November 2026.
+What is planned for EconQuest, in the order it will be built. Last updated 13 November 2026.
 
 ## How the work is done
 
@@ -14,7 +14,7 @@ The same rules hold for every change:
 - **Only real figures.** A new source adds figures only from its own published data; anything it
   cannot supply reads Missing, with the reason.
 - **Each new source** comes with tests on saved replies (never the live service), a Data health row,
-  a licence row, plain-language help at each help level, and its words in English, Spanish and French.
+  a licence row, plain-language help at each help level, and its words in English, Spanish, French and Portuguese.
 - **New data is fetched by the daily download**, not when a page opens, so no page waits on a website.
 - **New screens load only when opened**, and each language downloads only when picked, so the app
   stays within its size limits (465 KB compressed at start-up, 7.5 MB in all).
@@ -23,7 +23,8 @@ The same rules hold for every change:
 
 | Area | What was added |
 | --- | --- |
-| Languages | The whole app in Spanish (formal *usted*) and French (formal *vous*), each downloaded only when picked |
+| Languages | The whole app in Spanish (formal *usted*), French (formal *vous*) and Brazilian Portuguese (*você*), each downloaded only when picked; Arabic and Swahili planned, not started |
+| Documentation | README and walk-through guide with screenshots in English, Spanish, French and Portuguese; recommended AI models, settings and measured download and disk sizes |
 | Researcher tools | Opt-in 14B referee for smaller computers; a small gap model you fill in yourself, with a council link; the data API with R, Python and Stata helpers; register and run your own tests, with their own Holm correction |
 | Your own data | Load your own CSV series and use them across the app |
 | Fiscal what-ifs | Spending multipliers by type, defence and spending by purpose, OECD and European Commission budget elasticities, an editable what-if card |
@@ -175,4 +176,4 @@ also tidies how the main app stores data and calls feeds.
 - Wider statistics tools (more than two variables, panels).
 - Bilateral and current tariff rates (WITS, WTO).
 - A dated data snapshot with a DOI, to be decided at the public release.
-- A review of the Spanish and French translations by native speakers.
+- A review of the Spanish, French and Portuguese translations by native speakers.

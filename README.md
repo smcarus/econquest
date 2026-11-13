@@ -1,15 +1,45 @@
 # EconQuest Sovereign Council Terminal
 
-EconQuest is a free research terminal for understanding countries' economies, their governments'
-finances and the risks around them. It gathers figures from free public sources (the IMF, the World
-Bank, the Bank for International Settlements, central banks, statistics offices and others), shows
-each one with where it came from and when, and lets you ask a council of specialist AI agents
-questions about the countries you follow. Every answer is built only from those figures.
+**English** · [Español](./README.es.md) · [Français](./README.fr.md) · [Português](./README.pt.md)
+
+EconQuest is a free, open-source research terminal for understanding countries' economies, their
+governments' finances and the risks around them. It gathers figures from free public sources (the
+IMF, the World Bank, the Bank for International Settlements, central banks, statistics offices and
+others), shows each one with where it came from and when, and lets you put questions to a council of
+specialist AI agents that answer only from those figures.
 
 It runs on your own computer. There is no EconQuest website to sign up to and no account with us:
-your keys, your saved research and the questions you ask stay with you.
+your keys, your saved research and the questions you ask stay with you. The whole app is in
+**English, Spanish, French and Brazilian Portuguese**.
 
-The whole app is in **English, Spanish and French**.
+![Research page for Brazil: a plain brief of the economy, with each figure's source, and Missing where no source answered](docs/images/04-research-summary.png)
+
+*Research > One country, Summary. Each figure names its source and date; a figure no source supplied
+reads Missing, with the reason.*
+
+This is research and teaching software, not investment advice.
+
+## Contents
+
+- [Why it exists](#why-it-exists)
+- [Free, open and independent](#free-open-and-independent)
+- [The one rule: only real figures](#the-one-rule-only-real-figures)
+- [What you can do with it](#what-you-can-do-with-it)
+- [Walk-through with screenshots](#walk-through-with-screenshots)
+- [Quick start](#quick-start)
+- [System requirements and sizes](#system-requirements-and-sizes)
+- [AI models: which to use, sizes and settings](#ai-models-which-to-use-sizes-and-settings)
+- [Languages](#languages)
+- [Quests: crowdsourcing answers to economic questions](#quests-crowdsourcing-answers-to-economic-questions)
+- [Where the data comes from](#where-the-data-comes-from)
+- [How you can check it](#how-you-can-check-it)
+- [Commands](#commands)
+- [Roadmap](#roadmap)
+- [Documentation](#documentation)
+- [For developers](#for-developers)
+- [Licence](#licence)
+
+---
 
 ## Why it exists
 
@@ -43,8 +73,6 @@ economy and why.
   [github.com/e-conquest/econquest](https://github.com/e-conquest/econquest), with the ready-made app at
   `ghcr.io/e-conquest/econquest`.
 
-This is research and teaching software, not investment advice.
-
 ---
 
 ## The one rule: only real figures
@@ -62,97 +90,281 @@ in downloads or shared copies.
 
 ## What you can do with it
 
-### Ask the council
+| Task | Where | What you get |
+| --- | --- | --- |
+| Ask a question in plain words | **Workspace** (Council chat) | Specialist agents answer from the app's figures, each naming its source; with an AI model, a summary agent writes a short brief that may quote only their figures, and a number check flags any figure it cannot trace |
+| Study one country | **Research > One country** | Summary, Markets & signals, History & data and Sources: charts going back years, nowcasts and forecasts with ranges, output gap, debt sustainability, reserve adequacy, policy rules, crisis early-warning, yield curve, inflation drivers, growth accounting, IMF forecasts by edition, and "as of" views of what was known on a past day |
+| Compare countries | **Research > Compare countries** | Your watchlist side by side (the 19 G20 member countries to start with), story leads and where market prices and the data disagree |
+| Follow your holdings | **Research > My holdings** | A list of bonds or positions you load, against the risks and signals |
+| Test a policy choice | **Reports > New policy review** | A step-by-step case file: frame the problem, diagnose, rank options, check the evidence and precedents, write a recommendation memo and a one-page brief for non-economists, then track what happened |
+| Try a fiscal what-if | **History & data**, or from Council chat | Change government spending or taxes and see the likely effect on growth and debt, using published multipliers and budget elasticities, with a range |
+| Write a report | **Reports** | Country notes, issuer notes, debt sustainability assessments, portfolio and client reviews and council briefs, as Markdown or PDF with sources and dates |
+| Learn as you go | Header buttons, **Menu > User manual**, **Menu > Worked examples** | Three help levels, a plain-language glossary, four worked case studies, teaching episodes and exam mode |
+| Bring your own data and tests | **Menu > Your data**, **Menu > Models & validation** | Load your own CSV series; register your own signal or model test under the same strict rules as the app's own |
+| Use the figures in R, Python or Stata | [docs/DATA_API.md](./docs/DATA_API.md) | The same series, panels and tables the screens show, with source and date on every value |
 
-Council chat is the heart of the app. Type a question in plain words, such as "Is Brazil's debt
-sustainable?" or "Who is most exposed to a closure of the Strait of Hormuz?". The agents that cover
-the question answer from the app's figures, each naming its source: Central Bank, Fiscal & Debt,
-Politics & Events, Relative Value, FX (currencies), Global Spillover, Calendar, Timing and
-Behavioural Finance, plus a
-Document agent that reads policy papers you upload. A summary agent then writes a short brief that may
-quote only their figures, and a number check flags any figure it cannot trace back to a source.
+**Council chat** is the heart of the app. The agents are Central Bank, Fiscal & Debt, Politics &
+Events, Relative Value, FX (currencies), Global Spillover, Calendar, Timing and Behavioural Finance,
+plus a Document agent that reads policy papers you upload. **Run the full council** sends one country
+to nine specialist agents on three desks (geopolitics, sovereign credit and the wider economy); they
+debate, and the app stops for your approval before writing the final report. A larger AI model acts as
+the **referee**, judging whether each answer sticks to the figures ([AI models](#ai-models-which-to-use-sizes-and-settings)).
 
-For a deeper look, **Run the full council** sends one country to nine specialist agents on three
-desks (geopolitics, sovereign credit and the wider economy). They debate, and the app stops for your
-approval before writing the final report.
+**Every figure, chart and test works without any AI model.** The AI is needed only for the chat
+summary, debates and plain-language explanations, and each answer it writes is labelled as AI-written.
 
-A separate, larger AI model acts as the **referee**, judging whether each answer sticks to the
-figures. By default the referee is a 32-billion-parameter model; people with smaller computers can opt
-in to a 14-billion one under Menu > Settings > AI model, and every answer it judges is then labelled
-"Small referee". Smaller models are never used as a full referee.
+---
 
-The AI can run on your own computer through Ollama (free, nothing leaves your machine) or through a
-Google Gemini key, or a local server such as LM Studio. **Every figure, chart and test works without
-any AI model**; the AI is only needed for the chat, summaries, debates and explanations. Each answer
-is labelled as AI-written.
+## Walk-through with screenshots
 
-### Study one country, or many side by side
+The full walk-through, with numbered steps for each task, is in **[docs/GUIDE.md](./docs/GUIDE.md)**
+(also in [Spanish](./docs/GUIDE.es.md), [French](./docs/GUIDE.fr.md) and [Portuguese](./docs/GUIDE.pt.md)).
+It covers: the first start, asking the council, studying a country, comparing countries, writing a
+policy review and a report, choosing an AI model, the tools and data checks, language and help levels,
+using it on a phone, and trying Quests.
 
-**Research** has three views: **One country**, **Compare countries** (your watchlist side by side) and
-**My holdings** (a list of bonds or positions you load). Each has the same four sections:
+| | |
+| --- | --- |
+| ![Council chat with the Agents panel open](docs/images/02-council-answer.png) **Ask the council.** Type a question or pick an example; the Agents panel shows which agents answered and why. | ![History & data: policy rate chart for Brazil with its source and download buttons](docs/images/06-history.png) **Read the history.** Every chart says what it measures, whose figure it is and how to read it. |
+| ![Compare countries: story leads for the G20 watchlist](docs/images/10-compare.png) **Compare countries.** Story leads and where markets and the data disagree. | ![New policy review form](docs/images/12-policy-review.png) **Review a policy.** Frame a problem and work it through to a memo. |
+| ![Settings > AI model with Ollama selected and the referee model fields](docs/images/13-settings-ai.png) **Choose an AI model.** Fast model for the desks, large model for the referee. | ![Research page in Spanish](docs/images/17-research-es.png) **Switch language.** The EN / ES / FR / PT button in the header. |
 
-- **Summary**: a plain brief of where the economy stands, what moved, and where market prices and
-  the data disagree.
-- **Markets & signals**: bond spreads, currencies, prediction-market odds (Kalshi and Polymarket) and
-  the app's tested signals, each with its test result.
-- **History & data**: charts going back years, "as of" views of what was known on a past date, and
-  the research panels described below. Each series says what it measures and whose figure it is
-  (for example general or central government), whether it is seasonally adjusted, real or nominal,
-  its base year and its currency; the same labels go into every download.
-- **Sources**: which sources answered, when, and why any figure is missing.
+The screenshots were taken on 13 November 2026 from a local build of the main branch, replaying feed
+replies recorded on 5 November 2026 from the sources whose terms allow passing data on. That is why
+many figures read Missing in them; on a computer that reaches the feeds, more fill in.
 
-The watchlist starts with the 19 member countries of the G20, and you can add any country.
+---
 
-### Look ahead and test policy choices
+## Quick start
 
-On each country's **History & data**:
+**New to this?** [docs/INSTALL.md](docs/INSTALL.md) is a plain-language, step-by-step guide: install
+Docker Desktop, download one file, and run the ready-made app. No building and no programming needed.
 
-- **Nowcasts and forecasts** of growth and inflation, each with its out-of-sample test result and a
-  range (50, 70 and 90% bands) that says how far it could be off. A forecast that failed its test is
-  not drawn by default. Where no sound range exists, such as for IMF projections, the app says so.
-- **Output gap**: how far the economy is running above or below its normal capacity.
-- **Debt sustainability**: whether government debt is on a stable path, with fan charts showing the
-  range of likely outcomes, gross financing needs, and the fiscal reaction test (does the government
-  tighten when debt rises?).
-- **Reserve adequacy, policy rules and inflation after rate changes**: whether a central bank has
-  enough foreign reserves, how its rate compares with common rules, and what past rate moves did.
-- **Fiscal what-ifs**: change government spending or taxes and see the likely effect on growth and
-  debt, using published spending multipliers by type of spending (such as defence and public
-  investment), each government's spending broken down by purpose (the UN's COFOG categories), and the
-  OECD's and European Commission's published budget elasticities where they exist. The what-if card can also be opened from Council chat.
-- **A small gap model** you fill in yourself: four plain equations for the output gap, inflation, the
-  policy rate and the exchange rate. Every number starts blank and is typed in by you; a "Fill starting
-  point from latest data" button copies today's figures with their sources. You can ask the council to
-  explain your run, labelled "Your model".
-- **IMF forecasts by edition**, so you can see how the IMF's view of a country changed over time, and
-  US data as first published.
+**Ready-made app** (Docker Desktop running):
 
-### Write reports
+```sh
+mkdir econquest && cd econquest
+curl -fsSLO https://raw.githubusercontent.com/e-conquest/econquest/main/deploy/quick-start/compose.yml
+docker compose up -d          # then open http://localhost:3737
+```
 
-**Reports** builds country notes, issuer notes, debt sustainability assessments, portfolio and client
-reviews, policy reviews and council briefs, downloadable as Markdown or PDF with sources and dates.
+**Modest laptop** (4 GB of memory or little disk): put `LIGHT_MODE=on` in a `.env` file next to
+`compose.yml` before starting. Light mode runs no AI model on your computer (the council uses your own
+Gemini key, or stays off), leaves out the 3.4 GB of GDELT news files, and downloads only your
+watchlist countries ([INSTALL.md, On a modest laptop](docs/INSTALL.md#on-a-modest-laptop)). From the
+code: `scripts/start-mac.sh --light`, or `scripts\start-windows-light.bat` on Windows.
 
-### Learn as you go
+**From the code** (Node.js 20.19 or later, or 22.12 or later):
 
-- **Help levels**: the "?" button in the header switches between **Help off** (figures only, without forecast ranges), **Key
-  help** (the default: explains the charts, the main figures and what each reading means in real life)
-  and **Full help** (explains every figure and term, and why each missing figure is missing).
-- **Glossary**: every economic, market and testing term in plain words ([docs/GLOSSARY.md](./docs/GLOSSARY.md)).
-- **Teaching episodes, exercises and exam mode** for classes. In exam mode no AI step runs.
-- **Quests** (open questions anyone can answer and check) are built but **switched off** and greyed out
-  in the Menu until they have been checked. They turn on only with `QUESTS_ENABLED=on`
-  ([docs/QUESTS.md](./docs/QUESTS.md)).
+```sh
+git clone https://github.com/e-conquest/econquest.git
+cd econquest
+npm install
+npm run go           # update, install, start the app and begin the daily data download
+```
 
-### Bring your own data and tests
+`npm run go` pulls the latest code, installs packages, downloads the AI models if you use Ollama,
+rebuilds and starts the Docker app on http://localhost:3737 and the development app on
+http://localhost:3000, and begins the daily data download in the background. On a Mac you can
+double-click `econquest-mac.command` instead (Windows: `scripts/start-windows.bat`).
 
-- **Your data** (Menu > Your data): load your own series from a CSV file. It is checked line by line,
-  kept exactly as given, labelled "Your file" wherever it shows, and fingerprinted so any change is visible.
-- **Your tests** (Menu > Models & validation > Your tests): register your own trading-signal or model
-  test under the same strict rules as the app's own (below). Once saved it is frozen and cannot be
-  edited; it then runs on free histories and its verdict is recorded for good.
-- **Data API**: R, Python and Stata scripts can read the same series, panels and tables the screens
-  show, with source and date on every value ([docs/DATA_API.md](./docs/DATA_API.md), helper files in
-  `scripts/data-api/`, nothing extra to install).
+To run it on an always-on Linux box or NAS, see [docs/HOME_SERVER.md](docs/HOME_SERVER.md); on a
+Kubernetes cluster, the Helm chart in `deploy/helm/econquest/` ([docs/KUBERNETES.md](docs/KUBERNETES.md)).
+
+### First run
+
+A new install shows dashes until the first download finishes. The **Briefing** panel on Workspace
+lists what is left to set up:
+
+1. **See which sources answer.** Menu > Tools > Data connections (or `npm run check:data`) lists every
+   source as connected (with a figure it returned), needs setup, off, or why it failed.
+2. **Add a free FRED key** in Menu > Settings > Free data keys (⌘, or Ctrl+,). It fills official
+   10-year yields for several countries.
+3. **Choose an AI model** in Menu > Settings > AI model ([AI models](#ai-models-which-to-use-sizes-and-settings)).
+4. **Pick your countries** with Edit on the watchlist card.
+5. **Pick your language and help level** with the buttons in the header.
+
+Keys saved in Settings go to `data/local/settings.json` (never in git, never in backups or the audit
+log) and take effect without a restart.
+
+---
+
+## System requirements and sizes
+
+| Part | Minimum | Recommended |
+| --- | --- | --- |
+| Operating system | macOS (three newest versions), Windows 10 or 11 (64-bit, WSL 2 for Docker Desktop), or 64-bit Linux | The same; Apple Silicon and Intel or AMD all work |
+| Memory | 8 GB (4 GB in light mode, a target not yet measured) | 16 GB; 32 GB to run the large AI referee on the same computer |
+| Free disk | 5 GB | 10 GB, plus room for AI models (below) |
+| Internet | Any connection | One without a small monthly data cap |
+| Node.js (only to run from the code) | 20.19 or later, or 22.12 or later | 22 |
+
+### Download sizes
+
+Each figure says how it was found. "Measured" means measured on the date given; "estimate" gives its
+method. Measurements from 13 November 2026 are of the main branch through pull request #496.
+
+| What | Size | How the figure was found |
+| --- | --- | --- |
+| Source code (`git clone`) | 59 MB (28 MB of files and 31 MB of history) | Measured, fresh clone, 13 November 2026 |
+| Ready-made app (Docker image) | About 170 MB to download; 795 MB once unpacked | Measured: image built from the repository's Dockerfile on 13 November 2026 (795 MB unpacked, 169 MB compressed with gzip). The download from the registry is compressed the same way, so expect a similar size |
+| Installed packages, from the code (`npm install`) | 465 MB | Measured, 13 November 2026 |
+| Built web app (`npm run build`) | 6.5 MB in all; 409 KB compressed at start-up | Measured with `npm run size:check`, 13 November 2026 (limits 465 KB and 7.5 MB) |
+| Each extra language (Spanish, French, Portuguese) | About 0.65 MB (about 210 KB compressed), downloaded only when picked | Measured from the build, 13 November 2026 |
+| First full data download | About 3.6 to 3.8 GB, mostly GDELT news files | Estimate: GDELT about 3.4 GB for 8 weeks (from GDELT's own file sizes), past IMF forecast editions about 100 MB (measured), the rest as in the daily run |
+| First data download in light mode | Target: well under 1 GB | Not yet measured; owed from a light-mode run on the developer's Mac before the public release |
+| Daily data download | Roughly 150 to 200 MB (about 4.5 to 6 GB a month) | Estimate from recorded replies and file sizes ([INSTALL.md](docs/INSTALL.md#how-much-data-it-downloads)). The daily run now records what it downloads; the measured figure from a week of runs (`npm run go -- status` on the developer's Mac) will replace this estimate |
+| AI models through Ollama (optional) | qwen2.5:7b 4.7 GB; qwen2.5:14b 9 GB; qwen2.5:32b 20 GB | Model sizes published by Ollama |
+| GDELT long history (optional, `npm run gdelt:daily`) | About 25 GB from 2016 (35 GB from 1979); about 5 MB kept on disk | GDELT's published file sizes; `-- --estimate` gives the exact figure |
+
+### Space used once running
+
+| Set-up | About how much disk | Made up of |
+| --- | --- | --- |
+| Light mode, no local AI | Target 2 GB | Not yet measured, as above |
+| Ready-made app, no local AI | About 1 GB, growing about 40 MB a year | App image 0.8 GB (measured) plus the `data/` folder, about 150 MB after the first few days (measured on the developer's Mac, 9 November 2026, 22 countries) |
+| Ready-made app with a 14B referee | About 15 GB | The above plus qwen2.5:7b and qwen2.5:14b (4.7 + 9 GB) |
+| Ready-made app with the full local AI | About 26 GB | The above plus qwen2.5:7b and qwen2.5:32b (4.7 + 20 GB) |
+| From the code instead of the image | Add about 0.5 GB | Source and history 59 MB, packages 465 MB, build 7 MB (measured) |
+
+Docker Desktop itself needs a few GB more (check docker.com). Every past IMF forecast edition since
+2007 would add roughly 300 MB (estimate: about 38 editions at an average of 7 MB). To see the real
+size on your own computer, run `du -sh data data/*` in the EconQuest folder, or open Menu > Offline
+data. [docs/INSTALL.md](docs/INSTALL.md#what-you-need) has the folder-by-folder tables.
+
+---
+
+## AI models: which to use, sizes and settings
+
+The AI writes the council summary, runs the debate, picks agents for a question and explains figures.
+It never supplies a figure: every number comes from a feed, an official series or your file. Choose a
+provider in Menu > Settings > AI model.
+
+| Provider | Cost | Privacy | Notes |
+| --- | --- | --- | --- |
+| **No AI** | Free | Nothing leaves your computer except requests for public figures | Every figure, chart and test works; agents answer from the figures without a written summary |
+| **Ollama** on your computer | Free | Everything stays on your computer | Needs the [Ollama app](https://ollama.com/download) and enough memory (below) |
+| **Google Gemini** | Free up to Google's daily limits, then billed to your own key | Questions and the figures they use go to Google | Needs a Gemini API key; the default model is `gemini-3.8-flash`, changed with `GEMINI_MODEL` in `.env` |
+| **Ollama, then Gemini** | As above | As above | Ollama first; Gemini answers when Ollama does not |
+| Local OpenAI-compatible server (such as LM Studio) | Free | Stays on your computer | Under Advanced AI set-up; you set the address and model name |
+
+### Two roles: fast model and referee
+
+| Role | What it does | Default | Rule |
+| --- | --- | --- | --- |
+| **Fast model** | Picks agents and writes the desk agents' answers | `qwen2.5:7b` (`OLLAMA_QUICK_MODEL`) | A 7 to 8B model answers in under a minute on most Macs |
+| **Referee** | The full council's final step, Council chat summaries and explanations, the agent debate, the Policy review Options step and Quest debate briefs | `qwen2.5:32b` (`OLLAMA_DEEP_MODEL`) | 30B or larger counts as a full referee. A model of 8B or less is never used as a referee: it is flagged in Settings and under each answer. A 14B referee is allowed only if you turn on **Allow a 14B referee** (off by default), and every answer it judges says "Small referee" |
+
+### Which set-up for which computer
+
+| Your computer | Recommended set-up |
+| --- | --- |
+| 4 GB laptop | Light mode with a Google Gemini key, or no AI |
+| 8 GB | Google Gemini, or no AI. A local model leaves too little memory for the app, Docker and a browser |
+| 16 GB | Ollama `qwen2.5:7b` for the desks, with "Ollama, then Gemini" so Gemini does the refereeing; or opt in to a `qwen2.5:14b` referee, labelled "Small referee" (it needs about half the memory of the 32B model) |
+| 32 GB or more, or a graphics card with 24 GB | Everything local: `qwen2.5:7b` and `qwen2.5:32b` |
+
+Download the models once with `ollama pull qwen2.5:7b` and `ollama pull qwen2.5:32b` (or `npm run go`
+does it). On a computer without enough memory or a graphics chip the large model can take 10 minutes
+or more per full council report; use Gemini for the referee, or run Ollama on a bigger machine
+([HOME_SERVER.md](docs/HOME_SERVER.md)).
+
+### Settings the app uses
+
+These are the values in the code today; the ones marked "changeable" are under Menu > Settings > AI
+model > Advanced AI set-up.
+
+| Setting | Value | Why |
+| --- | --- | --- |
+| Temperature, Council chat summary and explanations | 0, with seed 42 | The same figures give the same answer, exactly on the same Ollama model and machine |
+| Temperature, Policy review steps | 0 | A rerun reads as close as the model allows |
+| Temperature, Quest debate briefs | 0, with seed 42, on the referee | Written once and recorded with its settings |
+| Temperature, other steps (full council desks) | 0.2 (changeable, 0 to 1.5) | A little variety between desk answers |
+| Context window (Ollama `num_ctx`) | 8,192 tokens (changeable, 1,024 to 65,536) | Enough for a question, the figures and the instructions |
+| Answer length cap on long steps (Ollama `num_predict`) | 2,048 tokens; 4,096 for reasoning models | Stops a model that keeps writing padding |
+| Wait per model call | 16 seconds for a desk step and 25 for a full-council step by default (changeable, 5 to 180); at least 120 seconds for referee steps | A dead address fails fast; the referee gets time to think |
+| Model kept loaded (Ollama `keep_alive`) | 30 minutes on long steps | The next question does not reload a 20 GB model |
+| Answer format | JSON checked against a schema; Gemini thinking level low | The app reads each field and checks every figure against its source |
+
+In `.env` (see [deploy/quick-start/env.example](deploy/quick-start/env.example)):
+`DEFAULT_AI_PROVIDER` (`ollama` or `gemini`), `OLLAMA_BASE_URL`, `OLLAMA_QUICK_MODEL`,
+`OLLAMA_DEEP_MODEL`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `LIGHT_MODE`.
+
+---
+
+## Languages
+
+| Language | Status | Form of address |
+| --- | --- | --- |
+| English | Complete; the source language | |
+| Spanish (español) | Whole app | Formal *usted* |
+| French (français) | Whole app | Formal *vous* |
+| Brazilian Portuguese (português) | Whole app | *Você* |
+| Arabic, Swahili | Planned, not started | |
+
+Every screen, menu, help text, glossary entry and worked example is translated; the one-page policy
+brief prints in all four languages. Switch with the **EN / ES / FR / PT** button in the header; the
+choice is kept in your browser. A language downloads only when picked, so it never slows the app for
+anyone else.
+
+Some things stay as they are written and say so: figures, source names and series names show as the
+source gave them; the council agents read questions in English and write their documents in English;
+method notes cite papers in English; some text the app's rules write about a country (such as the
+brief's headline sentences) is still in English. None of the translations has yet been checked by a
+native speaker; help with that is welcome ([CONTRIBUTING.md](./CONTRIBUTING.md)).
+
+This README and the walk-through guide are in all four languages. The other documents are in English.
+
+---
+
+## Quests: crowdsourcing answers to economic questions
+
+Quests turn open economic questions into a public, scored game anyone can join, so that many people
+can work on a country's problems, test each other's reasoning against the data, and build a record of
+who forecasts well. **Quests are built but switched off.** Menu > Quests is greyed out ("Not yet
+available") until every item on the checklist in [docs/QUESTS.md](./docs/QUESTS.md) is ticked and the
+project has gone public. To try them on your own computer, add `QUESTS_ENABLED=on` to `.env` and
+restart.
+
+![Menu > Quests with QUESTS_ENABLED=on: a list of draft Quests with their type and result date](docs/images/18-quests.png)
+
+**What a Quest is.** One file in `quests/`, with a question and a stated rule for how it is settled
+from the app's own feeds. There are four kinds:
+
+| Kind | Example | How it ends |
+| --- | --- | --- |
+| **Forecast** | "Will Turkey's policy rate be lower on 30 June 2027 than when entries close?" | Settled from the feed by its rule; each entry is scored |
+| **Debate** | "What would most reliably rebuild Egypt's foreign reserves?" | Never scored. People argue a position with the app's figures; Claim Check compares every figure they state with the app's; after close an evidence map shows the arguments beside what the figures showed |
+| **Replication** | "Reproduce the Bohn fiscal reaction estimate for Brazil" | Each entry gives the figure a person's own public script produced; it reproduces the app's figure if within the stated tolerance. A careful entry that finds a mistake in the app solves the Quest |
+| **Signal** | "Does crowded futures positioning come back within six weeks?" | People propose a pre-registered test; each is run once after close, counted in the Holm correction with every other test on record, and badged like the app's own |
+
+**How the game works.**
+
+- **Play in private or in public.** Log an answer privately on your own computer, practise on past
+  data (scored at once, not saved), or enter publicly by a pull request the app prepares for you.
+  People in countries GitHub blocks can enter by email through a maintainer.
+- **Scores against a base rate.** Forecasts are scored with the Brier score against how often the
+  thing happened in the past, and number forecasts against "nothing changes", so luck and copying
+  gain little.
+- **Scoreboard.** Skill with a 90% range, calibration, sharpness, record against the crowd, strengths
+  by field and region, streaks, seasons by calendar year and an all-time table. A person is ranked
+  only after 12 settled forecasts and with a GitHub account at least 90 days old; nobody is ranked on
+  how many Quests they enter. Debates, replications and tests are listed on contributor pages, never
+  ranked.
+- **Nothing can be changed afterwards.** Approved Quests are fingerprinted; results are written to a
+  hash-chained record that fails its check if any line is altered; disputes are decided in public.
+- **Open for people without the app.** A static public board (`npm run quests:board`) shows the
+  tables, results and the crowd against the base rate, and a yearly open dataset can be deposited
+  for a DOI.
+- **Rules that keep it sound.** No figures written into a Quest file; Forecast Quests settle only on
+  sources whose terms allow sharing with credit; questions on conflict, unrest or casualties run only
+  as Debates; no stakes and no prizes. Quests are not a betting market.
+- **In the classroom.** Teachers can run Quests with a class code and a private class table; a
+  one-term pilot with two professors is planned ([docs/ROADMAP.md](./docs/ROADMAP.md)).
+
+Fourteen draft Quests are in `quests/drafts/`; none is approved yet. The full rules, the maintainer's
+steps and the launch checklist are in [docs/QUESTS.md](./docs/QUESTS.md) and
+[quests/README.md](./quests/README.md).
 
 ---
 
@@ -174,14 +386,18 @@ The full list, with what each source fills and how often it is fetched, is in
 [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md). What each source's terms allow (showing figures to
 others, commercial use, credit) is in [docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md).
 
+**How data is kept.** The daily download fetches every free feed once a day in the background, so
+opening a page never waits on the internet (log: `data/local/logs/daily.log`). If a source fails, the
+last good figure is kept with "kept from the <date> pull" on its label. Every pull is archived by day
+in `data/archive/`, so the data as it stood on a past date is never lost. Menu > Settings > Backup
+saves your holdings, watchlists and settings, without the keys, as one file.
+
 ---
 
 ## How you can check it
 
 - **Every figure carries its source and date**, and Menu > Data health shows whether each source is
-  still arriving and whether any figure has been revised since it was first shown. Its Inflation tab shows where each
-  country's inflation figure comes from and how old it is, and flags any over 90 days old. Where several
-  sources publish the same figure, the app uses the freshest one.
+  still arriving and whether any figure has been revised since it was first shown.
 - **Signals and models are tested before they are trusted.** Each test is written down and
   fingerprinted *before* it is run (pre-registration), uses only data that was available at the time,
   counts trading costs, and is checked with resampling. Because many tests are run, the results are
@@ -197,98 +413,18 @@ The full method is in [docs/METHODOLOGY.md](./docs/METHODOLOGY.md).
 
 ---
 
-## Start it
-
-**New to this?** [docs/INSTALL.md](docs/INSTALL.md) is a plain-language, step-by-step guide: install
-Docker Desktop, download one file, and run the ready-made app. No building and no programming needed.
-
-**What your computer needs.** At least 8 GB of memory (16 GB recommended), 5 GB of free disk space
-(10 GB recommended, plus about 5 GB and 20 GB for the optional small and large AI models) and an
-internet connection. The first full data download is about 3.6 to 3.8 GB, mostly GDELT news files;
-after that the daily run downloads roughly 150 to 200 MB (an estimate; about 4.5 to 6 GB a month).
-The saved data folder is about 150 MB after the first few days and grows by about 40 MB a year.
-[docs/INSTALL.md](docs/INSTALL.md#what-you-need) has the full tables and how each figure was found.
-
-**From the code** (Node.js 20.19 or later, or 22.12 or later):
-
-```bash
-npm install
-npm run go           # update, install, start the app and begin the daily data download
-```
-
-`npm run go` is one command for everything: it pulls the latest code, installs packages, downloads
-the AI models if you use Ollama, rebuilds and starts the Docker app on http://localhost:3737 and the
-development app on http://localhost:3000, and begins the daily data download in the background. On a
-Mac you can double-click `econquest-mac.command` instead (Windows: `scripts/start-windows.bat`).
+## Commands
 
 | Command | What it does |
 | --- | --- |
 | `npm run go` | Update and start everything |
-| `npm run go -- status` | Show what is running and what the last daily download did |
+| `npm run go -- status` | Show what is running and what the last daily download did, with its size |
 | `npm run go -- daily` | Run the daily data download now |
 | `npm run go -- --test` | Start, then run the type check and tests |
 | `npm run go -- --validate` | Start, then re-run the signal tests and write the report |
 | `npm run go -- stop` | Stop the app |
 | `npm run dev` | Only the development app, on http://localhost:3000 |
-
-To run it on an always-on Linux box or NAS with Ollama on the same machine, see
-[docs/HOME_SERVER.md](docs/HOME_SERVER.md). On a Kubernetes cluster, use the Helm chart in
-`deploy/helm/econquest/` ([docs/KUBERNETES.md](docs/KUBERNETES.md)).
-
-### First run
-
-A new install shows dashes until the first download finishes. Workspace opens with a **Getting
-started** card that ticks itself off:
-
-1. **See which sources answer.** Menu > Tools > Data connections (or `npm run check:data`) lists every
-   source as connected (with a figure it returned), needs setup, off, or why it failed.
-2. **Add a free FRED key** in Menu > Settings (⌘, or Ctrl+,). It fills official 10-year yields for
-   several countries.
-3. **Choose an AI model** in Menu > Settings > AI model: Ollama on this computer, a local server, or a
-   Gemini key. Needed only for the council summary, the debate and explanations.
-4. **Pick your countries** with Edit on the watchlist card.
-5. **Pick your language and help level** with the buttons in the header.
-
-Keys saved in Settings go to `data/local/settings.json` (never in git, never in backups or the audit
-log) and take effect without a restart.
-
-### How data is kept
-
-The **daily download** fetches every free feed once a day in the background (also IMF forecast
-editions, sanctions lists, the Geopolitical Risk index, conflict files, nowcasts and forecasts, and the
-weekly tests when a week has passed), so opening a page never waits on the internet. Its log is in
-`data/local/logs/daily.log`.
-
-If a source fails, the last good figure is kept with "kept from the <date> pull" on its label, and the
-pull is retried. **Refresh now** on a country page pulls everything for that country again. Every pull
-is also archived by day in `data/archive/`, so the data as it stood on a past date is never lost.
-Your holdings, watchlists and settings are in `data/local/`; Menu > Settings > Backup saves all of it
-except the keys as one file you can restore on another computer.
-
----
-
-## The pages
-
-| Page | What it is for |
-| --- | --- |
-| **Workspace** | Council chat fills the screen; **Briefing** opens your inputs, watchlist, what moved, the next two weeks and watch alerts in a side panel |
-| **Research** | One country, Compare countries and My holdings, each with Summary, Markets & signals, History & data and Sources. CSV and Excel downloads |
-| **Reports** | Notes, reviews, policy reviews, council briefs, saved research and teaching episodes; Markdown or PDF |
-| **Menu** | Settings (including API keys and *Your subscriptions* for a paid data account you already have, off by default), Tools and data connections, Data health, Your data, Models & validation (with Your tests), Idea journal, Audit log, Offline data, Sharing mode, Exam mode, User manual, About & data licences, and Quests (greyed out for now) |
-
-Council chat is the same conversation on every page: on Research and Reports, *Council chat* in the
-header opens it in a side panel.
-
----
-
-## Languages
-
-Every screen, menu, help text and glossary entry is available in English, Spanish (formal *usted*) and
-French (formal *vous*), switched with the language button in the header. A language downloads only
-when picked, so it never slows the app for anyone else. A few things stay in English for now and say
-so: the council agents read questions in English and write their documents in English, and method
-notes cite papers in English. Neither translation has yet been reviewed by a native speaker; help
-with that is welcome.
+| `npm run check:data` | Live check of every source from this computer |
 
 ---
 
@@ -296,42 +432,47 @@ with that is welcome.
 
 Planned work, in order (details and status in [docs/ROADMAP.md](./docs/ROADMAP.md)):
 
-1. **Citations, upkeep and feedback**: "Cite this" on every chart, table and answer (done); a size
+1. **Citations, upkeep and feedback** (done): "Cite this" on every chart, table and answer, a size
    review, a monthly source check, and checks of past policy reviews against what happened.
-2. **The figures a full terminal needs**: inequality, tax revenue and tariffs, low-income country
-   debt, people, trade and debt structure, climate, wages and house prices, sector balances, monthly
-   activity, and euro area and UK figures as first published.
+2. **The figures a full terminal needs** (done; revenue by level of government has a second step that waits on the data): inequality, tax revenue and tariffs, low-income
+   country debt, people, trade and debt structure, climate, wages and house prices, sector balances,
+   monthly activity, and euro area and UK figures as first published.
 3. **The public release** at e-conquest/econquest, after a security and Windows check, with a light
-   mode for modest laptops.
-4. **Analysis and policy tools**: crisis early-warning, external sustainability, the yield curve,
-   inflation drivers, growth accounting, a restructuring calculator, behavioural finance, and a
-   fuller policy review.
-5. **More languages and teaching**: Portuguese, Arabic and Swahili, worked examples, and Quests in
-   the classroom with a one-term pilot.
+   mode for modest laptops (light mode done; release checks under way).
+4. **Analysis and policy tools** (done; the crisis early-warning test waits on a data licence): crisis early-warning, external sustainability, the yield
+   curve, inflation drivers, growth accounting, a restructuring calculator, behavioural finance, and a
+   fuller policy review with precedents, fiscal rules, political feasibility, a trade-off chart and a
+   one-page brief.
+5. **More languages and teaching**: Portuguese and worked examples (done); Arabic and Swahili
+   (planned); Quests in the classroom with a one-term pilot.
 6. **A phone app** (paused): a free standalone app that uses your own keys.
 
 ---
 
 ## Documentation
 
-- [docs/INSTALL.md](./docs/INSTALL.md): step-by-step install for people new to this
-- [docs/USER_MANUAL.md](./docs/USER_MANUAL.md): how to use each page
-- [docs/GLOSSARY.md](./docs/GLOSSARY.md): every economic, market and testing term in plain words
-- [docs/METHODOLOGY.md](./docs/METHODOLOGY.md): how data is sourced, how the council is checked, and how models and signals are tested and graded
-- [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md): every source, what it fills, how to set it up
-- [docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md): what each source's terms allow
-- [docs/MAINTENANCE.md](./docs/MAINTENANCE.md): the upkeep routine: daily checks, monthly and yearly tasks, and what happens when a source ends
-- [docs/DATA_API.md](./docs/DATA_API.md): reading the app's figures from R, Python and Stata
-- [docs/METHODS.md](./docs/METHODS.md): a methods note per model and signal, with its pre-registered backtests and recorded verdicts
-- [docs/TRACK_RECORD.md](./docs/TRACK_RECORD.md): every pre-registered test on record, passed or failed, with the Holm correction and the forward record
-- [docs/ROADMAP.md](./docs/ROADMAP.md): what is planned next, in order
-- [docs/QUESTS.md](./docs/QUESTS.md): Quests and the checklist before they are turned on
-- [docs/RISK_AND_COMPLIANCE.md](./docs/RISK_AND_COMPLIANCE.md): audit log, model register, report sign-off
-- [docs/BACKUP_AND_RESTORE.md](./docs/BACKUP_AND_RESTORE.md): backups and moving to another computer
-- [docs/HOME_SERVER.md](./docs/HOME_SERVER.md) and [docs/KUBERNETES.md](./docs/KUBERNETES.md): running it for a household, team or class
-- [docs/SECURITY.md](./docs/SECURITY.md): accounts, sign-in, sessions, and what is not protected yet
-- [docs/DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md): UI rules for contributors
-- [CONTRIBUTING.md](./CONTRIBUTING.md): how to contribute, the research rules, and signing off commits
+| Document | What it covers |
+| --- | --- |
+| [docs/GUIDE.md](./docs/GUIDE.md) | Walk-through with screenshots, task by task (also [ES](./docs/GUIDE.es.md), [FR](./docs/GUIDE.fr.md), [PT](./docs/GUIDE.pt.md)) |
+| [docs/INSTALL.md](./docs/INSTALL.md) | Step-by-step install for people new to this, with requirements and sizes |
+| [docs/USER_MANUAL.md](./docs/USER_MANUAL.md) | Every page and panel in detail |
+| [docs/GLOSSARY.md](./docs/GLOSSARY.md) | Every economic, market and testing term in plain words |
+| [docs/METHODOLOGY.md](./docs/METHODOLOGY.md) | How data is sourced, how the council is checked, and how models and signals are tested and graded |
+| [docs/METHODS.md](./docs/METHODS.md) | A methods note per model and signal, with its pre-registered backtests and recorded verdicts |
+| [docs/TRACK_RECORD.md](./docs/TRACK_RECORD.md) | Every pre-registered test on record, passed or failed, with the Holm correction |
+| [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md) | Every source, what it fills, how to set it up |
+| [docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md) | What each source's terms allow |
+| [docs/DATA_API.md](./docs/DATA_API.md) | Reading the app's figures from R, Python and Stata |
+| [docs/POLICY_REVIEW.md](./docs/POLICY_REVIEW.md) | The policy review steps |
+| [docs/QUESTS.md](./docs/QUESTS.md) | Quests, their rules and the checklist before they are turned on |
+| [docs/ROADMAP.md](./docs/ROADMAP.md) | What is planned next, in order |
+| [docs/MAINTENANCE.md](./docs/MAINTENANCE.md) | The upkeep routine and what happens when a source ends |
+| [docs/RISK_AND_COMPLIANCE.md](./docs/RISK_AND_COMPLIANCE.md) | Audit log, model register, report sign-off |
+| [docs/BACKUP_AND_RESTORE.md](./docs/BACKUP_AND_RESTORE.md) | Backups and moving to another computer |
+| [docs/HOME_SERVER.md](./docs/HOME_SERVER.md), [docs/KUBERNETES.md](./docs/KUBERNETES.md) | Running it for a household, team or class |
+| [docs/SECURITY.md](./docs/SECURITY.md), [docs/SECURITY_REVIEW.md](./docs/SECURITY_REVIEW.md) | Accounts, sign-in, sessions, and the security review |
+| [docs/DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md) | UI rules for contributors |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | How to contribute, the research rules, and signing off commits |
 
 ---
 
@@ -349,32 +490,40 @@ npm run record:feeds # records every free feed's real reply for the tests (run w
 npm run preload      # downloads every free feed for every country, for fast offline use
 ```
 
-Every pull request runs the type check and tests on GitHub (`.github/workflows/ci.yml`); changes to
-code also run the build, size check and browser tests, and changes to packaging also build the app
-image. The smoke test needs Playwright's Chromium once: `npx playwright install chromium`.
-`tests/server.test.ts` and the smoke test start the real server with `tests/helpers/offline-fetch.mjs`
-in place of the network.
+**Stack.** Node.js and Express on the server (`server.ts`, `src/server/`), React 19 and Vite on the
+page, TypeScript throughout. AI calls go through `src/server/ai.ts` to Ollama, Google Gemini or an
+OpenAI-compatible local server.
+
+**Layout.** `src/utils/` (one module per source or calculation, each with a test in `tests/`),
+`src/components/` (React pages and panels), `src/data/` (navigation, official calendar, country list),
+`src/i18n/` (English message files, with Spanish in `es/`, French in `fr/` and Portuguese in `pt/`),
+`quests/` (Quest files), `docs/validation/` (pre-registered tests and verdicts). Each panel sits inside
+a crash guard (`PanelBoundary`), so one failing panel never blanks the app.
+
+**Continuous integration.** Every pull request runs the type check and tests on GitHub
+(`.github/workflows/ci.yml`); changes to code also run the build, size check and browser tests, and
+changes to packaging also build the app image. The smoke test needs Playwright's Chromium once:
+`npx playwright install chromium`. `tests/server.test.ts` and the smoke test start the real server
+with `tests/helpers/offline-fetch.mjs` in place of the network.
 
 **Size limits.** Every screen added since the start loads only when it is opened, and each language
 downloads only when picked. The start-up download must stay under 465 KB compressed and the whole app
 under 7.5 MB; `npm run size:check` enforces both.
 
-**Tests on real replies.** The offline fixtures are hand-written. `npm run record:feeds`, run on a
-computer that reaches the feeds, saves what every free feed really sends (gzipped, keys taken out of
-every URL, own paid data and AI switched off) in `tests/fixtures/recorded/`, with what the app made of
-it. `tests/recorded.test.ts` replays those replies through the real server with the clock set back to
-the recording, and fails, naming the source, if a source connected then no longer is or a figure
-filled then is now Missing. It is skipped until a recording exists. Record again after adding a feed.
-The same run builds `tests/fixtures/recorded-public/` (`npm run record:public`): only the replies from
-sources whose terms allow passing data on (`tests/helpers/publicFeeds.mjs`), replayed once to save
-what the app reads from them. That folder ships in the public repository, so
-`tests/recordedPublic.test.ts` gives outside contributors the same check without a key.
+**Tests on real replies.** `npm run record:feeds`, run on a computer that reaches the feeds, saves
+what every free feed really sends (gzipped, keys taken out of every URL, own paid data and AI switched
+off) in `tests/fixtures/recorded/`, with what the app made of it. `tests/recorded.test.ts` replays those
+replies through the real server with the clock set back to the recording, and fails, naming the
+source, if a source connected then no longer is or a figure filled then is now Missing. The same run
+builds `tests/fixtures/recorded-public/`: only the replies from sources whose terms allow passing data
+on. That folder ships in the public repository, so `tests/recordedPublic.test.ts` gives outside
+contributors the same check without a key. Council prompts have their own recorded replay
+(`npm run council:record`, `tests/councilRecorded.test.ts`).
 
-Layout: `server.ts` and `src/server/` (Express API, data pulls and caches), `src/utils/` (one module
-per source or calculation, each with a test in `tests/`), `src/components/` (React pages and panels),
-`src/data/` (navigation, official calendar, country list), `src/i18n/` (English message files, with
-Spanish in `es/` and French in `fr/`). Each panel sits inside a crash guard (`PanelBoundary`), so one
-failing panel never blanks the app.
+**Screenshots.** The images in `docs/images/` come from a build that replays
+`tests/fixtures/recorded-public/` (start the server with
+`NODE_OPTIONS="--import ./tests/helpers/replay-fetch.mjs" REPLAY_DIR=tests/fixtures/recorded-public`),
+so they show only figures whose sources allow passing them on.
 
 ### Integration API
 
@@ -401,10 +550,10 @@ itself or at cloud metadata addresses.
 
 ## Licence
 
-Code: [Apache License 2.0](./LICENSE). Documentation, methods notes, validation records and Quest
-content: [CC BY 4.0](./LICENSE-docs.md). Figures fetched from outside sources keep their own terms
-([docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md)); the bundled UCDP datasets are CC BY 4.0 ([NOTICE](./NOTICE)).
-Contributions are signed off under the Developer Certificate of Origin (DCO).
+Code: [Apache License 2.0](./LICENSE). Documentation, methods notes, validation records, screenshots
+and Quest content: [CC BY 4.0](./LICENSE-docs.md). Figures fetched from outside sources keep their own
+terms ([docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md)); the bundled UCDP datasets are CC BY 4.0
+([NOTICE](./NOTICE)). Contributions are signed off under the Developer Certificate of Origin (DCO).
 
 Contributions are welcome: see [CONTRIBUTING.md](./CONTRIBUTING.md), the
 [code of conduct](./CODE_OF_CONDUCT.md), [GOVERNANCE.md](./GOVERNANCE.md) and, for security problems,
