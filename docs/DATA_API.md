@@ -400,3 +400,30 @@ log can show one back. Set it in Menu > Settings > Hidden names, or with a token
 
 A list is all or nothing, and a refused name is not repeated in the reply. Every change is in the
 audit log as counts ("added 2 hidden names; 2 items hidden now").
+
+### Scenarios on a portfolio
+
+With a token that has `run:scenarios`, POST `/api/v1/scenarios` with the positions (the same fields
+as `/api/v1/holdings`) and a scenario. The positions are used for this one reply and not saved.
+
+- A shock: `{ "kind": "shock", "em_fx_pct": -15, "us_rates_bp": 100, "countries": { "TUR": { "fx_pct": -30, "spread_bp": 400, "local_yield_bp": 600 } } }`.
+  `em_fx_pct` moves every emerging-market currency against the US dollar (negative = weaker);
+  "emerging" means outside the IMF World Economic Outlook list of advanced economies. A per-country
+  move overrides it, and is how a fiscal shock is set (spread for USD bonds and CDS, local 10Y yield
+  for local bonds).
+- A historical replay: `{ "kind": "replay", "episode": "gfc_2008" }`. Episodes: `asia_1997`
+  (Jun 1997 to Jan 1998), `russia_1998` (Jul to Sep 1998), `year_2001` (Dec 2000 to Dec 2001),
+  `gfc_2008` (Aug to Nov 2008), `taper_2013` (Apr to Aug 2013), `covid_2020` (Jan to Mar 2020),
+  `year_2022` (Dec 2021 to Oct 2022). The move is the change between the two months' averages, from
+  the OECD 10-year yields and Federal Reserve Board H.10 exchange rates on FRED (from 1990), the ECB
+  reference rates (from 1999) and the BCRP EMBI spreads (eight Latin American countries, from 2016).
+  The daily download saves these; a request never fetches anything.
+
+The reply gives each position's moves (`components`: `fx`, `us_rates`, `spread`, `local_yield`),
+each with its move, the P&L in US dollars, the two monthly values, the source and the shareable flag.
+A move with no source is `"status": "Missing"` with the reason: CDS in a replay (a bond spread is not
+CDS), a country outside the series, a window before a series starts, a position without a duration.
+Then the position's `pnl_usd` is `null` and `pnl_known_usd` gives the known part. Every reply has
+`"hypothetical": true`: it is a first-order estimate (duration times the yield or spread move,
+notional times the currency move), not a forecast or a valuation. GET `/api/v1/scenarios` lists the
+episodes and which countries the saved series cover for each.

@@ -48,6 +48,9 @@ import { registerConsoleWatchRoutes } from './src/server/routes/consoleWatches';
 import { buildCountrySnapshot } from './src/server/countrySnapshot';
 import { registerConsoleHoldingsRoutes } from './src/server/routes/consoleHoldings';
 import { registerExclusionRoutes } from './src/server/routes/consoleExclusions';
+import { registerConsoleScenarioRoutes } from './src/server/routes/consoleScenarios';
+import { monthlyAverages, readReplayFile, type ReplayFile } from './src/utils/scenarioReplay';
+import { fxDailySeries, fxHistoryPulledAt } from './src/utils/fxHistory';
 import { loadWatchRules as loadWatchRuleFile } from './src/utils/watchRulesStore';
 import { registerConsoleEventRoutes } from './src/server/routes/consoleEvents';
 import { LEGACY_SCOPES, TOKEN_PREFIX, publicToken, scopeFor, scopeRefusal, tokenOnly, type Scope } from './src/utils/apiTokens';
@@ -1004,7 +1007,7 @@ async function runDailyCli(): Promise<void> {
   if (offline) run.offline = true;
 
   // 2. Files that used to be downloaded by hand.
-  console.log('[daily] 2/5 Files: IMF WEO editions, sanctions lists, GPR index, UCDP');
+  console.log('[daily] 2/5 Files: IMF WEO editions, sanctions lists, GPR index, UCDP, scenario replay series');
   const sanctionsBefore = sanctionsCounts(sanctionsData(DATA_DIR));
   for (const f of FILE_PULLS) {
     if (offline) {
@@ -3321,6 +3324,46 @@ async function startServer() {
       const maker = t.createdById ? accounts.find((a) => a.id === t.createdById) : undefined;
       const firstAdmin = accounts.filter((a) => a.role === 'admin').sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
       return workspaceFileForAccount(maker ?? firstAdmin ?? null);
+    },
+  });
+  // Scenarios read only saved files: the replay series (daily download) and the ECB rates (item 9).
+  const replayFilePath = path.join(DATA_DIR, 'local', 'replays', 'replay-series.json');
+  let replayCache: { mtimeMs: number; file: ReplayFile | null } | null = null;
+  const ecbMonthlyCache = new Map<string, { at: string | undefined; months: Record<string, number> | null }>();
+  registerConsoleScenarioRoutes(app, {
+    hidden: (h) => HIDDEN.holdingHidden(h),
+    replayFile: () => {
+      let mtimeMs = -1;
+      try {
+        mtimeMs = fs.statSync(replayFilePath).mtimeMs;
+      } catch {
+        return null;
+      }
+      if (replayCache?.mtimeMs !== mtimeMs) {
+        let file: ReplayFile | null = null;
+        try {
+          file = readReplayFile(JSON.parse(fs.readFileSync(replayFilePath, 'utf8')));
+        } catch {
+          file = null;
+        }
+        replayCache = { mtimeMs, file };
+      }
+      return replayCache.file;
+    },
+    ecbMonthly: (ccy) => {
+      const saved = loadFxHistory();
+      const at = fxHistoryPulledAt(saved);
+      const hit = ecbMonthlyCache.get(ccy);
+      if (hit && hit.at === at) return hit.months;
+      const s = fxDailySeries(saved, ccy);
+      const months = 'points' in s && s.source && /ECB/.test(s.source) ? monthlyAverages(s.points) : null;
+      ecbMonthlyCache.set(ccy, { at, months });
+      return months;
+    },
+    ecbFirstMonth: () => {
+      const q = Object.keys(loadFxHistory().chunks).sort()[0];
+      const m = q && /^(\d{4})-Q([1-4])$/.exec(q);
+      return m ? `${m[1]}-${String((Number(m[2]) - 1) * 3 + 1).padStart(2, '0')}` : null;
     },
   });
   const consoleHub = new EventHub({

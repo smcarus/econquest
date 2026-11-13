@@ -646,6 +646,152 @@
           }
         },
         "description": "Counts and kinds only: the list keeps fingerprints, never names."
+      },
+      "ScenarioResult": {
+        "type": "object",
+        "properties": {
+          "hypothetical": {
+            "const": true
+          },
+          "note": {
+            "type": "string"
+          },
+          "scenario": {
+            "type": "object"
+          },
+          "hidden": {
+            "type": "integer",
+            "description": "Positions left out because they name a hidden country or security."
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "entity_id": {
+                  "type": "string"
+                },
+                "country": {
+                  "type": "string"
+                },
+                "instrument": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "side": {
+                  "type": "string"
+                },
+                "notional_usd_mm": {
+                  "type": "number"
+                },
+                "duration_years": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "components": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "factor": {
+                        "enum": [
+                          "fx",
+                          "us_rates",
+                          "spread",
+                          "local_yield"
+                        ]
+                      },
+                      "status": {
+                        "enum": [
+                          "Live",
+                          "Missing"
+                        ]
+                      },
+                      "move": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "unit": {
+                        "enum": [
+                          "%",
+                          "bp"
+                        ]
+                      },
+                      "pnl_usd": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "from": {
+                        "type": "object"
+                      },
+                      "to": {
+                        "type": "object"
+                      },
+                      "source": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "shareable": {
+                        "type": "boolean"
+                      },
+                      "reason": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "pnl_usd": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "pnl_known_usd": {
+                  "type": "number"
+                },
+                "complete": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "totals": {
+            "type": "object",
+            "properties": {
+              "pnl_known_usd": {
+                "type": "number"
+              },
+              "pnl_usd": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "positions": {
+                "type": "integer"
+              },
+              "complete": {
+                "type": "integer"
+              },
+              "partial": {
+                "type": "integer"
+              }
+            }
+          }
+        }
       }
     },
     "headers": {
@@ -2395,6 +2541,197 @@
           },
           "403": {
             "description": "TOKEN_SCOPE: the token lacks write:exclusions."
+          }
+        }
+      }
+    },
+    "/api/v1/scenarios": {
+      "get": {
+        "summary": "Historical episodes and what the saved series cover",
+        "tags": [
+          "Scenarios"
+        ],
+        "x-scope": "run:scenarios",
+        "security": [
+          {
+            "ApiToken": [
+              "run:scenarios"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Episodes with their windows and, per episode, the countries covered.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "hypothetical": {
+                      "type": "boolean"
+                    },
+                    "note": {
+                      "type": "string"
+                    },
+                    "replay_series_saved_at": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "episodes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks run:scenarios. The legacy key cannot run scenarios."
+          }
+        }
+      },
+      "post": {
+        "summary": "Run a shock or a historical replay on a portfolio sent in the request (not saved)",
+        "tags": [
+          "Scenarios"
+        ],
+        "x-scope": "run:scenarios",
+        "security": [
+          {
+            "ApiToken": [
+              "run:scenarios"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "portfolio",
+                  "scenario"
+                ],
+                "properties": {
+                  "portfolio": {
+                    "type": "array",
+                    "maxItems": 5000,
+                    "items": {
+                      "type": "object",
+                      "description": "A position, the same fields as PUT /api/v1/holdings."
+                    }
+                  },
+                  "scenario": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "required": [
+                          "kind"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "const": "shock"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "em_fx_pct": {
+                            "type": "number",
+                            "minimum": -95,
+                            "maximum": 95
+                          },
+                          "us_rates_bp": {
+                            "type": "number",
+                            "minimum": -2000,
+                            "maximum": 2000
+                          },
+                          "countries": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "fx_pct": {
+                                  "type": "number"
+                                },
+                                "spread_bp": {
+                                  "type": "number"
+                                },
+                                "local_yield_bp": {
+                                  "type": "number"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "episode"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "const": "replay"
+                          },
+                          "episode": {
+                            "enum": [
+                              "asia_1997",
+                              "russia_1998",
+                              "year_2001",
+                              "gfc_2008",
+                              "taper_2013",
+                              "covid_2020",
+                              "year_2022"
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Hypothetical result per position; Missing moves carry the reason.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BAD_SCENARIO: nothing was run; errors lists every problem."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks run:scenarios. The legacy key cannot run scenarios."
           }
         }
       }

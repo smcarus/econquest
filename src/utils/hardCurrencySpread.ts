@@ -121,7 +121,7 @@ function monthsBefore(period: string, n: number): string {
  * to codes by position, and checked against the series name so a reordered reply is refused
  * rather than misread.
  */
-export function parseBcrpEmbig(body: unknown, url: string, at = new Date().toISOString()): HcSpreadPull | null {
+export function parseBcrpEmbig(body: unknown, url: string, at = new Date().toISOString(), keepMonths = 36): HcSpreadPull | null {
   const doc = typeof body === 'string' ? safeJson(body.replace(/^\uFEFF/, '').trim()) : body;
   if (!doc || typeof doc !== 'object') return null;
   const periods = (doc as { periods?: unknown }).periods;
@@ -163,7 +163,7 @@ export function parseBcrpEmbig(body: unknown, url: string, at = new Date().toISO
       seriesId,
       source: HC_SPREAD_SOURCE,
       url,
-      history: entries.slice(-36).map(([p, v]) => ({ period: p, bps: v })),
+      history: entries.slice(-keepMonths).map(([p, v]) => ({ period: p, bps: v })),
     };
     const c3 = cols[i].get(monthsBefore(period, 3));
     const c12 = cols[i].get(monthsBefore(period, 12));

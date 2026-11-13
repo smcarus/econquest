@@ -26,6 +26,7 @@
     "sanctions:pull": "tsx scripts/sanctions-pull.ts",
     "gpr:pull": "tsx scripts/gpr-pull.ts",
     "ucdp:pull": "tsx scripts/ucdp-pull.ts",
+    "replays:pull": "tsx scripts/replays-pull.ts",
     "signals:evaluate": "tsx scripts/signals-evaluate.ts",
     "preload": "tsx server.ts --preload",
     "daily": "tsx server.ts --daily",

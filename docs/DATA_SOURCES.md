@@ -109,6 +109,7 @@ own-data switch in Settings).
 | Central bank of Peru (BCRPData, EMBIG) | USD bond spread over US Treasuries: J.P. Morgan EMBI Global spread, monthly average, for Argentina, Brazil, Chile, Colombia, Ecuador, Mexico, Peru and Venezuela, plus the Latin American and emerging-market aggregates. The free stand-in for 5Y CDS: labelled a bond spread, never CDS. Other countries read Missing ("No free source"). Published about three weeks after the month | estadisticas.bcrp.gob.pe | 12 h, on disk (`data/live/market-extras.json`) |
 | FRED download | 10Y yields (OECD monthly): US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries | fred.stlouisfed.org | 6 h |
 | FRED download | Fed balance sheet (H.4.1): WALCL total assets, WRESBAL reserves, WTREGEN Treasury General Account; NY Fed RRPONTSYD overnight reverse repos | fred.stlouisfed.org | 12 h (1 h after a miss); saved to data/live/fed-balance-sheet.json |
+| FRED download | Federal Reserve Board H.10 monthly exchange rates per US dollar (22 currencies) and the OECD 10Y yields, from 1990, for the historical scenario replays (`POST /api/v1/scenarios`); BCRP EMBI spreads from 2016 for the same | fred.stlouisfed.org, estadisticas.bcrp.gob.pe | Saved by the daily download at most every 6 days (`data/local/replays/replay-series.json`); never fetched when a scenario runs |
 | FRED download (API with your key) | Stress indices: St. Louis Fed STLFSI4, Chicago Fed NFCI and ANFCI (weekly; scenario factor of your choice and world series) | fred.stlouisfed.org | 12 h (1 h after a miss) |
 | NY Fed download | Global Supply Chain Pressure Index (monthly; scenario factor and world series), an Excel 97 .xls file (served even at gscpi_data.csv), read with the app's own .xls reader | newyorkfed.org | 12 h (1 h after a miss) |
 | IMF PortWatch (ArcGIS feature layers) | Ships through eight chokepoints and their estimated volume (world series); each country's port calls and estimated seaborne imports and exports. Daily data from ship signals, shown as monthly averages per day; the latest month is partial | services9.arcgis.com | 24 h (1 h after a miss) |
@@ -573,7 +574,10 @@ the background once the app is up; the app can be used straight away. It runs at
 2. Files: past IMF WEO editions (`npm run weo:pull`, tried at most once a week because the IMF
    often refuses automated downloads with HTTP 403; then they have to be downloaded by hand from the
    IMF WEO database page into `data/local/weo-vintages/`), the OFAC and UN sanctions lists
-   (`sanctions:pull`), the Geopolitical Risk index (`gpr:pull`) and newer UCDP files (`ucdp:pull`).
+   (`sanctions:pull`), the Geopolitical Risk index (`gpr:pull`), newer UCDP files (`ucdp:pull`) and
+   the monthly series behind the scenario replays (`replays:pull`: OECD 10Y yields and Fed H.10
+   exchange rates from FRED since 1990, BCRP EMBI spreads since 2016, into `data/local/replays/`,
+   at most once every 6 days).
 3. The long histories behind the nowcasts and forecasts (refreshed weekly), then a nowcast and a
    forecast for every country, listing which are Missing and why.
 4. The pre-registered tests (backtests, forecast evaluations, currency signal tests) when the last

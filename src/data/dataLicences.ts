@@ -263,7 +263,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'fred',
     name: 'FRED (St. Louis Fed): 10Y government yields from the OECD; St. Louis Fed and Chicago Fed stress indices; US inflation expectations',
-    usedFor: 'US monthly activity: industrial production (INDPRO, Federal Reserve), retail and food services sales (RSAFS, Census Bureau) and the unemployment rate (UNRATE, BLS); US data as first published and as known on a past day (ALFRED vintages of GDPC1 real GDP, CPIAUCSL CPI and UNRATE unemployment, with your FRED API key; government statistics from BEA and BLS); US inflation expectations: 5- and 10-year breakevens and the 5y5y forward (T5YIE, T10YIE, T5YIFR, computed by the St. Louis Fed from US Treasury yields, labelled "Copyrighted: Citation Required") and the Cleveland Fed 1- and 10-year expected inflation (EXPINF1YR, EXPINF10YR, labelled "Public Domain: Citation Requested"); St. Louis Fed Financial Stress Index (STLFSI4, the default stress factor in the global shock scenarios; owned by the St. Louis Fed itself, labelled "Copyrighted: Citation Required"); Chicago Fed NFCI and adjusted NFCI (NFCI, ANFCI, alternative stress factors and world series; owned by the Federal Reserve Bank of Chicago, labelled "Copyrighted: Citation Required"); 10Y yields for the US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, the Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries (all OECD series on FRED)',
+    usedFor: 'US monthly activity: industrial production (INDPRO, Federal Reserve), retail and food services sales (RSAFS, Census Bureau) and the unemployment rate (UNRATE, BLS); US data as first published and as known on a past day (ALFRED vintages of GDPC1 real GDP, CPIAUCSL CPI and UNRATE unemployment, with your FRED API key; government statistics from BEA and BLS); US inflation expectations: 5- and 10-year breakevens and the 5y5y forward (T5YIE, T10YIE, T5YIFR, computed by the St. Louis Fed from US Treasury yields, labelled "Copyrighted: Citation Required") and the Cleveland Fed 1- and 10-year expected inflation (EXPINF1YR, EXPINF10YR, labelled "Public Domain: Citation Requested"); St. Louis Fed Financial Stress Index (STLFSI4, the default stress factor in the global shock scenarios; owned by the St. Louis Fed itself, labelled "Copyrighted: Citation Required"); Chicago Fed NFCI and adjusted NFCI (NFCI, ANFCI, alternative stress factors and world series; owned by the Federal Reserve Bank of Chicago, labelled "Copyrighted: Citation Required"); 10Y yields for the US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, the Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries (all OECD series on FRED); the same yields from January 1990, saved monthly by the daily download for the historical scenario replays',
     terms: [
       { label: 'FRED legal', url: 'https://fred.stlouisfed.org/legal/' },
       { label: 'FRED API terms', url: 'https://fred.stlouisfed.org/docs/api/terms_of_use.html' },
@@ -282,6 +282,25 @@ export const DATA_LICENCES: LicenceRow[] = [
     share: 'unclear',
     shareNote: 'The OECD owns the series; FRED says to ask the owner before any use beyond personal use.',
     checked: D,
+  },
+  {
+    id: 'fed_h10',
+    name: 'Federal Reserve Board H.10 exchange rates (monthly, via FRED)',
+    usedFor: 'Monthly average exchange rates against the US dollar for 22 currencies (EXBZUS, EXMXUS, EXKOUS, EXTHUS, EXMAUS, EXINUS, EXSFUS, EXUSEU and others) back to 1990, for the historical scenario replays (1997 Asia, 1998 Russia); saved by the daily download, never fetched when a scenario runs',
+    terms: [
+      { label: 'FRED legal', url: 'https://fred.stlouisfed.org/legal/' },
+      { label: 'Example series: Brazil real per US dollar', url: 'https://fred.stlouisfed.org/series/EXBZUS' },
+      { label: 'Federal Reserve Board website disclaimer', url: 'https://www.federalreserve.gov/disclaimer.htm' },
+    ],
+    status: 'not_verified',
+    display: 'Not confirmed. The series are published by the Federal Reserve Board; the copyright label on each FRED series page and the Board\'s own website terms were not read (federalreserve.gov could not be reached from the session that built this, 13 November 2026).',
+    commercial: 'Not confirmed.',
+    attribution: 'Board of Governors of the Federal Reserve System (US), <series name> [<series id>], retrieved from FRED, Federal Reserve Bank of St. Louis.',
+    quotes: ['BEFORE USING DATA SERIES OWNED BY THIRD PARTIES FOR ANYTHING OTHER THAN YOUR OWN PERSONAL USE, YOU MUST CONTACT THE DATA OWNER TO OBTAIN PERMISSION.'],
+    flag: 'Open the FRED page of one H.10 series (for example EXBZUS) and read its copyright line, and read federalreserve.gov/disclaimer.htm, then update this row. Until then the replay currency moves are marked not shareable.',
+    share: 'unclear',
+    shareNote: 'The copyright line of the H.10 series on FRED was not read.',
+    checked: '2026-11-13',
   },
   {
     id: 'oecd',
