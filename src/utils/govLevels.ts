@@ -131,6 +131,28 @@ export function dbnomicsLevelsUrl(ids: string[]): string {
   return `https://api.db.nomics.world/v22/series?series_ids=${ids.map(encodeURIComponent).join(',')}&observations=1&limit=${ids.length}`;
 }
 
+/**
+ * Every GFSMAB series DBnomics holds for one country and level, without figures: used when none of
+ * the series the app asks for came back, to show which codes the dataset really uses.
+ */
+export function dbnomicsGfsListUrl(iso2: string, level: GovLevel = 'central'): string {
+  const dims = encodeURIComponent(JSON.stringify({ REF_AREA: [iso2], REF_SECTOR: [LEVEL_SECTOR[level]] }));
+  return `https://api.db.nomics.world/v22/series/IMF/GFSMAB?dimensions=${dims}&observations=0&limit=200`;
+}
+
+/** Up to `n` "code (name)" pairs from a DBnomics series list, revenue and expenditure first. */
+export function gfsCodeSample(reply: unknown, n = 6): string[] {
+  const docs = (reply as { series?: { docs?: Array<{ series_code?: unknown; series_name?: unknown }> } })?.series?.docs;
+  if (!Array.isArray(docs)) return [];
+  const rank = (name: string) => (/revenue|expenditure|expense/i.test(name) ? 0 : 1);
+  return docs
+    .map((d) => ({ code: String(d?.series_code || ''), name: String(d?.series_name || '') }))
+    .filter((d) => d.code)
+    .sort((a, b) => rank(a.name) - rank(b.name))
+    .slice(0, n)
+    .map((d) => (d.name ? `${d.code} (${d.name})` : d.code));
+}
+
 /** DBnomics series reply -> latest figures per country (a share under 0.001% of GDP is a scale error and dropped). */
 export function parseDbnomicsLevels(reply: unknown, iso2ToIso3: Record<string, string>): Record<string, GovLevelsReading> {
   const docs = (reply as { series?: { docs?: unknown[] } })?.series?.docs;

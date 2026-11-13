@@ -71,6 +71,7 @@ export function fetchGovLevels(opts: { force?: boolean } = {}): Promise<GovLevel
     // One country's series can be split across batches: parse them together.
     const docs = imfReplies.flatMap((r) => ((r as { series?: { docs?: unknown[] } } | null)?.series?.docs as unknown[]) || []);
     const imf = parseDbnomicsLevels({ series: { docs } }, iso2ToIso3);
+    if (imfReplies.some(Boolean) && !Object.keys(imf).length) console.warn('[IMF GFS via DBnomics] answered, but none of the GFSMAB series the app asks for came back; npm run check:data row imf_gov_levels lists the codes DBnomics holds.');
     const countries: Record<string, GovLevelsReading> = mergeLevels(eurostat, imf);
     if (!Object.keys(countries).length) {
       memory = { pull: saved, triedAt: Date.now() };
