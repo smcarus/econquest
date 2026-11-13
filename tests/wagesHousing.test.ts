@@ -7,7 +7,7 @@ import path from 'path';
 // An empty data folder, as on a first run (read by the downloads below).
 process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'wages-housing-'));
 
-const { bisPropertyAllUrl, buildWages, housePriceValue, iloEarningsUrl, parseBisPropertyAll, parseIloEarnings, parseWbInflation, wageGrowthValue, wageReading } = await import('../src/utils/wagesHousing.ts');
+const { bisPropertyAllUrl, buildWages, housePriceValue, iloEarningsCandidates, iloEarningsUrl, iloIdRefused, pickIloEarningsId, parseBisPropertyAll, parseIloEarnings, parseWbInflation, wageGrowthValue, wageReading } = await import('../src/utils/wagesHousing.ts');
 const { wagesHousingRows, economistBrief } = await import('../src/utils/countryNotes.ts');
 const { parseBisProperty, bisCreditSeries } = await import('../src/utils/bisCreditCycle.ts');
 const { buildBaselineOpenData } = await import('../src/data/presetsAndBaselines.ts');
@@ -169,4 +169,35 @@ test('the downloads: saved to data/live, kept, read back from disk', async () =>
   } finally {
     globalThis.fetch = realFetch;
   }
+});
+
+test('ILOSTAT: a refused earnings id is replaced from the indicator list, local currency first', () => {
+  const toc = [
+    'id,indicator.label,freq,last.update',
+    'EAR_4MTH_SEX_ECO_CUR_NB_A,"Average monthly earnings of employees by sex and economic activity",A,2025-01-01',
+    'EAR_4MTH_SEX_ECO_CUR_NB_M,"Average monthly earnings of employees by sex and economic activity",M,2026-10-01',
+    'EAR_4MTH_SEX_ECO_NB_A,"Average monthly earnings of employees by sex, economic activity and currency",A,2026-10-01',
+    'EAR_4MTH_SEX_ECO_LCU_NB_A,"Average monthly earnings of employees by sex and economic activity (local currency)",A,2026-10-01',
+    'EMP_TEMP_SEX_ECO_NB_A,"Employment by sex and economic activity",A,2026-10-01',
+  ].join('\n');
+  assert.deepEqual(iloEarningsCandidates(toc), ['EAR_4MTH_SEX_ECO_LCU_NB_A', 'EAR_4MTH_SEX_ECO_NB_A']);
+  assert.equal(pickIloEarningsId(toc), 'EAR_4MTH_SEX_ECO_LCU_NB_A');
+  assert.equal(pickIloEarningsId('id\nEMP_TEMP_SEX_ECO_NB_A'), null);
+  assert.match(iloEarningsUrl(2018, 'EAR_4MTH_SEX_ECO_LCU_NB_A'), /id=EAR_4MTH_SEX_ECO_LCU_NB_A&/);
+  assert.equal(iloIdRefused(400, '{"error":"deprecated or invalid dataset id=EAR_4MTH_SEX_ECO_CUR_NB_A"}'), true);
+  assert.equal(iloIdRefused(503, 'down'), false);
+});
+
+test('connection check: a refused ILOSTAT id is replaced from the indicator list and named', async () => {
+  const { checkConnections } = await import('../src/utils/connectionCheck.ts');
+  const csv = 'ref_area,source,sex,classif1,classif2,time,obs_value,obs_status\nBRA,X,SEX_T,ECO_AGGREGATE_TOTAL,CUR_TYPE_LCU,2024,3000,\nBRA,X,SEX_T,ECO_AGGREGATE_TOTAL,CUR_TYPE_LCU,2025,3150,\n';
+  const fetchFn = (async (url: string) => {
+    if (url.includes('id=EAR_4MTH_SEX_ECO_CUR_NB_A')) return new Response('{"error":"deprecated or invalid dataset id=EAR_4MTH_SEX_ECO_CUR_NB_A"}', { status: 400 });
+    if (url.includes('/metadata/toc/')) return new Response('id,indicator.label\nEAR_4MTH_SEX_ECO_LCU_NB_A,"Average monthly earnings of employees (local currency)"\n');
+    if (url.includes('id=EAR_4MTH_SEX_ECO_LCU_NB_A')) return new Response(csv);
+    return new Response('', { status: 404 });
+  }) as never;
+  const row = (await checkConnections({ env: {}, fetchFn, only: ['ilostat_wages'] } as never)).results[0];
+  assert.equal(row.state, 'connected');
+  assert.match(row.sample || '', /no longer served; ILOSTAT's indicator list offers EAR_4MTH_SEX_ECO_LCU_NB_A/);
 });

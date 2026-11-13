@@ -19,7 +19,7 @@ import { ECB_RTD_SERIES, ecbRtdUrl, parseEcbHistory } from './ecbRealTime';
 import { latestEditionUri, ONS_TRIANGLE_PAGE } from './onsTriangles';
 import { bcbActivityUrl, eurostatActivityUrl, monthText, onsActivityUrl, parseBcbActivity, parseEurostatActivity, parseOnsSeries } from './monthlyIndicators';
 import { BIS_PRIVATE_DEBT_SAMPLE_URL, parseBisPrivateDebtAll } from './sectorBalances';
-import { BIS_PROPERTY_SAMPLE_URL, iloEarningsSampleUrl, parseBisPropertyAll, parseIloEarnings, quarterLabel, wageReading } from './wagesHousing';
+import { BIS_PROPERTY_SAMPLE_URL, ILO_EARNINGS_ENV, ILO_EARNINGS_ID, ILO_TOC_URLS, iloEarningsCandidates, iloEarningsSampleUrl, iloIdRefused, parseBisPropertyAll, parseIloEarnings, quarterLabel, wageReading } from './wagesHousing';
 import { debtStructureUrl, parseDebtStructure, currencyValue } from './debtStructure';
 import { INVESTOR_BASE_SETUP_HELP, investorBaseValue } from './investorBase';
 import { FISCAL_RULES_SETUP_HELP, RULE_KINDS, RULE_KIND_NAME } from './fiscalRules';
@@ -443,23 +443,32 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     )
   );
 
-  add('ilostat_wages', () =>
-    httpCheck(
-      { id: 'ilostat_wages', name: 'ILOSTAT earnings', group: 'free', feeds: 'Nominal and real wage growth (country brief, Central Bank and Politics agents)' },
-      fetchFn,
-      iloEarningsSampleUrl(SAMPLE_ISO3, new Date().getUTCFullYear() - 8),
-      T,
-      (r) => {
-        const parsed = parseIloEarnings(r.text || '');
-        if (!parsed) return null;
-        const w = parsed[SAMPLE_ISO3] && wageReading(parsed[SAMPLE_ISO3], undefined);
-        if (!w) return `Answered (no earnings for ${SAMPLE_NAME} in local currency, all activities)`;
-        return `${SAMPLE_NAME} average monthly earnings ${fmt(w.monthly, 0)} in local currency (${w.year})${w.nominalGrowthPct !== undefined ? `, ${w.nominalGrowthPct > 0 ? '+' : ''}${fmt(w.nominalGrowthPct)}% on a year earlier` : ''}`;
-      },
-      undefined,
-      'It answered, but not with the ILOSTAT columns the app reads (ref_area, classif1, time, obs_value). ILOSTAT may have changed its layout, or the indicator id.'
-    )
-  );
+  add('ilostat_wages', async () => {
+    const def = { id: 'ilostat_wages' as SourceId, name: 'ILOSTAT earnings', group: 'free' as const, feeds: 'Nominal and real wage growth (country brief, Central Bank and Politics agents)' };
+    const from = new Date().getUTCFullYear() - 8;
+    const read = (r: ProbeReply) => {
+      const parsed = parseIloEarnings(r.text || '');
+      if (!parsed) return null;
+      const w = parsed[SAMPLE_ISO3] && wageReading(parsed[SAMPLE_ISO3], undefined);
+      if (!w) return `Answered (no earnings for ${SAMPLE_NAME} in local currency, all activities)`;
+      return `${SAMPLE_NAME} average monthly earnings ${fmt(w.monthly, 0)} in local currency (${w.year})${w.nominalGrowthPct !== undefined ? `, ${w.nominalGrowthPct > 0 ? '+' : ''}${fmt(w.nominalGrowthPct)}% on a year earlier` : ''}`;
+    };
+    const unreadable = 'It answered, but not with the ILOSTAT columns the app reads (ref_area, classif1, time, obs_value). ILOSTAT may have changed its layout, or the indicator id.';
+    const set = env[ILO_EARNINGS_ENV]?.trim();
+    const id = set || ILO_EARNINGS_ID;
+    const first = await httpCheck(def, fetchFn, iloEarningsSampleUrl(SAMPLE_ISO3, from, id), T, read, undefined, unreadable);
+    if (set || first.state !== 'refused' || !iloIdRefused(first.httpStatus, first.detail)) return first;
+    // The id is no longer served: look for its replacement in ILOSTAT's own list of indicators.
+    for (const tocUrl of ILO_TOC_URLS) {
+      const toc = await probe(fetchFn, tocUrl, T);
+      const ids = toc.ok ? iloEarningsCandidates(toc.text || '', id) : [];
+      if (!ids.length) continue;
+      const next = await httpCheck(def, fetchFn, iloEarningsSampleUrl(SAMPLE_ISO3, from, ids[0]), T, read, undefined, unreadable);
+      const note = `${id} is no longer served; ILOSTAT's indicator list offers ${ids.slice(0, 4).join(', ')}, and the daily run uses ${ids[0]} (${ILO_EARNINGS_ENV} in .env chooses another).`;
+      return next.state === 'connected' ? { ...next, sample: `${next.sample}. ${note}` } : { ...next, detail: `${note} ${next.detail}` };
+    }
+    return { ...first, detail: `${first.detail} No replacement for ${id} was found in ILOSTAT's indicator list (${ILO_TOC_URLS.map(hostOf).join(', ')}); set ${ILO_EARNINGS_ENV} in .env to the current id (https://rplumber.ilo.org/).` };
+  });
 
   add('bis_property', () =>
     httpCheck(
