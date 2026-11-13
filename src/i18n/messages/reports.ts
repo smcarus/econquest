@@ -321,6 +321,8 @@ export const REPORTS = defineMessages('reports', {
   pr_evidenceFirst: 'Finish Evidence first.',
   pr_oodMemo: 'Out of date: an earlier step changed after the memo was written. Write it again.',
   pr_memoEnglish: 'The memo is written in English, so it reads the same for everyone who signs it off.',
+  pr_brief: "One-page brief (PDF)",
+  pr_briefTitle: "A one-page summary for readers who are not economists: the question, the chosen option, its figures with sources and what to watch, in the language you are using.",
   pr_signoffNote: ' · the sign-off records this hash; a memo written again reads "Changed after sign-off".',
   pr_checking: 'Checking…',
   pr_checkNow: 'Check now (review date {date})',
