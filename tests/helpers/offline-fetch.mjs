@@ -16,8 +16,11 @@ import { CBPOL_DAILY_LIVE, CBPOL_MONTHLY } from '../fixtures/bisCbpol.mjs';
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
+const realFetch = globalThis.fetch;
 globalThis.fetch = async (input, init = {}) => {
   const url = String(input instanceof Request ? input.url : input);
+  // OFFLINE_PASS=<address start>: a receiver the test itself runs on this machine (webhook tests).
+  if (process.env.OFFLINE_PASS && url.startsWith(process.env.OFFLINE_PASS)) return realFetch(input, init);
   const headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
   process.stderr.write(`[offline-fetch] ${url} key=${headers.has('key') ? 'present' : 'missing'}\n`);
   // OFFLINE_HANG=<host part>: that host never answers (for the preload step time limit).

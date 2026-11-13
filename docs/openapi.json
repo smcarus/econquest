@@ -163,6 +163,131 @@
             ]
           }
         ]
+      },
+      "ConsoleEvent": {
+        "type": "object",
+        "description": "One envelope for every event. Values come with their source, the date they refer to (as_of), the validation badge and whether the licence register lets them be passed on (shareable).",
+        "required": [
+          "id",
+          "type",
+          "entity",
+          "severity",
+          "occurred_at",
+          "as_of",
+          "source",
+          "evidence_url",
+          "shareable",
+          "badge",
+          "idempotency_key",
+          "summary"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "evt_..., increasing; use with after= or Last-Event-ID."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "signal_state_changed",
+              "threshold_crossed",
+              "badge_changed",
+              "figure_revised",
+              "feed_failed",
+              "data_stale",
+              "sanctions_list_changed",
+              "release_upcoming",
+              "council_run_finished",
+              "daily_download_ready"
+            ]
+          },
+          "entity": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "country",
+                  "model",
+                  "source",
+                  "app",
+                  "watch"
+                ]
+              },
+              "iso2": {
+                "type": "string"
+              },
+              "iso3": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "indicator": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              }
+            }
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "info",
+              "warning",
+              "critical"
+            ]
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When EconQuest noticed it."
+          },
+          "as_of": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The period or date the value refers to."
+          },
+          "source": {
+            "type": "string"
+          },
+          "evidence_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Where to read the value behind the event (relative addresses are on this server)."
+          },
+          "shareable": {
+            "type": "boolean",
+            "description": "From the data-licence register; false when the source's terms are restricted or unconfirmed."
+          },
+          "badge": {
+            "type": "string",
+            "enum": [
+              "official",
+              "validated",
+              "provisional",
+              "under_review",
+              "review_due",
+              "withdrawn",
+              "not_validated"
+            ]
+          },
+          "idempotency_key": {
+            "type": "string",
+            "description": "The same for the same happening; also sent as the Idempotency-Key header."
+          },
+          "summary": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          }
+        }
       }
     },
     "headers": {
@@ -603,6 +728,425 @@
             "$ref": "#/components/parameters/CorrelationId"
           }
         ]
+      }
+    },
+    "/api/v1/events": {
+      "get": {
+        "summary": "Events after an id or a time (catch-up)",
+        "tags": [
+          "Events"
+        ],
+        "x-scope": "read:events",
+        "security": [
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "description": "Return events after this event id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "description": "Return events at or after this ISO time.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "types",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated event types; empty means every type.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "countries",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated ISO alpha-2 or alpha-3 codes; only events about these countries.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "At most this many (default 200, highest 1000). With after or since, the oldest first, so paging with after misses nothing; without them, the latest.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Events, oldest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ConsoleEvent"
+                      }
+                    },
+                    "types": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "last_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BAD_FILTER."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
+      }
+    },
+    "/api/v1/events/stream": {
+      "get": {
+        "summary": "Live events (server-sent events)",
+        "tags": [
+          "Events"
+        ],
+        "x-scope": "read:events",
+        "security": [
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "types",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated event types; empty means every type.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "countries",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated ISO alpha-2 or alpha-3 codes; only events about these countries.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false,
+            "description": "On reconnect: events after this id are sent first.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "text/event-stream. Each frame has id, event (the type) and data (a ConsoleEvent)."
+          },
+          "400": {
+            "description": "BAD_FILTER."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
+      }
+    },
+    "/api/v1/events/deliveries": {
+      "get": {
+        "summary": "Delivery log of your webhooks, newest first",
+        "tags": [
+          "Events"
+        ],
+        "x-scope": "read:events",
+        "security": [
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "webhook",
+            "in": "query",
+            "required": false,
+            "description": "Only this webhook id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "At most this many (default 100, highest 500).",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Each attempt: time, delivery and event ids, HTTP status, ok, milliseconds, note, and the next attempt time or gaveUp."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks": {
+      "get": {
+        "summary": "Your webhooks",
+        "tags": [
+          "Events"
+        ],
+        "x-scope": "read:events",
+        "security": [
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Webhooks made with this token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "webhooks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": "string"
+                          },
+                          "types": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "countries": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
+      },
+      "post": {
+        "summary": "Add a webhook; the signing secret is shown once",
+        "tags": [
+          "Events"
+        ],
+        "x-scope": "read:events",
+        "security": [
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "url"
+                ],
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "types": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "countries": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The webhook and its secret (whsec_...). Each delivery is a POST of one ConsoleEvent with X-EconQuest-Signature-256 = sha256=HMAC-SHA256(secret, X-EconQuest-Timestamp + '.' + body). Failed deliveries are retried after 30 s, 2 min, 10 min, 1 h and 6 h."
+          },
+          "400": {
+            "description": "BAD_URL or BAD_WEBHOOK."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks/{id}": {
+      "delete": {
+        "summary": "Remove one of your webhooks",
+        "tags": [
+          "Events"
+        ],
+        "x-scope": "read:events",
+        "security": [
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Removed."
+          },
+          "404": {
+            "description": "NO_WEBHOOK: none of yours with that id."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
       }
     }
   }
