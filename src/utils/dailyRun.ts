@@ -58,6 +58,7 @@ export const FILE_PULLS: Array<{ id: string; script: string; label: string; args
   { id: 'weo', script: 'weo-pull.ts', args: ['--weekly'], label: 'Past IMF World Economic Outlook editions (real-time IMF figures, debt fan test)' },
   { id: 'sanctions', script: 'sanctions-pull.ts', label: 'OFAC and UN sanctions lists' },
   { id: 'gpr', script: 'gpr-pull.ts', label: 'Geopolitical Risk index (Caldara and Iacoviello, monthly)' },
+  { id: 'chinn_ito', script: 'chinn-ito-pull.ts', label: 'Capital account openness (Chinn-Ito index, yearly)' },
   { id: 'ucdp', script: 'ucdp-pull.ts', label: 'UCDP conflict data (newer yearly release, monthly candidate events)' },
   { id: 'replays', script: 'replays-pull.ts', label: 'Monthly history for the scenario replays (OECD 10Y yields and Fed H.10 exchange rates via FRED, BCRP EMBIG spreads)' },
 ];

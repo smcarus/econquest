@@ -346,6 +346,10 @@ watchlist countries with both codes.
 - `figures`: the panel figures (policy rate, inflation, growth, debt, balances, reserves, yield,
   leading indicator, positioning, Treasury holdings).
 - `series`: the latest value of every saved series, plus the series that are Missing.
+  Capital account openness is here as `capital_openness` (the Chinn-Ito index scaled 0 to 1) and
+  `capital_openness_raw` (KAOPEN as published), yearly; cite Chinn and Ito (2006), Journal of
+  Development Economics 81(1), 163-192. The authors give no licence, so these values are
+  `shareable: false` and are held back in sharing mode.
 - `signals`: the policy cycle, CFTC positioning and growth-and-inflation regime states, with their
   validation badges.
 - `council`: the id of the last council run, or null.

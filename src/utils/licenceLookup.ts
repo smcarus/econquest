@@ -38,6 +38,7 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['ucdp', /\bUCDP\b|Uppsala Conflict/i],
   ['ofac', /\bOFAC\b/],
   ['gpr', /Caldara|Iacoviello|Geopolitical Risk index/i],
+  ['chinn_ito', /Chinn-Ito|\bKAOPEN\b/i],
   ['unsc', /UN Security Council|\bUNSC\b/],
   ['polymarket', /Polymarket/i],
   ['kalshi', /Kalshi/i],

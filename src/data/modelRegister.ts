@@ -276,9 +276,9 @@ export const MODEL_REGISTER: RegisterEntry[] = [
   {
     id: 'risk_scorecard',
     name: 'Country risk scorecard',
-    says: 'Governance, armed conflict, unrest and the economy side by side, each figure with its source and year.',
+    says: 'Governance, armed conflict, unrest, geopolitical risk, capital account openness and the economy side by side, each figure with its source and year.',
     method: 'Six World Bank WGI estimates against the world average; UCDP/PRIO conflicts and UCDP deaths for the latest coded year; GDELT 1.0 unrest spikes; the Caldara-Iacoviello Geopolitical Risk index; IMF and World Bank debt, growth, inflation, current account, reserves and external debt. No overall score.',
-    inputs: 'World Bank WGI, UCDP/PRIO and UCDP, GDELT 1.0 event files, Caldara-Iacoviello GPR file, IMF WEO, World Bank Open Data',
+    inputs: 'World Bank WGI, UCDP/PRIO and UCDP, GDELT 1.0 event files, Caldara-Iacoviello GPR file, Chinn-Ito capital account openness file, IMF WEO, World Bank Open Data',
     where: 'Country Research > History & data (Country risk scorecard)',
     use: 'Research',
     status: 'not_validated',

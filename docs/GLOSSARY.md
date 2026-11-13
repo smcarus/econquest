@@ -796,6 +796,14 @@ An index by economists Dario Caldara and Matteo Iacoviello that counts how often
 
 **How to read it.** Higher means more press coverage of geopolitical threats than usual.
 
+### Capital account openness (Chinn-Ito index)
+
+An index by economists Menzie Chinn and Hiro Ito of how freely money can move in and out of a country under its laws, from 0 (closed) to 1 (open), built from the IMF's yearly report on exchange rules.
+
+**Why it matters.** Capital controls decide whether foreign investors can take their money out and whether people and firms can borrow or invest abroad, which matters in a crisis.
+
+**How to read it.** Higher means fewer legal limits. It measures the rules on paper, not how much money actually moves.
+
 ### Sanctions
 
 Restrictions a government (such as the US, EU or UK) or the UN places on dealing with named countries, companies or people.

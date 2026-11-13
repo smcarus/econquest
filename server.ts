@@ -218,6 +218,8 @@ import { gprForCountry } from './src/utils/gprIndex.ts';
 import { gprData } from './src/utils/gprStore.ts';
 import { countrySanctions, sanctionsSentence, searchSanctions, SANCTIONS_METHOD } from './src/utils/sanctionsLists.ts';
 import { sanctionsData, sanctionsDir } from './src/utils/sanctionsStore.ts';
+import { chinnItoData } from './src/utils/chinnItoStore.ts';
+import { chinnItoReading } from './src/utils/chinnIto.ts';
 import { countryRiskScorecard, scorecardSentence, ECONOMY_IDS, SCORECARD_METHOD, WGI_IDS, type ScorecardInputs } from './src/utils/countryRiskScorecard.ts';
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { US_10Y_SERIES } from './src/utils/officialYields.ts';
@@ -3899,6 +3901,10 @@ async function startServer() {
       bisCredit,
       idsCreditors,
       sovereignDefaults,
+      ...(() => {
+        const ci = chinnItoData(DATA_DIR);
+        return ci.ok ? { chinnIto: ci.table } : { chinnIto: null, chinnItoMissing: ci.reason };
+      })(),
       inflationExpectations,
       inflationSurveys,
       portWatch,
@@ -4157,7 +4163,7 @@ async function startServer() {
     const spikes = spikeMonths(series);
     res.json({ series, reading: v1Reading(series), spikes: spikes.slice(-36), spikeSentence: series ? spikeSentence(SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3, spikes) : null, spikeMethod: SPIKE_METHOD, pull: loadDailyState(gdeltDailyDir(DATA_DIR)), from: v1FromMonth(process.env) });
   });
-  // Country risk scorecard (src/utils/countryRiskScorecard.ts): governance, conflict, unrest, economy; no overall score.
+  // Country risk scorecard (src/utils/countryRiskScorecard.ts): governance, conflict, unrest, geopolitical, capital account, economy; no overall score.
   app.get('/api/risk-scorecard/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
@@ -4170,6 +4176,8 @@ async function startServer() {
     const conflict = ucdpReading(ucdp, iso3);
     const series = gdeltDailySeries(DATA_DIR, iso3);
     const gpr = gprData(DATA_DIR);
+    const ci = chinnItoData(DATA_DIR);
+    const ciReading = ci.ok ? chinnItoReading(ci.table, iso3) : null;
     const sc = countryRiskScorecard({
       official,
       officialMissingReason: file ? undefined : 'Full official history not downloaded yet (Menu > Offline data, or open History & data while online)',
@@ -4179,6 +4187,8 @@ async function startServer() {
       spikesMissing: series ? undefined : 'GDELT 1.0 files not pulled yet (npm run gdelt:daily)',
       gpr: gpr.ok ? gprForCountry(gpr.table, iso3) : null,
       gprMissing: gpr.ok ? undefined : gpr.reason,
+      capital: ciReading && !('missing' in ciReading) ? ciReading : null,
+      capitalMissing: !ci.ok ? ci.reason : ciReading && 'missing' in ciReading ? ciReading.missing : undefined,
     });
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...sc, sentence: scorecardSentence(name, sc), method: SCORECARD_METHOD });
