@@ -24,6 +24,9 @@ export interface Holding extends SecurityIds {
   notionalUsdMm: number;
   /** Modified duration in years (bonds) or spread duration (CDS). Optional. */
   durationYears?: number;
+  /** Sent by an outside system through the holdings API: the token's id and name. Absent = added in the app. */
+  from?: string;
+  fromName?: string;
 }
 
 export const ASSET_CLASS_LABEL: Record<HoldingAssetClass, string> = {
@@ -110,7 +113,7 @@ function normaliseHeader(h: string): string {
   return h.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 }
 
-function parseAssetClass(v: string): HoldingAssetClass {
+export function parseAssetClass(v: string): HoldingAssetClass {
   const s = v.toLowerCase();
   if (!s) return 'HC_BOND';
   if (s.includes('cds') || s.includes('protection')) return 'CDS';

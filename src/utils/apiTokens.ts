@@ -37,6 +37,8 @@ export interface ApiToken {
   hint: string;
   createdAt: string;
   createdBy: string;
+  /** The account that made it (sign-in on): positions it sends go to that account's workspace. */
+  createdById?: string;
   lastUsedAt?: string;
   revokedAt?: string;
   revokedBy?: string;

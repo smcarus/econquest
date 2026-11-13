@@ -528,6 +528,59 @@
             "type": "string"
           }
         }
+      },
+      "ApiPosition": {
+        "type": "object",
+        "required": [
+          "country",
+          "notional_usd_mm"
+        ],
+        "properties": {
+          "country": {
+            "type": "string",
+            "description": "ISO alpha-2 or alpha-3."
+          },
+          "instrument": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "type": {
+            "type": "string",
+            "description": "HC_BOND, LC_BOND, CDS, FX or OTHER (or the CSV words such as hc_bond, local, cds, forward)."
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "long",
+              "short"
+            ]
+          },
+          "notional_usd_mm": {
+            "type": "number",
+            "description": "USD millions; a negative number means short."
+          },
+          "duration": {
+            "type": "number",
+            "description": "Modified or spread duration, years."
+          },
+          "isin": {
+            "type": "string"
+          },
+          "lei": {
+            "type": "string"
+          },
+          "cik": {
+            "type": "string"
+          },
+          "ticker": {
+            "type": "string"
+          },
+          "entity_id": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Your own id, returned exactly; positions are updated by it."
+          }
+        }
       }
     },
     "headers": {
@@ -1719,6 +1772,287 @@
           },
           "403": {
             "description": "TOKEN_SCOPE: the token lacks read:data."
+          }
+        }
+      }
+    },
+    "/api/v1/holdings": {
+      "get": {
+        "summary": "The positions this token sent",
+        "tags": [
+          "Holdings"
+        ],
+        "x-scope": "write:holdings",
+        "security": [
+          {
+            "ApiToken": [
+              "write:holdings"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The positions this token now holds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "holdings": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/ApiPosition"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks write:holdings. The legacy key cannot write."
+          }
+        }
+      },
+      "put": {
+        "summary": "Replace this token's positions (all or nothing)",
+        "tags": [
+          "Holdings"
+        ],
+        "x-scope": "write:holdings",
+        "security": [
+          {
+            "ApiToken": [
+              "write:holdings"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "holdings"
+                ],
+                "properties": {
+                  "holdings": {
+                    "type": "array",
+                    "maxItems": 5000,
+                    "items": {
+                      "$ref": "#/components/schemas/ApiPosition"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The positions this token now holds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "holdings": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/ApiPosition"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BAD_HOLDINGS: nothing was changed; errors lists every problem."
+          },
+          "413": {
+            "description": "TOO_LARGE."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks write:holdings. The legacy key cannot write."
+          }
+        }
+      },
+      "post": {
+        "summary": "Add positions, or update them by entity_id",
+        "tags": [
+          "Holdings"
+        ],
+        "x-scope": "write:holdings",
+        "security": [
+          {
+            "ApiToken": [
+              "write:holdings"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "holdings"
+                ],
+                "properties": {
+                  "holdings": {
+                    "type": "array",
+                    "maxItems": 5000,
+                    "items": {
+                      "$ref": "#/components/schemas/ApiPosition"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The positions this token now holds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "holdings": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/ApiPosition"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BAD_HOLDINGS: nothing was changed; errors lists every problem."
+          },
+          "413": {
+            "description": "TOO_LARGE."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks write:holdings. The legacy key cannot write."
+          }
+        }
+      }
+    },
+    "/api/v1/holdings/{id}": {
+      "delete": {
+        "summary": "Remove one of this token's positions, by id or entity_id",
+        "tags": [
+          "Holdings"
+        ],
+        "x-scope": "write:holdings",
+        "security": [
+          {
+            "ApiToken": [
+              "write:holdings"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Removed."
+          },
+          "404": {
+            "description": "NO_HOLDING."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks write:holdings. The legacy key cannot write."
           }
         }
       }

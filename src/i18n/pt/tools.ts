@@ -151,6 +151,7 @@ export const TOOLS_PT: Messages<typeof TOOLS> = {
   ho_side: "Lado",
   ho_long: "Comprado",
   ho_short: "Vendido",
+  ho_fromApi: "Enviada por {name}",
   ho_notional: "Nocional (US$ mi)",
   ho_duration: "Duration (anos, opcional)",
   ho_add: "Adicionar",

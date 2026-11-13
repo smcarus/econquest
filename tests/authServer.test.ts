@@ -350,6 +350,48 @@ test('country snapshot: a read:data token reads every saved figure with source, 
   assert.equal((await fetch(`${base}/api/v1/countries/MEX/snapshot`)).status, 401, 'tokens only');
 });
 
+test('holdings API: a write:holdings token sends positions; they land in the maker\'s Holdings, marked, and only its own change', async () => {
+  const made = await (await post('/api/settings/api-tokens', { name: 'Book console', scopes: ['write:holdings'] }, adminCookie)).json();
+  const auth = { Authorization: `Bearer ${made.secret}`, 'Content-Type': 'application/json', 'X-Correlation-Id': 'book-sync-1' };
+  const send = (method: string, body: unknown) => fetch(`${base}/api/v1/holdings`, { method, headers: auth, body: JSON.stringify(body) });
+  const bad = await send('PUT', { holdings: [{ country: 'BR', notional_usd_mm: 10 }, { country: 'Atlantis', notional_usd_mm: 0, isin: 'US0378331006X' }] });
+  assert.equal(bad.status, 400);
+  const badBody = await bad.json();
+  assert.ok(badBody.errors.length >= 2, 'every problem is listed');
+  assert.equal((await (await fetch(`${base}/api/v1/holdings`, { headers: auth })).json()).holdings.length, 0, 'all or nothing');
+  const put = await send('PUT', { holdings: [
+    { country: 'BR', instrument: 'BRAZIL 6.125% 2034', type: 'hc_bond', side: 'long', notional_usd_mm: 25, duration: 6.8, isin: 'US105756CE88', entity_id: 'pos-1' },
+    { country: 'MEX', type: 'FX', side: 'short', notional_usd_mm: 8, entity_id: 'pos-2' },
+  ] });
+  assert.equal(put.status, 200);
+  const held = (await put.json()).holdings;
+  assert.equal(held.length, 2);
+  assert.equal(held[0].country, 'BRA');
+  const id1 = held[0].id;
+  // Upsert by entity_id keeps the id; a new one is added.
+  const up = await (await send('POST', { holdings: [{ country: 'BRA', notional_usd_mm: 30, entity_id: 'pos-1' }, { country: 'TUR', notional_usd_mm: 5, entity_id: 'pos-3' }] })).json();
+  assert.equal(up.holdings.length, 3);
+  assert.equal(up.holdings.find((h: { entity_id: string }) => h.entity_id === 'pos-1').id, id1);
+  assert.equal(up.holdings.find((h: { entity_id: string }) => h.entity_id === 'pos-1').notional_usd_mm, 30);
+  assert.equal((await fetch(`${base}/api/v1/holdings/pos-2`, { method: 'DELETE', headers: auth })).status, 200);
+  // The admin who made the token sees them in Holdings, next to the position they already had, marked.
+  const ws = await (await fetch(`${base}/api/workspace`, { headers: { Cookie: adminCookie } })).json();
+  const book = JSON.parse(ws.values['econquest.holdings.v1']);
+  assert.ok(book.some((h: { iso3: string; from?: string }) => h.iso3 === 'BRA' && !h.from), 'the position added in the app is kept');
+  assert.deepEqual(book.filter((h: { from?: string }) => h.from).map((h: { entityId: string; fromName: string }) => [h.entityId, h.fromName]).sort(), [['pos-1', 'Book console'], ['pos-3', 'Book console']]);
+  // Replace with an empty list removes only this token's positions.
+  assert.equal((await send('PUT', { holdings: [] })).status, 200);
+  const after = JSON.parse((await (await fetch(`${base}/api/workspace`, { headers: { Cookie: adminCookie } })).json()).values['econquest.holdings.v1']);
+  assert.equal(after.filter((h: { from?: string }) => h.from).length, 0);
+  assert.ok(after.length >= 1);
+  await new Promise((r) => setTimeout(r, 300));
+  const audit = readFileSync(path.join(dataDir, 'local', 'audit', 'audit-log.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+  const entry = audit.find((e) => /^API token "Book console" replaced its positions: 2 received/.test(e.summary));
+  assert.ok(entry, 'changes are audited with counts');
+  assert.equal(entry.correlationId, 'book-sync-1');
+  assert.ok(!JSON.stringify(audit).includes('US105756CE88'), 'positions themselves are not in the audit log');
+});
+
 test('wrong passwords are refused, then locked out; the right one signs in', async () => {
   const bad = await post('/api/auth/sign-in', { username: 'sam', password: 'not the password at all' });
   assert.equal(bad.status, 401);

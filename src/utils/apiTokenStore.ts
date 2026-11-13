@@ -60,7 +60,7 @@ export class ApiTokenStore {
   }
 
   /** Make a token; the secret is returned once and never kept. */
-  create(input: { name: unknown; scopes: unknown; createdBy: string }): { token: ApiToken; secret: string } | { error: string } {
+  create(input: { name: unknown; scopes: unknown; createdBy: string; createdById?: string }): { token: ApiToken; secret: string } | { error: string } {
     const problem = tokenNameProblem(input.name) || scopesProblem(input.scopes);
     if (problem) return { error: problem };
     const active = this.load().filter((t) => !t.revokedAt);
@@ -70,7 +70,7 @@ export class ApiTokenStore {
     const id = newTokenId();
     const secret = newSecret(id);
     const scopes = [...new Set(input.scopes as Scope[])];
-    const token: ApiToken = { id, name, scopes, hash: hashSecret(secret), hint: secret.slice(0, 12), createdAt: new Date().toISOString(), createdBy: input.createdBy };
+    const token: ApiToken = { id, name, scopes, hash: hashSecret(secret), hint: secret.slice(0, 12), createdAt: new Date().toISOString(), createdBy: input.createdBy, ...(input.createdById ? { createdById: input.createdById } : {}) };
     this.load().push(token);
     this.save();
     return { token, secret };
