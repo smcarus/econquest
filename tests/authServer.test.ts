@@ -320,6 +320,36 @@ test('watches: a token sets a threshold, and after the daily download the crossi
   }
 });
 
+test('country snapshot: a read:data token reads every saved figure with source, date, badge and shareable, no council run needed', async () => {
+  const made = await (await post('/api/settings/api-tokens', { name: 'Snapshot console', scopes: ['read:data'] }, adminCookie)).json();
+  const bearer = { Authorization: `Bearer ${made.secret}` };
+  const res = await fetch(`${base}/api/v1/countries/MX/snapshot`, { headers: bearer });
+  assert.equal(res.status, 200);
+  const snap = await res.json();
+  assert.deepEqual(snap.country, { iso2: 'MX', iso3: 'MEX', name: snap.country.name });
+  assert.equal(snap.council.run_id, null, 'no council run on Mexico, and the snapshot answers anyway');
+  assert.ok(snap.figures.length > 5);
+  for (const v of [...snap.figures, ...snap.series]) {
+    assert.ok(v.status === 'Live' || v.status === 'Missing');
+    assert.equal(typeof v.shareable, 'boolean');
+    if (v.status === 'Live') {
+      assert.ok(v.source && v.as_of && v.badge, `${v.id} has source, date and badge`);
+      assert.equal(typeof v.value, 'number');
+    } else {
+      assert.equal(v.value, null);
+      assert.ok(v.reason, `${v.id} says why it is Missing`);
+    }
+  }
+  // The BIS fixture's policy rate is there, from BIS.
+  const policy = snap.figures.find((f: { id: string }) => f.id === 'policy_rate');
+  assert.equal(policy.status, 'Live');
+  assert.match(policy.source, /BIS/);
+  assert.equal((await fetch(`${base}/api/v1/countries/ZZZ/snapshot`, { headers: bearer })).status, 404);
+  const list = await (await fetch(`${base}/api/v1/countries`, { headers: bearer })).json();
+  assert.ok(list.countries.some((c: { iso2: string; iso3: string }) => c.iso2 === 'MX' && c.iso3 === 'MEX'));
+  assert.equal((await fetch(`${base}/api/v1/countries/MEX/snapshot`)).status, 401, 'tokens only');
+});
+
 test('wrong passwords are refused, then locked out; the right one signs in', async () => {
   const bad = await post('/api/auth/sign-in', { username: 'sam', password: 'not the password at all' });
   assert.equal(bad.status, 401);

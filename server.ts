@@ -43,6 +43,7 @@ import { MODEL_REGISTER } from './src/data/modelRegister';
 import { EventHub, WebhookStore, emitEvents, eventFiles } from './src/server/eventBus';
 import { badgeChangeInputs, councilRunInput, dailyRunInputs, figureEventInputs, releaseUpcomingInputs, sanctionsChangeInputs, sanctionsCounts, signalChangeInputs, type SignalStates, watchCrossingInputs, type WatchStates } from './src/server/eventSources';
 import { registerConsoleWatchRoutes } from './src/server/routes/consoleWatches';
+import { buildCountrySnapshot } from './src/server/countrySnapshot';
 import { loadWatchRules as loadWatchRuleFile } from './src/utils/watchRulesStore';
 import { registerConsoleEventRoutes } from './src/server/routes/consoleEvents';
 import { LEGACY_SCOPES, TOKEN_PREFIX, publicToken, scopeFor, scopeRefusal, tokenOnly, type Scope } from './src/utils/apiTokens';
@@ -3945,6 +3946,31 @@ async function startServer() {
     }
     res.json({ mode: 'latest', figures: PANEL_FIGURES.filter((f) => figures.includes(f.id)), cells: panelLatest(data, figures).map((c) => ({ iso2: iso2For(c.iso3), ...c })) });
   });
+  // Country snapshot for outside systems (item 6): every saved figure for one country, no council run needed.
+  const countrySnapshotRoute = async (req: express.Request, res: express.Response) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z]/g, '');
+    if (!iso2For(iso3)) return res.status(404).json({ error: 'NO_COUNTRY', message: `${req.params.iso3} is not an ISO alpha-2 or alpha-3 country code.` });
+    const [data] = await panelData(iso3);
+    if (!data) return res.status(404).json({ error: 'NO_COUNTRY', message: `No country ${iso3}.` });
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || data.snapshot.countryName || iso3;
+    res.json(
+      buildCountrySnapshot({
+        iso3,
+        name,
+        cells: panelLatest([data], PANEL_FIGURES.map((f) => f.id)),
+        series: data.series,
+        signals: readSignalStates(),
+        badges: modelBadgesNow(),
+        sharingMode: shareModeFromValue(loadWorkspace(workspaceFor(res)).values[SHARE_MODE_KEY]),
+        councilRunId: latestRunsByIso3.get(iso3)?.runId ?? null,
+      })
+    );
+  };
+  app.get('/api/v1/countries', (_req, res) => {
+    res.json({ countries: SOVEREIGN_CATALOG.map((c) => ({ iso2: iso2For(c.iso3) ?? null, iso3: c.iso3, name: c.countryName })) });
+  });
+  app.get('/api/v1/countries/:iso3', countrySnapshotRoute);
+  app.get('/api/v1/countries/:iso3/snapshot', countrySnapshotRoute);
   app.get('/api/export/panel.:fmt(csv|xlsx)', async (req, res) => {
     const figures = parseFigureIds(req.query.figures);
     const data = await panelData(req.query.countries);

@@ -368,6 +368,166 @@
             }
           }
         }
+      },
+      "SnapshotValue": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "unit",
+          "status",
+          "value",
+          "as_of",
+          "source",
+          "badge",
+          "shareable"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Live",
+              "Missing"
+            ]
+          },
+          "value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "as_of": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The period the value refers to."
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "badge": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "official",
+              "validated",
+              "provisional",
+              "under_review",
+              "review_due",
+              "withdrawn",
+              "not_validated",
+              null
+            ]
+          },
+          "shareable": {
+            "type": "boolean"
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "feed",
+              "own_file"
+            ]
+          },
+          "pulled_at": {
+            "type": "string"
+          },
+          "projected_to": {
+            "type": "string",
+            "description": "IMF projection years exist up to here; value is the latest outturn."
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why it is Missing or held back."
+          }
+        }
+      },
+      "CountrySnapshot": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "$ref": "#/components/schemas/CountryCodes"
+          },
+          "generated_at": {
+            "type": "string"
+          },
+          "figures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SnapshotValue"
+            }
+          },
+          "series": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SnapshotValue"
+            }
+          },
+          "signals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "signal": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string"
+                },
+                "as_of": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "string"
+                },
+                "badge": {
+                  "type": "string"
+                },
+                "shareable": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "council": {
+            "type": "object",
+            "properties": {
+              "run_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "note": {
+                "type": "string"
+              }
+            }
+          },
+          "sharing_mode": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
       }
     },
     "headers": {
@@ -1428,6 +1588,137 @@
           },
           "403": {
             "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
+      }
+    },
+    "/api/v1/countries": {
+      "get": {
+        "summary": "The watchlist countries, with both ISO codes",
+        "tags": [
+          "Countries"
+        ],
+        "x-scope": "read:data",
+        "security": [
+          {
+            "ApiToken": [
+              "read:data"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "countries: iso2, iso3, name."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:data."
+          }
+        }
+      }
+    },
+    "/api/v1/countries/{iso3}": {
+      "get": {
+        "summary": "Country snapshot (same as /snapshot)",
+        "tags": [
+          "Countries"
+        ],
+        "x-scope": "read:data",
+        "security": [
+          {
+            "ApiToken": [
+              "read:data"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Country"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Every figure saved for the country, read from what the daily download saved (never fetched by this call). No council run needed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountrySnapshot"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NO_COUNTRY."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:data."
+          }
+        }
+      }
+    },
+    "/api/v1/countries/{iso3}/snapshot": {
+      "get": {
+        "summary": "Country snapshot: figures, series and signals with source, date, badge and shareable flag",
+        "tags": [
+          "Countries"
+        ],
+        "x-scope": "read:data",
+        "security": [
+          {
+            "ApiToken": [
+              "read:data"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Country"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Every figure saved for the country, read from what the daily download saved (never fetched by this call). No council run needed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountrySnapshot"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NO_COUNTRY."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:data."
           }
         }
       }
