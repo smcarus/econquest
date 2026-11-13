@@ -13,6 +13,7 @@ import { MENU } from '../i18n/messages/menu';
 // Your subscriptions page (data plan G4): its series list loads only when the page is opened.
 const SubscriptionSeries = lazy(() => import('./SubscriptionSeries'));
 const ApiTokenSettings = lazy(() => import('./ApiTokenSettings'));
+const HiddenNamesSettings = lazy(() => import('./HiddenNamesSettings'));
 
 /**
  * Settings (Menu > Settings, or Cmd/Ctrl + comma). The "Data API keys" section lets you paste your
@@ -23,7 +24,7 @@ const ApiTokenSettings = lazy(() => import('./ApiTokenSettings'));
 
 /**
  * Any part of the app can open Settings with openSettings('ai') (or the raw event, whose detail
- * may name the page: { tab: 'ai' | 'keys' | 'paid' | 'subscriptions' | 'alerts' | 'morning' | 'backup' | 'tokens' | 'tools' }).
+ * may name the page: { tab: 'ai' | 'keys' | 'paid' | 'subscriptions' | 'alerts' | 'morning' | 'backup' | 'tokens' | 'hidden' | 'tools' }).
  */
 export const OPEN_SETTINGS_EVENT = 'econquest:open-settings';
 
@@ -193,7 +194,7 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
   );
 };
 
-export type SettingsTab = 'ai' | 'keys' | 'paid' | 'subscriptions' | 'alerts' | 'morning' | 'backup' | 'tokens' | 'tools';
+export type SettingsTab = 'ai' | 'keys' | 'paid' | 'subscriptions' | 'alerts' | 'morning' | 'backup' | 'tokens' | 'hidden' | 'tools';
 
 /** The pages of Settings, in order, and which key sections each one shows. */
 const PAGES: Array<{ id: SettingsTab; sections: KeySection[] }> = [
@@ -208,6 +209,8 @@ const PAGES: Array<{ id: SettingsTab; sections: KeySection[] }> = [
   { id: 'backup', sections: [] },
   // Tokens for outside systems (console integration item 2, src/utils/apiTokens.ts).
   { id: 'tokens', sections: [] },
+  // Hidden names (console integration item 8, src/utils/exclusions.ts).
+  { id: 'hidden', sections: [] },
   { id: 'tools', sections: [] },
 ];
 const PAGE_ICON: Record<SettingsTab, React.ReactNode> = {
@@ -219,6 +222,7 @@ const PAGE_ICON: Record<SettingsTab, React.ReactNode> = {
   morning: <Sunrise className="w-3.5 h-3.5" aria-hidden />,
   backup: <Archive className="w-3.5 h-3.5" aria-hidden />,
   tokens: <Plug className="w-3.5 h-3.5" aria-hidden />,
+  hidden: <EyeOff className="w-3.5 h-3.5" aria-hidden />,
   tools: <Wrench className="w-3.5 h-3.5" aria-hidden />,
 };
 
@@ -328,6 +332,15 @@ export const SettingsDialog: React.FC<{
               <div className="mt-3">
                 <Suspense fallback={<p className="text-xs text-slate-500">{t('c_loading')}</p>}>
                   <ApiTokenSettings />
+                </Suspense>
+              </div>
+            </section>
+          ) : tab === 'hidden' ? (
+            <section className="flex-1 min-w-0 overflow-y-auto px-4 py-3" aria-labelledby="settings-hidden-title">
+              <h3 id="settings-hidden-title" className="ui-section-title">{t('set_p_hidden')}</h3>
+              <div className="mt-3">
+                <Suspense fallback={<p className="text-xs text-slate-500">{t('c_loading')}</p>}>
+                  <HiddenNamesSettings />
                 </Suspense>
               </div>
             </section>

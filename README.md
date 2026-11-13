@@ -553,7 +553,9 @@ and retried with backoff; see "Events and webhooks" in [docs/DATA_API.md](docs/D
 system can also set its own indicator watches (none is built in); a crossing after the daily download
 sends a `threshold_crossed` event. `GET /api/v1/countries/<code>/snapshot` returns every saved figure
 for a country, with source, date, badge and shareable flag, without a council run. With `write:holdings` it
-can send its positions (`PUT` or `POST /api/v1/holdings`), which appear in Holdings marked with the token's name.
+can send its positions (`PUT` or `POST /api/v1/holdings`), which appear in Holdings marked with the token's name. Names on
+the hidden-names list (Menu > Settings > Hidden names, or `/api/v1/exclusions`) never appear anywhere; only a
+count shows, and the app keeps fingerprints, not names.
 
 ### Network
 

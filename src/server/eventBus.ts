@@ -276,6 +276,8 @@ export interface HubDeps {
   urlProblem: (url: string) => string | null;
   fetcher?: Fetcher;
   timeoutMs?: number;
+  /** Events about a hidden name (src/utils/exclusions.ts) are neither streamed nor delivered. */
+  hidden?: (e: ConsoleEvent) => boolean;
 }
 
 /** The server side: reads new events, sends them to streams, queues and makes deliveries. */
@@ -354,6 +356,7 @@ export class EventHub {
     const hooks = this.deps.webhooks.list().filter((w) => !w.disabledAt);
     const queue = [...box.queue];
     for (const e of events) {
+      if (this.deps.hidden?.(e)) continue;
       this.deps.broadcast(e);
       for (const w of hooks) {
         if (!wants(w, e)) continue;

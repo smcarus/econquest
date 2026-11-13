@@ -28,6 +28,8 @@ export interface ConsoleEventDeps {
   files: EventFiles;
   webhooks: WebhookStore;
   urlProblem: (url: string) => string | null;
+  /** Events about a hidden name are left out, and counted. */
+  hidden?: (e: ConsoleEvent) => boolean;
 }
 
 /** Who owns what a request makes: its token id ("legacy" for the integration key), or "app" for a signed-in person. */
@@ -53,8 +55,10 @@ export function registerConsoleEventRoutes(app: express.Express, deps: ConsoleEv
     if (f.error) return res.status(400).json({ error: 'BAD_FILTER', message: f.error });
     const since = typeof req.query.since === 'string' ? req.query.since : undefined;
     if (since && Number.isNaN(Date.parse(since))) return res.status(400).json({ error: 'BAD_FILTER', message: 'since must be an ISO date or time.' });
-    const events = eventsAfter(readEvents(deps.files), { after: typeof req.query.after === 'string' ? req.query.after : undefined, since, types: f.types, countries: f.countries, limit: Number(req.query.limit) || undefined });
-    res.json({ events, types: EVENT_TYPES, last_id: events.at(-1)?.id ?? null });
+    const all = readEvents(deps.files);
+    const shown = deps.hidden ? all.filter((e) => !deps.hidden!(e)) : all;
+    const events = eventsAfter(shown, { after: typeof req.query.after === 'string' ? req.query.after : undefined, since, types: f.types, countries: f.countries, limit: Number(req.query.limit) || undefined });
+    res.json({ events, types: EVENT_TYPES, last_id: events.at(-1)?.id ?? null, hidden: all.length - shown.length });
   });
 
   app.get('/api/v1/events/stream', (req, res) => {
@@ -67,7 +71,7 @@ export function registerConsoleEventRoutes(app: express.Express, deps: ConsoleEv
     res.write(`: connected ${new Date().toISOString()}\nretry: 5000\n\n`);
     // Reconnecting with Last-Event-ID: send what was missed first.
     const last = String(req.headers['last-event-id'] || req.query.lastEventId || '').trim();
-    if (last) for (const e of eventsAfter(readEvents(deps.files), { after: last, types: f.types, countries: f.countries, limit: 1000 })) res.write(sseFrame(e));
+    if (last) for (const e of eventsAfter(readEvents(deps.files), { after: last, types: f.types, countries: f.countries, limit: 1000 })) if (!deps.hidden?.(e)) res.write(sseFrame(e));
     const client: Client = { res, ...f };
     clients.add(client);
     const ping = setInterval(() => res.write(`: ping\n\n`), 25_000);

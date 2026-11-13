@@ -378,3 +378,25 @@ negative number means short), and optionally `instrument`, `type` (`HC_BOND`, `L
 position has a problem, nothing changes and the reply lists every problem. Up to 5,000 positions per
 call. A token never sees or changes positions added in the app or sent by another token. Each change
 is in the audit log with counts, never the positions themselves.
+
+### Hidden names
+
+Countries and securities on the hidden-names list never appear: not in Holdings, the watchlist,
+country pages, the data addresses, the snapshot, events or webhooks. Where something was left out,
+the reply says only how many (`"hidden": 1`, or the `X-EconQuest-Hidden` header on lists such as
+`countries=`), and an address about a hidden country answers `404` with `"error": "HIDDEN"`.
+
+The list keeps a fingerprint (SHA-256) of each name, never the name, so no screen, reply, backup or
+log can show one back. Set it in Menu > Settings > Hidden names, or with a token that has
+`write:exclusions`:
+
+- POST `/api/v1/exclusions` with `{ "names": [ { "kind": "country", "value": "MX" }, { "kind": "isin", "value": "US0378331005" } ] }`.
+  Kinds: `country` (ISO alpha-2 or alpha-3), `isin`, `lei`, `cik`, `ticker`, `entity_id`, checked
+  as for positions.
+- POST `/api/v1/exclusions/remove` with the same shape shows names again; PUT `/api/v1/exclusions`
+  replaces the whole list (an empty list clears it); DELETE `/api/v1/exclusions/<id>` removes one
+  entry.
+- GET `/api/v1/exclusions` returns the count, the count per kind and entry ids, never names.
+
+A list is all or nothing, and a refused name is not repeated in the reply. Every change is in the
+audit log as counts ("added 2 hidden names; 2 items hidden now").
