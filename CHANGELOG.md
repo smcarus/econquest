@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Natural disasters (PA6): Research > History & data shows floods, storms, droughts, earthquakes and
+  other natural disasters since 2000 from the EM-DAT public table you download with your own EM-DAT
+  account and save in data/local/emdat/ (EM-DAT's terms do not allow passing it on, so nothing is
+  shipped or fetched): events, deaths and people affected by type, yearly averages against
+  population, the last ten years with damage as % of GDP, the five largest events, and EM-DAT's
+  citation line. Route `GET /api/disasters/:iso3`.
 - Food prices and food security (PA2): Research > History & data shows food price inflation against
   all prices from the FAOSTAT Consumer Price Indices file you save in data/local/fao-cpi/ (terms not
   confirmed, nothing shipped; values FAO estimated or imputed left out), undernourishment and food

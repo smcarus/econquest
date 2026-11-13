@@ -58,6 +58,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Commodity prices and terms of trade | Research | Description, not a tested signal | None |
 | Aid received | Research | Description, not a tested signal | None |
 | Food prices and food security | Research | Description, not a tested signal | None |
+| Natural disasters | Research | Description, not a tested signal | None |
 | Trade-off chart | Research | Description, not a tested signal | None |
 | Global shock scenarios | Research | Description, not a tested signal | None |
 | Currency carry | Research | Signal test passed | v1, 2026-11-07 |
@@ -758,6 +759,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: published indices and shares, not a forecast.
 - **Limits:** FAOSTAT terms for this table not confirmed, so nothing shipped; small island states without an ISO numeric match read Missing; food security figures are three-year averages; world prices are in US dollars, local prices also move with the exchange rate.
 - **Code:** `src/utils/foodPrices.ts, src/utils/faoCpiStore.ts, src/components/FoodPricesPanel.tsx`
+
+### Natural disasters
+
+- **Says:** How often natural disasters have hit the country since 2000, deaths and people affected by type, damage as % of GDP in the last ten years, and the largest events.
+- **Rule:** EM-DAT public table, Disaster Group Natural, from 2000 to the latest year in the file; counts by type; deaths, total affected and damage summed over the events that report them; damage in US dollars of the year over IMF GDP in US dollars that year; yearly average of people affected over the latest World Bank population.
+- **Reads:** EM-DAT public table (your file in data/local/emdat/); IMF WEO NGDPD; World Bank SP.POP.TOTL
+- **Shows in:** Country Research > History & data (Natural disasters)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: event counts and sums from the file, not a forecast.
+- **Limits:** EM-DAT terms forbid passing the data on, so nothing shipped or fetched; free accounts are for universities, non-profit research, public bodies and media; only events meeting EM-DAT's entry criteria are listed; many events have no damage figure, so damage is understated; years before 2000 left out.
+- **Code:** `src/utils/disasters.ts, src/utils/disasterStore.ts, src/components/DisastersPanel.tsx`
 
 ### Trade-off chart
 
