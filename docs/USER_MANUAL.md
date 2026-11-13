@@ -890,6 +890,11 @@ becomes the problem). Six steps, in order:
 6. **Track outcomes.** On the review date, *Check outcomes* sets the latest saved figures beside the
    ones the review started from and says whether the goal indicator moved the right way. *Review
    again* starts a new review with the same frame on today's data, linked to this one.
+   On the new review, **What changed since the earlier review** (PC3) opens to show what you changed
+   in the frame (problem, goal, constraints, audience), the option each memo recommended, each
+   diagnosis figure in the earlier review and now with the change, and whether the goal indicator
+   moved the way the goal wants between the two. What moved is not what the earlier recommendation
+   caused, and the app does not know whether it was followed. Nothing is saved.
 
 **Expert review** (P4). At the bottom of a review whose memo is written, *Fill in an expert review*
 gives a pilot economist or professor a short form on the memo: how clear it is and how well it uses

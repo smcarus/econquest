@@ -16,6 +16,7 @@ import { REPORTS } from '../i18n/messages/reports';
 import { BehaviouralCheck } from './BehaviouralCheck';
 import { PrecedentFinder } from './PrecedentFinder';
 import { ReviewPeers } from './ReviewPeers';
+import { ReviewCompare } from './ReviewCompare';
 import { PoliticalFeasibility } from './PoliticalFeasibility';
 import { ExpertReviewForm } from './ExpertReviewForm';
 
@@ -771,6 +772,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                 .
               </p>
             )}
+            {r.previousId && <ReviewCompare review={r} previousId={r.previousId} />}
             {opened!.changed.length > 0 && (
               <p className="text-xs text-rose-700 dark:text-rose-400" role="alert">
                 {opened!.changed.length === 1 ? t('pr_hashMismatch1', { steps: opened!.changed.map((s) => tx(STEP_LABEL[s])).join(', ') }) : t('pr_hashMismatch', { steps: opened!.changed.map((s) => tx(STEP_LABEL[s])).join(', ') })}
