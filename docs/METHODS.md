@@ -55,6 +55,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Costed fiscal options | Research | Description, not a tested signal | None |
 | Remittances | Research | Description, not a tested signal | None |
 | Financial inclusion | Research | Description, not a tested signal | None |
+| Commodity prices and terms of trade | Research | Description, not a tested signal | None |
 | Trade-off chart | Research | Description, not a tested signal | None |
 | Global shock scenarios | Research | Description, not a tested signal | None |
 | Currency carry | Research | Signal test passed | v1, 2026-11-07 |
@@ -719,6 +720,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: published survey and access figures, not a forecast.
 - **Limits:** Findex is a survey about every three years; an account is not proof it is used; credit counts domestic lenders only.
 - **Code:** `src/utils/financialInclusion.ts, src/components/FinancialInclusionPanel.tsx`
+
+### Commodity prices and terms of trade
+
+- **Says:** How the latest world prices of oil, metals and food bear on a country, given its shares of fuel, ores and metals and food in goods exports and imports; and its terms of trade.
+- **Rule:** Share of goods exports x goods exports / GDP x 12-month Pink Sheet price move, minus the same for imports, trade figures from one year; each group a simple average of its Pink Sheet prices; commodity share against the UNCTAD 60% line; World Bank terms of trade index with 1- and 5-year change.
+- **Reads:** World Bank Pink Sheet monthly prices; World Bank: TX.VAL.FUEL.ZS.UN, TX.VAL.MMTL.ZS.UN, TX.VAL.FOOD.ZS.UN, TM.VAL.FUEL.ZS.UN, TM.VAL.MMTL.ZS.UN, TM.VAL.FOOD.ZS.UN, TX.VAL.MRCH.CD.WT, TM.VAL.MRCH.CD.WT, TT.PRI.MRCH.XD.WD; IMF WEO NGDPD
+- **Shows in:** Country Research > History & data (Commodity prices and terms of trade)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: arithmetic on published shares and prices, not a forecast.
+- **Limits:** Quantities held fixed; each group uses a few world prices, not the country's own basket; farm raw materials and gold left out; trade shares are a year or more old.
+- **Code:** `src/utils/commodityTerms.ts, src/components/CommodityTermsPanel.tsx`
 
 ### Trade-off chart
 

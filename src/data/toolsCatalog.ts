@@ -277,6 +277,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-financial-inclusion' },
   },
   {
+    id: 'commodity_terms',
+    category: 'history',
+    title: "Commodity prices and terms of trade",
+    what: "What the country sells and buys in fuel, ores and metals and food, how World Bank monthly prices of those moved over 1 and 12 months, the rough effect on income as % of GDP if prices hold for a year, whether it is commodity-dependent by UNCTAD's 60% line, and its terms of trade index.",
+    sources: "World Bank Pink Sheet and WDI (UN Comtrade, WTO); IMF WEO",
+    target: { area: 'country', tab: 'history', anchor: 'tool-commodity-terms' },
+  },
+  {
     id: 'policy_incidence',
     category: 'history',
     title: 'Who pays for a policy',

@@ -702,4 +702,10 @@ export const PANEL_TEXT_FR: Record<string, string> = {
   // PA5 financial inclusion
   "The Global Findex survey has not covered this country": "L’enquête Global Findex n’a pas couvert ce pays",
   "World Bank Global Findex and World Development Indicators (IMF Financial Access Survey, IMF International Financial Statistics), CC BY 4.0": "Banque mondiale Global Findex et Indicateurs du développement dans le monde (enquête du FMI sur l’accès aux services financiers, Statistiques financières internationales du FMI), CC BY 4.0",
+  // PA3 commodity prices and terms of trade
+  "The World Bank publishes no goods trade breakdown for this country": "La Banque mondiale ne publie pas de ventilation des échanges de biens pour ce pays",
+  "No goods exports, imports or GDP in US dollars for the year of the trade shares": "Pas d’exportations ou d’importations de biens ni de PIB en dollars pour l’année des parts des échanges",
+  "The World Bank Pink Sheet has not answered yet": "Le Pink Sheet de la Banque mondiale n’a pas encore répondu",
+  "The World Bank publishes no terms of trade index for this country": "La Banque mondiale ne publie pas d’indice des termes de l’échange pour ce pays",
+  "World Bank Commodity Price Data (Pink Sheet) and World Development Indicators (UN Comtrade, WTO); IMF World Economic Outlook for GDP in US dollars; CC BY 4.0 (World Bank)": "Données de prix des matières premières de la Banque mondiale (Pink Sheet) et Indicateurs du développement dans le monde (UN Comtrade, OMC) ; Perspectives de l’économie mondiale du FMI pour le PIB en dollars ; CC BY 4.0 (Banque mondiale)",
 };
