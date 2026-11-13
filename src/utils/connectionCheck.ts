@@ -1192,7 +1192,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       T,
       (r) => (r.text?.startsWith('PK') ? `${PWT_EDITION} workbook answered (${Math.round(r.text.length / 1e5) / 10} MB)` : null),
       {},
-      'The GGDC answered, but not with an Excel workbook at the PWT address; download the edition from www.ggdc.net/pwt and put the .xlsx in data/local/pwt/.'
+      'The GGDC answered, but not with an Excel workbook at the PWT address; download the Excel file from www.rug.nl/ggdc/productivity/pwt/ and put the .xlsx in data/local/pwt/.'
     )
   );
 

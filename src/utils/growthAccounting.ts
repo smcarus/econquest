@@ -15,8 +15,14 @@
  */
 
 export const PWT_EDITION = 'PWT 11.0';
-/** The edition's Excel file on the GGDC site (not confirmed from the cloud: connection check row pwt). */
-export const PWT_URL = 'https://www.rug.nl/ggdc/docs/pwt110.xlsx';
+/**
+ * The edition's Excel file. The GGDC page (www.rug.nl/ggdc/productivity/pwt/, March 2026) links it
+ * on DataverseNL (doi 10.34894/FABVLR); the old www.rug.nl/ggdc/docs/pwt110.xlsx address answers 404.
+ * Not downloadable from the cloud: connection check row pwt confirms it.
+ */
+export const PWT_URL = 'https://dataverse.nl/api/access/datafile/554105';
+/** The name the downloaded workbook is kept under in data/local/pwt/. */
+export const PWT_FILE_NAME = 'pwt110.xlsx';
 export const PWT_CITATION = 'Feenstra, Robert C., Robert Inklaar and Marcel P. Timmer (2015), "The Next Generation of the Penn World Table", American Economic Review, 105(10), 3150-3182, available for download at www.ggdc.net/pwt';
 export const PWT_SPAN = 10;
 export const PWT_MAX_PERIODS = 6;
