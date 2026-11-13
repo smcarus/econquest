@@ -48,7 +48,9 @@ export interface ReviewWatch {
   items: ReviewWatchItem[];
 }
 
-const NUM = '(-?\\d+(?:[.,]\\d+)?)';
+// A run of digit groups is captured whole, so "1,500" or "2.000" (a thousands separator in one
+// language, a decimal mark in another) is refused rather than read as 1.5 or 2.
+const NUM = '(-?\\d+(?:[.,]\\d+)*)';
 // English first, then the Spanish, French and Portuguese wordings a user of those languages would type.
 const ABOVE_WORDS = ['above', 'over', 'exceeds?', 'more than', 'higher than', 'greater than', 'por encima de', 'más de', 'mayor que', 'au-dessus de', 'plus de', 'supérieure? à', 'acima de', 'mais de', 'maior que', '>=?'];
 const BELOW_WORDS = ['below', 'under', 'less than', 'lower than', 'por debajo de', 'menos de', 'menor que', 'en dessous de', 'moins de', 'inférieure? à', 'abaixo de', '<=?'];
@@ -62,18 +64,22 @@ const BELOW = numAfter(BELOW_WORDS);
 const TARGET = numAfter(TARGET_WORDS);
 const RISES = word(RISE_WORDS);
 const FALLS = word(FALL_WORDS);
-const num = (s: string) => Number(s.replace(',', '.'));
+/** One decimal mark at most, and not followed by exactly three digits after a 1-3 digit lead (a thousands separator). */
+const num = (s: string): number | null => {
+  if (/[.,].*[.,]/.test(s) || /^-?[1-9]\d{0,2}[.,]\d{3}$/.test(s)) return null;
+  return Number(s.replace(',', '.'));
+};
 
 /** The trigger in one of the wordings the app reads, or null. */
 export function parseTrigger(text: string): Trigger | null {
   const t = text.toLowerCase().replace(/%/g, ' ').replace(/\s+/g, ' ').trim();
   if (!t) return null;
-  let m = TARGET.exec(t);
-  if (m) return { kind: 'target', value: num(m[1]) };
-  m = ABOVE.exec(t);
-  if (m) return { kind: 'above', value: num(m[1]) };
-  m = BELOW.exec(t);
-  if (m) return { kind: 'below', value: num(m[1]) };
+  for (const [kind, re] of [['target', TARGET], ['above', ABOVE], ['below', BELOW]] as const) {
+    const m = re.exec(t);
+    if (!m) continue;
+    const value = num(m[1]);
+    return value === null ? null : { kind, value };
+  }
   if (RISES.test(t)) return { kind: 'rises' };
   if (FALLS.test(t)) return { kind: 'falls' };
   return null;
