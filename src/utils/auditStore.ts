@@ -36,11 +36,23 @@ function readLines(files: AuditFiles): string[] {
   }
 }
 
-/** Last entry of the log as it stands on disk (read once, then kept in memory per file). */
+/**
+ * Last entry of the log as it stands on disk, kept in memory per file with the file's size, so an
+ * entry written by another process (npm run tokens) is read again instead of forking the chain.
+ */
 const lastByFile = new Map<string, Pick<AuditEntry, 'seq' | 'hash'> | null>();
+const sizeByFile = new Map<string, number>();
+
+const sizeOf = (file: string) => {
+  try {
+    return fs.statSync(file).size;
+  } catch {
+    return 0;
+  }
+};
 
 function lastEntry(files: AuditFiles): Pick<AuditEntry, 'seq' | 'hash'> | null {
-  if (lastByFile.has(files.log)) return lastByFile.get(files.log)!;
+  if (lastByFile.has(files.log) && sizeByFile.get(files.log) === sizeOf(files.log)) return lastByFile.get(files.log)!;
   const lines = readLines(files).filter((l) => l.trim());
   let last: Pick<AuditEntry, 'seq' | 'hash'> | null = null;
   for (let i = lines.length - 1; i >= 0 && !last; i--) {
@@ -52,6 +64,7 @@ function lastEntry(files: AuditFiles): Pick<AuditEntry, 'seq' | 'hash'> | null {
     }
   }
   lastByFile.set(files.log, last);
+  sizeByFile.set(files.log, sizeOf(files.log));
   return last;
 }
 
@@ -86,6 +99,7 @@ export function appendAudit(files: AuditFiles, input: AuditInput, at: Date = new
     fs.mkdirSync(path.dirname(files.log), { recursive: true });
     fs.appendFileSync(files.log, JSON.stringify(entry) + '\n', { mode: 0o600 });
     lastByFile.set(files.log, { seq: entry.seq, hash: entry.hash });
+    sizeByFile.set(files.log, sizeOf(files.log));
     writeFileAtomic(files.head, JSON.stringify({ seq: entry.seq, hash: entry.hash, at: entry.at }), 0o600);
     return entry;
   } catch (error) {
@@ -107,4 +121,5 @@ export function rawAudit(files: AuditFiles): string {
 /** Tests only: forget the cached last entry. */
 export function resetAuditCache(): void {
   lastByFile.clear();
+  sizeByFile.clear();
 }

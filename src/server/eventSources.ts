@@ -14,6 +14,7 @@
 import { countryEntity, type EventInput, type ValueBadge } from '../utils/consoleEvents';
 import type { FigureEvent } from '../utils/figureWatch';
 import type { DailyRun } from '../utils/dailyRun';
+import { deadlineNote, type Deadline } from '../utils/dailyDeadline';
 import type { LiveWatchlistItem } from '../types/council';
 import { policyCycle } from '../utils/cycleClock';
 import { regimeFor } from '../utils/regimeQuadrant';
@@ -146,7 +147,7 @@ export function badgeChangeInputs(before: Record<string, ValueBadge>, after: Rec
 }
 
 /** A finished daily run: one daily_download_ready, and a feed_failed for each step that failed. */
-export function dailyRunInputs(run: DailyRun): EventInput[] {
+export function dailyRunInputs(run: DailyRun, deadline?: Deadline | null): EventInput[] {
   if (!run.finishedAt) return [];
   const failed = run.steps.filter((s) => s.outcome === 'failed');
   const day = run.startedAt.slice(0, 10);
@@ -169,7 +170,7 @@ export function dailyRunInputs(run: DailyRun): EventInput[] {
     source: 'EconQuest daily download',
     evidence_url: '/api/daily/status',
     summary: failed.length ? `Daily download finished with ${failed.length} step${failed.length === 1 ? '' : 's'} failed.` : 'Daily download finished; every step done.',
-    data: { started_at: run.startedAt, finished_at: run.finishedAt, steps: run.steps.map((s) => ({ id: s.id, outcome: s.outcome })), offline: Boolean(run.offline) },
+    data: { started_at: run.startedAt, finished_at: run.finishedAt, steps: run.steps.map((s) => ({ id: s.id, outcome: s.outcome })), offline: Boolean(run.offline), ...(deadline ? { deadline: deadlineNote(run.finishedAt, deadline) } : {}) },
     discriminator: run.startedAt,
   });
   return out;
