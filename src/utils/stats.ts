@@ -107,6 +107,31 @@ export function transform(points: Point[], t: Transform, freq: Freq): Point[] {
   const v = points.map((p) => p.value);
   if (t === 'level') return points;
   if (t === 'change') return points.slice(1).map((p, i) => ({ date: p.date, value: p.value - v[i] }));
+  if (t === 'yoy' && freq === 'daily') {
+    // Daily data skip weekends and holidays, so "a year earlier" is a calendar date, not 252 days back:
+    // the last observation on or before the same date a year earlier, if it is at most 7 days older.
+    const sorted = [...points].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+    const dates = sorted.map((p) => p.date.slice(0, 10));
+    const out: Point[] = [];
+    for (const p of sorted) {
+      const target = yearEarlier(p.date.slice(0, 10));
+      const floor = shiftPeriod(target, -7, 'daily');
+      let lo = 0;
+      let hi = dates.length - 1;
+      let at = -1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (dates[mid] <= target) {
+          at = mid;
+          lo = mid + 1;
+        } else hi = mid - 1;
+      }
+      if (at < 0 || dates[at] < floor) continue;
+      const prev = sorted[at].value;
+      if (prev !== 0) out.push({ date: p.date, value: (p.value / prev - 1) * 100 });
+    }
+    return out;
+  }
   if (t === 'yoy') {
     const k = periodsPerYear(freq);
     const byDate = new Map(points.map((p) => [p.date, p.value]));
@@ -129,6 +154,13 @@ export function transform(points: Point[], t: Transform, freq: Freq): Point[] {
   const hp = hpFilter(v, hpLambda(freq));
   if ('error' in hp) return [];
   return points.map((p, i) => ({ date: p.date, value: t === 'hp_trend' ? hp.trend[i] : hp.cycle[i] }));
+}
+
+/** The same calendar date one year earlier; 29 February maps to 28 February. */
+function yearEarlier(date: string): string {
+  const y = Number(date.slice(0, 4)) - 1;
+  const md = date.slice(5, 10) === '02-29' ? '02-28' : date.slice(5, 10);
+  return `${y}-${md}`;
 }
 
 /** A period key moved by n periods (n negative = back in time). */
@@ -462,7 +494,9 @@ export function granger(pairs: Pair[], lags: number): GrangerResult | Failed {
 
 /** The usual smoothing parameter for a frequency (Ravn-Uhlig for annual and monthly). */
 export function hpLambda(freq: Freq): number {
-  return { daily: 129600 * 441, weekly: 129600 * 18.8, monthly: 129600, quarterly: 1600, annual: 6.25 }[freq];
+  // Ravn and Uhlig (2002): λ = 1600 × (periods per quarter)^4 = 6.25 × (periods per year)^4, so the
+  // trend has the same smoothness whatever the frequency. Daily counts 252 trading days a year.
+  return { daily: 6.25 * 252 ** 4, weekly: 6.25 * 52 ** 4, monthly: 129600, quarterly: 1600, annual: 6.25 }[freq];
 }
 
 /** Trend solves (I + λD'D)τ = y, D the second-difference matrix: a symmetric pentadiagonal system. */

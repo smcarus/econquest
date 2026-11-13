@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { adf, alignPair, crossCorrelation, fPValue, granger, hpFilter, ols, pearson, periodKey, rollingCorrelation, shiftPeriod, toFreq, transform, tPValue } from '../src/utils/stats.ts';
+import { adf, alignPair, crossCorrelation, fPValue, granger, hpFilter, hpLambda, ols, pearson, periodKey, rollingCorrelation, shiftPeriod, toFreq, transform, tPValue } from '../src/utils/stats.ts';
 
 // Deterministic noise (mulberry32 + Box-Muller), so the tests never flicker.
 function rng(seed: number) {
@@ -133,4 +133,40 @@ test('HP filter: a straight line is its own trend; cycle sums near zero', () => 
   const wavy = Array.from({ length: 80 }, (_, i) => i * 0.1 + Math.sin(i / 3) + 0.1 * n());
   const h2 = hpFilter(wavy, 1600);
   if (!('error' in h2)) close(h2.cycle.reduce((s, v) => s + v, 0), 0, 1e-6);
+});
+
+test('daily year-on-year compares with the same date a year earlier, skipping weekends', () => {
+  // Business days only, growing 10% a year in continuous time on calendar days.
+  const pts: Array<{ date: string; value: number }> = [];
+  const start = Date.UTC(2023, 0, 2);
+  for (let d = 0; d < 800; d++) {
+    const t = new Date(start + d * 86400000);
+    const wd = t.getUTCDay();
+    if (wd === 0 || wd === 6) continue;
+    pts.push({ date: t.toISOString().slice(0, 10), value: 100 * Math.exp((Math.log(1.1) * d) / 365) });
+  }
+  const yy = transform(pts, 'yoy', 'daily');
+  assert.ok(yy.length > 250);
+  // Monday 2024-03-04: a year earlier is Saturday 2023-03-04, so Friday 2023-03-03 is used (366 days back).
+  const mon = yy.find((p) => p.date === '2024-03-04')!;
+  assert.ok(Math.abs(mon.value - (Math.exp((Math.log(1.1) * 367) / 365) - 1) * 100) < 1e-9);
+  // An ordinary weekday sits near 10% (the 2024 leap day adds one day for part of the year).
+  for (const p of yy) assert.ok(p.value > 9.9 && p.value < 10.2, `${p.date}: ${p.value}`);
+  // 29 February looks back to 28 February.
+  assert.ok(yy.some((p) => p.date === '2024-02-29'));
+  // No point a year back within a week: dropped.
+  assert.equal(transform([{ date: '2024-06-03', value: 1 }, { date: '2023-05-20', value: 1 }], 'yoy', 'daily').length, 0);
+});
+
+test('HP smoothing scales with the fourth power of the frequency (Ravn and Uhlig)', () => {
+  assert.equal(hpLambda('annual'), 6.25);
+  assert.equal(hpLambda('quarterly'), 1600);
+  assert.equal(hpLambda('monthly'), 129600);
+  assert.equal(hpLambda('weekly'), 45697600);
+  assert.equal(hpLambda('daily'), 6.25 * 252 ** 4);
+  // The solver stays accurate at the daily λ: a straight line is still its own trend.
+  const line = Array.from({ length: 600 }, (_, i) => 3 + 0.01 * i);
+  const h = hpFilter(line, hpLambda('daily'));
+  assert.ok(!('error' in h));
+  if (!('error' in h)) assert.ok(Math.max(...h.cycle.map(Math.abs)) < 1e-4);
 });
