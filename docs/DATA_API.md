@@ -335,3 +335,24 @@ and to your webhooks, with the value, its date (`as_of`) and its source. It fire
 the figure has gone back. A country with no figure never fires. DELETE `/api/v1/watches/<id>` removes
 one. These are the same rules as Menu > Watch alerts; a token sees only the watches it made. Adding
 and removing them is in the audit log.
+
+### Country snapshot
+
+GET `/api/v1/countries/<code>/snapshot` (alpha-2 or alpha-3; a token with `read:data`) returns
+every figure the app holds for one country. No council run is needed. It reads what the daily
+download saved and never fetches, so it can be called at any time. GET `/api/v1/countries` lists the
+watchlist countries with both codes.
+
+- `figures`: the panel figures (policy rate, inflation, growth, debt, balances, reserves, yield,
+  leading indicator, positioning, Treasury holdings).
+- `series`: the latest value of every saved series, plus the series that are Missing.
+- `signals`: the policy cycle, CFTC positioning and growth-and-inflation regime states, with their
+  validation badges.
+- `council`: the id of the last council run, or null.
+
+Every value has `status` (`Live` or `Missing`), `value`, `as_of` (the period it refers to), `source`,
+`badge` and `shareable`. A Missing value has `value: null` and a `reason`. Where IMF projection years
+exist, `value` is the latest outturn and `projected_to` says how far the projections go. A series
+from a file you loaded has `origin: "own_file"`, badge `not_validated` and `shareable: false`. With
+sharing mode on, a value whose source does not allow passing it on is held back, with the reason.
+Your paid-subscription figures are never included.
