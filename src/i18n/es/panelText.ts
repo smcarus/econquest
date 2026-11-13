@@ -765,4 +765,9 @@ export const PANEL_TEXT_ES: Record<string, string> = {
   "CEMAC multilateral surveillance convergence criteria, as revised in 2016": "Criterios de convergencia de la supervisión multilateral de la CEMAC, revisados en 2016",
   "IMF World Economic Outlook, general government gross debt (GGXWDG_NGDP)": "Perspectivas de la Economía Mundial del FMI, deuda bruta del gobierno general (GGXWDG_NGDP)",
   "IMF Fiscal Monitor, general government net lending/borrowing (GGXCNL_G01_GDP_PT)": "Monitor Fiscal del FMI, préstamo neto/endeudamiento neto del gobierno general (GGXCNL_G01_GDP_PT)",
+  // PA1 remittances
+  "No saved World Bank history for this country yet (Data health > World Bank)": "Aún no hay historial del Banco Mundial guardado para este país (Estado de los datos > Banco Mundial)",
+  "The World Bank publishes no remittance figure for this country before this year": "El Banco Mundial no publica cifras de remesas para este país antes de este año",
+  "The World Bank survey of sending costs does not cover this country": "La encuesta del Banco Mundial sobre costos de envío no cubre este país",
+  "World Bank World Development Indicators (IMF balance of payments; OECD DAC for aid; Remittance Prices Worldwide for cost), CC BY 4.0": "Indicadores del Desarrollo Mundial del Banco Mundial (balanza de pagos del FMI; CAD de la OCDE para la ayuda; Remittance Prices Worldwide para el costo), CC BY 4.0",
 };

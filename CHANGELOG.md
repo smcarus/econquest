@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Remittances (PA1): Research > History & data shows money sent home by people working abroad,
+  beside exports, foreign direct investment and aid in the same year, how it moved in years exports
+  fell, the cost of sending US$200 against the UN goal of below 3%, and money sent abroad. Five new
+  saved World Bank series (BX.TRF.PWKR.CD.DT, BM.TRF.PWKR.CD.DT, BX.KLT.DINV.CD.WD, DT.ODA.ODAT.CD,
+  SI.RMT.COST.IB.ZS); route `GET /api/remittances/:iso3`.
 - Documentation: README rewritten to a developer and researcher standard, with recommended AI models
   by computer size, the referee rules, the model settings the app uses (temperature, seed, context
   window, time limits), measured download and disk sizes (source 59 MB, Docker image about 170 MB to

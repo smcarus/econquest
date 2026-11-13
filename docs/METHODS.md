@@ -53,6 +53,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Policy rule family | Research | Backtest too few cases | v1, 2026-11-07, method 2 |
 | Debt fan chart (bootstrap of past shocks) | Research | Forecast evaluation too few cases | debt_fan_coverage v1, 2026-11-07 |
 | Costed fiscal options | Research | Description, not a tested signal | None |
+| Remittances | Research | Description, not a tested signal | None |
 | Trade-off chart | Research | Description, not a tested signal | None |
 | Global shock scenarios | Research | Description, not a tested signal | None |
 | Currency carry | Research | Signal test passed | v1, 2026-11-07 |
@@ -693,6 +694,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: a stated what-if on stated assumptions, not a forecast or a recommendation.
 - **Limits:** Multiplier range is a guide, not estimated for the country; no confidence or interest-rate feedback.
 - **Code:** `src/utils/costedOptions.ts`
+
+### Remittances
+
+- **Says:** How much money people working abroad send home, beside exports, foreign direct investment and aid in the same year, how it moved in years exports fell, and what sending it costs.
+- **Rule:** Latest World Bank year, same-year comparison in current US dollars; years exports fell listed with the change in remittances; cost of sending US$200 against the UN goal of below 3% (SDG 10.c).
+- **Reads:** World Bank WDI: BX.TRF.PWKR.CD.DT, BX.TRF.PWKR.DT.GD.ZS, BM.TRF.PWKR.CD.DT, NE.EXP.GNFS.CD, BX.KLT.DINV.CD.WD, DT.ODA.ODAT.CD, SI.RMT.COST.IB.ZS
+- **Shows in:** Country Research > History & data (Remittances)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published figures side by side, not a forecast.
+- **Limits:** Money sent outside banks is often not counted; yearly figures only; what moved together in years exports fell is not what caused it.
+- **Code:** `src/utils/remittances.ts, src/components/RemittancesPanel.tsx`
 
 ### Trade-off chart
 
