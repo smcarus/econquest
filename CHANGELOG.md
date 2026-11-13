@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Review-to-review comparison (PC3): a review started with Review again shows what changed since
+  the earlier one: frame changes, the option each memo recommended, each diagnosis figure then and
+  now with the change, and whether the goal indicator moved the way the goal wants. Read in the
+  browser from both saved reviews; nothing is saved.
 - Peer comparison for a policy review (PC2): after Diagnose, pick up to six watchlist countries (or
   the same region) to see each diagnosis figure beside the same figure for each peer, each from its
   saved pull on or before the review's As of day, with the peer median and the review country's rank.

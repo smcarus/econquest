@@ -61,6 +61,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Natural disasters | Research | Description, not a tested signal | None |
 | Policy review watch | Research | Description, not a tested signal | None |
 | Peer comparison for a policy review | Research | Description, not a tested signal | None |
+| Review-to-review comparison | Research | Description, not a tested signal | None |
 | Trade-off chart | Research | Description, not a tested signal | None |
 | Global shock scenarios | Research | Description, not a tested signal | None |
 | Currency carry | Research | Signal test passed | v1, 2026-11-07 |
@@ -797,6 +798,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: saved figures side by side.
 - **Limits:** Only countries the app has saved figures for on or before the As of day can be compared; figures may be from different periods across countries (each cell shows its period on hover); being above or below peers is not good or bad by itself.
 - **Code:** `src/utils/reviewPeers.ts, src/components/ReviewPeers.tsx`
+
+### Review-to-review comparison
+
+- **Says:** What changed between a policy review and the review started from it with Review again: frame, recommended option, each diagnosis figure, and whether the goal indicator moved the way the goal wants.
+- **Rule:** Both saved reviews read side by side; change = later figure minus earlier figure, on the same standard indicator; the goal as the later review states it, judged on the same figure in both diagnoses, the same way as Track outcomes.
+- **Reads:** Your two saved policy reviews (data/local/reviews.json)
+- **Shows in:** Reports > Policy reviews (a review started with Review again)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: two saved reviews side by side.
+- **Limits:** What moved is not what the earlier recommendation caused; whether it was followed is not known; annual figures may have been revised between the two pulls.
+- **Code:** `src/utils/reviewCompare.ts, src/components/ReviewCompare.tsx`
 
 ### Trade-off chart
 
