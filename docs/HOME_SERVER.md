@@ -227,6 +227,7 @@ Config comes only from environment variables (`.env` here, or the full list in t
 | `TZ` | UTC | Time zone for the morning brief, the nightly data check and scheduled jobs |
 | `SCHEDULE_DOWNLOAD_ALL` | 02:30 | Daily Download all (every free feed for every country); `off` to stop |
 | `SCHEDULE_BACKTESTS` | sun 03:30 | Weekly run of the pre-registered tests: backtests, then forecast evaluations and currency signal tests, each adding to its forward record; `off` to stop. The app runs this weekly by default even outside the home server |
+| `DAILY_DOWNLOAD_DEADLINE` | empty | HH:MM in `SCHEDULE_TZ`: if no daily download has finished by then, a `feed_failed` event is sent ([DEPLOYMENT.md](./DEPLOYMENT.md)) |
 | `LOG_FORMAT` | json in the image | `json` or empty for plain text |
 | `SHUTDOWN_TIMEOUT_MS` | 8000 | How long a stop waits for open requests |
 

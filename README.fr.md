@@ -99,10 +99,10 @@ les Réglages, et ne sont jamais transmises dans les téléchargements ou les co
 | Tâche | Où | Ce que vous obtenez |
 | --- | --- | --- |
 | Poser une question en langage courant | **Espace de travail** (Chat du conseil) | Des agents spécialisés répondent à partir des chiffres de l'application, chacun avec sa source ; avec un modèle d'IA, un agent de synthèse rédige une courte note qui ne peut citer que leurs chiffres, et un contrôle signale tout chiffre impossible à retracer |
-| Étudier un pays | **Recherche > Un pays** | Résumé, Marchés et signaux, Historique et données, Sources : graphiques sur des années, estimations du présent et prévisions avec intervalles, écart de production, soutenabilité de la dette, adéquation des réserves, règles de politique monétaire, alerte précoce de crise, courbe des taux, moteurs de l'inflation, comptabilité de la croissance, prévisions du FMI par édition, et vues « à une date passée » |
+| Étudier un pays | **Recherche > Un pays** | Résumé, Marchés et signaux, Historique et données, Sources : graphiques sur des années, estimations du présent et prévisions avec intervalles, écart de production, soutenabilité de la dette, adéquation des réserves, règles de politique monétaire, alerte précoce de crise, courbe des taux, moteurs de l'inflation, comptabilité de la croissance, prévisions du FMI par édition, et vues « à une date passée ». Pour les pays à revenu plus faible : envois de fonds, aide reçue, inclusion financière, prix des matières premières et termes de l’échange, prix alimentaires et sécurité alimentaire, et catastrophes naturelles |
 | Comparer des pays | **Recherche > Comparer des pays** | Votre liste de suivi côte à côte (les 19 pays membres du G20 au départ), des pistes d'articles et les écarts entre prix de marché et données |
 | Suivre vos positions | **Recherche > Mes positions** | Une liste d'obligations ou de positions que vous chargez, face aux risques et aux signaux |
-| Évaluer un choix de politique | **Rapports > Nouvelle revue de politique** | Un dossier pas à pas : poser le problème, diagnostiquer, classer les options, examiner les preuves et les précédents, rédiger une note de recommandation et une synthèse d'une page pour les non-économistes, puis suivre ce qui s'est passé |
+| Évaluer un choix de politique | **Rapports > Nouvelle revue de politique** | Un dossier pas à pas : poser le problème, diagnostiquer, classer les options, examiner les preuves et les précédents, rédiger une note de recommandation et une synthèse d'une page pour les non-économistes, puis suivre ce qui s'est passé. Comparez le diagnostic avec jusqu'à six pays pairs, recevez une alerte sur la page d'accueil quand un chiffre suivi franchit son seuil, et voyez ce qui a changé quand vous reprenez la même politique |
 | Tester une hypothèse budgétaire | **Historique et données**, ou depuis le Chat du conseil | Modifiez les dépenses publiques ou les impôts et voyez l'effet probable sur la croissance et la dette, avec des multiplicateurs et élasticités publiés et un intervalle |
 | Rédiger un rapport | **Rapports** | Notes pays et émetteur, évaluations de soutenabilité, revues de portefeuille et synthèses du conseil, en Markdown ou PDF avec sources et dates |
 | Apprendre en chemin | Boutons de l'en-tête, **Menu > Manuel d'utilisation**, **Menu > Exemples guidés** | Trois niveaux d'aide, un glossaire en langage clair, quatre cas guidés, des séquences pédagogiques et un mode examen |
@@ -210,15 +210,15 @@ dans le journal d'audit).
 
 Chaque chiffre dit comment il a été obtenu. « Mesuré » signifie mesuré à la date indiquée ; « estimation »
 donne la méthode. Les mesures du 13 novembre 2026 portent sur la branche principale jusqu'à la demande
-#496.
+#510.
 
 | Quoi | Taille | Comment le chiffre a été obtenu |
 | --- | --- | --- |
-| Code source (`git clone`) | 59 Mo (28 Mo de fichiers et 31 Mo d'historique) | Mesuré, clone neuf, 13 novembre 2026 |
-| Application prête à l'emploi (image Docker) | Environ 170 Mo à télécharger ; 795 Mo une fois décompressée | Mesuré : image construite avec le Dockerfile du dépôt le 13 novembre 2026 (795 Mo décompressée, 169 Mo compressée avec gzip). Le téléchargement depuis le registre est compressé de la même façon, la taille sera donc proche |
+| Code source (`git clone`) | 70 Mo (29 Mo de fichiers et 41 Mo d'historique) | Mesuré, clone neuf, 13 novembre 2026 |
+| Application prête à l'emploi (image Docker) | Environ 170 Mo à télécharger ; 798 Mo une fois décompressée | Mesuré : image construite avec le Dockerfile du dépôt le 13 novembre 2026 (798 Mo décompressée, 170 Mo compressée avec gzip). Le téléchargement depuis le registre est compressé de la même façon, la taille sera donc proche |
 | Paquets installés, depuis le code (`npm install`) | 465 Mo | Mesuré, 13 novembre 2026 |
-| Application web compilée | 6,5 Mo au total ; 409 Ko compressés au démarrage | Mesuré avec `npm run size:check`, 13 novembre 2026 |
-| Chaque langue supplémentaire | Environ 0,65 Mo (environ 210 Ko compressés), seulement si elle est choisie | Mesuré sur la version compilée, 13 novembre 2026 |
+| Application web compilée | 6,7 Mo au total ; 415 Ko compressés au démarrage | Mesuré avec `npm run size:check`, 13 novembre 2026 |
+| Chaque langue supplémentaire | Environ 0,7 Mo (environ 220 Ko compressés), seulement si elle est choisie | Mesuré sur la version compilée, 13 novembre 2026 |
 | Premier téléchargement complet des données | Environ 3,6 à 3,8 Go, surtout des fichiers d'actualité GDELT | Estimation : GDELT environ 3,4 Go pour 8 semaines (d'après les tailles publiées par GDELT), anciennes éditions du FMI environ 100 Mo (mesuré), le reste comme le téléchargement quotidien |
 | Premier téléchargement en mode léger | Objectif : bien moins de 1 Go | Pas encore mesuré ; attendu d'un essai sur le Mac du développeur avant la publication |
 | Téléchargement quotidien | Environ 150 à 200 Mo (4,5 à 6 Go par mois) | Estimation à partir de réponses enregistrées et de tailles de fichiers. Le téléchargement quotidien enregistre désormais ce qu'il récupère ; le chiffre mesuré après une semaine (`npm run go -- status` sur le Mac du développeur) remplacera cette estimation |
@@ -233,7 +233,7 @@ donne la méthode. Les mesures du 13 novembre 2026 portent sur la branche princi
 | Application prête à l'emploi, sans IA locale | Environ 1 Go, plus environ 40 Mo par an | Image 0,8 Go (mesuré) plus le dossier `data/`, environ 150 Mo après les premiers jours (mesuré sur le Mac du développeur le 9 novembre 2026, 22 pays) |
 | Avec un arbitre 14B | Environ 15 Go | Ce qui précède plus qwen2.5:7b et qwen2.5:14b |
 | Avec toute l'IA en local | Environ 26 Go | Ce qui précède plus qwen2.5:7b et qwen2.5:32b |
-| Depuis le code au lieu de l'image | Ajoutez environ 0,5 Go | Code et historique 59 Mo, paquets 465 Mo, version compilée 7 Mo (mesuré) |
+| Depuis le code au lieu de l'image | Ajoutez environ 0,5 Go | Code et historique 70 Mo, paquets 465 Mo, version compilée 7 Mo (mesuré) |
 
 Docker Desktop demande en plus quelques Go (voir docker.com). Pour connaître la taille réelle sur votre
 ordinateur, lancez `du -sh data data/*` dans le dossier EconQuest ou ouvrez Menu > Données hors ligne.
@@ -389,6 +389,7 @@ Toutes sont gratuites. Quelques-unes demandent une clé gratuite, à ajouter dan
 | Banques centrales et calendrier | Banco Central do Brasil, Banco de México (jeton gratuit), dates officielles des décisions, dates de publication de l'IPC et du PIB des instituts statistiques |
 | Politique, conflits et transport maritime | Actualités GDELT, données de conflit UCDP et ACLED (ACLED se télécharge à la main), listes de sanctions de l'OFAC et de l'ONU, indice de risque géopolitique, IMF PortWatch |
 | Marchés et positionnement | Marchés de prédiction Kalshi et Polymarket, rapport Commitments of Traders de la CFTC |
+| Pays à revenu plus faible | Banque mondiale (envois de fonds et leur coût d'envoi, comptes Global Findex, aide reçue telle que republiée à partir de l'OCDE, sécurité alimentaire, part des matières premières dans les échanges et termes de l’échange) ; deux fichiers que vous enregistrez vous-même : les prix à la consommation de FAOSTAT pour l'inflation alimentaire, et les catastrophes naturelles d'EM-DAT, téléchargées avec votre propre compte EM-DAT gratuit (ses conditions ne permettent pas à l'application de les fournir) |
 
 La liste complète est dans [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md) et ce que permet chaque source
 dans [docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md) (en anglais).
@@ -426,6 +427,12 @@ Dans l'ordre (détail dans [docs/ROADMAP.md](./docs/ROADMAP.md), en anglais) :
 5. **Plus de langues et d'enseignement** : portugais et exemples guidés (fait) ; arabe et swahili
    (prévus) ; Quêtes en classe avec un pilote d'un semestre.
 6. **Une application mobile** (en pause).
+
+Le 13 novembre 2026, deux groupes d'idées ont été avancés depuis la liste en attente, et ils sont
+faits : des données pour les pays à revenu plus faible (envois de fonds, inclusion financière, prix des
+matières premières et termes de l’échange, aide reçue, prix alimentaires et catastrophes naturelles) et
+des outils pour la revue de politique (comparaison avec des pairs, alertes sur la page d'accueil et
+comparaison d'une revue avec la précédente).
 
 ---
 

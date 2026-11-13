@@ -87,6 +87,70 @@ npm run users -- disable <username>
 
 Under Docker: `docker compose exec econquest npm run users -- list`.
 
+## Sign-in through an OIDC provider
+
+A server with several people on it can let them sign in with an account they already have at an
+OpenID Connect provider (Google, Microsoft Entra ID, Okta, Keycloak, Authentik and others), beside
+the local accounts. It is off unless `OIDC_ISSUER` and `OIDC_CLIENT_ID` are set (see `.env.example`).
+
+1. Register the app with the provider as a web application, with the callback address
+   `https://<your host>/api/auth/oidc/callback` (or set `OIDC_REDIRECT_URI` to the exact address).
+2. Set `OIDC_ISSUER` (for Google `https://accounts.google.com`; for Microsoft
+   `https://login.microsoftonline.com/<tenant id>/v2.0`), `OIDC_CLIENT_ID`, and `OIDC_CLIENT_SECRET`
+   unless the provider registered a public client.
+3. Say who may sign in: `OIDC_ALLOWED_EMAILS` (whole addresses, or `@example.org` for everyone at a
+   domain) and `OIDC_ADMIN_EMAILS`. Others on the list get `OIDC_DEFAULT_ROLE` (viewer unless set);
+   an admin can change the role in Menu > Users. An email on neither list is refused, whatever the
+   provider says.
+4. Restart. The sign-in page shows "Sign in with <OIDC_NAME>" above the username and password.
+
+How it is checked:
+
+- The authorization code flow with PKCE (S256), a random state tied to the browser by a 10-minute
+  cookie, and a nonce. A sign-in that was not started in the same browser, or took longer than 10
+  minutes, is refused.
+- The ID token's signature is checked against the keys the provider publishes (RS256, PS256, ES256
+  and the larger sizes; never `none` or a shared-secret algorithm), then its issuer, audience, expiry
+  and nonce. Keys are fetched again once when a token names a new key, so a key change at the
+  provider needs no restart.
+- Only a verified email (`email_verified`) counts. At the first sign-in an account is made with the
+  provider and the person's id there (`sub`); later sign-ins use that link, so a changed email at
+  the provider does not move anyone to another account. A disabled account stays disabled.
+- OIDC accounts have no password here: password sign-in, password change and password reset do not
+  apply to them. Sessions, roles, CSRF, the audit log and API tokens work as for local accounts.
+- With no accounts yet, an email in `OIDC_ADMIN_EMAILS` may create the first admin account by
+  signing in; the setup code still works for a local admin.
+- Every OIDC sign-in, new account and refusal (with the reason: not on the list, no verified email,
+  disabled, expired, or a failed check) is in the audit log. The provider's tokens are not kept.
+
+## Audit seal and locked copies
+
+Each audit entry is chained to the one before it by a SHA-256 hash, so a line changed or removed
+afterwards shows in Menu > Audit log. Two settings protect against someone who can edit the file
+and rewrites the whole chain from some point on:
+
+- **Seal.** With `AUDIT_SEAL_KEY` set (at least 32 characters, for example the output of
+  `openssl rand -hex 32`), every new entry also carries an HMAC-SHA256 of its hash under that key.
+  Without the key nobody can make a matching seal, so a rewritten chain fails the seal check.
+  Keep the key in the server's environment or a secrets manager, not in `data/`: a key stored next
+  to the log protects nothing. Entries written before the key was set read "not sealed", not broken.
+  Changing the key starts a new run of seals; older ones are counted as "sealed with an earlier key".
+- **Locked copies.** With `AUDIT_BUCKET_URL` and its keys set, each entry is also sent, in order, to
+  an S3-compatible bucket as its own object (`econquest-audit/0000000001.json`, ...) with an
+  object-lock retention date, so it cannot be changed or deleted before that date even by the
+  account that wrote it (`COMPLIANCE`, the default) or only with a special permission
+  (`GOVERNANCE`). The bucket must be created with object lock turned on (Amazon S3, MinIO,
+  Backblaze B2 and Wasabi support it). Give the access key `s3:PutObject` and
+  `s3:PutObjectRetention` on the prefix and nothing else. A failed upload is tried again (5 seconds,
+  doubling to 10 minutes) and named in Menu > Audit log until it goes through; what has gone up is in
+  `data/local/audit/bucket-state.json`.
+
+To check the log against the bucket, download the objects and compare each with the line of the
+same number in an export (Menu > Audit log > JSON Lines): they must be byte for byte the same.
+
+The keys are read from the environment only. They are never written to the audit log, to settings
+or to backups.
+
 ## Release review
 
 The review done before the public release (dependencies, routes, file permissions, backups, the
@@ -97,4 +161,4 @@ local AI model and the Windows start scripts), with what it found and fixed, is 
 
 1. HTTPS through a reverse proxy in the compose stack.
 
-Accounts record a provider (`local` today) so Google or Microsoft sign-in can be added later.
+Accounts record a provider: `local` (password kept here) or `oidc` (see "Sign-in through an OIDC provider").

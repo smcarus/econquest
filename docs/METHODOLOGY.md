@@ -1,6 +1,6 @@
 # EconQuest Terminal: Methodology
 
-**Version 1.0, 7 November 2026.** Describes the software as of release 0.1.0.
+**Version 1.0, 7 November 2026; updated 13 November 2026** (sources, files you save, statistics conventions in §7.4). Describes the software as of release 0.1.0.
 Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not validated advice.
 
 This document sets out how the EconQuest Terminal sources its data, how its council of agents
@@ -118,9 +118,9 @@ what each fills, its address, how long it is cached and how to set it up is in
 
 | Group | Examples |
 | --- | --- |
-| Free feeds, no key | World Bank (indicators, governance, debt statistics, Pink Sheet commodity prices), IMF (World Economic Outlook, reserves and balance of payments, COFER), BIS (policy rates, real exchange rates, debt securities, credit gap), OECD (via DBnomics), ECB reference rates, Eurostat, CFTC Commitments of Traders, US Treasury, New York Fed, UN Comtrade, WITS, national central banks (for example BCB, BCRP), GDELT, Polymarket and Kalshi odds |
+| Free feeds, no key | World Bank (indicators, governance, debt statistics, Pink Sheet commodity prices, remittances and remittance prices, Global Findex, aid received as republished from the OECD DAC, food security), IMF (World Economic Outlook, reserves and balance of payments, COFER), BIS (policy rates, real exchange rates, debt securities, credit gap), OECD (via DBnomics), ECB reference rates, Eurostat, CFTC Commitments of Traders, US Treasury, New York Fed, UN Comtrade, WITS, national central banks (for example BCB, BCRP), GDELT, Polymarket and Kalshi odds |
 | Free with the user's own key | FRED and ALFRED (St. Louis Fed), US EIA |
-| Free files the user downloads | IMF WEO past editions, Caldara-Iacoviello Geopolitical Risk index, OFAC and UN sanctions lists, UCDP conflict data (one release ships with the code under CC BY 4.0), ACLED aggregated files |
+| Free files the user downloads | IMF WEO past editions, Caldara-Iacoviello Geopolitical Risk index, Chinn-Ito capital account openness index, OFAC and UN sanctions lists, UCDP conflict data (one release ships with the code under CC BY 4.0), ACLED aggregated files. Read from `data/local/` and never shipped, because their terms are unconfirmed or forbid passing them on: FAOSTAT Consumer Price Indices, EM-DAT disasters (each user's own account), IMF Fiscal Rules Dataset, Database of Political Institutions 2020, IMF investor base workbook, central bank statements the user saves. The full table is in [INSTALL.md](./INSTALL.md#files-you-save-yourself) |
 | The user's own paid data (off by default) | Their own CDS file or their own LSEG account |
 
 Prediction-market odds (Polymarket, Kalshi) are shown as market prices, labelled as such, and are
@@ -134,7 +134,7 @@ Every figure the agents and screens use carries one of four tags: **Live data** 
 one of these never reaches the council: its finding is dropped and the gap is stated
 (`src/utils/askCouncil.ts`).
 
-Each country's snapshot is pulled weekly. If a source fails during a pull, the last good figure from
+The daily download runs in the background at most once every 20 hours and refreshes each feed whose saved copy is older than that feed's own interval ([DATA_SOURCES.md](./DATA_SOURCES.md)); each country's snapshot is refreshed weekly, and pages read the saved copy. If a source fails during a pull, the last good figure from
 that same source is kept, with "kept from the *date* pull" on its label, and the pull is retried
 within the hour. A built-in value is never kept in its place.
 
@@ -149,8 +149,9 @@ The rule is applied without exception. Examples of what reads Missing today, and
 - **Sovereign CDS** has no free source. It is hidden from screens and prompts
   (`src/utils/cdsHidden.ts`); the USD bond spread over Treasuries (J.P. Morgan EMBI Global as
   published by BCRP) stands in, and is labelled "a bond spread, not CDS".
-- **Credit ratings, PMIs, government bond auction results and consensus forecasts** have no free
-  source that the terminal can use, so they read Missing.
+- **Credit ratings, PMIs, government bond auction results outside the United States and consensus
+  forecasts** have no free source that the terminal can use, so they read Missing. (US Treasury
+  auction results come from the Treasury's Fiscal Data API.)
 - **Egypt's policy rate** is not in the BIS dataset, so it reads Missing.
 
 Where an AI model writes the council's final report and leaves a field empty, the field reads
@@ -355,6 +356,29 @@ Diebold-Mariano test with the Harvey-Leybourne-Newbold small-sample correction i
 for reference, and the coverage of the 70% and 90% bands is reported beside the verdict
 (`src/utils/forecastEval.ts`). A forecast that fails is not drawn by default in the terminal.
 
+### 7.4 Conventions in the charts and tables
+
+These settings apply wherever the terminal computes a statistic (`src/utils/stats.ts`), and the
+replication packs use the same ones.
+
+- **Unit-root test (ADF).** The lag is chosen by AIC, with every candidate lag fitted on one common
+  sample; the test statistic is then refitted at the chosen lag on every usable row, as statsmodels
+  `adfuller` does.
+- **Year-on-year change of a daily series.** Each point is compared with the last observation on or
+  before the same date a year earlier, at most 7 days older; 29 February compares with 28 February.
+  With no observation in that window the change is left out.
+- **Hodrick-Prescott smoothing.** The trend on a chart uses a smoothing parameter that follows the
+  Ravn-Uhlig rule: 6.25 for annual, 1,600 for quarterly, 129,600 for monthly, 6.25 × 52⁴ for weekly
+  and 6.25 × 252⁴ for daily data. The output gap panels set their own (100 and 6.25 on yearly GDP,
+  [METHODS.md](./METHODS.md)).
+- **US dollar amounts.** World Bank dollar series (reserves, external debt, debt service, exports,
+  balance of payments flows, trade totals) are kept in billions to six decimals, the nearest $1,000,
+  so small economies do not round to zero. Ratios built from them use the unrounded inputs and round
+  only the result.
+- **Watch triggers.** A policy review trigger is read only when its number is unambiguous: "2,5" and
+  "0,750" read as 2.5 and 0.75, but a thousands separator such as "above 1,500" reads as "cannot read"
+  rather than being guessed.
+
 ## 8. Multiple testing
 
 The more rules are tried, the more likely one passes by chance. Each verdict is therefore shown with
@@ -458,8 +482,9 @@ consistent with the wider literature on macroeconomic forecasting, and they are 
 - **Replication packs.** A chart result can be downloaded as a zip containing the data it drew
   (`data.csv`), the same statistical tests written out in Python, R and Stata with the settings the
   terminal used, and a README listing each column's source, licence and the terminal's own figures to
-  check against. The scripts implement the arithmetic directly (OLS, Granger F test, ADF with lag
-  chosen by AIC, Hodrick-Prescott filter) so they match the terminal's statistics rather than a
+  check against. The scripts implement the arithmetic directly (OLS, Granger F test, ADF with the lag
+  chosen by AIC on one common sample and the test refitted at that lag on every usable row,
+  Hodrick-Prescott filter) so they match the terminal's statistics rather than a
   package's defaults (`src/utils/replicationPack.ts`).
 - **Point-in-time views.** *As of a past day* shows every figure the terminal held on a date;
   *Replicate a rate decision* shows the inputs a simple rule would have had before a central bank
@@ -472,8 +497,8 @@ consistent with the wider literature on macroeconomic forecasting, and they are 
 The terminal states what it cannot do. In particular:
 
 - **No free source, so Missing:** sovereign CDS (hidden; a USD bond spread stands in, labelled as
-  such), credit ratings, PMIs, government bond auction results, consensus forecasts, and some
-  countries' series (for example Egypt's policy rate).
+  such), credit ratings, PMIs, government bond auction results outside the United States, consensus
+  forecasts, and some countries' series (for example Egypt's policy rate).
 - **Revised data.** Where real-time vintages are not available, tests use today's revised data and
   say so. OECD figures obtained through DBnomics can lag the official release by about five months.
 - **Small samples.** Many emerging-market series are short and stress episodes cluster. Results from a
@@ -509,6 +534,8 @@ version number.
   (2011). *Supervisory Guidance on Model Risk Management* (SR 11-7 / OCC 2011-12).
 - Caldara, D. and Iacoviello, M. (2022). Measuring geopolitical risk. *American Economic Review*,
   112(4), 1194-1225.
+- Chinn, M. D. and Ito, H. (2006). What matters for financial development? Capital controls,
+  institutions, and interactions. *Journal of Development Economics*, 81(1), 163-192.
 - CFA Institute. *Global Investment Performance Standards (GIPS)*, 2020 edition.
 - Diebold, F. X. and Mariano, R. S. (1995). Comparing predictive accuracy. *Journal of Business &
   Economic Statistics*, 13(3), 253-263.

@@ -34,7 +34,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Forecasts with fan charts (AR models) | Research | Forecast evaluation failed | debt_forecast v2, 2026-11-07 |
 | Fiscal reaction (Bohn test) | Research | Description, not a tested signal | None |
 | Gross financing need | Research | Description, not a tested signal | None |
-| Country risk scorecard | Research | Description, not a tested signal | None |
+| Country risk scorecard | Research | Not validated | None |
 | Sanctions lists | Research | Description, not a tested signal | None |
 | Geopolitical risk VaR | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
@@ -440,13 +440,13 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### Country risk scorecard
 
-- **Says:** Governance, armed conflict, unrest and the economy side by side, each figure with its source and year.
+- **Says:** Governance, armed conflict, unrest, geopolitical risk, capital account openness and the economy side by side, each figure with its source and year.
 - **Rule:** Six World Bank WGI estimates against the world average; UCDP/PRIO conflicts and UCDP deaths for the latest coded year; GDELT 1.0 unrest spikes; the Caldara-Iacoviello Geopolitical Risk index; IMF and World Bank debt, growth, inflation, current account, reserves and external debt. No overall score.
-- **Reads:** World Bank WGI, UCDP/PRIO and UCDP, GDELT 1.0 event files, Caldara-Iacoviello GPR file, IMF WEO, World Bank Open Data
+- **Reads:** World Bank WGI, UCDP/PRIO and UCDP, GDELT 1.0 event files, Caldara-Iacoviello GPR file, Chinn-Ito capital account openness file, IMF WEO, World Bank Open Data
 - **Shows in:** Country Research > History & data (Country risk scorecard)
 - **Use:** Research
-- **Status:** Description, not a tested signal
-- **How it is tested:** Description, not a tested signal: published figures side by side, no forward call and no weights.
+- **Status:** Not validated
+- **How it is tested:** Pre-registered on 13 November 2026 before any run (docs/validation/pending/scorecard_default.json): a governance reading in the bottom quarter of countries that year (plain average of the six WGI estimates, used a year after) followed by the start of a sovereign default (BoC-BoE) within 3 years more often than usual; at least 30 cases over 15 years, lift 3 points, p at or below 0.05 with whole years resampled. Not validated until the runner is built and the test passes. The average is fixed for the test only; the scorecard still shows no overall score.
 - **Limits:** WGI and UCDP are yearly and lag a year or more; WGI estimates have wide margins of error; GDELT counts news reports, not events on the ground.
 - **Code:** `src/utils/countryRiskScorecard.ts`
 
@@ -984,8 +984,10 @@ These show where things stand on a stated method and make no call a backtest cou
 - Armed conflict: UCDP/PRIO conflicts located in the country (and how many at war level), and UCDP best estimates of state-based, non-state and one-sided deaths, for the latest year UCDP has coded, with the three years before.
 - Unrest: protests and violence as a share of the country's GDELT 1.0 events in the latest complete month, as z-scores against the previous 24 months, and the spike episodes of the last 24 months (see Unrest spikes).
 - Geopolitical risk: the Caldara and Iacoviello Geopolitical Risk index (AER 2022), the share of articles in ten leading newspapers about adverse geopolitical events and threats, for the country (44 countries covered) and the world, read from the authors' monthly file in data/local/gpr/ (fetched as published by the daily start-up run or npm run gpr:pull, or saved there by you as .xls, .xlsx or .csv). Latest month, where it sits among all months on file, and the 12-month and all-time means.
+- Capital account: the Chinn-Ito index (Chinn and Ito 2006, Journal of Development Economics 81(1)), openness in law from the IMF AREAER, read from the authors' file in data/local/chinn-ito/ (fetched by the daily start-up run or npm run chinn-ito:pull). The latest year on file, scaled 0 (least open) to 1 (most open), where it sits among all countries that year, the change over five years, and the index as published.
 - Economy: government debt, real growth, inflation (IMF WEO, latest outturn year, projections left out), current account, reserves in months of imports and external debt (World Bank), against five years earlier.
 - No overall score: any weighting of the pillars would be a guess, and one number would look more certain than the figures are.
+- Pre-registered test (scorecard_default v1, registered 13 November 2026, runner not built yet): a country-year whose plain average of the six WGI estimates is in the bottom quarter of countries that year, used from the end of the next year (WGI is published a year late), is a call that a sovereign default starts (BoC-BoE: debt in default goes from zero to above zero) in the following three years. Base rate: all country-years not already in default, pooled. Method 2: whole years resampled, p at most 0.05, a lift of at least 3 points, 30 cases over 15 years. The average is fixed for the test only and is not shown as a score.
 - **Limits:** WGI and UCDP are yearly and lag a year or more. WGI estimates are built from surveys and expert ratings and carry wide margins of error; small changes are within them. GDELT counts news reports, which rise with media attention. Figures not on file are listed as missing with the reason.
 - **Code:** `src/utils/countryRiskScorecard.ts`
 
@@ -1086,7 +1088,7 @@ These show where things stand on a stated method and make no call a backtest cou
 
 - **Shows in:** Council chat > a Chart Agent chart > Replication pack
 - data.csv holds the lines the chart drew, one row per date (or country, x, y for a chart across countries); trend lines the HP test adds are left out and recomputed.
-- replicate.py, replicate.R and replicate.do run the tests the chart ran on the first two columns, on the rows where both have a value: correlation, OLS regression, lead/lag (up to 1.5 years of rows either way), Granger F test, rolling correlation (3 years of rows, at least 8), ADF with a constant and its lag chosen by AIC on one sample (MacKinnon 2010 critical values), the HP filter as a linear solve with the app's lambda, and where the first line stands.
+- replicate.py, replicate.R and replicate.do run the tests the chart ran on the first two columns, on the rows where both have a value: correlation, OLS regression, lead/lag (up to 1.5 years of rows either way), Granger F test, rolling correlation (3 years of rows, at least 8), ADF with a constant, its lag chosen by AIC on one common sample and the test refitted at that lag on every usable row, as statsmodels adfuller does (MacKinnon 2010 critical values), the HP filter as a linear solve with the app's lambda, and where the first line stands.
 - The README lists each column with its label, unit, source and credit, the settings, and the app's readings and figures to check against.
 - **Limits:** A saved chart keeps its latest 600 points per line; the app ran its tests on every point, so a longer sample can give slightly different figures (the README says so when it applies). The Python and R scripts were checked against the app's figures; the Stata script follows the same steps.
 - **Code:** `src/utils/replicationPack.ts`

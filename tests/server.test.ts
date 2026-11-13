@@ -478,7 +478,7 @@ test('data connections: every source gets a row; keys are never in the reply', a
   assert.equal(res.status, 200);
   const rep = (await res.json()) as import('../src/utils/connectionCheck.ts').ConnectionReport;
   const row = (id: string) => rep.results.find((r) => r.id === id)!;
-  assert.equal(rep.results.length, 71); // + DPI file (G36), + IMF Fiscal Rules Dataset file (G35), + Penn World Table (G27), + Eurostat HICP core inflation (G26), + EU households' price expectations (G32), + ECB real-time database and ONS GDP revision triangle (G12, G13), + IMF GFS by level of government (G42), + Eurostat, ONS and BCB monthly activity (G41), + BIS total credit (G40), + ILOSTAT earnings, BIS residential property prices (G22), World Bank emissions and renewables, Our World in Data energy file (G20), World Bank trade and energy (G18), IMF investor base file (G19), World Bank debt structure (G19), World Bank people and living standards (G17), AidData file (U1), World Bank inequality, taxes and tariffs (G16), ECB SPF, BCB Focus and NY Fed GSCPI layout probes, IMF PortWatch, US Treasury auctions, EU business surveys, IMF monthly CPI, your data subscription
+  assert.equal(rep.results.length, 73); // + Chinn-Ito page (item 13), + Fed H.10 exchange rates (scenario replays), + DPI file (G36), + IMF Fiscal Rules Dataset file (G35), + Penn World Table (G27), + Eurostat HICP core inflation (G26), + EU households' price expectations (G32), + ECB real-time database and ONS GDP revision triangle (G12, G13), + IMF GFS by level of government (G42), + Eurostat, ONS and BCB monthly activity (G41), + BIS total credit (G40), + ILOSTAT earnings, BIS residential property prices (G22), World Bank emissions and renewables, Our World in Data energy file (G20), World Bank trade and energy (G18), IMF investor base file (G19), World Bank debt structure (G19), World Bank people and living standards (G17), AidData file (U1), World Bank inequality, taxes and tariffs (G16), ECB SPF, BCB Focus and NY Fed GSCPI layout probes, IMF PortWatch, US Treasury auctions, EU business surveys, IMF monthly CPI, your data subscription
   assert.equal(row('ucdp').state, 'connected', 'the UCDP release shipped in datasets/ucdp/');
   assert.equal(row('bcb_ipca').state, 'connected');
   assert.match(row('bcb_ipca').sample || '', /Brazil IPCA 4\.58% over 12 months \(Sep 2026\)/);
@@ -790,6 +790,13 @@ test('series: every figure lists its history or why it has none; unknown series 
   assert.match(((await egypt.json()) as { message: string }).message, /Missing\. Not in BIS policy rates/);
   const world = (await (await fetch(`${base}/api/series/world`)).json()) as { series: unknown[]; missing: unknown[] };
   assert.ok(Array.isArray(world.series) && Array.isArray(world.missing));
+  // Countries by alpha-2 or alpha-3; every answer carries both codes.
+  const byIso2 = (await (await fetch(`${base}/api/series/MX`)).json()) as { iso2: string; iso3: string; series: unknown[] };
+  assert.equal(byIso2.iso2, 'MX');
+  assert.equal(byIso2.iso3, 'MEX');
+  assert.equal(byIso2.series.length, list.series.length);
+  const one = (await (await fetch(`${base}/api/series/mx/reserves_months`)).json()) as { iso2: string; iso3: string };
+  assert.deepEqual([one.iso2, one.iso3], ['MX', 'MEX']);
 });
 
 test('downloads: figures and series come as CSV files; a series with no history says why', async () => {
@@ -798,6 +805,10 @@ test('downloads: figures and series come as CSV files; a series with no history 
   assert.match(figs.headers.get('content-type') || '', /text\/csv/);
   assert.match(figs.headers.get('content-disposition') || '', /MEX-figures-\d{4}-\d{2}-\d{2}\.csv/);
   const text = await figs.text();
+  // The alpha-2 code is the last column, so scripts reading columns by position keep working.
+  assert.match(text.split('\n').find((l) => l.startsWith('iso3,')) || '', /,licence,iso2\r?$/);
+  assert.match(text, /\nMEX,.*,MX\r?\n/);
+  assert.equal((await fetch(`${base}/api/export/MX/figures.csv`)).status, 200);
   assert.ok(text.includes('iso3,country,field,figure,value,unit,status'));
   assert.ok(text.includes('Missing'));
   const all = await fetch(`${base}/api/export/MEX/series.csv`);
@@ -850,8 +861,11 @@ test('downloads: the same tables come as Excel workbooks', async () => {
 test('panel builder: countries x figures as JSON and CSV; missing cells say why', async () => {
   const r = await fetch(`${base}/api/panel?countries=MEX,EGY&figures=policy_rate,yield_10y`);
   assert.equal(r.status, 200);
-  const body = (await r.json()) as { cells: Array<{ iso3: string; figureId: string; status: string; value: number | null; reason: string }> };
+  const body = (await r.json()) as { cells: Array<{ iso2: string; iso3: string; figureId: string; status: string; value: number | null; reason: string }> };
   assert.equal(body.cells.length, 4);
+  assert.deepEqual([...new Set(body.cells.map((c) => `${c.iso2}/${c.iso3}`))].sort(), ['EG/EGY', 'MX/MEX']);
+  const byIso2 = (await (await fetch(`${base}/api/panel?countries=MX,EG&figures=policy_rate,yield_10y`)).json()) as { cells: unknown[] };
+  assert.equal(byIso2.cells.length, 4);
   for (const c of body.cells) if (c.status === 'Missing') assert.ok(c.value === null && c.reason.length > 0);
   const hist = (await (await fetch(`${base}/api/panel?countries=MEX&figures=policy_rate&mode=history`)).json()) as { rowCount: number };
   assert.equal(typeof hist.rowCount, 'number');
@@ -1055,4 +1069,26 @@ test('exam mode: switched from this computer, AI steps answer with figures only,
     assert.equal((await (await put(false)).json()).on, false);
   }
   assert.equal((await (await fetch(`${base}/api/exam-mode/opened`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ what: 'country', label: 'x' }) })).json()).recorded, false);
+});
+
+test('correlation IDs: sent back on every reply and written into the audit entries a call makes', async () => {
+  const none = await fetch(`${base}/healthz`);
+  assert.match(none.headers.get('x-correlation-id') || '', /^[0-9a-f-]{36}$/, 'one is made when none is sent');
+  const id = 'console-trace-7f3a.1';
+  const put = await fetch(`${base}/api/watch-rules`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Correlation-Id': id }, body: JSON.stringify({ rules: [] }) });
+  assert.equal(put.status, 200);
+  assert.equal(put.headers.get('x-correlation-id'), id);
+  const bad = await fetch(`${base}/api/series/MEX`, { headers: { 'X-Correlation-Id': 'not ok!' } });
+  assert.equal(bad.status, 400);
+  assert.equal((await bad.json()).error, 'BAD_CORRELATION_ID');
+  await new Promise((r) => setTimeout(r, 200));
+  const lines = readFileSync(path.join(dataDir, 'local', 'audit', 'audit-log.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+  const hit = lines.filter((e) => e.correlationId === id);
+  assert.ok(hit.length >= 1, 'the audit entry carries the ID');
+  assert.equal(hit[0].summary, 'Changed the watch alerts');
+  const audit = await (await fetch(`${base}/api/audit?q=${id}`)).json();
+  assert.equal(audit.check.ok, true);
+  assert.ok(audit.entries.length >= 1, 'searchable in Menu > Audit log');
+  const csv = await (await fetch(`${base}/api/audit/export.csv`)).text();
+  assert.ok(csv.split('\n')[0].includes('Correlation ID'));
 });

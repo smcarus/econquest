@@ -13,12 +13,15 @@ import {
   newHoldingId,
   parseHoldingsCsv,
 } from '../utils/holdings';
+import { idsLabel } from '../utils/securityIds';
 
 interface HoldingsPanelProps {
   holdings: Holding[];
   countries: CountryLookup[];
   onChange: (next: Holding[]) => void;
   onClose: () => void;
+  /** Positions left out because they are on the hidden-names list (only the count shows). */
+  hiddenCount?: number;
 }
 
 function downloadText(filename: string, text: string) {
@@ -34,7 +37,7 @@ function downloadText(filename: string, text: string) {
 const inputCls =
   'px-2 py-1 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white min-w-0';
 
-export const HoldingsPanel: React.FC<HoldingsPanelProps> = ({ holdings, countries, onChange, onClose }) => {
+export const HoldingsPanel: React.FC<HoldingsPanelProps> = ({ holdings, countries, onChange, onClose, hiddenCount = 0 }) => {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [pasted, setPasted] = useState('');
   const [mode, setMode] = useState<'replace' | 'append'>(holdings.length ? 'append' : 'replace');
@@ -237,6 +240,12 @@ export const HoldingsPanel: React.FC<HoldingsPanelProps> = ({ holdings, countrie
           </div>
         )}
 
+        {hiddenCount > 0 && (
+          <p className="text-xs text-slate-500 dark:text-slate-400" data-holdings-hidden={hiddenCount}>
+            {hiddenCount === 1 ? t('ho_hiddenOne') : t('ho_hiddenMany', { n: hiddenCount })}
+          </p>
+        )}
+
         {holdings.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -256,7 +265,11 @@ export const HoldingsPanel: React.FC<HoldingsPanelProps> = ({ holdings, countrie
                 {holdings.map((h) => (
                   <tr key={h.id} className="border-b border-slate-50 dark:border-slate-800/60">
                     <td className="py-1.5 pr-3 whitespace-nowrap">{countries.find((c) => c.iso3 === h.iso3)?.countryName || h.iso3}</td>
-                    <td className="py-1.5 pr-3">{h.instrument}</td>
+                    <td className="py-1.5 pr-3">
+                      {h.instrument}
+                      {idsLabel(h) && <span className="block text-[11px] font-mono text-slate-500 dark:text-slate-400 break-all">{idsLabel(h)}</span>}
+                      {h.fromName && <span className="block text-[11px] text-slate-500 dark:text-slate-400">{t('ho_fromApi', { name: h.fromName })}</span>}
+                    </td>
                     <td className="py-1.5 pr-3 whitespace-nowrap">{tx(ASSET_CLASS_LABEL[h.assetClass])}</td>
                     <td className="py-1.5 pr-3">{h.side === 'LONG' ? t('ho_long') : t('ho_short')}</td>
                     <td className="py-1.5 pr-3 text-right ui-num">{h.notionalUsdMm.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>

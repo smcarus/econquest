@@ -5,6 +5,15 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Documentation brought up to date with the panels and tools added since the README rewrite: the
+  README and walk-through guide in English, Spanish, French and Portuguese describe the panels for
+  lower-income countries, peer comparison, Policy review watch and review-to-review comparison; the
+  methodology gains statistics conventions (section 7.4) and the US Treasury auctions source; the
+  install guide lists every file you save yourself in data/local/ and how to copy one into the
+  ready-made app; data sources, data API, user manual, methods notes and roadmap updated; licence
+  register rows for EM-DAT and FAOSTAT Consumer Price Indices, matched from the panels' source lines, so
+  Sharing mode now withholds figures from those two files; sizes re-measured. A Python package
+  file committed by mistake was removed from the repository root.
 - Review-to-review comparison (PC3): a review started with Review again shows what changed since
   the earlier one: frame changes, the option each memo recommended, each diagnosis figure then and
   now with the change, and whether the goal indicator moved the way the goal wants. Read in the

@@ -93,10 +93,10 @@ in downloads or shared copies.
 | Task | Where | What you get |
 | --- | --- | --- |
 | Ask a question in plain words | **Workspace** (Council chat) | Specialist agents answer from the app's figures, each naming its source; with an AI model, a summary agent writes a short brief that may quote only their figures, and a number check flags any figure it cannot trace |
-| Study one country | **Research > One country** | Summary, Markets & signals, History & data and Sources: charts going back years, nowcasts and forecasts with ranges, output gap, debt sustainability, reserve adequacy, policy rules, crisis early-warning, yield curve, inflation drivers, growth accounting, IMF forecasts by edition, and "as of" views of what was known on a past day |
+| Study one country | **Research > One country** | Summary, Markets & signals, History & data and Sources: charts going back years, nowcasts and forecasts with ranges, output gap, debt sustainability, reserve adequacy, policy rules, crisis early-warning, yield curve, inflation drivers, growth accounting, IMF forecasts by edition, and "as of" views of what was known on a past day. For lower-income countries: remittances, aid received, financial inclusion, commodity prices and terms of trade, food prices and food security, and natural disasters |
 | Compare countries | **Research > Compare countries** | Your watchlist side by side (the 19 G20 member countries to start with), story leads and where market prices and the data disagree |
 | Follow your holdings | **Research > My holdings** | A list of bonds or positions you load, against the risks and signals |
-| Test a policy choice | **Reports > New policy review** | A step-by-step case file: frame the problem, diagnose, rank options, check the evidence and precedents, write a recommendation memo and a one-page brief for non-economists, then track what happened |
+| Test a policy choice | **Reports > New policy review** | A step-by-step case file: frame the problem, diagnose, rank options, check the evidence and precedents, write a recommendation memo and a one-page brief for non-economists, then track what happened. Compare the diagnosis with up to six peer countries, get a warning on the start page when a watched figure crosses its trigger, and see what changed when you review the same policy again |
 | Try a fiscal what-if | **History & data**, or from Council chat | Change government spending or taxes and see the likely effect on growth and debt, using published multipliers and budget elasticities, with a range |
 | Write a report | **Reports** | Country notes, issuer notes, debt sustainability assessments, portfolio and client reviews and council briefs, as Markdown or PDF with sources and dates |
 | Learn as you go | Header buttons, **Menu > User manual**, **Menu > Worked examples** | Three help levels, a plain-language glossary, four worked case studies, teaching episodes and exam mode |
@@ -202,15 +202,15 @@ log) and take effect without a restart.
 ### Download sizes
 
 Each figure says how it was found. "Measured" means measured on the date given; "estimate" gives its
-method. Measurements from 13 November 2026 are of the main branch through pull request #496.
+method. Measurements from 13 November 2026 are of the main branch through pull request #510.
 
 | What | Size | How the figure was found |
 | --- | --- | --- |
-| Source code (`git clone`) | 59 MB (28 MB of files and 31 MB of history) | Measured, fresh clone, 13 November 2026 |
-| Ready-made app (Docker image) | About 170 MB to download; 795 MB once unpacked | Measured: image built from the repository's Dockerfile on 13 November 2026 (795 MB unpacked, 169 MB compressed with gzip). The download from the registry is compressed the same way, so expect a similar size |
+| Source code (`git clone`) | 70 MB (29 MB of files and 41 MB of history) | Measured, fresh clone, 13 November 2026 |
+| Ready-made app (Docker image) | About 170 MB to download; 798 MB once unpacked | Measured: image built from the repository's Dockerfile on 13 November 2026 (798 MB unpacked, 170 MB compressed with gzip). The download from the registry is compressed the same way, so expect a similar size |
 | Installed packages, from the code (`npm install`) | 465 MB | Measured, 13 November 2026 |
-| Built web app (`npm run build`) | 6.5 MB in all; 409 KB compressed at start-up | Measured with `npm run size:check`, 13 November 2026 (limits 465 KB and 7.5 MB) |
-| Each extra language (Spanish, French, Portuguese) | About 0.65 MB (about 210 KB compressed), downloaded only when picked | Measured from the build, 13 November 2026 |
+| Built web app (`npm run build`) | 6.7 MB in all; 415 KB compressed at start-up | Measured with `npm run size:check`, 13 November 2026 (limits 465 KB and 7.5 MB) |
+| Each extra language (Spanish, French, Portuguese) | About 0.7 MB (about 220 KB compressed), downloaded only when picked | Measured from the build, 13 November 2026 |
 | First full data download | About 3.6 to 3.8 GB, mostly GDELT news files | Estimate: GDELT about 3.4 GB for 8 weeks (from GDELT's own file sizes), past IMF forecast editions about 100 MB (measured), the rest as in the daily run |
 | First data download in light mode | Target: well under 1 GB | Not yet measured; owed from a light-mode run on the developer's Mac before the public release |
 | Daily data download | Roughly 150 to 200 MB (about 4.5 to 6 GB a month) | Estimate from recorded replies and file sizes ([INSTALL.md](docs/INSTALL.md#how-much-data-it-downloads)). The daily run now records what it downloads; the measured figure from a week of runs (`npm run go -- status` on the developer's Mac) will replace this estimate |
@@ -225,7 +225,7 @@ method. Measurements from 13 November 2026 are of the main branch through pull r
 | Ready-made app, no local AI | About 1 GB, growing about 40 MB a year | App image 0.8 GB (measured) plus the `data/` folder, about 150 MB after the first few days (measured on the developer's Mac, 9 November 2026, 22 countries) |
 | Ready-made app with a 14B referee | About 15 GB | The above plus qwen2.5:7b and qwen2.5:14b (4.7 + 9 GB) |
 | Ready-made app with the full local AI | About 26 GB | The above plus qwen2.5:7b and qwen2.5:32b (4.7 + 20 GB) |
-| From the code instead of the image | Add about 0.5 GB | Source and history 59 MB, packages 465 MB, build 7 MB (measured) |
+| From the code instead of the image | Add about 0.5 GB | Source and history 70 MB, packages 465 MB, build 7 MB (measured) |
 
 Docker Desktop itself needs a few GB more (check docker.com). Every past IMF forecast edition since
 2007 would add roughly 300 MB (estimate: about 38 editions at an average of 7 MB). To see the real
@@ -381,6 +381,7 @@ All of these are free. A few need a free key, which you add in Menu > Settings.
 | Central banks and calendar | Banco Central do Brasil, Banco de México (free token), official central bank decision dates, CPI and GDP release dates from statistics offices' own calendars |
 | Politics, conflict and shipping | GDELT news events, UCDP and ACLED conflict data (ACLED files are downloaded by hand), OFAC and UN sanctions lists, the Geopolitical Risk index, IMF PortWatch (ships through chokepoints and port calls) |
 | Markets and positioning | Kalshi and Polymarket prediction markets, CFTC Commitments of Traders |
+| Lower-income countries | World Bank (remittances and the cost of sending them, Global Findex accounts, aid received as republished from the OECD, food security, commodity trade shares and terms of trade); two files you save yourself: FAOSTAT consumer prices for food price inflation, and EM-DAT natural disasters, downloaded with your own free EM-DAT account (its terms do not allow the app to ship it) |
 
 The full list, with what each source fills and how often it is fetched, is in
 [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md). What each source's terms allow (showing figures to
@@ -446,6 +447,11 @@ Planned work, in order (details and status in [docs/ROADMAP.md](./docs/ROADMAP.m
 5. **More languages and teaching**: Portuguese and worked examples (done); Arabic and Swahili
    (planned); Quests in the classroom with a one-term pilot.
 6. **A phone app** (paused): a free standalone app that uses your own keys.
+
+Two groups of ideas were brought forward from the parked list on 13 November 2026 and are done: data
+for lower-income countries (remittances, financial inclusion, commodity prices and terms of trade,
+aid received, food prices and natural disasters) and policy review tools (peer comparison, watch
+alerts on the start page, and comparing a review with the earlier one).
 
 ---
 
@@ -532,6 +538,30 @@ stream, deliveries, and `openapi.json`). It answers `404 NO_COUNCIL_RUN` until y
 council on that country, and never sends built-in figures. Set `SMCR_INTEGRATION_API_KEY` and
 `SMCR_WEBHOOK_HMAC_SECRET` in `.env` to fix the key and signing secret. The same key lets a script
 read the [data API](docs/DATA_API.md) addresses, and only those, on a copy with sign-in on.
+
+An outside portfolio system can name countries by ISO alpha-2 or alpha-3 (every answer carries
+both) and positions by ISIN, LEI, CIK or ticker plus its own entity ID, which comes back unchanged.
+See "Connecting an outside portfolio system" in [docs/DATA_API.md](docs/DATA_API.md) and the
+address list in [docs/openapi.json](docs/openapi.json). It signs in with a named, revocable API token made
+in Menu > Settings > API tokens, limited to the scopes it needs (`read:data`, `read:council`,
+`read:events`, `write:holdings`, `write:exclusions`, `run:scenarios`); every use is in the audit
+log. `SMCR_INTEGRATION_API_KEY` still works as a legacy key with the three read scopes. On a server with several people, they can also sign in through any standard OpenID Connect provider (Google, Microsoft, Okta, Keycloak and others); see [docs/SECURITY.md](docs/SECURITY.md). Any call may carry an
+`X-Correlation-Id` header, which is sent back and written into the audit log entries it makes. Events (signal and badge changes,
+revisions, stale or failed feeds, sanctions list changes, releases due tomorrow, council runs and
+the daily download) can be read after an id, streamed live, or sent to webhooks signed with HMAC-SHA256
+and retried with backoff; see "Events and webhooks" in [docs/DATA_API.md](docs/DATA_API.md). An outside
+system can also set its own indicator watches (none is built in); a crossing after the daily download
+sends a `threshold_crossed` event. `GET /api/v1/countries/<code>/snapshot` returns every saved figure
+for a country, with source, date, badge and shareable flag, without a council run. It includes capital account openness from the Chinn-Ito index (Chinn and Ito 2006), cited and not passed on in sharing mode. With `write:holdings` it
+can send its positions (`PUT` or `POST /api/v1/holdings`), which appear in Holdings marked with the token's name. Names on
+the hidden-names list (Menu > Settings > Hidden names, or `/api/v1/exclusions`) never appear anywhere; only a
+count shows, and the app keeps fingerprints, not names. With `run:scenarios` it can run a shock (emerging-market
+currencies, US rates, per-country fiscal shocks) or replay a past crisis (1997, 1998, 2001, 2008, 2013, 2020, 2022) on a
+portfolio it sends (`POST /api/v1/scenarios`); results are per position, labelled hypothetical, with Missing moves explained.
+The audit log can be sealed (`AUDIT_SEAL_KEY`: an HMAC on every entry) and copied entry by entry to an S3-compatible
+bucket with object lock (`AUDIT_BUCKET_URL`); see "Audit seal and locked copies" in [docs/SECURITY.md](docs/SECURITY.md).
+Running it as a service for another system (reverse proxy and TLS, `ALLOWED_HOSTS`, service tokens with
+`npm run tokens`, `/healthz` and `/readyz`, and `DAILY_DOWNLOAD_DEADLINE`) is covered in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ### Network
 

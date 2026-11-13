@@ -99,10 +99,10 @@ repassados em downloads ou cópias compartilhadas.
 | Tarefa | Onde | O que você recebe |
 | --- | --- | --- |
 | Fazer uma pergunta com palavras simples | **Área de trabalho** (Chat do conselho) | Agentes especializados respondem com os números do app, cada um com sua fonte; com um modelo de IA, um agente de síntese escreve um breve resumo que só pode citar esses números, e uma checagem aponta qualquer número que não consiga rastrear |
-| Estudar um país | **Pesquisa > Um país** | Resumo, Mercados e sinais, Histórico e dados, e Fontes: gráficos de muitos anos, estimativas do presente e previsões com faixas, hiato do produto, sustentabilidade da dívida, adequação das reservas, regras de política monetária, alerta antecipado de crise, curva de juros, fatores da inflação, contabilidade do crescimento, previsões do FMI por edição e visões "em um dia passado" |
+| Estudar um país | **Pesquisa > Um país** | Resumo, Mercados e sinais, Histórico e dados, e Fontes: gráficos de muitos anos, estimativas do presente e previsões com faixas, hiato do produto, sustentabilidade da dívida, adequação das reservas, regras de política monetária, alerta antecipado de crise, curva de juros, fatores da inflação, contabilidade do crescimento, previsões do FMI por edição e visões "em um dia passado". Para países de renda mais baixa: remessas, ajuda recebida, inclusão financeira, preços de commodities e termos de troca, preços dos alimentos e segurança alimentar, e desastres naturais |
 | Comparar países | **Pesquisa > Comparar países** | Sua lista de acompanhamento lado a lado (os 19 países membros do G20 no início), pautas e onde os preços de mercado e os dados discordam |
 | Acompanhar suas posições | **Pesquisa > Minhas posições** | Uma lista de títulos ou posições que você carrega, diante dos riscos e sinais |
-| Avaliar uma escolha de política | **Relatórios > Nova revisão de política** | Um dossiê passo a passo: definir o problema, diagnosticar, ordenar opções, checar evidências e precedentes, escrever um memorando de recomendação e um resumo de uma página para quem não é economista, e depois acompanhar o que aconteceu |
+| Avaliar uma escolha de política | **Relatórios > Nova revisão de política** | Um dossiê passo a passo: definir o problema, diagnosticar, ordenar opções, checar evidências e precedentes, escrever um memorando de recomendação e um resumo de uma página para quem não é economista, e depois acompanhar o que aconteceu. Compare o diagnóstico com até seis países pares, receba um aviso na página inicial quando um número acompanhado cruzar seu gatilho, e veja o que mudou ao revisar de novo a mesma política |
 | Testar um "e se" fiscal | **Histórico e dados**, ou a partir do Chat do conselho | Mude os gastos do governo ou os impostos e veja o efeito provável no crescimento e na dívida, com multiplicadores e elasticidades publicados e uma faixa |
 | Escrever um relatório | **Relatórios** | Notas de país e de emissor, avaliações de sustentabilidade, revisões de carteira e resumos do conselho, em Markdown ou PDF com fontes e datas |
 | Aprender pelo caminho | Botões do cabeçalho, **Menu > Manual do usuário**, **Menu > Exemplos resolvidos** | Três níveis de ajuda, um glossário em linguagem simples, quatro casos resolvidos, episódios didáticos e modo prova |
@@ -203,15 +203,15 @@ As chaves ficam em `data/local/settings.json` (nunca no git, nos backups ou no l
 ### Tamanhos de download
 
 Cada número diz como foi obtido. "Medido" quer dizer medido na data indicada; "estimativa" traz o
-método. As medições de 13 de novembro de 2026 são do branch principal até o pull request #496.
+método. As medições de 13 de novembro de 2026 são do branch principal até o pull request #510.
 
 | O quê | Tamanho | Como o número foi obtido |
 | --- | --- | --- |
-| Código-fonte (`git clone`) | 59 MB (28 MB de arquivos e 31 MB de histórico) | Medido, clone novo, 13 de novembro de 2026 |
-| App pronto (imagem Docker) | Cerca de 170 MB para baixar; 795 MB descompactada | Medido: imagem construída com o Dockerfile do repositório em 13 de novembro de 2026 (795 MB descompactada, 169 MB compactada com gzip). O download do registro é compactado da mesma forma, então o tamanho será parecido |
+| Código-fonte (`git clone`) | 70 MB (29 MB de arquivos e 41 MB de histórico) | Medido, clone novo, 13 de novembro de 2026 |
+| App pronto (imagem Docker) | Cerca de 170 MB para baixar; 798 MB descompactada | Medido: imagem construída com o Dockerfile do repositório em 13 de novembro de 2026 (798 MB descompactada, 170 MB compactada com gzip). O download do registro é compactado da mesma forma, então o tamanho será parecido |
 | Pacotes instalados, a partir do código (`npm install`) | 465 MB | Medido, 13 de novembro de 2026 |
-| App web compilado | 6,5 MB no total; 409 KB compactados na inicialização | Medido com `npm run size:check`, 13 de novembro de 2026 |
-| Cada idioma adicional | Cerca de 0,65 MB (cerca de 210 KB compactados), só quando escolhido | Medido na compilação, 13 de novembro de 2026 |
+| App web compilado | 6,7 MB no total; 415 KB compactados na inicialização | Medido com `npm run size:check`, 13 de novembro de 2026 |
+| Cada idioma adicional | Cerca de 0,7 MB (cerca de 220 KB compactados), só quando escolhido | Medido na compilação, 13 de novembro de 2026 |
 | Primeiro download completo de dados | Cerca de 3,6 a 3,8 GB, quase tudo arquivos de notícias do GDELT | Estimativa: GDELT cerca de 3,4 GB para 8 semanas (pelos tamanhos publicados pelo GDELT), edições antigas do FMI cerca de 100 MB (medido), o resto como no download diário |
 | Primeiro download no modo leve | Meta: bem menos de 1 GB | Ainda não medido; pendente de um teste no Mac do desenvolvedor antes do lançamento |
 | Download diário de dados | Cerca de 150 a 200 MB (4,5 a 6 GB por mês) | Estimativa a partir de respostas gravadas e tamanhos de arquivo. O download diário agora registra quanto baixa; o número medido após uma semana (`npm run go -- status` no Mac do desenvolvedor) vai substituir esta estimativa |
@@ -226,7 +226,7 @@ método. As medições de 13 de novembro de 2026 são do branch principal até o
 | App pronto, sem IA local | Cerca de 1 GB, crescendo uns 40 MB por ano | Imagem 0,8 GB (medido) mais a pasta `data/`, cerca de 150 MB após os primeiros dias (medido no Mac do desenvolvedor em 9 de novembro de 2026, 22 países) |
 | Com um árbitro de 14B | Cerca de 15 GB | O anterior mais qwen2.5:7b e qwen2.5:14b |
 | Com toda a IA local | Cerca de 26 GB | O anterior mais qwen2.5:7b e qwen2.5:32b |
-| A partir do código em vez da imagem | Some cerca de 0,5 GB | Código e histórico 59 MB, pacotes 465 MB, compilação 7 MB (medido) |
+| A partir do código em vez da imagem | Some cerca de 0,5 GB | Código e histórico 70 MB, pacotes 465 MB, compilação 7 MB (medido) |
 
 O Docker Desktop precisa de mais alguns GB (veja docker.com). Para ver o tamanho real no seu computador,
 rode `du -sh data data/*` na pasta do EconQuest ou abra Menu > Dados offline.
@@ -379,6 +379,7 @@ Todas são gratuitas. Algumas precisam de uma chave gratuita, adicionada em Menu
 | Bancos centrais e calendário | Banco Central do Brasil, Banco de México (token gratuito), datas oficiais das decisões, datas de divulgação de inflação e PIB dos institutos de estatística |
 | Política, conflitos e transporte marítimo | Notícias do GDELT, dados de conflito do UCDP e do ACLED (o ACLED é baixado à mão), listas de sanções da OFAC e da ONU, índice de risco geopolítico, IMF PortWatch |
 | Mercados e posicionamento | Mercados de previsão Kalshi e Polymarket, relatório Commitments of Traders da CFTC |
+| Países de renda mais baixa | Banco Mundial (remessas e o custo de enviá-las, contas do Global Findex, ajuda recebida como republicada a partir da OCDE, segurança alimentar, peso das commodities no comércio e termos de troca); dois arquivos que você mesmo salva: preços ao consumidor da FAOSTAT para a inflação de alimentos, e desastres naturais do EM-DAT, baixados com sua própria conta gratuita do EM-DAT (os termos não permitem que o app os inclua) |
 
 A lista completa está em [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md) e o que cada fonte permite em
 [docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md) (em inglês).
@@ -416,6 +417,11 @@ Na ordem (detalhes em [docs/ROADMAP.md](./docs/ROADMAP.md), em inglês):
 5. **Mais idiomas e ensino**: português e exemplos resolvidos (feito); árabe e suaíli (planejados);
    Quests na sala de aula com um piloto de um semestre.
 6. **Um app para celular** (pausado).
+
+Em 13 de novembro de 2026, dois grupos de ideias foram adiantados da lista de espera e estão feitos:
+dados para países de renda mais baixa (remessas, inclusão financeira, preços de commodities e termos de
+troca, ajuda recebida, preços dos alimentos e desastres naturais) e ferramentas para a revisão de
+política (comparação com pares, avisos na página inicial e comparação de uma revisão com a anterior).
 
 ---
 

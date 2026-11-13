@@ -1,6 +1,7 @@
 {
   "note": "SHA-256 of each test registered before its tool and runner are built. When the step is built, the file moves unchanged to docs/validation/preregistered/ with the same hash; any change before then needs a new version and a new hash, committed before it is run.",
   "files": {
-    "crisis_warning.json": "c9e9939645383e85170e07230bb473c3dd86160ef5a6a37ec371967bb90bbea9"
+    "crisis_warning.json": "c9e9939645383e85170e07230bb473c3dd86160ef5a6a37ec371967bb90bbea9",
+    "scorecard_default.json": "11eb76b62362a6a647b8b7a37fdfd8b8d4a79d96150d55639e8f6385ba382b14"
   }
 }

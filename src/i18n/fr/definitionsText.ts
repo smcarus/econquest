@@ -97,6 +97,8 @@ export const DEFINITIONS_TEXT_FR: Record<string, string> = {
   "St. Louis Fed Financial Stress Index (STLFSI4): zero = average stress": "Indice de stress financier de la Fed de Saint-Louis (STLFSI4) : zéro = stress moyen",
   "Chicago Fed National Financial Conditions Index: zero = average, positive = tighter": "Indice des conditions financières nationales de la Fed de Chicago : zéro = moyenne, positif = plus restrictives",
   "Chicago Fed adjusted NFCI: financial conditions with the part explained by the economy taken out": "NFCI ajusté de la Fed de Chicago : conditions financières hors la part expliquée par l'économie",
+  "Capital account openness in law, scaled 0 (least open) to 1 (most open), from the IMF AREAER (Chinn-Ito index)": "Ouverture du compte de capital en droit, sur une échelle de 0 (moins ouvert) à 1 (plus ouvert), d'après l'AREAER du FMI (indice de Chinn-Ito)",
+  "Capital account openness in law, first principal component of four IMF AREAER measures, as published (Chinn-Ito KAOPEN)": "Ouverture du compte de capital en droit, première composante principale de quatre mesures de l'AREAER du FMI, telle que publiée (KAOPEN de Chinn-Ito)",
   "World Bank WGI estimate of voice and accountability": "Estimation des WGI de la Banque mondiale pour la voix et la responsabilité",
   "World Bank WGI estimate of political stability and absence of violence": "Estimation des WGI de la Banque mondiale pour la stabilité politique et l'absence de violence",
   "World Bank WGI estimate of government effectiveness": "Estimation des WGI de la Banque mondiale pour l'efficacité des pouvoirs publics",

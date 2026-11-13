@@ -11,6 +11,8 @@
  * Used by GET /api/data/connections (the Tools page) and by `npm run check:data` in a terminal.
  * Keys and passwords are never put in a row: only whether they are set.
  */
+import { CHINN_ITO_PAGE, chinnItoLinks } from './chinnIto';
+import { parseFredCsvSeries } from './fedBalanceSheet';
 import { EMISSIONS_CODE, OWID_ENERGY_URL, energyColumns } from './climateEnergy';
 import { dbnomicsLevelsUrl, imfLevelSeriesId } from './govLevels';
 import { ECB_RTD_SERIES, ecbRtdUrl, parseEcbHistory } from './ecbRealTime';
@@ -337,6 +339,8 @@ export const SOURCE_IDS = [
   'comtrade',
   'fred_csv',
   'fred_api',
+  'fed_h10',
+  'chinn_ito',
   'tesouro',
   'ecb_spf',
   'bcb_focus',
@@ -1256,6 +1260,35 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
         const o = parseFredCsvLatest(r.text || '', US_10Y_SERIES);
         return o ? `US 10Y ${fmt(o.valuePct, 2)}% (${o.period})` : null;
       }
+    )
+  );
+
+  add('fed_h10', () =>
+    httpCheck(
+      { id: 'fed_h10', name: 'Fed H.10 exchange rates (FRED download)', group: 'free', feeds: 'Monthly exchange rates since 1990 for the scenario replays (saved by the daily download)' },
+      fetchFn,
+      fredCsvUrl('EXBZUS', now),
+      T,
+      (r) => {
+        const obs = parseFredCsvSeries(r.text || '');
+        const last = obs[obs.length - 1];
+        return last ? `Brazil ${fmt(last.value, 4)} reais per US dollar (${last.date.slice(0, 7)})` : null;
+      }
+    )
+  );
+
+  add('chinn_ito', () =>
+    httpCheck(
+      { id: 'chinn_ito', name: 'Chinn-Ito capital account openness index (authors\' page)', group: 'free', feeds: 'Capital account openness by country, yearly since 1970, for the country risk scorecard (file saved by the daily download)' },
+      fetchFn,
+      CHINN_ITO_PAGE,
+      T,
+      (r) => {
+        const links = chinnItoLinks(r.text || '');
+        return links.length ? `Newest file linked: ${links[0]!.split('/').pop()}` : null;
+      },
+      undefined,
+      'The page answered but links no kaopen_<year>.xls file. The authors may have moved it; download it by hand into data/local/chinn-ito/.'
     )
   );
 

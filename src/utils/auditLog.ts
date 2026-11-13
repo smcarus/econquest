@@ -18,7 +18,7 @@
 import { createHash } from 'crypto';
 import { apiKeyField } from '../data/apiKeyFields';
 
-export type AuditKind = 'council' | 'research' | 'export' | 'settings' | 'data' | 'model' | 'workspace' | 'audit' | 'validation' | 'signoff' | 'access' | 'idea' | 'own_data' | 'paid_data';
+export type AuditKind = 'council' | 'research' | 'export' | 'settings' | 'data' | 'model' | 'workspace' | 'audit' | 'validation' | 'signoff' | 'access' | 'idea' | 'own_data' | 'paid_data' | 'api';
 
 export const AUDIT_KIND_LABEL: Record<AuditKind, string> = {
   council: 'Council answer',
@@ -35,6 +35,7 @@ export const AUDIT_KIND_LABEL: Record<AuditKind, string> = {
   idea: 'Trade idea',
   own_data: 'Your data',
   paid_data: 'Your subscription',
+  api: 'API tokens',
 };
 
 export interface AuditFigure {
@@ -57,6 +58,11 @@ export interface AuditActor {
 export interface AuditInput {
   kind: AuditKind;
   by?: AuditActor;
+  /**
+   * The X-Correlation-Id an outside system sent with the request that led to this entry, so one
+   * action can be traced across its logs and this one. Absent when none was sent.
+   */
+  correlationId?: string;
   /** One line in plain words, e.g. 'Council answer: "Is Brazil debt sustainable?"'. */
   summary: string;
   detail?: Record<string, unknown>;
@@ -69,9 +75,22 @@ export interface AuditEntry extends AuditInput {
   /** Hash of the entry before; GENESIS for the first. */
   prev: string;
   hash: string;
+  /** HMAC of `hash` under AUDIT_SEAL_KEY (src/utils/auditSeal.ts), and which key; not part of the hash. */
+  seal?: string;
+  sealKey?: string;
 }
 
 export const GENESIS = 'GENESIS';
+
+/** Correlation IDs: 1 to 128 letters, digits and . _ : - (a UUID, a trace ID, a job number). */
+export const CORRELATION_ID_MAX = 128;
+export const CORRELATION_HEADER = 'x-correlation-id';
+export function correlationIdProblem(v: string): string | null {
+  if (!v) return 'X-Correlation-Id is empty.';
+  if (v.length > CORRELATION_ID_MAX) return `X-Correlation-Id is longer than ${CORRELATION_ID_MAX} characters.`;
+  if (!/^[A-Za-z0-9._:-]+$/.test(v)) return 'X-Correlation-Id may hold only letters, digits and . _ : -';
+  return null;
+}
 export const MAX_FIGURES = 400;
 
 /** JSON with object keys sorted at every level, so the same entry always hashes the same. */
@@ -86,9 +105,9 @@ export function canonicalJson(value: unknown): string {
 }
 
 export function entryHash(e: Omit<AuditEntry, 'hash'>): string {
-  const { seq, at, kind, summary, detail, prev, by } = e;
-  // `by` is left out of the hash when absent, so entries written before accounts existed still check.
-  return createHash('sha256').update(canonicalJson({ seq, at, kind, summary, detail: detail ?? null, prev, by })).digest('hex');
+  const { seq, at, kind, summary, detail, prev, by, correlationId } = e;
+  // `by` and `correlationId` are left out of the hash when absent, so older entries still check.
+  return createHash('sha256').update(canonicalJson({ seq, at, kind, summary, detail: detail ?? null, prev, by, correlationId })).digest('hex');
 }
 
 /** The next entry after `last` (null for an empty log). */
@@ -101,6 +120,7 @@ export function nextEntry(last: Pick<AuditEntry, 'seq' | 'hash'> | null, input: 
     ...(input.detail ? { detail: input.detail } : {}),
     prev: last ? last.hash : GENESIS,
     ...(input.by ? { by: { id: input.by.id, username: input.by.username, name: input.by.name } } : {}),
+    ...(input.correlationId ? { correlationId: String(input.correlationId).slice(0, CORRELATION_ID_MAX) } : {}),
   };
   return { ...base, hash: entryHash(base) };
 }
@@ -139,7 +159,7 @@ export function checkLog(lines: string[], head?: { seq: number; hash: string } |
     const expectSeq = last ? last.seq + 1 : 1;
     if (e.seq !== expectSeq) return fail(i + 1, `entry ${expectSeq} is missing (line ${i + 1} is entry ${e.seq})`);
     if (e.prev !== (last ? last.hash : GENESIS)) return fail(i + 1, `entry ${e.seq} does not follow the one before it`);
-    const { hash, ...rest } = e;
+    const { hash, seal: _seal, sealKey: _sealKey, ...rest } = e;
     if (entryHash(rest) !== hash) return fail(i + 1, `entry ${e.seq} was changed after it was written`);
     entries.push(e);
     last = e;
@@ -238,7 +258,7 @@ export function describeRequest(method: string, path: string): AuditInput | null
   return { kind: 'data', summary: `${m} ${p}` };
 }
 
-export const AUDIT_HEADER = ['Entry', 'Time (UTC)', 'Kind', 'By', 'What happened', 'AI model', 'Figures used', 'Detail', 'Hash'];
+export const AUDIT_HEADER = ['Entry', 'Time (UTC)', 'Kind', 'By', 'What happened', 'AI model', 'Figures used', 'Detail', 'Hash', 'Correlation ID'];
 
 export function auditRows(entries: AuditEntry[]): Array<Array<string | number>> {
   return entries.map((e) => {
@@ -256,6 +276,7 @@ export function auditRows(entries: AuditEntry[]): Array<Array<string | number>> 
       figures.map((f) => `${f.iso3} ${f.label} ${f.value} (${f.source})`).join('; '),
       Object.keys(rest).length ? JSON.stringify(rest) : '',
       e.hash,
+      e.correlationId ?? '',
     ];
   });
 }

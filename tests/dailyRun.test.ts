@@ -90,7 +90,7 @@ test('npm run daily: runs offline against fixtures, writes the report, and does 
     assert.equal(first.status, 0, first.stderr.slice(-2000));
     const saved = readDaily(path.join(dataDir, 'local', 'daily-run.json')).last!;
     assert.ok(saved.finishedAt);
-    assert.deepEqual(saved.steps.map((s) => s.id), ['feeds', 'weo', 'sanctions', 'gpr', 'ucdp', 'nowcasts', 'tests', 'check']);
+    assert.deepEqual(saved.steps.map((s) => s.id), ['feeds', 'weo', 'sanctions', 'gpr', 'chinn_ito', 'ucdp', 'replays', 'nowcasts', 'tests', 'check']);
     assert.equal(saved.steps.find((s) => s.id === 'tests')!.outcome, 'skipped');
     // Every step says how much it downloaded (0 when nothing came from another computer).
     for (const s of saved.steps) assert.equal(typeof s.bytes, 'number', s.id);

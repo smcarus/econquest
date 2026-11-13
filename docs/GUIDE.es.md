@@ -129,6 +129,14 @@ indican lo recientes que son los datos. **Actualizar ahora** vuelve a traer las 
    de reservas, sostenibilidad externa, alerta temprana de crisis, curva de rendimientos, factores de la
    inflación, contabilidad del crecimiento, reglas de política, «¿y si?» fiscales y un pequeño modelo de
    brecha que usted rellena.
+5. Siguen paneles para países de menores ingresos: **Remesas** (junto a exportaciones, inversión y
+   ayuda, y el costo de enviar 200 US$ frente a la meta del 3 % de la ONU), **Inclusión financiera**
+   (quién tiene una cuenta, por sexo e ingreso), **Precios de materias primas y términos de
+   intercambio** (qué significan los últimos movimientos de los precios mundiales para el país, en % del
+   PIB), **Ayuda recibida**, **Precios de los alimentos y seguridad alimentaria** y **Desastres
+   naturales**. La inflación de alimentos y los desastres se leen de archivos que usted guarda en
+   `data/local/fao-cpi/` y `data/local/emdat/`; hasta entonces esas partes dicen Faltante e indican
+   dónde obtener el archivo ([INSTALL.md](./INSTALL.md#files-you-save-yourself), en inglés).
 
 ![Brecha del producto de Brasil: el centro de tres estimaciones con una banda que muestra su dispersión, discontinua en los años de proyección del FMI](images/07-output-gap.png)
 
@@ -203,6 +211,20 @@ Para revisar una política:
    una comprobación conductual, reglas fiscales y viabilidad política, el memorando de recomendación, un
    **resumen de una página** en PDF para no economistas, y el seguimiento de resultados, que compara la
    revisión con lo ocurrido a los 12 y 24 meses. Cada paso se guarda con su huella digital.
+
+![Pares en una revisión de políticas: las cifras del diagnóstico de Brasil junto a México, India, Indonesia, Sudáfrica y Turquía, con la mediana de los pares y el puesto](images/20-peers.png)
+
+6. Después del diagnóstico, **Pares** pone las cifras del diagnóstico junto a hasta seis países de su
+   lista de seguimiento (o pulse **Misma región**, luego **Comparar**), cada una tal como estaba guardada
+   en la fecha de la revisión o antes, con la mediana de los pares y el puesto de este país.
+7. En el memorando, dé a una cifra vigilada un umbral que la aplicación pueda leer, como «por encima de
+   8», «por debajo de 3», «meta 4», «sube» o «baja». **Seguimiento de revisiones de políticas**, bajo
+   las alertas de seguimiento en el Briefing del espacio de trabajo, muestra cada una como cruzada o no
+   cruzada frente a las últimas cifras guardadas; **Abrir revisión** vuelve a la revisión.
+8. En la fecha de revisión, **Revisar de nuevo** inicia una revisión nueva con el mismo planteamiento y
+   los datos de hoy. La nueva revisión abre **Qué cambió desde la revisión anterior**: el planteamiento,
+   la opción que recomendó cada memorando, cada cifra entonces y ahora, y si el indicador objetivo se
+   movió en la dirección buscada.
 
 ## 8. Elegir un modelo de IA
 

@@ -57,9 +57,16 @@ own-data switch in Settings).
 | Our World in Data energy file | Energy mix: shares of coal, oil, gas, nuclear and renewables in primary energy (Energy Institute Statistical Review of World Energy, via Our World in Data); downloaded to this computer, not shipped (Energy Institute terms: private, non-commercial use only) | catalog.ourworldindata.org (older file: raw.githubusercontent.com/owid/energy-data) | 1 week, daily run, on disk |
 | World Bank trade and energy (WDI) | Shares of merchandise exports and imports in fuel, ores and metals, food and manufactures (TX.VAL.FUEL.ZS.UN, TX.VAL.MMTL.ZS.UN, TX.VAL.FOOD.ZS.UN, TX.VAL.MANF.ZS.UN and the TM.VAL.* counterparts); net energy imports, % of energy use (EG.IMP.CONS.ZS; negative = net exporter) | api.worldbank.org | 1 week (country snapshot) |
 | World Bank debt structure (WDI, IDS) | Interest payments, % of central government revenue (GC.XPN.INTP.RV.ZS); currency mix of public and publicly guaranteed external debt (IDS DT.CUR.USDL.ZS, DT.CUR.EURO.ZS, DT.CUR.JYEN.ZS, DT.CUR.UKPS.ZS, DT.CUR.SWFR.ZS, DT.CUR.SDRW.ZS, DT.CUR.MULC.ZS, DT.CUR.OTHC.ZS) and average maturity of new loans (DT.MAT.DPPG), low- and middle-income countries only | api.worldbank.org | 1 week (country snapshot) |
+| World Bank remittances and flows (WDI) | Remittances received and paid in US dollars (BX.TRF.PWKR.CD.DT, BM.TRF.PWKR.CD.DT), set beside exports, net foreign direct investment inflows (BX.KLT.DINV.CD.WD) and net aid received (DT.ODA.ODAT.CD); average cost of sending US$200 (SI.RMT.COST.IB.ZS, Remittance Prices Worldwide), for the Remittances panel | api.worldbank.org | 1 week (country history) |
+| World Bank financial inclusion (Global Findex, WDI) | Adults with an account: all, women, men, poorest 40%, richest 60% (FX.OWN.TOTL.ZS, .FE.ZS, .MA.ZS, .40.ZS, .60.ZS); bank branches and ATMs per 100,000 adults (FB.CBK.BRCH.P5, FB.ATM.TOTL.P5, IMF Financial Access Survey); domestic credit to the private sector, % of GDP (FS.AST.PRVT.GD.ZS) | api.worldbank.org | 1 week (country history) |
+| World Bank commodity trade (WDI) | Merchandise exports and imports in US dollars (TX.VAL.MRCH.CD.WT, TM.VAL.MRCH.CD.WT), with the fuel, ores and metals and food shares above and the Pink Sheet below, for the Commodity prices and terms of trade panel | api.worldbank.org | 1 week (country history) |
+| World Bank aid received (WDI, from OECD DAC) | Net development aid received as % of GNI, central government spending, imports and investment, and per person (DT.ODA.ODAT.GN.ZS, .XP.ZS, .MP.ZS, .GI.ZS, .PC.ZS); net aid from the United States, Germany, the United Kingdom, France, Japan and EU institutions (DC.DAC.USAL.CD, DEUL, GBRL, FRAL, JPNL, CECL) | api.worldbank.org | 1 week (country history) |
+| World Bank food security (WDI, from FAO) | Prevalence of undernourishment (SN.ITK.DEFC.ZS), moderate or severe and severe food insecurity (SN.ITK.MSFI.ZS, SN.ITK.SVFI.ZS), three-year averages | api.worldbank.org | 1 week (country history) |
 | IMF Sovereign Debt Investor Base (Arslanalp and Tsuda) | Who holds general government debt: foreign official, foreign banks, foreign other investors, domestic central bank, domestic banks, domestic other investors (shares), about 136 emerging and developing economies, yearly | your file in data/local/imf-investor-base/ (wp1439.zip from imf.org) | when you replace the file (the IMF updates it end-April and end-October) |
 | IMF Fiscal Rules Dataset, 1985-2024 | National fiscal rules (expenditure, revenue, budget balance, debt) by country and year, 123 economies, for the Fiscal rules check | your file in data/local/imf-fiscal-rules/ (Dataset (XLSX) from imf.org; terms not confirmed, not shipped) | when you replace the file |
 | Database of Political Institutions 2020 (Inter-American Development Bank) | Political system, checks and balances, fractionalisation, polarisation, years left in the term, by country and year, for Political feasibility in Policy review | your file in data/local/dpi/ (DPI2020 .csv or .xlsx from the IDB; terms not confirmed, not shipped) | when you replace the file |
+| FAOSTAT Consumer Price Indices (FAO) | Food and general consumer price indices by month, for food price inflation (values FAO flags as estimated or imputed left out; areas matched by M49 code) | your file in data/local/fao-cpi/ (bulk download "All Data" or "All Data Normalized" from fao.org/faostat; terms for this table not confirmed, not shipped) | when you replace the file |
+| EM-DAT (CRED, UCLouvain) | Natural disasters since 2000: events, deaths, people affected and damage by type, for the Natural disasters panel | your file in data/local/emdat/ (public table .xlsx from public.emdat.be, downloaded with your own account; the terms do not allow passing it on, so nothing is shipped or fetched) | when you replace the file |
 | IMF list of LIC DSAs | Risk of debt distress for 67 low-income countries, with each DSA's date (typed from the list as of 30 Sep 2026) | typed in src/utils/lowIncomeDebt.ts | updated by hand when the list changes |
 | Paris Club, Common Framework | Countries that applied for a debt treatment (typed, as of 2024) | typed in src/utils/lowIncomeDebt.ts | by hand |
 | AidData Global Chinese Development Finance (v3.0) | Official loan commitments from China by country, 2000-2021 | datasets/aiddata/china-lending.json (shipped summary); data/local/aiddata/ (a newer file of yours wins) | when AidData publishes a new version |
@@ -89,7 +96,7 @@ own-data switch in Settings).
 | CFTC Commitments of Traders | Weekly currency futures positioning (leveraged funds, asset managers) for MXN, BRL, ZAR, JPY, GBP, EUR | publicreporting.cftc.gov | Until a newer report can exist (weekly), on disk |
 | US Treasury TIC | Holdings of US Treasuries by country, monthly (Japan, UK, China, Brazil, India and the other ~15 holders Treasury names) | ticdata.treasury.gov | 1 day, on disk |
 | US Treasury Fiscal Data (auctions) | US Treasury auctions: bid-to-cover, high yield (bills: high investment rate), amounts offered and accepted, indirect bidders' share, for 13- and 26-week bills, 2-, 5- and 10-year notes and 30-year bonds, ten years back (TIPS, floating-rate notes and cash management bills left out). United States page, issuer note and council charts | api.fiscaldata.treasury.gov | Daily run, on disk (data/live/ust-auctions.json); pages read the saved copy |
-| World Bank Pink Sheet | Monthly commodity prices: oil (Brent, WTI, Dubai), gas, LNG, coal, copper, iron ore, aluminium, nickel, gold, platinum, silver, soybeans, maize, wheat, palm oil, coffee, cocoa, sugar | www.worldbank.org (page), thedocs.worldbank.org (workbook) | 1 day, on disk |
+| World Bank Pink Sheet | Monthly commodity prices: oil (Brent, WTI, Dubai), gas, LNG, coal, copper, iron ore, aluminium, nickel, gold, platinum, silver, soybeans, maize, wheat, rice (Thai 5%), palm oil, coffee, cocoa, sugar | www.worldbank.org (page), thedocs.worldbank.org (workbook) | 1 day, on disk |
 | OECD leading indicators (via DBnomics) | Composite leading indicator (amplitude adjusted, 100 = long-term average), monthly, for the countries the OECD covers | api.db.nomics.world | 1 day, on disk |
 | OECD quarterly GDP (via DBnomics) | Real GDP growth, quarter on quarter and year on year, seasonally adjusted, for about 53 OECD and partner areas; feeds the nowcast and forecasts | api.db.nomics.world | 1 day, on disk |
 | BCB IBC-Br (SGS 24364) | Brazil's monthly economic activity index, seasonally adjusted, full history from 2003; for the GDP nowcast | api.bcb.gov.br | 1 day, on disk |
@@ -102,6 +109,7 @@ own-data switch in Settings).
 | Central bank of Peru (BCRPData, EMBIG) | USD bond spread over US Treasuries: J.P. Morgan EMBI Global spread, monthly average, for Argentina, Brazil, Chile, Colombia, Ecuador, Mexico, Peru and Venezuela, plus the Latin American and emerging-market aggregates. The free stand-in for 5Y CDS: labelled a bond spread, never CDS. Other countries read Missing ("No free source"). Published about three weeks after the month | estadisticas.bcrp.gob.pe | 12 h, on disk (`data/live/market-extras.json`) |
 | FRED download | 10Y yields (OECD monthly): US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries | fred.stlouisfed.org | 6 h |
 | FRED download | Fed balance sheet (H.4.1): WALCL total assets, WRESBAL reserves, WTREGEN Treasury General Account; NY Fed RRPONTSYD overnight reverse repos | fred.stlouisfed.org | 12 h (1 h after a miss); saved to data/live/fed-balance-sheet.json |
+| FRED download | Federal Reserve Board H.10 monthly exchange rates per US dollar (22 currencies) and the OECD 10Y yields, from 1990, for the historical scenario replays (`POST /api/v1/scenarios`); BCRP EMBI spreads from 2016 for the same | fred.stlouisfed.org, estadisticas.bcrp.gob.pe | Saved by the daily download at most every 6 days (`data/local/replays/replay-series.json`); never fetched when a scenario runs |
 | FRED download (API with your key) | Stress indices: St. Louis Fed STLFSI4, Chicago Fed NFCI and ANFCI (weekly; scenario factor of your choice and world series) | fred.stlouisfed.org | 12 h (1 h after a miss) |
 | NY Fed download | Global Supply Chain Pressure Index (monthly; scenario factor and world series), an Excel 97 .xls file (served even at gscpi_data.csv), read with the app's own .xls reader | newyorkfed.org | 12 h (1 h after a miss) |
 | IMF PortWatch (ArcGIS feature layers) | Ships through eight chokepoints and their estimated volume (world series); each country's port calls and estimated seaborne imports and exports. Daily data from ship signals, shown as monthly averages per day; the latest month is partial | services9.arcgis.com | 24 h (1 h after a miss) |
@@ -329,6 +337,25 @@ the page). The daily start-up run (`npm run daily`, started by `npm run go`) fet
 file as published (`data_gpr_export.xls`) into `data/local/gpr/` when the saved copy is more than 7
 days old; `npm run gpr:pull` does the same by hand. A download is kept only if it reads as the GPR
 table. You can also save the file there yourself as .xls, .xlsx or .csv; the newest file is used.
+
+### Capital account openness (Chinn-Ito index)
+
+The country risk scorecard, History & data and the data API's country snapshot read the Chinn-Ito
+financial openness index (KAOPEN) from <https://web.pdx.edu/~ito/Chinn-Ito_website.htm>: how open
+each country's capital account is in law, yearly from 1970 for about 180 countries, built from the
+IMF's yearly report on exchange arrangements and restrictions (AREAER). Two series: the index as
+published and the authors' version scaled from 0 (least open) to 1 (most open). The daily start-up
+run fetches the newest `kaopen_<year>.xls` linked from the page into `data/local/chinn-ito/` when the
+saved copy is more than 30 days old; `npm run chinn-ito:pull` does the same by hand. You can also
+save the file there yourself as .xls, .xlsx or .csv.
+
+Terms: the authors ask that the index be credited to Chinn, Menzie D. and Hiro Ito (2006), "What
+Matters for Financial Development? Capital Controls, Institutions, and Interactions", Journal of
+Development Economics 81(1), 163-192, and the readme says "All rights reserved"; there is no
+licence. The app shows the figures with that citation and never re-publishes the file, and the
+values are marked not shareable in sharing mode. The Fernández, Klein, Rebucci, Schindler and Uribe
+(2016) capital control dataset was also checked on 13 November 2026: its page could not be read and
+no terms were found, so it is not used.
 
 ### Sanctions lists (OFAC, UN)
 
@@ -566,7 +593,11 @@ the background once the app is up; the app can be used straight away. It runs at
 2. Files: past IMF WEO editions (`npm run weo:pull`, tried at most once a week because the IMF
    often refuses automated downloads with HTTP 403; then they have to be downloaded by hand from the
    IMF WEO database page into `data/local/weo-vintages/`), the OFAC and UN sanctions lists
-   (`sanctions:pull`), the Geopolitical Risk index (`gpr:pull`) and newer UCDP files (`ucdp:pull`).
+   (`sanctions:pull`), the Geopolitical Risk index (`gpr:pull`), the Chinn-Ito capital account openness index
+   (`chinn-ito:pull`, at most once every 30 days), newer UCDP files (`ucdp:pull`) and
+   the monthly series behind the scenario replays (`replays:pull`: OECD 10Y yields and Fed H.10
+   exchange rates from FRED since 1990, BCRP EMBI spreads since 2016, into `data/local/replays/`,
+   at most once every 6 days).
 3. The long histories behind the nowcasts and forecasts (refreshed weekly), then a nowcast and a
    forecast for every country, listing which are Missing and why.
 4. The pre-registered tests (backtests, forecast evaluations, currency signal tests) when the last

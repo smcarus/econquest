@@ -247,6 +247,9 @@ const BY_ID: Record<string, Def> = {
   stress_nfci: d('Chicago Fed National Financial Conditions Index: zero = average, positive = tighter', 'financial'),
   stress_anfci: d('Chicago Fed adjusted NFCI: financial conditions with the part explained by the economy taken out', 'financial'),
   // World Bank Worldwide Governance Indicators: estimates with world mean 0 and standard deviation 1.
+  // Chinn-Ito capital account openness (src/utils/chinnIto.ts).
+  capital_openness: d('Capital account openness in law, scaled 0 (least open) to 1 (most open), from the IMF AREAER (Chinn-Ito index)', 'country'),
+  capital_openness_raw: d('Capital account openness in law, first principal component of four IMF AREAER measures, as published (Chinn-Ito KAOPEN)', 'country'),
   wgi_voice: d('World Bank WGI estimate of voice and accountability', 'governance'),
   wgi_stability: d('World Bank WGI estimate of political stability and absence of violence', 'governance'),
   wgi_effectiveness: d('World Bank WGI estimate of government effectiveness', 'governance'),
@@ -585,6 +588,8 @@ const UNITS_BY_ID: Record<string, Units> = {
   stress_nfci: ['index'],
   stress_anfci: ['index'],
   gscpi: ['index'],
+  capital_openness: ['index'],
+  capital_openness_raw: ['index'],
 };
 for (const id of ['wgi_voice', 'wgi_stability', 'wgi_effectiveness', 'wgi_regulatory', 'wgi_rule_of_law', 'wgi_corruption']) UNITS_BY_ID[id] = ['score'];
 const UNITS_BY_PATTERN: Array<{ re: RegExp; units: Units }> = [

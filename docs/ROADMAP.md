@@ -24,7 +24,7 @@ The same rules hold for every change:
 | Area | What was added |
 | --- | --- |
 | Languages | The whole app in Spanish (formal *usted*), French (formal *vous*) and Brazilian Portuguese (*você*), each downloaded only when picked; Arabic and Swahili planned, not started |
-| Documentation | README and walk-through guide with screenshots in English, Spanish, French and Portuguese; recommended AI models, settings and measured download and disk sizes |
+| Documentation | README and walk-through guide with screenshots in English, Spanish, French and Portuguese; recommended AI models, settings and measured download and disk sizes; a table of the files you save yourself in the install guide |
 | Researcher tools | Opt-in 14B referee for smaller computers; a small gap model you fill in yourself, with a council link; the data API with R, Python and Stata helpers; register and run your own tests, with their own Holm correction |
 | Your own data | Load your own CSV series and use them across the app |
 | Fiscal what-ifs | Spending multipliers by type, defence and spending by purpose, OECD and European Commission budget elasticities, an editable what-if card |
@@ -32,7 +32,7 @@ The same rules hold for every change:
 | Paid data you already have | A Settings screen for your own subscription (off by default, paid figures never leave your computer) and the first vendor, Macrobond |
 | New data | IMF PortWatch shipping, central bank decision dates, a Calendar tab, US Treasury auctions, EU business and consumer surveys, fresher inflation figures (IMF monthly prices, freshest source per country) |
 | Easier running | `npm run go` (one command to update and start), downloads at start-up and the daily data download (which records how much it downloads), the ready-made app image, and the computer and disk space needed, written down in the install guide |
-| Trust and testing | Pre-registered tests with badges, the track record with the Holm correction, agent badges and a sources line on every answer |
+| Trust and testing | Pre-registered tests with badges, the track record with the Holm correction, agent badges and a sources line on every answer; statistics checked against standard packages (ADF refitted on the full sample, daily year-on-year by calendar date, HP smoothing by frequency, dollar figures to the nearest $1,000) |
 | Learning | Three help levels, a plain-language glossary, teaching episodes and exam mode; Quests built but switched off until checked |
 | Smaller and faster | Council chat and several Research panels load only when opened |
 | Open source | Licences (Apache-2.0, CC BY 4.0, DCO), governance, contributing guide, the methodology and a clean public export |

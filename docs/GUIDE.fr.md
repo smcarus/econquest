@@ -129,6 +129,15 @@ indiquent la fraîcheur des données. **Actualiser maintenant** récupère de no
    réserves, soutenabilité extérieure, alerte précoce de crise, courbe des taux, moteurs de l'inflation,
    comptabilité de la croissance, règles de politique monétaire, hypothèses budgétaires et un petit
    modèle d'écart que vous remplissez vous-même.
+5. Suivent des panneaux pour les pays à revenu plus faible : **Envois de fonds** (à côté des
+   exportations, des investissements et de l'aide, et le coût d'envoi de 200 $ US face à l'objectif de
+   3 % de l'ONU), **Inclusion financière** (qui a un compte, par sexe et par revenu), **Prix des matières
+   premières et termes de l’échange** (ce que les derniers mouvements des prix mondiaux signifient pour
+   le pays, en % du PIB), **Aide reçue**, **Prix alimentaires et sécurité alimentaire** et
+   **Catastrophes naturelles**. L'inflation alimentaire et les catastrophes sont lues dans des fichiers
+   que vous enregistrez vous-même dans `data/local/fao-cpi/` et `data/local/emdat/` ; d'ici là, ces
+   parties affichent Manquant et disent où obtenir le fichier
+   ([INSTALL.md](./INSTALL.md#files-you-save-yourself), en anglais).
 
 ![Écart de production du Brésil : le milieu de trois estimations avec une bande qui montre leur dispersion, en pointillés pour les années de projection du FMI](images/07-output-gap.png)
 
@@ -205,6 +214,20 @@ Pour examiner une politique :
    contrôle comportemental, règles budgétaires et faisabilité politique, la note de recommandation, une
    **synthèse d'une page** en PDF pour les non-économistes, et le suivi des résultats, qui compare la revue
    à ce qui s'est passé à 12 et 24 mois. Chaque étape est enregistrée avec son empreinte.
+
+![Pairs dans une revue de politique : les chiffres du diagnostic du Brésil à côté du Mexique, de l'Inde, de l'Indonésie, de l'Afrique du Sud et de la Turquie, avec la médiane des pairs et le rang](images/20-peers.png)
+
+6. Après le diagnostic, **Pairs** place les chiffres du diagnostic à côté de jusqu'à six pays de votre
+   liste de suivi (ou appuyez sur **Même région**, puis **Comparer**), chacun tel qu'enregistré à la
+   date de la revue ou avant, avec la médiane des pairs et le rang de ce pays.
+7. Dans la note, donnez à un chiffre suivi un seuil que l'application sait lire, comme « au-dessus de
+   8 », « en dessous de 3 », « cible 4 », « monte » ou « baisse ». **Suivi des revues de politique**,
+   sous les alertes de suivi dans le Briefing de l'espace de travail, indique alors pour chacun s'il est
+   franchi ou non face aux derniers chiffres enregistrés ; **Ouvrir la revue** ramène à la revue.
+8. À la date prévue, **Revoir** lance une nouvelle revue avec le même cadrage sur les données du jour.
+   La nouvelle revue ouvre **Ce qui a changé depuis la revue précédente** : le cadrage, l'option
+   recommandée par chaque note, chaque chiffre alors et maintenant, et si l'indicateur visé a évolué
+   dans le bon sens.
 
 ## 8. Choisir un modèle d'IA
 

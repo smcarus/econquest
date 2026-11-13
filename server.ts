@@ -35,8 +35,29 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { refusal, requiredRole, roleAtLeast } from './src/utils/permissions';
 import { CSRF_HEADER, csrfMatches, csrfToken, isAiCall, isWrite, LIMITS, RateLimiter, SECURITY_HEADERS } from './src/utils/requestLimits';
 import { apiKeyFrom, DATA_API_LIMIT, isDataApiRead, keyMatches } from './src/server/dataApi';
+import { countryInPath, normaliseCountryQuery, normaliseCountryUrl, withoutHiddenCountries } from './src/server/countryCodes';
+import { ExclusionStore } from './src/server/exclusionStore';
+import { hiddenNote } from './src/utils/exclusions';
+import { iso2For } from './src/data/iso3166Alpha2';
+import type { ConsoleEvent, ValueBadge } from './src/utils/consoleEvents';
+import { entryBadge, validationHolm, type ValidationReply } from './src/utils/validationGrades';
+import { MODEL_REGISTER } from './src/data/modelRegister';
+import { EventHub, WebhookStore, emitEvents, eventFiles } from './src/server/eventBus';
+import { badgeChangeInputs, councilRunInput, dailyRunInputs, figureEventInputs, releaseUpcomingInputs, sanctionsChangeInputs, sanctionsCounts, signalChangeInputs, type SignalStates, watchCrossingInputs, type WatchStates } from './src/server/eventSources';
+import { registerConsoleWatchRoutes } from './src/server/routes/consoleWatches';
+import { buildCountrySnapshot } from './src/server/countrySnapshot';
+import { registerConsoleHoldingsRoutes } from './src/server/routes/consoleHoldings';
+import { registerExclusionRoutes } from './src/server/routes/consoleExclusions';
+import { registerConsoleScenarioRoutes } from './src/server/routes/consoleScenarios';
+import { deadlineInputs, parseDeadline } from './src/utils/dailyDeadline';
+import { monthlyAverages, readReplayFile, type ReplayFile } from './src/utils/scenarioReplay';
+import { fxDailySeries, fxHistoryPulledAt } from './src/utils/fxHistory';
+import { loadWatchRules as loadWatchRuleFile } from './src/utils/watchRulesStore';
+import { registerConsoleEventRoutes } from './src/server/routes/consoleEvents';
+import { LEGACY_SCOPES, TOKEN_PREFIX, publicToken, scopeFor, scopeRefusal, tokenOnly, type Scope } from './src/utils/apiTokens';
+import { ApiTokenStore, apiTokensFile } from './src/utils/apiTokenStore';
 import { registerUserTestRoutes } from './src/server/routes/userTests';
-import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, ROLES, type Account, type Role } from './src/utils/auth';
+import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newOidcAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, ROLES, type Account, type Role } from './src/utils/auth';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
 import { codeHash } from './src/utils/codeHash';
@@ -96,14 +117,16 @@ import { addBrief, addCouncilDoc, addDoc, addEpisode, addNotebook, briefId, isBr
 import { episodeFileName, episodeMarkdown } from './src/utils/episodeHandout';
 import { notebookFileName, notebookMarkdown } from './src/utils/notebookExport';
 import { loadLibrary, saveLibrary } from './src/utils/researchStore';
-import { appendAudit, rawAudit, readAudit, setAuditActor } from './src/utils/auditStore';
+import { appendAudit, rawAudit, readAudit, setAuditActor, setAuditCorrelation, setAuditSealKey } from './src/utils/auditStore';
+import { sealKeyFrom, sealKeyProblem } from './src/utils/auditSeal';
+import { bucketConfigFromEnv, bucketStateFile, readBucketState, shipAudit } from './src/server/auditBucket';
 import { defaultFetcher, loadSpecs, loadValidation, runBacktests } from './src/utils/backtestRun';
 import { loadSignOffs, recordFor, reportHash, signOffView } from './src/utils/signoff';
 import { buildDiagnosis, DIAGNOSIS_FIELDS, type Diagnosis } from './src/utils/reviewDiagnosis';
 import { reviewModelFigures } from './src/utils/reviewModels';
 import { checkOptions, OPTIONS_INSTRUCTION, optionsPrompt, LEVERS, type OptionsStep, type UserOption } from './src/utils/reviewOptions';
 import { type ReviewFrame } from './src/utils/policyReview';
-import { AUDIT_HEADER, AUDIT_KIND_LABEL, auditRows, describeRequest, figuresFromAnswers, type AuditKind } from './src/utils/auditLog';
+import { AUDIT_HEADER, AUDIT_KIND_LABEL, CORRELATION_HEADER, auditRows, correlationIdProblem, describeRequest, figuresFromAnswers, type AuditKind } from './src/utils/auditLog';
 import { backupFileName, parseBackup, summariseBackup } from './src/utils/backup';
 import { currentBackup, restoreBackup } from './src/utils/backupStore';
 import { cleanSettings, isDue, localClock, morningQuestion, nextRunText, parseMorningFile, settingsProblem, type MorningBriefFile, type MorningBriefRun } from './src/utils/morningBrief';
@@ -195,6 +218,10 @@ import { gprForCountry } from './src/utils/gprIndex.ts';
 import { gprData } from './src/utils/gprStore.ts';
 import { countrySanctions, sanctionsSentence, searchSanctions, SANCTIONS_METHOD } from './src/utils/sanctionsLists.ts';
 import { sanctionsData, sanctionsDir } from './src/utils/sanctionsStore.ts';
+import { chinnItoData } from './src/utils/chinnItoStore.ts';
+import { OidcClient } from './src/server/oidcClient';
+import { authorizationUrl, newPending, oidcConfigFromEnv, oidcCookie, oidcDecision, tokenRequest, usernameFromEmail, verifiedEmail, OIDC_COOKIE, OIDC_PENDING_MS, type OidcError } from './src/utils/oidc';
+import { chinnItoReading } from './src/utils/chinnIto.ts';
 import { countryRiskScorecard, scorecardSentence, ECONOMY_IDS, SCORECARD_METHOD, WGI_IDS, type ScorecardInputs } from './src/utils/countryRiskScorecard.ts';
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { US_10Y_SERIES } from './src/utils/officialYields.ts';
@@ -213,6 +240,26 @@ import { callOllamaOrOpenAICompatible, sanitizeAndParseJson, NO_MODEL_DESK, NO_M
 
 const __dirname = APP_ROOT;
 let validationRunning = false;
+// Events for outside systems (console integration item 4, src/server/eventBus.ts).
+const EVENT_FILES = eventFiles(DATA_DIR);
+const SIGNAL_STATE_FILE = path.join(DATA_DIR, 'local', 'events', 'signal-states.json');
+const WATCH_STATE_FILE = path.join(DATA_DIR, 'local', 'events', 'watch-states.json');
+/** Hidden names (item 8): fingerprints only, src/server/exclusionStore.ts. */
+const HIDDEN = new ExclusionStore(ExclusionStore.fileIn(DATA_DIR));
+function readWatchStates(): WatchStates | null {
+  try {
+    return JSON.parse(fs.readFileSync(WATCH_STATE_FILE, 'utf8')) as WatchStates;
+  } catch {
+    return null;
+  }
+}
+function readSignalStates(): SignalStates | null {
+  try {
+    return JSON.parse(fs.readFileSync(SIGNAL_STATE_FILE, 'utf8')) as SignalStates;
+  } catch {
+    return null;
+  }
+}
 
 /** MarketEdge benchmarks always on screen (see src/utils/marketEdgeAnchors.ts). */
 async function fetchMarketEdgeAnchors(): Promise<MarketEdgeAnchorsReply> {
@@ -967,7 +1014,8 @@ async function runDailyCli(): Promise<void> {
   if (offline) run.offline = true;
 
   // 2. Files that used to be downloaded by hand.
-  console.log('[daily] 2/5 Files: IMF WEO editions, sanctions lists, GPR index, UCDP');
+  console.log('[daily] 2/5 Files: IMF WEO editions, sanctions lists, GPR index, UCDP, scenario replay series');
+  const sanctionsBefore = sanctionsCounts(sanctionsData(DATA_DIR));
   for (const f of FILE_PULLS) {
     if (offline) {
       add({ id: f.id, label: f.label, outcome: 'skipped', note: 'offline' });
@@ -984,6 +1032,8 @@ async function runDailyCli(): Promise<void> {
       details: got.problems,
     }, r.bytes);
   }
+
+  emitEvents(EVENT_FILES, sanctionsChangeInputs(sanctionsBefore, sanctionsCounts(sanctionsData(DATA_DIR))));
 
   // 3. Nowcasts and forecasts: the long histories (weekly), then one of each for every country.
   console.log('[daily] 3/5 Nowcasts and forecasts');
@@ -1084,6 +1134,7 @@ async function runDailyCli(): Promise<void> {
 
   run.finishedAt = new Date().toISOString();
   save();
+  emitEvents(EVENT_FILES, [...dailyRunInputs(run, DAILY_DEADLINE), ...releaseUpcomingInputs(new Date(), loadUstAuctions()?.announced)]);
   console.log('');
   console.log(formatDaily(run, { full: true }));
   process.exit(0);
@@ -1592,8 +1643,27 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
   try {
     const { ledger, events } = watchFigures(readLedger(FIGURE_WATCH_FILES), items.map((r) => toLive(r)));
     saveWatch(FIGURE_WATCH_FILES, ledger, events);
+    emitEvents(EVENT_FILES, figureEventInputs(events));
   } catch (e) {
     console.error('[figure-watch]', e);
+  }
+  // Signal states (policy cycle, CFTC positioning, growth and inflation regime): a change is an event.
+  try {
+    const { states, inputs } = signalChangeInputs(readSignalStates(), items.map((r) => toLive(r)), modelBadgesNow());
+    fs.mkdirSync(path.dirname(SIGNAL_STATE_FILE), { recursive: true });
+    writeFileAtomic(SIGNAL_STATE_FILE, JSON.stringify(states));
+    emitEvents(EVENT_FILES, inputs);
+  } catch (e) {
+    console.error('[events] signal states:', e);
+  }
+  // Indicator watches you set (item 5): a crossing is a threshold_crossed event.
+  try {
+    const { states, inputs } = watchCrossingInputs(loadWatchRuleFile(WATCH_RULES_FILE), items.map((r) => toLive(r)), readWatchStates());
+    fs.mkdirSync(path.dirname(WATCH_STATE_FILE), { recursive: true });
+    writeFileAtomic(WATCH_STATE_FILE, JSON.stringify(states));
+    emitEvents(EVENT_FILES, inputs);
+  } catch (e) {
+    console.error('[events] watches:', e);
   }
   return items;
 }
@@ -2184,6 +2254,9 @@ const SIGNAL_RESULT_FILE = path.join(DATA_DIR, 'local', 'validation', 'signals.j
 /** Scheduled jobs (src/utils/scheduledJobs.ts): time zone for SCHEDULE_DOWNLOAD_ALL and SCHEDULE_BACKTESTS. */
 const SCHEDULE_TZ = (process.env.SCHEDULE_TZ || '').trim() || NIGHTLY_CHECK_TZ;
 const jobSchedule = (id: JobId) => jobScheduleFrom(id, process.env).schedule;
+/** DAILY_DOWNLOAD_DEADLINE (item 11): the daily download finishes by then, or a feed_failed event says it did not. */
+const DAILY_DEADLINE_PARSED = parseDeadline(process.env.DAILY_DOWNLOAD_DEADLINE, SCHEDULE_TZ);
+const DAILY_DEADLINE = DAILY_DEADLINE_PARSED.deadline;
 const jobRunning: Partial<Record<JobId, boolean>> = {};
 
 async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: string }> {
@@ -2197,6 +2270,7 @@ async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: strin
   // passing test's forward record (data/local/validation/forward.jsonl) grows without a hand run.
   // One part failing does not stop the others.
   validationRunning = true;
+  const badgesBefore = modelBadgesNow();
   try {
     const parts: TestsPart[] = [];
     const regressedAll: Parameters<typeof backtestRegressionAlert>[0] = [];
@@ -2248,10 +2322,47 @@ async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: strin
     // Server alert when a test that passed (same id and version) does not pass now.
     const regressed = backtestRegressionAlert(regressedAll.sort((a, b) => a.id.localeCompare(b.id)));
     if (regressed) void notify(regressed, LAST_ALERT_FILE);
+    emitEvents(EVENT_FILES, badgeChangeInputs(badgesBefore, modelBadgesNow(), Object.fromEntries(MODEL_REGISTER.map((m) => [m.id, m.name])), startedAt));
     return testsSummary(parts, startedAt);
   } finally {
     validationRunning = false;
   }
+}
+
+/** What /api/validation answers: every recorded verdict, the specs, forecast and signal tests, and the forward record. */
+function validationReplyNow() {
+  const v = loadValidation(VALIDATION_FILE);
+  const specs = loadSpecs(SPEC_DIR).map((s) => ({ file: s.file, hash: s.hash, problem: s.problem, ...(s.spec ? { id: s.spec.id, version: s.spec.version, registeredOn: s.spec.registeredOn, hypothesis: s.spec.hypothesis, passMark: s.spec.passMark, params: s.spec.params, sample: s.spec.sample, knownLimits: s.spec.knownLimits, framework: s.spec.framework === 2 ? 2 : 1, retestOf: s.spec.retestOf } : {}) }));
+  const fv = loadForecastValidation(path.join(DATA_DIR, 'local', 'validation', 'forecasts.json'));
+  const forecasts = Object.fromEntries(Object.values(fv.results).map((r) => [r.id, { id: r.id, status: r.status, verdict: r.verdict, specVersion: r.specVersion, specHash: r.specHash, ranAt: r.ranAt }]));
+  // Every forecast evaluation version run, for the Holm correction across all tests on record:
+  // its p is its own p where it has one (fan coverage), else the largest horizon p (every horizon
+  // must pass); its alpha the registered pass mark.
+  const fSpecs = loadSpecs(path.join(APP_ROOT, 'docs', 'validation', 'forecasts'));
+  const forecastTests = Object.values({ ...fv.versions, ...Object.fromEntries(Object.values(fv.results).map((r) => [`${r.id} v${r.specVersion}`, r])) }).map((r) => ({
+    id: r.id,
+    version: r.specVersion,
+    status: r.status,
+    p: r.pValue ?? (r.horizons?.length ? Math.max(...r.horizons.map((h) => h.pValue)) : 1),
+    alpha: Number((fSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.1,
+  }));
+  // Currency factor tests (npm run signals:evaluate) sit beside the forecast evaluations: same
+  // verdict shape for the register, and their p enters the same Holm family.
+  const sv = loadSignalValidation(path.join(DATA_DIR, 'local', 'validation', 'signals.json'));
+  const sSpecs = loadSpecs(path.join(APP_ROOT, 'docs', 'validation', 'signals'));
+  for (const r of Object.values(sv.results)) forecasts[r.id] = { id: r.id, status: r.status, verdict: r.verdict, specVersion: r.specVersion, specHash: r.specHash, ranAt: r.ranAt, ...(r.crash ? { crash: crashSentence(r.crash) } : {}) };
+  for (const r of Object.values({ ...sv.versions, ...Object.fromEntries(Object.values(sv.results).map((r) => [`${r.id} v${r.specVersion}`, r])) })) {
+    forecastTests.push({ id: r.id, version: r.specVersion, status: r.status, p: r.pValue, alpha: Number((sSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.05 });
+  }
+  const fwd = loadForward(forwardFilePath(DATA_DIR));
+  return { ...v, specs, running: validationRunning, file: 'data/local/validation/results.json', forecasts, forecastTests, forward: forwardSummary(fwd.lines), forwardCheck: { chainOk: fwd.chainOk, badLines: fwd.badLines, lines: fwd.lines.length, file: 'data/local/validation/forward.jsonl' } };
+}
+
+/** The badge of every registered model and signal now (src/utils/validationGrades.ts). */
+function modelBadgesNow(): Record<string, ValueBadge> {
+  const v = validationReplyNow() as unknown as ValidationReply;
+  const holmMap = validationHolm(v);
+  return Object.fromEntries(MODEL_REGISTER.map((m) => [m.id, entryBadge(m.id, m.status, v, holmMap)]));
 }
 
 /** Checked every minute; starts each switched-on job once per day or week after its set time. */
@@ -2752,6 +2863,44 @@ async function startServer() {
     next();
   });
 
+  // Correlation IDs (console integration item 3): an outside system may send X-Correlation-Id on
+  // any call; it is checked, sent back on the reply, and written into every audit entry the call
+  // makes, so one action can be traced across the systems' logs. Without one, the app makes one
+  // for the reply only (and the audit entry stays without).
+  const correlationStore = new AsyncLocalStorage<string>();
+  setAuditCorrelation(() => correlationStore.getStore());
+  // Audit seal and locked bucket copies (item 10). Keys come from the environment only.
+  {
+    const problem = sealKeyProblem(process.env.AUDIT_SEAL_KEY);
+    if (problem) console.warn(`[audit] ${problem}`);
+    setAuditSealKey(sealKeyFrom(process.env.AUDIT_SEAL_KEY));
+  }
+  app.use((req, res, next) => {
+    const raw = req.headers[CORRELATION_HEADER];
+    const given = (Array.isArray(raw) ? raw[0] : raw)?.trim();
+    if (given === undefined) {
+      res.setHeader('X-Correlation-Id', crypto.randomUUID());
+      return next();
+    }
+    const problem = correlationIdProblem(given);
+    if (problem) return res.status(400).json({ error: 'BAD_CORRELATION_ID', message: problem });
+    res.setHeader('X-Correlation-Id', given);
+    correlationStore.run(given, next);
+  });
+
+  // Countries by ISO alpha-2 or alpha-3 (src/server/countryCodes.ts): "BR" in an address or in
+  // iso3= / countries= becomes "BRA" before any route or check sees it.
+  app.use((req, _res, next) => {
+    const nextUrl = normaliseCountryUrl(req.url);
+    if (nextUrl !== req.url) {
+      req.url = nextUrl;
+      const q = normaliseCountryQuery(req.query as Record<string, unknown>);
+      if (q) req.query = q as typeof req.query;
+    }
+    next();
+  });
+
+
   // All state lives under DATA_DIR (one mounted volume in Docker). Stop at once with a clear
   // sentence if it cannot be written, instead of failing later on the first save.
   const dataProblem = dataDirProblem(DATA_DIR);
@@ -2797,6 +2946,10 @@ async function startServer() {
   const actorStore = new AsyncLocalStorage<{ id: string; username: string; name: string }>();
   setAuditActor(() => actorStore.getStore());
   let setupCode: string | null = null;
+  const oidcSetting = oidcConfigFromEnv(process.env);
+  if (oidcSetting.problem) console.warn(`[auth] ${oidcSetting.problem}`);
+  if (oidcSetting.config) console.log(`[auth] OIDC sign-in on: ${oidcSetting.config.issuer} ("Sign in with ${oidcSetting.config.name}")`);
+  const oidc = new OidcClient(oidcSetting.config);
   const currentMode = () => authMode(auth.count(), process.env);
   const announceSetupCode = () => {
     if (currentMode() !== 'setup' || setupCode) return;
@@ -2807,6 +2960,59 @@ async function startServer() {
   const secureCookie = (req: express.Request) => req.secure || String(process.env.COOKIE_SECURE || '').trim().toLowerCase() === 'true';
   const signedIn = (res: express.Response): Account | null => (res.locals.account as Account | undefined) ?? null;
   const accountName = (a: Account | null) => (a ? `${a.displayName} (${a.username})` : 'nobody signed in');
+  // Scoped API tokens (console integration item 2, src/utils/apiTokens.ts). A request carrying a
+  // token is checked here, before sign-in: the token must be active and have the scope the address
+  // needs. Console addresses (/api/v1/ outside the integration API) answer tokens only; the legacy
+  // integration key may do the three read scopes there. Every use goes to the audit log.
+  const apiTokens = new ApiTokenStore(apiTokensFile(DATA_DIR));
+  const limiter = new RateLimiter();
+  const auditTokenUse = (req: express.Request, res: express.Response, who: { id: string; name: string }, scope: Scope | null) => {
+    // 'finish' runs outside the request's async context, so the correlation ID is read now.
+    const correlationId = correlationStore.getStore();
+    res.on('finish', () => {
+      appendAudit(AUDIT_FILES, {
+        ...(correlationId ? { correlationId } : {}),
+        kind: 'api',
+        summary: `API token "${who.name}": ${req.method} ${req.path} (${res.statusCode})`,
+        detail: { token: who.id, scope, method: req.method, path: req.path, status: res.statusCode },
+      });
+    });
+  };
+  app.use((req, res, next) => {
+    if (req.path === '/api/v1/integration/openapi.json') return next();
+    const given = apiKeyFrom(req.headers as Record<string, string | string[] | undefined>);
+    const isToken = given.startsWith(TOKEN_PREFIX);
+    const onlyTokens = tokenOnly(req.path);
+    if (!isToken && !onlyTokens) return next();
+    const needed = scopeFor(req.method, req.path);
+    if (isToken) {
+      const token = apiTokens.resolve(given);
+      if (!token) {
+        appendAudit(AUDIT_FILES, { kind: 'api', summary: `Refused an unknown or revoked API token: ${req.method} ${req.path}`, detail: { method: req.method, path: req.path, status: 401 } });
+        return res.status(401).json({ error: 'INVALID_TOKEN', message: 'This API token is unknown or has been revoked.' });
+      }
+      if (!needed || !token.scopes.includes(needed)) {
+        appendAudit(AUDIT_FILES, { kind: 'api', summary: `API token "${token.name}" refused: ${req.method} ${req.path} needs ${needed ?? 'no token'}`, detail: { token: token.id, scope: needed, method: req.method, path: req.path, status: 403 } });
+        return res.status(403).json({ error: 'TOKEN_SCOPE', message: scopeRefusal(token.name, needed), needed });
+      }
+      const wait = limiter.take(`token:${token.id}`, LIMITS.api);
+      if (wait) {
+        res.setHeader('Retry-After', String(wait));
+        return res.status(429).json({ error: `Too many requests with this token. Try again in ${wait} seconds.` });
+      }
+      res.locals.apiToken = { id: token.id, name: token.name, scopes: token.scopes, createdById: token.createdById };
+      auditTokenUse(req, res, token, needed);
+      return actorStore.run({ id: `token:${token.id}`, username: `token:${token.name}`, name: `API token "${token.name}"` }, next);
+    }
+    // A console address without a token: the legacy integration key may do the read scopes.
+    const integration = serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG;
+    if (needed && LEGACY_SCOPES.includes(needed) && keyMatches(given, integration.apiKey)) {
+      res.locals.apiToken = { id: 'legacy', name: 'legacy integration key', scopes: [...LEGACY_SCOPES] };
+      auditTokenUse(req, res, { id: 'legacy', name: 'legacy integration key' }, needed);
+      return next();
+    }
+    res.status(401).json({ error: 'TOKEN_REQUIRED', message: `This address needs an API token${needed ? ` with the ${needed} scope` : ''}, sent as Authorization: Bearer <token>. Make one in Menu > Settings > API tokens.` });
+  });
   app.use((req, res, next) => {
     const mode = currentMode();
     const hit = mode === 'off' ? null : auth.resolve(readCookie(req.headers.cookie, SESSION_COOKIE));
@@ -2817,7 +3023,7 @@ async function startServer() {
       const a = hit.account;
       return actorStore.run({ id: a.id, username: a.username, name: a.displayName }, next);
     }
-    if (mode === 'off' || hit || openPath(req.method, req.path)) return next();
+    if (mode === 'off' || hit || openPath(req.method, req.path) || res.locals.apiToken) return next();
     // The integration API keeps its own key check when that is switched on in Settings.
     if (req.path.startsWith('/api/v1/integration/') && (serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG).requireApiKey) return next();
     // Scripts reading data (docs/DATA_API.md): the same key, sent in a header, opens the read-only data addresses.
@@ -2834,7 +3040,6 @@ async function startServer() {
     res.status(403).json({ error: refusal(me.role, needed), role: me.role, needed });
   });
   // CSRF token and per-account rate limits (src/utils/requestLimits.ts), once someone is signed in.
-  const limiter = new RateLimiter();
   app.use((req, res, next) => {
     const me = signedIn(res);
     if (!me) return next();
@@ -2852,7 +3057,7 @@ async function startServer() {
   // Data reads that come from no signed-in account (scripts, or the single user with sign-in off): one
   // limit per address, so a script in a loop cannot slow the app (src/server/dataApi.ts).
   app.use((req, res, next) => {
-    if (signedIn(res) || !isDataApiRead(req.method, req.path)) return next();
+    if (signedIn(res) || res.locals.apiToken || !isDataApiRead(req.method, req.path)) return next();
     const wait = limiter.take(`data:${req.socket.remoteAddress || 'unknown'}`, DATA_API_LIMIT);
     if (!wait) return next();
     res.setHeader('Retry-After', String(wait));
@@ -2898,6 +3103,7 @@ async function startServer() {
       canCreateFirstAccount: auth.count() === 0 && (mode === 'setup' || trusted(req, res)),
       sessionIdleHours: Math.round(limits.idleMs / 3600_000),
       csrfToken: me ? csrfToken(res.locals.sessionHash as string) : null,
+      oidc: oidc.config ? { name: oidc.config.name } : null,
     };
   };
   app.get('/api/auth/status', (req, res) => res.json(authStatus(req, res)));
@@ -2952,12 +3158,75 @@ async function startServer() {
     if (me) appendAudit(AUDIT_FILES, { kind: 'access', summary: `Signed out: ${accountName(me)}` });
     res.json({ ok: true });
   });
+  // Sign-in through an OIDC provider (src/utils/oidc.ts), when OIDC_ISSUER and OIDC_CLIENT_ID are set.
+  const oidcRedirectUri = (req: express.Request) => oidc.config!.redirectUri || `${secureCookie(req) ? 'https' : req.protocol}://${req.get('host')}/api/auth/oidc/callback`;
+  const oidcFail = (res: express.Response, code: OidcError, why: string, address: string) => {
+    appendAudit(AUDIT_FILES, { kind: 'access', summary: `Failed OIDC sign-in (${code}): ${why.slice(0, 200)}`, detail: { address } });
+    res.setHeader('Set-Cookie', oidcCookie('', { secure: false, maxAgeMs: 0 }));
+    res.redirect(302, `/?signin_error=${code}`);
+  };
+  app.get('/api/auth/oidc/start', async (req, res) => {
+    if (!oidc.config) return res.status(404).json({ error: 'OIDC sign-in is not set up on this server (OIDC_ISSUER, OIDC_CLIENT_ID).' });
+    const address = req.ip || req.socket.remoteAddress || '';
+    const wait = signInLimiter.waitSeconds('(oidc)', address);
+    if (wait) return res.status(429).json({ error: `Too many tries. Wait ${Math.ceil(wait / 60)} minutes.` });
+    try {
+      const d = await oidc.discovery();
+      const p = newPending(oidcRedirectUri(req));
+      oidc.remember(p);
+      res.setHeader('Set-Cookie', oidcCookie(p.state, { secure: secureCookie(req), maxAgeMs: OIDC_PENDING_MS }));
+      res.redirect(302, authorizationUrl(d, oidc.config, p));
+    } catch (err: any) {
+      oidcFail(res, 'failed', `the provider could not be reached (${err?.message || err})`, address);
+    }
+  });
+  app.get('/api/auth/oidc/callback', async (req, res) => {
+    const c = oidc.config;
+    if (!c) return res.status(404).json({ error: 'OIDC sign-in is not set up on this server.' });
+    const address = req.ip || req.socket.remoteAddress || '';
+    const state = String(req.query.state || '');
+    const p = oidc.take(state);
+    if (!p || readCookie(req.headers.cookie, OIDC_COOKIE) !== state) return oidcFail(res, 'expired', 'the sign-in was not started in this browser, or took longer than 10 minutes', address);
+    if (req.query.error) return oidcFail(res, 'failed', `the provider said ${String(req.query.error).slice(0, 60)}`, address);
+    try {
+      const d = await oidc.discovery();
+      const tr = tokenRequest(c, p, String(req.query.code || ''));
+      const r = await fetch(d.token_endpoint, { method: 'POST', headers: tr.headers, body: tr.body, signal: AbortSignal.timeout(15_000) });
+      const body = (await r.json().catch(() => null)) as { id_token?: string } | null;
+      if (!r.ok || !body?.id_token) return oidcFail(res, 'failed', `the token request was refused (HTTP ${r.status})`, address);
+      const v = await oidc.verify(body.id_token, p.nonce);
+      if ('problem' in v) {
+        signInLimiter.failed('(oidc)', address);
+        return oidcFail(res, 'failed', v.problem, address);
+      }
+      const claims = v.claims;
+      const decision = oidcDecision(claims, c, auth.byOidc(c.issuer, claims.sub));
+      if ('refuse' in decision) return oidcFail(res, decision.refuse as OidcError, `${verifiedEmail(claims) || 'no verified email'}: ${decision.refuse}`, address);
+      let account: Account;
+      if ('use' in decision) account = auth.byId(decision.use)!;
+      else {
+        const username = usernameFromEmail(decision.create.email, (u) => Boolean(auth.byUsername(u)));
+        account = newOidcAccount({ username, displayName: String(claims.name || claims.preferred_username || username), role: decision.create.role, issuer: c.issuer, subject: claims.sub, email: decision.create.email });
+        const first = auth.count() === 0;
+        auth.add(account);
+        if (first) setupCode = null;
+        appendAudit(AUDIT_FILES, { kind: 'access', summary: `Created the ${account.role} account ${accountName(account)} at its first sign-in through ${c.name}${first ? '. Sign-in is now required for everyone.' : ''}`, detail: { email: decision.create.email } });
+      }
+      const token = auth.startSession(account.id);
+      res.setHeader('Set-Cookie', [sessionCookie(token, { secure: secureCookie(req), maxAgeMs: limits.maxMs }), oidcCookie('', { secure: secureCookie(req), maxAgeMs: 0 })]);
+      appendAudit(AUDIT_FILES, { kind: 'access', summary: `Signed in through ${c.name}: ${accountName(account)}`, detail: { address } });
+      res.redirect(302, '/');
+    } catch (err: any) {
+      oidcFail(res, 'failed', `the provider could not be reached (${err?.message || err})`, address);
+    }
+  });
   app.post('/api/auth/password', express.json({ limit: '10kb' }), (req, res) => {
     const me = signedIn(res);
     if (!me) return res.status(401).json({ error: 'Sign in first.', signIn: true });
     const address = req.ip || req.socket.remoteAddress || '';
     const wait = signInLimiter.waitSeconds(me.username, address);
     if (wait) return res.status(429).json({ error: `Too many wrong passwords. Try again in ${Math.ceil(wait / 60)} minutes.` });
+    if (me.provider === 'oidc') return res.status(400).json({ error: `This account signs in through ${oidc.config?.name || 'the OIDC provider'} and has no password here.` });
     if (!verifyPassword(String(req.body?.current || ''), me.passwordHash)) {
       signInLimiter.failed(me.username, address);
       return res.status(403).json({ error: 'The current password is wrong.' });
@@ -3016,6 +3285,7 @@ async function startServer() {
     const me = signedIn(res)!;
     const target = auth.byId(String(req.params.id));
     if (!target) return res.status(404).json({ error: 'No such account.' });
+    if (target.provider === 'oidc') return res.status(400).json({ error: `${target.username} signs in through ${oidc.config?.name || 'the OIDC provider'} and has no password here.` });
     const password = randomPassword();
     auth.update(target.id, (a) => ({ ...a, passwordHash: hashPassword(password), passwordChangedAt: new Date().toISOString() }));
     const ended = auth.endSessionsFor(target.id, target.id === me.id ? (res.locals.sessionHash as string) : undefined);
@@ -3027,20 +3297,46 @@ async function startServer() {
   // by what it did (route), never by its body, so keys and document text stay out of the log.
   app.use((req, res, next) => {
     const by = actorStore.getStore();
+    const correlationId = correlationStore.getStore();
     res.on('finish', () => {
       if (res.statusCode >= 400) return;
       const what = describeRequest(req.method, req.originalUrl || req.url);
-      if (what) appendAudit(AUDIT_FILES, by ? { ...what, by } : what);
+      if (what) appendAudit(AUDIT_FILES, { ...what, ...(by ? { by } : {}), ...(correlationId ? { correlationId } : {}) });
     });
     next();
   });
+  const auditBucket = bucketConfigFromEnv(process.env);
+  if (auditBucket.problem) console.warn(`[audit] ${auditBucket.problem}`);
+  const auditBucketState = bucketStateFile(DATA_DIR);
+  const auditBucketView = () => {
+    if (!auditBucket.config) return { on: false, ...(auditBucket.problem ? { problem: auditBucket.problem } : {}) };
+    const st = readBucketState(auditBucketState);
+    return { on: true, where: `${auditBucket.config.url.host}${auditBucket.config.url.pathname}/${auditBucket.config.prefix}`, lockMode: auditBucket.config.lockMode, retainDays: auditBucket.config.retainDays, ...st };
+  };
+  if (auditBucket.config) {
+    const cfg = auditBucket.config;
+    let shipping = false;
+    const tick = async () => {
+      if (shipping) return;
+      shipping = true;
+      try {
+        await shipAudit(cfg, rawAudit(AUDIT_FILES).split('\n'), auditBucketState);
+      } catch (e) {
+        console.warn(`[audit] bucket copy: ${(e as Error)?.message || e}`);
+      } finally {
+        shipping = false;
+      }
+    };
+    setInterval(() => void tick(), Math.max(200, Number(process.env.AUDIT_BUCKET_POLL_MS) || 5000)).unref();
+    void tick();
+  }
   app.get('/api/audit', (req, res) => {
-    const { check, entries } = readAudit(AUDIT_FILES);
+    const { check, entries, seals } = readAudit(AUDIT_FILES);
     const kind = typeof req.query.kind === 'string' && req.query.kind in AUDIT_KIND_LABEL ? (req.query.kind as AuditKind) : null;
     const q = typeof req.query.q === 'string' ? req.query.q.trim().toLowerCase().slice(0, 100) : '';
     const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 200));
     const hits = entries.filter((e) => (!kind || e.kind === kind) && (!q || JSON.stringify(e).toLowerCase().includes(q)));
-    res.json({ check, total: hits.length, entries: hits.slice(-limit).reverse(), kinds: AUDIT_KIND_LABEL, file: 'data/local/audit/audit-log.jsonl' });
+    res.json({ check, seals, bucket: auditBucketView(), total: hits.length, entries: hits.slice(-limit).reverse(), kinds: AUDIT_KIND_LABEL, file: 'data/local/audit/audit-log.jsonl' });
   });
   app.get('/api/audit/export.:fmt(csv|jsonl)', (req, res) => {
     const stamp = new Date().toISOString().slice(0, 10);
@@ -3049,11 +3345,34 @@ async function startServer() {
       res.attachment(`econquest-audit-log-${stamp}.jsonl`);
       return res.send(rawAudit(AUDIT_FILES));
     }
-    const { check, entries } = readAudit(AUDIT_FILES);
-    const note = check.ok ? `Checked: ${check.entries} entries, chain intact, last hash ${check.lastHash ?? '-'}` : `CHECK FAILED: ${check.problem}`;
+    const { check, entries, seals } = readAudit(AUDIT_FILES);
+    const sealNote = !seals.ok ? `; SEAL CHECK FAILED: ${seals.problem}` : seals.keySet ? `; ${seals.sealed} sealed with key ${seals.keyId}, ${seals.unsealed} unsealed` : '; not sealed (no AUDIT_SEAL_KEY)';
+    const note = (check.ok ? `Checked: ${check.entries} entries, chain intact, last hash ${check.lastHash ?? '-'}` : `CHECK FAILED: ${check.problem}`) + sealNote;
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.attachment(`econquest-audit-log-${stamp}.csv`);
-    res.send(toCsv(AUDIT_HEADER, [...auditRows(entries), ['', '', 'Check', '', note, '', '', '', '']]));
+    res.send(toCsv(AUDIT_HEADER, [...auditRows(entries), ['', '', 'Check', '', note, '', '', '', '', '']]));
+  });
+  // Menu > Settings > API tokens (admin only by the role table; this computer only while sign-in is off).
+  const tokensReply = () => ({ tokens: apiTokens.list().map(publicToken).sort((a, b) => Number(b.active) - Number(a.active) || b.createdAt.localeCompare(a.createdAt)) });
+  app.get('/api/settings/api-tokens', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    res.json(tokensReply());
+  });
+  app.post('/api/settings/api-tokens', express.json({ limit: '10kb' }), (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const by = signedIn(res) ? accountName(signedIn(res)) : 'this computer';
+    const made = apiTokens.create({ name: req.body?.name, scopes: req.body?.scopes, createdBy: by, createdById: signedIn(res)?.id });
+    if ('error' in made) return res.status(400).json({ error: made.error });
+    appendAudit(AUDIT_FILES, { kind: 'api', summary: `Made the API token "${made.token.name}" (${made.token.scopes.join(', ')})`, detail: { token: made.token.id, scopes: made.token.scopes } });
+    res.json({ ...tokensReply(), created: publicToken(made.token), secret: made.secret });
+  });
+  app.post('/api/settings/api-tokens/:id/revoke', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const by = signedIn(res) ? accountName(signedIn(res)) : 'this computer';
+    const t = apiTokens.revoke(String(req.params.id), by);
+    if (!t) return res.status(404).json({ error: 'No token with that id.' });
+    appendAudit(AUDIT_FILES, { kind: 'api', summary: `Revoked the API token "${t.name}"`, detail: { token: t.id } });
+    res.json(tokensReply());
   });
   // Backup and restore (Menu > Settings > Backup): saved research, policy reviews, watch alerts, holdings,
   // watchlists and AI settings in one file, never API keys. See src/utils/backup.ts. Restore takes
@@ -3080,7 +3399,139 @@ async function startServer() {
       res.status(500).json({ error: `Could not restore the backup (${error?.code || error?.message || 'unknown error'}). Nothing was lost: see data/local/backups/.` });
     }
   });
+  // Hidden names (item 8, src/utils/exclusions.ts): an address about a hidden country answers 404
+  // with a count only, and hidden countries are taken out of iso3= / countries= lists.
+  app.use((req, res, next) => {
+    if (!req.path.startsWith('/api/') || !HIDDEN.count()) return next();
+    const c = countryInPath(req.path);
+    const one = typeof req.query.iso3 === 'string' && !req.query.iso3.includes(',') ? req.query.iso3.trim().toUpperCase() : null;
+    if ((c && HIDDEN.countryHidden(c)) || (one && HIDDEN.countryHidden(one))) return res.status(404).json({ error: 'HIDDEN', message: `Not shown: it is on the hidden-names list (${hiddenNote(1)}).`, hidden: 1 });
+    const q = withoutHiddenCountries(req.query as Record<string, unknown>, (iso3) => HIDDEN.countryHidden(iso3));
+    if (q) {
+      req.query = q.query as typeof req.query;
+      res.setHeader('X-EconQuest-Hidden', String(q.removed));
+      res.locals.hiddenRemoved = q.removed;
+    }
+    next();
+  });
   app.use(express.json({ limit: '5mb' }));
+
+  // Console events (item 4): catch-up, live stream and signed webhooks. Events are written to
+  // data/local/events/events.jsonl by this server and by the daily download; the hub reads new
+  // lines, sends them to the live streams and delivers them to webhooks with retries.
+  const consoleWebhooks = new WebhookStore(EVENT_FILES, secretBoxFromEnv(process.env).box);
+  const consoleUrlProblem = (u: string) => outboundUrlProblem(u, PORT);
+  // An event about a hidden country, or a threshold on one, never leaves the app (item 8).
+  const eventHidden = (e: ConsoleEvent) => HIDDEN.countryHidden(e.entity.iso3);
+  const consoleStream = registerConsoleEventRoutes(app, { files: EVENT_FILES, webhooks: consoleWebhooks, urlProblem: consoleUrlProblem, hidden: eventHidden });
+  registerConsoleWatchRoutes(app, { rulesFile: WATCH_RULES_FILE, readStates: readWatchStates });
+  registerExclusionRoutes(app, { store: HIDDEN, refuseRemoteChange: (req, res) => refuseRemoteChange(req, res) });
+  registerConsoleHoldingsRoutes(app, {
+    hidden: (h) => HIDDEN.holdingHidden(h),
+    // The account that made the token; a token made with sign-in off (or by a removed account) uses
+    // the first admin's workspace when accounts exist, else the shared one.
+    workspaceForToken: (t) => {
+      const accounts = auth.list();
+      const maker = t.createdById ? accounts.find((a) => a.id === t.createdById) : undefined;
+      const firstAdmin = accounts.filter((a) => a.role === 'admin').sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
+      return workspaceFileForAccount(maker ?? firstAdmin ?? null);
+    },
+  });
+  // Scenarios read only saved files: the replay series (daily download) and the ECB rates (item 9).
+  const replayFilePath = path.join(DATA_DIR, 'local', 'replays', 'replay-series.json');
+  let replayCache: { mtimeMs: number; file: ReplayFile | null } | null = null;
+  const ecbMonthlyCache = new Map<string, { at: string | undefined; months: Record<string, number> | null }>();
+  registerConsoleScenarioRoutes(app, {
+    hidden: (h) => HIDDEN.holdingHidden(h),
+    replayFile: () => {
+      let mtimeMs = -1;
+      try {
+        mtimeMs = fs.statSync(replayFilePath).mtimeMs;
+      } catch {
+        return null;
+      }
+      if (replayCache?.mtimeMs !== mtimeMs) {
+        let file: ReplayFile | null = null;
+        try {
+          file = readReplayFile(JSON.parse(fs.readFileSync(replayFilePath, 'utf8')));
+        } catch {
+          file = null;
+        }
+        replayCache = { mtimeMs, file };
+      }
+      return replayCache.file;
+    },
+    ecbMonthly: (ccy) => {
+      const saved = loadFxHistory();
+      const at = fxHistoryPulledAt(saved);
+      const hit = ecbMonthlyCache.get(ccy);
+      if (hit && hit.at === at) return hit.months;
+      const s = fxDailySeries(saved, ccy);
+      const months = 'points' in s && s.source && /ECB/.test(s.source) ? monthlyAverages(s.points) : null;
+      ecbMonthlyCache.set(ccy, { at, months });
+      return months;
+    },
+    ecbFirstMonth: () => {
+      const q = Object.keys(loadFxHistory().chunks).sort()[0];
+      const m = q && /^(\d{4})-Q([1-4])$/.exec(q);
+      return m ? `${m[1]}-${String((Number(m[2]) - 1) * 3 + 1).padStart(2, '0')}` : null;
+    },
+  });
+  const consoleHub = new EventHub({
+    files: EVENT_FILES,
+    webhooks: consoleWebhooks,
+    urlProblem: consoleUrlProblem,
+    hidden: eventHidden,
+    broadcast: (e) => {
+      consoleStream.broadcast(e);
+      // After a daily download, rebuild the watchlist from the saved files: the figure watch, the
+      // signal states and your indicator watches are checked then.
+      if (e.type === 'daily_download_ready') void fetchLiveWatchlistCatalog([], true).catch((err) => console.error('[events] watchlist rebuild:', err));
+      // The older integration stream gets the same events, named by type.
+      const frame = `id: ${e.id}\nevent: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`;
+      sseClients.forEach((c) => {
+        try {
+          c.write(frame);
+        } catch {
+          sseClients.delete(c);
+        }
+      });
+    },
+  });
+  consoleHub.start();
+  const consolePollMs = Math.max(200, Number(process.env.EVENTS_POLL_MS) || 3000);
+  setInterval(() => {
+    try {
+      if (consoleHub.pull().length) void consoleHub.deliver().catch(() => undefined);
+    } catch (err) {
+      console.warn(`[events] could not read new events: ${(err as Error)?.message || err}`);
+    }
+  }, consolePollMs).unref();
+  setInterval(() => void consoleHub.deliver().catch(() => undefined), 10_000).unref();
+  // Releases due tomorrow: checked hourly; each release is sent once (idempotency key).
+  const announceReleases = () => {
+    try {
+      emitEvents(EVENT_FILES, releaseUpcomingInputs(new Date(), loadUstAuctions()?.announced));
+    } catch {
+      /* the calendar files are missing: nothing to announce */
+    }
+  };
+  setTimeout(announceReleases, 30_000).unref();
+  setInterval(announceReleases, 3_600_000).unref();
+  // The daily-download deadline (item 11): one feed_failed per day when today's run has not finished by then.
+  if (DAILY_DEADLINE_PARSED.problem) console.warn(`[daily] ${DAILY_DEADLINE_PARSED.problem}`);
+  if (DAILY_DEADLINE) {
+    const deadline = DAILY_DEADLINE;
+    const checkDeadline = () => {
+      try {
+        emitEvents(EVENT_FILES, deadlineInputs(readDaily(dailyFilePath(DATA_DIR)), deadline, new Date()));
+      } catch (err) {
+        console.error('[daily] deadline check:', (err as Error)?.message);
+      }
+    };
+    setInterval(checkDeadline, Math.max(200, Number(process.env.DEADLINE_CHECK_MS) || 60_000)).unref();
+    setTimeout(checkDeadline, 5000).unref();
+  }
 
   // 1. Live Open Data & Grounded Market Telemetry Snapshot Endpoint
   app.get('/api/data/sovereign-snapshot', async (req, res) => {
@@ -3147,11 +3598,13 @@ async function startServer() {
       // ?iso3=ARG,COL: rows for just those countries, pulled for one council question if not in the catalog.
       if (req.query.iso3) {
         const codes = String(req.query.iso3).toUpperCase().split(',').map((c) => c.trim().replace(/[^A-Z]/g, '')).filter((c) => c.length === 3);
-        return res.json({ items: await liveRowsFor([...new Set(codes)]), fetchedAt: new Date().toISOString() });
+        const rows = await liveRowsFor([...new Set(codes)].filter((c) => !HIDDEN.countryHidden(c)));
+        return res.json({ items: rows, fetchedAt: new Date().toISOString(), hidden: Number(res.locals.hiddenRemoved) || 0 });
       }
       // ?refresh=1 rebuilds the rows from what is saved now instead of the 4-minute copy.
-      const items = await fetchLiveWatchlistCatalog([], req.query.refresh === '1');
-      res.json({ items, fetchedAt: new Date().toISOString() });
+      const all = await fetchLiveWatchlistCatalog([], req.query.refresh === '1');
+      const items = all.filter((r) => !HIDDEN.countryHidden(r.iso3));
+      res.json({ items, fetchedAt: new Date().toISOString(), hidden: all.length - items.length });
     } catch (error: any) {
       res.status(500).json({ error: error?.message || 'Failed to refresh live watchlist' });
     }
@@ -3298,40 +3751,16 @@ async function startServer() {
   });
   registerReviewRoutes(app, { refuseRemoteChange, signedIn, archivedSnapshot: (iso3, date) => archivedSnapshot(iso3, date), seriesFor, fetchLiveOpenDataSnapshot, reviewOptionsStep, withModelFigures, allHistories, politicalInputs: (iso3) => ({ dpi: dpiInput(DATA_DIR), gdelt: gdeltDailySeries(DATA_DIR, iso3) }) });
   // Pre-registered backtests: the tests as registered (with their hashes) and the latest verdicts.
-  app.get('/api/validation', (_req, res) => {
-    const v = loadValidation(VALIDATION_FILE);
-    const specs = loadSpecs(SPEC_DIR).map((s) => ({ file: s.file, hash: s.hash, problem: s.problem, ...(s.spec ? { id: s.spec.id, version: s.spec.version, registeredOn: s.spec.registeredOn, hypothesis: s.spec.hypothesis, passMark: s.spec.passMark, params: s.spec.params, sample: s.spec.sample, knownLimits: s.spec.knownLimits, framework: s.spec.framework === 2 ? 2 : 1, retestOf: s.spec.retestOf } : {}) }));
-    const fv = loadForecastValidation(path.join(DATA_DIR, 'local', 'validation', 'forecasts.json'));
-    const forecasts = Object.fromEntries(Object.values(fv.results).map((r) => [r.id, { id: r.id, status: r.status, verdict: r.verdict, specVersion: r.specVersion, specHash: r.specHash, ranAt: r.ranAt }]));
-    // Every forecast evaluation version run, for the Holm correction across all tests on record:
-    // its p is its own p where it has one (fan coverage), else the largest horizon p (every horizon
-    // must pass); its alpha the registered pass mark.
-    const fSpecs = loadSpecs(path.join(APP_ROOT, 'docs', 'validation', 'forecasts'));
-    const forecastTests = Object.values({ ...fv.versions, ...Object.fromEntries(Object.values(fv.results).map((r) => [`${r.id} v${r.specVersion}`, r])) }).map((r) => ({
-      id: r.id,
-      version: r.specVersion,
-      status: r.status,
-      p: r.pValue ?? (r.horizons?.length ? Math.max(...r.horizons.map((h) => h.pValue)) : 1),
-      alpha: Number((fSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.1,
-    }));
-    // Currency factor tests (npm run signals:evaluate) sit beside the forecast evaluations: same
-    // verdict shape for the register, and their p enters the same Holm family.
-    const sv = loadSignalValidation(path.join(DATA_DIR, 'local', 'validation', 'signals.json'));
-    const sSpecs = loadSpecs(path.join(APP_ROOT, 'docs', 'validation', 'signals'));
-    for (const r of Object.values(sv.results)) forecasts[r.id] = { id: r.id, status: r.status, verdict: r.verdict, specVersion: r.specVersion, specHash: r.specHash, ranAt: r.ranAt, ...(r.crash ? { crash: crashSentence(r.crash) } : {}) };
-    for (const r of Object.values({ ...sv.versions, ...Object.fromEntries(Object.values(sv.results).map((r) => [`${r.id} v${r.specVersion}`, r])) })) {
-      forecastTests.push({ id: r.id, version: r.specVersion, status: r.status, p: r.pValue, alpha: Number((sSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.05 });
-    }
-    const fwd = loadForward(forwardFilePath(DATA_DIR));
-    res.json({ ...v, specs, running: validationRunning, file: 'data/local/validation/results.json', forecasts, forecastTests, forward: forwardSummary(fwd.lines), forwardCheck: { chainOk: fwd.chainOk, badLines: fwd.badLines, lines: fwd.lines.length, file: 'data/local/validation/forward.jsonl' } });
-  });
+  app.get('/api/validation', (_req, res) => res.json(validationReplyNow()));
   registerUserTestRoutes(app, { dataDir: DATA_DIR, specDir: SPEC_DIR, refuseRemoteChange, signedIn, local: backtestLocal, audit: (summary, detail) => appendAudit(AUDIT_FILES, { kind: 'validation', summary, detail }) });
   app.post('/api/validation/run', async (req, res) => {
     if (refuseRemoteChange(req, res)) return;
     if (validationRunning) return res.status(409).json({ error: 'The backtests are already running.' });
     validationRunning = true;
+    const badgesBefore = modelBadgesNow();
     try {
       const out = await runBacktests({ specDir: SPEC_DIR, resultFile: VALIDATION_FILE, onResult: auditBacktestResult, local: backtestLocal });
+      emitEvents(EVENT_FILES, badgeChangeInputs(badgesBefore, modelBadgesNow(), Object.fromEntries(MODEL_REGISTER.map((m) => [m.id, m.name])), new Date().toISOString()));
       res.json(out);
     } catch (error: any) {
       res.status(500).json({ error: `The backtests could not run (${error?.message || 'unknown error'}).` });
@@ -3543,6 +3972,10 @@ async function startServer() {
       bisCredit,
       idsCreditors,
       sovereignDefaults,
+      ...(() => {
+        const ci = chinnItoData(DATA_DIR);
+        return ci.ok ? { chinnIto: ci.table } : { chinnIto: null, chinnItoMissing: ci.reason };
+      })(),
       inflationExpectations,
       inflationSurveys,
       portWatch,
@@ -3637,20 +4070,20 @@ async function startServer() {
   app.get('/api/series/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const [set, paid] = await Promise.all([seriesFor(iso3), paidFor(req, iso3)]);
-    res.json({ iso3, series: [...set.series, ...paid.series].map(seriesSummary), missing: [...set.missing, ...paid.missing] });
+    res.json({ iso2: iso2For(iso3), iso3, series: [...set.series, ...paid.series].map(seriesSummary), missing: [...set.missing, ...paid.missing] });
   });
   app.get('/api/series/:iso3/:id', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (isPaidSeriesId(req.params.id)) {
       const paid = await paidFor(req, iso3);
       const hit = paid.series.find((x) => x.id === req.params.id);
-      if (hit) return res.json({ iso3, ...hit });
+      if (hit) return res.json({ iso2: iso2For(iso3), iso3, ...hit });
       const miss = paid.missing.find((m) => m.id === req.params.id);
       return res.status(miss?.reason === PAID_WITHHELD_REASON ? 403 : 404).json({ error: 'NO_SERIES', message: miss ? `${miss.label}: Missing. ${miss.reason}.` : `No series ${req.params.id}.`, reason: miss?.reason ?? null });
     }
     const set = await seriesFor(iso3);
     const hit = set.series.find((s) => s.id === req.params.id);
-    if (hit) return res.json({ iso3, ...hit });
+    if (hit) return res.json({ iso2: iso2For(iso3), iso3, ...hit });
     const miss = set.missing.find((m) => m.id === req.params.id);
     res.status(404).json({ error: 'NO_SERIES', message: miss ? `${miss.label}: Missing. ${miss.reason}.` : `No series ${req.params.id}.`, reason: miss?.reason ?? null });
   });
@@ -3660,7 +4093,12 @@ async function startServer() {
   type TableCell = string | number | null | undefined;
   // Sharing mode (Menu > Sharing mode, src/utils/shareMode.ts): values whose source's terms do not let
   // them be passed on for free are held back from every table download.
-  const sendTable = (req: express.Request, res: express.Response, name: string, header: string[], allRows: TableCell[][]) => {
+  const sendTable = (req: express.Request, res: express.Response, name: string, headerIn: string[], rowsIn: TableCell[][]) => {
+    // Tables keyed by country carry its ISO alpha-2 code too, as the last column so scripts that
+    // read columns by position keep working (src/data/iso3166Alpha2.ts).
+    const withIso2 = headerIn[0] === 'iso3' && !headerIn.includes('iso2');
+    const header = withIso2 ? [...headerIn, 'iso2'] : headerIn;
+    const allRows = withIso2 ? rowsIn.map((r) => [...r, iso2For(String(r[0] ?? '')) ?? '']) : rowsIn;
     // Your subscription's figures never leave in a download, sharing mode or not (src/engine/paidData.ts).
     const safe = withholdPaidRows(header, allRows);
     const rows = shareModeFromValue(loadWorkspace(workspaceFor(res)).values[SHARE_MODE_KEY]) ? withholdForSharing(header, safe) : safe;
@@ -3717,8 +4155,34 @@ async function startServer() {
       const rows = panelHistoryRows(data, figures);
       return res.json({ mode: 'history', figures: PANEL_FIGURES.filter((f) => figures.includes(f.id)), rowCount: rows.length, preview: rows.slice(0, 50) });
     }
-    res.json({ mode: 'latest', figures: PANEL_FIGURES.filter((f) => figures.includes(f.id)), cells: panelLatest(data, figures) });
+    res.json({ mode: 'latest', figures: PANEL_FIGURES.filter((f) => figures.includes(f.id)), cells: panelLatest(data, figures).map((c) => ({ iso2: iso2For(c.iso3), ...c })) });
   });
+  // Country snapshot for outside systems (item 6): every saved figure for one country, no council run needed.
+  const countrySnapshotRoute = async (req: express.Request, res: express.Response) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z]/g, '');
+    if (!iso2For(iso3)) return res.status(404).json({ error: 'NO_COUNTRY', message: `${req.params.iso3} is not an ISO alpha-2 or alpha-3 country code.` });
+    const [data] = await panelData(iso3);
+    if (!data) return res.status(404).json({ error: 'NO_COUNTRY', message: `No country ${iso3}.` });
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || data.snapshot.countryName || iso3;
+    res.json(
+      buildCountrySnapshot({
+        iso3,
+        name,
+        cells: panelLatest([data], PANEL_FIGURES.map((f) => f.id)),
+        series: data.series,
+        signals: readSignalStates(),
+        badges: modelBadgesNow(),
+        sharingMode: shareModeFromValue(loadWorkspace(workspaceFor(res)).values[SHARE_MODE_KEY]),
+        councilRunId: latestRunsByIso3.get(iso3)?.runId ?? null,
+      })
+    );
+  };
+  app.get('/api/v1/countries', (_req, res) => {
+    const shown = SOVEREIGN_CATALOG.filter((c) => !HIDDEN.countryHidden(c.iso3));
+    res.json({ countries: shown.map((c) => ({ iso2: iso2For(c.iso3) ?? null, iso3: c.iso3, name: c.countryName })), hidden: SOVEREIGN_CATALOG.length - shown.length });
+  });
+  app.get('/api/v1/countries/:iso3', countrySnapshotRoute);
+  app.get('/api/v1/countries/:iso3/snapshot', countrySnapshotRoute);
   app.get('/api/export/panel.:fmt(csv|xlsx)', async (req, res) => {
     const figures = parseFigureIds(req.query.figures);
     const data = await panelData(req.query.countries);
@@ -3770,7 +4234,7 @@ async function startServer() {
     const spikes = spikeMonths(series);
     res.json({ series, reading: v1Reading(series), spikes: spikes.slice(-36), spikeSentence: series ? spikeSentence(SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3, spikes) : null, spikeMethod: SPIKE_METHOD, pull: loadDailyState(gdeltDailyDir(DATA_DIR)), from: v1FromMonth(process.env) });
   });
-  // Country risk scorecard (src/utils/countryRiskScorecard.ts): governance, conflict, unrest, economy; no overall score.
+  // Country risk scorecard (src/utils/countryRiskScorecard.ts): governance, conflict, unrest, geopolitical, capital account, economy; no overall score.
   app.get('/api/risk-scorecard/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
@@ -3783,6 +4247,8 @@ async function startServer() {
     const conflict = ucdpReading(ucdp, iso3);
     const series = gdeltDailySeries(DATA_DIR, iso3);
     const gpr = gprData(DATA_DIR);
+    const ci = chinnItoData(DATA_DIR);
+    const ciReading = ci.ok ? chinnItoReading(ci.table, iso3) : null;
     const sc = countryRiskScorecard({
       official,
       officialMissingReason: file ? undefined : 'Full official history not downloaded yet (Menu > Offline data, or open History & data while online)',
@@ -3792,6 +4258,8 @@ async function startServer() {
       spikesMissing: series ? undefined : 'GDELT 1.0 files not pulled yet (npm run gdelt:daily)',
       gpr: gpr.ok ? gprForCountry(gpr.table, iso3) : null,
       gprMissing: gpr.ok ? undefined : gpr.reason,
+      capital: ciReading && !('missing' in ciReading) ? ciReading : null,
+      capitalMissing: !ci.ok ? ci.reason : ciReading && 'missing' in ciReading ? ciReading.missing : undefined,
     });
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...sc, sentence: scorecardSentence(name, sc), method: SCORECARD_METHOD });
@@ -5290,6 +5758,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       };
 
       latestRunsByIso3.set(updatedRun.iso3, updatedRun);
+      emitEvents(EVENT_FILES, [councilRunInput({ iso3: updatedRun.iso3, countryName: updatedRun.countryName })]);
       const intCfg = serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG;
       if (intCfg.autoBroadcastOnRun) {
         void dispatchTopLevelIntegrationEvent(
@@ -5881,7 +6350,8 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
     next: express.NextFunction
   ) => {
     const cfg = serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG;
-    if (!cfg.requireApiKey) return next();
+    // A scoped token with the right scope was already checked (src/utils/apiTokens.ts).
+    if (!cfg.requireApiKey || res.locals.apiToken) return next();
     const headerKey =
       req.headers['x-smcr-api-key'] ||
       String(req.headers.authorization || '').replace(/^Bearer\s+/i, '') ||
@@ -5896,139 +6366,14 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
     });
   };
 
-  // A. OpenAPI 3.1.0 Specification for External Applications & SDK Generators
+  // A. OpenAPI description of every outside address (docs/openapi.json, kept by hand with the docs;
+  // tests/openapi.test.ts checks it parses and covers the documented addresses).
   app.get('/api/v1/integration/openapi.json', (_req, res) => {
-    const spec = {
-      openapi: '3.1.0',
-      info: {
-        title: 'EconQuest Sovereign & Macro Council Top-Level Integration API',
-        version: '1.0.0',
-        description:
-          'Institutional SMCR-1.0 REST Pull API, Outbound HMAC-SHA256 Webhook Bus, and Real-Time SSE Event Stream for consuming Geopolitical, Sovereign Credit, and Macroeconomic Desk outputs, 9 sub-agent reports, quantitative suites, and Supreme Council verdicts.',
-      },
-      servers: [
-        {
-          url: 'http://localhost:3000',
-          description: 'Local Self-Hosted Docker / Node.js Instance',
-        },
-      ],
-      components: {
-        securitySchemes: {
-          SmcrApiKey: {
-            type: 'apiKey',
-            in: 'header',
-            name: 'X-SMCR-API-Key',
-            description: 'Optional API key configured in the Top-Level Integration GUI tab.',
-          },
-        },
-      },
-      paths: {
-        '/api/v1/integration/desks/{iso3}': {
-          get: {
-            summary: 'Pull Granular Desk Outputs, Sub-Agents & Quant Suites by ISO3',
-            parameters: [
-              {
-                name: 'iso3',
-                in: 'path',
-                required: true,
-                schema: { type: 'string', example: 'BRA' },
-              },
-              {
-                name: 'desk',
-                in: 'query',
-                required: false,
-                schema: {
-                  type: 'string',
-                  enum: ['all', 'geopolitical', 'sovereign', 'macro'],
-                  default: 'all',
-                },
-              },
-              {
-                name: 'includeSubAgents',
-                in: 'query',
-                required: false,
-                schema: { type: 'boolean', default: true },
-              },
-              {
-                name: 'includeQuant',
-                in: 'query',
-                required: false,
-                schema: { type: 'boolean', default: true },
-              },
-            ],
-            responses: {
-              '200': {
-                description: 'SMCR-1.0 Desk Output Envelope with HMAC-SHA256 signature.',
-              },
-            },
-          },
-        },
-        '/api/v1/integration/bundle/{iso3}': {
-          get: {
-            summary:
-              'Pull Complete SMCR-1.0 Bundle (All 3 Desks + 9 Sub-Agents + CRO Gate + Supreme Council + Quant Suites)',
-            parameters: [
-              {
-                name: 'iso3',
-                in: 'path',
-                required: true,
-                schema: { type: 'string', example: 'BRA' },
-              },
-            ],
-            responses: {
-              '200': {
-                description: 'Full SMCR-1.0 Sovereign Assessment Bundle.',
-              },
-            },
-          },
-        },
-        '/api/v1/integration/publish': {
-          post: {
-            summary:
-              'Broadcast Desk or Bundle Outputs to Outbound Webhooks and Real-Time SSE Subscribers',
-            requestBody: {
-              required: true,
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                    properties: {
-                      iso3: { type: 'string', example: 'BRA' },
-                      scope: {
-                        type: 'string',
-                        enum: [
-                          'all_desks_bundle',
-                          'geopolitical_desk',
-                          'sovereign_desk',
-                          'macro_desk',
-                          'supreme_council',
-                        ],
-                      },
-                    },
-                  },
-                },
-              },
-            },
-            responses: {
-              '200': {
-                description: 'Dispatched with HMAC-SHA256 delivery receipts.',
-              },
-            },
-          },
-        },
-        '/api/v1/integration/stream': {
-          get: {
-            summary: 'Subscribe to Real-Time Server-Sent Events (SSE) Stream of Desk Outputs',
-            responses: {
-              '200': {
-                description: 'text/event-stream emitting SMCR-1.0 JSON events.',
-              },
-            },
-          },
-        },
-      },
-    };
-    res.json(spec);
+    try {
+      res.type('application/json').send(fs.readFileSync(path.join(__dirname, 'docs', 'openapi.json'), 'utf-8'));
+    } catch {
+      res.status(500).json({ error: 'NO_OPENAPI', message: 'docs/openapi.json is missing from this copy of the app.' });
+    }
   });
 
   // B. Pull Granular Desk Outputs (GET /api/v1/integration/desks/:iso3)
@@ -6262,6 +6607,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       }
     });
     sseClients.clear();
+    consoleStream.close();
     httpServer.close(() => {
       console.log('[shutdown] stopped cleanly');
       process.exit(0);

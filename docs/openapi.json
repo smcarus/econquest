@@ -1,0 +1,2740 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "EconQuest API",
+    "version": "1.3.0",
+    "description": "Addresses an outside system can call over HTTP: the data API (series, panels and tables, docs/DATA_API.md) and the integration API (council output, webhooks and the event stream). Every country is named by ISO 3166 alpha-2 and alpha-3; either code is accepted wherever an address names a country. Values without a source read Missing with the reason; nothing is estimated."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "npm run dev on this computer (Docker: http://localhost:3737)"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "SmcrApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-SMCR-API-Key",
+        "description": "The integration key (SMCR_INTEGRATION_API_KEY), when key checks are switched on in Settings. Authorization: Bearer <key> also works. Never in the address."
+      },
+      "ApiToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "eqt_<id>_<secret>",
+        "description": "A scoped API token made in Menu > Settings > API tokens, sent as Authorization: Bearer <token> (or X-SMCR-API-Key). Each address names the scope it needs in x-scope. Scopes: read:data, read:council, read:events, write:holdings, write:exclusions, run:scenarios. The legacy integration key has the three read scopes."
+      }
+    },
+    "parameters": {
+      "Country": {
+        "name": "iso3",
+        "in": "path",
+        "required": true,
+        "description": "Country as ISO 3166 alpha-3 (BRA) or alpha-2 (BR), any case. Kosovo: XK or UVK.",
+        "schema": {
+          "type": "string",
+          "example": "BRA"
+        }
+      },
+      "CorrelationId": {
+        "name": "X-Correlation-Id",
+        "in": "header",
+        "required": false,
+        "description": "Your trace ID for this call (1 to 128 letters, digits and . _ : -). Sent back on the reply and written into every audit entry the call makes. Without one, the reply carries an ID the app made. A malformed one gets 400 BAD_CORRELATION_ID.",
+        "schema": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9._:-]+$"
+        }
+      }
+    },
+    "schemas": {
+      "CountryCodes": {
+        "type": "object",
+        "description": "Every country in an answer carries both codes.",
+        "properties": {
+          "iso2": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "BR",
+            "description": "ISO 3166-1 alpha-2; null for WORLD or a region. Kosovo: XK (not an ISO code)."
+          },
+          "iso3": {
+            "type": "string",
+            "example": "BRA",
+            "description": "ISO 3166-1 alpha-3 as the app uses it (Kosovo: UVK)."
+          }
+        },
+        "required": [
+          "iso2",
+          "iso3"
+        ]
+      },
+      "SecurityIds": {
+        "type": "object",
+        "description": "Optional identifiers on a position. ISIN, LEI and ticker are stored in capitals and CIK zero-padded to 10 digits; entityId is stored and given back exactly as sent.",
+        "properties": {
+          "isin": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}[A-Z0-9]{9}[0-9]$",
+            "description": "ISO 6166, check digit verified.",
+            "example": "US0378331005"
+          },
+          "lei": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{18}[0-9]{2}$",
+            "description": "ISO 17442, check digits verified (MOD 97-10).",
+            "example": "HWUPKR0MPOU8FGXBT394"
+          },
+          "cik": {
+            "type": "string",
+            "pattern": "^[0-9]{10}$",
+            "description": "SEC company number, 1 to 10 digits; given back zero-padded.",
+            "example": "0000320193"
+          },
+          "ticker": {
+            "type": "string",
+            "maxLength": 27,
+            "description": "Letters, digits and . - / :, up to 20, with an optional exchange code after a space.",
+            "example": "PETR4 BZ"
+          },
+          "entityId": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Your own ID for the position or issuer, given back unchanged."
+          }
+        }
+      },
+      "Holding": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SecurityIds"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "iso3": {
+                "type": "string",
+                "example": "BRA"
+              },
+              "instrument": {
+                "type": "string"
+              },
+              "assetClass": {
+                "type": "string",
+                "enum": [
+                  "HC_BOND",
+                  "LC_BOND",
+                  "CDS",
+                  "FX",
+                  "OTHER"
+                ]
+              },
+              "side": {
+                "type": "string",
+                "enum": [
+                  "LONG",
+                  "SHORT"
+                ]
+              },
+              "notionalUsdMm": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Face value in USD millions."
+              },
+              "durationYears": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "id",
+              "iso3",
+              "instrument",
+              "assetClass",
+              "side",
+              "notionalUsdMm"
+            ]
+          }
+        ]
+      },
+      "ConsoleEvent": {
+        "type": "object",
+        "description": "One envelope for every event. Values come with their source, the date they refer to (as_of), the validation badge and whether the licence register lets them be passed on (shareable).",
+        "required": [
+          "id",
+          "type",
+          "entity",
+          "severity",
+          "occurred_at",
+          "as_of",
+          "source",
+          "evidence_url",
+          "shareable",
+          "badge",
+          "idempotency_key",
+          "summary"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "evt_..., increasing; use with after= or Last-Event-ID."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "signal_state_changed",
+              "threshold_crossed",
+              "badge_changed",
+              "figure_revised",
+              "feed_failed",
+              "data_stale",
+              "sanctions_list_changed",
+              "release_upcoming",
+              "council_run_finished",
+              "daily_download_ready"
+            ]
+          },
+          "entity": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "country",
+                  "model",
+                  "source",
+                  "app",
+                  "watch"
+                ]
+              },
+              "iso2": {
+                "type": "string"
+              },
+              "iso3": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "indicator": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              }
+            }
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "info",
+              "warning",
+              "critical"
+            ]
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When EconQuest noticed it."
+          },
+          "as_of": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The period or date the value refers to."
+          },
+          "source": {
+            "type": "string"
+          },
+          "evidence_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Where to read the value behind the event (relative addresses are on this server)."
+          },
+          "shareable": {
+            "type": "boolean",
+            "description": "From the data-licence register; false when the source's terms are restricted or unconfirmed."
+          },
+          "badge": {
+            "type": "string",
+            "enum": [
+              "official",
+              "validated",
+              "provisional",
+              "under_review",
+              "review_due",
+              "withdrawn",
+              "not_validated"
+            ]
+          },
+          "idempotency_key": {
+            "type": "string",
+            "description": "The same for the same happening; also sent as the Idempotency-Key header."
+          },
+          "summary": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          }
+        }
+      },
+      "Watch": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string",
+            "description": "ISO alpha-3, or * for every watchlist country."
+          },
+          "metric": {
+            "type": "string",
+            "enum": [
+              "yield_level",
+              "yield_3m_bps",
+              "policy_rate",
+              "cli_level",
+              "cftc_percentile",
+              "tone_shift",
+              "reserves_12m_pct",
+              "shock_alerts",
+              "odds_1w_pts"
+            ]
+          },
+          "op": {
+            "type": "string",
+            "enum": [
+              ">=",
+              "<="
+            ]
+          },
+          "value": {
+            "type": "number"
+          },
+          "note": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "shareable": {
+            "type": "boolean"
+          },
+          "last_check": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "iso3": {
+                  "type": "string"
+                },
+                "crossed": {
+                  "type": "boolean"
+                },
+                "value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "as_of": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "checked_at": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "SnapshotValue": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "unit",
+          "status",
+          "value",
+          "as_of",
+          "source",
+          "badge",
+          "shareable"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Live",
+              "Missing"
+            ]
+          },
+          "value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "as_of": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The period the value refers to."
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "badge": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "official",
+              "validated",
+              "provisional",
+              "under_review",
+              "review_due",
+              "withdrawn",
+              "not_validated",
+              null
+            ]
+          },
+          "shareable": {
+            "type": "boolean"
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "feed",
+              "own_file"
+            ]
+          },
+          "pulled_at": {
+            "type": "string"
+          },
+          "projected_to": {
+            "type": "string",
+            "description": "IMF projection years exist up to here; value is the latest outturn."
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why it is Missing or held back."
+          }
+        }
+      },
+      "CountrySnapshot": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "$ref": "#/components/schemas/CountryCodes"
+          },
+          "generated_at": {
+            "type": "string"
+          },
+          "figures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SnapshotValue"
+            }
+          },
+          "series": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SnapshotValue"
+            }
+          },
+          "signals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "signal": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string"
+                },
+                "as_of": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "string"
+                },
+                "badge": {
+                  "type": "string"
+                },
+                "shareable": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "council": {
+            "type": "object",
+            "properties": {
+              "run_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "note": {
+                "type": "string"
+              }
+            }
+          },
+          "sharing_mode": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiPosition": {
+        "type": "object",
+        "required": [
+          "country",
+          "notional_usd_mm"
+        ],
+        "properties": {
+          "country": {
+            "type": "string",
+            "description": "ISO alpha-2 or alpha-3."
+          },
+          "instrument": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "type": {
+            "type": "string",
+            "description": "HC_BOND, LC_BOND, CDS, FX or OTHER (or the CSV words such as hc_bond, local, cds, forward)."
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "long",
+              "short"
+            ]
+          },
+          "notional_usd_mm": {
+            "type": "number",
+            "description": "USD millions; a negative number means short."
+          },
+          "duration": {
+            "type": "number",
+            "description": "Modified or spread duration, years."
+          },
+          "isin": {
+            "type": "string"
+          },
+          "lei": {
+            "type": "string"
+          },
+          "cik": {
+            "type": "string"
+          },
+          "ticker": {
+            "type": "string"
+          },
+          "entity_id": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Your own id, returned exactly; positions are updated by it."
+          }
+        }
+      },
+      "HiddenName": {
+        "type": "object",
+        "required": [
+          "kind",
+          "value"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "country",
+              "isin",
+              "lei",
+              "cik",
+              "ticker",
+              "entity_id"
+            ]
+          },
+          "value": {
+            "type": "string",
+            "description": "Country as ISO alpha-2 or alpha-3; identifiers checked as for positions."
+          }
+        }
+      },
+      "HiddenList": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "by_kind": {
+            "type": "object"
+          },
+          "note": {
+            "type": "string",
+            "example": "2 items hidden"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "country",
+                    "isin",
+                    "lei",
+                    "cik",
+                    "ticker",
+                    "entity_id"
+                  ]
+                },
+                "added_at": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "description": "Counts and kinds only: the list keeps fingerprints, never names."
+      },
+      "ScenarioResult": {
+        "type": "object",
+        "properties": {
+          "hypothetical": {
+            "const": true
+          },
+          "note": {
+            "type": "string"
+          },
+          "scenario": {
+            "type": "object"
+          },
+          "hidden": {
+            "type": "integer",
+            "description": "Positions left out because they name a hidden country or security."
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "entity_id": {
+                  "type": "string"
+                },
+                "country": {
+                  "type": "string"
+                },
+                "instrument": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "side": {
+                  "type": "string"
+                },
+                "notional_usd_mm": {
+                  "type": "number"
+                },
+                "duration_years": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "components": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "factor": {
+                        "enum": [
+                          "fx",
+                          "us_rates",
+                          "spread",
+                          "local_yield"
+                        ]
+                      },
+                      "status": {
+                        "enum": [
+                          "Live",
+                          "Missing"
+                        ]
+                      },
+                      "move": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "unit": {
+                        "enum": [
+                          "%",
+                          "bp"
+                        ]
+                      },
+                      "pnl_usd": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "from": {
+                        "type": "object"
+                      },
+                      "to": {
+                        "type": "object"
+                      },
+                      "source": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "shareable": {
+                        "type": "boolean"
+                      },
+                      "reason": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "pnl_usd": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "pnl_known_usd": {
+                  "type": "number"
+                },
+                "complete": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "totals": {
+            "type": "object",
+            "properties": {
+              "pnl_known_usd": {
+                "type": "number"
+              },
+              "pnl_usd": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "positions": {
+                "type": "integer"
+              },
+              "complete": {
+                "type": "integer"
+              },
+              "partial": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "headers": {
+      "X-Correlation-Id": {
+        "description": "The ID you sent, or one the app made.",
+        "schema": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/series/{iso3}": {
+      "get": {
+        "summary": "Every series the app holds for one country, and the ones Missing with the reason",
+        "tags": [
+          "Data"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Country"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "iso2, iso3, series (id, label, unit, frequency, source, first and last date, latest value) and missing (id, label, reason)."
+          },
+          "401": {
+            "description": "INVALID_TOKEN (unknown or revoked), or sign-in is on and no token or key was sent."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
+          },
+          "400": {
+            "description": "BAD_CORRELATION_ID, or another problem with the request."
+          }
+        },
+        "security": [
+          {},
+          {
+            "ApiToken": [
+              "read:data"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "x-scope": "read:data"
+      }
+    },
+    "/api/series/{iso3}/{id}": {
+      "get": {
+        "summary": "One series in full: every dated value with its source",
+        "tags": [
+          "Data"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Country"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "policy_rate"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "iso2, iso3 and the series."
+          },
+          "404": {
+            "description": "NO_SERIES with the reason it is Missing."
+          },
+          "401": {
+            "description": "INVALID_TOKEN (unknown or revoked), or sign-in is on and no token or key was sent."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
+          },
+          "400": {
+            "description": "BAD_CORRELATION_ID, or another problem with the request."
+          }
+        },
+        "security": [
+          {},
+          {
+            "ApiToken": [
+              "read:data"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "x-scope": "read:data"
+      }
+    },
+    "/api/panel": {
+      "get": {
+        "summary": "Countries by figures, latest cells or a history preview",
+        "tags": [
+          "Data"
+        ],
+        "parameters": [
+          {
+            "name": "countries",
+            "in": "query",
+            "required": true,
+            "description": "Comma-separated alpha-3 or alpha-2 codes, up to 60.",
+            "schema": {
+              "type": "string",
+              "example": "BR,MEX"
+            }
+          },
+          {
+            "name": "figures",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "policy_rate,cpi_monthly"
+            }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "latest",
+                "history"
+              ]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Latest mode: cells with iso2, iso3, figure, value, unit, status, period, source and reason if Missing."
+          },
+          "401": {
+            "description": "INVALID_TOKEN (unknown or revoked), or sign-in is on and no token or key was sent."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
+          },
+          "400": {
+            "description": "BAD_CORRELATION_ID, or another problem with the request."
+          }
+        },
+        "security": [
+          {},
+          {
+            "ApiToken": [
+              "read:data"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "x-scope": "read:data"
+      }
+    },
+    "/api/export/{iso3}/figures.csv": {
+      "get": {
+        "summary": "The latest figures for one country as a table (also .xlsx); asOf=YYYY-MM-DD for a past day",
+        "tags": [
+          "Data"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Country"
+          },
+          {
+            "name": "asOf",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV. Tables keyed by country end with an iso2 column."
+          },
+          "401": {
+            "description": "INVALID_TOKEN (unknown or revoked), or sign-in is on and no token or key was sent."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
+          },
+          "400": {
+            "description": "BAD_CORRELATION_ID, or another problem with the request."
+          }
+        },
+        "security": [
+          {},
+          {
+            "ApiToken": [
+              "read:data"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "x-scope": "read:data"
+      }
+    },
+    "/api/v1/integration/desks/{iso3}": {
+      "get": {
+        "summary": "Desk outputs of the last council run on one country",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Country"
+          },
+          {
+            "name": "desk",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "geopolitical",
+                "sovereign",
+                "macro"
+              ],
+              "default": "all"
+            }
+          },
+          {
+            "name": "includeSubAgents",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          {
+            "name": "includeQuant",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed SMCR-1.0 envelope; sovereign carries iso2 and iso3."
+          },
+          "404": {
+            "description": "NO_COUNCIL_RUN: no council run on that country yet."
+          },
+          "401": {
+            "description": "INVALID_TOKEN (unknown or revoked), or sign-in is on and no token or key was sent."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
+          },
+          "400": {
+            "description": "BAD_CORRELATION_ID, or another problem with the request."
+          }
+        },
+        "tags": [
+          "Integration"
+        ],
+        "security": [
+          {},
+          {
+            "ApiToken": [
+              "read:council"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "x-scope": "read:council"
+      }
+    },
+    "/api/v1/integration/bundle/{iso3}": {
+      "get": {
+        "summary": "Everything from the last council run on one country",
+        "tags": [
+          "Integration"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Country"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed SMCR-1.0 bundle; sovereign carries iso2 and iso3."
+          },
+          "404": {
+            "description": "NO_COUNCIL_RUN: no council run on that country yet."
+          },
+          "401": {
+            "description": "INVALID_TOKEN (unknown or revoked), or sign-in is on and no token or key was sent."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
+          },
+          "400": {
+            "description": "BAD_CORRELATION_ID, or another problem with the request."
+          }
+        },
+        "security": [
+          {},
+          {
+            "ApiToken": [
+              "read:council"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "x-scope": "read:council"
+      }
+    },
+    "/api/v1/integration/publish": {
+      "post": {
+        "summary": "Send the last council run to the webhooks and the event stream",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "iso3": {
+                    "type": "string",
+                    "example": "BRA"
+                  },
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "all_desks_bundle",
+                      "geopolitical_desk",
+                      "sovereign_desk",
+                      "macro_desk",
+                      "supreme_council"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Delivery receipts with the HMAC-SHA256 signature."
+          },
+          "400": {
+            "description": "BAD_CORRELATION_ID, or another problem with the request."
+          }
+        },
+        "tags": [
+          "Integration"
+        ],
+        "security": [
+          {},
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "description": "Not open to tokens.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ]
+      }
+    },
+    "/api/v1/integration/stream": {
+      "get": {
+        "summary": "Server-sent event stream",
+        "tags": [
+          "Integration"
+        ],
+        "responses": {
+          "200": {
+            "description": "text/event-stream of JSON events."
+          },
+          "401": {
+            "description": "INVALID_TOKEN (unknown or revoked), or sign-in is on and no token or key was sent."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
+          },
+          "400": {
+            "description": "BAD_CORRELATION_ID, or another problem with the request."
+          }
+        },
+        "security": [
+          {},
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "x-scope": "read:events",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ]
+      }
+    },
+    "/api/v1/events": {
+      "get": {
+        "summary": "Events after an id or a time (catch-up)",
+        "tags": [
+          "Events"
+        ],
+        "x-scope": "read:events",
+        "security": [
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "description": "Return events after this event id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "description": "Return events at or after this ISO time.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "types",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated event types; empty means every type.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "countries",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated ISO alpha-2 or alpha-3 codes; only events about these countries.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "At most this many (default 200, highest 1000). With after or since, the oldest first, so paging with after misses nothing; without them, the latest.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Events, oldest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ConsoleEvent"
+                      }
+                    },
+                    "types": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "last_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BAD_FILTER."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
+      }
+    },
+    "/api/v1/events/stream": {
+      "get": {
+        "summary": "Live events (server-sent events)",
+        "tags": [
+          "Events"
+        ],
+        "x-scope": "read:events",
+        "security": [
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "types",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated event types; empty means every type.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "countries",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated ISO alpha-2 or alpha-3 codes; only events about these countries.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false,
+            "description": "On reconnect: events after this id are sent first.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "text/event-stream. Each frame has id, event (the type) and data (a ConsoleEvent)."
+          },
+          "400": {
+            "description": "BAD_FILTER."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
+      }
+    },
+    "/api/v1/events/deliveries": {
+      "get": {
+        "summary": "Delivery log of your webhooks, newest first",
+        "tags": [
+          "Events"
+        ],
+        "x-scope": "read:events",
+        "security": [
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "webhook",
+            "in": "query",
+            "required": false,
+            "description": "Only this webhook id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "At most this many (default 100, highest 500).",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Each attempt: time, delivery and event ids, HTTP status, ok, milliseconds, note, and the next attempt time or gaveUp."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks": {
+      "get": {
+        "summary": "Your webhooks",
+        "tags": [
+          "Events"
+        ],
+        "x-scope": "read:events",
+        "security": [
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Webhooks made with this token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "webhooks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": "string"
+                          },
+                          "types": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "countries": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
+      },
+      "post": {
+        "summary": "Add a webhook; the signing secret is shown once",
+        "tags": [
+          "Events"
+        ],
+        "x-scope": "read:events",
+        "security": [
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "url"
+                ],
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "types": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "countries": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The webhook and its secret (whsec_...). Each delivery is a POST of one ConsoleEvent with X-EconQuest-Signature-256 = sha256=HMAC-SHA256(secret, X-EconQuest-Timestamp + '.' + body). Failed deliveries are retried after 30 s, 2 min, 10 min, 1 h and 6 h."
+          },
+          "400": {
+            "description": "BAD_URL or BAD_WEBHOOK."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks/{id}": {
+      "delete": {
+        "summary": "Remove one of your webhooks",
+        "tags": [
+          "Events"
+        ],
+        "x-scope": "read:events",
+        "security": [
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Removed."
+          },
+          "404": {
+            "description": "NO_WEBHOOK: none of yours with that id."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
+      }
+    },
+    "/api/v1/watches": {
+      "get": {
+        "summary": "Your indicator watches, their last check, and the figures a watch can use",
+        "tags": [
+          "Events"
+        ],
+        "x-scope": "read:events",
+        "security": [
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "watches (yours only), metrics (id, label, unit, source, shareable) and max.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "watches": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Watch"
+                      }
+                    },
+                    "metrics": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "max": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
+      },
+      "post": {
+        "summary": "Add a watch: a threshold you choose on one figure",
+        "tags": [
+          "Events"
+        ],
+        "x-scope": "read:events",
+        "security": [
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "country",
+                  "metric",
+                  "op",
+                  "value"
+                ],
+                "properties": {
+                  "country": {
+                    "type": "string",
+                    "description": "ISO alpha-2 or alpha-3, or *."
+                  },
+                  "metric": {
+                    "type": "string",
+                    "enum": [
+                      "yield_level",
+                      "yield_3m_bps",
+                      "policy_rate",
+                      "cli_level",
+                      "cftc_percentile",
+                      "tone_shift",
+                      "reserves_12m_pct",
+                      "shock_alerts",
+                      "odds_1w_pts"
+                    ]
+                  },
+                  "op": {
+                    "type": "string",
+                    "enum": [
+                      ">=",
+                      "<="
+                    ]
+                  },
+                  "value": {
+                    "type": "number"
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The watch. It is checked after each daily download; a crossing sends a threshold_crossed event once, and again only after the figure has gone back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "watch": {
+                      "$ref": "#/components/schemas/Watch"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BAD_WATCH."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
+      }
+    },
+    "/api/v1/watches/{id}": {
+      "delete": {
+        "summary": "Remove one of your watches",
+        "tags": [
+          "Events"
+        ],
+        "x-scope": "read:events",
+        "security": [
+          {
+            "ApiToken": [
+              "read:events"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Removed."
+          },
+          "404": {
+            "description": "NO_WATCH: none of yours with that id."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:events."
+          }
+        }
+      }
+    },
+    "/api/v1/countries": {
+      "get": {
+        "summary": "The watchlist countries, with both ISO codes",
+        "tags": [
+          "Countries"
+        ],
+        "x-scope": "read:data",
+        "security": [
+          {
+            "ApiToken": [
+              "read:data"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "countries: iso2, iso3, name."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:data."
+          }
+        }
+      }
+    },
+    "/api/v1/countries/{iso3}": {
+      "get": {
+        "summary": "Country snapshot (same as /snapshot)",
+        "tags": [
+          "Countries"
+        ],
+        "x-scope": "read:data",
+        "security": [
+          {
+            "ApiToken": [
+              "read:data"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Country"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Every figure saved for the country, read from what the daily download saved (never fetched by this call). No council run needed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountrySnapshot"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NO_COUNTRY."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:data."
+          }
+        }
+      }
+    },
+    "/api/v1/countries/{iso3}/snapshot": {
+      "get": {
+        "summary": "Country snapshot: figures, series and signals with source, date, badge and shareable flag",
+        "tags": [
+          "Countries"
+        ],
+        "x-scope": "read:data",
+        "security": [
+          {
+            "ApiToken": [
+              "read:data"
+            ]
+          },
+          {
+            "SmcrApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Country"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Every figure saved for the country, read from what the daily download saved (never fetched by this call). No council run needed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountrySnapshot"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NO_COUNTRY."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks read:data."
+          }
+        }
+      }
+    },
+    "/api/v1/holdings": {
+      "get": {
+        "summary": "The positions this token sent",
+        "tags": [
+          "Holdings"
+        ],
+        "x-scope": "write:holdings",
+        "security": [
+          {
+            "ApiToken": [
+              "write:holdings"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The positions this token now holds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "holdings": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/ApiPosition"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks write:holdings. The legacy key cannot write."
+          }
+        }
+      },
+      "put": {
+        "summary": "Replace this token's positions (all or nothing)",
+        "tags": [
+          "Holdings"
+        ],
+        "x-scope": "write:holdings",
+        "security": [
+          {
+            "ApiToken": [
+              "write:holdings"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "holdings"
+                ],
+                "properties": {
+                  "holdings": {
+                    "type": "array",
+                    "maxItems": 5000,
+                    "items": {
+                      "$ref": "#/components/schemas/ApiPosition"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The positions this token now holds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "holdings": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/ApiPosition"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BAD_HOLDINGS: nothing was changed; errors lists every problem."
+          },
+          "413": {
+            "description": "TOO_LARGE."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks write:holdings. The legacy key cannot write."
+          }
+        }
+      },
+      "post": {
+        "summary": "Add positions, or update them by entity_id",
+        "tags": [
+          "Holdings"
+        ],
+        "x-scope": "write:holdings",
+        "security": [
+          {
+            "ApiToken": [
+              "write:holdings"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "holdings"
+                ],
+                "properties": {
+                  "holdings": {
+                    "type": "array",
+                    "maxItems": 5000,
+                    "items": {
+                      "$ref": "#/components/schemas/ApiPosition"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The positions this token now holds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "holdings": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/ApiPosition"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BAD_HOLDINGS: nothing was changed; errors lists every problem."
+          },
+          "413": {
+            "description": "TOO_LARGE."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks write:holdings. The legacy key cannot write."
+          }
+        }
+      }
+    },
+    "/api/v1/holdings/{id}": {
+      "delete": {
+        "summary": "Remove one of this token's positions, by id or entity_id",
+        "tags": [
+          "Holdings"
+        ],
+        "x-scope": "write:holdings",
+        "security": [
+          {
+            "ApiToken": [
+              "write:holdings"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Removed."
+          },
+          "404": {
+            "description": "NO_HOLDING."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks write:holdings. The legacy key cannot write."
+          }
+        }
+      }
+    },
+    "/api/v1/exclusions": {
+      "get": {
+        "summary": "The hidden-names list: counts and kinds",
+        "tags": [
+          "Hidden names"
+        ],
+        "x-scope": "write:exclusions",
+        "security": [
+          {
+            "ApiToken": [
+              "write:exclusions"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list after the change (counts only).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HiddenList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks write:exclusions."
+          }
+        }
+      },
+      "post": {
+        "summary": "Hide names",
+        "tags": [
+          "Hidden names"
+        ],
+        "x-scope": "write:exclusions",
+        "security": [
+          {
+            "ApiToken": [
+              "write:exclusions"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "names"
+                ],
+                "properties": {
+                  "names": {
+                    "type": "array",
+                    "maxItems": 2000,
+                    "items": {
+                      "$ref": "#/components/schemas/HiddenName"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The list after the change (counts only).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HiddenList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BAD_NAMES: nothing was changed; errors lists every problem without repeating the names."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks write:exclusions."
+          }
+        }
+      },
+      "put": {
+        "summary": "Replace the whole list (an empty list clears it)",
+        "tags": [
+          "Hidden names"
+        ],
+        "x-scope": "write:exclusions",
+        "security": [
+          {
+            "ApiToken": [
+              "write:exclusions"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "names"
+                ],
+                "properties": {
+                  "names": {
+                    "type": "array",
+                    "maxItems": 2000,
+                    "items": {
+                      "$ref": "#/components/schemas/HiddenName"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The list after the change (counts only).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HiddenList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BAD_NAMES: nothing was changed; errors lists every problem without repeating the names."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks write:exclusions."
+          }
+        }
+      }
+    },
+    "/api/v1/exclusions/remove": {
+      "post": {
+        "summary": "Show names again, given by value",
+        "tags": [
+          "Hidden names"
+        ],
+        "x-scope": "write:exclusions",
+        "security": [
+          {
+            "ApiToken": [
+              "write:exclusions"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "names"
+                ],
+                "properties": {
+                  "names": {
+                    "type": "array",
+                    "maxItems": 2000,
+                    "items": {
+                      "$ref": "#/components/schemas/HiddenName"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The list after the change (counts only).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HiddenList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BAD_NAMES: nothing was changed; errors lists every problem without repeating the names."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks write:exclusions."
+          }
+        }
+      }
+    },
+    "/api/v1/exclusions/{id}": {
+      "delete": {
+        "summary": "Remove one entry by its id",
+        "tags": [
+          "Hidden names"
+        ],
+        "x-scope": "write:exclusions",
+        "security": [
+          {
+            "ApiToken": [
+              "write:exclusions"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list after the change (counts only).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HiddenList"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NO_ENTRY."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks write:exclusions."
+          }
+        }
+      }
+    },
+    "/api/v1/scenarios": {
+      "get": {
+        "summary": "Historical episodes and what the saved series cover",
+        "tags": [
+          "Scenarios"
+        ],
+        "x-scope": "run:scenarios",
+        "security": [
+          {
+            "ApiToken": [
+              "run:scenarios"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Episodes with their windows and, per episode, the countries covered.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "hypothetical": {
+                      "type": "boolean"
+                    },
+                    "note": {
+                      "type": "string"
+                    },
+                    "replay_series_saved_at": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "episodes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks run:scenarios. The legacy key cannot run scenarios."
+          }
+        }
+      },
+      "post": {
+        "summary": "Run a shock or a historical replay on a portfolio sent in the request (not saved)",
+        "tags": [
+          "Scenarios"
+        ],
+        "x-scope": "run:scenarios",
+        "security": [
+          {
+            "ApiToken": [
+              "run:scenarios"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "portfolio",
+                  "scenario"
+                ],
+                "properties": {
+                  "portfolio": {
+                    "type": "array",
+                    "maxItems": 5000,
+                    "items": {
+                      "type": "object",
+                      "description": "A position, the same fields as PUT /api/v1/holdings."
+                    }
+                  },
+                  "scenario": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "required": [
+                          "kind"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "const": "shock"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "em_fx_pct": {
+                            "type": "number",
+                            "minimum": -95,
+                            "maximum": 95
+                          },
+                          "us_rates_bp": {
+                            "type": "number",
+                            "minimum": -2000,
+                            "maximum": 2000
+                          },
+                          "countries": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "fx_pct": {
+                                  "type": "number"
+                                },
+                                "spread_bp": {
+                                  "type": "number"
+                                },
+                                "local_yield_bp": {
+                                  "type": "number"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "episode"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "const": "replay"
+                          },
+                          "episode": {
+                            "enum": [
+                              "asia_1997",
+                              "russia_1998",
+                              "year_2001",
+                              "gfc_2008",
+                              "taper_2013",
+                              "covid_2020",
+                              "year_2022"
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Hypothetical result per position; Missing moves carry the reason.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BAD_SCENARIO: nothing was run; errors lists every problem."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks run:scenarios. The legacy key cannot run scenarios."
+          }
+        }
+      }
+    }
+  }
+}
