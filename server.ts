@@ -37,6 +37,8 @@ import { CSRF_HEADER, csrfMatches, csrfToken, isAiCall, isWrite, LIMITS, RateLim
 import { apiKeyFrom, DATA_API_LIMIT, isDataApiRead, keyMatches } from './src/server/dataApi';
 import { normaliseCountryQuery, normaliseCountryUrl } from './src/server/countryCodes';
 import { iso2For } from './src/data/iso3166Alpha2';
+import { LEGACY_SCOPES, TOKEN_PREFIX, publicToken, scopeFor, scopeRefusal, tokenOnly, type Scope } from './src/utils/apiTokens';
+import { ApiTokenStore, apiTokensFile } from './src/utils/apiTokenStore';
 import { registerUserTestRoutes } from './src/server/routes/userTests';
 import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, ROLES, type Account, type Role } from './src/utils/auth';
 import { mergeLastGood } from './src/utils/snapshotMerge';
@@ -2821,6 +2823,56 @@ async function startServer() {
   const secureCookie = (req: express.Request) => req.secure || String(process.env.COOKIE_SECURE || '').trim().toLowerCase() === 'true';
   const signedIn = (res: express.Response): Account | null => (res.locals.account as Account | undefined) ?? null;
   const accountName = (a: Account | null) => (a ? `${a.displayName} (${a.username})` : 'nobody signed in');
+  // Scoped API tokens (console integration item 2, src/utils/apiTokens.ts). A request carrying a
+  // token is checked here, before sign-in: the token must be active and have the scope the address
+  // needs. Console addresses (/api/v1/ outside the integration API) answer tokens only; the legacy
+  // integration key may do the three read scopes there. Every use goes to the audit log.
+  const apiTokens = new ApiTokenStore(apiTokensFile(DATA_DIR));
+  const limiter = new RateLimiter();
+  const auditTokenUse = (req: express.Request, res: express.Response, who: { id: string; name: string }, scope: Scope | null) => {
+    res.on('finish', () => {
+      appendAudit(AUDIT_FILES, {
+        kind: 'api',
+        summary: `API token "${who.name}": ${req.method} ${req.path} (${res.statusCode})`,
+        detail: { token: who.id, scope, method: req.method, path: req.path, status: res.statusCode },
+      });
+    });
+  };
+  app.use((req, res, next) => {
+    if (req.path === '/api/v1/integration/openapi.json') return next();
+    const given = apiKeyFrom(req.headers as Record<string, string | string[] | undefined>);
+    const isToken = given.startsWith(TOKEN_PREFIX);
+    const onlyTokens = tokenOnly(req.path);
+    if (!isToken && !onlyTokens) return next();
+    const needed = scopeFor(req.method, req.path);
+    if (isToken) {
+      const token = apiTokens.resolve(given);
+      if (!token) {
+        appendAudit(AUDIT_FILES, { kind: 'api', summary: `Refused an unknown or revoked API token: ${req.method} ${req.path}`, detail: { method: req.method, path: req.path, status: 401 } });
+        return res.status(401).json({ error: 'INVALID_TOKEN', message: 'This API token is unknown or has been revoked.' });
+      }
+      if (!needed || !token.scopes.includes(needed)) {
+        appendAudit(AUDIT_FILES, { kind: 'api', summary: `API token "${token.name}" refused: ${req.method} ${req.path} needs ${needed ?? 'no token'}`, detail: { token: token.id, scope: needed, method: req.method, path: req.path, status: 403 } });
+        return res.status(403).json({ error: 'TOKEN_SCOPE', message: scopeRefusal(token.name, needed), needed });
+      }
+      const wait = limiter.take(`token:${token.id}`, LIMITS.api);
+      if (wait) {
+        res.setHeader('Retry-After', String(wait));
+        return res.status(429).json({ error: `Too many requests with this token. Try again in ${wait} seconds.` });
+      }
+      res.locals.apiToken = { id: token.id, name: token.name, scopes: token.scopes };
+      auditTokenUse(req, res, token, needed);
+      return actorStore.run({ id: `token:${token.id}`, username: `token:${token.name}`, name: `API token "${token.name}"` }, next);
+    }
+    // A console address without a token: the legacy integration key may do the read scopes.
+    const integration = serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG;
+    if (needed && LEGACY_SCOPES.includes(needed) && keyMatches(given, integration.apiKey)) {
+      res.locals.apiToken = { id: 'legacy', name: 'legacy integration key', scopes: [...LEGACY_SCOPES] };
+      auditTokenUse(req, res, { id: 'legacy', name: 'legacy integration key' }, needed);
+      return next();
+    }
+    res.status(401).json({ error: 'TOKEN_REQUIRED', message: `This address needs an API token${needed ? ` with the ${needed} scope` : ''}, sent as Authorization: Bearer <token>. Make one in Menu > Settings > API tokens.` });
+  });
   app.use((req, res, next) => {
     const mode = currentMode();
     const hit = mode === 'off' ? null : auth.resolve(readCookie(req.headers.cookie, SESSION_COOKIE));
@@ -2831,7 +2883,7 @@ async function startServer() {
       const a = hit.account;
       return actorStore.run({ id: a.id, username: a.username, name: a.displayName }, next);
     }
-    if (mode === 'off' || hit || openPath(req.method, req.path)) return next();
+    if (mode === 'off' || hit || openPath(req.method, req.path) || res.locals.apiToken) return next();
     // The integration API keeps its own key check when that is switched on in Settings.
     if (req.path.startsWith('/api/v1/integration/') && (serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG).requireApiKey) return next();
     // Scripts reading data (docs/DATA_API.md): the same key, sent in a header, opens the read-only data addresses.
@@ -2848,7 +2900,6 @@ async function startServer() {
     res.status(403).json({ error: refusal(me.role, needed), role: me.role, needed });
   });
   // CSRF token and per-account rate limits (src/utils/requestLimits.ts), once someone is signed in.
-  const limiter = new RateLimiter();
   app.use((req, res, next) => {
     const me = signedIn(res);
     if (!me) return next();
@@ -2866,7 +2917,7 @@ async function startServer() {
   // Data reads that come from no signed-in account (scripts, or the single user with sign-in off): one
   // limit per address, so a script in a loop cannot slow the app (src/server/dataApi.ts).
   app.use((req, res, next) => {
-    if (signedIn(res) || !isDataApiRead(req.method, req.path)) return next();
+    if (signedIn(res) || res.locals.apiToken || !isDataApiRead(req.method, req.path)) return next();
     const wait = limiter.take(`data:${req.socket.remoteAddress || 'unknown'}`, DATA_API_LIMIT);
     if (!wait) return next();
     res.setHeader('Retry-After', String(wait));
@@ -3068,6 +3119,28 @@ async function startServer() {
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.attachment(`econquest-audit-log-${stamp}.csv`);
     res.send(toCsv(AUDIT_HEADER, [...auditRows(entries), ['', '', 'Check', '', note, '', '', '', '']]));
+  });
+  // Menu > Settings > API tokens (admin only by the role table; this computer only while sign-in is off).
+  const tokensReply = () => ({ tokens: apiTokens.list().map(publicToken).sort((a, b) => Number(b.active) - Number(a.active) || b.createdAt.localeCompare(a.createdAt)) });
+  app.get('/api/settings/api-tokens', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    res.json(tokensReply());
+  });
+  app.post('/api/settings/api-tokens', express.json({ limit: '10kb' }), (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const by = signedIn(res) ? accountName(signedIn(res)) : 'this computer';
+    const made = apiTokens.create({ name: req.body?.name, scopes: req.body?.scopes, createdBy: by });
+    if ('error' in made) return res.status(400).json({ error: made.error });
+    appendAudit(AUDIT_FILES, { kind: 'api', summary: `Made the API token "${made.token.name}" (${made.token.scopes.join(', ')})`, detail: { token: made.token.id, scopes: made.token.scopes } });
+    res.json({ ...tokensReply(), created: publicToken(made.token), secret: made.secret });
+  });
+  app.post('/api/settings/api-tokens/:id/revoke', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const by = signedIn(res) ? accountName(signedIn(res)) : 'this computer';
+    const t = apiTokens.revoke(String(req.params.id), by);
+    if (!t) return res.status(404).json({ error: 'No token with that id.' });
+    appendAudit(AUDIT_FILES, { kind: 'api', summary: `Revoked the API token "${t.name}"`, detail: { token: t.id } });
+    res.json(tokensReply());
   });
   // Backup and restore (Menu > Settings > Backup): saved research, policy reviews, watch alerts, holdings,
   // watchlists and AI settings in one file, never API keys. See src/utils/backup.ts. Restore takes
@@ -5900,7 +5973,8 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
     next: express.NextFunction
   ) => {
     const cfg = serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG;
-    if (!cfg.requireApiKey) return next();
+    // A scoped token with the right scope was already checked (src/utils/apiTokens.ts).
+    if (!cfg.requireApiKey || res.locals.apiToken) return next();
     const headerKey =
       req.headers['x-smcr-api-key'] ||
       String(req.headers.authorization || '').replace(/^Bearer\s+/i, '') ||

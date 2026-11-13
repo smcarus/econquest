@@ -1,6 +1,6 @@
 import { CDS_HIDDEN } from '../utils/cdsHidden';
 import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
-import { Archive, Bell, CheckCircle2, CreditCard, Sunrise, Cpu, ExternalLink, Eye, EyeOff, KeyRound, Lock, Settings2, X, XCircle, Wrench } from 'lucide-react';
+import { Archive, Bell, Plug, CheckCircle2, CreditCard, Sunrise, Cpu, ExternalLink, Eye, EyeOff, KeyRound, Lock, Settings2, X, XCircle, Wrench } from 'lucide-react';
 import type { AIRuntimeConfig } from '../types/council';
 import { AiModelSettings } from './AiModelSettings';
 import { BackupSettings } from './BackupSettings';
@@ -12,6 +12,7 @@ import { MENU } from '../i18n/messages/menu';
 
 // Your subscriptions page (data plan G4): its series list loads only when the page is opened.
 const SubscriptionSeries = lazy(() => import('./SubscriptionSeries'));
+const ApiTokenSettings = lazy(() => import('./ApiTokenSettings'));
 
 /**
  * Settings (Menu > Settings, or Cmd/Ctrl + comma). The "Data API keys" section lets you paste your
@@ -22,7 +23,7 @@ const SubscriptionSeries = lazy(() => import('./SubscriptionSeries'));
 
 /**
  * Any part of the app can open Settings with openSettings('ai') (or the raw event, whose detail
- * may name the page: { tab: 'ai' | 'keys' | 'paid' | 'subscriptions' | 'alerts' | 'morning' | 'backup' | 'tools' }).
+ * may name the page: { tab: 'ai' | 'keys' | 'paid' | 'subscriptions' | 'alerts' | 'morning' | 'backup' | 'tokens' | 'tools' }).
  */
 export const OPEN_SETTINGS_EVENT = 'econquest:open-settings';
 
@@ -192,7 +193,7 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
   );
 };
 
-export type SettingsTab = 'ai' | 'keys' | 'paid' | 'subscriptions' | 'alerts' | 'morning' | 'backup' | 'tools';
+export type SettingsTab = 'ai' | 'keys' | 'paid' | 'subscriptions' | 'alerts' | 'morning' | 'backup' | 'tokens' | 'tools';
 
 /** The pages of Settings, in order, and which key sections each one shows. */
 const PAGES: Array<{ id: SettingsTab; sections: KeySection[] }> = [
@@ -205,6 +206,8 @@ const PAGES: Array<{ id: SettingsTab; sections: KeySection[] }> = [
   { id: 'alerts', sections: ['alerts'] },
   { id: 'morning', sections: [] },
   { id: 'backup', sections: [] },
+  // Tokens for outside systems (console integration item 2, src/utils/apiTokens.ts).
+  { id: 'tokens', sections: [] },
   { id: 'tools', sections: [] },
 ];
 const PAGE_ICON: Record<SettingsTab, React.ReactNode> = {
@@ -215,6 +218,7 @@ const PAGE_ICON: Record<SettingsTab, React.ReactNode> = {
   alerts: <Bell className="w-3.5 h-3.5" aria-hidden />,
   morning: <Sunrise className="w-3.5 h-3.5" aria-hidden />,
   backup: <Archive className="w-3.5 h-3.5" aria-hidden />,
+  tokens: <Plug className="w-3.5 h-3.5" aria-hidden />,
   tools: <Wrench className="w-3.5 h-3.5" aria-hidden />,
 };
 
@@ -316,6 +320,15 @@ export const SettingsDialog: React.FC<{
               <h3 id="settings-backup-title" className="ui-section-title">{t('set_p_backup')}</h3>
               <div className="mt-3">
                 <BackupSettings />
+              </div>
+            </section>
+          ) : tab === 'tokens' ? (
+            <section className="flex-1 min-w-0 overflow-y-auto px-4 py-3" aria-labelledby="settings-tokens-title">
+              <h3 id="settings-tokens-title" className="ui-section-title">{t('set_p_tokens')}</h3>
+              <div className="mt-3">
+                <Suspense fallback={<p className="text-xs text-slate-500">{t('c_loading')}</p>}>
+                  <ApiTokenSettings />
+                </Suspense>
               </div>
             </section>
           ) : showAi ? (

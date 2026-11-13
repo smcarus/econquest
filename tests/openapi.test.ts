@@ -40,3 +40,14 @@ test('the file has no AI-provider or build-tool branding', () => {
   const text = readFileSync(path.join(root, 'docs/openapi.json'), 'utf-8');
   assert.doesNotMatch(text, /claude|anthropic|ai studio/i);
 });
+
+test('each address open to tokens names its scope, matching the server table', async () => {
+  const { scopeFor } = await import('../src/utils/apiTokens.ts');
+  assert.ok(spec.components.securitySchemes.ApiToken);
+  for (const [p, item] of Object.entries(spec.paths as Record<string, Record<string, { 'x-scope'?: string }>>)) {
+    for (const [method, op] of Object.entries(item)) {
+      const sample = p.replace('{iso3}', 'BRA').replace('{id}', 'policy_rate');
+      assert.equal(op['x-scope'] ?? null, scopeFor(method, sample), `${method} ${p}`);
+    }
+  }
+});

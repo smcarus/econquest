@@ -183,3 +183,43 @@ named `isin`, `lei`, `cik`, `ticker` and `entity_id`. A file with an `isin` colu
 `instrument` column names each position by its ISIN. A malformed identifier stops that row and the
 import says which row and why. Exports add the identifier columns only when a position has one.
 
+### API tokens
+
+An outside system signs in with a scoped API token, not a password. Make one in Menu > Settings >
+API tokens: give it a name (the system that will use it) and tick only what it needs.
+
+| Scope | What it allows |
+| --- | --- |
+| `read:data` | The data addresses above (series, panels, tables) and country snapshots |
+| `read:council` | The last council run per country (`/api/v1/integration/desks/...` and `/bundle/...`) |
+| `read:events` | The event stream, webhooks and indicator watches |
+| `write:holdings` | Positions sent in by the outside system |
+| `write:exclusions` | The hidden-names list |
+| `run:scenarios` | Scenarios on a portfolio sent in the request |
+
+The token is shown once, when it is made: copy it then. The app keeps only a SHA-256 fingerprint
+of it in `data/local/api-tokens.json`, never the token itself, and backups never include that file.
+Send it in a header on every call:
+
+```
+Authorization: Bearer eqt_...
+```
+
+(`X-SMCR-API-Key: eqt_...` also works.) A token works whether sign-in is on or off. A call the
+token's scopes do not cover is refused with `403 TOKEN_SCOPE`, naming the scope it needs; an
+unknown or revoked token gets `401 INVALID_TOKEN`. Revoking a token in Settings stops it at once.
+Each token may make about 600 calls a minute.
+
+Every call made with a token is written to the audit log (Menu > Audit log, kind "API tokens"):
+which token, the method and address, and the answer's status. Refusals are logged too. Making and
+revoking tokens is logged with the name of whoever did it. The token itself never appears in the
+log.
+
+Addresses under `/api/v1/` other than the integration API (`/api/v1/integration/...`) answer
+tokens only, even on a computer with sign-in off, since they are meant for outside systems.
+
+**The legacy key.** The integration key in `.env` (`SMCR_INTEGRATION_API_KEY`) keeps working as it
+did, and counts as a token with the three read scopes (`read:data`, `read:council`,
+`read:events`). It cannot send positions, set hidden names or run scenarios. For a new connection,
+prefer a named token: it can be limited and revoked without changing `.env`.
+
