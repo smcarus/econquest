@@ -9,7 +9,7 @@
  * - Policy rate: AR on the monthly change in the BIS end-of-month policy rate, lag 0-3 by BIC, no
  *   drift (a past trend in rates is not carried on for ever). Fitted on the last 10 years.
  * - Government debt: AR on the yearly change in IMF debt-to-GDP outturns (IMF projections left
- *   out of the fit), lag 0-2 by BIC, with drift, two years ahead.
+ *   out of the fit), lag 0-2 by BIC, no drift, two years ahead.
  *
  * Bands are 50/70/90% from each model's forecast error (normal, parameter uncertainty left out, so
  * somewhat narrow; the evaluation reports how often they held). A band on the policy rate is not a

@@ -78,3 +78,14 @@ test('reviewWatch checks each trigger against the latest pull', () => {
 test('Policy review watch has its text', () => {
   for (const k of ['rw_title', 'rw_intro', 'rw_summary', 'rw_crossed', 'rw_wording', 'rw_open'] as const) assert.ok(k in WORKSPACE.en, k);
 });
+
+test('parseTrigger refuses a number that may hold a thousands separator', () => {
+  assert.equal(parseTrigger('above 1,500'), null);
+  assert.equal(parseTrigger('below 2.000'), null);
+  assert.equal(parseTrigger('above 1,234,567'), null);
+  assert.deepEqual(parseTrigger('por encima de 2,5'), { kind: 'above', value: 2.5 });
+  assert.deepEqual(parseTrigger('below 0,750'), { kind: 'below', value: 0.75 });
+  assert.deepEqual(parseTrigger('target 3.25'), { kind: 'target', value: 3.25 });
+  assert.deepEqual(parseTrigger('above 1500'), { kind: 'above', value: 1500 });
+  assert.deepEqual(parseTrigger('above 3.5.'), { kind: 'above', value: 3.5 });
+});
