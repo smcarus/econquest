@@ -128,6 +128,11 @@ now** pulls that country's figures again.
    disasters**. Food price inflation and disasters read from files you save yourself in
    `data/local/fao-cpi/` and `data/local/emdat/`; until then those parts read Missing and say where to
    get the file ([INSTALL.md](./INSTALL.md#files-you-save-yourself)).
+6. The **Country risk scorecard** sets governance, armed conflict, unrest, geopolitical risk,
+   capital account openness (the Chinn-Ito index, credited to Chinn and Ito 2006) and the economy side
+   by side, each with its source and year. It gives no overall score. A test of whether weak
+   governance comes before a default was fixed in advance on 13 November 2026; until it is run the
+   panel's badge reads Not validated.
 
 ![Output gap chart for Brazil: the middle of three estimates with a band showing their spread, dashed for IMF projection years](images/07-output-gap.png)
 
@@ -259,6 +264,29 @@ To check which sources answer:
 2. Scroll to **Data connections** and press **Show sources**, or **Check again** to ask every source
    now. Each source reads connected (with a figure it returned), needs setup, off, or why it failed.
 3. The same check runs in a terminal with `npm run check:data`.
+
+### Let another program use EconQuest
+
+If you use a portfolio tool or another program that should read EconQuest's figures, you can let it
+in without sharing your password.
+
+1. Open **Menu > Settings > API tokens**.
+2. Give the token a name (for example "Portfolio console") and tick only what it may do: read
+   figures and series, read council runs, receive events and set watches, send positions, set hidden
+   names, or run scenarios on a portfolio.
+3. Press **Make token** and copy the token at once: it is shown only once, and the app keeps only a
+   fingerprint of it. Every use is written to the audit log; **Revoke** stops it straight away.
+4. Positions the other program sends appear in **Research > My holdings** marked "Sent by" and the
+   token's name.
+
+To keep a country or a security out of every screen, reply and event, add it under **Menu > Settings
+> Hidden names** (by ISO country code, ticker or your own entity ID). Screens then show only how many
+items are hidden, and the app keeps a fingerprint of each name, not the name itself.
+
+On a server shared by several people, an administrator can let them sign in with an existing account
+at Google, Microsoft, Okta, Keycloak or another OpenID Connect provider; the sign-in page then shows
+**Sign in with** and the provider's name ([SECURITY.md](./SECURITY.md)). What a programmer needs to
+connect is in [DATA_API.md](./DATA_API.md) and [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## 10. Change language and help level
 

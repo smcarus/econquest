@@ -789,6 +789,10 @@ shows the same ones under Docker and `npm run dev`, and clearing the browser doe
 page uses your watchlist at equal weight. The book brief shows concentration, where the risk sits,
 the DV01 cost of a 10 bp move and dates to watch. The client brief says the same in plain language.
 
+Another program with an API token that may send positions can fill Holdings too. Its positions show
+"Sent by" and the token's name, and can be named by ISIN, LEI, CIK or ticker plus the program's own
+entity ID. Names on the hidden-names list (Menu > Settings > Hidden names) are left out, with a count.
+
 *Signals on your holdings* lays each imported holding over the app's signals that bear on it and marks
 each signal as leaning with or against the position. Local-currency bonds get the Taylor rule check, the
 policy cycle and the 3-month move in the 10Y yield (25 bps or more counts): lower rates lean with a long
@@ -991,6 +995,22 @@ hold no figures of their own; the handout reads them from the app's series when 
   saved copy). Haver and Moody's are not built yet, so their mapped series read Missing with that
   reason.
 - **AI model**: Ollama (local), Gemini, hybrid, or an OpenAI-compatible server such as LM Studio.
+- **API tokens** (Settings > API tokens): lets another program, such as a portfolio console, use the
+  app over HTTP without your password. Give each token a name, tick only what it may do (read figures
+  and series, read council runs, receive events and set watches, send positions, set hidden names, run
+  scenarios on a portfolio) and press *Make token*. The token is shown once, to copy; the app keeps only
+  a fingerprint of it. The list shows who made each token and when, when it was last used, and
+  *Revoke*, which stops it at once. Every use is in the audit log. The same tokens can be listed, made
+  and revoked with `npm run tokens`. The older integration key in `.env` (`SMCR_INTEGRATION_API_KEY`)
+  still works, with the three read scopes only. What a program can do with each scope is in
+  `docs/DATA_API.md`.
+- **Hidden names** (Settings > Hidden names): countries (by ISO code), tickers or your own entity IDs
+  that must never appear. A hidden name is left out of Holdings, the watchlist, country pages, events,
+  webhooks and every API reply; screens show only how many items are hidden (for example "2 items
+  hidden" under Holdings). The app stores a fingerprint of each name, not the name, so the list itself
+  does not reveal what is hidden. *Show again* removes one; *Clear the list* removes all. Each change
+  is written to the audit log as counts. A program with a token that may set hidden names can change
+  the list too.
 - **Your data**: load your own series from a CSV file, for figures the app does not have (for
   example a series from your country's statistics office or a central bank report). Pick the file,
   give it a name, unit, frequency, country (or *Not about one country*) and say where the figures came
@@ -1122,6 +1142,12 @@ hold no figures of their own; the handout reads them from the app's series when 
   reads *Changed after sign-off* until reviewed again. While you are the only user the approval says
   "self-approved, no second reviewer". An approved report cannot be deleted until the approval is
   withdrawn. Steps are kept in `data/local/signoffs.json` and in the audit log.
+- **Account**: with sign-in off it says so and how to turn it on (`docs/HOME_SERVER.md`); with
+  sign-in on it shows your name, user name and role (admin, analyst or viewer), sign-out and a
+  password change. If the server is set
+  up for single sign-on, the sign-in page shows *Sign in with* and the provider's name (Google,
+  Microsoft, Okta, Keycloak or another OpenID Connect provider) above the password form, and such users
+  are listed with their email and have no password in the app (`docs/SECURITY.md`).
 - **Audit log**: every council answer (the question, the AI model that wrote the summary or "none",
   and each figure the agents used with its source and period, plus what was missing) and every save,
   delete, download, settings, key and AI model change, newest first. Search it or pick a kind, and
@@ -1176,7 +1202,8 @@ small helper files, one each for Python, R and Stata, are in `scripts/data-api/`
 installed beyond the language. For example, in Python `eq.series("BRA", "policy_rate")` gives
 Brazil's policy rate one row per month. The full guide, with every address and what comes back, is
 `docs/DATA_API.md`. Downloads follow Sharing mode. A copy with sign-in on lets scripts read these
-addresses only with the integration API key, sent in a header (the guide says how to switch it on).
+addresses only with an API token that has the `read:data` scope (Settings > API tokens) or the older
+integration key, sent in a header (the guide says how).
 
 ### Download all country data (for offline use)
 

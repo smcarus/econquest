@@ -136,6 +136,11 @@ dados. **Atualizar agora** busca de novo os números daquele país.
    arquivos que você mesmo salva em `data/local/fao-cpi/` e `data/local/emdat/`; até lá essas partes
    mostram Ausente e dizem onde obter o arquivo ([INSTALL.md](./INSTALL.md#files-you-save-yourself), em
    inglês).
+6. O **Painel de risco-país** coloca lado a lado a governança, os conflitos armados, a agitação social,
+   o risco geopolítico, a abertura da conta de capital (o índice de Chinn e Ito, citado como Chinn e Ito
+   2006) e a economia, cada dado com sua fonte e seu ano. Ele não dá uma nota geral. Em 13 de novembro
+   de 2026 foi fixado de antemão um teste para saber se uma governança fraca vem antes de um calote;
+   enquanto ele não rodar, o selo do painel diz Não validado.
 
 ![Hiato do produto do Brasil: o meio de três estimativas com uma faixa que mostra a dispersão, tracejado nos anos de projeção do FMI](images/07-output-gap.png)
 
@@ -271,6 +276,31 @@ Para ver quais fontes respondem:
    consultar todas as fontes agora. Cada fonte aparece como conectada (com um número que retornou),
    precisando de configuração, desligada, ou com o motivo da falha.
 3. A mesma checagem roda num terminal com `npm run check:data`.
+
+### Deixar outro programa usar o EconQuest
+
+Se você usa uma ferramenta de carteira ou outro programa que precisa ler os números do EconQuest, pode
+dar acesso a ele sem compartilhar sua senha.
+
+1. Abra **Menu > Configurações > Tokens de API**.
+2. Dê um nome ao token (por exemplo "Console de carteira") e marque só o que ele pode fazer: ler
+   números e séries, ler as rodadas do conselho, receber eventos e definir alertas, enviar posições,
+   definir nomes ocultos ou rodar cenários em uma carteira.
+3. Clique em **Criar token** e copie na hora: ele aparece só uma vez, e o app guarda apenas uma impressão digital
+   dele. Cada uso fica no registro de auditoria; **Revogar** para o token na hora.
+4. As posições que o outro programa enviar aparecem em **Pesquisa > Minhas posições**, marcadas
+   "Enviada por" e o nome do token.
+
+Para que um país ou um título não apareça em nenhuma tela, resposta ou evento, inclua-o em **Menu >
+Configurações > Nomes ocultos** (pelo código ISO do país, ticker ou seu próprio identificador). As
+telas passam a mostrar só quantos itens estão ocultos, e o app guarda uma impressão digital de cada
+nome, não o nome.
+
+Em um servidor compartilhado por várias pessoas, um administrador pode deixar que elas entrem com uma
+conta que já têm no Google, Microsoft, Okta, Keycloak ou outro provedor OpenID Connect; a página de
+login mostra então **Entrar com** e o nome do provedor ([SECURITY.md](./SECURITY.md), em inglês). O que
+um programador precisa para conectar está em [DATA_API.md](./DATA_API.md) e
+[DEPLOYMENT.md](./DEPLOYMENT.md) (em inglês).
 
 ## 10. Trocar o idioma e o nível de ajuda
 

@@ -5,6 +5,30 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Documentation brought up to date with the console integration (#512 to #526) and the planned
+  state. The plain-language guide docs/HOW_IT_WORKS.md joins the repository (it was only on the
+  project website), brought up to 13 November with a section on crisis replays; the methodology moves
+  to version 1.2 with the sections from the website's version 1.1 (why EconQuest exists, where it
+  runs, help levels, geopolitical risk VaR, which countries the results rest on, Quests) and a
+  version history, and its short version now says that the council's chat agents are fixed code and
+  only the summary writer is an AI model. The README in English, Spanish, French and Portuguese gains a "Connect a portfolio system"
+  task, the Chinn-Ito index and the FRED history behind the crisis replays in its source list, and a
+  roadmap in three parts (done, next, waiting); the English README's integration notes are now a
+  "Connecting an outside system" list, and its command table adds `replays:pull`, `chinn-ito:pull`,
+  `tokens` and `check:success`. The walk-through guide in all four languages explains API tokens,
+  hidden names and single sign-on, and the country risk scorecard with capital account openness. The
+  install guide lists the files the daily download saves in data/local/ (replays, Chinn-Ito, WEO
+  editions, GPR, sanctions, UCDP) and the files that hold connections, the code-copy commands, and
+  links to the deployment guide and OpenID Connect sign-in. The user manual describes Settings > API
+  tokens, Settings > Hidden names, Account with single sign-on and positions sent in by another
+  program; backup and restore says what the backup file leaves out; the methodology adds §3.8
+  (figures served to outside systems, hypothetical first-order scenario estimates), the audit seal in
+  §4.5, and lists the country risk scorecard as Not validated with its registered test rather than as
+  a description; the risk and compliance note and the home server guide follow. The roadmap adds a
+  "Connecting other systems" row, the parked idea groups B and D (with capital controls partly
+  answered by Chinn-Ito), the three checks left before the public release, a table of built parts
+  waiting on a check or licence, Arabic and Swahili paused, classroom Quests waiting for a go, and
+  checkpoint 2 folded into checkpoint 1.
 - Documentation brought up to date with the panels and tools added since the README rewrite: the
   README and walk-through guide in English, Spanish, French and Portuguese describe the panels for
   lower-income countries, peer comparison, Policy review watch and review-to-review comparison; the

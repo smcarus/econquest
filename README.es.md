@@ -108,6 +108,7 @@ y nunca se transmiten en descargas ni copias compartidas.
 | Aprender sobre la marcha | Botones de la cabecera, **Menú > Manual de usuario**, **Menú > Ejemplos resueltos** | Tres niveles de ayuda, un glosario en lenguaje sencillo, cuatro casos resueltos, episodios didácticos y modo examen |
 | Usar sus propios datos y pruebas | **Menú > Sus datos**, **Menú > Modelos y validación** | Cargue sus propias series CSV; registre su propia prueba de señal o modelo con las mismas reglas estrictas que las de la aplicación |
 | Usar las cifras en R, Python o Stata | [docs/DATA_API.md](./docs/DATA_API.md) (en inglés) | Las mismas series, paneles y tablas que muestran las pantallas, con fuente y fecha en cada valor |
+| Conectar un sistema de cartera | **Menú > Configuración > Tokens de API**, [docs/DATA_API.md](./docs/DATA_API.md) (en inglés) | Otro programa lee resúmenes de país y eventos, envía sus posiciones y ejecuta choques y repeticiones de crisis pasadas sobre su cartera, cada uno con un token limitado a lo que usted marque. Los países y valores de la lista de **Nombres ocultos** no aparecen en ninguna parte |
 
 El **Chat del consejo** es el centro de la aplicación. Los agentes son Banco Central, Fiscal y Deuda,
 Política y Acontecimientos, Valor Relativo, Divisas, Contagio Global, Calendario, Momento y Finanzas
@@ -380,10 +381,11 @@ Todas son gratuitas. Algunas necesitan una clave gratuita, que se añade en Men�
 | Área | Fuentes |
 | --- | --- |
 | Crecimiento, deuda, presupuestos, comercio | Banco Mundial (indicadores y estadísticas de deuda), FMI (Perspectivas de la economía mundial y ediciones pasadas, reservas, balanza de pagos, composición de reservas, gasto público por función), OCDE (indicadores adelantados, precios, PIB trimestral, vía DBnomics), precios al consumo mensuales del FMI, Eurostat, UN Comtrade y WITS |
-| Tipos de interés y bonos | BPI (tipos oficiales, títulos de deuda, tipos de cambio reales), FRED (rendimientos oficiales a 10 años; clave gratuita), Fed de Nueva York, Tesoro de EE. UU. (tenedores extranjeros, subastas), Tesoro de Brasil, banco central de Perú (diferenciales EMBIG) |
+| Tipos de interés y bonos | BPI (tipos oficiales, títulos de deuda, tipos de cambio reales), FRED (rendimientos oficiales a 10 años; clave gratuita), Fed de Nueva York, Tesoro de EE. UU. (tenedores extranjeros, subastas), Tesoro de Brasil, banco central de Perú (diferenciales EMBIG), y rendimientos a 10 años de la OCDE y tipos de cambio H.10 de la Reserva Federal, mensuales desde 1990 vía FRED, para repetir crisis pasadas |
 | Divisas y materias primas | Tipos de cambio al contado (open.er-api.com), tipos de referencia del BCE, precios de materias primas del Banco Mundial, precios del petróleo de la EIA (clave gratuita) |
 | Encuestas y expectativas | Encuestas de empresas y consumidores de la UE (Comisión Europea, vía Eurostat; sustituto gratuito de los PMI de pago, marcado como tal), encuesta de previsores profesionales del BCE, encuesta Focus de Brasil, índice de presión de la cadena de suministro de la Fed de Nueva York |
 | Bancos centrales y calendario | Banco Central do Brasil, Banco de México (token gratuito), fechas oficiales de decisiones, fechas de publicación del IPC y del PIB de los institutos de estadística |
+| Instituciones y apertura | Indicadores de gobernanza del Banco Mundial (WGI), índice de apertura de la cuenta de capital de Chinn e Ito (se descarga en su ordenador como máximo una vez al mes, se cita a Chinn e Ito 2006 y nunca se reenvía) |
 | Política, conflicto y transporte marítimo | Noticias de GDELT, datos de conflicto de UCDP y ACLED (ACLED se descarga a mano), listas de sanciones de la OFAC y la ONU, índice de riesgo geopolítico, IMF PortWatch |
 | Mercados y posicionamiento | Mercados de predicción Kalshi y Polymarket, informe Commitments of Traders de la CFTC |
 | Países de menores ingresos | Banco Mundial (remesas y su costo de envío, cuentas de Global Findex, ayuda recibida según la publica de nuevo a partir de la OCDE, seguridad alimentaria, peso de las materias primas en el comercio y términos de intercambio); dos archivos que usted guarda: precios al consumidor de FAOSTAT para la inflación de alimentos, y desastres naturales de EM-DAT, descargados con su propia cuenta gratuita de EM-DAT (sus condiciones no permiten que la aplicación los incluya) |
@@ -411,24 +413,52 @@ El método completo está en [docs/METHODOLOGY.md](./docs/METHODOLOGY.md) (en in
 
 ## Hoja de ruta
 
-Por orden (detalle en [docs/ROADMAP.md](./docs/ROADMAP.md), en inglés):
+Situación al 13 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./docs/ROADMAP.md), en inglés):
 
-1. **Citas, mantenimiento y comentarios** (hecho).
-2. **Las cifras que necesita un terminal completo** (hecho; los ingresos por nivel de gobierno tienen un
-   segundo paso que espera datos).
-3. **La publicación** en e-conquest/econquest, tras una revisión de seguridad y de Windows, con un modo
-   ligero para portátiles modestos (modo ligero hecho; revisiones en curso).
-4. **Herramientas de análisis y de política** (hecho; la prueba de alerta temprana de crisis espera una
-   licencia de datos).
-5. **Más idiomas y enseñanza**: portugués y ejemplos resueltos (hecho); árabe y suajili (previstos);
-   Retos en el aula con un piloto de un trimestre.
-6. **Una aplicación para el teléfono** (en pausa).
+**Hecho**
 
-El 13 de noviembre de 2026 se adelantaron dos grupos de ideas de la lista aparcada, y ya están hechos:
-datos para países de menores ingresos (remesas, inclusión financiera, precios de materias primas y
-términos de intercambio, ayuda recibida, precios de los alimentos y desastres naturales) y herramientas
-para la revisión de políticas (comparación con pares, avisos en la página de inicio y comparación de
-una revisión con la anterior).
+1. **Citas, mantenimiento y comentarios**: «Citar» en cada gráfico, tabla y respuesta, una revisión de
+   tamaño, un control mensual de las fuentes y el contraste de revisiones de políticas pasadas con lo
+   que ocurrió.
+2. **Las cifras que necesita un terminal completo**: desigualdad, ingresos tributarios y aranceles,
+   deuda de países de bajos ingresos, población, comercio y estructura de la deuda, clima, salarios y
+   precios de la vivienda, balances sectoriales, actividad mensual, y cifras de la zona del euro y del
+   Reino Unido tal como se publicaron por primera vez (los ingresos por estado son un segundo paso que
+   espera un control de cobertura).
+3. **Herramientas de análisis y de política**: alerta temprana de crisis, sostenibilidad externa,
+   curva de rendimientos, factores de la inflación, contabilidad del crecimiento, una calculadora de
+   reestructuración, finanzas conductuales y una revisión de políticas más completa con precedentes,
+   reglas fiscales, viabilidad política, un gráfico de compensaciones y un resumen de una página.
+4. **Datos para países de menores ingresos** (adelantados el 13 de noviembre): remesas, inclusión
+   financiera, precios de materias primas y términos de intercambio, ayuda recibida, precios de los
+   alimentos y desastres naturales.
+5. **Herramientas para la revisión de políticas** (adelantadas el 13 de noviembre): comparación con
+   pares, avisos en la página de inicio y comparación de una revisión con la anterior.
+6. **Conexión con otros sistemas** (13 de noviembre): tokens de API, eventos y webhooks, vigilancias de
+   indicadores, resúmenes de país, posiciones enviadas desde fuera, nombres ocultos, escenarios y
+   repeticiones de crisis, un registro de auditoría sellado, una guía de despliegue e inicio de sesión
+   con OpenID Connect.
+7. **Idiomas y enseñanza**: toda la aplicación en portugués y cuatro ejemplos resueltos.
+
+**Siguiente**
+
+- **La publicación** en e-conquest/econquest. El modo ligero y la revisión de seguridad están hechos;
+  faltan un primer arranque en un ordenador con Windows, una medición del modo ligero y una nueva
+  exportación pública.
+- **El punto de control 1**, unas cuatro semanas después de la publicación, es la única revisión antes
+  de planificar más trabajo. El uso real decide lo que viene después; no se añaden funciones nuevas
+  antes.
+
+**En espera**
+
+- **Retos en el aula**: el plan está completo (13 cambios pequeños y luego un piloto de un trimestre
+  con dos profesores); la construcción empieza cuando el responsable del proyecto lo indique.
+- **Árabe y suajili**: previstos, en pausa por decisión del responsable del proyecto.
+- **La aplicación para el teléfono**: en pausa hasta después de la publicación.
+- **Ideas aparcadas** para el punto de control 1: datos de mercados y financiación (regímenes
+  cambiarios, balances de los bancos centrales, tensiones de financiación en dólares) y enseñanza y
+  difusión (un informe de país sin conexión, un laboratorio macro con modelos de manual y más ejemplos
+  resueltos).
 
 ---
 
@@ -437,9 +467,9 @@ una revisión con la anterior).
 - [docs/GUIDE.es.md](./docs/GUIDE.es.md): guía paso a paso con capturas, en español
 - En inglés: [INSTALL.md](./docs/INSTALL.md) (instalación), [USER_MANUAL.md](./docs/USER_MANUAL.md)
   (manual), [GLOSSARY.md](./docs/GLOSSARY.md) (glosario; también dentro de la aplicación en español),
-  [METHODOLOGY.md](./docs/METHODOLOGY.md), [METHODS.md](./docs/METHODS.md),
+  [METHODOLOGY.md](./docs/METHODOLOGY.md), [HOW_IT_WORKS.md](./docs/HOW_IT_WORKS.md), [METHODS.md](./docs/METHODS.md),
   [TRACK_RECORD.md](./docs/TRACK_RECORD.md), [DATA_SOURCES.md](./docs/DATA_SOURCES.md),
-  [DATA_LICENCES.md](./docs/DATA_LICENCES.md), [DATA_API.md](./docs/DATA_API.md),
+  [DATA_LICENCES.md](./docs/DATA_LICENCES.md), [DATA_API.md](./docs/DATA_API.md), [DEPLOYMENT.md](./docs/DEPLOYMENT.md),
   [POLICY_REVIEW.md](./docs/POLICY_REVIEW.md), [QUESTS.md](./docs/QUESTS.md),
   [ROADMAP.md](./docs/ROADMAP.md), [HOME_SERVER.md](./docs/HOME_SERVER.md),
   [SECURITY.md](./docs/SECURITY.md), [CONTRIBUTING.md](./CONTRIBUTING.md)

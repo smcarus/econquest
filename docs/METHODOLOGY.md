@@ -1,6 +1,6 @@
 # EconQuest Terminal: Methodology
 
-**Version 1.0, 7 November 2026; updated 13 November 2026** (sources, files you save, statistics conventions in §7.4). Describes the software as of release 0.1.0.
+**Version 1.2, 13 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of release 0.1.0.
 Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not validated advice.
 
 This document sets out how the EconQuest Terminal sources its data, how its council of agents
@@ -25,10 +25,11 @@ tests whether simple rules built on them say anything useful about what comes ne
 - **Every number has a source.** Each figure on screen names where it came from and when. If no real
   source provided it, the app shows "Missing" and says why. It never fills a gap with a guess, a
   sample number or an estimate from an AI model.
-- **The AI explains; it does not invent figures.** The council of agents is a set of AI models, each
-  covering one area (the central bank, the budget, politics and so on), that read the figures and
-  write an answer. The app checks that every number in an answer appears in the figures the agents
-  were given, and labels the answer as written by an AI model. It is an interpretation, not advice.
+- **The AI explains; it does not invent figures.** The council's agents, each covering one area (the
+  central bank, the budget, politics and so on), are fixed code that read the figures and state what
+  they show. An AI model only writes the short summary on top, and may quote only the agents'
+  figures. The app checks that every number in the summary appears in those figures, and labels it
+  as written by an AI model. It is an interpretation, not advice.
 - **Rules are tested before they are trusted.** A signal is a rule that claims to say something
   about the future, for example that currencies paying high interest tend to earn more than they
   lose. Before a rule is tested, its details and pass mark are written down and locked with a digital
@@ -44,12 +45,16 @@ tests whether simple rules built on them say anything useful about what comes ne
 - **What it does not do.** It does not give investment advice, does not promise any forecast, and
   does not replace assessments by the IMF, the World Bank or credit rating agencies.
 
-Every technical term used here and in the app is explained in the [Glossary](./GLOSSARY.md).
+Every technical term used here and in the app is explained in the [Glossary](./GLOSSARY.md). A longer
+companion guide, [How EconQuest works, in plain words](./HOW_IT_WORKS.md), explains the same framework
+without jargon, with one result read step by step. This document is the exact technical statement;
+where the two seem to differ, this one governs.
 
 ---
 
 ## Contents
 
+- [Why EconQuest exists](#why-econquest-exists)
 1. [What the terminal is](#1-what-the-terminal-is)
 2. [Principles](#2-principles)
 3. [Data](#3-data)
@@ -61,12 +66,42 @@ Every technical term used here and in the app is explained in the [Glossary](./G
 9. [Evidence grades](#9-evidence-grades)
 10. [The forward record](#10-the-forward-record)
 11. [Results on record](#11-results-on-record)
-12. [Reproducibility](#12-reproducibility)
-13. [Limitations and what stays Missing](#13-limitations-and-what-stays-missing)
-14. [Changing the methodology](#14-changing-the-methodology)
-15. [References](#15-references)
+12. [Quests (built, switched off)](#12-quests-built-switched-off)
+13. [Reproducibility](#13-reproducibility)
+14. [Limitations and what stays Missing](#14-limitations-and-what-stays-missing)
+15. [Changing the methodology](#15-changing-the-methodology)
+16. [References](#16-references)
+- [Version history](#version-history)
 
 ---
+
+## Why EconQuest exists
+
+> *"In 2026 we feel and see the economic effects of poor economic policies. I wanted to see if I could
+> make a tool that could assist people in learning and understanding economics, finding multiple and
+> optimal financial and policy options, and attempting to bring the best tools to the most
+> underserved countries."*
+
+In the maintainer's words.
+
+Sovereign and macroeconomic risk analysis is concentrated in expensive, closed systems. Commercial
+terminals and rating data are priced for large institutions, which leaves students, teachers,
+journalists, smaller institutions and many analysts in the countries being assessed without
+comparable tools. Many tools fill data gaps with estimates without saying so, and the forward claims
+behind their signals are seldom tested in public: models that stop working tend to be retired
+without a report. Large language models add a further risk, fluent commentary with plausible but
+untraceable figures.
+
+The terminal was built to show that the work can be done on free public data under stricter rules
+than are common in the industry: every figure traceable to its source, gaps shown as gaps, every
+forward claim tested against a specification fixed before the run, every verdict published and never
+edited, and AI confined to explaining figures it is given, with automatic checks on what it writes.
+Its aims are to help people learn and understand economics, to set out several costed financial and
+policy options rather than a single answer, and to bring research-grade tools to the economies least
+served by commercial ones. It
+began as a geopolitical-risk desk built around a geopolitical risk VaR measure (section 5.1) and grew
+into a terminal for sovereign and macroeconomic risk. It is a non-commercial, open-source research
+project; its methods and results cannot be bought or changed for money (see `GOVERNANCE.md`).
 
 ## 1. What the terminal is
 
@@ -84,6 +119,29 @@ macroeconomic risk. It runs on the user's own computer (or a server they control
 It is a research and teaching tool. It does not place trades, size positions, issue ratings or give
 investment advice, and nothing it shows has been independently validated by a third party. Every
 export carries the notice "Research, not validated advice" (`src/utils/disclaimer.ts`).
+
+### 1.1 Where it runs
+
+There is no EconQuest website to sign up to and no hosted copy run by the project. Each person runs
+the terminal themselves: on their own computer through Docker Desktop (a ready-made app image is
+built from the public repository for Apple Silicon and ordinary Intel or AMD computers), from the
+code with Node.js, or on a server they control. The terminal fetches figures straight from the public
+sources; it only reaches out, and nothing has to be opened to the internet. Setup is explained step
+by step for non-technical readers in [INSTALL.md](./INSTALL.md).
+
+This is a deliberate choice, for three reasons:
+
+- **Source terms.** Several free sources allow personal or research use but not redistribution to
+  others (section 3.7). When each person fetches their own figures, no one redistributes them.
+- **Keys and saved work stay with the user.** Keys for sources such as FRED, saved research, uploaded
+  documents and the audit log live on the user's computer. A shared copy would have to hold everyone's
+  keys in one place.
+- **The AI model is the user's choice.** The council's AI model can run on the user's own computer
+  through Ollama, so questions never leave it, or through a service the user picks with their own key.
+  A shared copy would need one paid model for everyone.
+
+The consequence for this document: every verdict in section 11 came from a run on the maintainer's
+computer, and anyone can rerun the same tests on theirs (section 13).
 
 ## 2. Principles
 
@@ -197,6 +255,36 @@ or commercial use, or terms not confirmed. Every figures download carries a lice
 reference list in a brief ends each source with its licence class. A figure worked out from several
 sources takes the strictest class among them.
 
+### 3.8 Figures served to outside systems
+
+Another program, such as a portfolio console, can read the terminal's figures over HTTP with a named
+API token limited to the scopes the user ticks ([DATA_API.md](./DATA_API.md)). The same rules hold
+there as on screen:
+
+- **Same figures, same labels.** A country snapshot returns only saved figures, each with its source,
+  date, model register badge and whether its licence allows passing it on; a figure with no source is
+  Missing with the reason. In sharing mode, figures whose terms do not allow passing them on (for
+  example the Chinn-Ito index, whose authors give no licence) are withheld, as in downloads.
+- **Stable names.** Countries are named by both ISO 3166 codes; positions by ISIN, LEI, CIK or ticker
+  plus the caller's own entity ID, returned unchanged, so the two systems can match records without
+  guessing.
+- **Hidden names.** Countries and securities on the user's hidden-names list are removed before
+  anything is shown, replied or sent, and only a count is reported. The list is stored as keyed
+  fingerprints, so the file does not reveal the names.
+- **Scenario estimates are hypothetical.** A shock (emerging-market currencies against the US dollar,
+  US rates, per-country currency, spread and yield moves) or a replay of a past episode (1997, 1998,
+  2001, 2008, 2013, 2020, 2022) is applied to a portfolio sent in the request. The estimate is first
+  order: duration times the yield or spread move, and notional times the currency move.
+  Carry, convexity, roll-down and the path inside the window are left out, so it is neither a
+  forecast nor a valuation (`src/utils/scenarioReplay.ts`). A replay's move is the change between the
+  monthly averages of the last calm month and the stress month, from OECD 10-year yields and Federal
+  Reserve H.10 exchange rates (FRED, from 1990) and J.P. Morgan EMBI Global spreads (BCRP, from 2016),
+  so it is smaller than the worst day inside the window. A move with no source (for example spreads
+  before 2016, or CDS) is Missing with the reason, and that position's total is left blank rather
+  than filled with a proxy.
+- **Events, not judgements.** Events report what changed (a badge, a revision, a stale feed, a
+  threshold crossed); indicator watches are set by the caller, and none is built in.
+
 ## 4. The council of agents
 
 ### 4.1 Council chat
@@ -254,7 +342,13 @@ missing), and every save, delete, download, settings change, backtest and sign-o
 local audit log. Each line is chained to the one before by SHA-256, and the chain is checked when the
 log is opened (`src/utils/auditLog.ts`). This detects a changed or removed line; it cannot stop
 someone who rewrites the whole chain, which the risk and compliance note states
-([RISK_AND_COMPLIANCE.md](./RISK_AND_COMPLIANCE.md)).
+([RISK_AND_COMPLIANCE.md](./RISK_AND_COMPLIANCE.md)). Two optional settings close that gap. With a
+seal key held outside the data folder, every entry also carries an HMAC-SHA256 of its hash, which a
+rewritten chain cannot reproduce without the key; and each entry can be copied, in order, to an
+S3-compatible bucket with object lock, where it cannot be changed or deleted before its retention
+date ([SECURITY.md](./SECURITY.md), "Audit seal and locked copies"). A call from another program may
+carry a correlation ID, which is written into the entries it causes, so a decision in that program can
+be traced to the figures it read.
 
 ### 4.6 Regression testing of the council
 
@@ -265,6 +359,21 @@ without a new recording, if the checked answers differ from the baseline, if a c
 fails, or if any answer contains a number that no input gave. Cases that failed when recorded are
 listed as known failures, not edited to pass
 ([council-regression/README.md](./validation/council-regression/README.md)).
+
+### 4.7 Explanations and help levels
+
+Plain-language help is shown at one of three levels, set with the help button at the top of the page
+and kept in the user's browser. **Key help**, the default, puts a guide on every chart (how to read
+it, and what it means in real life), a short introduction on each panel, a "What it means" line under
+each brief observation, and *What is this?* on the main figures. **Full help** adds *What is this?* on
+every figure and term. **Help off** shows figures, sources and observations only.
+
+These guides, introductions, "What it means" lines and glossary entries are fixed text, written in
+advance and stored in the code (for example `src/data/chartGuides.ts` and the [Glossary](./GLOSSARY.md)).
+They describe standard economics in general terms, contain no figures of their own and are not written
+by an AI model at the time of reading. The one exception is **Explain** on a figure, which asks the
+council what the figure means for that country: that answer is written by the AI model, labelled as
+such, and goes through the same number check as any council answer (section 4.3).
 
 ## 5. The model and signal register
 
@@ -280,10 +389,34 @@ Each entry carries one status:
 | Backtest / forecast evaluation / signal test **passed** | Met a pass mark fixed and hashed before the run |
 | **Failed** | Did not meet it. Shown as failed; never tuned afterwards |
 | **Too few cases** | The registered minimum sample was not reached; no verdict |
-| **Not validated** | Makes a forward claim that has not yet been tested |
-| **Description, not a tested signal** | Shows published figures or past co-movement and makes no forward call (for example, the country risk scorecard, gross financing need, geopolitical risk VaR) |
+| **Not validated** | Makes a forward claim, or has a forward test registered, that has not yet been run or passed (for example, the country risk scorecard, whose test that weak governance comes before a sovereign default was fixed and hashed on 13 November 2026, before any run) |
+| **Description, not a tested signal** | Shows published figures or past co-movement and makes no forward call (for example, gross financing need, geopolitical risk VaR, sanctions list counts) |
 | **Model-assisted, not validated** | AI-written output with automatic checks (the council summary); not testable as a rule |
 | **Stated method, no call to test** | A calculation or teaching tool with a published method and no forward claim |
+
+### 5.1 Geopolitical risk VaR
+
+The project began from the question of how much a country's markets can lose in periods of high
+geopolitical tension. The *Geopolitical risk VaR* panel (Country Research > History & data > Global
+shock scenarios; `src/utils/grVar.ts`) answers it for the currency, from public data only.
+
+- **Stress months.** Months in which the Caldara and Iacoviello (2022) Geopolitical Risk index (world,
+  and the country index where the file has one) is at or above its 90th percentile, computed over the
+  months that also have the currency. At least 100 overlapping months and 20 stress months are
+  required; otherwise the panel reads Missing.
+- **VaR and expected shortfall.** The 95th percentile of the monthly currency change against the US
+  dollar (100 × log change of units per dollar, month-end ECB rates; positive means weaker), and the
+  mean change at or beyond it, each computed in stress months and in all months.
+- **Global channels.** The mean US policy rate and dollar moves of the stress months are put through
+  the country's fitted scenario model (Global shock scenarios), with a 90% band from Newey-West
+  coefficient standard errors.
+- **Status.** Description, not a tested signal: it measures past co-movement with a news-based index
+  and makes no forward call.
+- **Limits.** The index is persistent, so stress months are fewer independent episodes than their
+  count, and a 95% tail read from 20 to 40 months is imprecise. Currency only; no bond or equity
+  prices. The index counts newspaper coverage, a proxy for risk rather than risk itself.
+
+A plain-language account, with a worked reading, is in [How EconQuest works](./HOW_IT_WORKS.md#10-geopolitical-risk-var-explained).
 
 ## 6. The signal standard
 
@@ -467,7 +600,70 @@ The grade shown in the terminal is computed from all tests on record at the time
 A failed result is a result. Most of the forecasting models fail to beat naive benchmarks, which is
 consistent with the wider literature on macroeconomic forecasting, and they are shown that way.
 
-## 12. Reproducibility
+### 11.1 Which countries the results rest on
+
+A result says something only about the countries and years it was tested on. The terminal's default
+watchlist is the 19 member countries of the G20 (Argentina, Australia, Brazil, Canada, China, France,
+Germany, India, Indonesia, Italy, Japan, Korea, Mexico, Russia, Saudi Arabia, South Africa, Turkey,
+the United Kingdom and the United States; the European Union and the African Union are not countries
+and are left out). The tests do not all cover the same countries, because each uses only the series a
+free source publishes over a long enough history. The coverage below is copied from the
+pre-registered test files and the recorded runs.
+
+| Test | What it covered |
+| --- | --- |
+| Crowded futures positioning (CFTC) and Timing Agent | 6 currency futures traded in Chicago: Mexican peso, Brazilian real, South African rand, Japanese yen, British pound and euro; June 2007 to September 2026 |
+| Cycle clock | 24 countries' policy rates (BIS), from January 1995 |
+| Currency carry, momentum | 25 currencies against the US dollar: Australian, Canadian and New Zealand dollars, Swiss franc, British pound, Japanese yen, Norwegian and Swedish kronor, euro, Czech koruna, Hungarian forint, Polish zloty, Israeli shekel, Korean won, Mexican peso, South African rand, Brazilian real, Indian rupee, Indonesian rupiah, Philippine peso, Thai baht, Malaysian ringgit, Turkish lira, Romanian leu and Icelandic krona; January 2000 to September 2026 |
+| Currency value | The same list, of which 20 currencies had the price data, January 2004 to February 2026 |
+| GDP nowcast | 35 countries' quarterly GDP, fourth quarter 2007 to fourth quarter 2025 |
+| Taylor-rule gap | 13 countries, February 2000 to February 2026 |
+| Unrest spikes to conflict onset | 113 countries, 2018 to 2024 |
+| CPI, GDP, policy rate and debt forecasts | Between 24 and 184 series, from 2008 (each count is in the [Track record](./TRACK_RECORD.md)) |
+
+Pegged and tightly managed currencies are left out of the currency tests by rule. Several G20
+countries (China, Saudi Arabia, Argentina, Russia) are therefore absent from some tests, and a result
+from mostly advanced and large emerging economies may not carry over to smaller or frontier ones.
+
+## 12. Quests (built, switched off)
+
+**Status: built and tested, but switched off.** Quests are not available to users yet. The menu shows
+"Quests: Not yet available", greyed out, and they stay off until every item on the go-live checklist
+in [QUESTS.md](./QUESTS.md) is ticked. They are described here because their method is fixed in code
+and should be open to criticism before launch.
+
+A Quest is an open question about an economy, a sovereign or geopolitical risk that anyone can answer,
+argue and check, for example "Will Brazil's policy rate be above 14% on 31 March?". Each Quest is one
+file in the public repository (`quests/`) with a fingerprint, like a pre-registered test, and states in
+advance exactly which feed and which value will settle it.
+
+- **Settled from the feeds, by a stated rule.** When a Forecast Quest's date passes, the app reads the
+  answer from the named feed exactly as the rule says: for daily and weekly series, the first value
+  published on or after the date; for yearly IMF and World Bank figures, the value as first published,
+  with later revisions undone. A missing value is never settled automatically. A Quest may settle only
+  on a source whose terms allow its figures to be shown with credit.
+- **A tamper-evident results file.** Each result is one line in `quests/resolutions.jsonl`, chained to
+  the line before by a SHA-256 fingerprint, like the forward record (section 10). Anyone may dispute a
+  result within 7 days; a disputed result can only stand or become "unresolvable", never be replaced by
+  a different answer.
+- **Scored against the simplest guess.** A forecast is scored by how much better it did than the base
+  rate (for yes-or-no questions, the Brier score of the base rate minus the person's Brier score) or
+  than assuming nothing changes (for number questions). Each statistic is shown only once a person has
+  enough settled forecasts for it to mean something (12 for skill, 30 for calibration), with a 90%
+  bootstrap range. Rankings need 12 settled forecasts and a GitHub account at least 90 days old.
+- **Debate Quests are never scored.** Some questions have no single figure that settles them ("What
+  would most reliably rebuild Egypt's foreign reserves?"). A Debate Quest lists two to four positions;
+  people argue them, and nobody is called right. While an argument is typed, Claim Check compares each
+  figure it states with the app's own figure, by fixed rules and no AI. After entries close, an
+  evidence map shows each argument with its Claim Check readings and the results of related Forecast
+  Quests.
+- **The opening brief is labelled AI-written and states no figures.** Before a debate opens, the
+  app's AI model (the referee model, at least 32 billion parameters, temperature 0, fixed seed) writes
+  the strongest case and the weakest point of each position. The script refuses any brief that states
+  a number not already in the Quest, so no figure comes from a model. The brief is saved with its model
+  and settings and never replaced.
+
+## 13. Reproducibility
 
 - **Open code and specifications.** All code, every pre-registered specification and the manifest of
   their hashes are public. A specification changed after registration is refused by the runner, and
@@ -492,7 +688,7 @@ consistent with the wider literature on macroeconomic forecasting, and they are 
 - **Exports.** Every brief, note, memo and figures download carries its sources, periods, licence
   classes and the research notice.
 
-## 13. Limitations and what stays Missing
+## 14. Limitations and what stays Missing
 
 The terminal states what it cannot do. In particular:
 
@@ -507,17 +703,21 @@ The terminal states what it cannot do. In particular:
   forecast of future performance; only the forward record speaks to that.
 - **AI-written text.** The traceability checks catch untraceable numbers and contradicted stances, not
   emphasis, omission or poor reasoning. A different model can lean differently on the same figures.
-- **Descriptive tools make no forward claim.** The country risk scorecard, geopolitical risk VaR,
-  gross financing need, reserve adequacy and similar panels describe; they are not tested signals.
+- **Descriptive tools make no forward claim.** Geopolitical risk VaR, gross financing need, reserve
+  adequacy and similar panels describe; they are not tested signals. The country risk scorecard also
+  gives no overall score; its registered default test has no runner yet, so it reads Not validated.
+- **Scenario estimates are first order.** Shock and replay results on a portfolio leave out carry,
+  convexity and the path inside the window, and replays use monthly averages; they understate the
+  worst day and are labelled hypothetical.
 - **Not a compliance tool.** The sanctions panel counts entries on official lists; it does no alias
   or fuzzy matching and does not apply ownership rules. EU and UK lists are not yet read.
 - **Single-user controls.** On a single-user installation, a report "approved" by its author is
   labelled self-approved. Audit-log integrity relies on a hash chain, which detects edits but not a
-  full rewrite of the chain.
+  full rewrite of the chain, unless the optional seal key and locked bucket copies are set up.
 - **Source terms.** Some free sources require permission for client or commercial use. The licence
   register states each case; users are responsible for respecting the terms of the sources they use.
 
-## 14. Changing the methodology
+## 15. Changing the methodology
 
 Changes to rules, specifications, the register or this document go through public pull requests with
 a sign-off under the Developer Certificate of Origin (see `CONTRIBUTING.md`). A new or changed test is
@@ -525,7 +725,7 @@ a new registered version with its own hash; a recorded verdict is never edited, 
 only from a real run. Material changes to this document are listed in the project changelog with a new
 version number.
 
-## 15. References
+## 16. References
 
 - Basel Committee on Banking Supervision (1996). *Supervisory framework for the use of "backtesting"
   in conjunction with the internal models approach to market risk capital requirements.* Bank for
@@ -552,7 +752,15 @@ version number.
 
 Per-model references are given in the [Methods note](./METHODS.md).
 
+## Version history
+
+| Version | Date | Changes |
+| --- | --- | --- |
+| 1.0 | 7 November 2026 | First version |
+| 1.1 | 8 November 2026 | Opening section on why EconQuest exists; a plain-language companion, [How EconQuest works](./HOW_IT_WORKS.md); where it runs (1.1), explanations and help levels (4.7), geopolitical risk VaR (5.1), which countries the results rest on (11.1) and Quests (12). Published on the project website; joined the repository with version 1.2 |
+| 1.2 | 13 November 2026 | Sources and the files you save (3.1), statistics conventions in the charts and tables (7.4), figures served to outside systems and hypothetical scenario estimates (3.8), the audit seal and locked copies (4.5), the country risk scorecard listed as Not validated with its registered default test (5, 14), scenario limits (14). The short version corrected: the council's chat agents are fixed code, and only the summary writer is an AI model |
+
 ---
 
-*EconQuest Terminal methodology, version 1.0 (7 November 2026). Text licensed under CC BY 4.0: you may
+*EconQuest Terminal methodology, version 1.2 (13 November 2026). Text licensed under CC BY 4.0: you may
 share and adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*

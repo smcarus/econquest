@@ -137,6 +137,11 @@ indican lo recientes que son los datos. **Actualizar ahora** vuelve a traer las 
    naturales**. La inflación de alimentos y los desastres se leen de archivos que usted guarda en
    `data/local/fao-cpi/` y `data/local/emdat/`; hasta entonces esas partes dicen Faltante e indican
    dónde obtener el archivo ([INSTALL.md](./INSTALL.md#files-you-save-yourself), en inglés).
+6. La **Ficha de riesgo país** pone lado a lado la gobernanza, los conflictos armados, el malestar
+   social, el riesgo geopolítico, la apertura de la cuenta de capital (el índice de Chinn e Ito, citado
+   como Chinn e Ito 2006) y la economía, cada dato con su fuente y su año. No da una puntuación global.
+   El 13 de noviembre de 2026 se fijó de antemano una prueba de si una gobernanza débil precede a un
+   impago; mientras no se ejecute, la insignia del panel dice No validada.
 
 ![Brecha del producto de Brasil: el centro de tres estimaciones con una banda que muestra su dispersión, discontinua en los años de proyección del FMI](images/07-output-gap.png)
 
@@ -273,6 +278,31 @@ Para comprobar qué fuentes responden:
    consultar todas las fuentes ahora. Cada fuente aparece como conectada (con una cifra que devolvió),
    pendiente de configurar, desactivada, o con el motivo del fallo.
 3. La misma comprobación se hace en un terminal con `npm run check:data`.
+
+### Dejar que otro programa use EconQuest
+
+Si usa una herramienta de cartera u otro programa que deba leer las cifras de EconQuest, puede darle
+acceso sin compartir su contraseña.
+
+1. Abra **Menú > Configuración > Tokens de API**.
+2. Dé un nombre al token (por ejemplo «Consola de cartera») y marque solo lo que puede hacer: leer
+   cifras y series, leer las sesiones del consejo, recibir eventos y fijar vigilancias, enviar
+   posiciones, fijar nombres ocultos o ejecutar escenarios sobre una cartera.
+3. Pulse **Crear token** y cópielo enseguida: solo se muestra una vez, y la aplicación guarda solo una huella
+   de él. Cada uso queda en el registro de auditoría; **Revocar** lo detiene al instante.
+4. Las posiciones que envíe el otro programa aparecen en **Investigación > Mis posiciones** marcadas
+   «Enviada por» y el nombre del token.
+
+Para que un país o un valor no aparezca en ninguna pantalla, respuesta o evento, añádalo en **Menú >
+Configuración > Nombres ocultos** (por código ISO del país, ticker o su propio identificador). Las
+pantallas mostrarán solo cuántos elementos están ocultos, y la aplicación guarda una huella de cada
+nombre, no el nombre.
+
+En un servidor compartido por varias personas, un administrador puede dejar que inicien sesión con una
+cuenta que ya tengan en Google, Microsoft, Okta, Keycloak u otro proveedor OpenID Connect; la página de
+inicio de sesión muestra entonces **Iniciar sesión con** y el nombre del proveedor
+([SECURITY.md](./SECURITY.md), en inglés). Lo que necesita un programador para conectarse está en
+[DATA_API.md](./DATA_API.md) y [DEPLOYMENT.md](./DEPLOYMENT.md) (en inglés).
 
 ## 10. Cambiar el idioma y el nivel de ayuda
 

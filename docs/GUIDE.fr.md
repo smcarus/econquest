@@ -138,6 +138,11 @@ indiquent la fraîcheur des données. **Actualiser maintenant** récupère de no
    que vous enregistrez vous-même dans `data/local/fao-cpi/` et `data/local/emdat/` ; d'ici là, ces
    parties affichent Manquant et disent où obtenir le fichier
    ([INSTALL.md](./INSTALL.md#files-you-save-yourself), en anglais).
+6. La **Fiche de risque pays** met côte à côte la gouvernance, les conflits armés, les troubles, le
+   risque géopolitique, l’ouverture du compte de capital (l’indice de Chinn et Ito, cité comme Chinn et
+   Ito 2006) et l’économie, chaque donnée avec sa source et son année. Elle ne donne pas de note
+   globale. Un test pour savoir si une gouvernance faible précède un défaut a été fixé à l’avance le
+   13 novembre 2026 ; tant qu’il n’est pas exécuté, le badge du panneau indique Non validé.
 
 ![Écart de production du Brésil : le milieu de trois estimations avec une bande qui montre leur dispersion, en pointillés pour les années de projection du FMI](images/07-output-gap.png)
 
@@ -277,6 +282,32 @@ Pour vérifier quelles sources répondent :
    nouveau** pour interroger toutes les sources maintenant. Chaque source s'affiche connectée (avec un
    chiffre renvoyé), à configurer, éteinte, ou avec la raison de l'échec.
 3. La même vérification se lance dans un terminal avec `npm run check:data`.
+
+### Laisser un autre programme utiliser EconQuest
+
+Si vous utilisez un outil de portefeuille ou un autre programme qui doit lire les chiffres
+d’EconQuest, vous pouvez lui donner accès sans partager votre mot de passe.
+
+1. Ouvrez **Menu > Réglages > Jetons d’API**.
+2. Donnez un nom au jeton (par exemple « Console de portefeuille ») et cochez seulement ce qu’il peut
+   faire : lire les chiffres et les séries, lire les séances du conseil, recevoir les événements et
+   définir des surveillances, envoyer des positions, définir les noms masqués ou lancer des scénarios
+   sur un portefeuille.
+3. Appuyez sur **Créer le jeton** et copiez-le tout de suite : il n’est affiché qu’une fois, et l’application n’en garde
+   qu’une empreinte. Chaque usage est inscrit au journal d’audit ; **Révoquer** l’arrête aussitôt.
+4. Les positions envoyées par l’autre programme apparaissent dans **Recherche > Mes positions**, marquées
+   « Envoyée par » suivi du nom du jeton.
+
+Pour qu’un pays ou un titre n’apparaisse sur aucun écran, dans aucune réponse ni aucun événement,
+ajoutez-le dans **Menu > Réglages > Noms masqués** (par code ISO du pays, ticker ou votre propre
+identifiant). Les écrans n’indiquent alors que le nombre d’éléments masqués, et l’application garde une
+empreinte de chaque nom, pas le nom lui-même.
+
+Sur un serveur partagé par plusieurs personnes, un administrateur peut les laisser se connecter avec un
+compte qu’elles ont déjà chez Google, Microsoft, Okta, Keycloak ou un autre fournisseur OpenID Connect ;
+la page de connexion affiche alors **Se connecter avec** et le nom du fournisseur
+([SECURITY.md](./SECURITY.md), en anglais). Ce dont un programmeur a besoin pour se connecter se trouve
+dans [DATA_API.md](./DATA_API.md) et [DEPLOYMENT.md](./DEPLOYMENT.md) (en anglais).
 
 ## 10. Changer la langue et le niveau d'aide
 

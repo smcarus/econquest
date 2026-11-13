@@ -23,8 +23,8 @@ The same rules hold for every change:
 
 | Area | What was added |
 | --- | --- |
-| Languages | The whole app in Spanish (formal *usted*), French (formal *vous*) and Brazilian Portuguese (*você*), each downloaded only when picked; Arabic and Swahili planned, not started |
-| Documentation | README and walk-through guide with screenshots in English, Spanish, French and Portuguese; recommended AI models, settings and measured download and disk sizes; a table of the files you save yourself in the install guide |
+| Languages | The whole app in Spanish (formal *usted*), French (formal *vous*) and Brazilian Portuguese (*você*), each downloaded only when picked; Arabic and Swahili planned but paused by the maintainer on 12 November, not started |
+| Documentation | README and walk-through guide with screenshots in English, Spanish, French and Portuguese; recommended AI models, settings and measured download and disk sizes; a table of the files you save yourself in the install guide; a deployment guide for running the app as a service, a plain-language guide to how the app works (docs/HOW_IT_WORKS.md), and every document brought up to date with the console integration on 13 November |
 | Researcher tools | Opt-in 14B referee for smaller computers; a small gap model you fill in yourself, with a council link; the data API with R, Python and Stata helpers; register and run your own tests, with their own Holm correction |
 | Your own data | Load your own CSV series and use them across the app |
 | Fiscal what-ifs | Spending multipliers by type, defence and spending by purpose, OECD and European Commission budget elasticities, an editable what-if card |
@@ -34,6 +34,7 @@ The same rules hold for every change:
 | Easier running | `npm run go` (one command to update and start), downloads at start-up and the daily data download (which records how much it downloads), the ready-made app image, and the computer and disk space needed, written down in the install guide |
 | Trust and testing | Pre-registered tests with badges, the track record with the Holm correction, agent badges and a sources line on every answer; statistics checked against standard packages (ADF refitted on the full sample, daily year-on-year by calendar date, HP smoothing by frequency, dollar figures to the nearest $1,000) |
 | Learning | Three help levels, a plain-language glossary, teaching episodes and exam mode; Quests built but switched off until checked |
+| Connecting other systems | Console integration C1 to C13 (13 November, #512 to #525): stable country and security identifiers, named API tokens with scopes, correlation IDs, events and signed webhooks, indicator watches, a country snapshot, positions sent in from outside, a hidden-names list, scenarios and crisis replays on a portfolio, a sealed audit log with locked copies, a deployment guide, and sign-in through any OpenID Connect provider |
 | Smaller and faster | Council chat and several Research panels load only when opened |
 | Open source | Licences (Apache-2.0, CC BY 4.0, DCO), governance, contributing guide, the methodology and a clean public export |
 
@@ -74,16 +75,15 @@ list until checkpoint 1;** new ideas are kept on a parked list and looked at the
 | Pulled forward | Parked idea group A, data for underserved countries (Sam chose 13 November): PA1 remittances (done 13 November: received, beside exports, investment and aid the same year, years exports fell, cost of sending against the UN 3% goal); PA5 financial inclusion (done 13 November: Global Findex accounts for adults, women and men, poorer and richer households, branches, cash machines, private credit); PA3 commodity prices and terms of trade (done 13 November: trade shares of fuel, ores and metals and food, World Bank monthly price moves, rough effect as % of GDP, commodity dependence, terms of trade index); PA4 aid (done 13 November: net aid received against GNI, government spending, imports and investment, per person, six donors, ten years; read from the World Bank's republication of OECD DAC figures); PA2 food prices (done 13 November: food price inflation from the FAOSTAT file you save, hunger and food insecurity, net food imports, world staple prices); PA6 disasters (done 13 November: EM-DAT events since 2000 from the file you download with your own account, by type, deaths and people affected, damage as % of GDP, largest events) | The largest outside flows and pressures for lower-income countries |
 | Pulled forward | Parked idea group C, policy workflow tools (Sam chose 13 November): PC1 watch alerts (done 13 November: the start page checks each memo's watch triggers against the latest saved figures); PC2 peer comparison (done 13 November: diagnosis figures beside up to six peers, each as saved on the As of day, with median and rank); PC3 review-to-review comparison (done 13 November: frame changes, recommended options, figures then and now, goal move) | Close the loop on a policy review before and at its review date |
 | Pulled forward | Console integration (Sam opened 13 November; all done 13 November, #512 to #525), so an outside portfolio console can read EconQuest figures and send holdings in: C1 stable identifiers (ISO alpha-2 and alpha-3; ISIN, LEI, CIK or ticker plus an entity ID); C2 scoped API tokens (Settings > API tokens) with optional OIDC sign-in; C3 correlation IDs (X-Correlation-Id in the audit log); C4 indicator event stream (one envelope, idempotency, retries, signed webhooks, delivery log); C5 indicator watches over the API; C6 country snapshot without a council run; C7 holdings write API; C8 hidden-names list; C9 scenario API on a supplied portfolio (EM FX, US rates, fiscal, historical replays; Mac check owed: `npm run replays:pull`, then check:data row fed_h10); C10 audit seal (HMAC plus S3 object lock); C11 server deployment guide, /healthz and a daily-download deadline; C12 validation (scorecard pre-registration, crisis_warning licence status); C13 capital controls from the Chinn-Ito index, cited and never re-published (Mac check owed: `npm run chinn-ito:pull`, then check:data row chinn_ito) | Use EconQuest figures inside an outside portfolio tool, with the same research rules |
-| Checkpoint 1 | About four weeks after the public release | Real use decides what comes next |
+| Checkpoint 1 | About four weeks after the public release. Checkpoint 2 was folded into it on 13 November, so this is the one review before more work is planned | Real use decides what comes next: the parked ideas below are looked at, and the rest of the list is kept, dropped or reordered |
 | 5 | G23 crisis early-warning (screen done 12 November: BIS credit gap against the Basel III lines, debt service, house prices, Not validated; its test runner waits for the crisis-dates licence); G24 external sustainability (done 12 November: external debt, debt service against reserves and exports, debt-stabilising current account; norm and investment position Missing with the reason); G25 yield curve and financial conditions (done 12 November: term spread, inverted spells, equal-weight conditions index; its locked recession test now runnable, no recession figure until it passes); G26 inflation drivers (done 12 November: headline against core, food and energy, contributions for EU members from Eurostat item weights); G27 growth accounting (done 12 November: capital, hours, human capital and TFP from the Penn World Table, chart and CSV); G28 bank and government links (done 12 November: bank size, claims on the government, banks' share of government debt, capital and bad loans, each with source and year; state-owned banks and contingent liabilities Missing with the reason); G29 debt restructuring calculator (done 12 November: old and new bond terms and up to three discount rates typed by the user, NPV and market haircuts, payments year by year, CSV; every field blank); G30 who pays for a policy (done 12 November: incidence shares typed by the user with their source, set against each fifth's share of income, regressive or progressive reading, beside the Gini, tax split and poverty rates; starts empty); G31 central bank word count (done 12 November: Apel and Blix Grimaldi 2012 dictionary on statements you save or paste, net index by statement; no AI scoring, no downloads); G32 behavioural finance agent (done early, 12 November: Council chat agent describing herding and sentiment, its locked test now runnable) | New analysis tools; each forward-looking one is tested before it gets a badge |
 | 6 | G33 behavioural policy check (done 12 November: flags in Policy review where an option depends on take-up, a tax response, trust in a target, defaults, losses or acting now for a gain later, each citing published studies from a fixed list; effect sizes only as entered with a source; glossary group Behavioural economics); G34 precedent finder (done 12 November: closest country-years on the figures picked and what followed over three years, from the saved histories; IMF programme and crisis dates Missing until the IMF confirms terms); G35 fiscal rules check (done 12 November: EU, WAEMU and CEMAC treaty limits checked against the latest saved IMF debt and balance; national rules listed from the IMF Fiscal Rules Dataset you save locally, terms not confirmed, not shipped); G36 political feasibility (done 13 November: beside the Policy review options, elections on file, DPI checks and balances from the file you save locally, terms not confirmed, not shipped, and GDELT unrest, cut at the As of day); G37 trade-off chart (done 13 November: under Debt sustainability, the costed options and the what-if results you keep from Council chat on two axes you pick, each drawn from the low to the high published multiplier); G39 one-page policy brief (done 13 November: Policy review memo step, one PDF page for non-economists with the question, the chosen option, its figures with sources and ranges, and what to watch, in English, Spanish, French and Portuguese) | A fuller policy review |
-| 7 | U2 Portuguese, Arabic and Swahili (Portuguese done 12 November in four parts: Brazilian, "você"; the whole app, from the app frame, Workspace and Council chat to Research, Tools, Compare, Menu, Settings, help and glossary, Worked examples and Reports); W1 worked examples (done early, 12 November: Menu > Worked examples, four case studies from a question to a memo, EN/ES/FR/PT); Phase 5 classroom and pilot, with P4 expert review (form done 12 November: Policy review > Expert review, five questions on the memo, saved with its hash, CSV, published summary only with consent; the review round itself runs with the pilot) | More languages once the screens have settled; teaching |
-| Checkpoint 2 | After the pilot term | |
+| 7 | U2 Portuguese, Arabic and Swahili (Arabic and Swahili paused by the maintainer on 12 November and left planned; they start only when the maintainer says so. Portuguese done 12 November in four parts: Brazilian, "você"; the whole app, from the app frame, Workspace and Council chat to Research, Tools, Compare, Menu, Settings, help and glossary, Worked examples and Reports); W1 worked examples (done early, 12 November: Menu > Worked examples, four case studies from a question to a memo, EN/ES/FR/PT); Phase 5 classroom and pilot, waiting for the maintainer's go, with P4 expert review (form done 12 November: Policy review > Expert review, five questions on the memo, saved with its hash, CSV, published summary only with consent; the review round itself runs with the pilot) | More languages once the screens have settled; teaching |
 | When documentation arrives | G14 Haver, G15 Moody's | Paid vendors that need a subscriber's API documentation |
 
-## Phase 5: Quests in the classroom (wave 7)
+## Phase 5: Quests in the classroom (wave 7, waiting)
 
-This phase lets a professor run Quests with a class. It sits behind its own class switch with its own
+The plan is complete; building starts when the maintainer says go. This phase lets a professor run Quests with a class. It sits behind its own class switch with its own
 go-live checklist, so schools can start before Quests opens to everyone. The app never grades; the
 professor does.
 
@@ -134,11 +134,22 @@ ship only when Quests are switched on for everyone, not with the classroom chang
 
 ## The public release
 
-The licences, governance files and the public export tool are in place. Still to do: refresh the
-clean public copy, publish it at [github.com/e-conquest/econquest](https://github.com/e-conquest/econquest),
-switch on Discussions and private vulnerability reporting there, make the ready-made app image public,
-add the public address to the citation file and website, and open donations through the project
-website (GitHub Sponsors and Open Source Collective) once a fiscal host is in place.
+The licences, governance files, the security review, light mode and the public export tool are in
+place. Before the public copy goes up, three checks remain:
+
+1. A person starts the app on a Windows computer with `start-windows.bat` and confirms it opens.
+2. Light mode is measured on a modest laptop (`scripts/start-mac.sh --light`, then
+   `docker stats --no-stream`), so the memory and disk figures in the install guide are measured, not
+   targets.
+3. The clean public copy is exported again (`npm run public:export`), so it carries everything up to
+   the release, including the console integration and the current documentation.
+
+Then: publish it at [github.com/e-conquest/econquest](https://github.com/e-conquest/econquest),
+switch on Discussions and private vulnerability reporting there, protect its main branch, make the
+ready-made app image public, add the public address to the citation file and website, and open
+donations through the project website (GitHub Sponsors and Open Source Collective) once a fiscal host
+is in place. The release day and checkpoint 1 (about four weeks later) are written on this page on
+the day of the release.
 
 ## How we will know it works (S1)
 
@@ -164,12 +175,52 @@ No targets are set before the release: there is nothing yet to compare against. 
 checkpoint 1, about four weeks after the public release. The release day and the review day are
 written here on the day of the release.
 
+## Parked ideas (looked at in checkpoint 1)
+
+Ideas raised on 13 November 2026 that are not on the build list. Groups A (data for lower-income
+countries) and C (policy review tools) were brought forward that day and are done; they are listed
+under "The build order from here". Groups B and D wait for checkpoint 1, unless the maintainer brings
+one forward. A source marked "terms to confirm" would be read only from a file you save in
+`data/local/` until its terms are confirmed.
+
+**Group B: markets and financing data**
+
+| # | Idea | Why it matters | Source |
+| --- | --- | --- | --- |
+| PB1 | Exchange rate regime | Whether the currency floats, is managed or is pegged changes every policy option | Ilzetzki, Reinhart and Rogoff classification (terms to confirm, local file) |
+| PB2 | Capital controls | How open the capital account is shapes currency and interest rate options | Partly answered: the Chinn-Ito index is in the country risk scorecard since 13 November (C13). The more detailed Fernández, Klein, Rebucci, Schindler and Uribe dataset is not used, because no terms of use were found |
+| PB3 | Central bank balance sheets | Size and growth of central bank assets show money creation and currency support | BIS central bank total assets |
+| PB4 | Dollar funding stress | Use of Federal Reserve swap lines and the dollar funding gap in a crisis | New York Fed swap line operations (terms to check) |
+
+**Group D: teaching and sharing**
+
+| # | Idea | Why it matters | Source |
+| --- | --- | --- | --- |
+| PD1 | Offline country report | One HTML file of a country page that opens without the app, for journalists, students and slow connections | Figures already saved, each with source and date |
+| PD2 | Macro lab | Small textbook models (aggregate demand and supply, the debt equation) with sliders and plain explanations | No data |
+| PD3 | More worked examples | Two or three more walk-throughs, for example a commodity shock, a currency crisis or an IMF programme | Saved histories |
+
 ## Paused: the phone app
 
 A free standalone phone app that uses your own keys, for Android (Google Play, F-Droid and a direct
-download) and iPhone. Two of its 21 changes are done; the rest wait until the public release is live
-and the maintainer restarts the work. The first stage (separating the app's engine from the server)
+download) and iPhone. Two of its 21 changes are done (one more is open and paused); the rest wait
+until the public release is live and the maintainer restarts the work. The first stage (separating the app's engine from the server)
 also tidies how the main app stores data and calls feeds.
+
+## Built, waiting on a check or a licence
+
+These parts are built but wait on something outside the code. Until then they read Missing or Not
+validated, with the reason.
+
+| Part | Waiting on |
+| --- | --- |
+| Scenario replays (C9) | A first run of `npm run replays:pull` on a computer that reaches FRED and BCRP, then `npm run check:data` (row fed_h10), and a read of the copyright line on FRED's exchange rate pages |
+| Capital account openness (C13) | A first run of `npm run chinn-ito:pull`, then `npm run check:data` (row chinn_ito); the file layout is tested only on made-up rows so far |
+| Crisis early-warning test (G23) | The licence for the Laeven-Valencia crisis dates (asked of the IMF) |
+| Country risk scorecard test (C12) | Its runner; the test was fixed and hashed on 13 November before any run |
+| Revenue by state (G42 step 2) | The coverage count from `npm run check:data` (row imf_gov_levels) |
+| Haver and Moody's (G14, G15) | A subscriber's API documentation |
+| Several new World Bank, Eurostat, ONS and BCB series | A daily download on a computer that reaches the feeds; they could not be checked from the build machine |
 
 ## Noted, not yet scheduled
 

@@ -116,6 +116,10 @@ After that everyone signs in; the admin adds accounts under Menu > Users. Locked
    443 reach this box, set `TLS_MODE` to your email address instead and Caddy gets a Let's Encrypt
    certificate.
 4. Get the setup code (above), create the admin account, then add the others under Menu > Users.
+5. Optional: let people sign in with an account they already have at Google, Microsoft, Okta,
+   Keycloak or another OpenID Connect provider, instead of a password made here. The settings
+   (`OIDC_ISSUER`, client ID and secret, which emails may sign in, and which are admins) are in
+   [SECURITY.md](./SECURITY.md).
 
 `ECONQUEST_SECRET_KEY` encrypts the keys you save in Menu > Settings. It is not in the data folder,
 so the data folder backup does not hold it: keep it in your password manager.
