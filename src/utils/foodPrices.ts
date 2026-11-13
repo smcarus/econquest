@@ -19,7 +19,7 @@
  */
 import type { YearValue } from './fiscalRules';
 import type { PriceMove } from './commodityPrices';
-import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
+import { ISO_NUMERIC_TO_ALPHA3 } from '../data/isoNumeric';
 
 export const FOOD_IDS = ['undernourishment', 'food_insecurity', 'food_insecurity_severe', 'export_food', 'import_food', 'merch_exports_usd', 'merch_imports_usd', 'gdp_usd'] as const;
 export type FoodId = (typeof FOOD_IDS)[number];
@@ -27,7 +27,7 @@ export type FoodId = (typeof FOOD_IDS)[number];
 export const STAPLE_CODES = ['RICE_05', 'WHEAT_US_HRW', 'MAIZE', 'SOYBEANS', 'PALM_OIL', 'SUGAR_WLD'];
 
 export const FAO_CPI_URL = 'https://www.fao.org/faostat/en/#data/CP';
-export const FAO_CPI_SETUP_HELP = `Food price inflation comes from the FAOSTAT Consumer Price Indices (FAO). FAO's statistical databases are CC BY 4.0 by default, but this table is built from IMF, OECD and national figures, so the app ships none of it until its terms are confirmed. To add it: open ${FAO_CPI_URL}, choose Bulk downloads, "All Data Normalized" (a .zip with a .csv inside), and put the .zip or the .csv in data/local/fao-cpi/. The app reads it on this computer; nothing is sent anywhere.`;
+export const FAO_CPI_SETUP_HELP = `Food price inflation comes from the FAOSTAT Consumer Price Indices (FAO). FAO's statistical databases are CC BY 4.0 by default, but this table is built from IMF, OECD and national figures, so the app ships none of it until its terms are confirmed. To add it: open ${FAO_CPI_URL}, choose Bulk downloads, "All Data" or "All Data Normalized" (a .zip with .csv files inside), and put the .zip in data/local/fao-cpi/. The app reads it on this computer; nothing is sent anywhere.`;
 export const FAO_CPI_NO_FILE = 'No FAOSTAT consumer price file in data/local/fao-cpi/ (its terms are not confirmed, so the app ships none of it)';
 export const FAO_CPI_NO_COUNTRY = 'The FAOSTAT file has no food price index for this country';
 export const FAO_CPI_TOO_SHORT = 'The FAOSTAT file has no two months 12 months apart for this country (values FAO estimated or filled in are left out)';
@@ -57,9 +57,13 @@ const SKIP_FLAGS = new Set(['E', 'I']);
 
 const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
 
-/** The FAOSTAT "All Data Normalized" table (one row per country, item, month and year). */
+/**
+ * The FAOSTAT Consumer Price Indices table, in either layout FAO posts: "All Data" (one row per
+ * country, item and month, a column per year with its flag beside it, Y2000 and Y2000F) or "All Data
+ * Normalized" (one row per country, item, month and year, with Year, Value and Flag columns).
+ */
 export function faoCpiTable(rows: string[][], file: string): FaoCpiTable | { reason: string } {
-  const head = (rows[0] || []).map((h) => norm(h.replace(/^﻿/, '')));
+  const head = (rows[0] || []).map((h) => norm(h.replace(/^\uFEFF/, '')));
   const col = (...names: string[]) => head.findIndex((h) => names.includes(h));
   const cM49 = col('area code (m49)', 'm49 code');
   const cIso = col('iso3 code', 'area code (iso3)');
@@ -68,32 +72,44 @@ export function faoCpiTable(rows: string[][], file: string): FaoCpiTable | { rea
   const cYear = col('year');
   const cValue = col('value');
   const cFlag = col('flag');
-  if ((cM49 < 0 && cIso < 0) || cItem < 0 || cMonth < 0 || cYear < 0 || cValue < 0) {
-    return { reason: 'not the FAOSTAT Consumer Price Indices normalized table (needs Area Code (M49), Item, Months, Year and Value columns)' };
+  // Wide layout: a column per year (y2000), its flag in y2000f.
+  const yearCols = head.flatMap((h, i) => {
+    const m = /^y(\d{4})$/.exec(h);
+    return m ? [{ year: Number(m[1]), value: i, flag: head.indexOf(`${h}f`) }] : [];
+  });
+  const long = cYear >= 0 && cValue >= 0;
+  if ((cM49 < 0 && cIso < 0) || cItem < 0 || cMonth < 0 || (!long && !yearCols.length)) {
+    return { reason: 'not the FAOSTAT Consumer Price Indices table (needs Area Code (M49), Item and Months columns, and either Year and Value columns or a column per year)' };
   }
   const countries = new Map<string, CpiSeries>();
   let latest = '';
   let leftOut = 0;
   for (const r of rows.slice(1)) {
     const item = norm(r[cItem] || '');
+    // The country indices only; FAO's regional medians and weighted averages are left out.
+    if (/median|weighted average/.test(item)) continue;
     const kind = /food indices/.test(item) ? 'food' : /general indices/.test(item) ? 'general' : null;
     if (!kind) continue;
     const mo = MONTHS[norm(r[cMonth] || '')];
-    const yr = Number(r[cYear]);
-    const v = Number(r[cValue]);
-    if (!mo || !Number.isFinite(yr) || !Number.isFinite(v) || v <= 0) continue;
-    if (cFlag >= 0 && SKIP_FLAGS.has((r[cFlag] || '').trim().toUpperCase())) {
-      leftOut++;
-      continue;
-    }
+    if (!mo) continue;
     let iso = cIso >= 0 ? (r[cIso] || '').trim().toUpperCase() : '';
-    if (!/^[A-Z]{3}$/.test(iso) && cM49 >= 0) iso = ISO_NUMERIC_TO_ISO3[(r[cM49] || '').replace(/[^0-9]/g, '').padStart(3, '0')]?.iso3 || '';
+    if (!/^[A-Z]{3}$/.test(iso) && cM49 >= 0) iso = ISO_NUMERIC_TO_ALPHA3[(r[cM49] || '').replace(/[^0-9]/g, '').padStart(3, '0')] || '';
     if (!iso) continue;
-    const key = `${yr}-${String(mo).padStart(2, '0')}`;
-    const s = countries.get(iso) ?? { food: new Map(), general: new Map() };
-    s[kind].set(key, v);
-    countries.set(iso, s);
-    if (key > latest) latest = key;
+    const cells = long ? [{ year: Number(r[cYear]), raw: r[cValue], flag: cFlag >= 0 ? r[cFlag] : '' }] : yearCols.map((c) => ({ year: c.year, raw: r[c.value], flag: c.flag >= 0 ? r[c.flag] : '' }));
+    for (const { year, raw, flag } of cells) {
+      if (raw === undefined || String(raw).trim() === '') continue;
+      const v = Number(raw);
+      if (!Number.isFinite(year) || !Number.isFinite(v) || v <= 0) continue;
+      if (SKIP_FLAGS.has((flag || '').trim().toUpperCase())) {
+        leftOut++;
+        continue;
+      }
+      const key = `${year}-${String(mo).padStart(2, '0')}`;
+      const s = countries.get(iso) ?? { food: new Map(), general: new Map() };
+      s[kind].set(key, v);
+      countries.set(iso, s);
+      if (key > latest) latest = key;
+    }
   }
   if (!countries.size) return { reason: 'no food or general consumer price index rows for any country' };
   return { file, countries, latestMonth: latest, leftOut };

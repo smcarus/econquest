@@ -57,6 +57,29 @@ test('FAOSTAT table: M49 to ISO3, food and general indices by month, estimated a
   assert.match((faoCpiTable([['a', 'b']], 'x.csv') as { reason: string }).reason, /not the FAOSTAT/);
 });
 
+test('the wide "All Data" layout (a column per year, its flag beside it) reads the same; regional medians are left out', () => {
+  const head = ['Area Code', 'Area Code (M49)', 'Area', 'Item Code', 'Item', 'Element Code', 'Element', 'Months Code', 'Months', 'Unit', 'Y2025', 'Y2025F', 'Y2025N', 'Y2026', 'Y2026F', 'Y2026N'];
+  const w = (m49: string, item: string, month: string, a: string, af: string, b: string, bf: string) => ['1', `'${m49}`, 'X', '23013', item, '6125', 'Value', '7001', month, '', a, af, 'base year is 2015', b, bf, ''];
+  const t = faoCpiTable(
+    [
+      head,
+      w('108', FOOD, 'January', '200', 'X', '230', 'X'),
+      w('108', FOOD, 'February', '210', 'X', '231', 'I'),
+      w('108', GEN, 'January', '150', 'E', '160.5', 'X'),
+      w('108', 'Consumer Prices, Food Indices (2015 = 100); median', 'January', '1', 'X', '2', 'X'),
+      w('002', FOOD, 'January', '100', 'X', '', ''),
+    ],
+    'wide.csv',
+  );
+  assert.ok('countries' in t);
+  assert.deepEqual([...t.countries.keys()], ['BDI']);
+  assert.deepEqual([...t.countries.get('BDI')!.food.entries()].sort(), [['2025-01', 200], ['2025-02', 210], ['2026-01', 230]]);
+  assert.deepEqual([...t.countries.get('BDI')!.general.entries()], [['2026-01', 160.5]]);
+  assert.equal(t.leftOut, 2);
+  const f = foodView({ iso3: 'BDI', series: {}, beforeYear: 2026, historySaved: true, cpi: { table: t }, moves: null });
+  assert.deepEqual({ month: f.inflation?.month, food: f.inflation?.food, general: f.inflation?.general }, { month: '2026-01', food: 15, general: undefined });
+});
+
 test('food price inflation, gap, food security, net food imports and staple prices', () => {
   const t = faoCpiTable(rows, 'cpi.csv') as Exclude<ReturnType<typeof faoCpiTable>, { reason: string }>;
   const f = foodView({ iso3: 'KEN', series, beforeYear: 2025, historySaved: true, cpi: { table: t }, moves: [mv('RICE_05', 12.34, 1), mv('MAIZE', -5), mv('CRUDE_BRENT', 1), mv('WHEAT_US_HRW', 50, 50, 'eia')] });
