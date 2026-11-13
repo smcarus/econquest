@@ -57,7 +57,7 @@ import { registerConsoleEventRoutes } from './src/server/routes/consoleEvents';
 import { LEGACY_SCOPES, TOKEN_PREFIX, publicToken, scopeFor, scopeRefusal, tokenOnly, type Scope } from './src/utils/apiTokens';
 import { ApiTokenStore, apiTokensFile } from './src/utils/apiTokenStore';
 import { registerUserTestRoutes } from './src/server/routes/userTests';
-import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, ROLES, type Account, type Role } from './src/utils/auth';
+import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newOidcAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, ROLES, type Account, type Role } from './src/utils/auth';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
 import { codeHash } from './src/utils/codeHash';
@@ -219,6 +219,8 @@ import { gprData } from './src/utils/gprStore.ts';
 import { countrySanctions, sanctionsSentence, searchSanctions, SANCTIONS_METHOD } from './src/utils/sanctionsLists.ts';
 import { sanctionsData, sanctionsDir } from './src/utils/sanctionsStore.ts';
 import { chinnItoData } from './src/utils/chinnItoStore.ts';
+import { OidcClient } from './src/server/oidcClient';
+import { authorizationUrl, newPending, oidcConfigFromEnv, oidcCookie, oidcDecision, tokenRequest, usernameFromEmail, verifiedEmail, OIDC_COOKIE, OIDC_PENDING_MS, type OidcError } from './src/utils/oidc';
 import { chinnItoReading } from './src/utils/chinnIto.ts';
 import { countryRiskScorecard, scorecardSentence, ECONOMY_IDS, SCORECARD_METHOD, WGI_IDS, type ScorecardInputs } from './src/utils/countryRiskScorecard.ts';
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
@@ -2944,6 +2946,10 @@ async function startServer() {
   const actorStore = new AsyncLocalStorage<{ id: string; username: string; name: string }>();
   setAuditActor(() => actorStore.getStore());
   let setupCode: string | null = null;
+  const oidcSetting = oidcConfigFromEnv(process.env);
+  if (oidcSetting.problem) console.warn(`[auth] ${oidcSetting.problem}`);
+  if (oidcSetting.config) console.log(`[auth] OIDC sign-in on: ${oidcSetting.config.issuer} ("Sign in with ${oidcSetting.config.name}")`);
+  const oidc = new OidcClient(oidcSetting.config);
   const currentMode = () => authMode(auth.count(), process.env);
   const announceSetupCode = () => {
     if (currentMode() !== 'setup' || setupCode) return;
@@ -3097,6 +3103,7 @@ async function startServer() {
       canCreateFirstAccount: auth.count() === 0 && (mode === 'setup' || trusted(req, res)),
       sessionIdleHours: Math.round(limits.idleMs / 3600_000),
       csrfToken: me ? csrfToken(res.locals.sessionHash as string) : null,
+      oidc: oidc.config ? { name: oidc.config.name } : null,
     };
   };
   app.get('/api/auth/status', (req, res) => res.json(authStatus(req, res)));
@@ -3151,12 +3158,75 @@ async function startServer() {
     if (me) appendAudit(AUDIT_FILES, { kind: 'access', summary: `Signed out: ${accountName(me)}` });
     res.json({ ok: true });
   });
+  // Sign-in through an OIDC provider (src/utils/oidc.ts), when OIDC_ISSUER and OIDC_CLIENT_ID are set.
+  const oidcRedirectUri = (req: express.Request) => oidc.config!.redirectUri || `${secureCookie(req) ? 'https' : req.protocol}://${req.get('host')}/api/auth/oidc/callback`;
+  const oidcFail = (res: express.Response, code: OidcError, why: string, address: string) => {
+    appendAudit(AUDIT_FILES, { kind: 'access', summary: `Failed OIDC sign-in (${code}): ${why.slice(0, 200)}`, detail: { address } });
+    res.setHeader('Set-Cookie', oidcCookie('', { secure: false, maxAgeMs: 0 }));
+    res.redirect(302, `/?signin_error=${code}`);
+  };
+  app.get('/api/auth/oidc/start', async (req, res) => {
+    if (!oidc.config) return res.status(404).json({ error: 'OIDC sign-in is not set up on this server (OIDC_ISSUER, OIDC_CLIENT_ID).' });
+    const address = req.ip || req.socket.remoteAddress || '';
+    const wait = signInLimiter.waitSeconds('(oidc)', address);
+    if (wait) return res.status(429).json({ error: `Too many tries. Wait ${Math.ceil(wait / 60)} minutes.` });
+    try {
+      const d = await oidc.discovery();
+      const p = newPending(oidcRedirectUri(req));
+      oidc.remember(p);
+      res.setHeader('Set-Cookie', oidcCookie(p.state, { secure: secureCookie(req), maxAgeMs: OIDC_PENDING_MS }));
+      res.redirect(302, authorizationUrl(d, oidc.config, p));
+    } catch (err: any) {
+      oidcFail(res, 'failed', `the provider could not be reached (${err?.message || err})`, address);
+    }
+  });
+  app.get('/api/auth/oidc/callback', async (req, res) => {
+    const c = oidc.config;
+    if (!c) return res.status(404).json({ error: 'OIDC sign-in is not set up on this server.' });
+    const address = req.ip || req.socket.remoteAddress || '';
+    const state = String(req.query.state || '');
+    const p = oidc.take(state);
+    if (!p || readCookie(req.headers.cookie, OIDC_COOKIE) !== state) return oidcFail(res, 'expired', 'the sign-in was not started in this browser, or took longer than 10 minutes', address);
+    if (req.query.error) return oidcFail(res, 'failed', `the provider said ${String(req.query.error).slice(0, 60)}`, address);
+    try {
+      const d = await oidc.discovery();
+      const tr = tokenRequest(c, p, String(req.query.code || ''));
+      const r = await fetch(d.token_endpoint, { method: 'POST', headers: tr.headers, body: tr.body, signal: AbortSignal.timeout(15_000) });
+      const body = (await r.json().catch(() => null)) as { id_token?: string } | null;
+      if (!r.ok || !body?.id_token) return oidcFail(res, 'failed', `the token request was refused (HTTP ${r.status})`, address);
+      const v = await oidc.verify(body.id_token, p.nonce);
+      if ('problem' in v) {
+        signInLimiter.failed('(oidc)', address);
+        return oidcFail(res, 'failed', v.problem, address);
+      }
+      const claims = v.claims;
+      const decision = oidcDecision(claims, c, auth.byOidc(c.issuer, claims.sub));
+      if ('refuse' in decision) return oidcFail(res, decision.refuse as OidcError, `${verifiedEmail(claims) || 'no verified email'}: ${decision.refuse}`, address);
+      let account: Account;
+      if ('use' in decision) account = auth.byId(decision.use)!;
+      else {
+        const username = usernameFromEmail(decision.create.email, (u) => Boolean(auth.byUsername(u)));
+        account = newOidcAccount({ username, displayName: String(claims.name || claims.preferred_username || username), role: decision.create.role, issuer: c.issuer, subject: claims.sub, email: decision.create.email });
+        const first = auth.count() === 0;
+        auth.add(account);
+        if (first) setupCode = null;
+        appendAudit(AUDIT_FILES, { kind: 'access', summary: `Created the ${account.role} account ${accountName(account)} at its first sign-in through ${c.name}${first ? '. Sign-in is now required for everyone.' : ''}`, detail: { email: decision.create.email } });
+      }
+      const token = auth.startSession(account.id);
+      res.setHeader('Set-Cookie', [sessionCookie(token, { secure: secureCookie(req), maxAgeMs: limits.maxMs }), oidcCookie('', { secure: secureCookie(req), maxAgeMs: 0 })]);
+      appendAudit(AUDIT_FILES, { kind: 'access', summary: `Signed in through ${c.name}: ${accountName(account)}`, detail: { address } });
+      res.redirect(302, '/');
+    } catch (err: any) {
+      oidcFail(res, 'failed', `the provider could not be reached (${err?.message || err})`, address);
+    }
+  });
   app.post('/api/auth/password', express.json({ limit: '10kb' }), (req, res) => {
     const me = signedIn(res);
     if (!me) return res.status(401).json({ error: 'Sign in first.', signIn: true });
     const address = req.ip || req.socket.remoteAddress || '';
     const wait = signInLimiter.waitSeconds(me.username, address);
     if (wait) return res.status(429).json({ error: `Too many wrong passwords. Try again in ${Math.ceil(wait / 60)} minutes.` });
+    if (me.provider === 'oidc') return res.status(400).json({ error: `This account signs in through ${oidc.config?.name || 'the OIDC provider'} and has no password here.` });
     if (!verifyPassword(String(req.body?.current || ''), me.passwordHash)) {
       signInLimiter.failed(me.username, address);
       return res.status(403).json({ error: 'The current password is wrong.' });
@@ -3215,6 +3285,7 @@ async function startServer() {
     const me = signedIn(res)!;
     const target = auth.byId(String(req.params.id));
     if (!target) return res.status(404).json({ error: 'No such account.' });
+    if (target.provider === 'oidc') return res.status(400).json({ error: `${target.username} signs in through ${oidc.config?.name || 'the OIDC provider'} and has no password here.` });
     const password = randomPassword();
     auth.update(target.id, (a) => ({ ...a, passwordHash: hashPassword(password), passwordChangedAt: new Date().toISOString() }));
     const ended = auth.endSessionsFor(target.id, target.id === me.id ? (res.locals.sessionHash as string) : undefined);

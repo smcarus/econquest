@@ -99,6 +99,11 @@ export class AuthStore {
     return this.fresh().find((a) => a.username === username);
   }
 
+  /** The account linked to this OIDC issuer and subject, if any. */
+  byOidc(issuer: string, subject: string): Account | undefined {
+    return this.fresh().find((a) => a.provider === 'oidc' && a.oidc?.issuer === issuer && a.oidc?.subject === subject);
+  }
+
   add(account: Account): void {
     if (this.byUsername(account.username)) throw new Error(`The username "${account.username}" is taken.`);
     this.accounts.push(account);

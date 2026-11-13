@@ -62,6 +62,7 @@ switch (cmd) {
   }
   case 'reset-password': {
     const a = need();
+    if (a.provider === 'oidc') fail(`"${a.username}" signs in through the OIDC provider and has no password here.`);
     const password = randomPassword();
     store.update(a.id, (x) => ({ ...x, passwordHash: hashPassword(password), passwordChangedAt: new Date().toISOString() }));
     const n = store.endSessionsFor(a.id);

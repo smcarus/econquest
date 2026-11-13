@@ -63,6 +63,9 @@ ECONQUEST_SECRET_KEY=...              # openssl rand -base64 32; encrypts saved 
   DNS-rebinding attacks. Listing a name also turns sign-in on: nothing works until the first admin
   account is made (the setup code is in the log; see [SECURITY.md](SECURITY.md)).
 - Tokens (below) work without a browser session; people use accounts.
+- People can sign in with an account they already have at Google, Microsoft, Okta, Keycloak or any
+  other OpenID Connect provider: set `OIDC_ISSUER`, `OIDC_CLIENT_ID` and `OIDC_ALLOWED_EMAILS`; see
+  "Sign-in through an OIDC provider" in [SECURITY.md](SECURITY.md).
 
 ## 3. Service tokens
 

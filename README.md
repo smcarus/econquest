@@ -545,7 +545,7 @@ See "Connecting an outside portfolio system" in [docs/DATA_API.md](docs/DATA_API
 address list in [docs/openapi.json](docs/openapi.json). It signs in with a named, revocable API token made
 in Menu > Settings > API tokens, limited to the scopes it needs (`read:data`, `read:council`,
 `read:events`, `write:holdings`, `write:exclusions`, `run:scenarios`); every use is in the audit
-log. `SMCR_INTEGRATION_API_KEY` still works as a legacy key with the three read scopes. Any call may carry an
+log. `SMCR_INTEGRATION_API_KEY` still works as a legacy key with the three read scopes. On a server with several people, they can also sign in through any standard OpenID Connect provider (Google, Microsoft, Okta, Keycloak and others); see [docs/SECURITY.md](docs/SECURITY.md). Any call may carry an
 `X-Correlation-Id` header, which is sent back and written into the audit log entries it makes. Events (signal and badge changes,
 revisions, stale or failed feeds, sanctions list changes, releases due tomorrow, council runs and
 the daily download) can be read after an id, streamed live, or sent to webhooks signed with HMAC-SHA256
