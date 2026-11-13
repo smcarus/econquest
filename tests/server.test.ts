@@ -1070,3 +1070,25 @@ test('exam mode: switched from this computer, AI steps answer with figures only,
   }
   assert.equal((await (await fetch(`${base}/api/exam-mode/opened`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ what: 'country', label: 'x' }) })).json()).recorded, false);
 });
+
+test('correlation IDs: sent back on every reply and written into the audit entries a call makes', async () => {
+  const none = await fetch(`${base}/healthz`);
+  assert.match(none.headers.get('x-correlation-id') || '', /^[0-9a-f-]{36}$/, 'one is made when none is sent');
+  const id = 'console-trace-7f3a.1';
+  const put = await fetch(`${base}/api/watch-rules`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Correlation-Id': id }, body: JSON.stringify({ rules: [] }) });
+  assert.equal(put.status, 200);
+  assert.equal(put.headers.get('x-correlation-id'), id);
+  const bad = await fetch(`${base}/api/series/MEX`, { headers: { 'X-Correlation-Id': 'not ok!' } });
+  assert.equal(bad.status, 400);
+  assert.equal((await bad.json()).error, 'BAD_CORRELATION_ID');
+  await new Promise((r) => setTimeout(r, 200));
+  const lines = readFileSync(path.join(dataDir, 'local', 'audit', 'audit-log.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+  const hit = lines.filter((e) => e.correlationId === id);
+  assert.ok(hit.length >= 1, 'the audit entry carries the ID');
+  assert.equal(hit[0].summary, 'Changed the watch alerts');
+  const audit = await (await fetch(`${base}/api/audit?q=${id}`)).json();
+  assert.equal(audit.check.ok, true);
+  assert.ok(audit.entries.length >= 1, 'searchable in Menu > Audit log');
+  const csv = await (await fetch(`${base}/api/audit/export.csv`)).text();
+  assert.ok(csv.split('\n')[0].includes('Correlation ID'));
+});

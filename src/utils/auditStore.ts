@@ -63,11 +63,18 @@ export function setAuditActor(fn: () => AuditActor | undefined): void {
   currentActor = fn;
 }
 
+/** The correlation ID of the request being handled (AsyncLocalStorage on the server), if one was sent. */
+let currentCorrelation: () => string | undefined = () => undefined;
+export function setAuditCorrelation(fn: () => string | undefined): void {
+  currentCorrelation = fn;
+}
+
 /** Append one entry. Never throws: a log that cannot be written must not stop the app answering. */
 export function appendAudit(files: AuditFiles, input: AuditInput, at: Date = new Date()): AuditEntry | null {
   try {
     const by = input.by ?? currentActor();
-    const entry = nextEntry(lastEntry(files), by ? { ...input, by } : input, at);
+    const correlationId = input.correlationId ?? currentCorrelation();
+    const entry = nextEntry(lastEntry(files), { ...input, ...(by ? { by } : {}), ...(correlationId ? { correlationId } : {}) }, at);
     fs.mkdirSync(path.dirname(files.log), { recursive: true });
     fs.appendFileSync(files.log, JSON.stringify(entry) + '\n', { mode: 0o600 });
     lastByFile.set(files.log, { seq: entry.seq, hash: entry.hash });

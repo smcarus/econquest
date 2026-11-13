@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "EconQuest API",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "description": "Addresses an outside system can call over HTTP: the data API (series, panels and tables, docs/DATA_API.md) and the integration API (council output, webhooks and the event stream). Every country is named by ISO 3166 alpha-2 and alpha-3; either code is accepted wherever an address names a country. Values without a source read Missing with the reason; nothing is estimated."
   },
   "servers": [
@@ -35,6 +35,17 @@
         "schema": {
           "type": "string",
           "example": "BRA"
+        }
+      },
+      "CorrelationId": {
+        "name": "X-Correlation-Id",
+        "in": "header",
+        "required": false,
+        "description": "Your trace ID for this call (1 to 128 letters, digits and . _ : -). Sent back on the reply and written into every audit entry the call makes. Without one, the reply carries an ID the app made. A malformed one gets 400 BAD_CORRELATION_ID.",
+        "schema": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9._:-]+$"
         }
       }
     },
@@ -153,6 +164,14 @@
           }
         ]
       }
+    },
+    "headers": {
+      "X-Correlation-Id": {
+        "description": "The ID you sent, or one the app made.",
+        "schema": {
+          "type": "string"
+        }
+      }
     }
   },
   "paths": {
@@ -165,6 +184,9 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/Country"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
           }
         ],
         "responses": {
@@ -176,6 +198,9 @@
           },
           "403": {
             "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
+          },
+          "400": {
+            "description": "BAD_CORRELATION_ID, or another problem with the request."
           }
         },
         "security": [
@@ -210,6 +235,9 @@
               "type": "string",
               "example": "policy_rate"
             }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
           }
         ],
         "responses": {
@@ -224,6 +252,9 @@
           },
           "403": {
             "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
+          },
+          "400": {
+            "description": "BAD_CORRELATION_ID, or another problem with the request."
           }
         },
         "security": [
@@ -275,6 +306,9 @@
                 "history"
               ]
             }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
           }
         ],
         "responses": {
@@ -286,6 +320,9 @@
           },
           "403": {
             "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
+          },
+          "400": {
+            "description": "BAD_CORRELATION_ID, or another problem with the request."
           }
         },
         "security": [
@@ -319,6 +356,9 @@
               "type": "string",
               "format": "date"
             }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
           }
         ],
         "responses": {
@@ -330,6 +370,9 @@
           },
           "403": {
             "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
+          },
+          "400": {
+            "description": "BAD_CORRELATION_ID, or another problem with the request."
           }
         },
         "security": [
@@ -385,6 +428,9 @@
               "type": "boolean",
               "default": true
             }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
           }
         ],
         "responses": {
@@ -399,6 +445,9 @@
           },
           "403": {
             "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
+          },
+          "400": {
+            "description": "BAD_CORRELATION_ID, or another problem with the request."
           }
         },
         "tags": [
@@ -427,6 +476,9 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/Country"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
           }
         ],
         "responses": {
@@ -441,6 +493,9 @@
           },
           "403": {
             "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
+          },
+          "400": {
+            "description": "BAD_CORRELATION_ID, or another problem with the request."
           }
         },
         "security": [
@@ -489,6 +544,9 @@
         "responses": {
           "200": {
             "description": "Delivery receipts with the HMAC-SHA256 signature."
+          },
+          "400": {
+            "description": "BAD_CORRELATION_ID, or another problem with the request."
           }
         },
         "tags": [
@@ -500,7 +558,12 @@
             "SmcrApiKey": []
           }
         ],
-        "description": "Not open to tokens."
+        "description": "Not open to tokens.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ]
       }
     },
     "/api/v1/integration/stream": {
@@ -518,6 +581,9 @@
           },
           "403": {
             "description": "TOKEN_SCOPE: the token lacks the scope in x-scope."
+          },
+          "400": {
+            "description": "BAD_CORRELATION_ID, or another problem with the request."
           }
         },
         "security": [
@@ -531,7 +597,12 @@
             "SmcrApiKey": []
           }
         ],
-        "x-scope": "read:events"
+        "x-scope": "read:events",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ]
       }
     }
   }

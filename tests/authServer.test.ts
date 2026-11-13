@@ -153,6 +153,7 @@ test('scoped API tokens: made by the admin, limited to their scopes, revocable, 
   // With sign-in required and the integration key off, the token alone opens what its scope allows.
   assert.equal((await read('/api/series/BRA', bearer)).status, 200);
   assert.equal((await read('/api/series/BR', { 'X-SMCR-API-Key': secret })).status, 200);
+  assert.equal((await read('/api/series/MEX', { ...bearer, 'X-Correlation-Id': 'console-run-42' })).status, 200);
   const council = await read('/api/v1/integration/bundle/BRA', bearer);
   assert.equal(council.status, 403);
   assert.match((await council.json()).message, /needs the read:council scope/);
@@ -179,6 +180,7 @@ test('scoped API tokens: made by the admin, limited to their scopes, revocable, 
   const uses = lines.filter((e) => e.kind === 'api');
   assert.ok(uses.some((e) => e.summary === 'API token "Portfolio console": GET /api/series/BRA (200)' && e.by?.username === 'token:Portfolio console'));
   assert.ok(uses.some((e) => /refused: GET \/api\/v1\/integration\/bundle\/BRA needs read:council/.test(e.summary)));
+  assert.ok(uses.some((e) => e.summary.includes('GET /api/series/MEX (200)') && e.correlationId === 'console-run-42'), 'the token use carries the correlation ID');
   assert.ok(uses.some((e) => /^Made the API token "Portfolio console"/.test(e.summary)));
   assert.ok(uses.some((e) => /^Revoked the API token "Portfolio console"/.test(e.summary)));
   assert.ok(uses.some((e) => /^Refused an unknown or revoked API token/.test(e.summary)));

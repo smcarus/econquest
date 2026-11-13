@@ -223,3 +223,13 @@ did, and counts as a token with the three read scopes (`read:data`, `read:counci
 `read:events`). It cannot send positions, set hidden names or run scenarios. For a new connection,
 prefer a named token: it can be limited and revoked without changing `.env`.
 
+### Correlation IDs
+
+Send an `X-Correlation-Id` header on any call to trace one action across your logs and this app's.
+It may be 1 to 128 letters, digits and `. _ : -` (a UUID, a trace ID or a job number all fit).
+The app sends it back on the reply in the same header and writes it into every audit log entry the
+call makes; Menu > Audit log can search for it, and the CSV download has a "Correlation ID" column.
+The ID is part of each entry's hash, so it cannot be changed afterwards without the log check
+noticing. A malformed ID is refused with `400 BAD_CORRELATION_ID`. Without the header, the reply
+carries an ID the app made, which is not written to the log.
+
