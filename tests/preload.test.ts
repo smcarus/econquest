@@ -99,8 +99,9 @@ test('npm run preload offline: says the feeds cannot be reached and downloads no
 
 test('npm run preload: a step that never answers is recorded as not saved and the run moves on', () => {
   // The step limit grows with the history step: one request per official figure with a 200 ms gap
-  // (76 figures since G30, about 16 s offline), plus 8 s to spare. Three steps wait on BIS, so the run
-  // takes about three step limits plus the rest.
+  // (76 figures since G30, about 16 s offline), plus 8 s to spare. Five steps wait on BIS (policy
+  // rates, house prices, total credit, FX valuation and the country's latest figures), so the run
+  // takes about five step limits plus the history step and the rest.
   const stepS = Math.ceil(OFFICIAL_FIGURES.length * 0.2) + 8;
   const dataDir = mkdtempSync(path.join(tmpdir(), 'econquest-preload-hang-'));
   try {
@@ -108,7 +109,7 @@ test('npm run preload: a step that never answers is recorded as not saved and th
       cwd: rootDir,
       env: { ...process.env, NODE_OPTIONS: `--import ${pathToFileURL(path.join(rootDir, 'tests/helpers/offline-fetch.mjs')).href}`, DATA_DIR: dataDir, OFFLINE_HANG: 'stats.bis.org/api', PRELOAD_STEP_TIMEOUT_S: String(stepS) },
       encoding: 'utf8',
-      timeout: (stepS * 4 + 60) * 1000,
+      timeout: (stepS * 7 + 60) * 1000,
     });
     assert.equal(r.status, 0, r.stderr.slice(-1500));
     assert.match(r.stdout, new RegExp(`FAIL BIS central bank policy rates.*took longer than ${stepS} s; moved on`));

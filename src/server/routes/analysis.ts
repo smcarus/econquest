@@ -37,6 +37,8 @@ import { fetchWithTimeout } from '../http';
 import { OFFICIAL_FIGURES, officialSeries, type OfficialHistoryFile } from '../../utils/officialHistory';
 import { remittanceProfile, remitSentence, REMIT_IDS } from '../../utils/remittances';
 import { financialInclusion, fiSentence, FI_IDS } from '../../utils/financialInclusion';
+import { commodityTerms, ctSentence, CT_IDS } from '../../utils/commodityTerms';
+import { fetchCommodities } from '../feeds/commodities';
 import { type OutputGapResult } from '../../utils/outputGap';
 import { dsaSentence, type DsaOutcome } from '../../utils/debtSustainability';
 import { parseAsOfDate } from '../../utils/asOf';
@@ -451,6 +453,20 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const f = financialInclusion(Object.fromEntries(FI_IDS.map((id) => [id, pick(id)])), new Date().getUTCFullYear(), Boolean(file));
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...f, sentence: fiSentence(f, name) });
+  });
+  // Commodity prices and terms of trade (PA3, src/utils/commodityTerms.ts): saved World Bank history and the Pink Sheet moves.
+  app.get('/api/commodity-terms/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const [file, prices] = await Promise.all([quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)), quick(fetchCommodities())]);
+    const pick = (id: string): YearValue[] | undefined => {
+      if (!file) return undefined;
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
+    };
+    const c = commodityTerms(Object.fromEntries(CT_IDS.map((id) => [id, pick(id)])), prices?.moves ?? null, new Date().getUTCFullYear(), Boolean(file));
+    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...c, sentence: ctSentence(c, name) });
   });
   // Who pays for a policy (src/utils/policyIncidence.ts): the saved context; the incidence itself is worked out in the browser on shares the user types.
   app.get('/api/policy-incidence/:iso3', async (req, res) => {

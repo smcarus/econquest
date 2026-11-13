@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Commodity prices and terms of trade (PA3): Research > History & data shows the country's shares of
+  fuel, ores and metals and food in goods exports and imports, how World Bank Pink Sheet prices for
+  each group moved over 1 and 12 months, the rough effect on income as % of GDP if prices hold for a
+  year (the app's calculation, quantities fixed), commodity dependence against UNCTAD's 60% line, and
+  the World Bank terms of trade index. Two new saved World Bank series (goods exports and imports in
+  US dollars); route `GET /api/commodity-terms/:iso3`.
 - Financial inclusion (PA5): Research > History & data shows who has an account (World Bank Global
   Findex: adults, women, men, poorest 40% and richest 60% of households, gaps within the same survey),
   bank branches and cash machines per 100,000 adults, and private credit as % of GDP. Eight new saved
