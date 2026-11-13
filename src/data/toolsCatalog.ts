@@ -301,6 +301,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-food-prices' },
   },
   {
+    id: 'disasters',
+    category: 'history',
+    title: "Natural disasters",
+    what: "Floods, storms, droughts, earthquakes and other natural disasters since 2000 from the EM-DAT file you save in data/local/emdat/: events, deaths and people affected by type, the last ten years with damage as % of GDP, and the largest events.",
+    sources: "EM-DAT (your file); IMF WEO; World Bank WDI",
+    target: { area: 'country', tab: 'history', anchor: 'tool-disasters' },
+  },
+  {
     id: 'policy_incidence',
     category: 'history',
     title: 'Who pays for a policy',
