@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Food prices and food security (PA2): Research > History & data shows food price inflation against
+  all prices from the FAOSTAT Consumer Price Indices file you save in data/local/fao-cpi/ (terms not
+  confirmed, nothing shipped; values FAO estimated or imputed left out), undernourishment and food
+  insecurity (World Bank, from FAO), net food imports as % of GDP, and Pink Sheet moves for rice,
+  wheat, maize, soybeans, palm oil and sugar. Rice (Thai 5%) added to the Pink Sheet prices the app
+  reads. Three new saved World Bank series; route `GET /api/food-prices/:iso3`.
 - Aid received (PA4): Research > History & data shows net development aid the country receives (World
   Bank, from OECD DAC figures) in US dollars, as % of GNI, central government spending, imports and
   investment, per person, from six large donors with their share, and the last ten years with the

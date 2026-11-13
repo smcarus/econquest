@@ -39,6 +39,8 @@ import { remittanceProfile, remitSentence, REMIT_IDS } from '../../utils/remitta
 import { financialInclusion, fiSentence, FI_IDS } from '../../utils/financialInclusion';
 import { commodityTerms, ctSentence, CT_IDS } from '../../utils/commodityTerms';
 import { aidProfile, aidSentence, AID_IDS } from '../../utils/aidReceived';
+import { foodView, foodSentence, FOOD_IDS } from '../../utils/foodPrices';
+import { faoCpiInput } from '../../utils/faoCpiStore';
 import { fetchCommodities } from '../feeds/commodities';
 import { type OutputGapResult } from '../../utils/outputGap';
 import { dsaSentence, type DsaOutcome } from '../../utils/debtSustainability';
@@ -482,6 +484,27 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const a = aidProfile(Object.fromEntries(AID_IDS.map((id) => [id, pick(id)])), new Date().getUTCFullYear(), Boolean(file));
     const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...a, sentence: aidSentence(a, name) });
+  });
+  // Food prices and food security (PA2, src/utils/foodPrices.ts): saved World Bank history, the Pink Sheet moves, and the FAOSTAT file in data/local/fao-cpi/.
+  app.get('/api/food-prices/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const [file, prices] = await Promise.all([quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)), quick(fetchCommodities())]);
+    const pick = (id: string): YearValue[] | undefined => {
+      if (!file) return undefined;
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
+    };
+    const f = foodView({
+      iso3,
+      series: Object.fromEntries(FOOD_IDS.map((id) => [id, pick(id)])),
+      beforeYear: new Date().getUTCFullYear(),
+      historySaved: Boolean(file),
+      cpi: faoCpiInput(DATA_DIR),
+      moves: prices?.moves ?? null,
+    });
+    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...f, sentence: foodSentence(f, name) });
   });
   // Who pays for a policy (src/utils/policyIncidence.ts): the saved context; the incidence itself is worked out in the browser on shares the user types.
   app.get('/api/policy-incidence/:iso3', async (req, res) => {
