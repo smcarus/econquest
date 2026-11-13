@@ -361,7 +361,7 @@ export function rollingCorrelation(pairs: Pair[], window: number): Point[] {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Unit root (Augmented Dickey-Fuller, constant, lag chosen by AIC)
+// Unit root (Augmented Dickey-Fuller, constant, lag chosen by AIC on one sample, then refitted on the full sample)
 
 /** MacKinnon (2010) response-surface coefficients, constant, no trend: c(T) = b0 + b1/T + b2/T². */
 const ADF_CRIT: Record<'1%' | '5%' | '10%', [number, number, number]> = {
@@ -402,6 +402,21 @@ export function adf(values: number[], maxLag?: number): AdfResult | Failed {
     if (!best || aic < best.aic) best = { aic, reg, lags: p };
   }
   if (!best) return { error: 'The ADF regression could not be solved for this series.' };
+  // The lag is chosen on the common sample; the test itself is then run at that lag on every row
+  // it can use (Ng and Perron 1995; statsmodels adfuller does the same), so short lags do not drop
+  // the first rows for nothing.
+  {
+    const y: number[] = [];
+    const X: number[][] = [];
+    for (let t = best.lags; t < dy.length; t++) {
+      const row = [values[t]];
+      for (let j = 1; j <= best.lags; j++) row.push(dy[t - j]);
+      X.push(row);
+      y.push(dy[t]);
+    }
+    const full = ols(y, X);
+    if (!('error' in full)) best = { ...best, reg: full };
+  }
   const T = best.reg.n;
   const crit = Object.fromEntries(Object.entries(ADF_CRIT).map(([k, [b0, b1, b2]]) => [k, b0 + b1 / T + b2 / (T * T)])) as AdfResult['critical'];
   const stat = best.reg.t[1];
