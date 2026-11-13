@@ -34,7 +34,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Forecasts with fan charts (AR models) | Research | Forecast evaluation failed | debt_forecast v2, 2026-11-07 |
 | Fiscal reaction (Bohn test) | Research | Description, not a tested signal | None |
 | Gross financing need | Research | Description, not a tested signal | None |
-| Country risk scorecard | Research | Description, not a tested signal | None |
+| Country risk scorecard | Research | Not validated | None |
 | Sanctions lists | Research | Description, not a tested signal | None |
 | Geopolitical risk VaR | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
@@ -445,8 +445,8 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Reads:** World Bank WGI, UCDP/PRIO and UCDP, GDELT 1.0 event files, Caldara-Iacoviello GPR file, IMF WEO, World Bank Open Data
 - **Shows in:** Country Research > History & data (Country risk scorecard)
 - **Use:** Research
-- **Status:** Description, not a tested signal
-- **How it is tested:** Description, not a tested signal: published figures side by side, no forward call and no weights.
+- **Status:** Not validated
+- **How it is tested:** Pre-registered on 13 November 2026 before any run (docs/validation/pending/scorecard_default.json): a governance reading in the bottom quarter of countries that year (plain average of the six WGI estimates, used a year after) followed by the start of a sovereign default (BoC-BoE) within 3 years more often than usual; at least 30 cases over 15 years, lift 3 points, p at or below 0.05 with whole years resampled. Not validated until the runner is built and the test passes. The average is fixed for the test only; the scorecard still shows no overall score.
 - **Limits:** WGI and UCDP are yearly and lag a year or more; WGI estimates have wide margins of error; GDELT counts news reports, not events on the ground.
 - **Code:** `src/utils/countryRiskScorecard.ts`
 
@@ -986,6 +986,7 @@ These show where things stand on a stated method and make no call a backtest cou
 - Geopolitical risk: the Caldara and Iacoviello Geopolitical Risk index (AER 2022), the share of articles in ten leading newspapers about adverse geopolitical events and threats, for the country (44 countries covered) and the world, read from the authors' monthly file in data/local/gpr/ (fetched as published by the daily start-up run or npm run gpr:pull, or saved there by you as .xls, .xlsx or .csv). Latest month, where it sits among all months on file, and the 12-month and all-time means.
 - Economy: government debt, real growth, inflation (IMF WEO, latest outturn year, projections left out), current account, reserves in months of imports and external debt (World Bank), against five years earlier.
 - No overall score: any weighting of the pillars would be a guess, and one number would look more certain than the figures are.
+- Pre-registered test (scorecard_default v1, registered 13 November 2026, runner not built yet): a country-year whose plain average of the six WGI estimates is in the bottom quarter of countries that year, used from the end of the next year (WGI is published a year late), is a call that a sovereign default starts (BoC-BoE: debt in default goes from zero to above zero) in the following three years. Base rate: all country-years not already in default, pooled. Method 2: whole years resampled, p at most 0.05, a lift of at least 3 points, 30 cases over 15 years. The average is fixed for the test only and is not shown as a score.
 - **Limits:** WGI and UCDP are yearly and lag a year or more. WGI estimates are built from surveys and expert ratings and carry wide margins of error; small changes are within them. GDELT counts news reports, which rise with media attention. Figures not on file are listed as missing with the reason.
 - **Code:** `src/utils/countryRiskScorecard.ts`
 
