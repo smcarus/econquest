@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Financial inclusion (PA5): Research > History & data shows who has an account (World Bank Global
+  Findex: adults, women, men, poorest 40% and richest 60% of households, gaps within the same survey),
+  bank branches and cash machines per 100,000 adults, and private credit as % of GDP. Eight new saved
+  World Bank series; route `GET /api/financial-inclusion/:iso3`.
 - Remittances (PA1): Research > History & data shows money sent home by people working abroad,
   beside exports, foreign direct investment and aid in the same year, how it moved in years exports
   fell, the cost of sending US$200 against the UN goal of below 3%, and money sent abroad. Five new

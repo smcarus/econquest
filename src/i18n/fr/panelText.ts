@@ -699,4 +699,7 @@ export const PANEL_TEXT_FR: Record<string, string> = {
   "The World Bank publishes no remittance figure for this country before this year": "La Banque mondiale ne publie aucun chiffre d’envois de fonds pour ce pays avant cette année",
   "The World Bank survey of sending costs does not cover this country": "L’enquête de la Banque mondiale sur les coûts d’envoi ne couvre pas ce pays",
   "World Bank World Development Indicators (IMF balance of payments; OECD DAC for aid; Remittance Prices Worldwide for cost), CC BY 4.0": "Indicateurs du développement dans le monde de la Banque mondiale (balance des paiements du FMI ; CAD de l’OCDE pour l’aide ; Remittance Prices Worldwide pour le coût), CC BY 4.0",
+  // PA5 financial inclusion
+  "The Global Findex survey has not covered this country": "L’enquête Global Findex n’a pas couvert ce pays",
+  "World Bank Global Findex and World Development Indicators (IMF Financial Access Survey, IMF International Financial Statistics), CC BY 4.0": "Banque mondiale Global Findex et Indicateurs du développement dans le monde (enquête du FMI sur l’accès aux services financiers, Statistiques financières internationales du FMI), CC BY 4.0",
 };
