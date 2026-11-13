@@ -4,6 +4,7 @@
  * from your own systems.
  */
 
+import { iso2For } from '../data/iso3166Alpha2';
 import crypto from 'crypto';
 import express from 'express';
 import { AIRuntimeConfig, CouncilAssessmentRun, ExternalInternalConnectorConfig, ExternalInternalConnectorMetricKey, IntegrationBroadcastScope, IntegrationDeliveryReceipt, OpenDataSnapshot, TopLevelIntegrationConfig } from '../types/council.ts';
@@ -172,6 +173,7 @@ export function buildTopLevelIntegrationPayload(
     generatedAt: new Date().toISOString(),
     scope,
     sovereign: {
+      iso2: iso2For(run.iso3),
       iso3: run.iso3,
       countryName: run.countryName,
       currencyCode: run.openData.currencyCode,
@@ -381,7 +383,8 @@ export async function dispatchTopLevelIntegrationEvent(
 
 export function interpolateIsoTemplate(rawStr: string, iso3: string): string {
   const cleanIso3 = (iso3 || 'BRA').toUpperCase().trim();
-  const cleanIso2 = cleanIso3.slice(0, 2);
+  // The real ISO alpha-2 code (AUT is AT, not AU); a code that is not a country keeps its first two letters.
+  const cleanIso2 = iso2For(cleanIso3) ?? cleanIso3.slice(0, 2);
   return String(rawStr || '')
     .replace(/\{\{\s*ISO3\s*\}\}/gi, cleanIso3)
     .replace(/\{\{\s*ISO2\s*\}\}/gi, cleanIso2);

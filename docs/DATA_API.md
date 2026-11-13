@@ -87,6 +87,18 @@ The figure ids for panels are listed in the `figures` part of the `/api/panel` a
 `policy_rate` and `cpi_monthly`); the panel table on Research > Compare countries uses the same ones. Series ids for a country come from `series_list` (Python) or `/api/series/BRA` in a
 browser.
 
+## Country codes
+
+Every country in an answer carries both ISO 3166 codes: `iso2` (alpha-2, for example `BR`) and
+`iso3` (alpha-3, `BRA`). JSON answers have both fields; tables keyed by country end with an `iso2`
+column, after all the columns they had before, so a script that reads columns by position keeps
+working. World tables leave `iso2` empty.
+
+Wherever an address names a country you may use either code, in any case: `/api/series/BR`,
+`/api/export/tr/figures.csv` and `/api/panel?countries=BR,MX` work the same as the alpha-3 forms.
+Kosovo has no ISO code; the app uses `UVK` (the IMF's code) for alpha-3 and accepts `XK`, the code
+most banks use, for alpha-2.
+
 ## Sharing mode
 
 Downloads follow Menu > Sharing mode exactly as they do in the app: with it on, values whose source
@@ -146,3 +158,28 @@ still read these addresses (and only these, plus the integration API) with the i
 
 The key is only ever read from the header, never from the address, so it does not end up in logs
 or browser history. Treat it like a password: anyone with it can read the data the app holds.
+
+## Connecting an outside portfolio system
+
+An outside portfolio system (a "console") can use the app as a data and alert source over HTTP.
+The full list of addresses, with what each one takes and gives, is in
+[`docs/openapi.json`](openapi.json), which the app also serves at
+`/api/v1/integration/openapi.json`.
+
+### Naming positions
+
+A position (holding) can carry the identifiers your system already uses, all optional:
+
+| Field | What it is | How it is stored |
+| --- | --- | --- |
+| `isin` | ISO 6166 security number, for example `US0378331005` | In capitals; the check digit must be right |
+| `lei` | ISO 17442 legal entity identifier, 20 characters | In capitals; the two check digits must be right |
+| `cik` | The SEC's company number, 1 to 10 digits | Zero-padded to 10 digits, as EDGAR writes it |
+| `ticker` | Letters, digits and `. - / :`, with an optional exchange code after a space (`PETR4 BZ`) | In capitals; not checked against any exchange list |
+| `entityId` | Your own ID for the position or issuer, up to 128 characters | Exactly as sent, and given back unchanged |
+
+The holdings file (Menu > Holdings > Import CSV) reads the same identifiers from optional columns
+named `isin`, `lei`, `cik`, `ticker` and `entity_id`. A file with an `isin` column and no
+`instrument` column names each position by its ISIN. A malformed identifier stops that row and the
+import says which row and why. Exports add the identifier columns only when a position has one.
+

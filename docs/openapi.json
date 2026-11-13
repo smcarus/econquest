@@ -1,0 +1,447 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "EconQuest API",
+    "version": "1.1.0",
+    "description": "Addresses an outside system can call over HTTP: the data API (series, panels and tables, docs/DATA_API.md) and the integration API (council output, webhooks and the event stream). Every country is named by ISO 3166 alpha-2 and alpha-3; either code is accepted wherever an address names a country. Values without a source read Missing with the reason; nothing is estimated."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "npm run dev on this computer (Docker: http://localhost:3737)"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "SmcrApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-SMCR-API-Key",
+        "description": "The integration key (SMCR_INTEGRATION_API_KEY), when key checks are switched on in Settings. Authorization: Bearer <key> also works. Never in the address."
+      }
+    },
+    "parameters": {
+      "Country": {
+        "name": "iso3",
+        "in": "path",
+        "required": true,
+        "description": "Country as ISO 3166 alpha-3 (BRA) or alpha-2 (BR), any case. Kosovo: XK or UVK.",
+        "schema": {
+          "type": "string",
+          "example": "BRA"
+        }
+      }
+    },
+    "schemas": {
+      "CountryCodes": {
+        "type": "object",
+        "description": "Every country in an answer carries both codes.",
+        "properties": {
+          "iso2": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "BR",
+            "description": "ISO 3166-1 alpha-2; null for WORLD or a region. Kosovo: XK (not an ISO code)."
+          },
+          "iso3": {
+            "type": "string",
+            "example": "BRA",
+            "description": "ISO 3166-1 alpha-3 as the app uses it (Kosovo: UVK)."
+          }
+        },
+        "required": [
+          "iso2",
+          "iso3"
+        ]
+      },
+      "SecurityIds": {
+        "type": "object",
+        "description": "Optional identifiers on a position. ISIN, LEI and ticker are stored in capitals and CIK zero-padded to 10 digits; entityId is stored and given back exactly as sent.",
+        "properties": {
+          "isin": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}[A-Z0-9]{9}[0-9]$",
+            "description": "ISO 6166, check digit verified.",
+            "example": "US0378331005"
+          },
+          "lei": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{18}[0-9]{2}$",
+            "description": "ISO 17442, check digits verified (MOD 97-10).",
+            "example": "HWUPKR0MPOU8FGXBT394"
+          },
+          "cik": {
+            "type": "string",
+            "pattern": "^[0-9]{10}$",
+            "description": "SEC company number, 1 to 10 digits; given back zero-padded.",
+            "example": "0000320193"
+          },
+          "ticker": {
+            "type": "string",
+            "maxLength": 27,
+            "description": "Letters, digits and . - / :, up to 20, with an optional exchange code after a space.",
+            "example": "PETR4 BZ"
+          },
+          "entityId": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Your own ID for the position or issuer, given back unchanged."
+          }
+        }
+      },
+      "Holding": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SecurityIds"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "iso3": {
+                "type": "string",
+                "example": "BRA"
+              },
+              "instrument": {
+                "type": "string"
+              },
+              "assetClass": {
+                "type": "string",
+                "enum": [
+                  "HC_BOND",
+                  "LC_BOND",
+                  "CDS",
+                  "FX",
+                  "OTHER"
+                ]
+              },
+              "side": {
+                "type": "string",
+                "enum": [
+                  "LONG",
+                  "SHORT"
+                ]
+              },
+              "notionalUsdMm": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Face value in USD millions."
+              },
+              "durationYears": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "id",
+              "iso3",
+              "instrument",
+              "assetClass",
+              "side",
+              "notionalUsdMm"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "paths": {
+    "/api/series/{iso3}": {
+      "get": {
+        "summary": "Every series the app holds for one country, and the ones Missing with the reason",
+        "tags": [
+          "Data"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Country"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "iso2, iso3, series (id, label, unit, frequency, source, first and last date, latest value) and missing (id, label, reason)."
+          }
+        },
+        "security": [
+          {},
+          {
+            "SmcrApiKey": []
+          }
+        ]
+      }
+    },
+    "/api/series/{iso3}/{id}": {
+      "get": {
+        "summary": "One series in full: every dated value with its source",
+        "tags": [
+          "Data"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Country"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "policy_rate"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "iso2, iso3 and the series."
+          },
+          "404": {
+            "description": "NO_SERIES with the reason it is Missing."
+          }
+        },
+        "security": [
+          {},
+          {
+            "SmcrApiKey": []
+          }
+        ]
+      }
+    },
+    "/api/panel": {
+      "get": {
+        "summary": "Countries by figures, latest cells or a history preview",
+        "tags": [
+          "Data"
+        ],
+        "parameters": [
+          {
+            "name": "countries",
+            "in": "query",
+            "required": true,
+            "description": "Comma-separated alpha-3 or alpha-2 codes, up to 60.",
+            "schema": {
+              "type": "string",
+              "example": "BR,MEX"
+            }
+          },
+          {
+            "name": "figures",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "policy_rate,cpi_monthly"
+            }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "latest",
+                "history"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Latest mode: cells with iso2, iso3, figure, value, unit, status, period, source and reason if Missing."
+          }
+        },
+        "security": [
+          {},
+          {
+            "SmcrApiKey": []
+          }
+        ]
+      }
+    },
+    "/api/export/{iso3}/figures.csv": {
+      "get": {
+        "summary": "The latest figures for one country as a table (also .xlsx); asOf=YYYY-MM-DD for a past day",
+        "tags": [
+          "Data"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Country"
+          },
+          {
+            "name": "asOf",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV. Tables keyed by country end with an iso2 column."
+          }
+        },
+        "security": [
+          {},
+          {
+            "SmcrApiKey": []
+          }
+        ]
+      }
+    },
+    "/api/v1/integration/desks/{iso3}": {
+      "get": {
+        "summary": "Desk outputs of the last council run on one country",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Country"
+          },
+          {
+            "name": "desk",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "geopolitical",
+                "sovereign",
+                "macro"
+              ],
+              "default": "all"
+            }
+          },
+          {
+            "name": "includeSubAgents",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          {
+            "name": "includeQuant",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed SMCR-1.0 envelope; sovereign carries iso2 and iso3."
+          },
+          "404": {
+            "description": "NO_COUNCIL_RUN: no council run on that country yet."
+          }
+        },
+        "tags": [
+          "Integration"
+        ],
+        "security": [
+          {},
+          {
+            "SmcrApiKey": []
+          }
+        ]
+      }
+    },
+    "/api/v1/integration/bundle/{iso3}": {
+      "get": {
+        "summary": "Everything from the last council run on one country",
+        "tags": [
+          "Integration"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Country"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed SMCR-1.0 bundle; sovereign carries iso2 and iso3."
+          },
+          "404": {
+            "description": "NO_COUNCIL_RUN: no council run on that country yet."
+          }
+        },
+        "security": [
+          {},
+          {
+            "SmcrApiKey": []
+          }
+        ]
+      }
+    },
+    "/api/v1/integration/publish": {
+      "post": {
+        "summary": "Send the last council run to the webhooks and the event stream",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "iso3": {
+                    "type": "string",
+                    "example": "BRA"
+                  },
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "all_desks_bundle",
+                      "geopolitical_desk",
+                      "sovereign_desk",
+                      "macro_desk",
+                      "supreme_council"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Delivery receipts with the HMAC-SHA256 signature."
+          }
+        },
+        "tags": [
+          "Integration"
+        ],
+        "security": [
+          {},
+          {
+            "SmcrApiKey": []
+          }
+        ]
+      }
+    },
+    "/api/v1/integration/stream": {
+      "get": {
+        "summary": "Server-sent event stream",
+        "tags": [
+          "Integration"
+        ],
+        "responses": {
+          "200": {
+            "description": "text/event-stream of JSON events."
+          }
+        },
+        "security": [
+          {},
+          {
+            "SmcrApiKey": []
+          }
+        ]
+      }
+    }
+  }
+}

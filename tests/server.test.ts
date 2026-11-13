@@ -790,6 +790,13 @@ test('series: every figure lists its history or why it has none; unknown series 
   assert.match(((await egypt.json()) as { message: string }).message, /Missing\. Not in BIS policy rates/);
   const world = (await (await fetch(`${base}/api/series/world`)).json()) as { series: unknown[]; missing: unknown[] };
   assert.ok(Array.isArray(world.series) && Array.isArray(world.missing));
+  // Countries by alpha-2 or alpha-3; every answer carries both codes.
+  const byIso2 = (await (await fetch(`${base}/api/series/MX`)).json()) as { iso2: string; iso3: string; series: unknown[] };
+  assert.equal(byIso2.iso2, 'MX');
+  assert.equal(byIso2.iso3, 'MEX');
+  assert.equal(byIso2.series.length, list.series.length);
+  const one = (await (await fetch(`${base}/api/series/mx/reserves_months`)).json()) as { iso2: string; iso3: string };
+  assert.deepEqual([one.iso2, one.iso3], ['MX', 'MEX']);
 });
 
 test('downloads: figures and series come as CSV files; a series with no history says why', async () => {
@@ -798,6 +805,10 @@ test('downloads: figures and series come as CSV files; a series with no history 
   assert.match(figs.headers.get('content-type') || '', /text\/csv/);
   assert.match(figs.headers.get('content-disposition') || '', /MEX-figures-\d{4}-\d{2}-\d{2}\.csv/);
   const text = await figs.text();
+  // The alpha-2 code is the last column, so scripts reading columns by position keep working.
+  assert.match(text.split('\n').find((l) => l.startsWith('iso3,')) || '', /,licence,iso2\r?$/);
+  assert.match(text, /\nMEX,.*,MX\r?\n/);
+  assert.equal((await fetch(`${base}/api/export/MX/figures.csv`)).status, 200);
   assert.ok(text.includes('iso3,country,field,figure,value,unit,status'));
   assert.ok(text.includes('Missing'));
   const all = await fetch(`${base}/api/export/MEX/series.csv`);
@@ -850,8 +861,11 @@ test('downloads: the same tables come as Excel workbooks', async () => {
 test('panel builder: countries x figures as JSON and CSV; missing cells say why', async () => {
   const r = await fetch(`${base}/api/panel?countries=MEX,EGY&figures=policy_rate,yield_10y`);
   assert.equal(r.status, 200);
-  const body = (await r.json()) as { cells: Array<{ iso3: string; figureId: string; status: string; value: number | null; reason: string }> };
+  const body = (await r.json()) as { cells: Array<{ iso2: string; iso3: string; figureId: string; status: string; value: number | null; reason: string }> };
   assert.equal(body.cells.length, 4);
+  assert.deepEqual([...new Set(body.cells.map((c) => `${c.iso2}/${c.iso3}`))].sort(), ['EG/EGY', 'MX/MEX']);
+  const byIso2 = (await (await fetch(`${base}/api/panel?countries=MX,EG&figures=policy_rate,yield_10y`)).json()) as { cells: unknown[] };
+  assert.equal(byIso2.cells.length, 4);
   for (const c of body.cells) if (c.status === 'Missing') assert.ok(c.value === null && c.reason.length > 0);
   const hist = (await (await fetch(`${base}/api/panel?countries=MEX&figures=policy_rate&mode=history`)).json()) as { rowCount: number };
   assert.equal(typeof hist.rowCount, 'number');
