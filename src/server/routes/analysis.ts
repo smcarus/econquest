@@ -38,6 +38,7 @@ import { OFFICIAL_FIGURES, officialSeries, type OfficialHistoryFile } from '../.
 import { remittanceProfile, remitSentence, REMIT_IDS } from '../../utils/remittances';
 import { financialInclusion, fiSentence, FI_IDS } from '../../utils/financialInclusion';
 import { commodityTerms, ctSentence, CT_IDS } from '../../utils/commodityTerms';
+import { aidProfile, aidSentence, AID_IDS } from '../../utils/aidReceived';
 import { fetchCommodities } from '../feeds/commodities';
 import { type OutputGapResult } from '../../utils/outputGap';
 import { dsaSentence, type DsaOutcome } from '../../utils/debtSustainability';
@@ -467,6 +468,20 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const c = commodityTerms(Object.fromEntries(CT_IDS.map((id) => [id, pick(id)])), prices?.moves ?? null, new Date().getUTCFullYear(), Boolean(file));
     const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...c, sentence: ctSentence(c, name) });
+  });
+  // Aid received (PA4, src/utils/aidReceived.ts): saved World Bank history only (OECD DAC figures as the World Bank republishes them).
+  app.get('/api/aid/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    const pick = (id: string): YearValue[] | undefined => {
+      if (!file) return undefined;
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
+    };
+    const a = aidProfile(Object.fromEntries(AID_IDS.map((id) => [id, pick(id)])), new Date().getUTCFullYear(), Boolean(file));
+    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...a, sentence: aidSentence(a, name) });
   });
   // Who pays for a policy (src/utils/policyIncidence.ts): the saved context; the incidence itself is worked out in the browser on shares the user types.
   app.get('/api/policy-incidence/:iso3', async (req, res) => {

@@ -285,6 +285,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-commodity-terms' },
   },
   {
+    id: 'aid_received',
+    category: 'history',
+    title: "Aid received",
+    what: "Net development aid the country receives (World Bank, from OECD DAC): latest year in US dollars, as % of GNI, of central government spending, of imports and of investment, per person, from six large donors with their share, and the last ten years.",
+    sources: "World Bank WDI (OECD DAC)",
+    target: { area: 'country', tab: 'history', anchor: 'tool-aid' },
+  },
+  {
     id: 'policy_incidence',
     category: 'history',
     title: 'Who pays for a policy',
