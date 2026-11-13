@@ -69,7 +69,7 @@ function EntryDetail({ entry }: { entry: AuditEntry }) {
       )}
       {missing.length > 0 && <p>Missing: {missing.join(' · ')}</p>}
       {rest.length > 0 && <p className="break-words">{rest.map(([k, v]) => `${DETAIL_LABEL[k] ?? k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`).join(' · ')}</p>}
-      <p className="break-all text-slate-400 dark:text-slate-500">Entry {entry.seq} · hash {entry.hash}</p>
+      <p className="break-all text-slate-400 dark:text-slate-500">Entry {entry.seq}{entry.correlationId ? ` · correlation ID ${entry.correlationId}` : ''} · hash {entry.hash}</p>
     </div>
   );
 }

@@ -100,14 +100,14 @@ import { addBrief, addCouncilDoc, addDoc, addEpisode, addNotebook, briefId, isBr
 import { episodeFileName, episodeMarkdown } from './src/utils/episodeHandout';
 import { notebookFileName, notebookMarkdown } from './src/utils/notebookExport';
 import { loadLibrary, saveLibrary } from './src/utils/researchStore';
-import { appendAudit, rawAudit, readAudit, setAuditActor } from './src/utils/auditStore';
+import { appendAudit, rawAudit, readAudit, setAuditActor, setAuditCorrelation } from './src/utils/auditStore';
 import { defaultFetcher, loadSpecs, loadValidation, runBacktests } from './src/utils/backtestRun';
 import { loadSignOffs, recordFor, reportHash, signOffView } from './src/utils/signoff';
 import { buildDiagnosis, DIAGNOSIS_FIELDS, type Diagnosis } from './src/utils/reviewDiagnosis';
 import { reviewModelFigures } from './src/utils/reviewModels';
 import { checkOptions, OPTIONS_INSTRUCTION, optionsPrompt, LEVERS, type OptionsStep, type UserOption } from './src/utils/reviewOptions';
 import { type ReviewFrame } from './src/utils/policyReview';
-import { AUDIT_HEADER, AUDIT_KIND_LABEL, auditRows, describeRequest, figuresFromAnswers, type AuditKind } from './src/utils/auditLog';
+import { AUDIT_HEADER, AUDIT_KIND_LABEL, CORRELATION_HEADER, auditRows, correlationIdProblem, describeRequest, figuresFromAnswers, type AuditKind } from './src/utils/auditLog';
 import { backupFileName, parseBackup, summariseBackup } from './src/utils/backup';
 import { currentBackup, restoreBackup } from './src/utils/backupStore';
 import { cleanSettings, isDue, localClock, morningQuestion, nextRunText, parseMorningFile, settingsProblem, type MorningBriefFile, type MorningBriefRun } from './src/utils/morningBrief';
@@ -2756,6 +2756,25 @@ async function startServer() {
     next();
   });
 
+  // Correlation IDs (console integration item 3): an outside system may send X-Correlation-Id on
+  // any call; it is checked, sent back on the reply, and written into every audit entry the call
+  // makes, so one action can be traced across the systems' logs. Without one, the app makes one
+  // for the reply only (and the audit entry stays without).
+  const correlationStore = new AsyncLocalStorage<string>();
+  setAuditCorrelation(() => correlationStore.getStore());
+  app.use((req, res, next) => {
+    const raw = req.headers[CORRELATION_HEADER];
+    const given = (Array.isArray(raw) ? raw[0] : raw)?.trim();
+    if (given === undefined) {
+      res.setHeader('X-Correlation-Id', crypto.randomUUID());
+      return next();
+    }
+    const problem = correlationIdProblem(given);
+    if (problem) return res.status(400).json({ error: 'BAD_CORRELATION_ID', message: problem });
+    res.setHeader('X-Correlation-Id', given);
+    correlationStore.run(given, next);
+  });
+
   // Countries by ISO alpha-2 or alpha-3 (src/server/countryCodes.ts): "BR" in an address or in
   // iso3= / countries= becomes "BRA" before any route or check sees it.
   app.use((req, _res, next) => {
@@ -2830,8 +2849,11 @@ async function startServer() {
   const apiTokens = new ApiTokenStore(apiTokensFile(DATA_DIR));
   const limiter = new RateLimiter();
   const auditTokenUse = (req: express.Request, res: express.Response, who: { id: string; name: string }, scope: Scope | null) => {
+    // 'finish' runs outside the request's async context, so the correlation ID is read now.
+    const correlationId = correlationStore.getStore();
     res.on('finish', () => {
       appendAudit(AUDIT_FILES, {
+        ...(correlationId ? { correlationId } : {}),
         kind: 'api',
         summary: `API token "${who.name}": ${req.method} ${req.path} (${res.statusCode})`,
         detail: { token: who.id, scope, method: req.method, path: req.path, status: res.statusCode },
@@ -3092,10 +3114,11 @@ async function startServer() {
   // by what it did (route), never by its body, so keys and document text stay out of the log.
   app.use((req, res, next) => {
     const by = actorStore.getStore();
+    const correlationId = correlationStore.getStore();
     res.on('finish', () => {
       if (res.statusCode >= 400) return;
       const what = describeRequest(req.method, req.originalUrl || req.url);
-      if (what) appendAudit(AUDIT_FILES, by ? { ...what, by } : what);
+      if (what) appendAudit(AUDIT_FILES, { ...what, ...(by ? { by } : {}), ...(correlationId ? { correlationId } : {}) });
     });
     next();
   });
@@ -3118,7 +3141,7 @@ async function startServer() {
     const note = check.ok ? `Checked: ${check.entries} entries, chain intact, last hash ${check.lastHash ?? '-'}` : `CHECK FAILED: ${check.problem}`;
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.attachment(`econquest-audit-log-${stamp}.csv`);
-    res.send(toCsv(AUDIT_HEADER, [...auditRows(entries), ['', '', 'Check', '', note, '', '', '', '']]));
+    res.send(toCsv(AUDIT_HEADER, [...auditRows(entries), ['', '', 'Check', '', note, '', '', '', '', '']]));
   });
   // Menu > Settings > API tokens (admin only by the role table; this computer only while sign-in is off).
   const tokensReply = () => ({ tokens: apiTokens.list().map(publicToken).sort((a, b) => Number(b.active) - Number(a.active) || b.createdAt.localeCompare(a.createdAt)) });

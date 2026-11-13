@@ -58,6 +58,11 @@ export interface AuditActor {
 export interface AuditInput {
   kind: AuditKind;
   by?: AuditActor;
+  /**
+   * The X-Correlation-Id an outside system sent with the request that led to this entry, so one
+   * action can be traced across its logs and this one. Absent when none was sent.
+   */
+  correlationId?: string;
   /** One line in plain words, e.g. 'Council answer: "Is Brazil debt sustainable?"'. */
   summary: string;
   detail?: Record<string, unknown>;
@@ -73,6 +78,16 @@ export interface AuditEntry extends AuditInput {
 }
 
 export const GENESIS = 'GENESIS';
+
+/** Correlation IDs: 1 to 128 letters, digits and . _ : - (a UUID, a trace ID, a job number). */
+export const CORRELATION_ID_MAX = 128;
+export const CORRELATION_HEADER = 'x-correlation-id';
+export function correlationIdProblem(v: string): string | null {
+  if (!v) return 'X-Correlation-Id is empty.';
+  if (v.length > CORRELATION_ID_MAX) return `X-Correlation-Id is longer than ${CORRELATION_ID_MAX} characters.`;
+  if (!/^[A-Za-z0-9._:-]+$/.test(v)) return 'X-Correlation-Id may hold only letters, digits and . _ : -';
+  return null;
+}
 export const MAX_FIGURES = 400;
 
 /** JSON with object keys sorted at every level, so the same entry always hashes the same. */
@@ -87,9 +102,9 @@ export function canonicalJson(value: unknown): string {
 }
 
 export function entryHash(e: Omit<AuditEntry, 'hash'>): string {
-  const { seq, at, kind, summary, detail, prev, by } = e;
-  // `by` is left out of the hash when absent, so entries written before accounts existed still check.
-  return createHash('sha256').update(canonicalJson({ seq, at, kind, summary, detail: detail ?? null, prev, by })).digest('hex');
+  const { seq, at, kind, summary, detail, prev, by, correlationId } = e;
+  // `by` and `correlationId` are left out of the hash when absent, so older entries still check.
+  return createHash('sha256').update(canonicalJson({ seq, at, kind, summary, detail: detail ?? null, prev, by, correlationId })).digest('hex');
 }
 
 /** The next entry after `last` (null for an empty log). */
@@ -102,6 +117,7 @@ export function nextEntry(last: Pick<AuditEntry, 'seq' | 'hash'> | null, input: 
     ...(input.detail ? { detail: input.detail } : {}),
     prev: last ? last.hash : GENESIS,
     ...(input.by ? { by: { id: input.by.id, username: input.by.username, name: input.by.name } } : {}),
+    ...(input.correlationId ? { correlationId: String(input.correlationId).slice(0, CORRELATION_ID_MAX) } : {}),
   };
   return { ...base, hash: entryHash(base) };
 }
@@ -239,7 +255,7 @@ export function describeRequest(method: string, path: string): AuditInput | null
   return { kind: 'data', summary: `${m} ${p}` };
 }
 
-export const AUDIT_HEADER = ['Entry', 'Time (UTC)', 'Kind', 'By', 'What happened', 'AI model', 'Figures used', 'Detail', 'Hash'];
+export const AUDIT_HEADER = ['Entry', 'Time (UTC)', 'Kind', 'By', 'What happened', 'AI model', 'Figures used', 'Detail', 'Hash', 'Correlation ID'];
 
 export function auditRows(entries: AuditEntry[]): Array<Array<string | number>> {
   return entries.map((e) => {
@@ -257,6 +273,7 @@ export function auditRows(entries: AuditEntry[]): Array<Array<string | number>> 
       figures.map((f) => `${f.iso3} ${f.label} ${f.value} (${f.source})`).join('; '),
       Object.keys(rest).length ? JSON.stringify(rest) : '',
       e.hash,
+      e.correlationId ?? '',
     ];
   });
 }
