@@ -43,6 +43,7 @@ before(async () => {
       SMCR_INTEGRATION_API_KEY: 'smcr_data_api_test_key',
       OFFLINE_PASS: `http://127.0.0.1:${receiverPort}/`,
       EVENTS_POLL_MS: '300',
+      AUDIT_SEAL_KEY: 'audit-seal-key-for-the-server-tests-0123',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -119,7 +120,13 @@ test('signed in, the API answers; signed out, it refuses', async () => {
   assert.equal(me.account.username, 'sam');
   assert.equal(me.account.role, 'admin');
   assert.equal(me.account.passwordHash, undefined);
-  assert.equal((await fetch(`${base}/api/audit`, { headers: { Cookie: adminCookie } })).status, 200);
+  const auditReply = await fetch(`${base}/api/audit`, { headers: { Cookie: adminCookie } });
+  assert.equal(auditReply.status, 200);
+  const auditBody = await auditReply.json();
+  assert.equal(auditBody.seals.keySet, true, 'AUDIT_SEAL_KEY seals new entries');
+  assert.ok(auditBody.seals.sealed > 0 && auditBody.seals.ok);
+  assert.equal(auditBody.bucket.on, false);
+  assert.ok(!JSON.stringify(auditBody).includes('audit-seal-key-for-the-server-tests'), 'the key is never sent');
   assert.equal((await fetch(`${base}/api/audit`)).status, 401);
   assert.equal((await fetch(`${base}/api/audit`, { headers: { Cookie: 'eq_session=forged' } })).status, 401);
 });

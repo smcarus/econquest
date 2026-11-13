@@ -6,9 +6,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Download, ScrollText, ShieldAlert, ShieldCheck, X } from 'lucide-react';
 import type { AuditCheck, AuditEntry, AuditFigure, AuditKind } from '../utils/auditLog';
+import type { SealCheck } from '../utils/auditSeal';
+
+type BucketView = { on: boolean; problem?: string; where?: string; lockMode?: string; retainDays?: number; shippedSeq?: number; lastOkAt?: string; lastError?: string };
 
 type AuditReply = {
   check: AuditCheck;
+  seals?: SealCheck;
+  bucket?: BucketView;
   total: number;
   entries: AuditEntry[];
   kinds: Record<AuditKind, string>;
@@ -155,6 +160,25 @@ export function AuditLogDialog({ onClose }: { onClose: () => void }) {
                 {check.lastHash && (
                   <p className="text-xs text-slate-500 dark:text-slate-400 break-all">
                     Latest hash {check.lastHash}. Keep a copy of it, or of an export, somewhere else: that shows the whole log was not rewritten.
+                  </p>
+                )}
+                {reply?.seals && (
+                  <p className="text-xs text-slate-600 dark:text-slate-300" data-testid="audit-seal">
+                    {!reply.seals.ok
+                      ? `Seal check failed: ${reply.seals.problem}.`
+                      : reply.seals.keySet
+                        ? `Sealed: ${reply.seals.sealed} ${reply.seals.sealed === 1 ? 'entry' : 'entries'} carry a seal made with this server's key (${reply.seals.keyId})${reply.seals.unsealed ? `; ${reply.seals.unsealed} written before the key was set have none` : ''}${reply.seals.otherKey ? `; ${reply.seals.otherKey} were sealed with an earlier key` : ''}.`
+                        : 'Not sealed: set AUDIT_SEAL_KEY (at least 32 characters) where the app runs, and new entries get a seal that only that key can make.'}
+                    {reply.seals.ok && reply.seals.unsealedAfterSealed > 0 && ` Warning: ${reply.seals.unsealedAfterSealed} ${reply.seals.unsealedAfterSealed === 1 ? 'entry comes' : 'entries come'} after sealed ones without a seal (the key was removed, or seals were stripped).`}
+                  </p>
+                )}
+                {reply?.bucket && (
+                  <p className="text-xs text-slate-600 dark:text-slate-300" data-testid="audit-bucket">
+                    {reply.bucket.on
+                      ? `Locked copies: ${reply.bucket.shippedSeq ?? 0} ${reply.bucket.shippedSeq === 1 ? 'entry' : 'entries'} sent to ${reply.bucket.where} (${reply.bucket.lockMode}, kept ${reply.bucket.retainDays} days)${reply.bucket.lastError ? `. Not going through: ${reply.bucket.lastError}; tried again automatically` : ''}.`
+                      : reply.bucket.problem
+                        ? `Locked copies are off: ${reply.bucket.problem}`
+                        : 'Locked copies are off. Set AUDIT_BUCKET_URL and its keys to send each entry to a bucket with object lock (docs/SECURITY.md).'}
                   </p>
                 )}
               </div>
