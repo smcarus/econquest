@@ -78,6 +78,8 @@ import type { ToolTarget } from './data/toolsCatalog';
 import type { WorkspaceTab } from './components/WorkspacePage';
 
 import { loadHoldings, saveHoldings,   type Holding } from './utils/holdings';
+import { HIDDEN_CHANGED_EVENT, fetchHiddenView, hiddenSets } from './utils/hiddenNamesClient';
+import type { HiddenView } from './utils/exclusions';
 
 type AppArea = 'today' | 'country' | 'compare' | 'portfolio' | 'reports' | 'desks';
 import { EconQuestLogo } from './components/EconQuestLogo';
@@ -349,10 +351,24 @@ export default function App() {
   const [councilProgressId, setCouncilProgressId] = useState<string | null>(null);
   // Tools is always shown: without the old desks it is the page of tools that run on live data.
   const navAreas = NAV;
-  const [holdings, setHoldingsState] = useState<Holding[]>(() => loadHoldings());
+  const [allHoldings, setHoldingsState] = useState<Holding[]>(() => loadHoldings());
+  // Hidden names (Menu > Settings > Hidden names): positions and countries on the list are left
+  // out of every screen; only their count shows. The browser gets fingerprints, never names.
+  const [hiddenView, setHiddenView] = useState<HiddenView | null>(null);
+  const [hidden, setHidden] = useState<{ holdingIds: Set<string>; iso3: Set<string> }>(() => ({ holdingIds: new Set(), iso3: new Set() }));
+  useEffect(() => {
+    const load = () => void fetchHiddenView().then(setHiddenView);
+    load();
+    window.addEventListener(HIDDEN_CHANGED_EVENT, load);
+    return () => window.removeEventListener(HIDDEN_CHANGED_EVENT, load);
+  }, []);
+  const holdings = useMemo(() => (hidden.holdingIds.size ? allHoldings.filter((h) => !hidden.holdingIds.has(h.id)) : allHoldings), [allHoldings, hidden]);
+  const hiddenHoldingCount = allHoldings.length - holdings.length;
   const setHoldings = (next: Holding[]) => {
-    setHoldingsState(next);
-    saveHoldings(next);
+    // Screens edit the visible positions; hidden ones are kept as they were.
+    const full = [...next, ...allHoldings.filter((h) => hidden.holdingIds.has(h.id))];
+    setHoldingsState(full);
+    saveHoldings(full);
   };
   const openWorkspace = (area: 'portfolio' | 'reports', deskId?: string) => {
     const tabs = area === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS;
@@ -997,8 +1013,19 @@ export default function App() {
     }
   };
 
-  const activeWatchlistItems =
-    watchlists.find((w) => w.id === activeWatchlistId)?.items || SOVEREIGN_CATALOG;
+  const rawWatchlistItems = watchlists.find((w) => w.id === activeWatchlistId)?.items || SOVEREIGN_CATALOG;
+  const activeWatchlistItems = useMemo(() => (hidden.iso3.size ? rawWatchlistItems.filter((i) => !hidden.iso3.has(i.iso3)) : rawWatchlistItems), [rawWatchlistItems, hidden]);
+  const visibleWatchlists = useMemo(() => (hidden.iso3.size ? watchlists.map((w) => ({ ...w, items: w.items.filter((i) => !hidden.iso3.has(i.iso3)) })) : watchlists), [watchlists, hidden]);
+  useEffect(() => {
+    let live = true;
+    const iso3s = [...watchlists.flatMap((w) => w.items.map((i) => i.iso3)), ...SOVEREIGN_CATALOG.map((c) => c.iso3), ...allHoldings.map((h) => h.iso3)];
+    void hiddenSets(hiddenView, allHoldings, iso3s).then((next) => {
+      if (live) setHidden(next);
+    });
+    return () => {
+      live = false;
+    };
+  }, [hiddenView, allHoldings, watchlists]);
   // The core view never shows a built-in figure: only what a real source filled (utils/liveFigures.ts).
   const liveWatchlistItems = useMemo(() => activeWatchlistItems.map(toLive), [activeWatchlistItems]);
   // Council chat: one conversation for the whole app, on Workspace and in the side panel elsewhere.
@@ -1023,7 +1050,7 @@ export default function App() {
   // Risk scores for held countries: the active watchlist first (it may carry live figures), then the catalogue.
   const holdingsRiskLookup = [
     ...activeWatchlistItems,
-    ...SOVEREIGN_CATALOG.filter((c) => !activeWatchlistItems.some((w) => w.iso3 === c.iso3)),
+    ...SOVEREIGN_CATALOG.filter((c) => !activeWatchlistItems.some((w) => w.iso3 === c.iso3) && !hidden.iso3.has(c.iso3)),
   ];
   // Portfolio and Reports see only real figures: the catalogue's built-in values are stripped too.
   const liveRiskLookup = useMemo(() => holdingsRiskLookup.map(toLive), [activeWatchlistItems]);
@@ -1590,7 +1617,7 @@ export default function App() {
         {!isWatchlistCollapsed && (
           <aside className="lg:col-span-3">
             <WatchlistSidebar
-              watchlists={watchlists}
+              watchlists={visibleWatchlists}
               activeWatchlistId={activeWatchlistId}
               selectedIso3={run.iso3}
               onSelectWatchlist={setActiveWatchlistId}
@@ -1767,6 +1794,7 @@ export default function App() {
                 <PanelBoundary name="Your holdings">
                   <HoldingsPanel
                     holdings={holdings}
+                    hiddenCount={hiddenHoldingCount}
                     countries={holdingsRiskLookup}
                     onChange={setHoldings}
                     onClose={() => setResearchSection('summary')}

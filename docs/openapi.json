@@ -581,6 +581,71 @@
             "description": "Your own id, returned exactly; positions are updated by it."
           }
         }
+      },
+      "HiddenName": {
+        "type": "object",
+        "required": [
+          "kind",
+          "value"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "country",
+              "isin",
+              "lei",
+              "cik",
+              "ticker",
+              "entity_id"
+            ]
+          },
+          "value": {
+            "type": "string",
+            "description": "Country as ISO alpha-2 or alpha-3; identifiers checked as for positions."
+          }
+        }
+      },
+      "HiddenList": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "by_kind": {
+            "type": "object"
+          },
+          "note": {
+            "type": "string",
+            "example": "2 items hidden"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "country",
+                    "isin",
+                    "lei",
+                    "cik",
+                    "ticker",
+                    "entity_id"
+                  ]
+                },
+                "added_at": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "description": "Counts and kinds only: the list keeps fingerprints, never names."
       }
     },
     "headers": {
@@ -2053,6 +2118,283 @@
           },
           "403": {
             "description": "TOKEN_SCOPE: the token lacks write:holdings. The legacy key cannot write."
+          }
+        }
+      }
+    },
+    "/api/v1/exclusions": {
+      "get": {
+        "summary": "The hidden-names list: counts and kinds",
+        "tags": [
+          "Hidden names"
+        ],
+        "x-scope": "write:exclusions",
+        "security": [
+          {
+            "ApiToken": [
+              "write:exclusions"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list after the change (counts only).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HiddenList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks write:exclusions."
+          }
+        }
+      },
+      "post": {
+        "summary": "Hide names",
+        "tags": [
+          "Hidden names"
+        ],
+        "x-scope": "write:exclusions",
+        "security": [
+          {
+            "ApiToken": [
+              "write:exclusions"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "names"
+                ],
+                "properties": {
+                  "names": {
+                    "type": "array",
+                    "maxItems": 2000,
+                    "items": {
+                      "$ref": "#/components/schemas/HiddenName"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The list after the change (counts only).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HiddenList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BAD_NAMES: nothing was changed; errors lists every problem without repeating the names."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks write:exclusions."
+          }
+        }
+      },
+      "put": {
+        "summary": "Replace the whole list (an empty list clears it)",
+        "tags": [
+          "Hidden names"
+        ],
+        "x-scope": "write:exclusions",
+        "security": [
+          {
+            "ApiToken": [
+              "write:exclusions"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "names"
+                ],
+                "properties": {
+                  "names": {
+                    "type": "array",
+                    "maxItems": 2000,
+                    "items": {
+                      "$ref": "#/components/schemas/HiddenName"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The list after the change (counts only).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HiddenList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BAD_NAMES: nothing was changed; errors lists every problem without repeating the names."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks write:exclusions."
+          }
+        }
+      }
+    },
+    "/api/v1/exclusions/remove": {
+      "post": {
+        "summary": "Show names again, given by value",
+        "tags": [
+          "Hidden names"
+        ],
+        "x-scope": "write:exclusions",
+        "security": [
+          {
+            "ApiToken": [
+              "write:exclusions"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "names"
+                ],
+                "properties": {
+                  "names": {
+                    "type": "array",
+                    "maxItems": 2000,
+                    "items": {
+                      "$ref": "#/components/schemas/HiddenName"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The list after the change (counts only).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HiddenList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BAD_NAMES: nothing was changed; errors lists every problem without repeating the names."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks write:exclusions."
+          }
+        }
+      }
+    },
+    "/api/v1/exclusions/{id}": {
+      "delete": {
+        "summary": "Remove one entry by its id",
+        "tags": [
+          "Hidden names"
+        ],
+        "x-scope": "write:exclusions",
+        "security": [
+          {
+            "ApiToken": [
+              "write:exclusions"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list after the change (counts only).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HiddenList"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NO_ENTRY."
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks write:exclusions."
           }
         }
       }

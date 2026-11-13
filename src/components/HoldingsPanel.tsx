@@ -20,6 +20,8 @@ interface HoldingsPanelProps {
   countries: CountryLookup[];
   onChange: (next: Holding[]) => void;
   onClose: () => void;
+  /** Positions left out because they are on the hidden-names list (only the count shows). */
+  hiddenCount?: number;
 }
 
 function downloadText(filename: string, text: string) {
@@ -35,7 +37,7 @@ function downloadText(filename: string, text: string) {
 const inputCls =
   'px-2 py-1 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white min-w-0';
 
-export const HoldingsPanel: React.FC<HoldingsPanelProps> = ({ holdings, countries, onChange, onClose }) => {
+export const HoldingsPanel: React.FC<HoldingsPanelProps> = ({ holdings, countries, onChange, onClose, hiddenCount = 0 }) => {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [pasted, setPasted] = useState('');
   const [mode, setMode] = useState<'replace' | 'append'>(holdings.length ? 'append' : 'replace');
@@ -236,6 +238,12 @@ export const HoldingsPanel: React.FC<HoldingsPanelProps> = ({ holdings, countrie
               </p>
             ))}
           </div>
+        )}
+
+        {hiddenCount > 0 && (
+          <p className="text-xs text-slate-500 dark:text-slate-400" data-holdings-hidden={hiddenCount}>
+            {hiddenCount === 1 ? t('ho_hiddenOne') : t('ho_hiddenMany', { n: hiddenCount })}
+          </p>
         )}
 
         {holdings.length > 0 && (

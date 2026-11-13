@@ -392,6 +392,57 @@ test('holdings API: a write:holdings token sends positions; they land in the mak
   assert.ok(!JSON.stringify(audit).includes('US105756CE88'), 'positions themselves are not in the audit log');
 });
 
+test('hidden names: a write:exclusions token hides a country and a security; they never appear, only a count', async () => {
+  const made = await (await post('/api/settings/api-tokens', { name: 'Restricted list', scopes: ['write:exclusions', 'read:data', 'read:events', 'write:holdings'] }, adminCookie)).json();
+  const auth = { Authorization: `Bearer ${made.secret}`, 'Content-Type': 'application/json' };
+  const isin = 'US0378331005';
+  assert.equal((await fetch(`${base}/api/v1/exclusions`, { method: 'POST', headers: auth, body: JSON.stringify({ names: [{ kind: 'isin', value: 'bad' }] }) })).status, 400);
+  const add = await fetch(`${base}/api/v1/exclusions`, { method: 'POST', headers: auth, body: JSON.stringify({ names: [{ kind: 'country', value: 'MX' }, { kind: 'isin', value: isin }] }) });
+  assert.equal(add.status, 200);
+  const view = await add.json();
+  assert.equal(view.count, 2);
+  assert.equal(view.note, '2 items hidden');
+  assert.ok(!JSON.stringify(view).includes('MEX') && !JSON.stringify(view).includes(isin), 'the list never shows names');
+  // Countries: left out of the list, and every address about it answers with a count only.
+  const list = await (await fetch(`${base}/api/v1/countries`, { headers: auth })).json();
+  assert.ok(!list.countries.some((c: { iso3: string }) => c.iso3 === 'MEX'));
+  assert.equal(list.hidden, 1);
+  for (const p of ['/api/v1/countries/MX/snapshot', '/api/series/MEX', '/api/series/MX/policy_rate']) {
+    const r = await fetch(`${base}${p}`, { headers: auth });
+    assert.equal(r.status, 404, p);
+    const b = await r.json();
+    assert.equal(b.error, 'HIDDEN');
+    assert.ok(!JSON.stringify(b).includes('Mexico'), `${p} names nothing`);
+  }
+  // The watchlist in the app leaves it out too.
+  const wl = await (await fetch(`${base}/api/data/watchlist-live`, { headers: { Cookie: adminCookie } })).json();
+  assert.ok(!wl.items.some((i: { iso3: string }) => i.iso3 === 'MEX'));
+  assert.equal(wl.hidden, 1);
+  assert.equal((await fetch(`${base}/api/data/sovereign-snapshot?iso3=MEX`, { headers: { Cookie: adminCookie } })).status, 404);
+  // Events about it are not served.
+  emitEvents(eventFiles(dataDir), [{ type: 'release_upcoming', entity: { kind: 'country', iso2: 'MX', iso3: 'MEX', name: 'Mexico' }, as_of: '2026-11-14', source: 'Banco de México', summary: 'Tomorrow: Banxico decision.', discriminator: 'hidden-test' }]);
+  const ev = await (await fetch(`${base}/api/v1/events?types=release_upcoming`, { headers: auth })).json();
+  assert.ok(!ev.events.some((e: { entity: { iso3?: string } }) => e.entity.iso3 === 'MEX'));
+  assert.ok(ev.hidden >= 1);
+  // Positions naming the security: kept, but never shown.
+  const put = await (await fetch(`${base}/api/v1/holdings`, { method: 'PUT', headers: auth, body: JSON.stringify({ holdings: [{ country: 'US', isin, notional_usd_mm: 5, entity_id: 'h-1' }, { country: 'BR', notional_usd_mm: 3, entity_id: 'h-2' }] }) })).json();
+  assert.deepEqual(put.holdings.map((h: { entity_id: string }) => h.entity_id), ['h-2']);
+  assert.equal(put.hidden, 1);
+  // Nothing on disk or in the audit log names them.
+  await new Promise((r) => setTimeout(r, 300));
+  assert.ok(!readFileSync(path.join(dataDir, 'local', 'hidden-names.json'), 'utf8').includes(isin));
+  const audit = readFileSync(path.join(dataDir, 'local', 'audit', 'audit-log.jsonl'), 'utf8');
+  assert.ok(audit.includes('added 2 hidden names; 2 items hidden now'));
+  assert.ok(!audit.includes(isin), 'the audit log has counts, not names');
+  // The app reads fingerprints only; clearing shows everything again.
+  const appView = await (await fetch(`${base}/api/settings/hidden-names`, { headers: { Cookie: adminCookie } })).json();
+  assert.equal(appView.fingerprints.length, 2);
+  assert.match(appView.fingerprints[0].fp, /^[0-9a-f]{64}$/);
+  assert.equal((await post('/api/settings/hidden-names/clear', {}, adminCookie)).status, 200);
+  assert.equal((await fetch(`${base}/api/v1/countries/MX/snapshot`, { headers: auth })).status, 200);
+  await fetch(`${base}/api/v1/holdings`, { method: 'PUT', headers: auth, body: JSON.stringify({ holdings: [] }) });
+});
+
 test('wrong passwords are refused, then locked out; the right one signs in', async () => {
   const bad = await post('/api/auth/sign-in', { username: 'sam', password: 'not the password at all' });
   assert.equal(bad.status, 401);

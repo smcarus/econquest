@@ -152,6 +152,8 @@ export const TOOLS_FR: Messages<typeof TOOLS> = {
   ho_long: "Long",
   ho_short: "Court",
   ho_fromApi: "Envoyée par {name}",
+  ho_hiddenOne: "1 élément masqué (Menu > Réglages > Noms masqués).",
+  ho_hiddenMany: "{n} éléments masqués (Menu > Réglages > Noms masqués).",
   ho_notional: "Nominal (M USD)",
   ho_duration: "Duration (années, facultatif)",
   ho_add: "Ajouter",

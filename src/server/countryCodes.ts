@@ -77,3 +77,40 @@ export function normaliseCountryUrl(url: string): string {
   }
   return `${nextPath}?${changed ? params.toString() : search}`;
 }
+
+/** Address shapes that name one country by alpha-3 (after normalising). */
+const COUNTRY_SEGMENT3: RegExp[] = [
+  /^\/api\/series\/([A-Za-z]{3})(\/[^?]*)?$/,
+  /^\/api\/export\/([A-Za-z]{3})(\/[^?]*)$/,
+  /^\/api\/v1\/integration\/(?:desks|bundle)\/([A-Za-z]{3})(\/[^?]*)?$/,
+  /^\/api\/v1\/countries\/([A-Za-z]{3})(\/[^?]*)?$/,
+];
+
+/** The country an address is about (alpha-3), or null. */
+export function countryInPath(pathname: string): string | null {
+  for (const re of COUNTRY_SEGMENT3) {
+    const m = re.exec(pathname);
+    if (m) return m[1]!.toUpperCase();
+  }
+  return null;
+}
+
+/**
+ * Query fields with hidden countries taken out (src/utils/exclusions.ts). Returns the new query and
+ * how many were taken out, or null when none was.
+ */
+export function withoutHiddenCountries(query: Record<string, unknown>, hidden: (iso3: string) => boolean): { query: Record<string, unknown>; removed: number } | null {
+  let removed = 0;
+  const out: Record<string, unknown> = { ...query };
+  for (const k of COUNTRY_QUERY) {
+    const v = query[k];
+    if (typeof v !== 'string' || !v) continue;
+    const parts = v.split(',');
+    const kept = parts.filter((c) => !hidden(c.trim().toUpperCase()));
+    if (kept.length !== parts.length) {
+      removed += parts.length - kept.length;
+      out[k] = kept.join(',');
+    }
+  }
+  return removed ? { query: out, removed } : null;
+}

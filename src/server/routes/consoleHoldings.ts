@@ -23,6 +23,8 @@ export const HOLDINGS_KEY = 'econquest.holdings.v1';
 export interface ConsoleHoldingsDeps {
   /** The workspace file positions from this token go to. */
   workspaceForToken: (token: { id: string; createdById?: string }) => string;
+  /** Positions naming a hidden country or security are left out of replies and counted (item 8). */
+  hidden?: (h: Holding) => boolean;
 }
 
 type TokenLocal = { id: string; name: string; createdById?: string };
@@ -40,11 +42,16 @@ function readHoldings(file: string): Holding[] {
 
 export function registerConsoleHoldingsRoutes(app: express.Express, deps: ConsoleHoldingsDeps): void {
   const mine = (file: string, token: TokenLocal) => readHoldings(file).filter((h) => h.from === token.id);
+  /** The reply: positions shown, and how many are hidden. */
+  const shown = (list: Holding[]) => {
+    const visible = deps.hidden ? list.filter((h) => !deps.hidden!(h)) : list;
+    return { holdings: visible.map(apiHoldingView), hidden: list.length - visible.length };
+  };
 
   app.get('/api/v1/holdings', (_req, res) => {
     const token = tokenOf(res);
     if (!token) return res.status(401).json({ error: 'TOKEN_REQUIRED', message: 'Send a token with the write:holdings scope.' });
-    res.json({ holdings: mine(deps.workspaceForToken(token), token).map(apiHoldingView) });
+    res.json(shown(mine(deps.workspaceForToken(token), token)));
   });
 
   const write = (mode: 'replace' | 'upsert') => (req: express.Request, res: express.Response) => {
@@ -65,7 +72,7 @@ export function registerConsoleHoldingsRoutes(app: express.Express, deps: Consol
       summary: `API token "${token.name}" ${mode === 'replace' ? 'replaced its positions' : 'sent positions'}: ${parsed.holdings.length} received, ${now.length} now held from it`,
       detail: { token: token.id, mode, received: parsed.holdings.length, held: now.length },
     });
-    res.json({ ok: true, holdings: now.map(apiHoldingView) });
+    res.json({ ok: true, ...shown(now) });
   };
   app.put('/api/v1/holdings', write('replace'));
   app.post('/api/v1/holdings', write('upsert'));

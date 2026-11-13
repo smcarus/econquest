@@ -35,9 +35,11 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { refusal, requiredRole, roleAtLeast } from './src/utils/permissions';
 import { CSRF_HEADER, csrfMatches, csrfToken, isAiCall, isWrite, LIMITS, RateLimiter, SECURITY_HEADERS } from './src/utils/requestLimits';
 import { apiKeyFrom, DATA_API_LIMIT, isDataApiRead, keyMatches } from './src/server/dataApi';
-import { normaliseCountryQuery, normaliseCountryUrl } from './src/server/countryCodes';
+import { countryInPath, normaliseCountryQuery, normaliseCountryUrl, withoutHiddenCountries } from './src/server/countryCodes';
+import { ExclusionStore } from './src/server/exclusionStore';
+import { hiddenNote } from './src/utils/exclusions';
 import { iso2For } from './src/data/iso3166Alpha2';
-import type { ValueBadge } from './src/utils/consoleEvents';
+import type { ConsoleEvent, ValueBadge } from './src/utils/consoleEvents';
 import { entryBadge, validationHolm, type ValidationReply } from './src/utils/validationGrades';
 import { MODEL_REGISTER } from './src/data/modelRegister';
 import { EventHub, WebhookStore, emitEvents, eventFiles } from './src/server/eventBus';
@@ -45,6 +47,7 @@ import { badgeChangeInputs, councilRunInput, dailyRunInputs, figureEventInputs, 
 import { registerConsoleWatchRoutes } from './src/server/routes/consoleWatches';
 import { buildCountrySnapshot } from './src/server/countrySnapshot';
 import { registerConsoleHoldingsRoutes } from './src/server/routes/consoleHoldings';
+import { registerExclusionRoutes } from './src/server/routes/consoleExclusions';
 import { loadWatchRules as loadWatchRuleFile } from './src/utils/watchRulesStore';
 import { registerConsoleEventRoutes } from './src/server/routes/consoleEvents';
 import { LEGACY_SCOPES, TOKEN_PREFIX, publicToken, scopeFor, scopeRefusal, tokenOnly, type Scope } from './src/utils/apiTokens';
@@ -231,6 +234,8 @@ let validationRunning = false;
 const EVENT_FILES = eventFiles(DATA_DIR);
 const SIGNAL_STATE_FILE = path.join(DATA_DIR, 'local', 'events', 'signal-states.json');
 const WATCH_STATE_FILE = path.join(DATA_DIR, 'local', 'events', 'watch-states.json');
+/** Hidden names (item 8): fingerprints only, src/server/exclusionStore.ts. */
+const HIDDEN = new ExclusionStore(ExclusionStore.fileIn(DATA_DIR));
 function readWatchStates(): WatchStates | null {
   try {
     return JSON.parse(fs.readFileSync(WATCH_STATE_FILE, 'utf8')) as WatchStates;
@@ -2876,6 +2881,7 @@ async function startServer() {
     next();
   });
 
+
   // All state lives under DATA_DIR (one mounted volume in Docker). Stop at once with a clear
   // sentence if it cannot be written, instead of failing later on the first save.
   const dataProblem = dataDirProblem(DATA_DIR);
@@ -3279,6 +3285,21 @@ async function startServer() {
       res.status(500).json({ error: `Could not restore the backup (${error?.code || error?.message || 'unknown error'}). Nothing was lost: see data/local/backups/.` });
     }
   });
+  // Hidden names (item 8, src/utils/exclusions.ts): an address about a hidden country answers 404
+  // with a count only, and hidden countries are taken out of iso3= / countries= lists.
+  app.use((req, res, next) => {
+    if (!req.path.startsWith('/api/') || !HIDDEN.count()) return next();
+    const c = countryInPath(req.path);
+    const one = typeof req.query.iso3 === 'string' && !req.query.iso3.includes(',') ? req.query.iso3.trim().toUpperCase() : null;
+    if ((c && HIDDEN.countryHidden(c)) || (one && HIDDEN.countryHidden(one))) return res.status(404).json({ error: 'HIDDEN', message: `Not shown: it is on the hidden-names list (${hiddenNote(1)}).`, hidden: 1 });
+    const q = withoutHiddenCountries(req.query as Record<string, unknown>, (iso3) => HIDDEN.countryHidden(iso3));
+    if (q) {
+      req.query = q.query as typeof req.query;
+      res.setHeader('X-EconQuest-Hidden', String(q.removed));
+      res.locals.hiddenRemoved = q.removed;
+    }
+    next();
+  });
   app.use(express.json({ limit: '5mb' }));
 
   // Console events (item 4): catch-up, live stream and signed webhooks. Events are written to
@@ -3286,9 +3307,13 @@ async function startServer() {
   // lines, sends them to the live streams and delivers them to webhooks with retries.
   const consoleWebhooks = new WebhookStore(EVENT_FILES, secretBoxFromEnv(process.env).box);
   const consoleUrlProblem = (u: string) => outboundUrlProblem(u, PORT);
-  const consoleStream = registerConsoleEventRoutes(app, { files: EVENT_FILES, webhooks: consoleWebhooks, urlProblem: consoleUrlProblem });
+  // An event about a hidden country, or a threshold on one, never leaves the app (item 8).
+  const eventHidden = (e: ConsoleEvent) => HIDDEN.countryHidden(e.entity.iso3);
+  const consoleStream = registerConsoleEventRoutes(app, { files: EVENT_FILES, webhooks: consoleWebhooks, urlProblem: consoleUrlProblem, hidden: eventHidden });
   registerConsoleWatchRoutes(app, { rulesFile: WATCH_RULES_FILE, readStates: readWatchStates });
+  registerExclusionRoutes(app, { store: HIDDEN, refuseRemoteChange: (req, res) => refuseRemoteChange(req, res) });
   registerConsoleHoldingsRoutes(app, {
+    hidden: (h) => HIDDEN.holdingHidden(h),
     // The account that made the token; a token made with sign-in off (or by a removed account) uses
     // the first admin's workspace when accounts exist, else the shared one.
     workspaceForToken: (t) => {
@@ -3302,6 +3327,7 @@ async function startServer() {
     files: EVENT_FILES,
     webhooks: consoleWebhooks,
     urlProblem: consoleUrlProblem,
+    hidden: eventHidden,
     broadcast: (e) => {
       consoleStream.broadcast(e);
       // After a daily download, rebuild the watchlist from the saved files: the figure watch, the
@@ -3404,11 +3430,13 @@ async function startServer() {
       // ?iso3=ARG,COL: rows for just those countries, pulled for one council question if not in the catalog.
       if (req.query.iso3) {
         const codes = String(req.query.iso3).toUpperCase().split(',').map((c) => c.trim().replace(/[^A-Z]/g, '')).filter((c) => c.length === 3);
-        return res.json({ items: await liveRowsFor([...new Set(codes)]), fetchedAt: new Date().toISOString() });
+        const rows = await liveRowsFor([...new Set(codes)].filter((c) => !HIDDEN.countryHidden(c)));
+        return res.json({ items: rows, fetchedAt: new Date().toISOString(), hidden: Number(res.locals.hiddenRemoved) || 0 });
       }
       // ?refresh=1 rebuilds the rows from what is saved now instead of the 4-minute copy.
-      const items = await fetchLiveWatchlistCatalog([], req.query.refresh === '1');
-      res.json({ items, fetchedAt: new Date().toISOString() });
+      const all = await fetchLiveWatchlistCatalog([], req.query.refresh === '1');
+      const items = all.filter((r) => !HIDDEN.countryHidden(r.iso3));
+      res.json({ items, fetchedAt: new Date().toISOString(), hidden: all.length - items.length });
     } catch (error: any) {
       res.status(500).json({ error: error?.message || 'Failed to refresh live watchlist' });
     }
@@ -3978,7 +4006,8 @@ async function startServer() {
     );
   };
   app.get('/api/v1/countries', (_req, res) => {
-    res.json({ countries: SOVEREIGN_CATALOG.map((c) => ({ iso2: iso2For(c.iso3) ?? null, iso3: c.iso3, name: c.countryName })) });
+    const shown = SOVEREIGN_CATALOG.filter((c) => !HIDDEN.countryHidden(c.iso3));
+    res.json({ countries: shown.map((c) => ({ iso2: iso2For(c.iso3) ?? null, iso3: c.iso3, name: c.countryName })), hidden: SOVEREIGN_CATALOG.length - shown.length });
   });
   app.get('/api/v1/countries/:iso3', countrySnapshotRoute);
   app.get('/api/v1/countries/:iso3/snapshot', countrySnapshotRoute);

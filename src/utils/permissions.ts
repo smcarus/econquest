@@ -46,6 +46,8 @@ export function requiredRole(method: string, pathname: string): Role {
   const write = WRITE.has(method.toUpperCase());
   // GET /api/settings/keys shows which keys are set (masked) so Analysts see why a figure is Missing.
   if (!write && p === '/api/settings/keys') return 'analyst';
+  // Every account reads the hidden-names fingerprints, so its screens can leave those names out (no names in it).
+  if (!write && p === '/api/settings/hidden-names') return 'viewer';
   if (ADMIN_ANY.some((r) => r.test(p))) return 'admin';
   if (!p.startsWith('/api/')) return 'viewer';
   if (write) {
