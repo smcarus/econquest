@@ -121,6 +121,13 @@ now** pulls that country's figures again.
    gap, debt sustainability, gross financing need, reserve adequacy, external sustainability, crisis
    early-warning, the yield curve, inflation drivers, growth accounting, policy rules, fiscal
    what-ifs and a small gap model you fill in yourself.
+5. Panels for lower-income countries follow: **Remittances** (beside exports, investment and aid, and
+   the cost of sending US$200 against the UN 3% goal), **Financial inclusion** (who has an account,
+   by sex and income), **Commodity prices and terms of trade** (what the latest world price moves mean
+   for the country, as % of GDP), **Aid received**, **Food prices and food security** and **Natural
+   disasters**. Food price inflation and disasters read from files you save yourself in
+   `data/local/fao-cpi/` and `data/local/emdat/`; until then those parts read Missing and say where to
+   get the file ([INSTALL.md](./INSTALL.md#files-you-save-yourself)).
 
 ![Output gap chart for Brazil: the middle of three estimates with a band showing their spread, dashed for IMF projection years](images/07-output-gap.png)
 
@@ -192,6 +199,19 @@ To review a policy:
    fiscal rules and political feasibility, the Recommendation memo, a **one-page brief** PDF for
    non-economists, and Track outcomes, which checks the review against what happened at 12 and 24
    months. Every step is saved and fingerprinted.
+
+![Peers in a policy review: Brazil's diagnosis figures beside Mexico, India, Indonesia, South Africa and Turkey, with the peer median and rank](images/20-peers.png)
+
+6. After Diagnose, **Peers** sets the diagnosis figures beside up to six countries from your watchlist
+   (or press **Same region**, then **Compare**), each as saved on or before the review's As of day, with
+   the peers' median and this country's rank.
+7. In the memo, give a watched figure a trigger the app can read, such as "above 8", "below 3",
+   "target 4", "rises" or "falls". **Policy review watch**, under Watch alerts in the Workspace
+   Briefing, then shows each one as Crossed or Not crossed against the latest saved figures; **Open
+   review** goes back to the review.
+8. On the review date, **Review again** starts a new review with the same frame on today's data. The
+   new review opens **What changed since the earlier review**: the frame, the option each memo
+   recommended, each figure then and now, and whether the goal indicator moved the right way.
 
 ## 8. Choose an AI model
 

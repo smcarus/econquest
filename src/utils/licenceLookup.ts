@@ -53,6 +53,8 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['imf_investor_base', /Investor Base/i],
   ['imf_fiscal_rules', /Fiscal Rules Dataset/i],
   ['dpi', /Database of Political Institutions|\bDPI ?20\d\d\b/i],
+  ['emdat', /EM-DAT|emdat\.be/i],
+  ['fao_cpi', /FAOSTAT/i],
   ['owid_energy', /Our World in Data energy|Energy Institute/i],
   ['pwt', /Penn World Table/i],
   ['ilostat', /ILOSTAT/i],

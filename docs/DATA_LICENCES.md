@@ -69,6 +69,8 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies (Arslanalp and Tsuda) | Permission needed for client or commercial use | Free sharing allowed | Allowed with credit under the IMF data terms; the workbook itself states no terms. | Needs permission: email copyright@imf.org. | Source: International Monetary Fund, Sovereign Debt Investor Base for Emerging Markets and Developing Economies; Arslanalp and Tsuda (2014), IMF Working Paper WP/14/39. |
 | IMF Fiscal Rules Dataset, 1985-2024 | Terms not confirmed | Sharing unclear | Not stated on the dataset page. | Not stated on the dataset page. | "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page. |
 | Database of Political Institutions 2020 (Inter-American Development Bank) | Terms not confirmed | Sharing unclear | Not stated on the publication page. | Not stated. | Database of Political Institutions 2020 (DPI2020), Inter-American Development Bank (Cruz, Keefer and Scartascini); take the full citation from the download page. |
+| EM-DAT, the international disaster database (CRED, UCLouvain) | Terms not confirmed | Do not pass on | Figures and charts built from the data may be shown with the citation; the data itself may not be passed on. | Free accounts are for non-commercial use by universities, non-profit research bodies, public bodies and the media; other users need a paid licence from CRED. | EM-DAT, CRED / UCLouvain, Brussels, Belgium, www.emdat.be (year of access). |
+| FAOSTAT Consumer Price Indices (FAO) | Terms not confirmed | Sharing unclear | FAO statistical databases are CC BY 4.0 by default; whether that covers this table is not confirmed. | Not confirmed for this table. | FAO. FAOSTAT: Consumer Price Indices. Rome (year of access). |
 | DSSI and Common Framework status (World Bank, Paris Club) | Terms not confirmed | Sharing unclear | Not stated on either page. | Not stated. | World Bank, COVID-19 Debt Service Suspension Initiative; Paris Club, Common Framework. |
 
 ## Sources
@@ -730,6 +732,28 @@ From the terms:
 - **Credit:** Database of Political Institutions 2020 (DPI2020), Inter-American Development Bank (Cruz, Keefer and Scartascini); take the full citation from the download page.
 - **Open question:** The IDB page has no licence or data link. Read only from the file the user downloads and saves (G36, built 13 November 2026); nothing from it is shipped. Find the download page in a browser and read its licence before anything built from it is shared.
 
+### EM-DAT, the international disaster database (CRED, UCLouvain)
+
+- **Used for:** Natural disasters since 2000 by type, deaths, people affected and damage, in History & data, from the public table you download with your own EM-DAT account and put in data/local/emdat/
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Do not pass on. The terms do not allow the data to be passed on. Each user downloads the table with their own account; the app ships none of it.
+- **Terms read:** [EM-DAT terms of use](https://doc.emdat.be/docs/legal/terms-of-use/); [EM-DAT public table (sign-in)](https://public.emdat.be) (checked 2026-11-13)
+- **Show to others:** Figures and charts built from the data may be shown with the citation; the data itself may not be passed on.
+- **Commercial use:** Free accounts are for non-commercial use by universities, non-profit research bodies, public bodies and the media; other users need a paid licence from CRED.
+- **Credit:** EM-DAT, CRED / UCLouvain, Brussels, Belgium, www.emdat.be (year of access).
+- **Open question:** Read only from the file each user downloads with their own account (PA6, built 13 November 2026); nothing from it is shipped or fetched. Each user must check that their own use fits the account terms. Re-read the terms page in a browser and add quotes.
+
+### FAOSTAT Consumer Price Indices (FAO)
+
+- **Used for:** Food price inflation against all prices, in History & data, from the FAOSTAT bulk file you put in data/local/fao-cpi/
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. Default FAO terms are open, but this table repeats figures from other bodies. The file is not shipped.
+- **Terms read:** [FAO statistical database terms of use](https://www.fao.org/contact-us/terms/db-terms-of-use/en/); [FAOSTAT Consumer Price Indices](https://www.fao.org/faostat/en/#data/CP) (checked 2026-11-13)
+- **Show to others:** FAO statistical databases are CC BY 4.0 by default; whether that covers this table is not confirmed.
+- **Commercial use:** Not confirmed for this table.
+- **Credit:** FAO. FAOSTAT: Consumer Price Indices. Rome (year of access).
+- **Open question:** This table is built from IMF, OECD and national figures, so FAO's default CC BY 4.0 may not cover it. Read only from the file the user saves (PA2, built 13 November 2026); nothing from it is shipped. Confirm the terms for this table before anything built from it is shared.
+
 ### DSSI and Common Framework status (World Bank, Paris Club)
 
 - **Used for:** Which countries applied to the Common Framework (and, once typed, which took part in the Debt Service Suspension Initiative), typed by hand with source and date (issuer brief, Fiscal & Debt Agent)
@@ -867,4 +891,6 @@ From the terms:
 28. **IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies (Arslanalp and Tsuda)** (Permission needed for client or commercial use): The workbook (version of 6 November 2026, read 2026-11-11, given by the maintainer) and the working paper state no terms; the paper PDF is marked "Not for Redistribution", so neither is shipped with the app. The general IMF statistical data terms are taken to apply (publish with credit; commercial reuse needs permission). Confirm with copyright@imf.org with the other IMF questions.
 29. **IMF Fiscal Rules Dataset, 1985-2024** (Terms not confirmed): The page gives a citation but no terms. Read only from the workbook the user downloads and saves (G35, built 12 November 2026 on the maintainer's choice); nothing from it is shipped. Probably under the general IMF statistical data terms; confirm with copyright@imf.org with the other IMF questions.
 30. **Database of Political Institutions 2020 (Inter-American Development Bank)** (Terms not confirmed): The IDB page has no licence or data link. Read only from the file the user downloads and saves (G36, built 13 November 2026); nothing from it is shipped. Find the download page in a browser and read its licence before anything built from it is shared.
-31. **DSSI and Common Framework status (World Bank, Paris Club)** (Terms not confirmed): Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.
+31. **EM-DAT, the international disaster database (CRED, UCLouvain)** (Terms not confirmed): Read only from the file each user downloads with their own account (PA6, built 13 November 2026); nothing from it is shipped or fetched. Each user must check that their own use fits the account terms. Re-read the terms page in a browser and add quotes.
+32. **FAOSTAT Consumer Price Indices (FAO)** (Terms not confirmed): This table is built from IMF, OECD and national figures, so FAO's default CC BY 4.0 may not cover it. Read only from the file the user saves (PA2, built 13 November 2026); nothing from it is shipped. Confirm the terms for this table before anything built from it is shared.
+33. **DSSI and Common Framework status (World Bank, Paris Club)** (Terms not confirmed): Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.
