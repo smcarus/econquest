@@ -210,7 +210,7 @@ function python(result: ChartResult, tests: ChartTest[], s: PackSettings | null,
     out.push(
       '',
       'def adf(v, top):',
-      '    """ADF with a constant; lags 0..top on one sample, chosen by AIC; MacKinnon (2010) 5% critical value."""',
+      '    """ADF with a constant; lag 0..top chosen by AIC on one sample, then refitted on the full sample; MacKinnon (2010) 5% critical value."""',
       '    dy = np.diff(v)',
       '    best = None',
       '    for p in range(top + 1):',
@@ -221,6 +221,8 @@ function python(result: ChartResult, tests: ChartTest[], s: PackSettings | null,
       '        if best is None or aic < best[0]:',
       '            best = (aic, m, p)',
       '    _, m, p = best',
+      '    rows = range(p, len(dy))  # refit at the chosen lag on every usable row',
+      '    m = ols([dy[t] for t in rows], [[v[t]] + [dy[t - j] for j in range(1, p + 1)] for t in rows])',
       "    T = m['n']",
       '    crit5 = -2.86154 - 2.8903 / T - 4.234 / T ** 2',
       "    return m['t'][1], crit5, p, T",
@@ -298,8 +300,10 @@ function rScript(result: ChartResult, tests: ChartTest[], s: PackSettings | null
       '    n <- length(rows); aic <- n * log(sum(resid(m)^2) / n) + 2 * (ncol(X) + 1)',
       '    if (is.null(best) || aic < best$aic) best <- list(aic = aic, m = m, p = p, n = n)',
       '  }',
-      '  T <- best$n',
-      '  c(stat = summary(best$m)$coefficients[2, 3], crit5 = -2.86154 - 2.8903 / T - 4.234 / T^2, lags = best$p, n = T)',
+      '  p <- best$p; rows <- (p + 1):length(dy)  # refit at the chosen lag on every usable row',
+      '  X <- cbind(v[rows], if (p > 0) sapply(1:p, function(j) dy[rows - j]) else NULL)',
+      '  m <- lm(dy[rows] ~ X); T <- length(rows)',
+      '  c(stat = summary(m)$coefficients[2, 3], crit5 = -2.86154 - 2.8903 / T - 4.234 / T^2, lags = p, n = T)',
       '}',
       ...cols.slice(0, 2).map((c) => `print(adf(na.omit(df[[${q(c)}]]), ${s.adfTop[c] ?? 0}))`)
     );
@@ -332,7 +336,7 @@ function stata(result: ChartResult, tests: ChartTest[], s: PackSettings | null, 
     for (const c of cols.slice(0, 2)) {
       const top = s.adfTop[c] ?? 0;
       out.push(
-        `* ADF on ${c}: constant, lags 0-${top} on one sample, chosen by AIC (dfuller uses a longer sample for short lags, so the regression is written out)`,
+        `* ADF on ${c}: constant, lag 0-${top} chosen by AIC on one sample, then refitted at that lag on every usable row`,
         'preserve',
         `keep if !missing(${c})`,
         'gen t = _n',
@@ -350,6 +354,12 @@ function stata(result: ChartResult, tests: ChartTest[], s: PackSettings | null, 
         '    scalar T = e(N)',
         '  }',
         '}',
+        '* Refit at the chosen lag on every usable row',
+        'local L ""',
+        `if scalar(lags) > 0 local L "L(1/\`=scalar(lags)')D.${c}"`,
+        `quietly regress D.${c} L.${c} \`L'`,
+        `scalar stat = _b[L.${c}] / _se[L.${c}]`,
+        'scalar T = e(N)',
         `display "ADF, ${c}: statistic " scalar(stat) ", 5% critical value " (-2.86154 - 2.8903 / scalar(T) - 4.234 / scalar(T)^2) ", " scalar(lags) " lag(s), " scalar(T) " points"`,
         'restore',
         ''
@@ -418,7 +428,7 @@ function readme(result: ChartResult, tests: ChartTest[], s: PackSettings | null,
   if (s) {
     md.push(
       `- Tests on two series use the first two columns (\`${lines[0]?.key ?? '-'}\` then \`${lines[1]?.key ?? '-'}\`) on the ${s.pairs} rows where both have a value, in order (lags count rows, not dates).`,
-      `- Lead/lag up to ${s.leadLagMax} rows either way; Granger with ${s.grangerLags} lag(s); rolling correlation over ${s.rollingWindow} rows; HP lambda ${s.hpLambda}; ADF with a constant, lags 0 to ${Object.entries(s.adfTop).map(([k, v]) => `${v} (${k})`).join(', ')}, chosen by AIC on one sample, MacKinnon (2010) critical values.`,
+      `- Lead/lag up to ${s.leadLagMax} rows either way; Granger with ${s.grangerLags} lag(s); rolling correlation over ${s.rollingWindow} rows; HP lambda ${s.hpLambda}; ADF with a constant, lags 0 to ${Object.entries(s.adfTop).map(([k, v]) => `${v} (${k})`).join(', ')}, chosen by AIC on one sample and refitted at that lag on the full sample, MacKinnon (2010) critical values.`,
       '- Regression is plain OLS, as in the app: with trending series its t-statistic overstates confidence.'
     );
   } else md.push('- Correlation and OLS regression of y on x across countries.');
