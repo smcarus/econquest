@@ -266,4 +266,9 @@ export const DEFINITIONS_TEXT_FR: Record<string, string> = {
   // PB3: central bank assets (BIS)
   "Total assets of the central bank, as % of the sum of the last four quarters of GDP (BIS central bank total assets)": "Actif total de la banque centrale, en % de la somme des quatre derniers trimestres du PIB (actif total des banques centrales, BRI)",
   "Total assets of the central bank, in US dollars converted by the BIS, billions (BIS central bank total assets)": "Actif total de la banque centrale, en dollars américains convertis par la BRI, milliards (actif total des banques centrales, BRI)",
+  // PB4: dollar funding (BIS, New York Fed)
+  "Bank loans and debt securities in US dollars owed by borrowers in the country other than banks, billions (BIS global liquidity indicators)": "Prêts bancaires et titres de dette en dollars américains dus par les emprunteurs du pays autres que les banques, milliards (indicateurs de liquidité mondiale de la BRI)",
+  "US dollar bank loans and debt securities owed by non-banks in the country, change on a year earlier (BIS global liquidity indicators)": "Prêts bancaires et titres de dette en dollars américains dus par les non-banques du pays, variation sur un an (indicateurs de liquidité mondiale de la BRI)",
+  "US dollars lent by the Federal Reserve to foreign central banks through liquidity swap lines, amount outstanding each Wednesday, billions (New York Fed)": "Dollars américains prêtés par la Réserve fédérale aux banques centrales étrangères par des lignes de swap de liquidité, encours chaque mercredi, milliards (Fed de New York)",
+  "US dollars the country's central bank has borrowed through a Federal Reserve liquidity swap line, amount outstanding each Wednesday, billions (New York Fed)": "Dollars américains empruntés par la banque centrale du pays par une ligne de swap de liquidité de la Réserve fédérale, encours chaque mercredi, milliards (Fed de New York)",
 };

@@ -20,7 +20,7 @@ import { type DebtSchedule, idsUrl, parseIds, parseQeds, qedsUrl } from '../../u
 import { writeFileAtomic } from '../../utils/atomicWrite';
 import { CBPOL_DATASET, parseCbpolCsv } from '../../utils/bisPolicyRates';
 import { bisPrivateDebtUrl, parseBisPrivateDebt } from '../../utils/sectorBalances';
-import { type BisCreditCycle, bisCbAssetsUrl, bisCreditGapUrl, bisDsrUrl, bisPropertyUrl, parseBisCbAssets, parseBisCreditGap, parseBisDsr, parseBisProperty } from '../../utils/bisCreditCycle';
+import { type BisCreditCycle, bisCbAssetsUrl, bisCreditGapUrl, bisDsrUrl, bisPropertyUrl, bisUsdCreditUrl, parseBisCbAssets, parseBisUsdCredit, parseBisCreditGap, parseBisDsr, parseBisProperty } from '../../utils/bisCreditCycle';
 import { bocBoeEditions, bocBoeUrl, parseBocBoeCsv, type SovereignDefaults } from '../../utils/sovereignDefaults';
 import { idsChinaUrl, idsCreditorsUrl, type IdsCreditors, parseIdsCreditors } from '../../utils/idsCreditors';
 import { chokepointsUrl, parsePortWatchStats, type PortWatchChokepoints, type PortWatchPorts, portsUrl, type PwMonth } from '../../utils/portWatch';
@@ -138,15 +138,16 @@ export async function fetchBisCreditCycle(iso3: string): Promise<BisCreditCycle 
   if (!iso2) return null;
   const hit = bisCreditCache.get(iso3);
   if (hit && Date.now() - hit.at < (hit.value ? 12 : 1) * 60 * 60 * 1000) return hit.value;
-  const [gapCsv, dsrCsv, sppCsv, tcCsv, cbtaCsv] = await Promise.all([
+  const [gapCsv, dsrCsv, sppCsv, tcCsv, cbtaCsv, gliCsv] = await Promise.all([
     fetchTextWithTimeout(bisCreditGapUrl(iso2)),
     fetchTextWithTimeout(bisDsrUrl(iso2)),
     fetchTextWithTimeout(bisPropertyUrl(iso2)),
     fetchTextWithTimeout(bisPrivateDebtUrl(iso2)),
     fetchTextWithTimeout(bisCbAssetsUrl(iso2)),
+    fetchTextWithTimeout(bisUsdCreditUrl(iso2)),
   ]);
   const value: BisCreditCycle | null =
-    gapCsv || dsrCsv || sppCsv || tcCsv || cbtaCsv
+    gapCsv || dsrCsv || sppCsv || tcCsv || cbtaCsv || gliCsv
       ? {
           fetchedAt: new Date().toISOString(),
           ...parseBisCreditGap(gapCsv),
@@ -154,6 +155,7 @@ export async function fetchBisCreditCycle(iso3: string): Promise<BisCreditCycle 
           ...parseBisProperty(sppCsv),
           ...parseBisPrivateDebt(tcCsv),
           ...parseBisCbAssets(cbtaCsv),
+          ...parseBisUsdCredit(gliCsv),
         }
       : null;
   bisCreditCache.set(iso3, { at: Date.now(), value });

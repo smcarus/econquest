@@ -169,7 +169,7 @@ From the terms:
 
 ### BIS statistics (policy rates, real exchange rates, debt securities, credit cycle)
 
-- **Used for:** Central bank policy rates and their history, real exchange rates, government debt securities, credit-to-GDP gaps, debt service ratios, residential property prices (real and nominal, country brief and History & data) household and company debt (total credit) and central bank total assets (History & data)
+- **Used for:** Central bank policy rates and their history, real exchange rates, government debt securities, credit-to-GDP gaps, debt service ratios, residential property prices (real and nominal, country brief and History & data) household and company debt (total credit), central bank total assets and US dollar credit to non-banks (global liquidity, History & data)
 - **Status:** Allowed with conditions
 - **Free non-commercial sharing:** Free sharing allowed. Use is unrestricted with the BIS cited.
 - **Terms read:** [Terms of permitted use of BIS statistics](https://data.bis.org/help/legal); [BIS terms and conditions](https://www.bis.org/terms_conditions.htm) (checked 2026-11-06)
@@ -224,7 +224,7 @@ From the terms:
 
 ### New York Fed markets data
 
-- **Used for:** Fed funds, SOFR, reverse repo; Global Supply Chain Pressure Index (GSCPI, a factor in the global shock scenarios and a world series; built by the New York Fed from transport and manufacturing data)
+- **Used for:** Fed funds, SOFR, reverse repo; Federal Reserve dollar swap line operations (History & data); Global Supply Chain Pressure Index (GSCPI, a factor in the global shock scenarios and a world series; built by the New York Fed from transport and manufacturing data)
 - **Status:** Allowed with conditions
 - **Free non-commercial sharing:** Free sharing allowed. The licence covers use, copying and distribution, with the notice for reference rates.
 - **Terms read:** [Terms of Use](https://www.newyorkfed.org/privacy/termsofuse) (checked 2026-11-06)
