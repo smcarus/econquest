@@ -1,6 +1,6 @@
 # EconQuest Terminal: Methodology
 
-**Version 1.2, 13 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of release 0.1.0.
+**Version 1.3, 14 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of release 0.1.0.
 Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not validated advice.
 
 This document sets out how the EconQuest Terminal sources its data, how its council of agents
@@ -176,9 +176,9 @@ what each fills, its address, how long it is cached and how to set it up is in
 
 | Group | Examples |
 | --- | --- |
-| Free feeds, no key | World Bank (indicators, governance, debt statistics, Pink Sheet commodity prices, remittances and remittance prices, Global Findex, aid received as republished from the OECD DAC, food security), IMF (World Economic Outlook, reserves and balance of payments, COFER), BIS (policy rates, real exchange rates, debt securities, credit gap), OECD (via DBnomics), ECB reference rates, Eurostat, CFTC Commitments of Traders, US Treasury, New York Fed, UN Comtrade, WITS, national central banks (for example BCB, BCRP), GDELT, Polymarket and Kalshi odds |
+| Free feeds, no key | World Bank (indicators, governance, debt statistics, Pink Sheet commodity prices, remittances and remittance prices, Global Findex, aid received as republished from the OECD DAC, food security), IMF (World Economic Outlook, reserves and balance of payments, COFER), BIS (policy rates, real exchange rates, debt securities, credit gap, central bank total assets, US dollar credit to non-banks), OECD (via DBnomics), ECB reference rates, Eurostat, CFTC Commitments of Traders, US Treasury, New York Fed (rates and dollar swap lines), NASA POWER (weather at each capital since 1981), World Bank Climate Change Knowledge Portal (CRU TS country weather since 1901), UN Comtrade, WITS, national central banks (for example BCB, BCRP), GDELT, Polymarket and Kalshi odds |
 | Free with the user's own key | FRED and ALFRED (St. Louis Fed), US EIA |
-| Free files the user downloads | IMF WEO past editions, Caldara-Iacoviello Geopolitical Risk index, Chinn-Ito capital account openness index, OFAC and UN sanctions lists, UCDP conflict data (one release ships with the code under CC BY 4.0), ACLED aggregated files. Read from `data/local/` and never shipped, because their terms are unconfirmed or forbid passing them on: FAOSTAT Consumer Price Indices, EM-DAT disasters (each user's own account), IMF Fiscal Rules Dataset, Database of Political Institutions 2020, IMF investor base workbook, central bank statements the user saves. The full table is in [INSTALL.md](./INSTALL.md#files-you-save-yourself) |
+| Free files the user downloads | IMF WEO past editions, Caldara-Iacoviello Geopolitical Risk index, Chinn-Ito capital account openness index, OFAC and UN sanctions lists, UCDP conflict data (one release ships with the code under CC BY 4.0), ACLED aggregated files, NOAA IBTrACS tropical cyclone tracks (downloaded only when the user presses the button, or read from a file the user saves). Read from `data/local/` and never shipped, because their terms are unconfirmed or forbid passing them on: FAOSTAT Consumer Price Indices, EM-DAT disasters (each user's own account), IMF Fiscal Rules Dataset, Database of Political Institutions 2020, IMF investor base workbook, the Ilzetzki-Reinhart-Rogoff exchange rate regime workbook, central bank statements the user saves. The full table is in [INSTALL.md](./INSTALL.md#files-you-save-yourself) |
 | The user's own paid data (off by default) | Their own CDS file or their own LSEG account |
 
 Prediction-market odds (Polymarket, Kalshi) are shown as market prices, labelled as such, and are
@@ -418,6 +418,72 @@ shock scenarios; `src/utils/grVar.ts`) answers it for the currency, from public 
   prices. The index counts newspaper coverage, a proxy for risk rather than risk itself.
 
 A plain-language account, with a worked reading, is in [How EconQuest works](./HOW_IT_WORKS.md#10-geopolitical-risk-var-explained).
+
+### 5.2 The policy council
+
+A policy review can weigh one measure (a tax change, a subsidy reform, a spending programme) or what
+an event means for one market of the country (the currency, local-currency or US-dollar government
+bonds). The parts are arithmetic on what the user enters, and the AI step sees only those entries and
+the review's diagnosis (`src/utils/policyCouncil.ts`, `src/data/discountRates.ts`).
+
+- **Costs and benefits.** The user enters each year's costs and benefits with a source. Present values
+  are discounted sums at the official rates the user ticks (HM Treasury Green Book, US OMB Circular
+  A-4 at 3% and 7%, the European Commission's 3%, the Asian Development Bank's 9% and 6%, each with the
+  document, passage and the day it was checked) or at the user's own rate. The app reports the net,
+  benefits per unit of cost, the pay-back year, how far figures would have to move to flip the sign
+  (switching values) and the flat rate where the net is zero, found by bisection.
+- **Who gains and who loses.** One row per group, with a size only when it has a unit and a source;
+  otherwise Missing. Optional by-fifth shares are set against each fifth's share of income from World
+  Bank household surveys and read as regressive, progressive or about proportional.
+- **What follows.** Each link of a second-order chain rests on a figure from the review's Diagnose
+  step (with source and period), a source the user names, or is marked as an assumption; the panel
+  counts each kind.
+- **Scenarios.** Two to five cases scale the cost-benefit table by the user's percentages, with
+  optional odds; the panel gives each case's net present value and, with odds, the odds-weighted net
+  and the chance of a negative net. For a market, the app copies in its own readings as they stood on
+  the review's As of day, and cases are a change in value for a holder.
+- **The council step.** In the Options step the council ranks alternatives against the measure (or,
+  for a market, against keeping the current stance), using only numbers from the diagnosis and the
+  entries. The same traceability checks as Council chat apply (4.3), and the council regression set
+  (4.6) carries one policy and one market case. Outcome checks at 12 and 24 months set a currency
+  market council's cases against the change in value for a holder in US dollars.
+- **Status.** Description, not a tested signal: arithmetic on stated figures, not a forecast or a
+  recommendation. Sums of % of GDP across years treat each year's GDP as the same size.
+
+### 5.3 Weather, disasters and parametric insurance
+
+These tools describe past weather and losses and replay simple insurance designs over the record.
+None makes a forward call; all are listed as Description, not a tested signal. The full rules are in
+the [Methods note](./METHODS.md).
+
+- **Weather.** Monthly temperature and rainfall at the capital's grid cell from NASA POWER (MERRA-2
+  reanalysis, since 1981) and averaged over the country from CRU TS through the World Bank climate
+  portal (since 1901). Each month is compared with the same calendar month's 1991-2020 average in the
+  same series; a month needs 25 of the 30 base years, otherwise the comparison reads Missing.
+- **Trigger designer and burn analysis.** A season index (rainfall summed; temperature and prices
+  averaged) pays in a straight line from the trigger to the exit. Burn cost is the mean yearly payout
+  as % of the cover over every complete past season, with its standard deviation, and the same since
+  1991.
+- **Fair price.** Burn cost × (1 + loading %), or burn cost + k × the standard deviation of the yearly
+  payout, as the user picks; capped at 100% of the cover; a 90% range from the length of the record.
+  A teaching price from the record alone, not a market quote.
+- **Return periods and extreme values.** From the record, the r-th most extreme of n seasons counts as
+  about 1 year in (n + 1)/r. A generalised extreme value (GEV) curve is fitted by L-moments (Hosking
+  1990), on the low tail for low-index covers, with a 90% range from 400 bootstrap resamples at a fixed
+  seed; levels beyond the record are marked as extrapolation. At least 20 seasons are needed.
+- **Basis risk.** With no loss records in the app, the other weather series (capital against country)
+  stands in for the loss: the worst 1 in 5 of its seasons count as bad years, and the panel counts
+  bad years paid and missed, payouts in other years and the Spearman rank correlation. It is a lower
+  bound on basis risk.
+- **Disaster loss model.** From the EM-DAT file the user saves: events per year as a Poisson count, or
+  negative binomial when the yearly variance is more than 1.5 times the mean; damage per event as a
+  lognormal, checked against the record's 1-in-10 event; 20,000 simulated years give the average
+  annual loss and the loss passed 1 year in 10, 50 and 100. At least 5 events with a damage figure are
+  needed. Damage is understated because many events report none.
+- **Tropical cyclones.** IBTrACS tracks since 1980 whose centre passes within 50, 100 or 200 km of the
+  country with winds of 34 knots or more there; strength on the Saffir-Simpson scale from the highest
+  wind within that distance. The distance of the centre is not the reach of the winds, and wind is
+  not damage.
 
 ## 6. The signal standard
 
@@ -718,6 +784,11 @@ The terminal states what it cannot do. In particular:
 - **Scenario estimates are first order.** Shock and replay results on a portfolio leave out carry,
   convexity and the path inside the window, and replays use monthly averages; they understate the
   worst day and are labelled hypothetical.
+- **Weather and insurance tools rest on short records.** About 45 seasons of NASA POWER, 25 years of
+  EM-DAT damage and 45 seasons of storm tracks are short for 1-in-50 or 1-in-100 events; fitted
+  levels beyond the record assume no trend in climate or markets. The index of a parametric cover is
+  not the insured loss, and the fair price leaves out reinsurance, taxes, brokerage and the insurer's
+  own models.
 - **Not a compliance tool.** The sanctions panel counts entries on official lists; it does no alias
   or fuzzy matching and does not apply ownership rules. EU and UK lists are not yet read.
 - **Single-user controls.** On a single-user installation, a report "approved" by its author is
@@ -748,14 +819,25 @@ version number.
 - CFA Institute. *Global Investment Performance Standards (GIPS)*, 2020 edition.
 - Diebold, F. X. and Mariano, R. S. (1995). Comparing predictive accuracy. *Journal of Business &
   Economic Statistics*, 13(3), 253-263.
+- Gahtan, J., Knapp, K. R., Schreck, C. J., Diamond, H. J., Kossin, J. P. and Kruk, M. C. (2024).
+  International Best Track Archive for Climate Stewardship (IBTrACS) Project, Version 4r01. NOAA
+  National Centers for Environmental Information. doi:10.25921/82ty-9e16.
 - Harvey, C. R., Liu, Y. and Zhu, H. (2016). ... and the cross-section of expected returns. *Review of
   Financial Studies*, 29(1), 5-68.
 - Harvey, D., Leybourne, S. and Newbold, P. (1997). Testing the equality of prediction mean squared
   errors. *International Journal of Forecasting*, 13(2), 281-291.
+- HM Treasury. *The Green Book: Central Government Guidance on Appraisal and Evaluation* (edition
+  and discount rate schedule as cited in the app).
 - Holm, S. (1979). A simple sequentially rejective multiple test procedure. *Scandinavian Journal of
   Statistics*, 6(2), 65-70.
+- Hosking, J. R. M. (1990). L-moments: analysis and estimation of distributions using linear
+  combinations of order statistics. *Journal of the Royal Statistical Society, Series B*, 52(1),
+  105-124.
+- Ilzetzki, E., Reinhart, C. M. and Rogoff, K. S. (2019). Exchange arrangements entering the
+  twenty-first century: which anchor will hold? *Quarterly Journal of Economics*, 134(2), 599-646.
 - Taylor, J. B. (1993). Discretion versus policy rules in practice. *Carnegie-Rochester Conference
   Series on Public Policy*, 39, 195-214.
+- US Office of Management and Budget (2003). *Circular A-4: Regulatory Analysis.*
 - US Securities and Exchange Commission (2020). *Investment Adviser Marketing* (Rule 206(4)-1, the
   Marketing Rule). Release No. IA-5653.
 
@@ -768,8 +850,9 @@ Per-model references are given in the [Methods note](./METHODS.md).
 | 1.0 | 7 November 2026 | First version |
 | 1.1 | 8 November 2026 | Opening section on why EconQuest exists; a plain-language companion, [How EconQuest works](./HOW_IT_WORKS.md); where it runs (1.1), explanations and help levels (4.7), geopolitical risk VaR (5.1), which countries the results rest on (11.1) and Quests (12). Published on the project website; joined the repository with version 1.2 |
 | 1.2 | 13 November 2026 | Sources and the files you save (3.1), statistics conventions in the charts and tables (7.4), figures served to outside systems and hypothetical scenario estimates (3.8), the audit seal and locked copies (4.5), the country risk scorecard listed as Not validated with its registered default test (5, 14), scenario limits (14). The short version corrected: the council's chat agents are fixed code, and only the summary writer is an AI model |
+| 1.3 | 14 November 2026 | New sources in 3.1 (BIS central bank assets and dollar credit, New York Fed swap lines, NASA POWER, the World Bank climate portal, IBTrACS, the exchange rate regime workbook); the policy council (5.2); weather, disasters and parametric insurance (5.3); short-record limits of those tools (14); references for L-moments, IBTrACS, the exchange rate regime classification and the official discount rates |
 
 ---
 
-*EconQuest Terminal methodology, version 1.2 (13 November 2026). Text licensed under CC BY 4.0: you may
+*EconQuest Terminal methodology, version 1.3 (14 November 2026). Text licensed under CC BY 4.0: you may
 share and adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*

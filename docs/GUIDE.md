@@ -127,12 +127,42 @@ now** pulls that country's figures again.
    for the country, as % of GDP), **Aid received**, **Food prices and food security** and **Natural
    disasters**. Food price inflation and disasters read from files you save yourself in
    `data/local/fao-cpi/` and `data/local/emdat/`; until then those parts read Missing and say where to
-   get the file ([INSTALL.md](./INSTALL.md#files-you-save-yourself)).
-6. The **Country risk scorecard** sets governance, armed conflict, unrest, geopolitical risk,
-   capital account openness (the Chinn-Ito index, credited to Chinn and Ito 2006) and the economy side
-   by side, each with its source and year. It gives no overall score. A test of whether weak
-   governance comes before a default was fixed in advance on 13 November 2026; until it is run the
-   panel's badge reads Not validated.
+   get the file ([INSTALL.md](./INSTALL.md#files-you-save-yourself)). Under Natural disasters,
+   **Loss model** splits the yearly damage into how many damaging events a year and how large each
+   one is, and simulates 20,000 years to give the average yearly loss and the loss passed 1 year in
+   10, 50 and 100, also as % of GDP.
+6. **Figures with a history** also hold how the currency and dollar funding work in practice:
+   the **exchange rate regime** (how the currency is run in fact, month by month, from the Ilzetzki,
+   Reinhart and Rogoff workbook you save in `data/local/irr/`), **central bank assets** (the central
+   bank's balance sheet as % of GDP, from the BIS) and **dollar funding stress** (dollar loans and
+   bonds owed by the country's non-banks, from the BIS, and the Federal Reserve's dollar swap lines,
+   from the New York Fed).
+7. The same list holds the **weather**: monthly temperature and rainfall at the capital since 1981
+   (NASA POWER) and averaged over the whole country since 1901 (World Bank climate portal), each
+   month against its 1991-2020 average. Rice, wheat, maize and soybean world prices go back to 1960,
+   so a drought can be set beside a price spike.
+8. **Parametric insurance** lets you sketch a cover that pays from a measured number (rainfall,
+   temperature or a food price) instead of an assessed loss:
+   1. Pick the index, the season, whether it pays when the index is low or high, the trigger where
+      payment starts, the exit where the full cover is paid, and the cover amount. The panel opens on
+      a design from the record (trigger passed about 1 year in 5, exit about 1 in 20).
+   2. **Burn analysis** replays the design over every past season: the years it paid and the average
+      yearly payout (the burn cost).
+   3. **Fair price** adds a loading you pick (a % of the expected payout, or k standard deviations of
+      the yearly payout) and gives the price as % of the cover a year.
+   4. **How rare is it?** says how often the trigger and the exit are passed, from the record and from
+      a fitted extreme value curve, with a 90% range.
+   5. **Basis risk** checks the cover against the other weather series (capital against whole
+      country): in how many bad years it paid, and how many it missed.
+9. **Tropical cyclones** lists the hurricanes, typhoons and cyclones that passed within 50, 100 or
+   200 km of the country since 1980, from NOAA's IBTrACS tracks. Nothing is downloaded until you
+   press **Download storm tracks from NOAA**; you can also save an IBTrACS file in
+   `data/local/ibtracs/`.
+10. The **Country risk scorecard** sets governance, armed conflict, unrest, geopolitical risk,
+    capital account openness (the Chinn-Ito index, credited to Chinn and Ito 2006) and the economy
+    side by side, each with its source and year. It gives no overall score. A test of whether weak
+    governance comes before a default was fixed in advance on 13 November 2026; until it is run the
+    panel's badge reads Not validated.
 
 ![Output gap chart for Brazil: the middle of three estimates with a band showing their spread, dashed for IMF projection years](images/07-output-gap.png)
 
@@ -259,7 +289,9 @@ Which model fits which computer, and the settings the app uses, are in the READM
   country, look back, your portfolio, write and share), and **Data connections**.
 - **Offline data**: download all country data for use without internet, and see how much space it
   takes.
-- **Data health**: which sources arrive, which fail, and which figures were revised.
+- **Data health**: which sources arrive, which fail, and which figures were revised. Its **Daily
+  download** tab follows the daily download as it runs: each part, what failed and why, sources that
+  need a key or a file, and what to download by hand.
 - **Models & validation**: the model register, test results and **Your tests**.
 - **Your data**: load your own series from a CSV file.
 - **Exam mode**: turns every AI step off for a class test.
