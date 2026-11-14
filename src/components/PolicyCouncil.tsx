@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Save, Trash2 } from 'lucide-react';
 import { DISCOUNT_RATES } from '../data/discountRates';
 import { COUNCIL_SIZE_LABEL, COUNCIL_SIZE_UNITS, type CouncilSizeUnit, type PolicyReview, type ReviewFrame, type ReviewStep, type StepState } from '../utils/policyReview';
-import { costBenefitResults, councilPartState, GROUP_EFFECTS, GROUP_SUGGESTIONS, groupTally, chainTally, LINK_BASES, LINK_DIRECTIONS, type ChainLink, type EffectChain, type LinkBasis, type LinkDirection, type CbLine, type CostBenefit, type CouncilPart, type GroupEffect, type WinnersLosers } from '../utils/policyCouncil';
+import { costBenefitResults, councilPartState, GROUP_EFFECTS, GROUP_SUGGESTIONS, groupTally, chainTally, cbSchedules, scenarioResults, type Scenarios, LINK_BASES, LINK_DIRECTIONS, type ChainLink, type EffectChain, type LinkBasis, type LinkDirection, type CbLine, type CostBenefit, type CouncilPart, type GroupEffect, type WinnersLosers } from '../utils/policyCouncil';
 import { incidence, QUINTILES, type IncomeShares } from '../utils/policyIncidence';
 import type { Diagnosis } from '../utils/reviewDiagnosis';
 import { useT, useTx } from '../i18n/useLang';
@@ -604,6 +604,151 @@ const ChainPanel: React.FC<{ review: PolicyReview; changed: boolean; onSaved: Sa
   );
 };
 
+type CaseDraft = { name: string; story: string; costScale: string; benefitScale: string; delayYears: string; odds: string; source: string };
+const caseDraft = (name: string): CaseDraft => ({ name, story: '', costScale: '100', benefitScale: '100', delayYears: '0', odds: '', source: '' });
+
+const ScenariosPanel: React.FC<{ review: PolicyReview; changed: boolean; onSaved: Saved }> = ({ review, changed, onSaved }) => {
+  const t = useT(REPORTS);
+  const rec = review.councilParts?.scenarios;
+  const saved = rec?.content as Scenarios | undefined;
+  const state = councilPartState(rec, review.steps.frame?.hash);
+  const cb = review.councilParts?.costBenefit?.content as CostBenefit | undefined;
+  const schedules = cb ? cbSchedules(cb) : [];
+  const [cases, setCases] = useState<CaseDraft[]>([]);
+  const [rateId, setRateId] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    setCases(
+      saved
+        ? saved.scenarios.map((c) => ({ name: c.name, story: c.story, costScale: String(c.costScale), benefitScale: String(c.benefitScale), delayYears: String(c.delayYears), odds: c.odds !== undefined ? String(c.odds) : '', source: c.source ?? '' }))
+        : [caseDraft(t('pk_caseBase')), caseDraft(t('pk_caseGood')), caseDraft(t('pk_caseBad'))],
+    );
+    setRateId(saved?.rateId ?? '');
+    setError('');
+  }, [review.id, rec?.hash]);
+  const set = (i: number, patch: Partial<CaseDraft>) => setCases((d) => d.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+  const save = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await onSaved(await postPart(review.id, 'scenarios', { scenarios: cases, rateId: rateId || schedules[0]?.id || 'first' }));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const out = saved && cb ? scenarioResults(cb, saved) : null;
+
+  return (
+    <div className="space-y-2 border-t border-slate-200 dark:border-slate-700 pt-3" data-council-part="scenarios">
+      <p className="ui-section-title">{t('pk_scTitle')}</p>
+      <p className="ui-label">{t('pk_scHint')}</p>
+      {changed && <p className="text-xs text-amber-700 dark:text-amber-400">{t('pk_changed')}</p>}
+      {rec && state === 'out_of_date' && <p className="text-xs text-amber-700 dark:text-amber-400">{t('pk_outOfDate')}</p>}
+      {!cb ? (
+        <p className="text-xs text-slate-500 dark:text-slate-400">{t('pk_cbFirst')}</p>
+      ) : (
+        <>
+          <label className="ui-label block">
+            {t('pk_scRate')}
+            <select className={INPUT} value={rateId || schedules[0]?.id} onChange={(e) => setRateId(e.target.value)}>
+              {schedules.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.id === 'own' ? t('pk_own') : x.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {cases.map((c, i) => (
+            <div key={i} className="grid gap-1.5 sm:grid-cols-3 border border-slate-200 dark:border-slate-700 p-2" data-council-case={i}>
+              <label className="ui-label">
+                {t('pk_caseName')}
+                <input className={INPUT} value={c.name} maxLength={60} onChange={(e) => set(i, { name: e.target.value })} />
+              </label>
+              <label className="ui-label sm:col-span-2">
+                {t('pk_caseStory')}
+                <input className={INPUT} value={c.story} maxLength={400} onChange={(e) => set(i, { story: e.target.value })} />
+              </label>
+              <label className="ui-label">
+                {t('pk_costScale')}
+                <input className={INPUT} inputMode="decimal" value={c.costScale} onChange={(e) => set(i, { costScale: e.target.value })} />
+              </label>
+              <label className="ui-label">
+                {t('pk_benefitScale')}
+                <input className={INPUT} inputMode="decimal" value={c.benefitScale} onChange={(e) => set(i, { benefitScale: e.target.value })} />
+              </label>
+              <label className="ui-label">
+                {t('pk_delay')}
+                <input className={INPUT} inputMode="numeric" value={c.delayYears} onChange={(e) => set(i, { delayYears: e.target.value })} />
+              </label>
+              <label className="ui-label">
+                {t('pk_odds')}
+                <input className={INPUT} inputMode="decimal" value={c.odds} onChange={(e) => set(i, { odds: e.target.value })} />
+              </label>
+              <label className="ui-label sm:col-span-2">
+                {t('pk_caseSource')}
+                <input className={INPUT} value={c.source} maxLength={300} onChange={(e) => set(i, { source: e.target.value })} />
+              </label>
+              <div>
+                <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setCases((x) => x.filter((_, j) => j !== i))}>
+                  <Trash2 className="w-3.5 h-3.5" /> {t('pk_remove')}
+                </button>
+              </div>
+            </div>
+          ))}
+          {cases.length < 5 && (
+            <button type="button" className="ui-btn" onClick={() => setCases((x) => [...x, caseDraft('')])}>
+              <Plus className="w-3.5 h-3.5" /> {t('pk_addCase')}
+            </button>
+          )}
+          <div>
+            <button type="button" className="ui-btn ui-btn-primary" disabled={busy} onClick={save}>
+              <Save className="w-3.5 h-3.5" /> {busy ? t('pk_saving') : t('pk_saveCases')}
+            </button>
+          </div>
+        </>
+      )}
+      {error && (
+        <p className="text-xs text-amber-700 dark:text-amber-400" role="alert">
+          {error}
+        </p>
+      )}
+      {saved && out?.rate && (
+        <div className="space-y-1" data-council-results="scenarios">
+          <p className="ui-label">{t('pk_scResults', { rate: out.rate.id === 'own' ? `${t('pk_own')} (${out.rate.rateText})` : out.rate.label })}</p>
+          <table className="text-xs tabular-nums w-full">
+            <thead>
+              <tr className="text-left text-slate-500 dark:text-slate-400">
+                <th className="pr-2">{t('pk_caseName')}</th>
+                <th className="pr-2">{t('pk_colNpv')}</th>
+                <th className="pr-2">{t('pk_colBreakEven')}</th>
+                <th className="pr-2">{t('pk_odds')}</th>
+                <th>{t('pk_basis')}</th>
+              </tr>
+            </thead>
+            <tbody className="text-slate-900 dark:text-white">
+              {out.results.map((r, i) => (
+                <tr key={i}>
+                  <td className="pr-2">{r.name}</td>
+                  <td className="pr-2 font-semibold">{fmt(r.npv)}</td>
+                  <td className="pr-2">{r.breakEvenYear ?? t('pk_never')}</td>
+                  <td className="pr-2">{r.odds !== undefined ? `${r.odds}%` : ''}</td>
+                  <td>{saved.scenarios[i]?.source ? saved.scenarios[i].source : <span className="text-amber-700 dark:text-amber-400">{t('pk_basisAssumption')}</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {out.expected !== null && <p className="text-xs text-slate-800 dark:text-slate-200">{t('pk_expected', { v: fmt(out.expected), p: fmt(out.chanceNegative ?? 0, 1) })}</p>}
+          <p className="text-xs text-slate-500 dark:text-slate-400">{t('pk_saved', { when: rec!.savedAt.slice(0, 16).replace('T', ' '), hash: rec!.hash.slice(0, 12) })}</p>
+        </div>
+      )}
+      <p className="ui-label">{t('pk_scMethod')}</p>
+    </div>
+  );
+};
+
 export const PolicyCouncil: React.FC<{ review: PolicyReview; frame: ReviewFrame; changed?: string[]; onSaved: Saved }> = ({ review, frame, changed, onSaved }) => {
   const t = useT(REPORTS);
   return (
@@ -612,6 +757,7 @@ export const PolicyCouncil: React.FC<{ review: PolicyReview; frame: ReviewFrame;
       <CostBenefitPanel review={review} frame={frame} changed={Boolean(changed?.includes('costBenefit'))} onSaved={onSaved} />
       <GroupsPanel review={review} frame={frame} changed={Boolean(changed?.includes('groups'))} onSaved={onSaved} />
       <ChainPanel review={review} changed={Boolean(changed?.includes('chain'))} onSaved={onSaved} />
+      <ScenariosPanel review={review} changed={Boolean(changed?.includes('scenarios'))} onSaved={onSaved} />
     </div>
   );
 };

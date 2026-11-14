@@ -18,6 +18,11 @@
  * review's saved Diagnose step (copied in with its source and period), a source the user names, or
  * marked "assumption" when it rests on neither.
  *
+ * PK5 scenarios: a base, a good and a bad case (up to five), each a story with costs and benefits
+ * scaled from the PK2 table and benefits arriving later if the user says so, with odds the user
+ * sets. The net present value of each at one of the PK2 rates, and the odds-weighted net and the
+ * chance of a negative net when odds are given.
+ *
  * No figure is filled in for the user. Browser-safe.
  */
 import { DISCOUNT_RATES, discountRateById, type DiscountRate } from '../data/discountRates';
@@ -29,7 +34,7 @@ export const COUNCIL_TEMPLATE_VERSION = 'policy-council-v1';
 export const COUNCIL_LABEL = 'Description, not a tested signal';
 
 /** The parts saved beside the steps, in the order they are shown. */
-export const COUNCIL_PARTS = ['costBenefit', 'groups', 'chain'] as const;
+export const COUNCIL_PARTS = ['costBenefit', 'groups', 'chain', 'scenarios'] as const;
 export type CouncilPart = (typeof COUNCIL_PARTS)[number];
 
 export interface CouncilPartRecord<T = unknown> {
@@ -463,6 +468,108 @@ export function chainTally(c: EffectChain): Record<LinkBasis, number> {
   return { figure: c.links.filter((l) => l.basis === 'figure').length, source: c.links.filter((l) => l.basis === 'source').length, assumption: c.links.filter((l) => l.basis === 'assumption').length };
 }
 
+// ---------------------------------------------------------------- PK5 scenarios
+
+export const MAX_SCENARIOS = 5;
+export const MAX_DELAY = 10;
+
+export interface Scenario {
+  name: string;
+  /** What happens in this case, in a line or two. */
+  story: string;
+  /** Costs as % of the PK2 table (100 = as entered). */
+  costScale: number;
+  /** Benefits as % of the PK2 table. */
+  benefitScale: number;
+  /** Years the benefits arrive later than in the table. */
+  delayYears: number;
+  /** Chance of this case, %, if the user gives odds. */
+  odds?: number;
+  source?: string;
+}
+
+export interface Scenarios {
+  scenarios: Scenario[];
+  /** The PK2 rate to report at (a discount rate id or "own"). */
+  rateId: string;
+}
+
+export function parseScenarios(v: unknown): { content: Scenarios } | { errors: string[] } {
+  const errors: string[] = [];
+  const b = (v ?? {}) as Record<string, unknown>;
+  const raw = Array.isArray(b.scenarios) ? b.scenarios : [];
+  if (raw.length < 2) errors.push('Enter at least two cases (for example a base and a bad case).');
+  if (raw.length > MAX_SCENARIOS) errors.push(`At most ${MAX_SCENARIOS} cases.`);
+  const scenarios: Scenario[] = [];
+  raw.slice(0, MAX_SCENARIOS).forEach((x, i) => {
+    const c = (x ?? {}) as Record<string, unknown>;
+    const n = i + 1;
+    const name = str(c.name, 60);
+    const story = str(c.story, 400);
+    const costScale = num(c.costScale);
+    const benefitScale = num(c.benefitScale);
+    const delay = c.delayYears === '' || c.delayYears === undefined || c.delayYears === null ? 0 : num(c.delayYears);
+    const odds = c.odds === '' || c.odds === undefined || c.odds === null ? undefined : num(c.odds);
+    const source = str(c.source, 300);
+    let ok = true;
+    const bad = (m: string) => {
+      errors.push(m);
+      ok = false;
+    };
+    if (name.length < 2) bad(`Case ${n}: give it a name.`);
+    if (story.length < 5) bad(`Case ${n}: say what happens in it.`);
+    if (costScale === null || costScale < 0 || costScale > 1000) bad(`Case ${n}: costs must be a % of the table from 0 to 1000.`);
+    if (benefitScale === null || benefitScale < 0 || benefitScale > 1000) bad(`Case ${n}: benefits must be a % of the table from 0 to 1000.`);
+    if (delay === null || !Number.isInteger(delay) || delay < 0 || delay > MAX_DELAY) bad(`Case ${n}: the delay must be a whole number of years from 0 to ${MAX_DELAY}.`);
+    if (odds === null || (odds !== undefined && (odds < 0 || odds > 100))) bad(`Case ${n}: the odds must be a % from 0 to 100.`);
+    if (ok) scenarios.push({ name, story, costScale: costScale!, benefitScale: benefitScale!, delayYears: delay!, ...(typeof odds === 'number' ? { odds } : {}), ...(source ? { source } : {}) });
+  });
+  const given = scenarios.filter((x) => x.odds !== undefined);
+  if (given.length && given.length !== scenarios.length) errors.push('Give odds for every case or for none.');
+  else if (given.length) {
+    const sum = given.reduce((a, x) => a + x.odds!, 0);
+    if (Math.abs(sum - 100) > 0.5) errors.push(`The odds add up to ${Math.round(sum * 100) / 100}%, not 100%.`);
+  }
+  const rateId = str(b.rateId, 40) || 'first';
+  if (errors.length) return { errors };
+  return { content: { scenarios, rateId } };
+}
+
+/** The PK2 table as it would be in one case. */
+export function scaledTable(cb: CostBenefit, s: Scenario): CostBenefit {
+  return {
+    ...cb,
+    lines: cb.lines.map((l) => ({
+      ...l,
+      values: l.kind === 'cost' ? l.values.map((v) => (v * s.costScale) / 100) : [...Array<number>(s.delayYears).fill(0), ...l.values.map((v) => (v * s.benefitScale) / 100)],
+    })),
+  };
+}
+
+export interface ScenarioResult {
+  name: string;
+  npv: number;
+  odds?: number;
+  breakEvenYear: number | null;
+}
+
+export function scenarioResults(cb: CostBenefit, sc: Scenarios): { rate: { id: string; label: string; rateText: string } | null; results: ScenarioResult[]; expected: number | null; chanceNegative: number | null } {
+  const schedules = cbSchedules(cb);
+  const pick = schedules.find((x) => x.id === sc.rateId) ?? schedules[0];
+  if (!pick) return { rate: null, results: [], expected: null, chanceNegative: null };
+  const results = sc.scenarios.map((s) => {
+    const r = cbAt(scaledTable(cb, s), pick.label, pick.steps);
+    return { name: s.name, npv: r.npv, breakEvenYear: r.breakEvenYear, ...(s.odds !== undefined ? { odds: s.odds } : {}) };
+  });
+  const withOdds = results.length > 0 && results.every((r) => r.odds !== undefined);
+  return {
+    rate: { id: pick.id, label: pick.label, rateText: cbAt(cb, pick.label, pick.steps).rateText },
+    results,
+    expected: withOdds ? results.reduce((a, r) => a + (r.npv * r.odds!) / 100, 0) : null,
+    chanceNegative: withOdds ? results.filter((r) => r.npv < 0).reduce((a, r) => a + r.odds!, 0) : null,
+  };
+}
+
 /** Checks the content of one part. */
 export function parseCouncilPart(part: CouncilPart, v: unknown, defaults: { unit?: CouncilSizeUnit; firstYear: number; figures?: DiagnosisFigure[] }): { content: unknown } | { errors: string[] } {
   switch (part) {
@@ -472,5 +579,7 @@ export function parseCouncilPart(part: CouncilPart, v: unknown, defaults: { unit
       return parseWinnersLosers(v);
     case 'chain':
       return parseChain(v, defaults.figures);
+    case 'scenarios':
+      return parseScenarios(v);
   }
 }
