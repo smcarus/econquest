@@ -1249,6 +1249,16 @@ export const GLOSSARY: GlossaryEntry[] = [
     limits: "Beyond the length of the record it is extrapolation. It assumes every past season comes from the same curve, which a trend in the climate or a market breaks.",
     match: [/extreme value/i, /\bGEV\b/, /L-moments/i],
   },
+  {
+    id: 'basis_risk',
+    term: "Basis risk",
+    group: 'risk',
+    what: "The gap between what an index cover pays and the loss it is meant to cover. A farm can lose its crop while the index stays above the trigger (a missed bad year), or the cover can pay in a year when the farm did fine.",
+    why: "A missed bad year is the worst outcome for the insured: they paid for cover and got nothing when they needed it. It is the main reason people distrust index insurance, so schemes check it before they sell.",
+    read: "Look at how many bad years the cover paid in and how many it missed. A rank correlation near 1 between the index and the loss measure means the cover tracks the loss well; near 0, it barely does.",
+    limits: "In the app the loss is stood in for by a second measure of the same weather (capital against whole country), so it shows only part of basis risk. Real losses also depend on crops, timing, prices and local conditions.",
+    match: [/basis risk/i],
+  },
 ];
 
 /** Plain-words introductions for the panels in the Research briefs, keyed by panel title (prefix match). */
