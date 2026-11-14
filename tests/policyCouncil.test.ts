@@ -225,3 +225,68 @@ test('PK6: the regression check allows the present values the app hands the coun
   assert.match(text, /net 0\.97, pays back from 2028/);
   assert.doesNotMatch(text, /\b4\.21\b/);
 });
+
+test('PK7: a market question needs its market; readings are taken on or before As of with date and source; carry is worked out', async () => {
+  const { parseCouncil, frameTitle } = await import('../src/utils/policyReview');
+  const { buildMarketReadings, periodEnd, councilPartsFor, parseMarketScenarios, marketScenarioResults } = await import('../src/utils/policyCouncil');
+  const errors: string[] = [];
+  assert.equal(parseCouncil({ kind: 'market', measure: 'The Fed holds rates' }, errors)?.market, undefined);
+  assert.match(errors[0], /Pick the market/);
+  const q = parseCouncil({ kind: 'market', market: 'currency', measure: 'The Fed holds rates', size: { value: 1, unit: 'pct_gdp' } }, []);
+  assert.deepEqual(q, { kind: 'market', market: 'currency', measure: 'The Fed holds rates' });
+  const frame = { iso3: 'TUR', problem: 'p', goal: { indicator: 'Lira', direction: 'stable' as const }, constraints: [], asOf: '2026-06-15', council: q! };
+  assert.match(frameTitle(frame), /^TUR market council: The currency against the US dollar, The Fed holds rates/);
+  assert.deepEqual(councilPartsFor(frame), ['market', 'groups', 'chain', 'marketScenarios']);
+
+  assert.equal(periodEnd('2026-Q2'), '2026-06-30');
+  assert.equal(periodEnd('2026-02'), '2026-02-28');
+  assert.equal(periodEnd('2025'), '2025-12-31');
+  const series = (id: string, unit: string, points: [string, number][]) => ({ id, label: id, unit, freq: 'monthly' as const, source: `${id} source`, points: points.map(([date, value]) => ({ date, value })) });
+  const set = {
+    series: [series('policy_rate', '%', [['2026-05-01', 40], ['2026-06-10', 45], ['2026-07-01', 50]]), series('usd_credit', 'US$ bn', [['2026-Q1', 120], ['2026-Q2', 130]])],
+    missing: [{ id: 'cftc_lev_net', label: 'CFTC positioning', reason: 'No CME future for the Turkish lira' }],
+  };
+  const us = { series: [series('policy_rate', '%', [['2026-06-01', 4.25]])] };
+  const out = buildMarketReadings('currency', '2026-06-15', set, us);
+  const by = Object.fromEntries(out.readings.map((r) => [r.id, r]));
+  assert.equal(by.policy_rate.value, 45);
+  assert.equal(by.policy_rate.date, '2026-06-10');
+  assert.equal(by.carry_vs_us.value, 40.75);
+  assert.match(by.carry_vs_us.method!, /45% \(2026-06-10\) minus US policy rate 4.25% \(2026-06-01\)/);
+  assert.equal(by.usd_credit.value, 120, 'the second quarter has not ended on 15 June');
+  assert.equal(by.cftc_lev_net.value, null);
+  assert.equal(by.cftc_lev_net.reason, 'No CME future for the Turkish lira');
+  assert.ok(by.fed_swaps_total.reason);
+  assert.equal(buildMarketReadings('currency', '2026-06-15', set, null).readings.find((r) => r.id === 'carry_vs_us')!.reason, 'No US policy rate on or before As of');
+
+  assert.ok('errors' in parseMarketScenarios({ scenarios: [{ name: 'Base', story: 'Rates hold.', move: '2', odds: 60 }, { name: 'Bad', story: 'Holders sell.', move: '-10' }] }));
+  const ms = parseMarketScenarios({ scenarios: [{ name: 'Base', story: 'Rates hold.', move: '2', odds: 60 }, { name: 'Bad', story: 'Holders sell.', move: '-10', odds: 40, source: 'Taper tantrum, 2013' }] });
+  assert.ok('content' in ms);
+  const res = marketScenarioResults((ms as { content: Parameters<typeof marketScenarioResults>[0] }).content);
+  near(res.expected!, -2.8);
+  assert.equal(res.chanceLoss, 40);
+});
+
+test('PK7: the Options prompt for a market names the event, the readings and the cases; the task asks for responses', async () => {
+  const { optionsPrompt } = await import('../src/utils/reviewOptions');
+  const { currentCouncilInputs, buildMarketReadings } = await import('../src/utils/policyCouncil');
+  const today = new Date('2026-11-05T12:00:00Z');
+  const frame = (parseFrame({ iso3: 'BRA', problem: 'Foreign holders may sell local bonds.', goal: { indicator: 'Local 10-year yield', direction: 'lower' }, asOf: '2026-11-01', council: { kind: 'market', market: 'local_bonds', measure: 'The Fed holds rates through 2027' } }, today) as { frame: ReviewFrame }).frame;
+  const d = { iso3: 'BRA', asOf: '2026-11-01', pullDate: '2026-10-30', pulledAt: '2026-10-30T08:00:00Z', incomplete: false, figures: [], readings: [], coverage: '' };
+  const set = { series: [{ id: 'policy_rate', label: 'Policy rate', unit: '%', freq: 'daily' as const, source: 'BIS', points: [{ date: '2026-10-30', value: 15 }] }], missing: [] };
+  const r0 = newReview(frame, []);
+  const r1 = (saveCouncilPart(r0, 'market', buildMarketReadings('local_bonds', '2026-11-01', set, null)) as { review: typeof r0 }).review;
+  // A cost-benefit table saved on a market review is not handed over (not one of its parts).
+  const r = (saveCouncilPart(r1, 'costBenefit', cb()) as { review: typeof r0 }).review;
+  const { inputs } = currentCouncilInputs(r);
+  assert.deepEqual(Object.keys(inputs), ['market']);
+  const p = optionsPrompt(frame, d, [], inputs);
+  assert.match(p, /Event the principal wants weighed: The Fed holds rates through 2027/);
+  assert.match(p, /Market: Government bonds in local currency of BRA/);
+  assert.match(p, /- Policy rate: 15 % \(2026-10-30, BIS\)/);
+  assert.match(p, /Carry against the US .*: Missing \(No US policy rate on or before As of\)/);
+  assert.match(p, /Not entered by the principal \(or out of date\): who gains and who loses, what follows, scenarios\./);
+  assert.match(p, /Option 1 must be to keep the current stance unchanged/);
+  assert.match(p, /Task: weigh what "The Fed holds rates through 2027" means for government bonds in local currency of BRA/);
+  assert.doesNotMatch(p, /Measure the principal wants weighed/);
+});

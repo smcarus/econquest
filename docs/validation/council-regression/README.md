@@ -16,6 +16,8 @@ Cases by step (`kind` in `cases.json`):
   runs on the referee model too (it ranks options, so it judges).
   A case with `options.frame.council` and `options.council` is the policy council (PK6): a frozen
   measure and frozen costs and benefits, groups, chain and scenarios; option 1 must be the measure.
+  With `council.kind` "market" it is the market council (PK7): frozen market readings, groups, chain and
+  cases; option 1 is keeping the current stance.
 
 ## Three commands
 

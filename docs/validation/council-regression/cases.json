@@ -526,6 +526,156 @@
         "gapsMention": "(assum|source|missing|not (given|available)|not in|wage)",
         "maxRemoved": 2
       }
+    },
+    {
+      "id": "options-council-turkey-lira-fed",
+      "kind": "options",
+      "question": "Market council: weigh what the Fed holding rates through 2027 means for the Turkish lira, with frozen market readings (one Missing) and the principal's cases",
+      "options": {
+        "frame": {
+          "iso3": "TUR",
+          "problem": "Foreign investors hold lira assets for the high carry; a Fed that keeps rates high could pull them out.",
+          "goal": {
+            "indicator": "Lira against the US dollar",
+            "direction": "stable"
+          },
+          "constraints": [
+            "Keep the inflation programme on track."
+          ],
+          "asOf": "2026-10-31",
+          "council": {
+            "kind": "market",
+            "market": "currency",
+            "measure": "The Fed keeps rates where they are through 2027",
+            "years": 1
+          }
+        },
+        "figures": [
+          {
+            "field": "imf.cpiInflationPct",
+            "figure": "Inflation",
+            "value": 32.5,
+            "unit": "%",
+            "period": "Sep 2026",
+            "source": "TurkStat CPI (frozen test input)"
+          },
+          {
+            "field": "market.policyRatePct",
+            "figure": "Policy rate",
+            "value": 38,
+            "unit": "%",
+            "period": "Oct 2026",
+            "source": "BIS policy rates (frozen test input)"
+          }
+        ],
+        "council": {
+          "market": {
+            "asOf": "2026-10-31",
+            "readings": [
+              {
+                "id": "policy_rate",
+                "label": "Policy rate",
+                "value": 38,
+                "unit": "%",
+                "date": "2026-10-23",
+                "source": "BIS policy rates (frozen test input)"
+              },
+              {
+                "id": "carry_vs_us",
+                "label": "Carry against the US (policy rate minus US policy rate)",
+                "value": 34.12,
+                "unit": "percentage points",
+                "date": "2026-10-23",
+                "source": "BIS policy rates (frozen test input)",
+                "method": "Policy rate 38% (2026-10-23) minus US policy rate 3.88% (2026-10-29)."
+              },
+              {
+                "id": "fx_per_usd",
+                "label": "Lira per US dollar",
+                "value": 44.6,
+                "unit": "TRY per USD",
+                "date": "2026-10-30",
+                "source": "ECB reference rates (frozen test input)"
+              },
+              {
+                "id": "cftc_lev_net",
+                "label": "CFTC leveraged funds net position",
+                "value": null,
+                "unit": "",
+                "date": "",
+                "source": "",
+                "reason": "No CME future for the Turkish lira"
+              },
+              {
+                "id": "usd_credit",
+                "label": "US dollar credit to non-banks",
+                "value": 148.2,
+                "unit": "US$ bn",
+                "date": "2026-Q2",
+                "source": "BIS global liquidity indicators (frozen test input)"
+              }
+            ]
+          },
+          "groups": {
+            "rows": [
+              {
+                "group": "Foreign investors",
+                "effect": "loses",
+                "why": "The carry falls if the lira weakens faster than the rate gap pays."
+              },
+              {
+                "group": "Importers",
+                "effect": "loses",
+                "why": "Dollar costs rise if the lira falls.",
+                "size": 3,
+                "sizeUnit": "% of import costs",
+                "source": "Importers' association survey (frozen test input)"
+              }
+            ]
+          },
+          "chain": {
+            "links": [
+              {
+                "from": "Fed holds rates",
+                "to": "Carry against the US",
+                "direction": "lowers",
+                "basis": "source",
+                "source": "Policy rate spread (frozen test input)"
+              },
+              {
+                "from": "Lower carry",
+                "to": "Foreign holdings of lira assets",
+                "direction": "lowers",
+                "basis": "assumption"
+              }
+            ]
+          },
+          "marketScenarios": {
+            "scenarios": [
+              {
+                "name": "Base",
+                "story": "Carry holds and the lira weakens slowly.",
+                "move": 4,
+                "odds": 55
+              },
+              {
+                "name": "Bad",
+                "story": "Foreign holders leave and the lira falls fast.",
+                "move": -15,
+                "odds": 45,
+                "source": "2018 lira episode (frozen test input)"
+              }
+            ]
+          }
+        }
+      },
+      "answers": [],
+      "expect": {
+        "minOptions": 2,
+        "headline": "(lira|carry|fed|stance|currency)",
+        "gapsMention": "(assum|source|missing|cftc|position|not (given|available)|not in)",
+        "maxRemoved": 2
+      }
     }
   ]
 }

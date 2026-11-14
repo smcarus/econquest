@@ -29,7 +29,7 @@ import { dueChecks, judgeCheck, nextCheck, tallyChecks, tallySentence, OUTCOME_C
 import { figureRows } from '../../utils/csvExport';
 import { listArchivedDays } from '../../utils/pullArchive';
 import { parseEffects } from '../../utils/behaviouralCheck';
-import { COUNCIL_PARTS, currentCouncilInputs, parseCouncilPart, type CouncilInputs, type CouncilPart } from '../../utils/policyCouncil';
+import { buildMarketReadings, COUNCIL_PARTS, councilPartsFor, currentCouncilInputs, parseCouncilPart, type CouncilInputs, type CouncilPart } from '../../utils/policyCouncil';
 import type { DiagnosisFigure } from '../../utils/reviewDiagnosis';
 import { CONSENTS, expertCsv, expertSummaryMarkdown, parseExpertForm } from '../../utils/expertReview';
 import { findPrecedents, parseFeatures, type HistoryInput } from '../../utils/precedentFinder';
@@ -400,7 +400,8 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
   });
   // Policy council parts (PK2 to PK5): entered by the user with a source for every figure, saved
   // beside the steps and tied to the frame hash; no AI and no built-in figures.
-  app.post('/api/reviews/:id/council/:part', (req, res) => {
+  // PK7: for a market, the "market" part is copied in by the app from its saved history at As of.
+  app.post('/api/reviews/:id/council/:part', async (req, res) => {
     if (refuseRemoteChange(req, res)) return;
     const part = req.params.part as CouncilPart;
     if (!COUNCIL_PARTS.includes(part)) return res.status(404).json({ error: 'No such policy council part.' });
@@ -408,9 +409,15 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
     if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
     const frame = frameOf(r);
     if (!frame?.council) return res.status(400).json({ error: 'Tick "Weigh one measure" in the frame first.' });
+    if (!councilPartsFor(frame).includes(part)) return res.status(404).json({ error: 'No such policy council part for this review.' });
     const firstYear = Number((frame.council.start ?? frame.asOf).slice(0, 4));
     const figures = (r.steps.diagnose?.content as { figures?: DiagnosisFigure[] } | undefined)?.figures;
-    const parsed = parseCouncilPart(part, req.body?.content, { unit: frame.council.size?.unit, firstYear, figures });
+    let body: unknown = req.body?.content;
+    if (part === 'market') {
+      const [set, us] = await Promise.all([seriesFor(frame.iso3), frame.iso3 === 'USA' ? Promise.resolve(null) : seriesFor('USA').catch(() => null)]);
+      body = buildMarketReadings(frame.council.market ?? 'currency', frame.asOf, set, frame.iso3 === 'USA' ? set : us);
+    }
+    const parsed = parseCouncilPart(part, body, { unit: frame.council.size?.unit, firstYear, figures });
     if ('errors' in parsed) return res.status(400).json({ error: parsed.errors.join(' ') });
     const out = saveCouncilPart(r, part, parsed.content);
     if ('error' in out) return res.status(400).json({ error: out.error });
