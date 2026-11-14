@@ -222,6 +222,7 @@ import { gprData } from './src/utils/gprStore.ts';
 import { countrySanctions, sanctionsSentence, searchSanctions, SANCTIONS_METHOD } from './src/utils/sanctionsLists.ts';
 import { sanctionsData, sanctionsDir } from './src/utils/sanctionsStore.ts';
 import { chinnItoData } from './src/utils/chinnItoStore.ts';
+import { fxRegimeData } from './src/utils/fxRegimeStore.ts';
 import { OidcClient } from './src/server/oidcClient';
 import { authorizationUrl, newPending, oidcConfigFromEnv, oidcCookie, oidcDecision, tokenRequest, usernameFromEmail, verifiedEmail, OIDC_COOKIE, OIDC_PENDING_MS, type OidcError } from './src/utils/oidc';
 import { chinnItoReading } from './src/utils/chinnIto.ts';
@@ -2188,6 +2189,7 @@ async function runConnectionCheck(trigger: CheckTrigger): Promise<ConnectionRepo
     aiddata: () => aiddataData(DATA_DIR),
     investorBase: () => investorBaseData(DATA_DIR),
     fiscalRules: () => fiscalRulesData(DATA_DIR),
+    fxRegime: () => fxRegimeData(DATA_DIR),
     dpi: () => dpiData(DATA_DIR),
     paidMappingsText: paidMappingsText,
     env: process.env,
@@ -3685,6 +3687,7 @@ async function startServer() {
       aiddata: () => aiddataData(DATA_DIR),
       investorBase: () => investorBaseData(DATA_DIR),
     fiscalRules: () => fiscalRulesData(DATA_DIR),
+    fxRegime: () => fxRegimeData(DATA_DIR),
     dpi: () => dpiData(DATA_DIR),
       paidMappingsText: paidMappingsText,
       env,
@@ -4025,6 +4028,10 @@ async function startServer() {
       ...(() => {
         const ci = chinnItoData(DATA_DIR);
         return ci.ok ? { chinnIto: ci.table } : { chinnIto: null, chinnItoMissing: ci.reason };
+      })(),
+      ...(() => {
+        const fr = fxRegimeData(DATA_DIR);
+        return fr.ok ? { fxRegime: fr.table } : { fxRegime: null, fxRegimeMissing: fr.reason };
       })(),
       inflationExpectations,
       inflationSurveys,
@@ -6354,6 +6361,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       aiddata: () => aiddataData(DATA_DIR),
       investorBase: () => investorBaseData(DATA_DIR),
     fiscalRules: () => fiscalRulesData(DATA_DIR),
+    fxRegime: () => fxRegimeData(DATA_DIR),
     dpi: () => dpiData(DATA_DIR),
         paidMappingsText: paidMappingsText,
         env: process.env,

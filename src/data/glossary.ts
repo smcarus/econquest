@@ -922,6 +922,16 @@ export const GLOSSARY: GlossaryEntry[] = [
     match: [/Chinn-Ito/i, /\bKAOPEN\b/, /capital account openness/i],
   },
   {
+    id: 'fx_regime',
+    term: "Exchange rate regime",
+    group: 'risk',
+    what: "How a country runs its currency: tied to another currency (a peg), moved in small planned steps (a crawl), steered by the central bank (managed floating), left to the market (free float), or collapsing in high inflation (freely falling).",
+    why: "The regime decides what policy can do. With a peg, interest rates must follow the anchor country and reserves defend the rate; with a float, the currency absorbs shocks and the central bank can set rates for the home economy.",
+    read: "Ilzetzki, Reinhart and Rogoff classify what the currency did in fact, month by month, using market and parallel rates. History & data shows their coarse code (1 peg to 6) and fine code (1 to 15) from the workbook you save in data/local/irr/.",
+    limits: "The classification is published with a lag and revised. It describes behaviour, not the law, so it can differ from what the central bank announces.",
+    match: [/exchange rate regime/i, /\bIRR (coarse|fine)\b/],
+  },
+  {
     id: 'sanctions',
     term: 'Sanctions',
     group: 'risk',

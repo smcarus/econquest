@@ -54,6 +54,7 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['own', /\byour (own|holdings|connector)\b|\bLSEG\b|\byour \S+ data\b/i],
   ['imf_investor_base', /Investor Base/i],
   ['imf_fiscal_rules', /Fiscal Rules Dataset/i],
+  ['irr', /Ilzetzki|Reinhart and Rogoff|\bIRR\b/],
   ['dpi', /Database of Political Institutions|\bDPI ?20\d\d\b/i],
   ['emdat', /EM-DAT|emdat\.be/i],
   ['fao_cpi', /FAOSTAT/i],

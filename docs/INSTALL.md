@@ -281,6 +281,7 @@ the file read Missing and say where to get it.
 | --- | --- | --- | --- |
 | `data/local/fao-cpi/` | FAOSTAT Consumer Price Indices, bulk download "All Data" or "All Data Normalized" (.zip or .csv) | https://www.fao.org/faostat/en/#data/CP, Bulk downloads | Food price inflation (History & data) |
 | `data/local/emdat/` | EM-DAT public table (.xlsx, or a .csv or .zip of it) | https://public.emdat.be, with your own account (free for non-commercial use by universities, non-profit research bodies, public bodies and the media) | Natural disasters (History & data) |
+| `data/local/irr/` | Ilzetzki, Reinhart and Rogoff exchange rate regime classification, monthly (`ERA_Classification_Monthly_1940-2025.xlsx` or an earlier edition) | https://www.ilzetzki.com/irr-data | Exchange rate regime (History & data) |
 | `data/local/imf-fiscal-rules/` | IMF Fiscal Rules Dataset (XLSX) | IMF Fiscal Rules Dataset page | National fiscal rules (Fiscal rules check) |
 | `data/local/dpi/` | Database of Political Institutions 2020 (.csv or .xlsx) | Inter-American Development Bank | Checks and balances (Political feasibility in Policy review) |
 | `data/local/imf-investor-base/` | `wp1439.zip`, the IMF Sovereign Debt Investor Base | imf.org (Arslanalp and Tsuda) | Who holds government debt (History & data) |

@@ -23,6 +23,7 @@ import { acledFileData } from '../src/utils/acledFileStore.ts';
 import { aiddataData } from '../src/utils/aiddataStore.ts';
 import { investorBaseData } from '../src/utils/investorBaseStore.ts';
 import { fiscalRulesData } from '../src/utils/fiscalRulesStore.ts';
+import { fxRegimeData } from '../src/utils/fxRegimeStore.ts';
 import { dpiData } from '../src/utils/dpiStore.ts';
 import { applyKeysToEnv, envKeySnapshot, keySources, loadSettings, settingsFilePath } from '../src/utils/userSettings.ts';
 
@@ -41,6 +42,7 @@ const report = await checkConnections({
   aiddata: () => aiddataData(dataDir),
   investorBase: () => investorBaseData(dataDir),
   fiscalRules: () => fiscalRulesData(dataDir),
+  fxRegime: () => fxRegimeData(dataDir),
   dpi: () => dpiData(dataDir),
   readFile: (p) => {
     try {
