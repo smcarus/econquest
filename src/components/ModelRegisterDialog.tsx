@@ -11,7 +11,7 @@ import { YOUR_TESTS } from '../i18n/messages/yourTests';
 import { MODEL_REGISTER, REGISTER_HEADER, registerRows, STATUS_LABEL, type ValidationStatus } from '../data/modelRegister';
 import { ValidationBadge } from './ValidationBadge';
 import { TestLedgerTable } from './TestLedgerTable';
-import { effectiveStatus, entryGrade, runValidation, useValidation, validationHolm, type ValidationReply } from './useValidation';
+import { effectiveStatus, entryGrade, fromProjectRecord, projectVerdicts, runValidation, useValidation, validationHolm, type ValidationReply } from './useValidation';
 import { GRADE_POLICY } from '../utils/evidenceGrade';
 import { holmSentence } from '../utils/multipleTesting';
 import { forwardSentence } from '../utils/forwardRecord';
@@ -33,7 +33,10 @@ function downloadCsv(v: ValidationReply | null) {
     const gradeText = g ? ` Evidence grade: ${g.label}. ${g.why}` : '';
     if (r) return { status: r.status, text: `${r.verdict} Test v${r.specVersion}, hash ${r.specHash}, run ${r.ranAt}. ${holmSentence(holmMap.get(`${r.id} v${r.specVersion}`))}${gradeText}`.trim() };
     const fs = forecastRegisterStatus(id, v?.forecasts);
-    return fs ? { status: fs, text: forecastVerdicts(id, v?.forecasts).map((x) => `${x.id} v${x.specVersion}: ${x.verdict} Hash ${x.specHash}, run ${x.ranAt}. ${holmSentence(holmMap.get(`forecast ${x.id} v${x.specVersion}`))}`.trim()).join(' ') + gradeText } : undefined;
+    if (fs) return { status: fs, text: forecastVerdicts(id, v?.forecasts).map((x) => `${x.id} v${x.specVersion}: ${x.verdict} Hash ${x.specHash}, run ${x.ranAt}. ${holmSentence(holmMap.get(`forecast ${x.id} v${x.specVersion}`))}`.trim()).join(' ') + gradeText };
+    if (!fromProjectRecord(id, v)) return undefined;
+    const pv = projectVerdicts(id, v?.projectRecord);
+    return { status: effectiveStatus(id, 'not_validated', v), text: `From the project's published track record (docs/TRACK_RECORD.md), not yet run on this computer. ${pv.map((x) => `${x.id} v${x.version}, run ${x.ranAt}: ${x.summary}`).join(' ')}${gradeText}`.trim() };
   });
   const text = '\uFEFF' + [REGISTER_HEADER, ...rows, [EXPORT_NOTICE]].map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
   const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
@@ -127,7 +130,7 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
             </button>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400" data-backtest-status>
-            {v?.lastRun ? `Backtests last run ${when(v.lastRun.at)}.` : 'Backtests not run yet on this computer.'} They pull the long free histories (BIS policy rates since 1990, OECD leading indicator, CFTC since 2006), so they need a connection and take a minute or two. Same as `npm run backtest`.
+            {v?.lastRun ? `Backtests last run ${when(v.lastRun.at)}.` : 'Backtests not run yet on this computer.'} They pull the long free histories (BIS policy rates since 1990, OECD leading indicator, CFTC since 2006), so they need a connection and take a minute or two. Same as `npm run backtest`.{v?.lastRun ? '' : " Until they run here, each badge shows the project's published verdict (docs/TRACK_RECORD.md), marked as such."}
           </p>
           {holmMap.size > 0 && (
             <p className="text-xs text-slate-500 dark:text-slate-400" data-holm-summary>
@@ -193,8 +196,23 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
                       const earlier = Object.values(v?.versions || {}).filter((x) => x.id === e.id && x.specVersion !== v?.results?.[e.id]?.specVersion).sort((a, b) => b.specVersion - a.specVersion);
                       const r = v?.results?.[e.id];
                       const fv = forecastVerdicts(e.id, v?.forecasts);
+                      const pv = fromProjectRecord(e.id, v) ? projectVerdicts(e.id, v?.projectRecord) : [];
                       return (
                         <>
+                          {pv.length > 0 && (
+                            <>
+                              <dt className="text-slate-500 dark:text-slate-400">Published verdicts</dt>
+                              <dd data-project-verdicts={e.id}>
+                                <span className="block text-slate-500 dark:text-slate-400">From the project's own runs (docs/TRACK_RECORD.md); not yet run on this computer. Run backtests above to check them here.</span>
+                                {pv.map((x) => (
+                                  <span key={`${x.kind} ${x.id}`} className="block" data-project-verdict={x.id} data-status={x.status}>
+                                    <span className="font-medium">{x.id.replace(/_/g, ' ')}</span> (test v{x.version}, run {x.ranAt.slice(0, 10)}): {x.summary}
+                                    {x.adjusted !== undefined ? ` Holm-adjusted p ${x.adjusted} across the ${x.tested} published tests (pass mark ${x.alpha}).` : ''}
+                                  </span>
+                                ))}
+                              </dd>
+                            </>
+                          )}
                           {fv.length > 0 && (
                             <>
                               <dt className="text-slate-500 dark:text-slate-400">Evaluation verdicts</dt>
