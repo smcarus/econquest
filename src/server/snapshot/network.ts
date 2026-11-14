@@ -124,6 +124,7 @@ export async function fetchLiveOpenDataSnapshotNetwork(
           );
           if (!res.ok) return;
           const data: any = await res.json();
+          if (Array.isArray(data)) (baseline.worldBankIndicators.answeredFields ??= []).push(field);
           const row = pickDistTaxRow(code, data?.[1], now);
           if (!row) return;
           baseline.worldBankIndicators[field] = Number(row.value.toFixed(field.startsWith('tariff') ? 2 : 1));
@@ -149,6 +150,7 @@ export async function fetchLiveOpenDataSnapshotNetwork(
           );
           if (!res.ok) return;
           const data: any = await res.json();
+          if (Array.isArray(data)) (baseline.worldBankIndicators.answeredFields ??= []).push(field);
           const row = pickPeopleRow(field, data?.[1], now);
           if (!row) return;
           baseline.worldBankIndicators[field] = Number(row.value.toFixed(1));

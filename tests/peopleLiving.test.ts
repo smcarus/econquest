@@ -89,11 +89,14 @@ test('the brief group "People": figures with their years, or Missing with a reas
 
   const part = snap((s) => {
     s.worldBankIndicators.remittancesPctGdp = 3.6;
+    s.worldBankIndicators.answeredFields = ['remittancesPctGdp', 'povertyLowestPct'];
     s.liveFields = { 'wb.remittancesPctGdp': 'World Bank, 2024' };
   });
   const pr = peopleRows(getSnapshotDataStatus(part), part, NOW);
   assert.equal(pr[0].value, 'Missing');
   assert.equal(pr[0].source, 'No survey in the last 15 years');
+  // The other poverty lines' requests did not answer: never "no survey" for those.
+  assert.equal(pr[1].source, 'World Bank did not answer for this figure');
   assert.match(pr[0].help || '', /household surveys/);
   assert.equal(pr.find((r) => r.label === 'Youth unemployment')!.source, 'Not in World Bank data');
   const off = snap(() => {}, []);

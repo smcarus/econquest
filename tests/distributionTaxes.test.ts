@@ -87,6 +87,7 @@ test('the brief group "Distribution and taxes": figures with their years, or Mis
   // Tax split missing, tax revenue present; no Gini survey in 15 years.
   const part = snap((s) => {
     s.worldBankIndicators.taxRevenuePctGdp = 14.6;
+    s.worldBankIndicators.answeredFields = ['taxRevenuePctGdp', 'giniIndex'];
     s.liveFields = { 'wb.taxRevenuePctGdp': 'World Bank, 2024' };
   });
   const rowsPart = distTaxRows(getSnapshotDataStatus(part), part, NOW);
@@ -100,6 +101,13 @@ test('the brief group "Distribution and taxes": figures with their years, or Mis
     assert.equal(r.value, 'Missing', l);
     assert.equal(r.source, 'Not in World Bank data');
   }
+  // The World Bank answered for other figures, but the Gini request itself failed: say so, not "no survey".
+  const failed = snap((s) => {
+    s.worldBankIndicators.taxRevenuePctGdp = 14.6;
+    s.worldBankIndicators.answeredFields = ['taxRevenuePctGdp'];
+    s.liveFields = { 'wb.taxRevenuePctGdp': 'World Bank, 2024' };
+  });
+  assert.equal(distTaxRows(getSnapshotDataStatus(failed), failed, NOW)[0].source, 'World Bank did not answer for this figure');
   // World Bank did not answer at all: the usual reason, not the survey one.
   const off = snap(() => {}, []);
   const gOff = distTaxRows(getSnapshotDataStatus(off), off, NOW)[0];

@@ -327,6 +327,8 @@ export const BRIEF_TEXT_PT: Record<string, string> = {
   "Applied tariff, weighted mean": "Tarifa aplicada, média ponderada",
   "Applied tariff, simple mean": "Tarifa aplicada, média simples",
   "The Gini index comes from household surveys, which many countries run only every few years and some have never published. The app looks back 15 years and leaves it Missing rather than show an older survey or an estimate.": "O índice de Gini vem de pesquisas domiciliares, que muitos países fazem só a cada poucos anos e alguns nunca publicaram. O app olha 15 anos para trás e o deixa como Ausente em vez de mostrar uma pesquisa mais antiga ou uma estimativa.",
+  "World Bank did not answer for this figure": "O Banco Mundial não respondeu para este número",
+  "Other World Bank figures came in, but the request for this one failed or timed out, so the app cannot tell whether a survey exists. Press Refresh now under Research > One country to try again.": "Outros números do Banco Mundial chegaram, mas o pedido deste falhou ou expirou, então o app não consegue saber se existe uma pesquisa. Toque em Atualizar agora em Pesquisa > Um país para tentar de novo.",
   "No survey in the last 15 years": "Nenhuma pesquisa nos últimos 15 anos",
   "The World Bank answered, but has no recent figure for this country. World Bank figures are yearly and arrive a year or more late, and some countries do not report them. The app leaves it Missing rather than fill the gap.": "O Banco Mundial respondeu, mas não tem número recente para este país. Os números do Banco Mundial são anuais e chegam com um ano ou mais de atraso, e alguns países não os reportam. O app o deixa como Ausente em vez de preencher a lacuna.",
   "Not in World Bank data": "Fora dos dados do Banco Mundial",
