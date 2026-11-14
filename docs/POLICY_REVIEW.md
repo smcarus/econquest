@@ -40,6 +40,10 @@ The council parts of the review are built on top of the measure:
 | What could go differently (PK5) | Two to five cases (base, good and bad to start), each a short story with the costs and benefits of the PK2 table scaled by your percentages and the benefits arriving later by the years you give, and what each rests on (none means assumption). Odds for every case or none. The app shows the net present value of each case at one PK2 rate, and with odds the odds-weighted net and the chance of a negative net. | Your cases, the frame hash, their own hash and an audit log entry. |
 | The council weighs it (PK6) | Run the Options step as usual. With a measure in the frame, the council is handed the measure and every part above that is up to date with the frame (an out-of-date part is left out and named as not entered). Option 1 is always the measure itself; the council judges it against the goal, the diagnosis and your entries, says which entries rest on a source and which on an assumption, puts the assumptions in what must be true, and ranks two or more alternatives or changes against it. It may use only numbers from the diagnosis and your entries; a sentence with any other number is removed and listed. If you change a part after the Options step ran, the step says so and asks you to run it again. | The Options step as before, plus the hash of each council part it was given. |
 
+The one-page brief (PDF, memo step) ends with these parts when they are up to date with the frame
+(PK8): present values, who gains and who loses, the count of links by what they rest on, and the
+cases with the odds-weighted result; parts not entered or out of date are named.
+
 ### Market council (PK7)
 
 Instead of a measure, the frame can ask what an event means for one market of the country: pick

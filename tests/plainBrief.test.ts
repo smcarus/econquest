@@ -97,3 +97,33 @@ test('wiring: Policy review memo step has the one-page brief button, with text i
   assert.match(ui, /plainBriefPdf\(plainBrief\(r, memo\.inputs, asBriefLang\(lang\)\)/);
   assert.ok('pr_brief' in REPORTS.en && 'pr_briefTitle' in REPORTS.en);
 });
+
+test('PK8: a policy council brief adds the up-to-date council parts last; a market brief its readings and cases', async () => {
+  const { saveCouncilPart, newReview } = await import('../src/utils/policyReviewStore');
+  const { parseFrame } = await import('../src/utils/policyReview');
+  const today = new Date('2026-11-05T12:00:00Z');
+  const cf = (parseFrame({ iso3: 'BRA', problem: 'Fuel subsidies cost a large share of the budget.', goal: { indicator: 'Primary balance', direction: 'higher' }, asOf: '2026-11-01', council: { measure: 'Phase out the diesel subsidy' } }, today) as { frame: ReviewFrame }).frame;
+  let r = newReview(cf, []);
+  const add = (part: Parameters<typeof saveCouncilPart>[1], content: unknown) => (r = (saveCouncilPart(r, part, content) as { review: typeof r }).review);
+  add('costBenefit', { unit: 'lcu_bn', firstYear: 2027, lines: [{ kind: 'cost', label: 'Transfers', values: [10, 0, 0], source: 'Budget' }, { kind: 'benefit', label: 'Saved', values: [0, 6, 6], source: 'Outturn' }], rateIds: ['us_a4_7'] });
+  add('groups', { rows: [{ group: 'Poorer households', effect: 'loses', why: 'Fares rise.' }, { group: 'Government budget', effect: 'gains', why: 'Bill falls.' }] });
+  add('scenarios', { rateId: 'us_a4_7', scenarios: [{ name: 'Base', story: 'As planned.', costScale: 100, benefitScale: 100, delayYears: 0, odds: 60 }, { name: 'Bad', story: 'Late.', costScale: 100, benefitScale: 50, delayYears: 0, odds: 40 }] });
+  const withCouncil = { ...review, steps: { ...review.steps, frame: r.steps.frame! }, councilParts: r.councilParts };
+  const b = plainBrief(withCouncil, inputs, 'en');
+  const text = briefLines(b).map((l) => l.text);
+  const at = text.indexOf('The measure weighed (policy council)');
+  assert.ok(at > text.indexOf('Look again on 2027-05-01.'), 'after what to watch');
+  assert.ok(text.includes('At US OMB Circular A-4, 7%: costs 10, benefits 10.85, net 0.85 (billion, local currency); pays back from 2029'), text.join('\n'));
+  assert.ok(text.includes('Who gains: Government budget. Who loses: Poorer households. Both: none.'));
+  assert.ok(text.some((t) => t.startsWith('Case Base: net 0.85, odds 60%')));
+  assert.ok(text.includes('Not entered or out of date: what follows.'));
+  assert.equal(plainBrief(withCouncil, inputs, 'es').council!.heading, 'La medida ponderada (consejo de políticas)');
+  assert.equal(plainBrief(review, inputs, 'en').council, undefined);
+
+  const mf = (parseFrame({ iso3: 'TUR', problem: 'Foreign investors hold lira assets for the carry.', goal: { indicator: 'Lira', direction: 'stable' }, asOf: '2026-11-01', council: { kind: 'market', market: 'currency', measure: 'The Fed holds rates' } }, today) as { frame: ReviewFrame }).frame;
+  r = newReview(mf, []);
+  add('market', { asOf: '2026-11-01', readings: [{ id: 'policy_rate', label: 'Policy rate', value: 38, unit: '%', date: '2026-10-23', source: 'BIS' }, { id: 'cftc_lev_net', label: 'Futures positioning', value: null, unit: '', date: '', source: '', reason: 'No CME future' }] });
+  add('marketScenarios', { scenarios: [{ name: 'Base', story: 'Carry holds.', move: 4, odds: 55 }, { name: 'Bad', story: 'Holders leave.', move: -15, odds: 45 }] });
+  const m = briefLines(plainBrief({ ...review, steps: { ...review.steps, frame: r.steps.frame! }, councilParts: r.councilParts }, inputs, 'en')).map((l) => l.text);
+  for (const s of ['The event weighed (market council)', 'Market readings as of 2026-11-01: Policy rate 38% (2026-10-23).', 'Missing: Futures positioning.', 'Case Bad: change in value -15%, odds 45%', 'Odds-weighted change in value -4.55%; chance of a loss 45%.', 'Not entered or out of date: who gains and who loses, what follows.']) assert.ok(m.includes(s), s);
+});

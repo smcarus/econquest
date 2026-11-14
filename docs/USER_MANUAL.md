@@ -894,6 +894,12 @@ becomes the problem). Six steps, in order:
    watch and when to look again. The fixed wording follows the language you are using (English,
    Spanish, French or Portuguese); text written in the review is shown as it was saved. The text gets
    smaller to fit one page; if it still does not fit, the end is cut and the page says so. No AI.
+   For a policy or market council review (PK8), the brief ends with the council parts that are up to
+   date with the frame: present values at each rate you ticked and the rate at which the net turns,
+   who gains and who loses, how many links in the chain rest on a figure, a source or an assumption,
+   and each case with its net (or, for a market, the readings and each case's change in value) with
+   the odds-weighted result. Parts not entered or out of date are named. These lines come last, so
+   on a long brief they are the first to be cut.
    **Policy review watch** (PC1). Give a watched figure a trigger the app can read, such as "above 8",
    "below 3", "target 4", "rises" or "falls" (or the same in Spanish, French or Portuguese), and the
    start page (Today) checks it against the latest saved figures for the country each time it opens.
