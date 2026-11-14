@@ -186,6 +186,22 @@ test('ILOSTAT: a refused earnings id is replaced from the indicator list, local 
   assert.match(iloEarningsUrl(2018, 'EAR_4MTH_SEX_ECO_LCU_NB_A'), /id=EAR_4MTH_SEX_ECO_LCU_NB_A&/);
   assert.equal(iloIdRefused(400, '{"error":"deprecated or invalid dataset id=EAR_4MTH_SEX_ECO_CUR_NB_A"}'), true);
   assert.equal(iloIdRefused(503, 'down'), false);
+  // A JSON list, or any reply that is not a CSV with an id column: ids are taken where they appear; by activity first.
+  const json = '[{"id":"EAR_4MMN_SEX_OCU_CUR_NB_A","label":"x"},{"id":"EAR_4MMN_SEX_ECO_CUR_NB_A"},{"id":"EAR_4MTH_SEX_ECO_CUR_NB_A"}]';
+  assert.deepEqual(iloEarningsCandidates(json), ['EAR_4MMN_SEX_ECO_CUR_NB_A', 'EAR_4MMN_SEX_OCU_CUR_NB_A']);
+});
+
+test('connection check: when no list offers a replacement, what each list address gave back is reported', async () => {
+  const { checkConnections } = await import('../src/utils/connectionCheck.ts');
+  const fetchFn = (async (url: string) => {
+    if (url.includes('id=EAR_4MTH_SEX_ECO_CUR_NB_A')) return new Response('{"error":"deprecated or invalid dataset id=EAR_4MTH_SEX_ECO_CUR_NB_A"}', { status: 400 });
+    if (url.includes('format=.csv') && url.includes('/metadata/toc/')) return new Response('<html>not here</html>');
+    if (url.includes('format=.json')) return new Response('', { status: 404 });
+    return new Response('x', { status: 503 });
+  }) as never;
+  const row = (await checkConnections({ env: {}, fetchFn, only: ['ilostat_wages'] } as never)).results[0];
+  assert.equal(row.state, 'refused');
+  assert.match(row.detail, /No replacement for EAR_4MTH_SEX_ECO_CUR_NB_A was found in ILOSTAT's indicator lists \(\/metadata\/toc\/indicator\/\?lang=en&format=\.csv: HTTP 200, 21 bytes, starts "<html>not here<\/html>", no EAR_ ids; .*format=\.json: HTTP 404, 0 bytes; .*table_of_contents_en\.csv: HTTP 503, 1 bytes, starts "x"\)/);
 });
 
 test('connection check: a refused ILOSTAT id is replaced from the indicator list and named', async () => {

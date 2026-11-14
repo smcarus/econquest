@@ -28,7 +28,11 @@ export const ILO_EARNINGS_ID = 'EAR_4MTH_SEX_ECO_CUR_NB_A';
 export const ILO_EARNINGS_ENV = 'ILO_EARNINGS_ID';
 export const ILO_API = 'https://rplumber.ilo.org/data/indicator';
 /** ILOSTAT's lists of indicators (id, title, frequency), tried in this order. */
-export const ILO_TOC_URLS = ['https://rplumber.ilo.org/metadata/toc/indicator/?lang=en&format=.csv', 'https://rplumber.ilo.org/files/website/bulk/indicator/table_of_contents_en.csv'];
+export const ILO_TOC_URLS = [
+  'https://rplumber.ilo.org/metadata/toc/indicator/?lang=en&format=.csv',
+  'https://rplumber.ilo.org/metadata/toc/indicator/?lang=en&format=.json',
+  'https://rplumber.ilo.org/files/website/bulk/indicator/table_of_contents_en.csv',
+];
 export const WB_INFLATION_CODE = 'FP.CPI.TOTL.ZG';
 
 /** Earnings of every country from `fromYear`, both sexes, as CSV with codes. */
@@ -43,10 +47,12 @@ export function iloEarningsSampleUrl(iso3: string, fromYear: number, id = ILO_EA
 export const iloIdRefused = (status: number | undefined, body: string | undefined) => status === 400 && /deprecated|invalid dataset id/i.test(body || '');
 
 /**
- * From ILOSTAT's list of indicators (CSV with an id column and, when present, a title column),
- * the yearly id for average monthly earnings of employees by sex and economic activity, other
- * than the id it refused. A local-currency (CUR or LCU) id comes first; empty when none fits.
+ * From ILOSTAT's list of indicators (CSV with an id column and, when present, a title column; or
+ * any other reply, read for ids alone), the yearly ids for average monthly earnings of employees
+ * by sex, other than the id it refused. By economic activity and in local currency (CUR or LCU)
+ * first; empty when none fits.
  */
+const ILO_EARNINGS_ID_RE = /^EAR_4M[A-Z]{2}_SEX_[A-Z0-9_]*_A$/;
 export function iloEarningsCandidates(tocCsv: string, refused: string = ILO_EARNINGS_ID): string[] {
   const lines = tocCsv.split('\n').filter((l) => l.trim());
   if (!lines.length) return [];
@@ -56,13 +62,15 @@ export function iloEarningsCandidates(tocCsv: string, refused: string = ILO_EARN
   const ids = new Set<string>();
   for (const raw of lines.slice(1)) {
     const c = splitLine(raw.replace(/\r$/, ''));
-    const id = String((idCol >= 0 ? c[idCol] : c[0]) || '').trim();
-    if (!/^EAR_4MTH_SEX_ECO_[A-Z0-9_]*_A$/.test(id) || id === refused) continue;
+    const id = String((idCol >= 0 ? c[idCol] : c[0]) || '').trim().replace(/^"|"$/g, '');
+    if (!ILO_EARNINGS_ID_RE.test(id) || id === refused) continue;
     const title = titleCol >= 0 ? String(c[titleCol] || '') : '';
     if (title && !/earnings/i.test(title)) continue;
     ids.add(id);
   }
-  const rank = (id: string) => (/_(CUR|LCU)_/.test(id) ? 0 : 1);
+  // Not a CSV with an id column (JSON, for example): take the ids wherever they appear.
+  if (!ids.size) for (const m of tocCsv.matchAll(/\bEAR_4M[A-Z]{2}_SEX_[A-Z0-9_]*?_A\b/g)) if (m[0] !== refused) ids.add(m[0]);
+  const rank = (id: string) => (/_ECO_/.test(id) ? 0 : 2) + (/_(CUR|LCU)_/.test(id) ? 0 : 1);
   return [...ids].sort((a, b) => rank(a) - rank(b) || a.length - b.length || a.localeCompare(b));
 }
 export const pickIloEarningsId = (tocCsv: string, refused?: string): string | null => iloEarningsCandidates(tocCsv, refused)[0] ?? null;
