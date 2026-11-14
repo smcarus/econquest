@@ -57,6 +57,28 @@ export interface ReviewGoal {
   by?: string;
 }
 
+/**
+ * Policy council (PK1): the review is about one measure, worked through by cost-benefit, winners and
+ * losers, second-order effects and scenarios (src/utils/policyCouncil.ts). The size is what the user
+ * states; the app adds no figure of its own.
+ */
+export type CouncilSizeUnit = 'pct_gdp' | 'lcu_bn' | 'usd_bn';
+export const COUNCIL_SIZE_UNITS: CouncilSizeUnit[] = ['pct_gdp', 'lcu_bn', 'usd_bn'];
+export const COUNCIL_SIZE_LABEL: Record<CouncilSizeUnit, string> = { pct_gdp: '% of GDP a year', lcu_bn: 'billion in local currency a year', usd_bn: 'US$ billion a year' };
+export const COUNCIL_MAX_YEARS = 30;
+
+export interface CouncilQuestion {
+  kind: 'policy';
+  /** The measure in the principal's words, e.g. "Cut the fuel tax by half for two years". */
+  measure: string;
+  /** Its size a year, as the user states it (positive = cost to the budget or money spent). */
+  size?: { value: number; unit: CouncilSizeUnit };
+  /** YYYY-MM the measure starts. */
+  start?: string;
+  /** How many years the analysis looks ahead (1 to 30). */
+  years?: number;
+}
+
 export interface ReviewFrame {
   iso3: string;
   /** The problem in one or two sentences, in the principal's words. */
@@ -68,6 +90,8 @@ export interface ReviewFrame {
   asOf: string;
   /** Optional: who the review is for (a minister, a board, a committee). */
   audience?: string;
+  /** PK1: present when the review is a policy council question about one measure. */
+  council?: CouncilQuestion;
 }
 
 /** One saved step. The content's shape depends on the step and is filled in by later steps. */
@@ -157,6 +181,7 @@ export function parseFrame(v: unknown, today: Date = new Date()): { frame: Revie
     .map((c) => str(c, 200))
     .filter(Boolean)
     .slice(0, 10);
+  const council = parseCouncil(f.council, errors);
   if (errors.length) return { errors };
   const target = str(g.target, 60);
   const audience = str(f.audience, 120);
@@ -168,12 +193,45 @@ export function parseFrame(v: unknown, today: Date = new Date()): { frame: Revie
       constraints,
       asOf,
       ...(audience ? { audience } : {}),
+      ...(council ? { council } : {}),
     },
   };
 }
 
+/** The policy council part of a frame, or undefined when none was asked for; reasons go into `errors`. */
+export function parseCouncil(v: unknown, errors: string[]): CouncilQuestion | undefined {
+  if (v === undefined || v === null || v === false) return undefined;
+  const c = v as Record<string, unknown>;
+  const measure = str(c.measure, 300);
+  if (measure.length < 5) {
+    errors.push('Describe the measure the policy council should weigh.');
+    return undefined;
+  }
+  const out: CouncilQuestion = { kind: 'policy', measure };
+  const size = (c.size ?? null) as Record<string, unknown> | null;
+  if (size && size.value !== '' && size.value !== undefined && size.value !== null) {
+    const value = Number(size.value);
+    const unit = COUNCIL_SIZE_UNITS.includes(size.unit as CouncilSizeUnit) ? (size.unit as CouncilSizeUnit) : null;
+    if (!Number.isFinite(value) || Math.abs(value) > 1e6) errors.push('The size must be a number.');
+    else if (!unit) errors.push('Pick the unit of the size.');
+    else out.size = { value, unit };
+  }
+  const start = str(c.start, 7);
+  if (start) {
+    if (!/^\d{4}-\d{2}$/.test(start)) errors.push('"Starts" must be a month (YYYY-MM).');
+    else out.start = start;
+  }
+  if (c.years !== undefined && c.years !== '' && c.years !== null) {
+    const years = Number(c.years);
+    if (!Number.isInteger(years) || years < 1 || years > COUNCIL_MAX_YEARS) errors.push(`"Years ahead" must be a whole number from 1 to ${COUNCIL_MAX_YEARS}.`);
+    else out.years = years;
+  }
+  return out;
+}
+
 /** A short title from the frame, e.g. "BRA: lower Headline inflation (as of 2026-11-01)". */
 export function frameTitle(frame: ReviewFrame): string {
+  if (frame.council) return `${frame.iso3} policy council: ${frame.council.measure} (as of ${frame.asOf})`.slice(0, 160);
   const verb = { lower: 'lower', higher: 'raise', stable: 'stabilise' }[frame.goal.direction];
   return `${frame.iso3}: ${verb} ${frame.goal.indicator}${frame.goal.target ? ` to ${frame.goal.target}` : ''} (as of ${frame.asOf})`.slice(0, 160);
 }

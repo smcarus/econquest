@@ -20,6 +20,24 @@ It lives in **Reports > Policy reviews**. A review can also be started from a Co
 | 5. Recommendation memo | Written only from steps 1 to 4. Cites every figure by number with source and as-of. States what to watch and the review date. Triggers in a wording the app reads ("above 8", "below 3", "target 4", "rises", "falls") are checked on the start page against the latest saved figures (Policy review watch). Draft > Reviewed > Approved sign-off. Download as Markdown or PDF. | The memo text, its hash and the sign-off history. |
 | 6. Track outcomes | On the review date the app sets what happened beside the starting point. **Review again** copies the frame onto newer data; the new review shows what changed (frame, recommended option, each figure then and now, goal move). | The figures at review time and the link to the next review. |
 
+## Policy council
+
+A policy review can weigh one measure instead of a broad goal: a tax change, a subsidy reform, a
+spending programme, a new rule. Tick **Weigh one measure (policy council)** in the frame and
+describe the measure; its size (% of GDP, local currency or US$ billion a year), the month it
+starts and how many years to look ahead are optional. The review then carries the title "policy
+council" and keeps the measure in the frame, so it is part of the frame hash and a change to it
+marks every later step out of date.
+
+The council parts of the review are built on top of the measure:
+
+| Part | What you do | What is recorded |
+| --- | --- | --- |
+| Question (PK1) | The measure, its size, start and years ahead in the frame. | Part of the frame. |
+
+Every cost, benefit, group figure or link you enter carries its own source; where there is none
+the app says **Missing** or **assumption**. No figure is estimated for you.
+
 ## Expert review (P4)
 
 Once the memo is done, a pilot economist or professor can fill a short form on it: clarity (1 to 5),

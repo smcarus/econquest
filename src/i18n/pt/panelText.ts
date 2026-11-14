@@ -781,4 +781,8 @@ export const PANEL_TEXT_PT: Record<string, string> = {
   "This central bank has not drawn on a Federal Reserve dollar swap line": "Este banco central não usou uma linha de swap em dólares do Federal Reserve",
   "Dollars lent by the Federal Reserve to foreign central banks through swap lines, so they can lend dollars to their own banks, amount outstanding each Wednesday. Large use means banks outside the US could not borrow dollars in the market, as in late 2008 and March 2020.": "Dólares emprestados pelo Federal Reserve a bancos centrais estrangeiros por linhas de swap, para que possam emprestar dólares aos seus próprios bancos, saldo em aberto a cada quarta-feira. Uso elevado significa que bancos fora dos EUA não conseguiam tomar dólares no mercado, como no fim de 2008 e em março de 2020.",
   "Dollars this country's central bank has borrowed from the Federal Reserve through a swap line and lent on to its banks, amount outstanding each Wednesday.": "Dólares que o banco central deste país tomou emprestados do Federal Reserve por uma linha de swap e repassou aos seus bancos, saldo em aberto a cada quarta-feira.",
+  // PK1: policy council size units
+  "% of GDP a year": "% do PIB ao ano",
+  "billion in local currency a year": "bilhões em moeda local ao ano",
+  "US$ billion a year": "US$ bilhões ao ano",
 };

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ClipboardList, Download, Pencil, Play, Plus, Trash2 } from 'lucide-react';
-import { REVIEW_STEPS, STEP_HINT, STEP_LABEL, STEP_STATE_LABEL, type PolicyReview, type ReviewFrame, type ReviewStep, type ReviewSummary, type StepState } from '../utils/policyReview';
+import { COUNCIL_MAX_YEARS, COUNCIL_SIZE_LABEL, COUNCIL_SIZE_UNITS, REVIEW_STEPS, STEP_HINT, STEP_LABEL, STEP_STATE_LABEL, type CouncilSizeUnit, type PolicyReview, type ReviewFrame, type ReviewStep, type ReviewSummary, type StepState } from '../utils/policyReview';
 import { GOAL_INDICATORS, type Diagnosis, type DiagnosisFigure } from '../utils/reviewDiagnosis';
 import type { EvidenceStep } from '../utils/reviewEvidence';
 import { defaultMemoInputs, memoFileName, RESEARCH_BANNER, VALIDATED_BANNER, type MemoInputs, type MemoStep } from '../utils/reviewMemo';
@@ -64,6 +64,7 @@ const FrameForm: React.FC<{ countries: Country[]; initial: ReviewFrame; submitLa
   const goal = (patch: Partial<ReviewFrame['goal']>) => setF((x) => ({ ...x, goal: { ...x.goal, ...patch } }));
   const known = countries.some((c) => c.iso3 === f.iso3);
   const t = useT(REPORTS);
+  const tx = useTx();
   return (
     <form
       className="grid gap-3 sm:grid-cols-2"
@@ -133,6 +134,59 @@ const FrameForm: React.FC<{ countries: Country[]; initial: ReviewFrame; submitLa
         <span className="ui-label block mb-1">{t('pr_audience')}</span>
         <input className={INPUT} maxLength={120} value={f.audience || ''} onChange={(e) => setF({ ...f, audience: e.target.value })} placeholder={t('pr_audiencePh')} />
       </label>
+      <fieldset className="sm:col-span-2 rounded-lg border border-slate-200 dark:border-slate-700 p-3" data-review-council="true">
+        <label className="flex items-start gap-2 text-sm">
+          <input type="checkbox" className="mt-1" checked={Boolean(f.council)} onChange={(e) => setF({ ...f, council: e.target.checked ? { kind: 'policy', measure: '' } : undefined })} />
+          <span>
+            <span className="font-semibold text-slate-900 dark:text-white">{t('pr_councilToggle')}</span>
+            <span className="block text-xs text-slate-500 dark:text-slate-400">{t('pr_councilHelp')}</span>
+          </span>
+        </label>
+        {f.council && (
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="block sm:col-span-2">
+              <span className="ui-label block mb-1">{t('pr_councilMeasure')}</span>
+              <textarea className={INPUT} rows={2} maxLength={300} value={f.council.measure} onChange={(e) => setF({ ...f, council: { ...f.council!, measure: e.target.value } })} placeholder={t('pr_councilMeasurePh')} required />
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="ui-label block mb-1">{t('pr_councilSize')}</span>
+                <input
+                  type="number"
+                  step="any"
+                  className={INPUT}
+                  value={f.council.size?.value ?? ''}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setF({ ...f, council: { ...f.council!, size: v === '' ? undefined : { value: Number(v), unit: f.council!.size?.unit ?? 'pct_gdp' } } });
+                  }}
+                />
+              </label>
+              <label className="block">
+                <span className="ui-label block mb-1">{t('pr_councilUnit')}</span>
+                <select className={INPUT} value={f.council.size?.unit ?? 'pct_gdp'} disabled={!f.council.size} onChange={(e) => setF({ ...f, council: { ...f.council!, size: { value: f.council!.size?.value ?? 0, unit: e.target.value as CouncilSizeUnit } } })}>
+                  {COUNCIL_SIZE_UNITS.map((u) => (
+                    <option key={u} value={u}>
+                      {tx(COUNCIL_SIZE_LABEL[u])}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="ui-label block mb-1">{t('pr_councilStart')}</span>
+                <input type="month" className={INPUT} value={f.council.start || ''} onChange={(e) => setF({ ...f, council: { ...f.council!, start: e.target.value || undefined } })} />
+              </label>
+              <label className="block">
+                <span className="ui-label block mb-1">{t('pr_councilYears')}</span>
+                <input type="number" min={1} max={COUNCIL_MAX_YEARS} step={1} className={INPUT} value={f.council.years ?? ''} onChange={(e) => setF({ ...f, council: { ...f.council!, years: e.target.value === '' ? undefined : Number(e.target.value) } })} />
+              </label>
+            </div>
+            <p className="sm:col-span-2 text-xs text-slate-500 dark:text-slate-400">{t('pr_councilNote')}</p>
+          </div>
+        )}
+      </fieldset>
       <div className="sm:col-span-2 flex gap-1.5">
         <button type="submit" className="ui-btn ui-btn-primary" disabled={busy}>
           {busy ? t('pr_saving') : submitLabel}
@@ -826,6 +880,17 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                   </dd>
                   <dt className="ui-label">{t('pr_constraintsDt')}</dt>
                   <dd className="text-slate-900 dark:text-white">{frame.constraints.length ? frame.constraints.join('; ') : t('pr_noneStated')}</dd>
+                  {frame.council && (
+                    <>
+                      <dt className="ui-label">{t('pr_councilDt')}</dt>
+                      <dd className="text-slate-900 dark:text-white">
+                        {frame.council.measure}
+                        {frame.council.size ? ` (${frame.council.size.value} ${tx(COUNCIL_SIZE_LABEL[frame.council.size.unit])})` : ''}
+                        {frame.council.start ? t('pr_councilFrom', { d: frame.council.start }) : ''}
+                        {frame.council.years ? t('pr_councilAhead', { n: String(frame.council.years) }) : ''}
+                      </dd>
+                    </>
+                  )}
                   {frame.audience && (
                     <>
                       <dt className="ui-label">{t('pr_for')}</dt>
