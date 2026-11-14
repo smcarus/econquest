@@ -25,6 +25,12 @@ export const EIA_HOST = 'api.eia.gov';
 /** Months of history kept per commodity: enough for 12-month moves and a 3-year average. */
 export const PINK_HISTORY_MONTHS = 60;
 
+/**
+ * Food crops kept with their whole Pink Sheet history (monthly from 1960), for weather and crop
+ * insurance work that needs long records (W3). The rest keep PINK_HISTORY_MONTHS.
+ */
+export const PINK_FULL_HISTORY: ReadonlySet<string> = new Set(['RICE_05', 'WHEAT_US_HRW', 'MAIZE', 'SOYBEANS']);
+
 export interface CommodityDef {
   /** The Pink Sheet's own series code (row of codes under the units row). */
   code: string;
@@ -126,7 +132,7 @@ export function parsePinkSheet(rows: string[][], defs = PINK_COMMODITIES, keepMo
       const v = Number((row[col] || '').trim());
       if ((row[col] || '').trim() !== '' && Number.isFinite(v) && v > 0) points.push({ period, value: v });
     }
-    if (points.length) out.set(d.code, { code: d.code, name: d.name, unit: d.unit, source: 'pink_sheet', points: points.slice(-keepMonths) });
+    if (points.length) out.set(d.code, { code: d.code, name: d.name, unit: d.unit, source: 'pink_sheet', points: PINK_FULL_HISTORY.has(d.code) ? points : points.slice(-keepMonths) });
   }
   return out;
 }
