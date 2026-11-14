@@ -19,7 +19,7 @@ import { ECB_RTD_SERIES, ecbRtdUrl, parseEcbHistory } from './ecbRealTime';
 import { latestEditionUri, ONS_TRIANGLE_PAGE } from './onsTriangles';
 import { bcbActivityUrl, eurostatActivityUrl, monthText, onsActivityUrl, parseBcbActivity, parseEurostatActivity, parseOnsSeries } from './monthlyIndicators';
 import { BIS_PRIVATE_DEBT_SAMPLE_URL, parseBisPrivateDebtAll } from './sectorBalances';
-import { BIS_PROPERTY_SAMPLE_URL, ILO_EARNINGS_ENV, ILO_EARNINGS_ID, ILO_TOC_URLS, iloEarningsCandidates, iloEarningsSampleUrl, iloIdRefused, parseBisPropertyAll, parseIloEarnings, quarterLabel, wageReading } from './wagesHousing';
+import { BIS_PROPERTY_SAMPLE_URL, ILO_EARNINGS_ENV, ILO_EARNINGS_ID, ILO_TOC_URLS, iloEarningsCandidates, iloEarningsRows, iloEarningsSampleUrl, iloIdRefused, parseBisPropertyAll, parseIloEarnings, quarterLabel, wageReading } from './wagesHousing';
 import { debtStructureUrl, parseDebtStructure, currencyValue } from './debtStructure';
 import { INVESTOR_BASE_SETUP_HELP, investorBaseValue } from './investorBase';
 import { FISCAL_RULES_SETUP_HELP, RULE_KINDS, RULE_KIND_NAME } from './fiscalRules';
@@ -466,9 +466,10 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       if (!ids.length) {
         // What the list address really gave back, so the next run can be read from the report.
         const head = (toc.text || '').replace(/\s+/g, ' ').trim().slice(0, 100);
-        const earn = [...new Set((toc.text || '').match(/\bEAR_[A-Z0-9_]+/g) || [])].slice(0, 5);
+        const named = iloEarningsRows(toc.text || '').slice(0, 8).map((r) => `${r.id} (${r.label})`);
+        const earn = named.length ? named : [...new Set((toc.text || '').match(/\bEAR_[A-Z0-9_]+/g) || [])].slice(0, 5);
         seen.push(
-          `${tocUrl.replace(/^https:\/\/[^/]+/, '')}: ${toc.networkError || `HTTP ${toc.status}, ${(toc.text || '').length} bytes`}${head ? `, starts "${head}"` : ''}${earn.length ? `, earnings ids ${earn.join(', ')}` : toc.ok ? ', no EAR_ ids' : ''}`
+          `${tocUrl.replace(/^https:\/\/[^/]+/, '')}: ${toc.networkError || `HTTP ${toc.status}, ${(toc.text || '').length} bytes`}${head ? `, starts "${head}"` : ''}${earn.length ? `, ${named.length ? 'yearly earnings indicators' : 'earnings ids'} ${earn.join(', ')}` : toc.ok ? ', no EAR_ ids' : ''}`
         );
         continue;
       }
