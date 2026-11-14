@@ -19,6 +19,7 @@ import { ReviewPeers } from './ReviewPeers';
 import { ReviewCompare } from './ReviewCompare';
 import { PoliticalFeasibility } from './PoliticalFeasibility';
 import { ExpertReviewForm } from './ExpertReviewForm';
+import { PolicyCouncil } from './PolicyCouncil';
 
 /**
  * Reports > Policy reviews: a guided, repeatable case file for one country and one problem.
@@ -27,7 +28,7 @@ import { ExpertReviewForm } from './ExpertReviewForm';
  */
 
 type Country = { iso3: string; countryName: string };
-type Opened = { review: PolicyReview; states: Record<ReviewStep, StepState>; changed: ReviewStep[]; changedBehaviour?: boolean; changedExpert?: string[] };
+type Opened = { review: PolicyReview; states: Record<ReviewStep, StepState>; changed: ReviewStep[]; changedBehaviour?: boolean; changedCouncil?: string[]; changedExpert?: string[] };
 
 const INPUT = 'w-full px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white';
 const today = () => new Date().toISOString().slice(0, 10);
@@ -906,6 +907,13 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                 </dl>
               )}
             </section>
+
+            {frame?.council && !editingFrame && (
+              <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="council">
+                <h4 className="ui-section-title">1b. {t('pk_title')}</h4>
+                <PolicyCouncil review={r} frame={frame} changed={opened!.changedCouncil} onSaved={apply} />
+              </section>
+            )}
 
             <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="diagnose">
               <div className="flex flex-wrap items-baseline justify-between gap-2">

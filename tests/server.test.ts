@@ -966,6 +966,21 @@ test('policy reviews: a frame starts a review, a bad one is refused, and both ar
   assert.deepEqual(one.changed, []);
   const audit = await (await fetch(`${base}/api/audit`)).json();
   assert.ok(JSON.stringify(audit).includes('Started policy review'));
+  // Policy council (PK2): refused without a measure in the frame; saved with sources once there is one.
+  const cb = (id: string, part: string, content: unknown) => fetch(`${base}/api/reviews/${id}/council/${part}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content }) });
+  assert.equal((await cb(review.id, 'costBenefit', {})).status, 400);
+  assert.equal((await cb(review.id, 'nothing', {})).status, 404);
+  const pc = await (await post({ frame: { iso3: 'BRA', problem: 'Fuel subsidies cost a large share of the budget.', goal: { indicator: 'Primary balance', direction: 'higher' }, constraints: [], asOf, council: { measure: 'Phase out the diesel subsidy', start: '2027-01' } } })).json();
+  const line = { kind: 'cost', label: 'Cash transfer to poor households', values: '1, 1, 1', source: 'Budget proposal 2027, table 4' };
+  const noSource = await cb(pc.review.id, 'costBenefit', { lines: [{ ...line, source: '' }], rateIds: ['adb_9'] });
+  assert.equal(noSource.status, 400);
+  assert.match((await noSource.json()).error, /where the figures come from/);
+  const saved = await cb(pc.review.id, 'costBenefit', { lines: [line, { kind: 'benefit', label: 'Subsidy no longer paid', values: '2, 2, 2', source: 'Ministry of Finance subsidy outturn 2026' }], rateIds: ['adb_9'] });
+  assert.equal(saved.status, 200);
+  const sv = await saved.json();
+  assert.equal(sv.review.councilParts.costBenefit.frameHash, pc.review.steps.frame.hash);
+  assert.equal(sv.review.councilParts.costBenefit.content.firstYear, 2027);
+  assert.deepEqual((await (await fetch(`${base}/api/reviews/${pc.review.id}`)).json()).changedCouncil, []);
   const diag = await fetch(`${base}/api/reviews/${review.id}/diagnose`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
   if (diag.status === 200) {
     const d = await diag.json();

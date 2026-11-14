@@ -792,4 +792,11 @@ export const PANEL_TEXT_FR: Record<string, string> = {
   "% of GDP a year": "% du PIB par an",
   "billion in local currency a year": "milliards en monnaie locale par an",
   "US$ billion a year": "milliards de dollars US par an",
+  // PK2: who each official discount rate applies to
+  "UK central government appraisal": "évaluation de l'administration centrale du Royaume-Uni",
+  "US federal regulatory analysis (lower of the two required rates)": "analyse réglementaire fédérale des États-Unis (le plus bas des deux taux exigés)",
+  "US federal regulatory analysis (base case)": "analyse réglementaire fédérale des États-Unis (cas de base)",
+  "EU-funded projects 2021-2027 where there is no national rate": "projets financés par l'UE 2021-2027 en l'absence de taux national",
+  "ADB projects in general (minimum required economic return)": "projets de la BAsD en général (rendement économique minimal exigé)",
+  "ADB social-sector, selected poverty-targeting and mainly environmental projects": "projets de la BAsD du secteur social, certains ciblant la pauvreté et principalement environnementaux",
 };

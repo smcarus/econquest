@@ -34,6 +34,17 @@ The council parts of the review are built on top of the measure:
 | Part | What you do | What is recorded |
 | --- | --- | --- |
 | Question (PK1) | The measure, its size, start and years ahead in the frame. | Part of the frame. |
+| Costs and benefits (PK2) | One line per cost or benefit, one value per year from the first year, each with where the figures come from (and a link if you have one). Tick the official discount rates to use and add your own with a reason. The app shows, for each rate, the present value of costs and of benefits, the net, benefits per unit of cost, the year from which the running discounted total stays at or above zero, how far costs (or benefits) would have to rise to flip the answer, and the flat rate at which the net turns the other way. | Your lines and rates, the hash of the frame they were entered against (Out of date once the frame changes), their own hash and an audit log entry. |
+
+The official discount rates offered, each with the passage it comes from, checked 14 November 2026
+(`src/data/discountRates.ts`):
+
+| Rate | Applies to | Source |
+| --- | --- | --- |
+| 3.00% for years 0 to 30, 2.50% to year 75, 2.25% after | UK central government appraisal | HM Treasury, Green Book supplementary guidance: discounting (October 2026), paras 2.1 and 3.8 |
+| 3% and 7% | US federal regulatory analysis (7% the base case) | OMB Circular A-4 (2003 version, in force again since 2025), section D.2 |
+| 3% | EU-funded projects 2021-2027 without a national rate | European Commission, Economic Appraisal Vademecum 2021-2027, section 2.3 |
+| 9%, and 6% for social-sector, selected poverty-targeting and mainly environmental projects | Asian Development Bank projects | ADB, Guidelines for the Economic Analysis of Projects (2017), para. 16 |
 
 Every cost, benefit, group figure or link you enter carries its own source; where there is none
 the app says **Missing** or **assumption**. No figure is estimated for you.
