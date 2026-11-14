@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- ILOSTAT earnings: ILOSTAT now refuses the indicator id the app used (EAR_4MTH_SEX_ECO_CUR_NB_A,
+  "deprecated or invalid"). When it does, the daily run and `npm run check:data` read ILOSTAT's own
+  list of indicators and use the yearly average monthly earnings id it offers (local currency
+  first); the check names the ids found. `ILO_EARNINGS_ID` in .env chooses one by hand.
 - Offline download: a country's full World Bank and IMF history now downloads four figures at a
   time instead of one after another, and that step may take 6 minutes before the run moves on
   (3 for other steps). On the 13 November run 15 of 22 countries timed out at 3 minutes.

@@ -16,8 +16,13 @@ import {
   bisPropertyAllUrl,
   buildWages,
   type HousePricesPull,
+  ILO_EARNINGS_ENV,
+  ILO_EARNINGS_ID,
+  ILO_TOC_URLS,
   iloEarningsUrl,
+  iloIdRefused,
   parseBisPropertyAll,
+  pickIloEarningsId,
   parseIloEarnings,
   parseWbInflation,
   type WagesPull,
@@ -105,11 +110,44 @@ export function fetchPrivateDebtPull(opts: { force?: boolean } = {}): Promise<Pr
   });
 }
 
+/** The earnings id found in ILOSTAT's list after it refused the app's id (kept until restart). */
+let iloFoundId: string | null = null;
+
+/**
+ * The earnings CSV: the id from ILO_EARNINGS_ID in .env when set, else the app's id; when ILOSTAT
+ * refuses that as deprecated, the replacement read from ILOSTAT's own list of indicators.
+ */
+async function iloEarningsCsv(fromYear: number): Promise<string | null> {
+  const set = process.env[ILO_EARNINGS_ENV]?.trim();
+  const id = set || iloFoundId || ILO_EARNINGS_ID;
+  const url = iloEarningsUrl(fromYear, id);
+  try {
+    const res = await fetchWithTimeout(url, TIMEOUT_MS);
+    if (res.ok) return await res.text();
+    const body = await res.text().catch(() => '');
+    console.warn(`[ILOSTAT earnings] refused (HTTP ${res.status}): ${url}`);
+    if (set || !iloIdRefused(res.status, body)) return null;
+  } catch (e) {
+    console.warn(`[ILOSTAT earnings] ${describeNetworkError(e, TIMEOUT_MS)}`);
+    return null;
+  }
+  for (const tocUrl of ILO_TOC_URLS) {
+    const toc = await getText(tocUrl, 'ILOSTAT indicator list');
+    const next = toc ? pickIloEarningsId(toc, id) : null;
+    if (!next) continue;
+    console.warn(`[ILOSTAT earnings] ${id} is no longer served; using ${next} from ILOSTAT's indicator list (set ${ILO_EARNINGS_ENV} in .env to choose another).`);
+    iloFoundId = next;
+    return getText(iloEarningsUrl(fromYear, next), 'ILOSTAT earnings');
+  }
+  console.warn(`[ILOSTAT earnings] ${id} is no longer served and no replacement was found in ILOSTAT's indicator list; set ${ILO_EARNINGS_ENV} in .env (see https://rplumber.ilo.org/).`);
+  return null;
+}
+
 /** Earnings from ILOSTAT and inflation from the World Bank, eight years back. */
 export function fetchWagesPull(opts: { force?: boolean } = {}): Promise<WagesPull | null> {
   return refresh(wages, !!opts.force, async () => {
     const year = new Date().getUTCFullYear();
-    const [csv, wb] = await Promise.all([getText(iloEarningsUrl(year - 8), 'ILOSTAT earnings'), getText(wbInflationUrl(year - 8, year), 'World Bank inflation')]);
+    const [csv, wb] = await Promise.all([iloEarningsCsv(year - 8), getText(wbInflationUrl(year - 8, year), 'World Bank inflation')]);
     const earnings = csv ? parseIloEarnings(csv) : null;
     if (csv && !earnings) console.warn('[ILOSTAT earnings] the file is not in the expected layout');
     if (!earnings) return null;
