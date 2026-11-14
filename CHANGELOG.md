@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Policy council in the one-page brief (PK8): the brief PDF ends with the council parts that are up
+  to date with the frame (present values, who gains and who loses, the chain count by basis, cases
+  with the odds-weighted result; for a market, the readings and cases). English, Spanish, French
+  and Portuguese.
 - Market council (PK7): a policy review can weigh what an event means for one market of the country
   (the currency, local-currency or US-dollar government bonds). The app copies in its market
   readings as they stood on the As of day (policy rate, carry against the US, exchange rate,

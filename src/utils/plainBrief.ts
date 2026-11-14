@@ -14,6 +14,7 @@ import type { OptionsStep } from './reviewOptions';
 import type { EvidenceStep } from './reviewEvidence';
 import type { MemoInputs } from './reviewMemo';
 import { EXPORT_NOTICE } from './disclaimer';
+import { chainTally, costBenefitResults, councilPartsFor, currentCouncilInputs, marketScenarioResults, scenarioResults, type CouncilPart } from './policyCouncil';
 
 export const BRIEF_LANGS = ['en', 'es', 'fr', 'pt'] as const;
 export type BriefLang = (typeof BRIEF_LANGS)[number];
@@ -50,6 +51,25 @@ export const BRIEF_TEXT = {
     cut: 'Cut to fit one page; the full memo has the rest.',
     notice: EXPORT_NOTICE,
     footer: 'EconQuest policy brief - memo saved {when} UTC - hash {hash}',
+    councilPolicy: "The measure weighed (policy council)",
+    councilMarket: "The event weighed (market council)",
+    cbAt: "At {rate}: costs {c}, benefits {b}, net {n} ({unit}); {pay}",
+    paysBack: "pays back from {y}",
+    neverPays: "does not pay back within the table",
+    flip: "The net turns the other way at a flat discount rate of {r}%.",
+    groups: "Who gains: {g}. Who loses: {l}. Both: {m}.",
+    noneTxt: "none",
+    chain: "What follows: {n} links, {f} resting on a figure, {s} on a source, {a} on an assumption.",
+    caseNet: "Case {name}: net {v}{odds}",
+    caseMove: "Case {name}: change in value {v}%{odds}",
+    oddsTxt: ", odds {p}%",
+    expected: "Odds-weighted net {v}; chance of a negative net {p}%.",
+    moveExpected: "Odds-weighted change in value {v}%; chance of a loss {p}%.",
+    readings: "Market readings as of {d}: {list}.",
+    readingsMissing: "Missing: {list}.",
+    notEntered: "Not entered or out of date: {list}.",
+    parts: { costBenefit: "costs and benefits", groups: "who gains and who loses", chain: "what follows", scenarios: "scenarios", market: "market readings", marketScenarios: "scenarios" },
+    units: { pct_gdp: "% of GDP", lcu_bn: "billion, local currency", usd_bn: "US$ billion" },
   },
   es: {
     title: 'Nota de política',
@@ -83,6 +103,25 @@ export const BRIEF_TEXT = {
     notice:
       'Investigación, no asesoramiento validado. Las cifras provienen solo de fuentes públicas, series oficiales o sus propios archivos, cada una con su fuente y fecha; ningún modelo de la aplicación ha sido validado de forma independiente. No es asesoramiento de inversión. Los términos de uso de cada fuente de datos siguen aplicándose (docs/DATA_LICENCES.md).',
     footer: 'Nota de política de EconQuest - memorando guardado {when} UTC - hash {hash}',
+    councilPolicy: "La medida ponderada (consejo de políticas)",
+    councilMarket: "El evento ponderado (consejo de mercado)",
+    cbAt: "A {rate}: costos {c}, beneficios {b}, neto {n} ({unit}); {pay}",
+    paysBack: "se recupera desde {y}",
+    neverPays: "no se recupera dentro de la tabla",
+    flip: "El neto cambia de signo a una tasa de descuento fija de {r}%.",
+    groups: "Ganan: {g}. Pierden: {l}. Ambos: {m}.",
+    noneTxt: "ninguno",
+    chain: "Qué sigue: {n} vínculos, {f} basados en una cifra, {s} en una fuente, {a} en un supuesto.",
+    caseNet: "Caso {name}: neto {v}{odds}",
+    caseMove: "Caso {name}: cambio de valor {v}%{odds}",
+    oddsTxt: ", probabilidad {p}%",
+    expected: "Neto ponderado por probabilidades {v}; probabilidad de un neto negativo {p}%.",
+    moveExpected: "Cambio de valor ponderado por probabilidades {v}%; probabilidad de pérdida {p}%.",
+    readings: "Lecturas de mercado al {d}: {list}.",
+    readingsMissing: "Faltan: {list}.",
+    notEntered: "Sin ingresar o desactualizado: {list}.",
+    parts: { costBenefit: "costos y beneficios", groups: "quién gana y quién pierde", chain: "qué sigue", scenarios: "escenarios", market: "lecturas de mercado", marketScenarios: "escenarios" },
+    units: { pct_gdp: "% del PIB", lcu_bn: "miles de millones, moneda local", usd_bn: "miles de millones de US$" },
   },
   fr: {
     title: 'Note de politique',
@@ -116,6 +155,25 @@ export const BRIEF_TEXT = {
     notice:
       'Recherche, pas un conseil validé. Les chiffres proviennent uniquement de sources publiques, de séries officielles ou de vos propres fichiers, chacun avec sa source et sa date ; aucun modèle de l’application n’a été validé de façon indépendante. Ce n’est pas un conseil en investissement. Les conditions d’utilisation de chaque source de données continuent de s’appliquer (docs/DATA_LICENCES.md).',
     footer: 'Note de politique EconQuest - mémo enregistré {when} UTC - hash {hash}',
+    councilPolicy: "La mesure évaluée (conseil des politiques)",
+    councilMarket: "L’événement évalué (conseil de marché)",
+    cbAt: "À {rate} : coûts {c}, avantages {b}, net {n} ({unit}) ; {pay}",
+    paysBack: "rentable à partir de {y}",
+    neverPays: "pas rentable dans le tableau",
+    flip: "Le solde net change de signe à un taux d’actualisation fixe de {r} %.",
+    groups: "Gagnants : {g}. Perdants : {l}. Les deux : {m}.",
+    noneTxt: "aucun",
+    chain: "Ce qui suit : {n} liens, {f} reposant sur un chiffre, {s} sur une source, {a} sur une hypothèse.",
+    caseNet: "Cas {name} : net {v}{odds}",
+    caseMove: "Cas {name} : variation de valeur {v} %{odds}",
+    oddsTxt: ", probabilité {p} %",
+    expected: "Net pondéré par les probabilités {v} ; probabilité d’un net négatif {p} %.",
+    moveExpected: "Variation de valeur pondérée par les probabilités {v} % ; probabilité de perte {p} %.",
+    readings: "Relevés de marché au {d} : {list}.",
+    readingsMissing: "Manquants : {list}.",
+    notEntered: "Non saisi ou périmé : {list}.",
+    parts: { costBenefit: "coûts et avantages", groups: "qui gagne et qui perd", chain: "ce qui suit", scenarios: "scénarios", market: "relevés de marché", marketScenarios: "scénarios" },
+    units: { pct_gdp: "% du PIB", lcu_bn: "milliards, monnaie locale", usd_bn: "milliards de dollars US" },
   },
   pt: {
     title: 'Nota de política',
@@ -149,6 +207,25 @@ export const BRIEF_TEXT = {
     notice:
       'Pesquisa, não aconselhamento validado. Os números vêm apenas de fontes públicas, séries oficiais ou seus próprios arquivos, cada um com sua fonte e data; nenhum modelo do aplicativo foi validado de forma independente. Não é aconselhamento de investimento. Os termos de uso de cada fonte de dados continuam valendo (docs/DATA_LICENCES.md).',
     footer: 'Nota de política EconQuest - memorando salvo {when} UTC - hash {hash}',
+    councilPolicy: "A medida avaliada (conselho de políticas)",
+    councilMarket: "O evento avaliado (conselho de mercado)",
+    cbAt: "A {rate}: custos {c}, benefícios {b}, líquido {n} ({unit}); {pay}",
+    paysBack: "se paga a partir de {y}",
+    neverPays: "não se paga dentro da tabela",
+    flip: "O líquido muda de sinal a uma taxa de desconto fixa de {r}%.",
+    groups: "Ganham: {g}. Perdem: {l}. Ambos: {m}.",
+    noneTxt: "nenhum",
+    chain: "O que vem depois: {n} ligações, {f} apoiadas em um número, {s} em uma fonte, {a} em uma suposição.",
+    caseNet: "Caso {name}: líquido {v}{odds}",
+    caseMove: "Caso {name}: variação de valor {v}%{odds}",
+    oddsTxt: ", probabilidade {p}%",
+    expected: "Líquido ponderado pelas probabilidades {v}; chance de líquido negativo {p}%.",
+    moveExpected: "Variação de valor ponderada pelas probabilidades {v}%; chance de perda {p}%.",
+    readings: "Leituras de mercado em {d}: {list}.",
+    readingsMissing: "Ausentes: {list}.",
+    notEntered: "Não informado ou desatualizado: {list}.",
+    parts: { costBenefit: "custos e benefícios", groups: "quem ganha e quem perde", chain: "o que vem depois", scenarios: "cenários", market: "leituras de mercado", marketScenarios: "cenários" },
+    units: { pct_gdp: "% do PIB", lcu_bn: "bilhões, moeda local", usd_bn: "bilhões de US$" },
   },
 } as const;
 
@@ -174,6 +251,8 @@ export interface PlainBrief {
   watch: string[];
   reviewDate: string;
   researchOnly: boolean;
+  /** PK8: the policy or market council parts that are up to date with the frame. */
+  council?: { heading: string; lines: string[] };
 }
 
 const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k) => String(v[k] ?? ''));
@@ -218,7 +297,52 @@ export function briefFigures(d: Diagnosis, refs: number[], lang: BriefLang): Bri
   return out;
 }
 
-export function plainBrief(review: Pick<PolicyReview, 'title' | 'steps'>, inputs: MemoInputs, lang: BriefLang): PlainBrief {
+const r2 = (v: number) => String(Math.round(v * 100) / 100);
+
+/** PK8: the council parts, in a few lines each, from the parts that are up to date with the frame. */
+export function councilBrief(review: Pick<PolicyReview, 'steps' | 'councilParts'>, lang: BriefLang): PlainBrief['council'] {
+  const frame = review.steps.frame?.content as ReviewFrame | undefined;
+  if (!frame?.council) return undefined;
+  const L = BRIEF_TEXT[lang];
+  const { inputs } = currentCouncilInputs(review as PolicyReview);
+  const lines: string[] = [];
+  const market = frame.council.kind === 'market';
+  if (inputs.market) {
+    const have = inputs.market.readings.filter((r) => r.value !== null);
+    const miss = inputs.market.readings.filter((r) => r.value === null);
+    if (have.length) lines.push(fill(L.readings, { d: inputs.market.asOf, list: have.map((r) => `${r.label} ${r2(r.value!)}${r.unit === '%' ? '%' : r.unit ? ` ${r.unit}` : ''} (${r.date})`).join('; ') }));
+    if (miss.length) lines.push(fill(L.readingsMissing, { list: miss.map((r) => r.label).join(', ') }));
+  }
+  const cb = inputs.costBenefit;
+  if (cb && !market) {
+    const { results, flip } = costBenefitResults(cb);
+    for (const x of results) lines.push(fill(L.cbAt, { rate: x.id === 'own' ? x.rateText : x.label, c: r2(x.pvCosts), b: r2(x.pvBenefits), n: r2(x.npv), unit: L.units[cb.unit], pay: x.breakEvenYear ? fill(L.paysBack, { y: x.breakEvenYear }) : L.neverPays }));
+    if (flip !== null) lines.push(fill(L.flip, { r: r2(flip) }));
+  }
+  if (inputs.groups) {
+    const names = (e: string) => inputs.groups!.rows.filter((r) => r.effect === e).map((r) => r.group).join(', ') || L.noneTxt;
+    lines.push(fill(L.groups, { g: names('gains'), l: names('loses'), m: names('mixed') }));
+  }
+  if (inputs.chain) {
+    const t = chainTally(inputs.chain);
+    lines.push(fill(L.chain, { n: inputs.chain.links.length, f: t.figure, s: t.source, a: t.assumption }));
+  }
+  if (inputs.scenarios && cb && !market) {
+    const out = scenarioResults(cb, inputs.scenarios);
+    out.results.forEach((x) => lines.push(fill(L.caseNet, { name: x.name, v: r2(x.npv), odds: x.odds !== undefined ? fill(L.oddsTxt, { p: r2(x.odds) }) : '' })));
+    if (out.expected !== null) lines.push(fill(L.expected, { v: r2(out.expected), p: r2(out.chanceNegative ?? 0) }));
+  }
+  if (inputs.marketScenarios && market) {
+    inputs.marketScenarios.scenarios.forEach((x) => lines.push(fill(L.caseMove, { name: x.name, v: r2(x.move), odds: x.odds !== undefined ? fill(L.oddsTxt, { p: r2(x.odds) }) : '' })));
+    const out = marketScenarioResults(inputs.marketScenarios);
+    if (out.expected !== null) lines.push(fill(L.moveExpected, { v: r2(out.expected), p: r2(out.chanceLoss ?? 0) }));
+  }
+  const missing = councilPartsFor(frame).filter((p: CouncilPart) => !(inputs as Record<string, unknown>)[p] || (p === 'scenarios' && !cb));
+  if (missing.length) lines.push(fill(L.notEntered, { list: missing.map((p) => L.parts[p]).join(', ') }));
+  return { heading: market ? L.councilMarket : L.councilPolicy, lines };
+}
+
+export function plainBrief(review: Pick<PolicyReview, 'title' | 'steps'> & Partial<Pick<PolicyReview, 'councilParts'>>, inputs: MemoInputs, lang: BriefLang): PlainBrief {
   const L = BRIEF_TEXT[lang];
   const frame = review.steps.frame!.content as ReviewFrame;
   const d = review.steps.diagnose!.content as Diagnosis;
@@ -250,6 +374,7 @@ export function plainBrief(review: Pick<PolicyReview, 'title' | 'steps'>, inputs
     watch: inputs.watch.map((w) => `${w.indicator}${w.trigger ? `: ${w.trigger}` : ''}`),
     reviewDate: inputs.reviewDate,
     researchOnly: e.researchOnly,
+    ...(frame.council ? { council: councilBrief(review, lang) } : {}),
   };
 }
 
@@ -281,6 +406,11 @@ export function briefLines(b: PlainBrief): BriefLine[] {
   out.push({ text: L.watch, kind: 'heading' });
   for (const w of b.watch) out.push({ text: w, kind: 'bullet' });
   out.push({ text: fill(L.lookAgain, { date: b.reviewDate }), kind: 'body' });
+  // PK8: the council parts come last, so a long brief cuts them before the option and what to watch.
+  if (b.council) {
+    out.push({ text: b.council.heading, kind: 'heading' });
+    for (const l of b.council.lines) out.push({ text: l, kind: 'bullet' });
+  }
   if (b.lang !== 'en') out.push({ text: L.savedText, kind: 'small' });
   out.push({ text: L.notice, kind: 'small' });
   return out;
