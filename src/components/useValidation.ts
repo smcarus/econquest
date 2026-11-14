@@ -7,7 +7,7 @@ import type { ValidationReply } from '../utils/validationGrades';
 
 // The pure parts (types, effective status, Holm readings, grades) live in src/utils/validationGrades.ts
 // so the server can work out the same badges for its events and API.
-export { effectiveStatus, entryGrade, failsStricterCheck, validationHolm, type ValidationReply, type ValidationSpecInfo } from '../utils/validationGrades';
+export { effectiveStatus, entryGrade, failsStricterCheck, fromProjectRecord, projectVerdicts, validationHolm, type ProjectVerdict, type ValidationReply, type ValidationSpecInfo } from '../utils/validationGrades';
 
 let cache: ValidationReply | null = null;
 let loading: Promise<void> | null = null;

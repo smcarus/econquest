@@ -56,7 +56,8 @@ forward record (below) confirms it or the test is run again with a new pre-regis
 
 Holm p is across all 20 tests above; a test whose record gives no p is counted with p = 1, which can only
 make the other adjusted p-values larger. The app's own reading (Menu > Models & validation) uses every
-version run on that computer, so it can count more tests than this page.
+version run on that computer, so it can count more tests than this page. A computer that has not run a
+test yet shows the verdict on this page instead, marked "from the project's published track record".
 
 ## What each run found
 

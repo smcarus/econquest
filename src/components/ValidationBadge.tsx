@@ -5,7 +5,7 @@
  */
 import React from 'react';
 import { registerEntry, registerForPanel, STATUS_LABEL, type RegisterEntry, type ValidationStatus } from '../data/modelRegister';
-import { effectiveStatus, entryGrade, failsStricterCheck, useValidation } from './useValidation';
+import { effectiveStatus, entryGrade, failsStricterCheck, fromProjectRecord, projectVerdicts, useValidation } from './useValidation';
 import { useT, useTx } from '../i18n/useLang';
 import { COMMON } from '../i18n/messages/common';
 
@@ -33,7 +33,12 @@ function Badge({ entry }: { entry: RegisterEntry }) {
   const status = effectiveStatus(entry.id, entry.status, v);
   const r = v?.results?.[entry.id];
   const stricter = failsStricterCheck(entry.id, v);
-  const verdict = r ? `${r.verdict}${r.robustness && (r.framework ?? 1) === 1 ? ` Stricter check (method 2): ${r.robustness.verdict}` : ''}` : undefined;
+  const published = !r && fromProjectRecord(entry.id, v) ? projectVerdicts(entry.id, v?.projectRecord) : [];
+  const verdict = r
+    ? `${r.verdict}${r.robustness && (r.framework ?? 1) === 1 ? ` Stricter check (method 2): ${r.robustness.verdict}` : ''}`
+    : published.length
+      ? `From the project's published track record, not yet run on this computer: ${published.map((x) => `${x.id.replace(/_/g, ' ')} v${x.version}, run ${x.ranAt.slice(0, 10)}: ${x.summary}`).join(' ')}`
+      : undefined;
   const grade = stricter ? null : entryGrade(entry.id, entry.status, v);
   const label = stricter ? t('stricterFail') : tx(grade ? grade.label : STATUS_LABEL[status]);
   const tone = stricter ? 'ui-badge-warning' : grade ? GRADE_CLASS[grade.tone] : TONE[status];
@@ -45,6 +50,7 @@ function Badge({ entry }: { entry: RegisterEntry }) {
         openModelRegister(entry.id);
       }}
       data-validation-status={status}
+      data-validation-from={published.length ? 'project' : undefined}
       data-stricter-check={r?.robustness?.status}
       data-evidence-grade={grade?.grade}
       title={t('badgeTitle', { name: tx(entry.name), label, more: `${grade ? `${tx(grade.why)} ` : ''}${tx(verdict || entry.testPlan)}` })}

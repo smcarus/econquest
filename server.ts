@@ -40,7 +40,8 @@ import { ExclusionStore } from './src/server/exclusionStore';
 import { hiddenNote } from './src/utils/exclusions';
 import { iso2For } from './src/data/iso3166Alpha2';
 import type { ConsoleEvent, ValueBadge } from './src/utils/consoleEvents';
-import { entryBadge, validationHolm, type ValidationReply } from './src/utils/validationGrades';
+import { entryBadge, validationHolm, type ProjectVerdict, type ValidationReply } from './src/utils/validationGrades';
+import { trackRowsFromRepo } from './src/utils/trackRecordDocNode';
 import { MODEL_REGISTER } from './src/data/modelRegister';
 import { EventHub, WebhookStore, emitEvents, eventFiles } from './src/server/eventBus';
 import { badgeChangeInputs, councilRunInput, dailyRunInputs, figureEventInputs, releaseUpcomingInputs, sanctionsChangeInputs, sanctionsCounts, signalChangeInputs, type SignalStates, watchCrossingInputs, type WatchStates } from './src/server/eventSources';
@@ -2343,6 +2344,36 @@ async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: strin
   }
 }
 
+/**
+ * The project's published verdicts (docs/validation/recorded-verdicts.json, as docs/TRACK_RECORD.md
+ * shows them, with the Holm reading across them): the badges fall back to these on a computer that
+ * has not run a test yet (src/utils/validationGrades.ts). Read once; the file changes only with the code.
+ */
+let projectRecordCache: ProjectVerdict[] | null = null;
+function projectRecordNow(): ProjectVerdict[] {
+  if (projectRecordCache) return projectRecordCache;
+  try {
+    const rows = trackRowsFromRepo(APP_ROOT).filter((r) => r.kind !== 'quest');
+    projectRecordCache = rows.map((r) => ({
+      id: r.verdict.id,
+      ...(r.verdict.registerId ? { registerId: r.verdict.registerId } : {}),
+      kind: r.kind as ProjectVerdict['kind'],
+      version: r.verdict.version,
+      status: r.verdict.verdict,
+      ranAt: r.verdict.ranAt,
+      summary: r.verdict.summary,
+      ...(r.p !== undefined ? { p: r.p } : {}),
+      ...(r.adjusted !== undefined ? { adjusted: r.adjusted, holds: !!r.holds } : {}),
+      alpha: r.alpha,
+      tested: rows.length,
+    }));
+  } catch (e) {
+    console.warn(`[validation] project track record not read: ${String((e as Error)?.message || e)}`);
+    projectRecordCache = [];
+  }
+  return projectRecordCache;
+}
+
 /** What /api/validation answers: every recorded verdict, the specs, forecast and signal tests, and the forward record. */
 function validationReplyNow() {
   const v = loadValidation(VALIDATION_FILE);
@@ -2369,7 +2400,7 @@ function validationReplyNow() {
     forecastTests.push({ id: r.id, version: r.specVersion, status: r.status, p: r.pValue, alpha: Number((sSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.05 });
   }
   const fwd = loadForward(forwardFilePath(DATA_DIR));
-  return { ...v, specs, running: validationRunning, file: 'data/local/validation/results.json', forecasts, forecastTests, forward: forwardSummary(fwd.lines), forwardCheck: { chainOk: fwd.chainOk, badLines: fwd.badLines, lines: fwd.lines.length, file: 'data/local/validation/forward.jsonl' } };
+  return { ...v, specs, projectRecord: projectRecordNow(), running: validationRunning, file: 'data/local/validation/results.json', forecasts, forecastTests, forward: forwardSummary(fwd.lines), forwardCheck: { chainOk: fwd.chainOk, badLines: fwd.badLines, lines: fwd.lines.length, file: 'data/local/validation/forward.jsonl' } };
 }
 
 /** The badge of every registered model and signal now (src/utils/validationGrades.ts). */
