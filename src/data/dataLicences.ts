@@ -261,6 +261,28 @@ export const DATA_LICENCES: LicenceRow[] = [
     checked: D,
   },
   {
+    id: 'nasa_power',
+    name: 'NASA POWER (Prediction Of Worldwide Energy Resources)',
+    usedFor: 'Monthly temperature and rainfall at each country\'s capital since 1981, with the app\'s comparison against 1991-2020 (History & data)',
+    terms: [
+      { label: 'POWER referencing guide', url: 'https://power.larc.nasa.gov/docs/referencing/' },
+      { label: 'NASA Earthdata data use guidance', url: 'https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance' },
+    ],
+    status: 'conditions',
+    display: 'Allowed; no restriction is stated. NASA asks for the service, version and date of access to be cited.',
+    commercial: 'No restriction stated.',
+    attribution: 'The data was obtained from the POWER Project\'s monthly <version> on <YYYY/MM/DD> (NASA Langley Research Center POWER Project).',
+    quotes: [
+      'include both POWER\'s Reference and POWER\'s Data Reference in any work product or publication.',
+      'the Project requests notification if POWER data is transmitted to other researchers.',
+      'NASA data are freely accessible',
+    ],
+    flag: 'NASA asks to be told when POWER data is passed to other researchers; the app reads it at run time and ships none.',
+    share: 'allowed',
+    shareNote: 'Free access with citation; the app ships no POWER figures, each copy of the app reads them itself.',
+    checked: '2026-11-14',
+  },
+  {
     id: 'fred',
     name: 'FRED (St. Louis Fed): 10Y government yields from the OECD; St. Louis Fed and Chicago Fed stress indices; US inflation expectations',
     usedFor: 'US monthly activity: industrial production (INDPRO, Federal Reserve), retail and food services sales (RSAFS, Census Bureau) and the unemployment rate (UNRATE, BLS); US data as first published and as known on a past day (ALFRED vintages of GDPC1 real GDP, CPIAUCSL CPI and UNRATE unemployment, with your FRED API key; government statistics from BEA and BLS); US inflation expectations: 5- and 10-year breakevens and the 5y5y forward (T5YIE, T10YIE, T5YIFR, computed by the St. Louis Fed from US Treasury yields, labelled "Copyrighted: Citation Required") and the Cleveland Fed 1- and 10-year expected inflation (EXPINF1YR, EXPINF10YR, labelled "Public Domain: Citation Requested"); St. Louis Fed Financial Stress Index (STLFSI4, the default stress factor in the global shock scenarios; owned by the St. Louis Fed itself, labelled "Copyrighted: Citation Required"); Chicago Fed NFCI and adjusted NFCI (NFCI, ANFCI, alternative stress factors and world series; owned by the Federal Reserve Bank of Chicago, labelled "Copyrighted: Citation Required"); 10Y yields for the US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, the Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries (all OECD series on FRED); the same yields from January 1990, saved monthly by the daily download for the historical scenario replays',

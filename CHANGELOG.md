@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Weather at the capital (W1): History & data shows monthly temperature and rainfall at each
+  country's capital from NASA POWER since 1981, with each month against the same month's 1991-2020
+  average (°C warmer or colder, rainfall as % of normal). One grid cell at the capital, not a
+  country average; Missing with the reason when NASA has not answered or the 1991-2020 years are too
+  few. Licence row nasa_power, Data health row nasa_power, Spanish, French and Portuguese text.
 - Policy council check-back and docs (PK9): automatic outcome checks (rules version
   outcome-check-v3) set a currency market council's cases against the change in value for a holder
   in US dollars and name the closest case; for bonds they record how the yield or spread moved. The
