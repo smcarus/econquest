@@ -9,6 +9,7 @@ EconQuest data helper for Python (docs/DATA_API.md). Standard library only: no p
     listing = eq.series_list("BRA")                 # what exists, and what is Missing and why
 
 Each row keeps the app's unit, source and dates, so nothing is cut loose from where it came from.
+The value column comes back as a number (None where the figure is Missing, with the reason in its row).
 With pandas installed, pandas.DataFrame(rows) gives a data frame.
 
 Settings (or pass base=/key= to each call):
@@ -39,7 +40,8 @@ def _get(path, params=None, base=None, key=None):
         req.add_header("X-SMCR-API-Key", key)
     try:
         with urllib.request.urlopen(req, timeout=120) as r:
-            return r.read().decode("utf-8")
+            # utf-8-sig drops a byte order mark if one comes, so the first column is "iso3", not "\ufeffiso3".
+            return r.read().decode("utf-8-sig")
     except urllib.error.HTTPError as e:
         body = e.read().decode("utf-8", "replace")
         try:
@@ -49,8 +51,22 @@ def _get(path, params=None, base=None, key=None):
         raise RuntimeError(f"EconQuest answered {e.code} for {path}: {msg}") from None
 
 
+def _number(v):
+    """A value cell as a float; an empty cell (a Missing figure) as None; anything else left as written."""
+    if v is None or v == "":
+        return None
+    try:
+        return float(v)
+    except ValueError:
+        return v
+
+
 def _rows(text):
-    return list(csv.DictReader(io.StringIO(text)))
+    rows = list(csv.DictReader(io.StringIO(text)))
+    for r in rows:
+        if "value" in r:
+            r["value"] = _number(r["value"])
+    return rows
 
 
 def _code(iso3):
