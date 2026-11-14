@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Basis risk (I7): the trigger designer compares the cover with the other weather series (capital
+  against whole country, same season): of the second series' worst 1 in 5 seasons, how many the
+  cover paid in and how many it missed, payouts in years that were not bad, rank correlation, the
+  average payout gap, and the missed years. Glossary entry for basis risk; Spanish, French and
+  Portuguese.
 - Return periods and extreme values (I3 + I4): the trigger designer says how often the trigger and
   exit are passed, from the record and from a GEV curve fitted by L-moments (low tail for low-index
   covers), with the season passed 1 year in 2, 5, 10, 20, 50 and 100, a 90% bootstrap range,

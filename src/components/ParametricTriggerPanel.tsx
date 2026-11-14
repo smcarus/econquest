@@ -20,6 +20,7 @@ import {
   type TriggerDirection,
 } from '../utils/parametricTrigger';
 import { rarity, raritySentence } from '../utils/extremeValues';
+import { basisRisk, basisSentence, BASIS_MIN_SEASONS } from '../utils/basisRisk';
 import { useLang, useT, useTx } from '../i18n/useLang';
 import { PANELS } from '../i18n/messages/panels';
 
@@ -32,11 +33,11 @@ import { PANELS } from '../i18n/messages/panels';
 
 type IndexKey = 'country_rain' | 'weather_rain' | 'country_temp' | 'weather_temp' | 'rice' | 'wheat' | 'maize' | 'soybeans';
 
-const INDEXES: Record<IndexKey, { url: (iso3: string) => string; agg: IndexAgg; direction: TriggerDirection; season: number | 'year'; label: string; key: keyof typeof PANELS.en }> = {
-  country_rain: { url: (c) => `/api/series/${c}/country_rain`, agg: 'sum', direction: 'below', season: 4, label: 'rainfall, country average', key: 'ins_idxCountryRain' },
-  weather_rain: { url: (c) => `/api/series/${c}/weather_rain`, agg: 'sum', direction: 'below', season: 4, label: 'rainfall at the capital', key: 'ins_idxCapitalRain' },
-  country_temp: { url: (c) => `/api/series/${c}/country_temp`, agg: 'mean', direction: 'above', season: 3, label: 'temperature, country average', key: 'ins_idxCountryTemp' },
-  weather_temp: { url: (c) => `/api/series/${c}/weather_temp`, agg: 'mean', direction: 'above', season: 3, label: 'temperature at the capital', key: 'ins_idxCapitalTemp' },
+const INDEXES: Record<IndexKey, { url: (iso3: string) => string; agg: IndexAgg; direction: TriggerDirection; season: number | 'year'; label: string; key: keyof typeof PANELS.en; other?: IndexKey }> = {
+  country_rain: { url: (c) => `/api/series/${c}/country_rain`, agg: 'sum', direction: 'below', season: 4, label: 'rainfall, country average', key: 'ins_idxCountryRain', other: 'weather_rain' },
+  weather_rain: { url: (c) => `/api/series/${c}/weather_rain`, agg: 'sum', direction: 'below', season: 4, label: 'rainfall at the capital', key: 'ins_idxCapitalRain', other: 'country_rain' },
+  country_temp: { url: (c) => `/api/series/${c}/country_temp`, agg: 'mean', direction: 'above', season: 3, label: 'temperature, country average', key: 'ins_idxCountryTemp', other: 'weather_temp' },
+  weather_temp: { url: (c) => `/api/series/${c}/weather_temp`, agg: 'mean', direction: 'above', season: 3, label: 'temperature at the capital', key: 'ins_idxCapitalTemp', other: 'country_temp' },
   rice: { url: () => '/api/series/world/commodity_pink_sheet_rice_05', agg: 'mean', direction: 'above', season: 'year', label: 'world rice price (Thai 5%)', key: 'ins_idxRice' },
   wheat: { url: () => '/api/series/world/commodity_pink_sheet_wheat_us_hrw', agg: 'mean', direction: 'above', season: 'year', label: 'world wheat price (US HRW)', key: 'ins_idxWheat' },
   maize: { url: () => '/api/series/world/commodity_pink_sheet_maize', agg: 'mean', direction: 'above', season: 'year', label: 'world maize price', key: 'ins_idxMaize' },
@@ -62,6 +63,8 @@ export const ParametricTriggerPanel: React.FC<{ iso3: string; countryName: strin
   const [which, setWhich] = useState<IndexKey>('country_rain');
   const [series, setSeries] = useState<SeriesReply | null>(null);
   const [missing, setMissing] = useState<string | null>(null);
+  const [other, setOther] = useState<SeriesReply | null>(null);
+  const [otherMissing, setOtherMissing] = useState<string | null>(null);
   const [design, setDesign] = useState<TriggerDesign | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [loadMethod, setLoadMethod] = useState<LoadingMethod>('expected');
@@ -95,6 +98,26 @@ export const ParametricTriggerPanel: React.FC<{ iso3: string; countryName: strin
     };
   }, [iso3, which]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Basis risk (I7): the second measure of the same weather, if this index has one.
+  useEffect(() => {
+    let live = true;
+    setOther(null);
+    setOtherMissing(null);
+    const o = def.other;
+    if (!o) return;
+    fetch(INDEXES[o].url(encodeURIComponent(iso3)))
+      .then(async (r) => {
+        const b = await r.json().catch(() => ({}));
+        if (!live) return;
+        if (!r.ok || !Array.isArray(b.points)) setOtherMissing(b.reason || b.message || `HTTP ${r.status}`);
+        else setOther(b as SeriesReply);
+      })
+      .catch((e: Error) => live && setOtherMissing(e.message));
+    return () => {
+      live = false;
+    };
+  }, [iso3, which]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const seasons = useMemo(() => (series && design ? seasonValues(series.points, design.startMonth, design.endMonth, design.agg) : []), [series, design?.startMonth, design?.endMonth, design?.agg]); // eslint-disable-line react-hooks/exhaustive-deps
   const problem = design ? designProblem(design) : null;
   const burn = design && !problem ? burnAnalysis(seasons, design) : null;
@@ -111,7 +134,10 @@ export const ParametricTriggerPanel: React.FC<{ iso3: string; countryName: strin
   const price = burn && design && basisStats ? priceCover(basisStats, design.cover, loading) : null;
   const loadProblem = loadingProblem(loading);
   const rare = useMemo(() => (burn && design ? rarity(seasons, design) : null), [burn, seasons, design?.direction, design?.trigger, design?.exit]); // eslint-disable-line react-hooks/exhaustive-deps
-  const sentence = burn && design ? `${burnSentence(burn, design, def.label, unit)}${price ? ` ${priceSentence(price, loading)}` : ''}${rare ? ` ${raritySentence(rare, unit)}` : ''}` : '';
+  const otherSeasons = useMemo(() => (other && design ? seasonValues(other.points, design.startMonth, design.endMonth, design.agg) : []), [other, design?.startMonth, design?.endMonth, design?.agg]); // eslint-disable-line react-hooks/exhaustive-deps
+  const br = useMemo(() => (burn && design && other ? basisRisk(seasons, otherSeasons, design) : null), [burn, seasons, otherSeasons, design?.direction, design?.trigger, design?.exit]); // eslint-disable-line react-hooks/exhaustive-deps
+  const otherDef = def.other ? INDEXES[def.other] : null;
+  const sentence = burn && design ? `${burnSentence(burn, design, def.label, unit)}${price ? ` ${priceSentence(price, loading)}` : ''}${rare ? ` ${raritySentence(rare, unit)}` : ''}${br && otherDef ? ` ${basisSentence(br, otherDef.label)}` : ''}` : '';
   const rows = burn ? (showAll ? burn.rows : burn.rows.filter((r) => r.payoutPct > 0)) : [];
   const seasonLabel = design ? t('ins_seasonOf', { from: monthName(design.startMonth), to: monthName(design.endMonth), n: String(seasonMonths(design.startMonth, design.endMonth).length) }) : '';
 
@@ -356,6 +382,55 @@ export const ParametricTriggerPanel: React.FC<{ iso3: string; countryName: strin
                 <p className={muted}>{t('ins_rareMethod')}</p>
               </div>
             )}
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-2" data-ins-basis-block="true">
+              <h3 className="ui-label">{t('ins_basisTitle')}</h3>
+              {!otherDef && <p className={muted}>{t('ins_basisNone')}</p>}
+              {otherDef && !other && !otherMissing && <p className="ui-body">{t('c_loading')}</p>}
+              {otherDef && otherMissing && (
+                <p className={`text-xs ${amber}`} data-missing="true">
+                  {t('ins_basisMissing', { other: t(otherDef.key), reason: tx(otherMissing.replace(/\.$/, '')) })}
+                </p>
+              )}
+              {otherDef && other && !br && <p className={`text-xs ${amber}`}>{t('ins_basisTooFew', { n: String(BASIS_MIN_SEASONS) })}</p>}
+              {otherDef && br && (
+                <>
+                  <p className="text-xs">{t('ins_basisAgainst', { other: t(otherDef.key), n: String(br.seasons), from: String(br.from), to: String(br.to) })}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs [font-variant-numeric:tabular-nums]" data-ins-basis={String(br.missed)}>
+                    <div>
+                      <div className="ui-label">{t('ins_basisHits')}</div>
+                      <div className="font-medium">
+                        {br.hits} / {br.badYears} ({n(br.hitRatePct, 0)}%)
+                      </div>
+                    </div>
+                    <div>
+                      <div className="ui-label">{t('ins_basisMissed')}</div>
+                      <div className={`font-medium ${br.missed ? amber : ''}`}>{br.missed}</div>
+                    </div>
+                    <div>
+                      <div className="ui-label">{t('ins_basisPaidNoBad')}</div>
+                      <div className="font-medium">{br.paidNoBad}</div>
+                    </div>
+                    <div>
+                      <div className="ui-label">{t('ins_basisCorr')}</div>
+                      <div className="font-medium">{n(br.spearman, 2)}</div>
+                    </div>
+                  </div>
+                  <p className="text-xs">{t('ins_basisGap', { gap: n(br.payoutGapPct, 2), trig: n(br.otherTrigger, 1), exit: n(br.otherExit, 1), unit: other?.unit ?? '' })}</p>
+                  {br.missed > 0 && (
+                    <p className="text-xs">
+                      {t('ins_basisMissedYears', {
+                        years: br.rows
+                          .filter((r) => r.bad && r.coverPayPct === 0)
+                          .map((r) => r.year)
+                          .reverse()
+                          .join(', '),
+                      })}
+                    </p>
+                  )}
+                </>
+              )}
+              <p className={muted}>{t('ins_basisMethod')}</p>
+            </div>
             <div className="flex items-center gap-2">
               <h3 className="ui-label">{showAll ? t('ins_allYears') : t('ins_payingYears')}</h3>
               <button type="button" className="ui-btn text-xs" onClick={() => setShowAll((v) => !v)} data-ins-show-all="true">

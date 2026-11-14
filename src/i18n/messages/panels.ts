@@ -1046,6 +1046,18 @@ export const PANELS = defineMessages('panels', {
   ins_fittedBurn: "Burn cost from the fitted curve: {fit}% of the cover (from the past years alone: {rec}%). The fitted figure gives weight to bad years the record may be too short to hold.",
   ins_fitCheck: "Check: {got} past seasons passed the fitted 1-in-10 level, against about {expected} expected. A large gap means the curve fits this record poorly.",
   ins_rareMethod: "Method: from the record, the r-th most extreme of n seasons is passed about 1 year in (n + 1) / r. The fitted curve is a generalised extreme value (GEV) distribution fitted by L-moments (Hosking 1990), the usual method for short climate and river records; for a cover that pays when the index is low, the low tail is the one fitted. The 90% range comes from refitting on 400 resampled records. Needs at least 20 complete seasons. A changing climate or market breaks the assumption that every past season is a draw from the same curve.",
+  ins_basisTitle: "Basis risk: does the cover pay in the bad years?",
+  ins_basisNone: "There is no second series to compare with for a world price, so basis risk is not shown for this index.",
+  ins_basisMissing: "{other}: Missing. {reason}.",
+  ins_basisTooFew: "Fewer than {n} seasons shared by both series, so basis risk is not worked out.",
+  ins_basisAgainst: "Compared with {other}, same season, over the {n} seasons both hold ({from}-{to}). The worst 1 in 5 of those seasons count as bad years.",
+  ins_basisHits: "Bad years the cover paid in",
+  ins_basisMissed: "Bad years with no payout",
+  ins_basisPaidNoBad: "Payouts in years that were not bad",
+  ins_basisCorr: "Rank correlation of the two indexes",
+  ins_basisGap: "Average payout gap: {gap}% of the cover a year, against the same design on the second series (trigger {trig} {unit}, exit {exit} {unit}, set at the same place in its spread).",
+  ins_basisMissedYears: "Bad years missed, newest first: {years}.",
+  ins_basisMethod: "Method: the app has no records of farm or budget losses, so a second measure of the same weather stands in for the loss: rainfall over the whole country for a cover on the capital, and the other way round. Bad years are that series' worst 1 in 5 seasons. A missed bad year is the case that hurts the insured most: they paid for cover and got nothing. This is only a lower bound on basis risk; real losses also depend on crops, timing within the season, prices and local conditions.",
   ins_method: "Method: the payout rises in a straight line from 0 at the trigger to the full cover at the exit. Burn cost is the average of the past yearly payouts as % of the cover: the expected loss before any loading for costs, capital and uncertainty, which is not a price. Only complete seasons count. Past seasons are a guide, not a forecast: a trend in the climate or in prices makes old years less like the next one, and the index can differ from the loss a farmer or a government suffers (basis risk).",
 
   // Publish chart
