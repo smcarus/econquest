@@ -11,6 +11,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
   percent of GDP and asks again. Domestic-currency series are never read as shares. If no % of GDP
   unit exists, the figures stay Missing and `npm run check:data` row imf_gov_levels lists every unit
   code with its label; IMF_GFS_UNIT in .env sets the unit by hand.
+- ILOSTAT earnings: no replacement id was found on the 14 November run. The search now also reads
+  ILOSTAT's JSON list and accepts the newer EAR_4MMN ids, and when nothing is found the connection
+  check reports what each list address returned (status, size, first characters, any EAR_ ids).
+
 - IMF GFS by level of government (DBnomics): the connection check said OK while no series came back
   ("0 of 30 countries"). It now says the GFSMAB series the app asks for did not come back and lists
   the codes DBnomics holds for Brazil's central government, so the right codes can be set from the

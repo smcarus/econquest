@@ -459,15 +459,24 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     const first = await httpCheck(def, fetchFn, iloEarningsSampleUrl(SAMPLE_ISO3, from, id), T, read, undefined, unreadable);
     if (set || first.state !== 'refused' || !iloIdRefused(first.httpStatus, first.detail)) return first;
     // The id is no longer served: look for its replacement in ILOSTAT's own list of indicators.
+    const seen: string[] = [];
     for (const tocUrl of ILO_TOC_URLS) {
       const toc = await probe(fetchFn, tocUrl, T);
       const ids = toc.ok ? iloEarningsCandidates(toc.text || '', id) : [];
-      if (!ids.length) continue;
+      if (!ids.length) {
+        // What the list address really gave back, so the next run can be read from the report.
+        const head = (toc.text || '').replace(/\s+/g, ' ').trim().slice(0, 100);
+        const earn = [...new Set((toc.text || '').match(/\bEAR_[A-Z0-9_]+/g) || [])].slice(0, 5);
+        seen.push(
+          `${tocUrl.replace(/^https:\/\/[^/]+/, '')}: ${toc.networkError || `HTTP ${toc.status}, ${(toc.text || '').length} bytes`}${head ? `, starts "${head}"` : ''}${earn.length ? `, earnings ids ${earn.join(', ')}` : toc.ok ? ', no EAR_ ids' : ''}`
+        );
+        continue;
+      }
       const next = await httpCheck(def, fetchFn, iloEarningsSampleUrl(SAMPLE_ISO3, from, ids[0]), T, read, undefined, unreadable);
       const note = `${id} is no longer served; ILOSTAT's indicator list offers ${ids.slice(0, 4).join(', ')}, and the daily run uses ${ids[0]} (${ILO_EARNINGS_ENV} in .env chooses another).`;
       return next.state === 'connected' ? { ...next, sample: `${next.sample}. ${note}` } : { ...next, detail: `${note} ${next.detail}` };
     }
-    return { ...first, detail: `${first.detail} No replacement for ${id} was found in ILOSTAT's indicator list (${ILO_TOC_URLS.map(hostOf).join(', ')}); set ${ILO_EARNINGS_ENV} in .env to the current id (https://rplumber.ilo.org/).` };
+    return { ...first, detail: `${first.detail} No replacement for ${id} was found in ILOSTAT's indicator lists (${seen.join('; ')}); set ${ILO_EARNINGS_ENV} in .env to the current id (https://rplumber.ilo.org/).` };
   });
 
   add('bis_property', () =>
