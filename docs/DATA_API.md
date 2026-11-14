@@ -79,6 +79,13 @@ The `/api/series/...` lists carry the same labels under `tags` (`tags.definition
 (for example month-end rates, a monthly average of daily figures, one point per auction, or how the
 app averages months into quarters for the GDP nowcast). A series the app has no definition for says "Not stated yet" rather than a guess.
 
+The helpers give `value` as a number: a float in Python (`None` where the figure is Missing), numeric
+in R (`NA`), and numeric in Stata. Every other column stays text.
+
+Files downloaded from the app's pages start with a byte order mark so Excel shows accents correctly.
+The helpers ask for the file without it (their own User-Agent, or `?bom=0` from Stata), so the first
+column is always `iso3`. Add `?bom=0` yourself if you read an address with another tool.
+
 Panel tables in latest mode have `iso3, country, figure_id, figure, value, unit, status, period,
 source, reason_if_missing`. A figure the app does not hold has an empty value, status `Missing` and
 the reason.

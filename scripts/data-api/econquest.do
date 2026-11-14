@@ -16,7 +16,10 @@ program define econquest_get
   args path
   local base "$ECONQUEST_URL"
   if "`base'" == "" local base "http://localhost:3000"
-  local u "`base'`path'"
+  * bom=0: the file without the byte order mark Excel wants, so the first variable is iso3.
+  local sep "?"
+  if strpos("`path'", "?") local sep "&"
+  local u "`base'`path'`sep'bom=0"
   if "$ECONQUEST_KEY" == "" {
     import delimited using "`u'", clear varnames(1) encoding("utf-8") stringcols(_all)
   }

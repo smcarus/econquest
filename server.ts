@@ -4123,7 +4123,10 @@ async function startServer() {
     }
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.attachment(name);
-    res.send(toCsv(header, rows));
+    // The byte order mark helps Excel; scripts read it as part of the first column name, so the data
+    // helpers (scripts/data-api/) ask for the file without it: ?bom=0, or their own User-Agent.
+    const forScript = req.query.bom === '0' || /^econquest-(python|r)-helper/.test(String(req.headers['user-agent'] ?? ''));
+    res.send(toCsv(header, rows, { bom: !forScript }));
   };
   app.get('/api/export/world/series.:fmt(csv|xlsx)', async (req, res) => {
     sendTable(req, res, exportFileName('WORLD', 'commodity-prices'), SERIES_HEADER, seriesRows('WORLD', await worldSeries()));
