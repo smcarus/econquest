@@ -60,6 +60,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Food prices and food security | Research | Description, not a tested signal | None |
 | Natural disasters | Research | Description, not a tested signal | None |
 | Disaster loss model | Research | Description, not a tested signal | None |
+| Tropical cyclones near the country | Research | Description, not a tested signal | None |
 | Parametric insurance trigger designer | Research | Description, not a tested signal | None |
 | Policy review watch | Research | Description, not a tested signal | None |
 | Peer comparison for a policy review | Research | Description, not a tested signal | None |
@@ -789,6 +790,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: a fit to past events, checked against the record 1 in 10 event, not a forecast or a price.
 - **Limits:** Many EM-DAT events have no damage figure, so losses are understated; reporting has improved over time; a lognormal can understate the largest events; 1 year in 100 is far beyond a record of about 25 years; no trend in climate or exposure is modelled.
 - **Code:** `src/utils/lossModel.ts, src/components/DisastersPanel.tsx`
+
+### Tropical cyclones near the country
+
+- **Says:** How many tropical storms, hurricanes and major hurricanes passed within 50, 100 or 200 km of the country since 1980, each season, the share of seasons with each, and the strongest storms.
+- **Rule:** IBTrACS v04r01 main tracks from 1980, 3-hourly positions filled in every 25 km; a storm counts when its centre comes within the distance of the Natural Earth 1:50m country outline with 34 knots or more there; strength is the highest US 1-minute wind within the distance (WMO agency wind where it is missing), Saffir-Simpson categories.
+- **Reads:** NOAA IBTrACS v04r01 (downloaded on request, or your file in data/local/ibtracs/); Natural Earth outlines (world-atlas)
+- **Shows in:** Country Research > History & data (Tropical cyclones)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: counts from the tracks, not a forecast.
+- **Limits:** The distance of the centre is not the reach of the winds; wind is not damage; WMO agency winds (often 10-minute) read lower than 1-minute winds; about 45 seasons is short for the rarest storms; no change in climate is modelled.
+- **Code:** `src/utils/stormTracks.ts, src/server/feeds/ibtracs.ts, src/server/countryOutlines.ts, src/components/StormTracksPanel.tsx`
 
 ### Parametric insurance trigger designer
 

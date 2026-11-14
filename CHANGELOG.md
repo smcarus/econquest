@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Tropical cyclones (I8): History & data shows hurricanes, typhoons and cyclones since 1980 whose
+  centre passed within 50, 100 or 200 km of the country, from NOAA's IBTrACS tracks: storms by
+  strength (tropical storm, hurricane, major), each season, the share of seasons with each (about
+  1 season in how many), and the strongest storms with their closest distance. The tracks are
+  downloaded from NOAA only when you press the button (kept in data/live/ibtracs/), or read from
+  an IBTrACS CSV you save in data/local/ibtracs/. Licence row and Data health row ibtracs; glossary
+  entries for tropical cyclones and the Saffir-Simpson scale; Spanish, French and Portuguese.
 - Disaster loss model (I1 + I2): the Natural disasters panel adds every year's damage since 2000
   (at today's prices and as % of GDP) and a frequency-severity model by type of disaster: damaging
   events per year (Poisson, or negative binomial when bad years cluster), damage per event

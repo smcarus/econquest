@@ -928,4 +928,7 @@ export const PANEL_TEXT_ES: Record<string, string> = {
   "All natural disasters": "Todos los desastres naturales",
   "Fewer than 5 events with a damage figure, so no severity fit": "Menos de 5 eventos con una cifra de daños, así que no hay ajuste de la gravedad",
   "Every event reports the same damage, so no severity fit": "Todos los eventos informan el mismo daño, así que no hay ajuste de la gravedad",
+  "No storm tracks yet: download them from NOAA below, or save an IBTrACS CSV in data/local/ibtracs/": "Aún no hay trayectorias de tormentas: descárguelas de NOAA abajo, o guarde un CSV de IBTrACS en data/local/ibtracs/",
+  "The app has no outline for this country, so distances cannot be measured": "La aplicación no tiene el contorno de este país, así que no se pueden medir distancias",
+  "IBTrACS v04r01, NOAA National Centers for Environmental Information (doi:10.25921/82ty-9e16); country outlines Natural Earth 1:50m via world-atlas": "IBTrACS v04r01, Centros Nacionales de Información Ambiental de NOAA (doi:10.25921/82ty-9e16); contornos de países Natural Earth 1:50m vía world-atlas",
 };

@@ -53,6 +53,7 @@ const AidPanel = lazyNamed(() => import('./AidPanel'), 'AidPanel');
 const FoodPricesPanel = lazyNamed(() => import('./FoodPricesPanel'), 'FoodPricesPanel');
 const DisastersPanel = lazyNamed(() => import('./DisastersPanel'), 'DisastersPanel');
 const ParametricTriggerPanel = lazyNamed(() => import('./ParametricTriggerPanel'), 'ParametricTriggerPanel');
+const StormTracksPanel = lazyNamed(() => import('./StormTracksPanel'), 'StormTracksPanel');
 const CbWordsPanel = lazyNamed(() => import('./CbWordsPanel'), 'CbWordsPanel');
 const InflationDriversPanel = lazyNamed(() => import('./InflationDriversPanel'), 'InflationDriversPanel');
 const YieldCurvePanel = lazyNamed(() => import('./YieldCurvePanel'), 'YieldCurvePanel');
@@ -526,6 +527,12 @@ export const CountryPage: React.FC<{
           <PanelBoundary name="Parametric insurance trigger designer">
             <React.Suspense fallback={<DeskLoading />}>
               <ParametricTriggerPanel key={`pt-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-storm-tracks" className="scroll-mt-4" />
+          <PanelBoundary name="Tropical cyclones">
+            <React.Suspense fallback={<DeskLoading />}>
+              <StormTracksPanel key={`st-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
             </React.Suspense>
           </PanelBoundary>
           <div id="tool-fiscal-reaction" className="scroll-mt-4" />

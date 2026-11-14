@@ -300,6 +300,27 @@ export const DATA_LICENCES: LicenceRow[] = [
     checked: '2026-11-14',
   },
   {
+    id: 'ibtracs',
+    name: 'IBTrACS v04r01 (International Best Track Archive for Climate Stewardship), NOAA NCEI',
+    usedFor: 'Tropical cyclone tracks since 1980 near each country: storms by strength, each season and the strongest (History & data, downloaded only when you ask, or your copy in data/local/ibtracs/)',
+    terms: [
+      { label: 'IBTrACS product page (Terms of Use, citation)', url: 'https://www.ncei.noaa.gov/products/international-best-track-archive' },
+    ],
+    status: 'conditions',
+    display: 'Allowed; full and open access for research. Cite the dataset and the 2010 BAMS paper.',
+    commercial: 'NOAA follows WMO Resolution 40 as the guide for commercial use of IBTrACS data.',
+    attribution: 'Gahtan, J., K. R. Knapp, C. J. Schreck, H. J. Diamond, J. P. Kossin, M. C. Kruk (2024). International Best Track Archive for Climate Stewardship (IBTrACS) Project, Version 4r01. NOAA National Centers for Environmental Information. doi:10.25921/82ty-9e16. Knapp, K. R., et al. (2010), BAMS 91, 363-376, doi:10.1175/2009BAMS2755.1.',
+    quotes: [
+      'IBTrACS was developed to support scientific research efforts.',
+      'follows the World Data Center for Meteorology (WDC), which provides full and open access to the data',
+      'Resolution 40 policy as the guide for commercial use of IBTrACS data',
+    ],
+    flag: 'The app ships no tracks: each copy downloads them from NOAA when the user asks, or reads the user\'s own file.',
+    share: 'allowed',
+    shareNote: 'Full and open access with citation; commercial use follows WMO Resolution 40.',
+    checked: '2026-11-14',
+  },
+  {
     id: 'fred',
     name: 'FRED (St. Louis Fed): 10Y government yields from the OECD; St. Louis Fed and Chicago Fed stress indices; US inflation expectations',
     usedFor: 'US monthly activity: industrial production (INDPRO, Federal Reserve), retail and food services sales (RSAFS, Census Bureau) and the unemployment rate (UNRATE, BLS); US data as first published and as known on a past day (ALFRED vintages of GDPC1 real GDP, CPIAUCSL CPI and UNRATE unemployment, with your FRED API key; government statistics from BEA and BLS); US inflation expectations: 5- and 10-year breakevens and the 5y5y forward (T5YIE, T10YIE, T5YIFR, computed by the St. Louis Fed from US Treasury yields, labelled "Copyrighted: Citation Required") and the Cleveland Fed 1- and 10-year expected inflation (EXPINF1YR, EXPINF10YR, labelled "Public Domain: Citation Requested"); St. Louis Fed Financial Stress Index (STLFSI4, the default stress factor in the global shock scenarios; owned by the St. Louis Fed itself, labelled "Copyrighted: Citation Required"); Chicago Fed NFCI and adjusted NFCI (NFCI, ANFCI, alternative stress factors and world series; owned by the Federal Reserve Bank of Chicago, labelled "Copyrighted: Citation Required"); 10Y yields for the US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, the Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries (all OECD series on FRED); the same yields from January 1990, saved monthly by the daily download for the historical scenario replays',

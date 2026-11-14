@@ -43,6 +43,9 @@ import { foodView, foodSentence, FOOD_IDS } from '../../utils/foodPrices';
 import { faoCpiInput } from '../../utils/faoCpiStore';
 import { disasterView, disasterSentence } from '../../utils/disasters';
 import { lossModels } from '../../utils/lossModel';
+import { stormsNear, stormSentence, STORM_RADII, STORM_DEFAULT_RADIUS, STORM_SOURCES, STORM_NO_DATA, type StormView } from '../../utils/stormTracks';
+import { stormTracks, stormStatus, startStormDownload, IBTRACS_REFRESH_DAYS } from '../feeds/ibtracs';
+import { countryOutline } from '../countryOutlines';
 import { emdatInput } from '../../utils/disasterStore';
 import { fetchCommodities } from '../feeds/commodities';
 import { type OutputGapResult } from '../../utils/outputGap';
@@ -527,6 +530,31 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const evs = !v.missing && emdat.table ? emdat.table.countries.get(iso3) : undefined;
     const losses = evs ? lossModels(evs, emdat.table!.latestYear, new Map((gdp ?? []).map((p) => [p.year, p.value]))) : [];
     res.json({ iso3, ...v, losses, sentence: disasterSentence(v, name) });
+  });
+  // Tropical cyclone tracks near the country (src/utils/stormTracks.ts): IBTrACS from data/local/ibtracs/ or the download the user asks for.
+  const stormCache = new Map<string, StormView>();
+  app.get('/api/storms/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const r = Number(req.query.radius);
+    const radiusKm = (STORM_RADII as readonly number[]).includes(r) ? r : STORM_DEFAULT_RADIUS;
+    const got = await stormTracks();
+    const base = { iso3, radiusKm, status: stormStatus(), refreshDays: IBTRACS_REFRESH_DAYS, sources: STORM_SOURCES };
+    if (!got.tracks) return res.json({ ...base, missing: got.reason || STORM_NO_DATA });
+    const outline = countryOutline(iso3);
+    if (!outline) return res.json({ ...base, file: got.tracks.file, missing: 'The app has no outline for this country, so distances cannot be measured' });
+    const t = got.tracks;
+    const to = new Date(t.pulledAt).getUTCFullYear() > t.lastSeason ? t.lastSeason : t.lastSeason - 1;
+    const key = `${iso3}:${radiusKm}:${t.pulledAt}:${t.file}`;
+    let v = stormCache.get(key);
+    if (!v) {
+      v = stormsNear(t.storms, outline, radiusKm, to);
+      stormCache.set(key, v);
+    }
+    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    res.json({ ...base, file: t.file, pulledAt: t.pulledAt, source: got.source, stale: got.stale ?? false, wmoWindPoints: t.wmoWindPoints, ...v, list: v.list.slice(0, 200), sentence: stormSentence(v, name) });
+  });
+  app.post('/api/storms/download', (_req, res) => {
+    res.json({ status: startStormDownload() });
   });
   // Who pays for a policy (src/utils/policyIncidence.ts): the saved context; the incidence itself is worked out in the browser on shares the user types.
   app.get('/api/policy-incidence/:iso3', async (req, res) => {

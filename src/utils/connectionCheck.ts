@@ -24,6 +24,7 @@ import { BIS_CB_ASSETS_SAMPLE_URL, BIS_USD_CREDIT_SAMPLE_URL, parseBisCbAssets, 
 import { NYFED_SWAPS_SAMPLE_URL, parseNyfedSwaps } from './fedSwapLines';
 import { NASA_POWER_SAMPLE_URL, parseNasaPower } from './weatherPower';
 import { CCKP_SAMPLE_URL, parseCckp } from './weatherCountry';
+import { IBTRACS_SAMPLE_URL, ibtracsParser } from './stormTracks';
 import { BIS_PROPERTY_SAMPLE_URL, ILO_EARNINGS_ENV, ILO_EARNINGS_ID, ILO_TOC_URLS, iloEarningsCandidates, iloEarningsRows, iloEarningsSampleUrl, iloIdRefused, parseBisPropertyAll, parseIloEarnings, quarterLabel, wageReading } from './wagesHousing';
 import { debtStructureUrl, parseDebtStructure, currencyValue } from './debtStructure';
 import { INVESTOR_BASE_SETUP_HELP, investorBaseValue } from './investorBase';
@@ -309,6 +310,7 @@ export const SOURCE_IDS = [
   'nyfed_swaps',
   'nasa_power',
   'wb_cckp',
+  'ibtracs',
   'imf_gov_levels',
   'eurostat_activity',
   'ons_activity',
@@ -735,6 +737,24 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       },
       undefined,
       'It answered, but not with the climate portal layout the app reads (data.tas and data.pr by country and YYYY-MM). The World Bank may have changed its API or the CRU TS version names.'
+    )
+  );
+
+  add('ibtracs', () =>
+    httpCheck(
+      { id: 'ibtracs', name: 'NOAA IBTrACS storm tracks', group: 'free', feeds: 'Tropical cyclone tracks since 1980 near each country (History & data, downloaded when you ask)' },
+      fetchFn,
+      IBTRACS_SAMPLE_URL,
+      Math.max(T, 30000),
+      (r) => {
+        const p = ibtracsParser('last3years');
+        for (const line of (r.text ?? '').split(/\r?\n/)) p.line(line);
+        const got = p.done(new Date().toISOString());
+        if (!('storms' in got)) return null;
+        return `${got.storms.length} storms in the last three seasons, latest season ${got.lastSeason}`;
+      },
+      undefined,
+      'It answered, but not with the IBTrACS v04 CSV layout the app reads (SID, SEASON, LAT, LON, USA_WIND and others). NOAA may have changed the file names or columns.'
     )
   );
 

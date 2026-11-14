@@ -27,6 +27,7 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['nyfed', /\bNY Fed\b|New York Fed|\bEFFR\b|\bSOFR\b/i],
   ['nasa_power', /NASA POWER/i],
   ['wb_cckp', /Climate Change Knowledge Portal|CRU TS/i],
+  ['ibtracs', /IBTrACS/i],
   ['fred', /\bFRED\b/],
   ['fed_h10', /\bH\.10\b/],
   ['oecd', /\bOECD\b(?! via FRED)|DBnomics/i],
