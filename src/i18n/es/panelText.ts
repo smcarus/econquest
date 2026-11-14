@@ -837,4 +837,12 @@ export const PANEL_TEXT_ES: Record<string, string> = {
   "The IRR file you saved holds only coarse codes": "El archivo IRR que usted guardó solo tiene códigos amplios",
   "Not in the IRR file you saved ({range})": "No figura en el archivo IRR que usted guardó ({range})",
   "no IRR exchange rate classification file in data/local/irr/ (download the monthly workbook from https://www.ilzetzki.com/irr-data and put it there)": "no hay ningún archivo de clasificación cambiaria IRR en data/local/irr/ (descargue el libro mensual de https://www.ilzetzki.com/irr-data y colóquelo allí)",
+  // PB3: central bank assets (BIS)
+  "Central bank assets": "Activos del banco central",
+  "Central bank assets in dollars": "Activos del banco central en dólares",
+  "US$ bn": "miles de millones de US$",
+  "The BIS publishes no central bank assets series for this country": "El BPI no publica una serie de activos del banco central para este país",
+  "The BIS publishes no central bank assets in dollars series for this country": "El BPI no publica una serie de activos del banco central en dólares para este país",
+  "Everything the central bank owns (reserves, bonds, loans to banks), as % of a year of GDP. A fast rise usually means asset purchases (quantitative easing) or emergency lending; a fall means the bank is shrinking its balance sheet.": "Todo lo que posee el banco central (reservas, bonos, préstamos a los bancos), en % de un año de PIB. Una subida rápida suele indicar compras de activos (expansión cuantitativa) o préstamos de emergencia; una bajada indica que el banco está reduciendo su balance.",
+  "Total assets of the central bank, converted to US dollars by the BIS, in billions. Moves in the exchange rate change this figure even when the balance sheet does not change.": "Activos totales del banco central, convertidos a dólares estadounidenses por el BPI, en miles de millones. Los movimientos del tipo de cambio alteran esta cifra aunque el balance no cambie.",
 };
