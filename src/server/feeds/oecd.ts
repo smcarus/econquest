@@ -263,6 +263,17 @@ export function forgetNationalCpi(iso3s: string[]): void {
     // the memory copy is enough until the next pull
   }
 }
+/**
+ * fetchNationalCpi, but a refresh that takes longer than `ms` answers with the saved copy instead
+ * of nothing. Without it a chart or download asked while the daily refresh runs fell back to the
+ * OECD copy (stale since June 2026) even though the national series was on disk.
+ */
+export function nationalCpiOrSaved(ms = 8000): Promise<NationalCpiPull | null> {
+  return Promise.race([
+    fetchNationalCpi().catch(() => nationalCpiMemory?.pull ?? null),
+    new Promise<NationalCpiPull | null>((resolve) => setTimeout(() => resolve(nationalCpiMemory?.pull ?? null), ms)),
+  ]);
+}
 export async function fetchNationalCpi(): Promise<NationalCpiPull | null> {
   if (!nationalCpiMemory) {
     try {

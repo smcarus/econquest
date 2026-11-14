@@ -109,4 +109,8 @@ test('the zip unpacks to the same files in one folder', () => {
   assert.equal(names.length, 7);
   assert.ok(names.every((n) => n.startsWith('turkey-policy-rate-vs-turkey-inflation/')));
   assert.match(strFromU8(files[names.find((n) => n.endsWith('data.csv'))!]), /^date,s0,s1\n/);
+  const readme = strFromU8(files[names.find((n) => n.endsWith('README.md'))!]);
+  assert.match(readme, /## How to run/);
+  assert.match(readme, /one folder, `turkey-policy-rate-vs-turkey-inflation`/);
+  assert.match(readme, /Rscript replicate\.R/);
 });
