@@ -46,31 +46,57 @@ export function iloEarningsSampleUrl(iso3: string, fromYear: number, id = ILO_EA
 /** True when ILOSTAT says the indicator id is no longer served. */
 export const iloIdRefused = (status: number | undefined, body: string | undefined) => status === 400 && /deprecated|invalid dataset id/i.test(body || '');
 
-/**
- * From ILOSTAT's list of indicators (CSV with an id column and, when present, a title column; or
- * any other reply, read for ids alone), the yearly ids for average monthly earnings of employees
- * by sex, other than the id it refused. By economic activity and in local currency (CUR or LCU)
- * first; empty when none fits.
- */
-const ILO_EARNINGS_ID_RE = /^EAR_4M[A-Z]{2}_SEX_[A-Z0-9_]*_A$/;
-export function iloEarningsCandidates(tocCsv: string, refused: string = ILO_EARNINGS_ID): string[] {
-  const lines = tocCsv.split('\n').filter((l) => l.trim());
+/** Yearly rows of ILOSTAT's list of indicators whose name mentions earnings: id and name. */
+export function iloEarningsRows(toc: string): Array<{ id: string; label: string }> {
+  const lines = toc.split('\n').filter((l) => l.trim());
   if (!lines.length) return [];
-  const head = splitLine(lines[0].replace(/\r$/, '')).map((h) => h.trim().toLowerCase());
-  const idCol = head.findIndex((h) => h === 'id' || h === 'indicator');
-  const titleCol = head.findIndex((h) => /label|title|indicator\.label/.test(h));
-  const ids = new Set<string>();
+  const head = splitLine(lines[0].replace(/\r$/, '')).map((h) => h.trim().toLowerCase().replace(/^"|"$/g, ''));
+  const idCol = head.indexOf('id');
+  const labelCol = head.indexOf('indicator.label');
+  if (idCol < 0 || labelCol < 0) {
+    // JSON list: objects with "id" and "indicator.label".
+    try {
+      const j = JSON.parse(toc) as Array<Record<string, unknown>>;
+      if (Array.isArray(j))
+        return j
+          .map((r) => ({ id: String(r?.id || ''), label: String(r?.['indicator.label'] || '') }))
+          .filter((r) => /_A$/.test(r.id) && /earnings/i.test(r.label));
+    } catch {
+      // not JSON either
+    }
+    return [];
+  }
+  const out: Array<{ id: string; label: string }> = [];
   for (const raw of lines.slice(1)) {
     const c = splitLine(raw.replace(/\r$/, ''));
-    const id = String((idCol >= 0 ? c[idCol] : c[0]) || '').trim().replace(/^"|"$/g, '');
-    if (!ILO_EARNINGS_ID_RE.test(id) || id === refused) continue;
-    const title = titleCol >= 0 ? String(c[titleCol] || '') : '';
-    if (title && !/earnings/i.test(title)) continue;
-    ids.add(id);
+    const id = String(c[idCol] || '').trim().replace(/^"|"$/g, '');
+    const label = String(c[labelCol] || '').trim().replace(/^"|"$/g, '');
+    if (/_A$/.test(id) && /earnings/i.test(label)) out.push({ id, label });
   }
-  // Not a CSV with an id column (JSON, for example): take the ids wherever they appear.
-  if (!ids.size) for (const m of tocCsv.matchAll(/\bEAR_4M[A-Z]{2}_SEX_[A-Z0-9_]*?_A\b/g)) if (m[0] !== refused) ids.add(m[0]);
-  const rank = (id: string) => (/_ECO_/.test(id) ? 0 : 2) + (/_(CUR|LCU)_/.test(id) ? 0 : 1);
+  return out;
+}
+
+/**
+ * From ILOSTAT's list of indicators (CSV or JSON with id and indicator.label; or any other reply,
+ * read for ids alone), the yearly ids for average monthly earnings of employees, other than the id
+ * it refused. Found by name ("monthly earnings", not hourly) as well as by the EAR_4M.. id form.
+ * By economic activity and in local currency first; empty when none fits.
+ */
+const ILO_EARNINGS_ID_RE = /^EAR_4M[A-Z]{2}_SEX_[A-Z0-9_]*_A$/;
+export function iloEarningsCandidates(toc: string, refused: string = ILO_EARNINGS_ID): string[] {
+  const rows = iloEarningsRows(toc);
+  const label: Record<string, string> = {};
+  const ids = new Set<string>();
+  for (const r of rows) {
+    if (r.id === refused || /hour/i.test(r.label)) continue;
+    if (ILO_EARNINGS_ID_RE.test(r.id) || /monthly earnings/i.test(r.label)) {
+      ids.add(r.id);
+      label[r.id] = r.label;
+    }
+  }
+  // Neither a CSV nor a JSON list with names: take EAR_4M.. ids wherever they appear.
+  if (!rows.length) for (const m of toc.matchAll(/\bEAR_4M[A-Z]{2}_SEX_[A-Z0-9_]*?_A\b/g)) if (m[0] !== refused) ids.add(m[0]);
+  const rank = (id: string) => (/_ECO_/.test(id) || /economic activity/i.test(label[id] || '') ? 0 : 2) + (/_(CUR|LCU)_/.test(id) || /local currency/i.test(label[id] || '') ? 0 : 1);
   return [...ids].sort((a, b) => rank(a) - rank(b) || a.length - b.length || a.localeCompare(b));
 }
 export const pickIloEarningsId = (tocCsv: string, refused?: string): string | null => iloEarningsCandidates(tocCsv, refused)[0] ?? null;

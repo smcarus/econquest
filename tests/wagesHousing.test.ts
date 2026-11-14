@@ -189,6 +189,17 @@ test('ILOSTAT: a refused earnings id is replaced from the indicator list, local 
   // A JSON list, or any reply that is not a CSV with an id column: ids are taken where they appear; by activity first.
   const json = '[{"id":"EAR_4MMN_SEX_OCU_CUR_NB_A","label":"x"},{"id":"EAR_4MMN_SEX_ECO_CUR_NB_A"},{"id":"EAR_4MTH_SEX_ECO_CUR_NB_A"}]';
   assert.deepEqual(iloEarningsCandidates(json), ['EAR_4MMN_SEX_ECO_CUR_NB_A', 'EAR_4MMN_SEX_OCU_CUR_NB_A']);
+  // Found by name when the id form changed; hourly earnings and other frequencies left out.
+  const named = [
+    '"id","indicator","indicator.label","freq"',
+    '"EAR_EHRA_SEX_NB_A","EAR_EHRA_SEX_NB","Average hourly earnings of employees by sex","A"',
+    '"EAR_XEES_SEX_OCU_NB_A","EAR_XEES_SEX_OCU_NB","Mean nominal monthly earnings of employees by sex and occupation -- Harmonized series","A"',
+    '"EAR_XEES_SEX_ECO_NB_A","EAR_XEES_SEX_ECO_NB","Mean nominal monthly earnings of employees by sex and economic activity -- Harmonized series","A"',
+    '"EAR_XEES_SEX_ECO_NB_Q","EAR_XEES_SEX_ECO_NB","Mean nominal monthly earnings of employees by sex and economic activity","Q"',
+  ].join('\n');
+  assert.deepEqual(iloEarningsCandidates(named), ['EAR_XEES_SEX_ECO_NB_A', 'EAR_XEES_SEX_OCU_NB_A']);
+  const asJson = JSON.stringify([{ id: 'EAR_XEES_SEX_ECO_NB_A', 'indicator.label': 'Mean nominal monthly earnings of employees by sex and economic activity' }, { id: 'EAR_EHRA_SEX_NB_A', 'indicator.label': 'Average hourly earnings' }]);
+  assert.deepEqual(iloEarningsCandidates(asJson), ['EAR_XEES_SEX_ECO_NB_A']);
 });
 
 test('connection check: when no list offers a replacement, what each list address gave back is reported', async () => {

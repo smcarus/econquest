@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- ILOSTAT earnings: the 14 November check showed ILOSTAT's list has no EAR_4M.. ids any more, only
+  other earnings ids (EAR_EHRA.. is hourly). The search now finds the yearly indicator by its name
+  ("monthly earnings", by economic activity and local currency first, hourly left out) in the CSV
+  or JSON list, and when nothing fits the check lists the yearly earnings indicators with their
+  names.
+
 - IMF GFS by level of government (DBnomics): the 14 November Mac run showed the real GFSMAB codes
   (A.BR.S1311.XDC.G1__Z, domestic currency). The app now asks for items G1__Z and G2M__Z, and when
   nothing comes back it reads DBnomics' description of the dataset, picks the unit labelled as a
