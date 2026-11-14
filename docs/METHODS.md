@@ -826,7 +826,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### Policy council (one measure)
 
-- **Says:** For one measure in a policy review: present values of the costs and benefits you enter, at official discount rates you tick or your own, with the year it pays back and how far figures would have to move to flip the answer; who gains and who loses, with sizes only as entered with a source and the by-fifth reading of Who pays for a policy.
+- **Says:** For one measure in a policy review: present values of the costs and benefits you enter, at official discount rates you tick or your own, with the year it pays back and how far figures would have to move to flip the answer; who gains and who loses, with sizes only as entered with a source and the by-fifth reading of Who pays for a policy; a chain of what follows, each link resting on a Diagnose figure, a named source or marked as an assumption.
 - **Rule:** Discounted sums: the first year is not discounted, each later year divided by one plus that year's rate (schedules as published, e.g. the UK Green Book). The flat rate where the net is zero is found by bisection between -50% and 100%. Official rates from src/data/discountRates.ts, each with document, passage and the day checked.
 - **Reads:** Costs and benefits you enter by year, each with its source; official discount rates (HM Treasury Green Book, US OMB Circular A-4, European Commission, Asian Development Bank)
 - **Shows in:** Reports > Policy reviews (Policy council, beside the frame)

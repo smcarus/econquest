@@ -2,8 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Save, Trash2 } from 'lucide-react';
 import { DISCOUNT_RATES } from '../data/discountRates';
 import { COUNCIL_SIZE_LABEL, COUNCIL_SIZE_UNITS, type CouncilSizeUnit, type PolicyReview, type ReviewFrame, type ReviewStep, type StepState } from '../utils/policyReview';
-import { costBenefitResults, councilPartState, GROUP_EFFECTS, GROUP_SUGGESTIONS, groupTally, type CbLine, type CostBenefit, type CouncilPart, type GroupEffect, type WinnersLosers } from '../utils/policyCouncil';
+import { costBenefitResults, councilPartState, GROUP_EFFECTS, GROUP_SUGGESTIONS, groupTally, chainTally, LINK_BASES, LINK_DIRECTIONS, type ChainLink, type EffectChain, type LinkBasis, type LinkDirection, type CbLine, type CostBenefit, type CouncilPart, type GroupEffect, type WinnersLosers } from '../utils/policyCouncil';
 import { incidence, QUINTILES, type IncomeShares } from '../utils/policyIncidence';
+import type { Diagnosis } from '../utils/reviewDiagnosis';
 import { useT, useTx } from '../i18n/useLang';
 import { REPORTS } from '../i18n/messages/reports';
 
@@ -451,6 +452,158 @@ const GroupsPanel: React.FC<{ review: PolicyReview; frame: ReviewFrame; changed:
   );
 };
 
+type LinkDraft = { from: string; to: string; direction: LinkDirection; lag: string; basis: LinkBasis; ref: string; source: string; link: string };
+const linkDraft = (l?: ChainLink, from = ''): LinkDraft => ({ from: l?.from ?? from, to: l?.to ?? '', direction: l?.direction ?? 'raises', lag: l?.lag ?? '', basis: l?.basis ?? 'assumption', ref: l?.figure ? String(l.figure.ref) : '', source: l?.source ?? '', link: l?.link ?? '' });
+
+const ChainPanel: React.FC<{ review: PolicyReview; changed: boolean; onSaved: Saved }> = ({ review, changed, onSaved }) => {
+  const t = useT(REPORTS);
+  const rec = review.councilParts?.chain;
+  const saved = rec?.content as EffectChain | undefined;
+  const state = councilPartState(rec, review.steps.frame?.hash);
+  const figures = ((review.steps.diagnose?.content as Diagnosis | undefined)?.figures ?? []).filter((f) => f.status === 'Live' && f.value !== null);
+  const [links, setLinks] = useState<LinkDraft[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    setLinks(saved ? saved.links.map((l) => linkDraft(l)) : [linkDraft()]);
+    setError('');
+  }, [review.id, rec?.hash]);
+  const set = (i: number, patch: Partial<LinkDraft>) => setLinks((d) => d.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+  const save = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      const content = { links: links.map((l) => ({ from: l.from, to: l.to, direction: l.direction, lag: l.lag, basis: l.basis, ...(l.basis === 'figure' ? { ref: l.ref } : {}), ...(l.basis === 'source' ? { source: l.source, link: l.link } : {}) })) };
+      await onSaved(await postPart(review.id, 'chain', content));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const dirLabel = (d: LinkDirection) => t(d === 'raises' ? 'pk_raises' : d === 'lowers' ? 'pk_lowers' : 'pk_unclear');
+  const basisLabel = (b: LinkBasis) => t(b === 'figure' ? 'pk_basisFigure' : b === 'source' ? 'pk_basisSource' : 'pk_basisAssumption');
+  const tally = saved ? chainTally(saved) : null;
+
+  return (
+    <div className="space-y-2 border-t border-slate-200 dark:border-slate-700 pt-3" data-council-part="chain">
+      <p className="ui-section-title">{t('pk_chTitle')}</p>
+      <p className="ui-label">{t('pk_chHint')}</p>
+      {changed && <p className="text-xs text-amber-700 dark:text-amber-400">{t('pk_changed')}</p>}
+      {rec && state === 'out_of_date' && <p className="text-xs text-amber-700 dark:text-amber-400">{t('pk_outOfDate')}</p>}
+      {!figures.length && <p className="ui-label">{t('pk_noFigures')}</p>}
+      {links.map((l, i) => (
+        <div key={i} className="grid gap-1.5 sm:grid-cols-2 border border-slate-200 dark:border-slate-700 p-2" data-council-link={i}>
+          <label className="ui-label">
+            {t('pk_from')}
+            <input className={INPUT} value={l.from} maxLength={160} onChange={(e) => set(i, { from: e.target.value })} />
+          </label>
+          <label className="ui-label">
+            {t('pk_to')}
+            <input className={INPUT} value={l.to} maxLength={160} onChange={(e) => set(i, { to: e.target.value })} />
+          </label>
+          <label className="ui-label">
+            {t('pk_direction')}
+            <select className={INPUT} value={l.direction} onChange={(e) => set(i, { direction: e.target.value as LinkDirection })}>
+              {LINK_DIRECTIONS.map((d) => (
+                <option key={d} value={d}>
+                  {dirLabel(d)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="ui-label">
+            {t('pk_lag')}
+            <input className={INPUT} value={l.lag} maxLength={60} placeholder={t('pk_lagPh')} onChange={(e) => set(i, { lag: e.target.value })} />
+          </label>
+          <label className="ui-label">
+            {t('pk_basis')}
+            <select className={INPUT} value={l.basis} onChange={(e) => set(i, { basis: e.target.value as LinkBasis })}>
+              {LINK_BASES.map((b) => (
+                <option key={b} value={b} disabled={b === 'figure' && !figures.length}>
+                  {basisLabel(b)}
+                </option>
+              ))}
+            </select>
+          </label>
+          {l.basis === 'figure' && (
+            <label className="ui-label">
+              {t('pk_figure')}
+              <select className={INPUT} value={l.ref} onChange={(e) => set(i, { ref: e.target.value })}>
+                <option value="">{t('pk_pickFigure')}</option>
+                {figures.map((f) => (
+                  <option key={f.ref} value={f.ref}>
+                    [{f.ref}] {f.label}: {f.value} {f.unit} ({f.period})
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {l.basis === 'source' && (
+            <>
+              <label className="ui-label">
+                {t('pk_source')}
+                <input className={INPUT} value={l.source} maxLength={300} onChange={(e) => set(i, { source: e.target.value })} />
+              </label>
+              <label className="ui-label">
+                {t('pk_link')}
+                <input className={INPUT} value={l.link} maxLength={400} onChange={(e) => set(i, { link: e.target.value })} />
+              </label>
+            </>
+          )}
+          <div>
+            <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setLinks((x) => x.filter((_, j) => j !== i))}>
+              <Trash2 className="w-3.5 h-3.5" /> {t('pk_remove')}
+            </button>
+          </div>
+        </div>
+      ))}
+      <button type="button" className="ui-btn" onClick={() => setLinks((x) => [...x, linkDraft(undefined, x[x.length - 1]?.to ?? '')])}>
+        <Plus className="w-3.5 h-3.5" /> {t('pk_addLink')}
+      </button>
+      <div>
+        <button type="button" className="ui-btn ui-btn-primary" disabled={busy} onClick={save}>
+          <Save className="w-3.5 h-3.5" /> {busy ? t('pk_saving') : t('pk_saveChain')}
+        </button>
+      </div>
+      {error && (
+        <p className="text-xs text-amber-700 dark:text-amber-400" role="alert">
+          {error}
+        </p>
+      )}
+      {saved && tally && (
+        <div className="space-y-1" data-council-results="chain">
+          <p className="text-xs text-slate-800 dark:text-slate-200">{t('pk_chTally', { f: String(tally.figure), s: String(tally.source), a: String(tally.assumption) })}</p>
+          <ol className="list-decimal pl-5 text-xs text-slate-900 dark:text-white space-y-0.5">
+            {saved.links.map((l, i) => (
+              <li key={i}>
+                {l.from} → {dirLabel(l.direction)} → {l.to}
+                {l.lag ? ` (${l.lag})` : ''}.{' '}
+                {l.basis === 'figure' && l.figure ? (
+                  <span className="text-slate-600 dark:text-slate-300">{t('pk_restsFigure', { ref: String(l.figure.ref), label: l.figure.label, value: `${l.figure.value} ${l.figure.unit}`, period: l.figure.period, source: l.figure.source })}</span>
+                ) : l.basis === 'source' ? (
+                  <span className="text-slate-600 dark:text-slate-300">
+                    {l.link ? (
+                      <a href={l.link} target="_blank" rel="noopener noreferrer" className="underline">
+                        {l.source}
+                      </a>
+                    ) : (
+                      l.source
+                    )}
+                  </span>
+                ) : (
+                  <span className="text-amber-700 dark:text-amber-400">{t('pk_basisAssumption')}</span>
+                )}
+              </li>
+            ))}
+          </ol>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{t('pk_saved', { when: rec!.savedAt.slice(0, 16).replace('T', ' '), hash: rec!.hash.slice(0, 12) })}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const PolicyCouncil: React.FC<{ review: PolicyReview; frame: ReviewFrame; changed?: string[]; onSaved: Saved }> = ({ review, frame, changed, onSaved }) => {
   const t = useT(REPORTS);
   return (
@@ -458,6 +611,7 @@ export const PolicyCouncil: React.FC<{ review: PolicyReview; frame: ReviewFrame;
       <p className="ui-label">{t('pk_label2')}</p>
       <CostBenefitPanel review={review} frame={frame} changed={Boolean(changed?.includes('costBenefit'))} onSaved={onSaved} />
       <GroupsPanel review={review} frame={frame} changed={Boolean(changed?.includes('groups'))} onSaved={onSaved} />
+      <ChainPanel review={review} changed={Boolean(changed?.includes('chain'))} onSaved={onSaved} />
     </div>
   );
 };

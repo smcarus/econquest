@@ -30,6 +30,7 @@ import { figureRows } from '../../utils/csvExport';
 import { listArchivedDays } from '../../utils/pullArchive';
 import { parseEffects } from '../../utils/behaviouralCheck';
 import { COUNCIL_PARTS, parseCouncilPart, type CouncilPart } from '../../utils/policyCouncil';
+import type { DiagnosisFigure } from '../../utils/reviewDiagnosis';
 import { CONSENTS, expertCsv, expertSummaryMarkdown, parseExpertForm } from '../../utils/expertReview';
 import { findPrecedents, parseFeatures, type HistoryInput } from '../../utils/precedentFinder';
 import express from 'express';
@@ -405,7 +406,8 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
     const frame = frameOf(r);
     if (!frame?.council) return res.status(400).json({ error: 'Tick "Weigh one measure" in the frame first.' });
     const firstYear = Number((frame.council.start ?? frame.asOf).slice(0, 4));
-    const parsed = parseCouncilPart(part, req.body?.content, { unit: frame.council.size?.unit, firstYear });
+    const figures = (r.steps.diagnose?.content as { figures?: DiagnosisFigure[] } | undefined)?.figures;
+    const parsed = parseCouncilPart(part, req.body?.content, { unit: frame.council.size?.unit, firstYear, figures });
     if ('errors' in parsed) return res.status(400).json({ error: parsed.errors.join(' ') });
     const out = saveCouncilPart(r, part, parsed.content);
     if ('error' in out) return res.status(400).json({ error: out.error });
