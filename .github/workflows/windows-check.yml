@@ -26,7 +26,7 @@ jobs:
           $bytes = [System.IO.File]::ReadAllBytes("$PWD\scripts\start-windows.ps1")
           if (-not ($bytes -contains 13)) { Write-Host "start-windows.ps1 was not checked out with Windows line endings"; exit 1 }
           Write-Host "start-windows.ps1 parses with no errors."
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
