@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Policy council question (PK1): a policy review can weigh one measure (a tax change, a subsidy
+  reform, a spending programme). Tick "Weigh one measure" in the frame, describe the measure and
+  optionally its size, start month and years ahead. It is part of the frame and its hash. Spanish,
+  French and Portuguese text.
 - `npm run council:record` no longer stops with "fetch failed" when the set takes more than five
   minutes on a 32B model: the long request has no time limit, and an error names its cause.
 - Dollar funding stress (Group B, PB4): History & data shows US dollar loans and bonds owed by
