@@ -274,6 +274,7 @@ export const MENU = defineMessages('menu', {
   we_copied: 'Copied',
   we_download: 'Download (.md)',
   we_copyFailed: 'The browser did not allow copying. Select the text and copy it by hand.',
+  ab_version: 'Version {v}. Cite this version, and its commit when shown, so readers can find the exact code.',
   ab_what: 'A research workspace for sovereign and macro questions. Figures come only from public feeds, official series or your own files, each with its source and date; a figure nobody published reads Missing.',
   ab_notice: 'Research, not validated advice. No model in the app has been independently validated; each signal shows its pre-registered backtest verdict under Menu > Models & validation. Nothing here is a recommendation to buy or sell.',
   ab_credits: 'Credits',

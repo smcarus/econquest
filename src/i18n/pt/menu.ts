@@ -263,6 +263,7 @@ export const MENU_PT: Messages<typeof MENU> = {
   we_copied: "Copiado",
   we_download: "Baixar (.md)",
   we_copyFailed: "O navegador não permitiu copiar. Selecione o texto e copie-o manualmente.",
+  ab_version: "Versão {v}. Cite esta versão, e o seu commit quando aparecer, para que os leitores encontrem o código exato.",
   ab_what: "Um espaço de pesquisa para questões soberanas e macroeconômicas. Os números vêm apenas de feeds públicos, séries oficiais ou dos seus próprios arquivos, cada um com sua fonte e data; um número que ninguém publicou aparece como Ausente.",
   ab_notice: "Pesquisa, não um conselho validado. Nenhum modelo do app foi validado de forma independente; cada sinal mostra o veredito do seu backtest pré-registrado em Menu > Modelos e validação. Nada aqui é uma recomendação de compra ou venda.",
   ab_credits: "Créditos",

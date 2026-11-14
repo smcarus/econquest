@@ -270,6 +270,7 @@ export const MENU_ES: Partial<Record<Keys, string>> = {
   we_copied: 'Copiado',
   we_download: 'Descargar (.md)',
   we_copyFailed: 'El navegador no permitió copiar. Seleccione el texto y cópielo a mano.',
+  ab_version: 'Versión {v}. Cite esta versión, y su commit cuando aparezca, para que los lectores encuentren el código exacto.',
   ab_what: 'Un espacio de investigación para cuestiones soberanas y macroeconómicas. Las cifras vienen solo de fuentes públicas, series oficiales o sus propios archivos, cada una con su fuente y su fecha; una cifra que nadie publicó aparece como Falta.',
   ab_notice: 'Investigación, no asesoramiento validado. Ningún modelo de la app ha sido validado de forma independiente; cada señal muestra el veredicto de su backtest prerregistrado en Menú > Modelos y validación. Nada de lo que hay aquí es una recomendación de compra o venta.',
   ab_credits: 'Créditos',

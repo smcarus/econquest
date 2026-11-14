@@ -13,6 +13,7 @@
  * Text that looks like a key or token is blanked before it is saved. Browser-safe, pure.
  */
 import { APP_CITATION } from './citation';
+import { versionWithCommit } from './buildInfo';
 import { redact } from './dataHealth';
 
 export const FEEDBACK_VERSION = 'feedback-v1';
@@ -100,7 +101,7 @@ export function parseFeedback(v: unknown, now: Date = new Date()): { entry: Feed
       at,
       kind,
       target,
-      appVersion: APP_CITATION.version,
+      appVersion: versionWithCommit(APP_CITATION.version),
       note,
       ...(rating ? { rating } : {}),
       ...(figure ? { figure } : {}),

@@ -6,6 +6,7 @@
  * Config comes only from environment variables (.env for `npm run dev`); state lives only under
  * DATA_DIR (default: the data/ folder beside server.ts).
  */
+import { execFileSync } from 'node:child_process';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -27,6 +28,16 @@ installJsonConsole(process.env);
 
 /** The folder holding server.ts, docs/ and dist/. */
 export const APP_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+// The git commit this copy runs (src/utils/buildInfo.ts), so citations and replication packs name
+// the exact code. Docker images carry it as APP_COMMIT; a checkout reads it from git.
+if (!process.env.APP_COMMIT) {
+  try {
+    process.env.APP_COMMIT = execFileSync('git', ['rev-parse', '--short=12', 'HEAD'], { cwd: APP_ROOT, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  } catch {
+    // No git and no APP_COMMIT: citations give the version alone.
+  }
+}
 /** The one state folder. */
 export const DATA_DIR = process.env.DATA_DIR || path.join(APP_ROOT, 'data');
 

@@ -14,6 +14,10 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY . .
+# The git commit, so citations and flags name the exact code (src/utils/buildInfo.ts). .git is not
+# copied into the image; pass it in: docker build --build-arg APP_COMMIT=$(git rev-parse --short=12 HEAD)
+ARG APP_COMMIT=""
+ENV APP_COMMIT=$APP_COMMIT
 RUN npm run build
 
 # Stage 2: runtime dependencies only (no Vite build tools, Playwright or TypeScript checker)
@@ -25,6 +29,8 @@ RUN npm ci --omit=dev --no-audit --no-fund && npm cache clean --force
 # Stage 3: the image that runs
 FROM node:22-alpine AS runner
 WORKDIR /app
+ARG APP_COMMIT=""
+ENV APP_COMMIT=$APP_COMMIT
 
 ENV NODE_ENV=production \
     SELF_HOSTED_DOCKER=true \
