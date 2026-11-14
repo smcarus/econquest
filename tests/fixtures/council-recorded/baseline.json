@@ -1,15 +1,15 @@
 {
- "recordedAt": "2026-11-14T16:57:40.955Z",
+ "recordedAt": "2026-11-14T18:07:50.221Z",
  "model": "qwen2.5:32b",
  "ollamaVersion": "0.40.16",
- "commit": "62ec43e",
+ "commit": "98fdd9d",
  "report": {
-  "ranAt": "2026-11-14T16:57:40.400Z",
+  "ranAt": "2026-11-14T18:07:49.660Z",
   "setVersion": 3,
-  "setHash": "1bf641e3917fe4be7f6c0deb596b3ea784e5813ebf8f3913259daad90ed8bd16",
+  "setHash": "7cf3eed43f4f65872af31bcf974663f41b8b74b239a310b26908bed9c59306b7",
   "model": "qwen2.5:32b",
-  "passed": 9,
-  "total": 9,
+  "passed": 10,
+  "total": 10,
   "results": [
    {
     "id": "brazil-tight",
@@ -18,7 +18,7 @@
     "failures": [],
     "headline": "Monetary policy in Brazil is tight.",
     "removed": 0,
-    "snapshotId": "s20261114164930503-e7d8dd6fe206",
+    "snapshotId": "s20261114175626508-e7d8dd6fe206",
     "model": "qwen2.5:32b",
     "temperature": 0,
     "seed": 42,
@@ -39,7 +39,7 @@
     "failures": [],
     "headline": "Yes, Turkey's central bank is behind the curve on inflation.",
     "removed": 0,
-    "snapshotId": "s20261114165021065-78f0ee709277",
+    "snapshotId": "s20261114175637515-78f0ee709277",
     "model": "qwen2.5:32b",
     "temperature": 0,
     "seed": 42,
@@ -60,7 +60,7 @@
     "failures": [],
     "headline": "Brazil has tighter monetary policy than Mexico.",
     "removed": 0,
-    "snapshotId": "s20261114165045917-7874e524b4d1",
+    "snapshotId": "s20261114175651118-7874e524b4d1",
     "model": "qwen2.5:32b",
     "temperature": 0,
     "seed": 42,
@@ -81,7 +81,7 @@
     "failures": [],
     "headline": "Egypt's government debt sustainability cannot be definitively assessed due to missing data.",
     "removed": 0,
-    "snapshotId": "s20261114165102891-2a0d605e0a59",
+    "snapshotId": "s20261114175706255-2a0d605e0a59",
     "model": "qwen2.5:32b",
     "temperature": 0,
     "seed": 42,
@@ -240,6 +240,35 @@
      "The first option, 'Phase out the diesel subsidy over three years,' is ranked highest as it directly addresses the goal of improving the primary balance while protecting the poorest households through cash transfers. The second option, 'Introduce targeted subsidies for essential goods,' is ranked second as it provides an alternative way to protect the poor while reducing the subsidy burden. The third option, 'Increase excise taxes on non-essential goods,' is ranked third as it generates additional revenue but could affect consumption and businesses.",
      "Missing figures for policy rate, real GDP growth, government debt, and 10Y government bond yield prevent a full assessment of the monetary and fiscal impacts.",
      "Missing figures for exchange rate, reserves, and current account prevent a full assessment of external impacts."
+    ]
+   },
+   {
+    "id": "options-council-turkey-lira-fed",
+    "question": "Market council: weigh what the Fed holding rates through 2027 means for the Turkish lira, with frozen market readings (one Missing) and the principal's cases",
+    "pass": true,
+    "failures": [],
+    "headline": "Maintain Current Stance",
+    "removed": 0,
+    "model": "qwen2.5:32b",
+    "temperature": 0,
+    "seed": 42,
+    "promptHash": "cd33bea22426369c3a41b4a4df86b65bea1499cf97299ef1d02d3ea652065699",
+    "outputHash": "6e6940f73333545d557b51cfa3f597f618ab99e69b3d4cae9bccaf1cd88fe194",
+    "answer": [
+     "Maintain Current Stance",
+     "1. Maintain Current Stance (monetary): Keep the policy rate at 38% to maintain the high carry. Effect: Stabilizes the lira against the US dollar by maintaining the high carry. Trade-offs: High carry attracts foreign investors but may not be sustainable if the Fed keeps rates high. Refs: [1] [2]",
+     "2. Increase Policy Rate (monetary): Increase the policy rate to further attract foreign investors. Effect: Stabilizes the lira by increasing the carry. Trade-offs: Higher rates may further slow economic growth and increase inflation. Refs: [1] [2]",
+     "3. Reduce Inflation (monetary): Implement policies to reduce inflation, thereby reducing the real policy rate gap. Effect: Stabilizes the lira by reducing the inflation differential. Trade-offs: Reducing inflation may slow economic growth. Refs: [1] [2]",
+     "4. Strengthen External Reserves (external): Build up external reserves to support the lira. Effect: Stabilizes the lira by providing a buffer against foreign investor outflows. Trade-offs: Building reserves requires fiscal discipline and may limit other spending. Refs: [1] [2]",
+     "The options are ranked based on their immediate impact and feasibility. Maintaining the current stance is the most immediate but risky option, followed by increasing the policy rate, reducing inflation, and strengthening external reserves.",
+     "Real GDP growth [3] is missing, which is crucial for assessing the economic impact of policy changes.",
+     "Government debt [4] and its forecast [5] are missing, which are important for assessing fiscal sustainability.",
+     "Primary balance [6] is missing, which is crucial for assessing fiscal discipline.",
+     "10Y government bond yield [7] is missing, which is important for assessing the cost of borrowing.",
+     "Exchange rate [8] is missing, which is crucial for assessing the current state of the lira.",
+     "Reserves [9] are missing, which are important for assessing the buffer against foreign investor outflows.",
+     "Current account [10] is missing, which is crucial for assessing the balance of payments.",
+     "External debt [11] is missing, which is important for assessing external vulnerabilities."
     ]
    }
   ]
