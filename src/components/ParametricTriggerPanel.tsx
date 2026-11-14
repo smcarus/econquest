@@ -19,6 +19,7 @@ import {
   type TriggerDesign,
   type TriggerDirection,
 } from '../utils/parametricTrigger';
+import { rarity, raritySentence } from '../utils/extremeValues';
 import { useLang, useT, useTx } from '../i18n/useLang';
 import { PANELS } from '../i18n/messages/panels';
 
@@ -109,7 +110,8 @@ export const ParametricTriggerPanel: React.FC<{ iso3: string; countryName: strin
   const basisStats = burn ? (basis === 'recent' && burn.recent ? burn.recent : burn) : null;
   const price = burn && design && basisStats ? priceCover(basisStats, design.cover, loading) : null;
   const loadProblem = loadingProblem(loading);
-  const sentence = burn && design ? `${burnSentence(burn, design, def.label, unit)}${price ? ` ${priceSentence(price, loading)}` : ''}` : '';
+  const rare = useMemo(() => (burn && design ? rarity(seasons, design) : null), [burn, seasons, design?.direction, design?.trigger, design?.exit]); // eslint-disable-line react-hooks/exhaustive-deps
+  const sentence = burn && design ? `${burnSentence(burn, design, def.label, unit)}${price ? ` ${priceSentence(price, loading)}` : ''}${rare ? ` ${raritySentence(rare, unit)}` : ''}` : '';
   const rows = burn ? (showAll ? burn.rows : burn.rows.filter((r) => r.payoutPct > 0)) : [];
   const seasonLabel = design ? t('ins_seasonOf', { from: monthName(design.startMonth), to: monthName(design.endMonth), n: String(seasonMonths(design.startMonth, design.endMonth).length) }) : '';
 
@@ -305,6 +307,55 @@ export const ParametricTriggerPanel: React.FC<{ iso3: string; countryName: strin
               )}
               <p className={muted}>{t('ins_priceMethod')}</p>
             </div>
+            {rare && (
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-2" data-ins-rarity="true">
+                <h3 className="ui-label">{t('ins_rareTitle')}</h3>
+                <p className="text-xs" data-ins-trigger-rp={String(rare.trigger.fittedYears ?? '')}>
+                  {t('ins_rareTrigger', {
+                    rec: rare.trigger.recordYears !== undefined ? t('ins_oneInYears', { n: n(rare.trigger.recordYears, rare.trigger.recordYears < 10 ? 1 : 0) }) : t('ins_neverRecord'),
+                    fit: rare.gev ? (rare.trigger.fittedYears !== undefined ? t('ins_oneInYears', { n: n(rare.trigger.fittedYears, rare.trigger.fittedYears < 10 ? 1 : 0) }) : t('ins_neverFit')) : '–',
+                  })}{' '}
+                  {t('ins_rareExit', {
+                    rec: rare.exit.recordYears !== undefined ? t('ins_oneInYears', { n: n(rare.exit.recordYears, rare.exit.recordYears < 10 ? 1 : 0) }) : t('ins_neverRecord'),
+                    fit: rare.gev ? (rare.exit.fittedYears !== undefined ? t('ins_oneInYears', { n: n(rare.exit.fittedYears, rare.exit.fittedYears < 10 ? 1 : 0) }) : t('ins_neverFit')) : '–',
+                  })}
+                </p>
+                {rare.noFit && <p className={`text-xs ${amber}`}>{tx(rare.noFit)}</p>}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs [font-variant-numeric:tabular-nums]" data-ins-levels="true">
+                    <thead>
+                      <tr className="text-left text-slate-500 dark:text-slate-400">
+                        <th className="py-1 pr-3 font-medium">{t('ins_tReturn')}</th>
+                        <th className="py-1 pr-3 font-medium text-right">{t('ins_tRecord', { unit })}</th>
+                        <th className="py-1 pr-3 font-medium text-right">{t('ins_tFitted', { unit })}</th>
+                        <th className="py-1 font-medium text-right">{t('ins_tRange')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rare.levels.map((l) => (
+                        <tr key={l.years} className="border-t border-slate-100 dark:border-slate-800">
+                          <td className="py-0.5 pr-3">
+                            {t('ins_oneInYears', { n: String(l.years) })}
+                            {l.beyond ? ' *' : ''}
+                          </td>
+                          <td className="py-0.5 pr-3 text-right">{l.record === undefined ? '–' : n(l.record, 1)}</td>
+                          <td className="py-0.5 pr-3 text-right">{l.fitted === undefined ? '–' : n(l.fitted, 1)}</td>
+                          <td className="py-0.5 text-right">{l.low === undefined ? '–' : `${n(l.low, 1)} – ${n(l.high!, 1)}`}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {rare.levels.some((l) => l.beyond) && <p className={muted}>{t('ins_beyondNote', { n: String(rare.seasons) })}</p>}
+                {rare.fittedBurnPct !== undefined && (
+                  <p className="text-xs" data-ins-fitted-burn={String(rare.fittedBurnPct)}>
+                    {t('ins_fittedBurn', { fit: n(rare.fittedBurnPct, 2), rec: n(burn.burnPct, 2) })}
+                  </p>
+                )}
+                {rare.check && <p className="text-xs">{t('ins_fitCheck', { got: String(rare.check.beyond10), expected: n(rare.check.expected10, 1) })}</p>}
+                <p className={muted}>{t('ins_rareMethod')}</p>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <h3 className="ui-label">{showAll ? t('ins_allYears') : t('ins_payingYears')}</h3>
               <button type="button" className="ui-btn text-xs" onClick={() => setShowAll((v) => !v)} data-ins-show-all="true">
