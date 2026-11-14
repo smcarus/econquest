@@ -325,6 +325,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-parametric-trigger' },
   },
   {
+    id: 'storm_tracks',
+    category: 'history',
+    title: "Tropical cyclones",
+    what: "Hurricanes, typhoons and cyclones since 1980 whose centre passed within 50, 100 or 200 km of the country: how many by strength, each season, the share of seasons with a hurricane or a major hurricane, and the strongest storms. From NOAA's IBTrACS tracks, downloaded when you ask or from a copy in data/local/ibtracs/.",
+    sources: "NOAA IBTrACS v04r01; Natural Earth country outlines",
+    target: { area: 'country', tab: 'history', anchor: 'tool-storm-tracks' },
+  },
+  {
     id: 'policy_incidence',
     category: 'history',
     title: 'Who pays for a policy',

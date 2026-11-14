@@ -942,6 +942,26 @@ The average yearly cost of disasters over many years, counting the quiet years a
 
 **Limits.** A long-run average: a given year is usually much lower or much higher. In the app it counts only damage EM-DAT reports, so it is understated.
 
+### Tropical cyclone
+
+A rotating storm that forms over warm tropical seas, with its strongest winds around a calm centre (the eye). It is called a hurricane in the Atlantic and East Pacific, a typhoon in the West Pacific and a cyclone in the Indian Ocean and South Pacific.
+
+**Why it matters.** Tropical cyclones bring wind, storm surge and floods at once, and can destroy a year of crops, homes and roads in a day. Small islands in their path can lose a large share of GDP to one storm, which is why disaster insurance pools such as those in the Caribbean and the Pacific pay out on storm tracks.
+
+**How to read it.** Count how many storms pass near the country and how strong they are there. The share of seasons with a hurricane-strength storm says how often a bad year comes; the strongest storms show how bad it can get.
+
+**Limits.** A track is the path of the centre: large storms spread damaging wind and rain hundreds of kilometres wider, small ones less. How much damage a storm does depends on what is in its path and how well it is built.
+
+### Saffir-Simpson scale
+
+A scale of hurricane strength by the highest sustained wind averaged over 1 minute: category 1 from 64 knots (119 km/h), 2 from 83, 3 from 96, 4 from 113 and 5 from 137 knots (252 km/h). Below 64 knots a storm is a tropical storm (from 34 knots).
+
+**Why it matters.** Damage rises much faster than wind speed, so each step up the scale means far more destruction. Category 3 and above are called major hurricanes; they cause most hurricane losses.
+
+**How to read it.** Category 1 and 2 damage roofs, trees and power lines; category 3 and above destroy weaker buildings and can leave areas without power and water for weeks.
+
+**Limits.** The scale uses wind only: storm surge and rainfall flooding, often the deadliest part, are not in it. Some regional centres measure wind over 10 minutes, which reads lower than the 1-minute figure.
+
 ## Behavioural economics
 
 ### Present bias
