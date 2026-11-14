@@ -59,6 +59,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Aid received | Research | Description, not a tested signal | None |
 | Food prices and food security | Research | Description, not a tested signal | None |
 | Natural disasters | Research | Description, not a tested signal | None |
+| Parametric insurance trigger designer | Research | Description, not a tested signal | None |
 | Policy review watch | Research | Description, not a tested signal | None |
 | Peer comparison for a policy review | Research | Description, not a tested signal | None |
 | Review-to-review comparison | Research | Description, not a tested signal | None |
@@ -775,6 +776,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: event counts and sums from the file, not a forecast.
 - **Limits:** EM-DAT terms forbid passing the data on, so nothing shipped or fetched; free accounts are for universities, non-profit research, public bodies and media; only events meeting EM-DAT's entry criteria are listed; many events have no damage figure, so damage is understated; years before 2000 left out.
 - **Code:** `src/utils/disasters.ts, src/utils/disasterStore.ts, src/components/DisastersPanel.tsx`
+
+### Parametric insurance trigger designer
+
+- **Says:** What a parametric cover on season rainfall, temperature or a world food price would have paid in each past season, how often it pays, and the average yearly payout (burn cost).
+- **Rule:** Season index from complete monthly records (rainfall summed, temperature and prices averaged; a season across the new year counts in the year it ends); payout rises in a straight line from 0 at the trigger to the full cover at the exit; burn cost = mean yearly payout as % of the cover, with its sample standard deviation, the share of years paying, the largest year, and the same figures since 1991. Default season: the wettest 4 or hottest 3 calendar months; default trigger and exit passed 1 year in 5 and 1 in 20 (empirical quantiles).
+- **Reads:** World Bank CCKP country rainfall and temperature (CRU TS); NASA POWER at the capital; World Bank Pink Sheet rice, wheat, maize and soybeans
+- **Shows in:** Country Research > History & data (Parametric insurance: trigger designer)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: a replay of a stated design over past seasons, not a forecast or a price.
+- **Limits:** Burn cost is the expected loss before any loading, not a premium; past seasons stand for the future, so a climate or price trend biases it; the index is not the insured loss (basis risk); a capital grid cell is not the farm; the World Bank country series is published once a year.
+- **Code:** `src/utils/parametricTrigger.ts, src/components/ParametricTriggerPanel.tsx`
 
 ### Policy review watch
 

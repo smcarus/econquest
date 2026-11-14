@@ -1199,6 +1199,26 @@ export const GLOSSARY: GlossaryEntry[] = [
     read: 'Read each link and ask how sure it is. A long chain of uncertain links is weak support.',
     match: [/second-order/i, /knock-on/i],
   },
+  {
+    id: 'parametric_insurance',
+    term: "Parametric insurance (trigger and exit)",
+    group: 'risk',
+    what: "Insurance that pays when a measured index crosses a set level, such as season rainfall below 300 mm or a world rice price above $600 a tonne, instead of after a loss adjuster assesses the damage. Payment starts at the trigger and rises to the full cover at the exit.",
+    why: "Money arrives in weeks, not months, because nobody has to visit farms or count damage. African Risk Capacity, the Caribbean CCRIF and many farm schemes use it so governments and families can act before a drought or storm turns into a crisis.",
+    read: "A trigger closer to normal pays more often but costs more. The gap between trigger and exit sets how fast the payout grows. Check how often the design would have paid in the past and whether the years it paid were the bad years people remember.",
+    limits: "The index is not the loss: a farm can suffer while the index stays above the trigger, or be fine while it pays (basis risk). A rain gauge or grid cell far from the farm makes this worse.",
+    match: [/parametric/i, /trigger and exit/i],
+  },
+  {
+    id: 'burn_cost',
+    term: "Burn cost (burn analysis)",
+    group: 'risk',
+    what: "The average yearly payout a cover would have made if it had existed in every past year, as a % of the amount insured. Burn analysis replays the cover's terms over the historical record to find it.",
+    why: "It is the starting point for the price of an index cover: the money the cover is expected to pay out each year, before the insurer adds a loading for its costs, its capital and the uncertainty.",
+    read: "A burn cost of 4% means the cover paid out on average 4 of every 100 insured each year. Look at the spread too: a cover that pays 40% once in ten years has the same burn cost as one that pays 4% every year, but it is far riskier to carry.",
+    limits: "It assumes the future looks like the past. A warming climate or a shift in prices makes old years a poor guide, so compare the recent years with the whole record. Short records give unstable figures.",
+    match: [/burn cost/i, /burn analysis/i],
+  },
 ];
 
 /** Plain-words introductions for the panels in the Research briefs, keyed by panel title (prefix match). */

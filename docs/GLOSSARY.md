@@ -862,6 +862,26 @@ Restrictions a government (such as the US, EU or UK) or the UN places on dealing
 
 **Limits.** The app reads the official lists you download; it does not decide whether a particular deal is allowed.
 
+### Parametric insurance (trigger and exit)
+
+Insurance that pays when a measured index crosses a set level, such as season rainfall below 300 mm or a world rice price above $600 a tonne, instead of after a loss adjuster assesses the damage. Payment starts at the trigger and rises to the full cover at the exit.
+
+**Why it matters.** Money arrives in weeks, not months, because nobody has to visit farms or count damage. African Risk Capacity, the Caribbean CCRIF and many farm schemes use it so governments and families can act before a drought or storm turns into a crisis.
+
+**How to read it.** A trigger closer to normal pays more often but costs more. The gap between trigger and exit sets how fast the payout grows. Check how often the design would have paid in the past and whether the years it paid were the bad years people remember.
+
+**Limits.** The index is not the loss: a farm can suffer while the index stays above the trigger, or be fine while it pays (basis risk). A rain gauge or grid cell far from the farm makes this worse.
+
+### Burn cost (burn analysis)
+
+The average yearly payout a cover would have made if it had existed in every past year, as a % of the amount insured. Burn analysis replays the cover's terms over the historical record to find it.
+
+**Why it matters.** It is the starting point for the price of an index cover: the money the cover is expected to pay out each year, before the insurer adds a loading for its costs, its capital and the uncertainty.
+
+**How to read it.** A burn cost of 4% means the cover paid out on average 4 of every 100 insured each year. Look at the spread too: a cover that pays 40% once in ten years has the same burn cost as one that pays 4% every year, but it is far riskier to carry.
+
+**Limits.** It assumes the future looks like the past. A warming climate or a shift in prices makes old years a poor guide, so compare the recent years with the whole record. Short records give unstable figures.
+
 ## Behavioural economics
 
 ### Present bias

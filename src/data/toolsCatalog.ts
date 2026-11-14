@@ -317,6 +317,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-disasters' },
   },
   {
+    id: 'parametric_trigger',
+    category: 'history',
+    title: "Parametric insurance trigger designer",
+    what: "Design a parametric cover on season rainfall, temperature or a world food price: pick the season, trigger, exit and cover, and see what it would have paid in every past season, how often, and the average yearly payout (burn cost).",
+    sources: "World Bank climate portal (CRU TS); NASA POWER; World Bank Pink Sheet",
+    target: { area: 'country', tab: 'history', anchor: 'tool-parametric-trigger' },
+  },
+  {
     id: 'policy_incidence',
     category: 'history',
     title: 'Who pays for a policy',
