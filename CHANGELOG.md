@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Weather across the country (W2): History & data shows monthly temperature and rainfall averaged
+  over each country since 1901 from the World Bank Climate Change Knowledge Portal (CRU TS, CC BY
+  4.0), newest CRU version first, with each month against its 1991-2020 average. Licence row and
+  Data health row wb_cckp, Spanish, French and Portuguese text.
 - Weather at the capital (W1): History & data shows monthly temperature and rainfall at each
   country's capital from NASA POWER since 1981, with each month against the same month's 1991-2020
   average (°C warmer or colder, rainfall as % of normal). One grid cell at the capital, not a

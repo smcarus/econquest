@@ -283,6 +283,23 @@ export const DATA_LICENCES: LicenceRow[] = [
     checked: '2026-11-14',
   },
   {
+    id: 'wb_cckp',
+    name: 'World Bank Climate Change Knowledge Portal (observed climate, CRU TS)',
+    usedFor: 'Monthly temperature and rainfall averaged over each country since 1901, with the app\'s comparison against 1991-2020 (History & data)',
+    terms: [
+      { label: 'World Bank data catalog: CCKP observed climate data (CRU TS)', url: 'https://datacatalog.worldbank.org/search/dataset/0040276' },
+      { label: 'Creative Commons Attribution 4.0', url: 'https://creativecommons.org/licenses/by/4.0/' },
+    ],
+    status: 'open',
+    display: 'Allowed with attribution (CC BY 4.0).',
+    commercial: 'Allowed with attribution (CC BY 4.0).',
+    attribution: 'World Bank Climate Change Knowledge Portal, observed climate (CRU TS, Climatic Research Unit, University of East Anglia), CC BY 4.0.',
+    quotes: ['License: Creative Commons Attribution 4.0', 'Data is available as global gridded or spatially aggregated to national, subnational, watershed, and Exclusive Economic Zone scaled.'],
+    share: 'allowed',
+    shareNote: 'CC BY 4.0: sharing allowed with attribution.',
+    checked: '2026-11-14',
+  },
+  {
     id: 'fred',
     name: 'FRED (St. Louis Fed): 10Y government yields from the OECD; St. Louis Fed and Chicago Fed stress indices; US inflation expectations',
     usedFor: 'US monthly activity: industrial production (INDPRO, Federal Reserve), retail and food services sales (RSAFS, Census Bureau) and the unemployment rate (UNRATE, BLS); US data as first published and as known on a past day (ALFRED vintages of GDPC1 real GDP, CPIAUCSL CPI and UNRATE unemployment, with your FRED API key; government statistics from BEA and BLS); US inflation expectations: 5- and 10-year breakevens and the 5y5y forward (T5YIE, T10YIE, T5YIFR, computed by the St. Louis Fed from US Treasury yields, labelled "Copyrighted: Citation Required") and the Cleveland Fed 1- and 10-year expected inflation (EXPINF1YR, EXPINF10YR, labelled "Public Domain: Citation Requested"); St. Louis Fed Financial Stress Index (STLFSI4, the default stress factor in the global shock scenarios; owned by the St. Louis Fed itself, labelled "Copyrighted: Citation Required"); Chicago Fed NFCI and adjusted NFCI (NFCI, ANFCI, alternative stress factors and world series; owned by the Federal Reserve Bank of Chicago, labelled "Copyrighted: Citation Required"); 10Y yields for the US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, the Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries (all OECD series on FRED); the same yields from January 1990, saved monthly by the daily download for the historical scenario replays',

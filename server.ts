@@ -102,6 +102,7 @@ import { climateFromSnapshot } from './src/utils/climateEnergy';
 import { loadOwidEnergy, fetchOwidEnergyPull } from './src/server/feeds/owidEnergy';
 import { loadFedSwaps, fetchFedSwaps } from './src/server/feeds/fedSwaps';
 import { loadWeather, fetchWeather } from './src/server/feeds/nasaPower';
+import { loadCountryWeather, fetchCountryWeather } from './src/server/feeds/wbClimate';
 import { loadWages, fetchWagesPull, loadHousePrices, fetchHousePricesPull, loadPrivateDebt, fetchPrivateDebtPull } from './src/server/feeds/wagesHousing';
 import { sectorBalances } from './src/utils/sectorBalances';
 import { activitySnapshot } from './src/utils/monthlyIndicators';
@@ -3993,7 +3994,7 @@ async function startServer() {
   const quick = <T,>(p: Promise<T | null>): Promise<T | null> =>
     Promise.race([p.catch(() => null), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]);
   async function seriesFor(iso3: string) {
-    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna, activity, fxHistory, fxExtra, bisCredit, idsCreditors, sovereignDefaults, inflationExpectations, inflationSurveys, portWatch, fedSwaps, weather] = await Promise.all([
+    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna, activity, fxHistory, fxExtra, bisCredit, idsCreditors, sovereignDefaults, inflationExpectations, inflationSurveys, portWatch, fedSwaps, weather, countryWeather] = await Promise.all([
       quick(fetchCbpolPull()), quick(fetchCliPull()), quick(fetchCpiPull()), nationalCpiOrSaved(), quick(fetchCftcPull()), quick(fetchTicPull()),
       // Saved history answers at once; a first download that takes longer than 8 s finishes in the background.
       quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
@@ -4011,6 +4012,7 @@ async function startServer() {
       quick(fetchPortWatchPorts(iso3)),
       quick(fetchFedSwaps()).then((s) => s ?? loadFedSwaps()),
       quick(fetchWeather(iso3)).then((w) => w ?? loadWeather(iso3)),
+      quick(fetchCountryWeather(iso3)).then((w) => w ?? loadCountryWeather(iso3)),
     ]);
     const imfCpi = loadImfCpi();
     // The weekly long-history file (src/utils/longHistory.ts) puts older observations in front of
@@ -4051,6 +4053,7 @@ async function startServer() {
       portWatch,
       fedSwaps,
       weather,
+      countryWeather,
       ustAuctions: iso3.toUpperCase() === 'USA' ? loadUstAuctions() : null,
       euSurveys: loadEuSurveys(),
       monthlyIndicators: loadMonthlyIndicators(),
