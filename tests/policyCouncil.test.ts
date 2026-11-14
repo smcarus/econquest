@@ -171,3 +171,46 @@ test('scenarios: cases scale the table and delay benefits; odds give a weighted 
   // A rate no longer ticked in the table falls back to the first one.
   assert.equal(scenarioResults(cb(), { ...sc, rateId: 'gone' }).rate!.id, 'us_a4_7');
 });
+
+test('PK6: a frame with a measure hands Options the measure and the up-to-date parts; other prompts stay as they were', async () => {
+  const { optionsPrompt, checkOptions } = await import('../src/utils/reviewOptions');
+  const { currentCouncilInputs, councilChangedSince } = await import('../src/utils/policyCouncil');
+  const today = new Date('2026-11-05T12:00:00Z');
+  const base = { iso3: 'BRA', problem: 'Fuel subsidies cost a large share of the budget.', goal: { indicator: 'Primary balance', direction: 'higher' }, asOf: '2026-11-01' };
+  const plainFrame = (parseFrame(base, today) as { frame: ReviewFrame }).frame;
+  const frame = (parseFrame({ ...base, council: { measure: 'Phase out the diesel subsidy' } }, today) as { frame: ReviewFrame }).frame;
+  const fig = { ref: 1, field: 'f1', group: 'g', label: 'Primary balance', unit: '% of GDP', value: 1.5, status: 'Live' as const, period: '2026', source: 'IMF WEO', reason: '' };
+  const d = { iso3: 'BRA', asOf: '2026-11-01', pullDate: '2026-10-30', pulledAt: '2026-10-30T08:00:00Z', incomplete: false, figures: [fig], readings: [], coverage: '1 of 1 live.' };
+
+  // Without a measure, the council lines and task never appear, with or without inputs.
+  const plain = optionsPrompt(plainFrame, d, []);
+  assert.doesNotMatch(plain, /Measure the principal wants weighed/);
+  assert.equal(optionsPrompt(plainFrame, d, [], { costBenefit: cb() }), plain);
+  assert.match(plain, /Task: rank the options/);
+
+  // With a measure and a saved table: the measure, the lines, the present values, then the weigh task.
+  const r0 = newReview(frame, []);
+  const r = (saveCouncilPart(r0, 'costBenefit', cb()) as { review: typeof r0 }).review;
+  const { inputs, hashes } = currentCouncilInputs(r);
+  assert.deepEqual(Object.keys(inputs), ['costBenefit']);
+  const p = optionsPrompt(frame, d, [], inputs);
+  assert.match(p, /Measure the principal wants weighed: Phase out the diesel subsidy/);
+  assert.match(p, /Cost: Transfers: 10, 0, 0 \(source: Budget 2027\)/);
+  assert.match(p, /Present value at US OMB Circular A-4, 7%: costs 10, benefits 10\.85, net 0\.85/);
+  assert.match(p, /Not entered by the principal \(or out of date\): who gains and who loses, what follows, scenarios\./);
+  assert.match(p, /option 1 must be the measure itself/);
+  assert.match(p, /Task: weigh "Phase out the diesel subsidy" for BRA/);
+  assert.doesNotMatch(p, /Task: rank the options/);
+
+  // A sentence quoting a council figure is kept only when the council was given.
+  const raw = { options: [{ title: 'Phase out the diesel subsidy', lever: 'fiscal', how: 'Raise prices in steps.', effect: 'The net present value is 0.85 at 7%.', fromUser: true }], ranking: 'The measure pays back.', gaps: '' };
+  assert.equal(checkOptions(raw, frame, d, [], inputs).options[0].effect, 'The net present value is 0.85 at 7%.');
+  assert.equal(checkOptions(raw, frame, d, []).options[0].effect, '');
+
+  // Out of date parts are not handed over; the Options step notices a changed or new part.
+  assert.equal(councilChangedSince(r, hashes), false);
+  assert.equal(councilChangedSince(r, {}), true);
+  const moved = { ...r, steps: { ...r.steps, frame: { ...r.steps.frame!, hash: 'other' } } };
+  assert.deepEqual(currentCouncilInputs(moved).inputs, {});
+  assert.equal(councilChangedSince(moved, hashes), true);
+});

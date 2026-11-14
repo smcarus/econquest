@@ -129,6 +129,7 @@ import { loadSignOffs, recordFor, reportHash, signOffView } from './src/utils/si
 import { buildDiagnosis, DIAGNOSIS_FIELDS, type Diagnosis } from './src/utils/reviewDiagnosis';
 import { reviewModelFigures } from './src/utils/reviewModels';
 import { checkOptions, OPTIONS_INSTRUCTION, optionsPrompt, LEVERS, type OptionsStep, type UserOption } from './src/utils/reviewOptions';
+import type { CouncilInputs } from './src/utils/policyCouncil';
 import { type ReviewFrame } from './src/utils/policyReview';
 import { AUDIT_HEADER, AUDIT_KIND_LABEL, CORRELATION_HEADER, auditRows, correlationIdProblem, describeRequest, figuresFromAnswers, type AuditKind } from './src/utils/auditLog';
 import { backupFileName, parseBackup, summariseBackup } from './src/utils/backup';
@@ -2467,9 +2468,10 @@ async function reviewOptionsStep(
   frame: ReviewFrame,
   diagnosis: Diagnosis,
   userOptions: UserOption[],
-  runtimeConfig: Partial<AIRuntimeConfig>
+  runtimeConfig: Partial<AIRuntimeConfig>,
+  council?: CouncilInputs
 ): Promise<{ status: 502 | 503; error: string; model?: string } | { content: Pick<OptionsStep, 'model' | 'options' | 'ranking' | 'gaps' | 'removed'>; step: { model?: string; temperature?: number; seed?: number } }> {
-  const prompt = optionsPrompt(frame, diagnosis, userOptions);
+  const prompt = optionsPrompt(frame, diagnosis, userOptions, council);
   const step = await executeResilientLlmStep<Record<string, unknown>>({
     stepName: 'REVIEW_OPTIONS',
     providerMode: runtimeConfig.providerMode || 'gemini',
@@ -2514,7 +2516,7 @@ async function reviewOptionsStep(
   if (step.usedFallback) {
     return { status: 503 as const, error: `No AI model answered (${step.failure || 'no model is set up'}). Set one up in Menu > Settings > AI model, or save your own options without the council.` };
   }
-  const checked = checkOptions(step.data, frame, diagnosis, userOptions);
+  const checked = checkOptions(step.data, frame, diagnosis, userOptions, council);
   if (!checked.options.length) return { status: 502 as const, error: 'The model answered but gave no usable options (each needs a title and how it works). Try again or use another model.', model: step.model };
   return { content: { model: step.providerUsed, ...checked }, step: { model: step.model, temperature: step.temperature, seed: step.seed } };
 }
@@ -2739,7 +2741,7 @@ ${MISSING_FIGURES_RULE}
 
 /** A regression case on Policy review step 3: a diagnosis built only from the case's frozen figures. */
 async function optionsRegressionCase(c: RegressionCase, runtimeConfig: Partial<AIRuntimeConfig>): Promise<RegressionCaseResult> {
-  const { frame, figures } = c.options!;
+  const { frame, figures, council } = c.options!;
   const rows: Array<Array<string | number | null>> = figures.map((f) => [frame.iso3, '', f.field, f.figure, f.value, f.unit, 'Live', f.period, f.source, '', '']);
   // Every other diagnosis figure is Missing with a plain reason; the model readings [13]+ read the
   // app's saved history, so they are left out to keep the case the same on every computer.
@@ -2749,9 +2751,9 @@ async function optionsRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
       rows.push([frame.iso3, '', d.field, f?.label ?? d.field, null, f?.unit ?? '', 'Missing', '', '', 'not in this test case', '']);
     }
   const diagnosis = buildDiagnosis(rows, { iso3: frame.iso3, asOf: frame.asOf, pullDate: frame.asOf, pulledAt: `${frame.asOf}T00:00:00.000Z`, incomplete: false });
-  const step = await reviewOptionsStep(frame, diagnosis, [], runtimeConfig);
+  const step = await reviewOptionsStep(frame, diagnosis, [], runtimeConfig, council);
   // A model that answered with nothing usable is a failing answer, not a missing one.
-  if (!('content' in step)) return { ...checkRegressionCase(c, { brief: null, removed: [], reason: step.error } as SynthesisResult), model: step.model ?? null, ...(step.model ? { temperature: COUNCIL_TEMPERATURE, seed: COUNCIL_SEED, promptHash: sha256(`${OPTIONS_INSTRUCTION}\n${optionsPrompt(frame, diagnosis, [])}`), outputHash: sha256('no usable options') } : {}), answer: [] };
+  if (!('content' in step)) return { ...checkRegressionCase(c, { brief: null, removed: [], reason: step.error } as SynthesisResult), model: step.model ?? null, ...(step.model ? { temperature: COUNCIL_TEMPERATURE, seed: COUNCIL_SEED, promptHash: sha256(`${OPTIONS_INSTRUCTION}\n${optionsPrompt(frame, diagnosis, [], council)}`), outputHash: sha256('no usable options') } : {}), answer: [] };
   const o = step.content;
   const brief = {
     headline: o.options[0]?.title || '',
@@ -2765,7 +2767,7 @@ async function optionsRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
     model: step.step.model ?? null,
     temperature: step.step.temperature,
     seed: step.step.seed,
-    promptHash: sha256(`${OPTIONS_INSTRUCTION}\n${optionsPrompt(frame, diagnosis, [])}`),
+    promptHash: sha256(`${OPTIONS_INSTRUCTION}\n${optionsPrompt(frame, diagnosis, [], council)}`),
     outputHash: sha256(JSON.stringify(answer)),
     answer,
   };

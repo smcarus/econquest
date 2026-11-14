@@ -294,6 +294,8 @@ export const REPORTS_PT: Messages<typeof REPORTS> = {
   pk_scResults: "Valor presente líquido de cada caso a {rate}, na unidade da tabela",
   pk_expected: "Líquido ponderado pela probabilidade: {v}. Probabilidade de líquido negativo: {p}%.",
   pk_scMethod: "Método: cada caso multiplica as linhas de custos e de benefícios da tabela pelos seus percentuais e atrasa os benefícios pelos anos indicados; depois desconta como acima. As probabilidades são suas. Descrição, não uma previsão.",
+  pk_optionsNote: "Esta revisão avalia uma medida: o conselho recebe a medida e suas entradas atualizadas do conselho de políticas, julga a medida como opção 1 e depois classifica alternativas em relação a ela. Ele só pode citar números do diagnóstico e das suas entradas.",
+  pk_optionsStale: "Suas entradas do conselho de políticas mudaram depois que o conselho foi consultado. Consulte-o de novo para avaliar as entradas atuais.",
   pr_constraintsDt: "Restrições",
   pr_noneStated: "Nenhuma informada",
   pr_for: "Para",

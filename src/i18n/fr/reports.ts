@@ -294,6 +294,8 @@ export const REPORTS_FR: Messages<typeof REPORTS> = {
   pk_scResults: "Valeur actuelle nette de chaque cas à {rate}, dans l'unité du tableau",
   pk_expected: "Net pondéré par les probabilités : {v}. Probabilité d'un net négatif : {p} %.",
   pk_scMethod: "Méthode : chaque cas multiplie les lignes de coûts et d'avantages du tableau par vos pourcentages et retarde les avantages du nombre d'années indiqué, puis actualise comme ci-dessus. Les probabilités sont les vôtres. Description, pas une prévision.",
+  pk_optionsNote: "Cette revue évalue une mesure : le conseil reçoit la mesure et vos saisies à jour du conseil des politiques, juge la mesure comme option 1, puis classe des alternatives par rapport à elle. Il ne peut citer que des chiffres du diagnostic et de vos saisies.",
+  pk_optionsStale: "Vos saisies du conseil des politiques ont changé après la consultation du conseil. Consultez-le à nouveau pour évaluer les saisies actuelles.",
   pr_constraintsDt: "Contraintes",
   pr_noneStated: "Aucune indiquée",
   pr_for: "Pour",

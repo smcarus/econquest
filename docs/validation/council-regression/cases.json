@@ -376,6 +376,156 @@
         "forbid": "\\bdebt[^.]{0,60}?\\d+(\\.\\d+)?\\s?%|\\b(?<!\\b(whether|if|cannot|can't|unclear|uncertain)\\b[^.]{0,40})(debt )?(is|looks|appears) (clearly )?sustainable\\b",
         "maxRemoved": 1
       }
+    },
+    {
+      "id": "options-council-egypt-subsidy",
+      "kind": "options",
+      "question": "Policy council: weigh phasing out Egypt's diesel subsidy, with the principal's own entries, one of them an assumption",
+      "options": {
+        "frame": {
+          "iso3": "EGY",
+          "problem": "Fuel subsidies take a large share of the budget while the primary balance needs to improve.",
+          "goal": {
+            "indicator": "Primary balance",
+            "direction": "higher"
+          },
+          "constraints": [
+            "Protect the poorest households."
+          ],
+          "asOf": "2026-10-31",
+          "council": {
+            "kind": "policy",
+            "measure": "Phase out the diesel subsidy over three years",
+            "size": {
+              "value": 1.2,
+              "unit": "pct_gdp"
+            },
+            "start": "2027-01",
+            "years": 4
+          }
+        },
+        "figures": [
+          {
+            "field": "imf.cpiInflationPct",
+            "figure": "Inflation",
+            "value": 12.5,
+            "unit": "%",
+            "period": "Sep 2026",
+            "source": "CAPMAS CPI (frozen test input)"
+          },
+          {
+            "field": "imf.primaryFiscalBalancePct",
+            "figure": "Primary balance",
+            "value": 3.5,
+            "unit": "% of GDP",
+            "period": "2026",
+            "source": "IMF WEO (frozen test input)"
+          }
+        ],
+        "council": {
+          "costBenefit": {
+            "unit": "pct_gdp",
+            "firstYear": 2027,
+            "lines": [
+              {
+                "kind": "cost",
+                "label": "Cash transfers to poorer households",
+                "values": [
+                  0.4,
+                  0.4,
+                  0.4,
+                  0.3
+                ],
+                "source": "Budget proposal (frozen test input)"
+              },
+              {
+                "kind": "benefit",
+                "label": "Subsidy no longer paid",
+                "values": [
+                  0.3,
+                  0.6,
+                  0.9,
+                  0.9
+                ],
+                "source": "Subsidy outturn (frozen test input)"
+              }
+            ],
+            "rateIds": [
+              "adb_9"
+            ]
+          },
+          "groups": {
+            "rows": [
+              {
+                "group": "Poorer households",
+                "effect": "loses",
+                "why": "Bus and food transport costs rise.",
+                "size": 2,
+                "sizeUnit": "% of spending",
+                "source": "Incidence study (frozen test input)"
+              },
+              {
+                "group": "Government budget",
+                "effect": "gains",
+                "why": "The subsidy bill falls."
+              }
+            ]
+          },
+          "chain": {
+            "links": [
+              {
+                "from": "Diesel price",
+                "to": "Inflation",
+                "direction": "raises",
+                "lag": "1 to 3 months",
+                "basis": "figure",
+                "figure": {
+                  "ref": 1,
+                  "label": "Inflation",
+                  "value": 12.5,
+                  "unit": "%",
+                  "period": "Sep 2026",
+                  "source": "CAPMAS CPI (frozen test input)"
+                }
+              },
+              {
+                "from": "Inflation",
+                "to": "Wage demands",
+                "direction": "raises",
+                "basis": "assumption"
+              }
+            ]
+          },
+          "scenarios": {
+            "rateId": "adb_9",
+            "scenarios": [
+              {
+                "name": "Base",
+                "story": "Prices rise as planned and transfers reach the poorest.",
+                "costScale": 100,
+                "benefitScale": 100,
+                "delayYears": 0,
+                "odds": 60
+              },
+              {
+                "name": "Bad",
+                "story": "Smuggling continues and the saving comes a year late.",
+                "costScale": 120,
+                "benefitScale": 60,
+                "delayYears": 1,
+                "odds": 40
+              }
+            ]
+          }
+        }
+      },
+      "answers": [],
+      "expect": {
+        "minOptions": 2,
+        "headline": "(diesel|subsid)",
+        "gapsMention": "(assum|source|missing|not (given|available)|not in|wage)",
+        "maxRemoved": 2
+      }
     }
   ]
 }

@@ -20,6 +20,7 @@ import { ReviewCompare } from './ReviewCompare';
 import { PoliticalFeasibility } from './PoliticalFeasibility';
 import { ExpertReviewForm } from './ExpertReviewForm';
 import { PolicyCouncil } from './PolicyCouncil';
+import { councilChangedSince } from '../utils/policyCouncil';
 
 /**
  * Reports > Policy reviews: a guided, repeatable case file for one country and one problem.
@@ -972,6 +973,12 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                     </button>
                   </div>
                 </>
+              )}
+              {frame?.council && <p className="text-xs text-slate-600 dark:text-slate-300" data-council-options="true">{t('pk_optionsNote')}</p>}
+              {frame?.council && options?.model && councilChangedSince(r, options.councilHashes) && (
+                <p className="text-xs text-amber-700 dark:text-amber-400" data-council-stale="true">
+                  {t('pk_optionsStale')}
+                </p>
               )}
               {options && <OptionsView s={options} d={diagnosis} />}
               {r.steps.options && (

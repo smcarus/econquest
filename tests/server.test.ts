@@ -348,7 +348,7 @@ test('council regression set: each case is checked and reported as it is (stand-
   });
   assert.equal(res.status, 200);
   const report = await res.json();
-  assert.equal(report.total, 8);
+  assert.equal(report.total, 9);
   assert.match(report.setHash, /^[0-9a-f]{64}$/);
   const by = Object.fromEntries(report.results.map((r: { id: string }) => [r.id, r]));
   // The stand-in always writes about Turkey: right for the Turkey case, wrong for the others.
@@ -360,6 +360,8 @@ test('council regression set: each case is checked and reported as it is (stand-
   assert.equal(by['options-egypt-missing'].pass, true, JSON.stringify(by['options-egypt-missing'].failures));
   assert.ok(by['options-brazil-inflation'].failures.some((f: string) => /at least 2 expected/.test(f)));
   assert.equal(by['options-brazil-inflation'].model, 'qwen2.5:32b');
+  // The policy council case runs through the same Options step, with the measure and the entries.
+  assert.ok(by['options-council-egypt-subsidy'].failures.some((f: string) => /at least 2 expected/.test(f)), JSON.stringify(by['options-council-egypt-subsidy'].failures));
   assert.equal(by['supreme-brazil-tight'].pass, false);
   // The stand-in wrote none of the Supreme Council's fields: each reads Missing, never the built-in report.
   assert.ok(by['supreme-brazil-tight'].answer.every((l: string) => /Missing: model gave no answer for this field\./.test(l)), JSON.stringify(by['supreme-brazil-tight'].answer));

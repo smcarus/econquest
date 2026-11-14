@@ -13,6 +13,7 @@
  *
  * Browser-safe: types and the check. The server runs the cases.
  */
+import type { CouncilInputs } from './policyCouncil';
 import type { AgentAnswer, SynthesisResult } from './askCouncil';
 import type { ReviewFrame } from './policyReview';
 
@@ -51,6 +52,8 @@ export interface OptionsCaseInput {
   frame: ReviewFrame;
   /** Diagnosis figures that are live; every other diagnosis figure is Missing ("not in this test case"). */
   figures: Array<{ field: string; figure: string; value: number; unit: string; period: string; source: string }>;
+  /** A frame that names one measure (policy council, PK6): the principal's frozen council entries. */
+  council?: CouncilInputs;
 }
 
 export interface RegressionCase {

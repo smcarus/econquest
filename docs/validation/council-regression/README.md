@@ -14,6 +14,8 @@ Cases by step (`kind` in `cases.json`):
   diagnosis figure is Missing ("not in this test case"). The model readings [13]+ read the app's
   saved history, so they are left out to keep the case the same on every computer. This step now
   runs on the referee model too (it ranks options, so it judges).
+  A case with `options.frame.council` and `options.council` is the policy council (PK6): a frozen
+  measure and frozen costs and benefits, groups, chain and scenarios; option 1 must be the measure.
 
 ## Three commands
 

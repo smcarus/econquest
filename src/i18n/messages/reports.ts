@@ -300,6 +300,8 @@ export const REPORTS = defineMessages('reports', {
   pk_scResults: "Net present value of each case at {rate}, in the unit of the table",
   pk_expected: "Odds-weighted net: {v}. Chance of a negative net: {p}%.",
   pk_scMethod: "Method: each case multiplies the cost lines and the benefit lines of the table by your percentages and moves the benefits later by the years you give, then discounts as above. The odds are yours. Description, not a forecast.",
+  pk_optionsNote: "This review weighs one measure: the council gets the measure and your up-to-date policy council entries, judges the measure as option 1, then ranks alternatives against it. It may quote only figures from the diagnosis and your entries.",
+  pk_optionsStale: "Your policy council entries changed after the council was asked. Ask it again to weigh the current entries.",
   pr_constraintsDt: 'Constraints',
   pr_noneStated: 'None stated',
   pr_for: 'For',
