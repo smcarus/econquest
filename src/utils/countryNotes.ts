@@ -156,6 +156,21 @@ export function netInterestRow(status: SnapshotDataStatus, open?: CouncilAssessm
     : { ...row, value: `${pct(v)} of GDP` };
 }
 
+/**
+ * Why a survey figure (Gini, poverty) is Missing: "no survey" only when its own World Bank request
+ * answered and held none in the look-back window; when that request failed, say so instead.
+ */
+export function surveyMissing(status: SnapshotDataStatus, open: CouncilAssessmentRun['openData'], field: string, help: string): MissingReason {
+  const base = pathMissing(status, `wb.${field}`);
+  if (!status.isFeedLive('worldbank')) return base;
+  if (open?.worldBankIndicators?.answeredFields?.includes(field)) return { ...base, short: `No survey in the last ${GINI_LOOKBACK_YEARS} years`, help };
+  return {
+    kind: 'unreachable',
+    short: 'World Bank did not answer for this figure',
+    help: 'Other World Bank figures came in, but the request for this one failed or timed out, so the app cannot tell whether a survey exists. Press Refresh now under Research > One country to try again.',
+  };
+}
+
 /** Help for a missing Gini: surveys are rare, and the app looks back only GINI_LOOKBACK_YEARS. */
 export const GINI_MISSING_HELP = `The Gini index comes from household surveys, which many countries run only every few years and some have never published. The app looks back ${GINI_LOOKBACK_YEARS} years and leaves it Missing rather than show an older survey or an estimate.`;
 
@@ -168,7 +183,7 @@ export function distTaxRows(status: SnapshotDataStatus, open: CouncilAssessmentR
   const g = distTaxFromSnapshot(open)?.gini;
   const gini: BriefRow = g
     ? { label: giniLabel, value: giniValue(g, now), source: pathSource(status, 'wb.giniIndex', open), verified: true }
-    : missingRow(giniLabel, { ...pathMissing(status, 'wb.giniIndex'), ...(status.isFeedLive('worldbank') ? { short: `No survey in the last ${GINI_LOOKBACK_YEARS} years`, help: GINI_MISSING_HELP } : {}) });
+    : missingRow(giniLabel, surveyMissing(status, open, 'giniIndex', GINI_MISSING_HELP));
   const share = (v: number) => `${pct(v)} of revenue`;
   return [
     gini,
@@ -196,7 +211,7 @@ export function peopleRows(status: SnapshotDataStatus, open: CouncilAssessmentRu
     const label = POVERTY_LABEL[f];
     return p
       ? { label, value: povertyValue(p, now), source: pathSource(status, `wb.${f}`, open), verified: true }
-      : missingRow(label, { ...pathMissing(status, `wb.${f}`), ...(status.isFeedLive('worldbank') ? { short: `No survey in the last ${GINI_LOOKBACK_YEARS} years`, help: POVERTY_MISSING_HELP } : {}) });
+      : missingRow(label, surveyMissing(status, open, f, POVERTY_MISSING_HELP));
   });
   return [
     ...poverty,

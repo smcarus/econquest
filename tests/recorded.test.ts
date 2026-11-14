@@ -11,7 +11,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { maskUrl, sharedParams, urlStem } from './helpers/feedRecording.mjs';
+import { maskUrl, rangeOnlyDiffers, sharedParams, urlStem } from './helpers/feedRecording.mjs';
 import { replaySuite } from './helpers/replaySuite.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -23,6 +23,12 @@ test('recording helpers: keys never reach the stored URL, and moved ranges still
   assert.equal(maskUrl('https://user:pw@example.org/a?token=t'), 'https://example.org/a?token=X');
   assert.equal(urlStem('https://stats.bis.org/api/v1/data/WS_CBPOL/M.BR?startPeriod=2023-11'), 'https://stats.bis.org/api/v1/data/WS_CBPOL/M.BR');
   assert.equal(sharedParams('https://x.org/a?f=json&start=2023-11', 'https://x.org/a?f=json&start=2023-12'), 1);
+  // A moved date range may stand in; another country's series id may not.
+  assert.ok(rangeOnlyDiffers('https://x.org/a?f=json&start=2023-11', 'https://x.org/a?f=json&start=2023-12'));
+  assert.ok(rangeOnlyDiffers('https://fred.stlouisfed.org/graph/fredgraph.csv?id=IRLTLT01USM156N&cosd=2024-11-01', 'https://fred.stlouisfed.org/graph/fredgraph.csv?id=IRLTLT01USM156N&cosd=2024-12-01'));
+  assert.ok(!rangeOnlyDiffers('https://fred.stlouisfed.org/graph/fredgraph.csv?id=IRLTLT01USM156N&cosd=2024-11-01', 'https://fred.stlouisfed.org/graph/fredgraph.csv?id=IRLTLT01AUM156N&cosd=2024-11-01'));
+  assert.ok(!rangeOnlyDiffers('https://x.org/a?f=json', 'https://x.org/a?f=json&country=BR'));
+  assert.ok(rangeOnlyDiffers('https://x.org/a?f=json', 'https://x.org/a?f=json&limit=13'));
 });
 
 replaySuite(recDir, 'recorded replies', 'no full recording here (it stays private; tests/recordedPublic.test.ts replays the public one): run `npm run record:feeds` on a computer that reaches the feeds');
