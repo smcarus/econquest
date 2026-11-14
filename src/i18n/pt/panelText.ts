@@ -759,4 +759,12 @@ export const PANEL_TEXT_PT: Record<string, string> = {
   "The IRR file you saved holds only coarse codes": "O arquivo IRR que você salvou só tem códigos amplos",
   "Not in the IRR file you saved ({range})": "Não consta no arquivo IRR que você salvou ({range})",
   "no IRR exchange rate classification file in data/local/irr/ (download the monthly workbook from https://www.ilzetzki.com/irr-data and put it there)": "não há nenhum arquivo de classificação cambial IRR em data/local/irr/ (baixe a planilha mensal em https://www.ilzetzki.com/irr-data e coloque-a lá)",
+  // PB3: central bank assets (BIS)
+  "Central bank assets": "Ativos do banco central",
+  "Central bank assets in dollars": "Ativos do banco central em dólares",
+  "US$ bn": "US$ bi",
+  "The BIS publishes no central bank assets series for this country": "O BIS não publica uma série de ativos do banco central para este país",
+  "The BIS publishes no central bank assets in dollars series for this country": "O BIS não publica uma série de ativos do banco central em dólares para este país",
+  "Everything the central bank owns (reserves, bonds, loans to banks), as % of a year of GDP. A fast rise usually means asset purchases (quantitative easing) or emergency lending; a fall means the bank is shrinking its balance sheet.": "Tudo o que o banco central possui (reservas, títulos, empréstimos aos bancos), em % de um ano de PIB. Uma alta rápida costuma indicar compras de ativos (afrouxamento quantitativo) ou empréstimos emergenciais; uma queda indica que o banco está reduzindo seu balanço.",
+  "Total assets of the central bank, converted to US dollars by the BIS, in billions. Moves in the exchange rate change this figure even when the balance sheet does not change.": "Ativos totais do banco central, convertidos em dólares americanos pelo BIS, em bilhões. Variações da taxa de câmbio mudam este número mesmo quando o balanço não muda.",
 };

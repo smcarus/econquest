@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Central bank assets (Group B, PB3): History & data shows each central bank's total assets from
+  the BIS, as % of GDP and in US$ bn, quarterly, so asset purchases and emergency lending show as
+  a fast rise. Free BIS series with citation. Data health row bis_cb_assets, glossary entry,
+  Spanish, French and Portuguese text.
 - Exchange rate regime (Group B, PB1): History & data shows the Ilzetzki, Reinhart and Rogoff
   classification of how a country's currency is run in fact, by month: the coarse code (1 peg,
   2 crawling peg, 3 managed floating, 4 freely floating, 5 freely falling, 6 dual market) and the

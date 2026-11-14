@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bisCreditGapUrl, bisCreditSeries, bisDsrUrl, bisPropertyUrl, parseBisCreditGap, parseBisDsr, parseBisProperty } from '../src/utils/bisCreditCycle.ts';
+import { bisCbAssetsUrl, bisCreditGapUrl, bisCreditSeries, bisDsrUrl, bisPropertyUrl, parseBisCbAssets, parseBisCreditGap, parseBisDsr, parseBisProperty } from '../src/utils/bisCreditCycle.ts';
+import { checkConnections } from '../src/utils/connectionCheck.ts';
 import { countrySeries } from '../src/utils/seriesHistory.ts';
 
 // Rows as the BIS answered on 2026-11-07 (Brazil).
@@ -53,4 +54,38 @@ test('country series include the credit cycle for a BIS country', () => {
   const set = countrySeries('BRA', { bisCredit: { fetchedAt: '2026-11-07T05:00:00Z', ...parseBisCreditGap(GAP) } });
   assert.ok(set.series.some((s) => s.id === 'credit_gap' && s.source === 'BIS credit-to-GDP gaps'));
   assert.ok(set.missing.some((s) => s.id === 'debt_service_ratio'));
+});
+
+// PB3: central bank total assets (WS_CBTA). Layout as the BIS answered on 2026-11-14 (United States
+// 2026-Q2: 21.24% of GDP, US$ 6735.645 bn); a break-adjusted (B) and an unadjusted (N) row both
+// present for one quarter, B wins.
+const CBTA = `FREQ,REF_AREA,COMP_METHOD,UNIT_MEASURE,CURRENCY,TRANSFORMATION,UNIT_MULT,DECIMALS,TITLE_TS,TIME_PERIOD,OBS_VALUE,OBS_STATUS
+Q,US,A,XDF_R_B1GQ,_Z,B,0,2,,2026-Q1,21.9,A
+Q,US,A,XDF_R_B1GQ,_Z,N,0,2,,2026-Q1,22.5,A
+Q,US,A,XDF_R_B1GQ,_Z,N,0,2,,2026-Q2,21.24,A
+Q,US,A,USD,USD,B,9,3,,2026-Q2,6735.645,A
+Q,US,A,USD,USD,N,6,3,,2026-Q1,6700000,A
+Q,US,A,XDC,USD,B,9,3,,2026-Q2,6735.645,A
+Q,US,A,USD,USD,B,9,3,,2026-Q3,NaN,A`;
+
+test('central bank assets: % of GDP and US$ bn, break-adjusted rows first', () => {
+  const p = parseBisCbAssets(CBTA);
+  assert.deepEqual(p.cbAssetsGdp, { '2026Q1': 21.9, '2026Q2': 21.24 });
+  assert.deepEqual(p.cbAssetsUsd, { '2026Q1': 6700, '2026Q2': 6735.645 });
+  assert.deepEqual(parseBisCbAssets('<html>'), {});
+  assert.match(bisCbAssetsUrl('US'), /WS_CBTA\/Q\.US\/all\?format=csv$/);
+  const out = bisCreditSeries({ fetchedAt: '2026-11-14T00:00:00Z', ...p }, true);
+  const gdp = out.find((s) => s.id === 'cb_assets_gdp');
+  assert.ok(gdp && 'points' in gdp && gdp.unit === '% of GDP' && gdp.source === 'BIS central bank total assets');
+  const none = bisCreditSeries({ fetchedAt: '2026-11-14T00:00:00Z' }, true).find((s) => s.id === 'cb_assets_usd');
+  assert.ok(none && 'reason' in none);
+  assert.equal(none.reason, 'The BIS publishes no central bank assets in dollars series for this country');
+});
+
+test('Data health row bis_cb_assets reads the sample answer', async () => {
+  const rep = await checkConnections({ env: {}, only: ['bis_cb_assets'], fetchFn: async () => new Response(CBTA, { status: 200 }) } as never);
+  assert.equal(rep.results[0].state, 'connected');
+  assert.match(rep.results[0].sample || '', /central bank assets 21\.2% of GDP, US\$ 6,735\.6 bn \(2026 Q2\)/);
+  const bad = await checkConnections({ env: {}, only: ['bis_cb_assets'], fetchFn: async () => new Response('a,b\n1,2', { status: 200 }) } as never);
+  assert.equal(bad.results[0].state, 'bad_reply');
 });

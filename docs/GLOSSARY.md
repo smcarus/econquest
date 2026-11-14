@@ -298,6 +298,16 @@ Everything the US Federal Reserve owns (mainly government bonds) and owes (mainl
 
 **Limits.** Net liquidity is a popular market shorthand, not an official Fed measure. The app shows it only when all its parts are for the same Wednesday.
 
+### Central bank assets
+
+Everything a central bank owns: foreign reserves, government bonds and other securities, and loans to banks. The total is the size of its balance sheet.
+
+**Why it matters.** When a central bank buys bonds (quantitative easing) or lends to banks in a crisis, its assets grow and it creates money to pay for them. A large or fast-growing balance sheet tells you how much the bank is supporting markets and the government.
+
+**How to read it.** History & data shows the BIS series as % of a year of GDP, which makes countries comparable, and in US dollars. Compare the change over a few years more than the level: some banks hold large reserves for long-standing reasons.
+
+**Limits.** The dollar figure moves with the exchange rate. Accounting rules differ between central banks, and the BIS does not cover every country.
+
 ### Checks and balances
 
 The people and bodies that can block or delay a government decision: for example a legislature controlled by another party, a second chamber, or coalition partners. The Database of Political Institutions counts them as veto players.

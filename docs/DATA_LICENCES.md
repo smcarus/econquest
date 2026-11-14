@@ -169,7 +169,7 @@ From the terms:
 
 ### BIS statistics (policy rates, real exchange rates, debt securities, credit cycle)
 
-- **Used for:** Central bank policy rates and their history, real exchange rates, government debt securities, credit-to-GDP gaps, debt service ratios, residential property prices (real and nominal, country brief and History & data) and household and company debt (total credit)
+- **Used for:** Central bank policy rates and their history, real exchange rates, government debt securities, credit-to-GDP gaps, debt service ratios, residential property prices (real and nominal, country brief and History & data) household and company debt (total credit) and central bank total assets (History & data)
 - **Status:** Allowed with conditions
 - **Free non-commercial sharing:** Free sharing allowed. Use is unrestricted with the BIS cited.
 - **Terms read:** [Terms of permitted use of BIS statistics](https://data.bis.org/help/legal); [BIS terms and conditions](https://www.bis.org/terms_conditions.htm) (checked 2026-11-06)

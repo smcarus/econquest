@@ -20,6 +20,7 @@ import { ECB_RTD_SERIES, ecbRtdUrl, parseEcbHistory } from './ecbRealTime';
 import { latestEditionUri, ONS_TRIANGLE_PAGE } from './onsTriangles';
 import { bcbActivityUrl, eurostatActivityUrl, monthText, onsActivityUrl, parseBcbActivity, parseEurostatActivity, parseOnsSeries } from './monthlyIndicators';
 import { BIS_PRIVATE_DEBT_SAMPLE_URL, parseBisPrivateDebtAll } from './sectorBalances';
+import { BIS_CB_ASSETS_SAMPLE_URL, parseBisCbAssets } from './bisCreditCycle';
 import { BIS_PROPERTY_SAMPLE_URL, ILO_EARNINGS_ENV, ILO_EARNINGS_ID, ILO_TOC_URLS, iloEarningsCandidates, iloEarningsRows, iloEarningsSampleUrl, iloIdRefused, parseBisPropertyAll, parseIloEarnings, quarterLabel, wageReading } from './wagesHousing';
 import { debtStructureUrl, parseDebtStructure, currencyValue } from './debtStructure';
 import { INVESTOR_BASE_SETUP_HELP, investorBaseValue } from './investorBase';
@@ -300,6 +301,7 @@ export const SOURCE_IDS = [
   'ilostat_wages',
   'bis_property',
   'bis_private_debt',
+  'bis_cb_assets',
   'imf_gov_levels',
   'eurostat_activity',
   'ons_activity',
@@ -633,6 +635,26 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       },
       undefined,
       'It answered, but not with the BIS total credit columns the app reads (BORROWERS_CTY, TC_BORROWERS, TC_LENDERS, TIME_PERIOD, OBS_VALUE). The BIS may have changed the series key.'
+    )
+  );
+
+  add('bis_cb_assets', () =>
+    httpCheck(
+      { id: 'bis_cb_assets', name: 'BIS central bank total assets', group: 'free', feeds: 'Central bank assets, % of GDP and US$ bn (History & data)' },
+      fetchFn,
+      BIS_CB_ASSETS_SAMPLE_URL,
+      T,
+      (r) => {
+        const { cbAssetsGdp, cbAssetsUsd } = parseBisCbAssets(r.text || '');
+        const last = (m?: Record<string, number>) => (m ? Object.keys(m).sort().pop() : undefined);
+        const q = last(cbAssetsGdp) ?? last(cbAssetsUsd);
+        if (!q) return null;
+        const gdp = cbAssetsGdp?.[q];
+        const usd = cbAssetsUsd?.[q];
+        return `${SAMPLE_NAME} central bank assets ${gdp === undefined ? 'n/a' : `${fmt(gdp)}% of GDP`}, ${usd === undefined ? 'n/a' : `US$ ${fmt(usd)} bn`} (${q.replace(/^(\d{4})Q/, '$1 Q')})`;
+      },
+      undefined,
+      'It answered, but not with the BIS central bank assets columns the app reads (UNIT_MEASURE XDF_R_B1GQ or USD, TIME_PERIOD, OBS_VALUE). The BIS may have changed the series key.'
     )
   );
 

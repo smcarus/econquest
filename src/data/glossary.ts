@@ -932,6 +932,16 @@ export const GLOSSARY: GlossaryEntry[] = [
     match: [/exchange rate regime/i, /\bIRR (coarse|fine)\b/],
   },
   {
+    id: 'cb_assets',
+    term: "Central bank assets",
+    group: 'policy',
+    what: "Everything a central bank owns: foreign reserves, government bonds and other securities, and loans to banks. The total is the size of its balance sheet.",
+    why: "When a central bank buys bonds (quantitative easing) or lends to banks in a crisis, its assets grow and it creates money to pay for them. A large or fast-growing balance sheet tells you how much the bank is supporting markets and the government.",
+    read: "History & data shows the BIS series as % of a year of GDP, which makes countries comparable, and in US dollars. Compare the change over a few years more than the level: some banks hold large reserves for long-standing reasons.",
+    limits: "The dollar figure moves with the exchange rate. Accounting rules differ between central banks, and the BIS does not cover every country.",
+    match: [/central bank (total )?assets/i],
+  },
+  {
     id: 'sanctions',
     term: 'Sanctions',
     group: 'risk',

@@ -253,4 +253,7 @@ export const DEFINITIONS_TEXT_PT: Record<string, string> = {
   // PB1: exchange rate regime (IRR)
   "Exchange rate regime in fact, Ilzetzki-Reinhart-Rogoff coarse code: 1 peg, 2 crawling peg, 3 managed floating, 4 freely floating, 5 freely falling, 6 dual market": "Regime cambial de fato, código amplo de Ilzetzki-Reinhart-Rogoff: 1 câmbio fixo, 2 paridade deslizante, 3 flutuação administrada, 4 flutuação livre, 5 queda livre, 6 mercado duplo",
   "Exchange rate regime in fact, Ilzetzki-Reinhart-Rogoff fine code, 1 (no own currency) to 15 (dual market)": "Regime cambial de fato, código detalhado de Ilzetzki-Reinhart-Rogoff, de 1 (sem moeda própria) a 15 (mercado duplo)",
+  // PB3: central bank assets (BIS)
+  "Total assets of the central bank, as % of the sum of the last four quarters of GDP (BIS central bank total assets)": "Ativos totais do banco central, em % da soma dos últimos quatro trimestres do PIB (ativos totais de bancos centrais do BIS)",
+  "Total assets of the central bank, in US dollars converted by the BIS, billions (BIS central bank total assets)": "Ativos totais do banco central, em dólares americanos convertidos pelo BIS, bilhões (ativos totais de bancos centrais do BIS)",
 };
