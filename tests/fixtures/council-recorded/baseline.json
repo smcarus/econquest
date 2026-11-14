@@ -1,10 +1,10 @@
 {
- "recordedAt": "2026-11-06T15:13:15.817Z",
+ "recordedAt": "2026-11-14T15:39:38.388Z",
  "model": "qwen2.5:32b",
- "ollamaVersion": "0.40.5",
- "commit": "8b5f08f",
+ "ollamaVersion": "0.40.16",
+ "commit": "4113b85",
  "report": {
-  "ranAt": "2026-11-06T15:13:15.254Z",
+  "ranAt": "2026-11-14T15:39:37.834Z",
   "setVersion": 3,
   "setHash": "513d8f47db399874e0eff69c52ce409be06b509d723bd772d6eae9fc0cec4a79",
   "model": "qwen2.5:32b",
@@ -18,7 +18,7 @@
     "failures": [],
     "headline": "Monetary policy in Brazil is tight.",
     "removed": 0,
-    "snapshotId": "s20261106150912413-e7d8dd6fe206",
+    "snapshotId": "s20261114153323875-e7d8dd6fe206",
     "model": "qwen2.5:32b",
     "temperature": 0,
     "seed": 42,
@@ -39,7 +39,7 @@
     "failures": [],
     "headline": "Yes, Turkey's central bank is behind the curve on inflation.",
     "removed": 0,
-    "snapshotId": "s20261106150922909-78f0ee709277",
+    "snapshotId": "s20261114153336566-78f0ee709277",
     "model": "qwen2.5:32b",
     "temperature": 0,
     "seed": 42,
@@ -60,7 +60,7 @@
     "failures": [],
     "headline": "Brazil has tighter monetary policy than Mexico.",
     "removed": 0,
-    "snapshotId": "s20261106150936354-7874e524b4d1",
+    "snapshotId": "s20261114153352392-7874e524b4d1",
     "model": "qwen2.5:32b",
     "temperature": 0,
     "seed": 42,
@@ -81,7 +81,7 @@
     "failures": [],
     "headline": "Egypt's government debt sustainability cannot be definitively assessed due to missing data.",
     "removed": 0,
-    "snapshotId": "s20261106150959077-2a0d605e0a59",
+    "snapshotId": "s20261114153409764-2a0d605e0a59",
     "model": "qwen2.5:32b",
     "temperature": 0,
     "seed": 42,
@@ -185,17 +185,17 @@
     "model": "qwen2.5:32b",
     "temperature": 0,
     "seed": 42,
-    "promptHash": "cc43853ec52bde7e0976f3d4181e3c374faaaf67da66baaee50249395132f22f",
-    "outputHash": "4c88c971ec38ad436a35ec70ac101dd666a488d5b3d601ade8facecef0beac0b",
+    "promptHash": "6c5cdf06ee43755944b421ce012e371360fdede262a669e5d17760c51380317d",
+    "outputHash": "e1a1074366e0012a1ad9d71e7e57919e0d3d3c702a15493fb22e4425c38d775a",
     "answer": [
      "Increase the Policy Rate",
-     "1. Increase the Policy Rate (monetary): The central bank can raise the policy rate further to tighten monetary conditions and reduce inflationary pressures. Effect: Should lower inflation by reducing aggregate demand and cooling the economy. Trade-offs: Higher interest rates could slow economic growth and increase borrowing costs for businesses and consumers. Refs: [1] [2]",
-     "2. Reduce Government Spending (fiscal): The government can cut non-essential spending to reduce inflationary pressures without raising taxes. Effect: Should lower inflation by reducing government demand and cooling the economy. Trade-offs: Reduced government spending could lead to job losses and reduced public services. Refs: [1]",
-     "3. Improve Supply Chain Efficiency (structural): The government can implement policies to improve supply chain efficiency, reducing costs and inflationary pressures. Effect: Should lower inflation by reducing production costs and increasing supply. Trade-offs: Implementation may require significant investment and time to see results. Refs: [1]",
-     "The options are ranked based on their immediate impact on inflation and the feasibility within the given constraints. Increasing the policy rate is the most direct and immediate option, followed by reducing government spending, which can be done without raising taxes. Improving supply chain efficiency is a longer-term solution with less immediate impact.",
-     "Missing real GDP growth data [3] prevents a full assessment of the economic cycle and potential risks of slowing growth.",
-     "Missing government debt and primary balance data [4, 6] prevents a full assessment of fiscal space and the impact of spending cuts.",
-     "Missing exchange rate and reserves data [8, 9] prevents a full assessment of external vulnerabilities."
+     "1. Increase the Policy Rate (monetary): The central bank can raise the policy rate to further tighten monetary conditions, reducing aggregate demand and thereby lowering inflation. Effect: Lower inflation Trade-offs: Higher interest rates can slow economic growth and increase borrowing costs for businesses and consumers. Refs: [1] [2]",
+     "2. Reduce Government Spending (fiscal): The government can cut non-essential spending to reduce inflationary pressures without raising taxes. Effect: Lower inflation Trade-offs: Reduced government spending can slow economic growth and impact public services. Refs: [1] [4] [5] [6]",
+     "3. Strengthen Wage Controls (structural): Implement stricter wage controls to prevent wages from rising too quickly, which can contribute to inflation. Effect: Lower inflation Trade-offs: Wage controls can reduce worker morale and purchasing power. Refs: [1]",
+     "The options are ranked based on their potential to lower inflation while minimizing the risk of a recession. Increasing the policy rate is the most direct way to reduce inflation, but it carries the risk of slowing economic growth. Reducing government spending is a fiscal measure that can help control inflation without raising taxes, but it may impact public services. Strengthening wage controls is a structural measure that can help control inflation but may reduce worker purchasing power.",
+     "Real GDP growth [3] is missing, which makes it difficult to assess the risk of a recession.",
+     "Government debt [4] and its forecast [5] are missing, which makes it difficult to assess the fiscal space for reducing government spending.",
+     "Primary balance [6] is missing, which makes it difficult to assess the fiscal impact of reducing government spending."
     ]
    },
    {
@@ -208,15 +208,15 @@
     "model": "qwen2.5:32b",
     "temperature": 0,
     "seed": 42,
-    "promptHash": "0a3db4d02ab2cc780cb5f15558ca971611b3a7584fd17c4a269fe6bb07d0f34f",
-    "outputHash": "aa9b119c4906e3fd7ebee380816ebcf491b8eb600a45b327bc67101d9be8ec91",
+    "promptHash": "08d98facc509729dc4ffdc429575e2577d1d0fe5de459de919ac390b329c4de5",
+    "outputHash": "e2552cbfcc21a2340c1607a660a5d13a2a6b403f7cae7fa479c09978fa0353a6",
     "answer": [
      "Increase Foreign Direct Investment (FDI) Incentives",
-     "1. Increase Foreign Direct Investment (FDI) Incentives (structural): Attract more FDI by offering tax breaks, streamlined regulations, and other incentives. Effect: FDI inflows can boost reserves. Trade-offs: Potential short-term fiscal costs from tax breaks and regulatory changes. Refs: [9]",
-     "2. Negotiate External Financing from Multilateral Institutions (external): Seek additional financing from the IMF, World Bank, or other multilateral institutions. Effect: External financing can directly increase reserves. Trade-offs: Conditionalities may require policy reforms. Refs: [9]",
-     "3. Reduce Non-Essential Imports (external): Implement import restrictions or tariffs on non-essential goods. Effect: Reducing imports can improve the current account and boost reserves. Trade-offs: Higher prices for consumers and potential trade tensions. Refs: [9]",
-     "The options are ranked based on their potential to directly increase reserves and the time it takes for the effects to materialize. Increasing FDI incentives is ranked first due to its long-term benefits, followed by negotiating external financing, which can provide immediate support. Reducing non-essential imports is ranked last due to potential trade-offs and risks.",
-     "Missing data on inflation, policy rate, real GDP growth, government debt, primary balance, and current account make it difficult to fully assess the impact of the options."
+     "1. Increase Foreign Direct Investment (FDI) Incentives (structural): Attract more FDI by offering tax breaks and other incentives to foreign investors. Effect: FDI inflows would increase, boosting reserves. Trade-offs: Tax revenue could decrease in the short term due to tax breaks. Refs: [9] [12]",
+     "2. Reduce External Debt Payments (external): Negotiate with creditors to extend the maturity of external debt or reduce interest rates. Effect: Reduced debt payments would free up resources to rebuild reserves. Trade-offs: Creditors may demand higher interest rates in the future. Refs: [9] [11]",
+     "3. Increase Export Promotion Efforts (external): Boost export promotion efforts to increase foreign currency inflows. Effect: Increased exports would boost reserves. Trade-offs: Domestic industries may face increased competition. Refs: [9]",
+     "The options are ranked based on their potential to quickly increase reserves while respecting the constraints. Increasing FDI incentives is ranked first due to its potential to attract significant foreign inflows, followed by reducing external debt payments, which can free up resources quickly. Increasing export promotion efforts is ranked last due to its longer time to effect.",
+     "Missing figures for inflation, policy rate, real GDP growth, government debt, and current account make it difficult to fully assess the impact of these options on the overall economic stability and fiscal position."
     ]
    }
   ]
