@@ -1,15 +1,15 @@
 {
- "recordedAt": "2026-11-14T15:39:38.388Z",
+ "recordedAt": "2026-11-14T16:57:40.955Z",
  "model": "qwen2.5:32b",
  "ollamaVersion": "0.40.16",
- "commit": "4113b85",
+ "commit": "62ec43e",
  "report": {
-  "ranAt": "2026-11-14T15:39:37.834Z",
+  "ranAt": "2026-11-14T16:57:40.400Z",
   "setVersion": 3,
-  "setHash": "513d8f47db399874e0eff69c52ce409be06b509d723bd772d6eae9fc0cec4a79",
+  "setHash": "1bf641e3917fe4be7f6c0deb596b3ea784e5813ebf8f3913259daad90ed8bd16",
   "model": "qwen2.5:32b",
-  "passed": 8,
-  "total": 8,
+  "passed": 9,
+  "total": 9,
   "results": [
    {
     "id": "brazil-tight",
@@ -18,7 +18,7 @@
     "failures": [],
     "headline": "Monetary policy in Brazil is tight.",
     "removed": 0,
-    "snapshotId": "s20261114153323875-e7d8dd6fe206",
+    "snapshotId": "s20261114164930503-e7d8dd6fe206",
     "model": "qwen2.5:32b",
     "temperature": 0,
     "seed": 42,
@@ -39,7 +39,7 @@
     "failures": [],
     "headline": "Yes, Turkey's central bank is behind the curve on inflation.",
     "removed": 0,
-    "snapshotId": "s20261114153336566-78f0ee709277",
+    "snapshotId": "s20261114165021065-78f0ee709277",
     "model": "qwen2.5:32b",
     "temperature": 0,
     "seed": 42,
@@ -60,7 +60,7 @@
     "failures": [],
     "headline": "Brazil has tighter monetary policy than Mexico.",
     "removed": 0,
-    "snapshotId": "s20261114153352392-7874e524b4d1",
+    "snapshotId": "s20261114165045917-7874e524b4d1",
     "model": "qwen2.5:32b",
     "temperature": 0,
     "seed": 42,
@@ -81,7 +81,7 @@
     "failures": [],
     "headline": "Egypt's government debt sustainability cannot be definitively assessed due to missing data.",
     "removed": 0,
-    "snapshotId": "s20261114153409764-2a0d605e0a59",
+    "snapshotId": "s20261114165102891-2a0d605e0a59",
     "model": "qwen2.5:32b",
     "temperature": 0,
     "seed": 42,
@@ -217,6 +217,29 @@
      "3. Increase Export Promotion Efforts (external): Boost export promotion efforts to increase foreign currency inflows. Effect: Increased exports would boost reserves. Trade-offs: Domestic industries may face increased competition. Refs: [9]",
      "The options are ranked based on their potential to quickly increase reserves while respecting the constraints. Increasing FDI incentives is ranked first due to its potential to attract significant foreign inflows, followed by reducing external debt payments, which can free up resources quickly. Increasing export promotion efforts is ranked last due to its longer time to effect.",
      "Missing figures for inflation, policy rate, real GDP growth, government debt, and current account make it difficult to fully assess the impact of these options on the overall economic stability and fiscal position."
+    ]
+   },
+   {
+    "id": "options-council-egypt-subsidy",
+    "question": "Policy council: weigh phasing out Egypt's diesel subsidy, with the principal's own entries, one of them an assumption",
+    "pass": true,
+    "failures": [],
+    "headline": "Phase out the diesel subsidy over three years",
+    "removed": 0,
+    "model": "qwen2.5:32b",
+    "temperature": 0,
+    "seed": 42,
+    "promptHash": "c4e95518a69bc4c9f9808fcb9264d31d9598541b28a6c8b3ae96fd15eb7a243d",
+    "outputHash": "8c761397461614ebf430deac087ae0c102b77d13fd81da9e3e8bde7f8eb1973b",
+    "answer": [
+     "Phase out the diesel subsidy over three years",
+     "1. Phase out the diesel subsidy over three years (fiscal): Gradually reduce the diesel subsidy over three years, starting in 2027, while providing cash transfers to poorer households. Effect: Improves the primary balance by reducing the subsidy bill, with a net benefit of 0.97% of GDP over four years. Trade-offs: Increased inflation and potential wage demands in the short term, but long-term fiscal sustainability. Refs: [1] [6]",
+     "2. Introduce targeted subsidies for essential goods (fiscal): Replace diesel subsidies with targeted subsidies for essential goods like food and medicine to protect the poorest households. Effect: Improves the primary balance while ensuring essential goods remain affordable for the poor. Trade-offs: Requires careful targeting to avoid leakage and ensure benefits reach the intended recipients. Refs: [6]",
+     "3. Increase excise taxes on non-essential goods (fiscal): Increase excise taxes on non-essential goods to generate additional revenue and reduce the subsidy burden. Effect: Improves the primary balance by generating additional revenue. Trade-offs: Higher prices on non-essential goods could reduce consumption and affect businesses. Refs: [6]",
+     "4. Implement a gradual increase in fuel prices (fiscal): Gradually increase fuel prices over three years, starting in 2027, while providing cash transfers to poorer households. Effect: Improves the primary balance by reducing the subsidy bill, with a net benefit of 0.97% of GDP over four years. Trade-offs: Increased inflation and potential wage demands in the short term, but long-term fiscal sustainability. Refs: [1] [6]",
+     "The first option, 'Phase out the diesel subsidy over three years,' is ranked highest as it directly addresses the goal of improving the primary balance while protecting the poorest households through cash transfers. The second option, 'Introduce targeted subsidies for essential goods,' is ranked second as it provides an alternative way to protect the poor while reducing the subsidy burden. The third option, 'Increase excise taxes on non-essential goods,' is ranked third as it generates additional revenue but could affect consumption and businesses.",
+     "Missing figures for policy rate, real GDP growth, government debt, and 10Y government bond yield prevent a full assessment of the monetary and fiscal impacts.",
+     "Missing figures for exchange rate, reserves, and current account prevent a full assessment of external impacts."
     ]
    }
   ]

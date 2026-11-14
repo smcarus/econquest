@@ -214,3 +214,14 @@ test('PK6: a frame with a measure hands Options the measure and the up-to-date p
   assert.deepEqual(currentCouncilInputs(moved).inputs, {});
   assert.equal(councilChangedSince(moved, hashes), true);
 });
+
+test('PK6: the regression check allows the present values the app hands the council, not other numbers', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { caseInputText, parseRegressionSet } = await import('../src/utils/councilRegression');
+  const set = parseRegressionSet(JSON.parse(readFileSync('docs/validation/council-regression/cases.json', 'utf8')));
+  const c = (set as { cases: { id: string }[] }).cases.find((x) => x.id === 'options-council-egypt-subsidy');
+  assert.ok(c);
+  const text = caseInputText(c as never).join('\n');
+  assert.match(text, /net 0\.97, pays back from 2028/);
+  assert.doesNotMatch(text, /\b4\.21\b/);
+});
