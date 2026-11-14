@@ -17,9 +17,11 @@
  * send data/local/council-recording.zip in the project thread (or commit tests/fixtures/council-recorded/).
  *
  * The referee must be a large model: a model of 8B or less is refused. No feed is asked and no key
- * is used; the cases carry frozen inputs. Takes a few minutes on a 32B model.
+ * is used; the cases carry frozen inputs. Takes several minutes on a 32B model; the long request has
+ * no time limit.
  */
 import { spawn, execSync } from 'node:child_process';
+import http from 'node:http';
 import { pathToFileURL } from 'node:url';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -70,6 +72,26 @@ Object.assign(env, {
   CDS_FEED: 'off',
   GEMINI_API_KEY: '',
 });
+/**
+ * POST with no time limit. The whole set takes longer than five minutes on a 32B model, and Node's
+ * built-in fetch gives up when no reply has started after five minutes ("fetch failed").
+ */
+function postJsonNoTimeout(url: string, body: unknown): Promise<{ ok: boolean; status: number; text: string }> {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify(body);
+    const req = http.request(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } }, (res) => {
+      let text = '';
+      res.setEncoding('utf8');
+      res.on('data', (c) => (text += c));
+      res.on('end', () => resolve({ ok: (res.statusCode ?? 0) >= 200 && (res.statusCode ?? 0) < 300, status: res.statusCode ?? 0, text }));
+      res.on('error', reject);
+    });
+    req.setTimeout(0);
+    req.on('error', reject);
+    req.end(data);
+  });
+}
+
 const runtimeConfig = { providerMode: 'ollama', ollamaBaseUrl: ollamaUrl, ollamaDeepModel: model };
 
 console.log(`Recording the council regression set on ${model} (Ollama at ${ollamaUrl}; private server on port ${port})…`);
@@ -97,8 +119,15 @@ try {
   const pulled: string[] = status.models || [];
   if (!pulled.some((m) => m === model || m === `${model}:latest`)) throw new Error(`${model} is not downloaded. Run "ollama pull ${model}" and run this again.`);
 
-  const r = await fetch(`${base}/api/council/regression`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ runtimeConfig }) });
-  const report = (await r.json().catch(() => ({}))) as RegressionReport & { error?: string };
+  console.log('Running the cases (several minutes on a 32B model)…');
+  const r = await postJsonNoTimeout(`${base}/api/council/regression`, { runtimeConfig });
+  const report = (() => {
+    try {
+      return JSON.parse(r.text);
+    } catch {
+      return {};
+    }
+  })() as RegressionReport & { error?: string };
   if (!r.ok) throw new Error(report?.error || `The app answered HTTP ${r.status}.`);
   if (report.results.some((x) => !x.model)) throw new Error(`No model answered for ${report.results.filter((x) => !x.model).map((x) => x.id).join(', ')}; nothing saved. ${report.results.find((x) => !x.model)?.failures[0] || ''}`);
   // The recorder saves each reply as its stream ends: wait until every answered case has one.
@@ -151,7 +180,9 @@ try {
   console.log(`Saved in ${path.relative(root, out) || out}/ and ${zipPath}.`);
   console.log('If these answers are right, send that zip in the project thread to make them the new baseline.');
 } catch (error: any) {
-  console.error(error?.message || error);
+  const cause = error?.cause?.code || error?.cause?.message;
+  console.error(`${error?.message || error}${cause ? ` (${cause})` : ''}`);
+  if (log && /fetch failed|ECONNRESET|socket hang up/i.test(String(error?.message))) console.error(`Last server lines:\n${log.slice(-1500)}`);
   exitCode = 1;
 } finally {
   server.kill();
