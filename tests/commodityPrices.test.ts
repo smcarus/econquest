@@ -12,6 +12,7 @@ import {
   moveSentence,
   parseEiaSpot,
   parsePinkSheet,
+  PINK_HISTORY_MONTHS,
   priceMove,
 } from '../src/utils/commodityPrices.ts';
 import { makeXlsx, pinkSheetRows } from './helpers/makeXlsx.ts';
@@ -49,6 +50,19 @@ test('Pink Sheet: falls back to headings when there is no code row; unknown layo
   const noCodes = ROWS.filter((_, i) => i !== 6);
   assert.equal(parsePinkSheet(noCodes.map((r) => r.map((c) => (c === null ? '' : String(c))))).get('CRUDE_BRENT')!.points.length, 46);
   assert.equal(parsePinkSheet([['Date', 'Brent'], ['2026-10-01', '64']]).size, 0);
+});
+
+test('Pink Sheet: rice, wheat, maize and soybeans keep the whole history from 1960; others keep 60 months', () => {
+  const n = (2026 - 1960) * 12 + 10; // 1960-01 .. 2026-10
+  const vals = Array.from({ length: n }, (_, i) => 100 + i);
+  const cols = ['RICE_05', 'WHEAT_US_HRW', 'MAIZE', 'SOYBEANS', 'CRUDE_BRENT'].map((code) => ({ code, heading: code, unit: '$/mt', values: vals }));
+  const s = parsePinkSheet(pinkSheetRows(cols, 1960).map((r) => r.map((c) => (c === null ? '' : String(c)))));
+  for (const code of ['RICE_05', 'WHEAT_US_HRW', 'MAIZE', 'SOYBEANS']) {
+    assert.equal(s.get(code)!.points.length, n, code);
+    assert.deepEqual(s.get(code)!.points[0], { period: '1960-01', value: 100 }, code);
+  }
+  assert.equal(s.get('CRUDE_BRENT')!.points.length, PINK_HISTORY_MONTHS);
+  assert.equal(s.get('CRUDE_BRENT')!.points.at(-1)!.period, '2026-10');
 });
 
 test('price moves: 1 month, 12 months, against the 3-year average', async () => {

@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Long food price history (W3): rice (Thai 5%), wheat (US HRW), maize and soybeans now keep the
+  whole World Bank Pink Sheet monthly history from 1960 instead of the last 60 months, so History &
+  data can chart them over decades next to the weather series. Other Pink Sheet prices still keep
+  60 months.
 - Weather across the country (W2): History & data shows monthly temperature and rainfall averaged
   over each country since 1901 from the World Bank Climate Change Knowledge Portal (CRU TS, CC BY
   4.0), newest CRU version first, with each month against its 1991-2020 average. Licence row and
