@@ -142,3 +142,32 @@ test('second-order links: a figure is copied from Diagnose with its source; no f
   assert.equal(c.links[2].basis, 'assumption');
   assert.deepEqual(chainTally(c), { figure: 1, source: 1, assumption: 1 });
 });
+
+test('scenarios: cases scale the table and delay benefits; odds give a weighted net and the chance of a loss', async () => {
+  const { parseScenarios, scenarioResults, scaledTable } = await import('../src/utils/policyCouncil');
+  const bad = parseScenarios({ scenarios: [{ name: 'B', story: '', costScale: -1, benefitScale: 'x', delayYears: 1.5, odds: 50 }], rateId: 'us_a4_7' });
+  const e = (bad as { errors: string[] }).errors.join(' ');
+  for (const m of [/at least two/, /name/, /what happens/, /costs must be/, /benefits must be/, /whole number/]) assert.match(e, m);
+  const half = parseScenarios({ scenarios: [{ name: 'Base', story: 'As planned.', costScale: 100, benefitScale: 100, odds: 60 }, { name: 'Bad', story: 'Smuggling continues.', costScale: 100, benefitScale: 50 }] });
+  assert.match((half as { errors: string[] }).errors.join(' '), /every case or for none/);
+  const ok = parseScenarios({
+    scenarios: [
+      { name: 'Base', story: 'As planned.', costScale: '100', benefitScale: '100', delayYears: '', odds: '60' },
+      { name: 'Bad', story: 'Smuggling continues and the saving comes a year late.', costScale: 130, benefitScale: 50, delayYears: 1, odds: 40, source: 'Fuel smuggling study, World Bank 2023' },
+    ],
+    rateId: 'us_a4_7',
+  });
+  assert.ok('content' in ok);
+  const sc = (ok as { content: import('../src/utils/policyCouncil').Scenarios }).content;
+  const t = scaledTable(cb(), sc.scenarios[1]);
+  assert.deepEqual(t.lines[0].values, [13, 0, 0]);
+  assert.deepEqual(t.lines[1].values, [0, 0, 3, 3]);
+  const out = scenarioResults(cb(), sc);
+  assert.equal(out.rate!.id, 'us_a4_7');
+  near(out.results[0].npv, cbAt(cb(), 'x', [{ from: 0, rate: 7 }]).npv);
+  assert.ok(out.results[1].npv < 0);
+  near(out.expected!, 0.6 * out.results[0].npv + 0.4 * out.results[1].npv);
+  assert.equal(out.chanceNegative, 40);
+  // A rate no longer ticked in the table falls back to the first one.
+  assert.equal(scenarioResults(cb(), { ...sc, rateId: 'gone' }).rate!.id, 'us_a4_7');
+});

@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Policy council scenarios (PK5): for the measure in a policy review, two to five cases, each a
+  short story with the costs and benefits table scaled by the user's percentages and benefits
+  arriving later if they say so, with optional odds; net present value of each case, and with odds
+  the odds-weighted net and the chance of a negative net. Spanish, French and Portuguese text.
 - Policy council second-order effects (PK4): for the measure in a policy review, a chain of links
   (this raises or lowers that, and how long it takes), each resting on a figure from the review's
   Diagnose step with its source and period, a source the user names, or marked as an assumption,
