@@ -59,6 +59,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Aid received | Research | Description, not a tested signal | None |
 | Food prices and food security | Research | Description, not a tested signal | None |
 | Natural disasters | Research | Description, not a tested signal | None |
+| Disaster loss model | Research | Description, not a tested signal | None |
 | Parametric insurance trigger designer | Research | Description, not a tested signal | None |
 | Policy review watch | Research | Description, not a tested signal | None |
 | Peer comparison for a policy review | Research | Description, not a tested signal | None |
@@ -776,6 +777,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: event counts and sums from the file, not a forecast.
 - **Limits:** EM-DAT terms forbid passing the data on, so nothing shipped or fetched; free accounts are for universities, non-profit research, public bodies and media; only events meeting EM-DAT's entry criteria are listed; many events have no damage figure, so damage is understated; years before 2000 left out.
 - **Code:** `src/utils/disasters.ts, src/utils/disasterStore.ts, src/components/DisastersPanel.tsx`
+
+### Disaster loss model
+
+- **Says:** Every year of disaster damage since 2000 and a frequency-severity model: how many damaging events a year, how large each one is, and the simulated yearly loss passed 1 year in 10, 50 and 100, by type of disaster.
+- **Rule:** EM-DAT events with a damage figure at todays prices; frequency Poisson, or negative binomial by the method of moments when the yearly variance is above 1.5 times the mean; severity lognormal by maximum likelihood on the logs; 20,000 simulated years with a fixed seed; % of GDP over the latest IMF GDP in US dollars.
+- **Reads:** EM-DAT public table (your file in data/local/emdat/); IMF WEO NGDPD
+- **Shows in:** Country Research > History & data (Natural disasters, Loss model)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: a fit to past events, checked against the record 1 in 10 event, not a forecast or a price.
+- **Limits:** Many EM-DAT events have no damage figure, so losses are understated; reporting has improved over time; a lognormal can understate the largest events; 1 year in 100 is far beyond a record of about 25 years; no trend in climate or exposure is modelled.
+- **Code:** `src/utils/lossModel.ts, src/components/DisastersPanel.tsx`
 
 ### Parametric insurance trigger designer
 

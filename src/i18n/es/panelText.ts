@@ -925,4 +925,7 @@ export const PANEL_TEXT_ES: Record<string, string> = {
   "The loading must be a number of 0 or more": "El recargo debe ser un número de 0 o más",
   "Fewer than 20 complete seasons, so no extreme value fit": "Menos de 20 temporadas completas, así que no hay ajuste de valores extremos",
   "The extreme value fit did not converge on these seasons": "El ajuste de valores extremos no convergió con estas temporadas",
+  "All natural disasters": "Todos los desastres naturales",
+  "Fewer than 5 events with a damage figure, so no severity fit": "Menos de 5 eventos con una cifra de daños, así que no hay ajuste de la gravedad",
+  "Every event reports the same damage, so no severity fit": "Todos los eventos informan el mismo daño, así que no hay ajuste de la gravedad",
 };

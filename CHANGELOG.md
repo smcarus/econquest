@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Disaster loss model (I1 + I2): the Natural disasters panel adds every year's damage since 2000
+  (at today's prices and as % of GDP) and a frequency-severity model by type of disaster: damaging
+  events per year (Poisson, or negative binomial when bad years cluster), damage per event
+  (lognormal, with a check against the record), and 20,000 simulated years giving the average
+  yearly loss and the loss passed 1 year in 10, 50 and 100, also as % of GDP. From the EM-DAT file
+  in data/local/emdat/ only. Glossary entries for the frequency-severity model and average annual
+  loss; Spanish, French and Portuguese.
 - Basis risk (I7): the trigger designer compares the cover with the other weather series (capital
   against whole country, same season): of the second series' worst 1 in 5 seasons, how many the
   cover paid in and how many it missed, payouts in years that were not bad, rank correlation, the
