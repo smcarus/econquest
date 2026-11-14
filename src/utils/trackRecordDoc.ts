@@ -95,6 +95,27 @@ export function trackRows(verdicts: RecordedVerdict[], files: TestFile[], questV
 
 const cell = (s: string) => s.replace(/\|/g, '\\|');
 
+/** Whole days from registration to the run, or undefined when the registration date is missing. */
+export function daysBeforeRun(r: TrackRow): number | undefined {
+  const reg = r.file?.registeredOn?.slice(0, 10);
+  const ran = r.verdict.ranAt.slice(0, 10);
+  if (!reg || !/^\d{4}-\d{2}-\d{2}$/.test(reg)) return undefined;
+  const d = Math.round((Date.parse(`${ran}T00:00:00Z`) - Date.parse(`${reg}T00:00:00Z`)) / 86_400_000);
+  return Number.isFinite(d) ? d : undefined;
+}
+
+function sameDayLine(rows: TrackRow[]): string {
+  const known = rows.map(daysBeforeRun).filter((d): d is number => d !== undefined);
+  const same = known.filter((d) => d <= 0).length;
+  const near = known.filter((d) => d <= 1).length;
+  const missing = rows.length - known.length;
+  const most = known.length ? Math.max(...known) : 0;
+  const parts = [`${near} of the ${rows.length} tests were written down on the day they ran or the day before (${same} on the same day).`];
+  if (most > 1) parts.push(`The longest gap between writing a test down and running it is ${most} days.`);
+  if (missing) parts.push(`${missing} ${missing === 1 ? 'test has' : 'tests have'} no registration date on file.`);
+  return parts.join(' ');
+}
+
 export function trackRecordMarkdown(verdicts: RecordedVerdict[], files: TestFile[], runs: RecordedRun[], questVerdicts: QuestTestVerdict[] = []): string {
   const rows = trackRows(verdicts, files, questVerdicts);
   const n = rows.length;
@@ -114,6 +135,12 @@ export function trackRecordMarkdown(verdicts: RecordedVerdict[], files: TestFile
     're-tuned after a fail; a changed test is a new version and counts as a new test. Verdicts are copied',
     'from the owner\'s real runs and never edited. Backtest and evaluation results are hypothetical: they',
     'show how a rule would have done on past data, not money made.',
+    '',
+    `**When each test was written down.** ${sameDayLine(rows)} For a test written down shortly before it ran,`,
+    'on data already public, the hash shows the rule did not change after the run; it does not show that',
+    'the rule was fixed before anyone looked at the data. Read those as *specified and hashed before the',
+    'run*. Only a test written down before its data exist rules out both. The *Registered* and *Run*',
+    'columns below give both dates for every test.',
     '',
     '**In plain words.** Each test asks one question: would this rule have done better than the simplest',
     'possible guess, using only the figures that had actually been published at the time and after',

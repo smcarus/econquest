@@ -1065,6 +1065,15 @@ export const GLOSSARY: GlossaryEntry[] = [
     why: 'Without it, running many tests guarantees some false passes. The track record shows which passes survive it across every test on record.',
   },
   {
+    id: 'preregistered',
+    term: 'Pre-registered test',
+    group: 'methods',
+    what: 'A test whose rule, data, pass mark and costs were written down and hashed (given a SHA-256 fingerprint) before it was run. The hash shows the rule was not changed after the result was seen.',
+    why: 'It stops a rule being re-tuned until it passes. A changed rule is a new version and counts as a new test.',
+    limits: "Most of the app's tests were written down on the same day they ran, on data that was already public. For those, the hash shows the rule did not change after the run, not that it was fixed before anyone looked at the data, so the track record calls them specified and hashed before the run. Only a test written down before its data exist rules out both. The track record shows the registration and run dates side by side.",
+    match: [/pre-registered/i],
+  },
+  {
     id: 'bootstrap',
     term: 'Bootstrap',
     group: 'methods',

@@ -5,6 +5,28 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Fixes from the usability review for economists and researchers:
+  - Data health > Daily download shows the daily download as it goes: each of its five parts, what
+    failed and why, sources that need a key or a file, and what to download by hand. While it runs,
+    a line at the top of the screen says which part it is on. Route `GET /api/daily-run`.
+  - Citations, the About box and feedback carry the code commit beside the version (`APP_COMMIT`,
+    set by the start scripts and the image build); docs/MAINTENANCE.md lists the release steps.
+  - Data API: the Python, R and Stata helpers get CSV without a byte-order mark (`bom=0`) and read
+    `value` as a number.
+  - Council chat without an AI model lists the figures found, the parts of the question no reading
+    answered (such as a 200bp rate rise, pointing to Debt sustainability) and the gaps.
+  - One inflation figure per country on Summary and Markets: the latest monthly series when there is
+    one, else the IMF yearly average, with the source named; the real policy rate says which.
+  - A missing Gini or poverty figure says the World Bank did not answer when that request failed,
+    instead of "No survey in the last 15 years". The feed replay no longer lends one country's
+    recording to another.
+  - A new install shows the project's published verdicts (docs/validation/recorded-verdicts.json)
+    on each badge until the tests run on that computer.
+  - Help level Expert: figures, sources and forecast ranges without plain-language explanations.
+  - Policy rate, leading indicator and OECD inflation charts and downloads start where the source
+    starts once the weekly long-history file is on disk, instead of in late 2024.
+  - The track record, glossary, methodology and README say that every test so far was written down
+    the day it ran or the day before, on public data: specified and hashed before the run.
 - ILOSTAT earnings: the 14 November check showed ILOSTAT's list has no EAR_4M.. ids any more, only
   other earnings ids (EAR_EHRA.. is hourly). The search now finds the yearly indicator by its name
   ("monthly earnings", by economic activity and local currency first, hourly left out) in the CSV
