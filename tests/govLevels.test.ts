@@ -17,23 +17,25 @@ const { checkConnections } = await import('../src/utils/connectionCheck.ts');
 type Item = import('../src/types/council.ts').WatchlistItem;
 type Run = import('../src/types/council.ts').CouncilAssessmentRun;
 
-// DBnomics IMF GFSMAB layout: Brazil with all levels, Japan with central and local, Mexico central only.
+// DBnomics IMF GFSMAB layout (% of GDP unit): Brazil with all levels, Japan with central and local, Mexico central only.
+// A domestic-currency copy of a Brazil series must not be read as a share.
 const doc = (code: string, period: string[], value: Array<number | string>) => ({ series_code: code, period, value });
 const DBN = {
   series: {
     docs: [
-      doc('A.BR.S1311.XDC_R_B1GQ.G2M', ['2022', '2023'], [24.1, 25.0]),
-      doc('A.BR.S1312.XDC_R_B1GQ.G2M', ['2022', '2023'], [11.9, 12.2]),
-      doc('A.BR.S1313.XDC_R_B1GQ.G2M', ['2022', '2023'], [7.0, 'NA']),
-      doc('A.BR.S1314.XDC_R_B1GQ.G2M', ['2023'], [0.0000001]),
-      doc('A.BR.S13.XDC_R_B1GQ.G2M', ['2022', '2023'], [38.5, 39.0]),
-      doc('A.BR.S1311.XDC_R_B1GQ.G1', ['2023'], [22.4]),
-      doc('A.BR.S1312.XDC_R_B1GQ.G1', ['2023'], [10.1]),
-      doc('A.JP.S1311.XDC_R_B1GQ.G2M', ['2021'], [16.0]),
-      doc('A.JP.S1313.XDC_R_B1GQ.G2M', ['2021'], [12.0]),
-      doc('A.MX.S1311.XDC_R_B1GQ.G2M', ['2023'], [25.0]),
-      doc('A.MX.S1314.XDC_R_B1GQ.G2M', ['2023'], [3.0]),
-      doc('A.XX.S1311.XDC_R_B1GQ.G2M', ['2023'], [1]),
+      doc('A.BR.S1311.XDC_R_B1GQ.G2M__Z', ['2022', '2023'], [24.1, 25.0]),
+      doc('A.BR.S1312.XDC_R_B1GQ.G2M__Z', ['2022', '2023'], [11.9, 12.2]),
+      doc('A.BR.S1313.XDC_R_B1GQ.G2M__Z', ['2022', '2023'], [7.0, 'NA']),
+      doc('A.BR.S1314.XDC_R_B1GQ.G2M__Z', ['2023'], [0.0000001]),
+      doc('A.BR.S13.XDC_R_B1GQ.G2M__Z', ['2022', '2023'], [38.5, 39.0]),
+      doc('A.BR.S1311.XDC_R_B1GQ.G1__Z', ['2023'], [22.4]),
+      doc('A.BR.S1312.XDC_R_B1GQ.G1__Z', ['2023'], [10.1]),
+      doc('A.JP.S1311.XDC_R_B1GQ.G2M__Z', ['2021'], [16.0]),
+      doc('A.JP.S1313.XDC_R_B1GQ.G2M__Z', ['2021'], [12.0]),
+      doc('A.MX.S1311.XDC_R_B1GQ.G2M__Z', ['2023'], [25.0]),
+      doc('A.MX.S1314.XDC_R_B1GQ.G2M__Z', ['2023'], [3.0]),
+      doc('A.XX.S1311.XDC_R_B1GQ.G2M__Z', ['2023'], [1]),
+      doc('A.BR.S1311.XDC.G2M__Z', ['2024'], [5000000]),
     ],
   },
 };
@@ -51,7 +53,7 @@ const EURO = {
 };
 
 test('IMF GFS through DBnomics: the newest year with central and another level; scale errors dropped; catalogue codes only', () => {
-  assert.equal(gl.imfLevelSeriesId('BR', 'state', 'revenue'), 'IMF/GFSMAB/A.BR.S1312.XDC_R_B1GQ.G1');
+  assert.equal(gl.imfLevelSeriesId('BR', 'state', 'revenue'), 'IMF/GFSMAB/A.BR.S1312.XDC_R_B1GQ.G1__Z');
   assert.equal(gl.imfLevelIds(['BR']).length, 10);
   const r = gl.parseDbnomicsLevels(DBN, { BR: 'BRA', JP: 'JPN', MX: 'MEX' });
   assert.deepEqual(r.BRA.spending, { year: '2023', table: 'imf', pct: { central: 25, state: 12.2, general: 39 } });
@@ -150,18 +152,92 @@ test('the download: saved to data/live, kept when a later run fails, read back f
   }
 });
 
+// DBnomics' description of GFSMAB: units as an object, items as [code, label] pairs.
+const DS = (unit: Record<string, string>) => ({
+  datasets: {
+    docs: [
+      {
+        code: 'GFSMAB',
+        dimensions_values_labels: {
+          FREQ: { A: 'Annual' },
+          UNIT: unit,
+          INDICATOR: [
+            ['G1__Z', 'Revenue'],
+            ['G2__Z', 'Expense'],
+            ['G2M__Z', 'Expenditure'],
+            ['G24__Z', 'Interest expense'],
+          ],
+        },
+      },
+    ],
+  },
+});
+
+test('the GFSMAB description: the unit labelled as a percent of GDP and the revenue and expenditure items', () => {
+  const p = gl.pickGfsCodes(DS({ XDC: 'Domestic currency', POGDP_PT: 'Percent of GDP' }));
+  assert.deepEqual(p.codes, { unit: 'POGDP_PT', revenue: 'G1__Z', spending: 'G2M__Z' });
+  assert.deepEqual(p.units, ['XDC (Domestic currency)', 'POGDP_PT (Percent of GDP)']);
+  assert.equal(gl.pickGfsCodes(DS({ XDC: 'Domestic currency' })).codes.unit, undefined, 'no % of GDP unit: none picked');
+  assert.deepEqual(gl.pickGfsCodes({ nope: 1 }), { codes: {}, units: [] });
+  const r = gl.parseDbnomicsLevels({ series: { docs: [doc('A.BR.S1311.POGDP_PT.G2M__Z', ['2023'], [25]), doc('A.BR.S1312.POGDP_PT.G2M__Z', ['2023'], [12])] } }, { BR: 'BRA' }, { unit: 'POGDP_PT', revenue: 'G1__Z', spending: 'G2M__Z' });
+  assert.deepEqual(r.BRA.spending!.pct, { central: 25, state: 12 });
+});
+
+test('the download asks again with the codes from the GFSMAB description when the first codes bring nothing', async () => {
+  const mod = await import('../src/server/feeds/govLevels.ts');
+  mod.resetGovLevelsForTests();
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: unknown) => {
+    const url = decodeURIComponent(String(input));
+    if (url.includes('eurostat')) return new Response('busy', { status: 503 });
+    if (url.endsWith('/datasets/IMF/GFSMAB')) return new Response(JSON.stringify(DS({ XDC: 'Domestic currency', POGDP_PT: 'Percent of GDP' })), { status: 200 });
+    const docs = url.includes('POGDP_PT') ? [doc('A.BR.S1311.POGDP_PT.G2M__Z', ['2023'], [25]), doc('A.BR.S1313.POGDP_PT.G2M__Z', ['2023'], [6])] : [];
+    return new Response(JSON.stringify({ series: { docs } }), { status: 200 });
+  }) as typeof fetch;
+  try {
+    const p = (await mod.fetchGovLevels({ force: true }))!;
+    assert.deepEqual(p.countries.BRA.spending!.pct, { central: 25, local: 6 });
+  } finally {
+    globalThis.fetch = realFetch;
+    mod.resetGovLevelsForTests();
+  }
+});
+
 test('connection check: no GFSMAB series back is not OK, and the codes DBnomics holds are listed', async () => {
   const fetchFn = async (u: string) =>
     new Response(
       JSON.stringify(
         u.includes('/series/IMF/GFSMAB?dimensions=')
-          ? { series: { docs: [{ series_code: 'A.BR.S1311.XDC.G2', series_name: 'Annual – Brazil – Central government – Domestic currency – Expense' }, { series_code: 'A.BR.S1311.XDC.G1', series_name: 'Annual – Brazil – Central government – Domestic currency – Revenue' }] } }
-          : { series: { docs: [] } }
+          ? {
+              series: {
+                docs: [
+                  { series_code: 'A.BR.S1311.XDC.G24__Z', series_name: 'Annual – Brazil – Central government – Domestic currency – Interest expense' },
+                  { series_code: 'A.BR.S1311.XDC.G2M__Z', series_name: 'Annual – Brazil – Central government – Domestic currency – Expenditure' },
+                  { series_code: 'A.BR.S1311.XDC.G1__Z', series_name: 'Annual – Brazil – Central government – Domestic currency – Revenue' },
+                ],
+              },
+            }
+          : u.endsWith('/datasets/IMF/GFSMAB')
+            ? DS({ XDC: 'Domestic currency' })
+            : { series: { docs: [] } }
       ),
       { status: 200 }
     );
   const row = (await checkConnections({ env: {}, only: ['imf_gov_levels'], fetchFn } as never)).results[0];
   assert.equal(row.state, 'bad_reply');
-  assert.match(row.detail, /none of the \d+ GFSMAB series the app asks for \(for example IMF\/GFSMAB\/A\.BR\.S1311\.XDC_R_B1GQ\.G2M\) came back/);
-  assert.match(row.detail, /DBnomics holds: A\.BR\.S1311\.XDC\.G2 \(.*Expense\); A\.BR\.S1311\.XDC\.G1/);
+  assert.match(row.detail, /none of the \d+ GFSMAB series the app asks for \(for example IMF\/GFSMAB\/A\.BR\.S1311\.XDC_R_B1GQ\.G2M__Z\) came back/);
+  assert.match(row.detail, /unit none labelled as a percent of GDP, revenue G1__Z, expenditure G2M__Z; units listed: XDC \(Domestic currency\)/);
+  assert.match(row.detail, /DBnomics holds: A\.BR\.S1311\.XDC\.G2M__Z \(.*Expenditure\); A\.BR\.S1311\.XDC\.G1__Z .*; A\.BR\.S1311\.XDC\.G24__Z/);
+});
+
+test('connection check: the % of GDP unit from the description is tried and named', async () => {
+  const fetchFn = async (u: string) => {
+    const url = decodeURIComponent(u);
+    if (url.endsWith('/datasets/IMF/GFSMAB')) return new Response(JSON.stringify(DS({ XDC: 'Domestic currency', POGDP_PT: 'Percent of GDP' })), { status: 200 });
+    const docs = url.includes('POGDP_PT') ? [{ series_code: 'A.BR.S1311.POGDP_PT.G2M__Z', value: [25] }] : [];
+    return new Response(JSON.stringify({ series: { docs } }), { status: 200 });
+  };
+  const row = (await checkConnections({ env: {}, only: ['imf_gov_levels'], fetchFn } as never)).results[0];
+  assert.equal(row.state, 'connected');
+  assert.match(row.sample || '', /Central government spending for 1 of \d+ countries.*Uses IMF\/GFSMAB\/A\.BR\.S1311\.POGDP_PT\.G2M__Z/);
 });

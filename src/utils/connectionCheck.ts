@@ -14,7 +14,7 @@
 import { CHINN_ITO_PAGE, chinnItoLinks } from './chinnIto';
 import { parseFredCsvSeries } from './fedBalanceSheet';
 import { EMISSIONS_CODE, OWID_ENERGY_URL, energyColumns } from './climateEnergy';
-import { dbnomicsGfsListUrl, dbnomicsLevelsUrl, gfsCodeSample, imfLevelSeriesId } from './govLevels';
+import { DBNOMICS_GFSMAB_URL, dbnomicsGfsListUrl, dbnomicsLevelsUrl, GFS_DEFAULT, GFS_UNIT_ENV, type GfsCodes, gfsCodeSample, imfLevelSeriesId, pickGfsCodes } from './govLevels';
 import { ECB_RTD_SERIES, ecbRtdUrl, parseEcbHistory } from './ecbRealTime';
 import { latestEditionUri, ONS_TRIANGLE_PAGE } from './onsTriangles';
 import { bcbActivityUrl, eurostatActivityUrl, monthText, onsActivityUrl, parseBcbActivity, parseEurostatActivity, parseOnsSeries } from './monthlyIndicators';
@@ -490,35 +490,53 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
   // says how many publish them (the coverage that decides the per-state screen).
   add('imf_gov_levels', async () => {
     const iso2s = Object.values(BIS_ISO2);
-    const ids = iso2s.flatMap((i) => [imfLevelSeriesId(i, 'state', 'spending'), imfLevelSeriesId(i, 'local', 'spending'), imfLevelSeriesId(i, 'central', 'spending')]);
+    const unitSet = env[GFS_UNIT_ENV]?.trim();
+    const first: GfsCodes = { ...GFS_DEFAULT, ...(unitSet ? { unit: unitSet } : {}) };
     const def = { id: 'imf_gov_levels' as SourceId, name: 'IMF GFS by level of government (via DBnomics)', group: 'free' as const, feeds: 'Revenue and spending by level of government (country brief, Fiscal Agent)' };
-    let none = false;
-    const row = await httpCheck(def, fetchFn, dbnomicsLevelsUrl(ids), T, (r) => {
-      const docs = (JSON.parse(r.text || '') as { series?: { docs?: Array<{ series_code?: string; value?: unknown[] }> } })?.series?.docs;
-      if (!Array.isArray(docs)) return null;
-      const has = (d: { value?: unknown[] }) => Array.isArray(d.value) && d.value.some((v) => typeof v === 'number');
-      const sub = new Set(docs.filter((d) => /\.S131[23]\./.test(String(d.series_code)) && has(d)).map((d) => String(d.series_code).split('.')[1]));
-      const central = new Set(docs.filter((d) => /\.S1311\./.test(String(d.series_code)) && has(d)).map((d) => String(d.series_code).split('.')[1]));
-      if (!central.size && !sub.size) {
-        none = true;
-        return null;
-      }
-      return `Central government spending for ${central.size} of ${iso2s.length} countries; state or local spending for ${sub.size}${sub.size ? ` (${[...sub].sort().join(', ')})` : ''}`;
-    });
-    if (!none) return row;
-    // None of the series the app asks for came back: show which codes DBnomics holds instead.
+    const ask = async (codes: GfsCodes) => {
+      let none = false;
+      const ids = iso2s.flatMap((i) => [imfLevelSeriesId(i, 'state', 'spending', codes), imfLevelSeriesId(i, 'local', 'spending', codes), imfLevelSeriesId(i, 'central', 'spending', codes)]);
+      const row = await httpCheck(def, fetchFn, dbnomicsLevelsUrl(ids), T, (r) => {
+        const docs = (JSON.parse(r.text || '') as { series?: { docs?: Array<{ series_code?: string; value?: unknown[] }> } })?.series?.docs;
+        if (!Array.isArray(docs)) return null;
+        const has = (d: { value?: unknown[] }) => Array.isArray(d.value) && d.value.some((v) => typeof v === 'number');
+        const sub = new Set(docs.filter((d) => /\.S131[23]\./.test(String(d.series_code)) && has(d)).map((d) => String(d.series_code).split('.')[1]));
+        const central = new Set(docs.filter((d) => /\.S1311\./.test(String(d.series_code)) && has(d)).map((d) => String(d.series_code).split('.')[1]));
+        if (!central.size && !sub.size) {
+          none = true;
+          return null;
+        }
+        return `Central government spending for ${central.size} of ${iso2s.length} countries; state or local spending for ${sub.size}${sub.size ? ` (${[...sub].sort().join(', ')})` : ''}`;
+      });
+      return { row, none, count: ids.length };
+    };
+    const tried = await ask(first);
+    if (!tried.none) return tried.row;
+    // None of the series asked for came back: read the dataset's own codes and try them.
     const sampleIso2 = BIS_ISO2[SAMPLE_ISO3] || 'BR';
+    const ds = await probe(fetchFn, DBNOMICS_GFSMAB_URL, T);
+    let picked: ReturnType<typeof pickGfsCodes> = { codes: {}, units: [] };
+    try {
+      if (ds.ok) picked = pickGfsCodes(JSON.parse(ds.text || ''));
+    } catch {
+      // unreadable; the listing below still helps
+    }
+    const next: GfsCodes = { unit: unitSet || picked.codes.unit || first.unit, revenue: picked.codes.revenue || first.revenue, spending: picked.codes.spending || first.spending };
+    const found = `Codes read from DBnomics' GFSMAB description: unit ${picked.codes.unit || 'none labelled as a percent of GDP'}, revenue ${picked.codes.revenue || 'not found'}, expenditure ${picked.codes.spending || 'not found'}${picked.units.length ? `; units listed: ${picked.units.join('; ')}` : ds.ok ? '' : ` (description not read: ${ds.networkError || `HTTP ${ds.status}`})`}.`;
+    if (JSON.stringify(next) !== JSON.stringify(first)) {
+      const again = await ask(next);
+      if (!again.none) return again.row.state === 'connected' ? { ...again.row, sample: `${again.row.sample}. Uses ${imfLevelSeriesId(sampleIso2, 'central', 'spending', next)}.` } : again.row;
+    }
     const list = await probe(fetchFn, dbnomicsGfsListUrl(sampleIso2), T);
     let codes: string[] = [];
     try {
-      codes = list.ok ? gfsCodeSample(JSON.parse(list.text || '')) : [];
+      codes = list.ok ? gfsCodeSample(JSON.parse(list.text || ''), 10) : [];
     } catch {
       codes = [];
     }
-    const asked = imfLevelSeriesId(sampleIso2, 'central', 'spending');
     return {
-      ...row,
-      detail: `DBnomics answered, but none of the ${ids.length} GFSMAB series the app asks for (for example ${asked}) came back, so revenue and spending by level of government stay Missing. ${
+      ...tried.row,
+      detail: `DBnomics answered, but none of the ${tried.count} GFSMAB series the app asks for (for example ${imfLevelSeriesId(sampleIso2, 'central', 'spending', first)}) came back, so revenue and spending by level of government stay Missing. ${found} ${
         codes.length ? `For ${SAMPLE_NAME}, central government, DBnomics holds: ${codes.join('; ')}.` : `DBnomics listed no GFSMAB series for ${SAMPLE_NAME}, central government${list.ok ? '' : ` (${list.networkError || `HTTP ${list.status}`})`}; the dataset may have moved.`
       }`,
     };
