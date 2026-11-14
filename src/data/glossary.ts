@@ -1152,6 +1152,16 @@ export const GLOSSARY: GlossaryEntry[] = [
     limits: 'Answers are written by an AI model and are labelled so. They are interpretation of the figures shown, not advice, and the app checks that every number they quote appears in the source figures.',
   },
   {
+    id: 'weather_anomaly',
+    term: "Weather anomaly (against the 1991-2020 normal)",
+    group: 'economy',
+    what: "How far a month's temperature or rainfall is from its normal: the average of the same calendar month over the 30 years 1991-2020 at the same place. The World Meteorological Organization uses 30-year averages like this as the standard reference.",
+    why: "A drought, a very wet season or a heatwave shows up first in harvests, food prices, power use and the budget. The anomaly shows how unusual a month was, so a 30 mm month in a desert and in a rain forest are not read the same way.",
+    read: "Temperature: degrees above (warmer) or below (colder) normal. Rainfall: % of normal, where 100 is a normal month, 50 half the usual rain and 200 twice. A run of dry months matters more than one.",
+    limits: "In the app the figures are for one grid cell at the capital (NASA POWER), not the whole country, and the normal comes from the same series.",
+    match: [/weather anomaly/i, /1991-2020/],
+  },
+  {
     id: 'present_value',
     term: 'Present value',
     group: 'methods',

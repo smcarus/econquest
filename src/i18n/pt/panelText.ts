@@ -813,4 +813,18 @@ export const PANEL_TEXT_PT: Record<string, string> = {
   "Government bonds in US dollars": "Títulos públicos em dólares americanos",
   "Carry against the US (policy rate minus US policy rate)": "Carry contra os EUA (taxa básica menos taxa básica dos EUA)",
   "percentage points": "pontos percentuais",
+  // W1: NASA POWER weather at the capital
+  "Temperature at the capital": "Temperatura na capital",
+  "Temperature at the capital against 1991-2020": "Temperatura na capital em relação a 1991-2020",
+  "Rainfall at the capital": "Chuva na capital",
+  "Rainfall at the capital, % of 1991-2020": "Chuva na capital, % de 1991-2020",
+  "No capital city on file for this country, so NASA POWER is not asked": "Não há capital registrada para este país, então a NASA POWER não é consultada",
+  "NASA POWER has not answered yet": "A NASA POWER ainda não respondeu",
+  "NASA POWER gave no temperature for this point": "A NASA POWER não deu temperatura para este ponto",
+  "NASA POWER gave no rainfall for this point": "A NASA POWER não deu chuva para este ponto",
+  "Fewer than 25 of the 30 years 1991-2020 in the NASA POWER series, so there is no average to compare with": "Menos de 25 dos 30 anos 1991-2020 na série da NASA POWER, então não há média para comparar",
+  "Average air temperature two metres above the ground for the month, at one grid cell (about 50 km across) at the capital, from NASA satellite and weather-model data. A point, not an average over the whole country.": "Temperatura média do ar a dois metros do solo no mês, em uma célula da grade (de cerca de 50 km) na capital, a partir de dados de satélite e de modelos meteorológicos da NASA. Um ponto, não uma média do país inteiro.",
+  "How much warmer (above 0) or colder (below 0) the month was than the same calendar month averaged over 1991-2020, at the same point. Months need 25 of those 30 years for an average.": "Quanto o mês foi mais quente (acima de 0) ou mais frio (abaixo de 0) que o mesmo mês do calendário na média de 1991-2020, no mesmo ponto. Cada mês precisa de 25 desses 30 anos para ter uma média.",
+  "Total rainfall in the month at one grid cell at the capital, from NASA satellite and weather-model data corrected against rain gauges. Rain varies a lot over short distances, so a single point can differ from the country as a whole.": "Chuva total no mês em uma célula da grade na capital, a partir de dados de satélite e de modelos meteorológicos da NASA corrigidos por pluviômetros. A chuva varia muito em distâncias curtas, então um único ponto pode diferir do país como um todo.",
+  "Rainfall in the month as a % of the same calendar month averaged over 1991-2020, at the same point: 100 is a normal month, 50 half the usual rain, 200 twice. Months need 25 of those 30 years for an average.": "Chuva no mês como % do mesmo mês do calendário na média de 1991-2020, no mesmo ponto: 100 é um mês normal, 50 metade da chuva habitual, 200 o dobro. Cada mês precisa de 25 desses 30 anos para ter uma média.",
 };

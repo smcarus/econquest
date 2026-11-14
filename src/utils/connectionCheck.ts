@@ -22,6 +22,7 @@ import { bcbActivityUrl, eurostatActivityUrl, monthText, onsActivityUrl, parseBc
 import { BIS_PRIVATE_DEBT_SAMPLE_URL, parseBisPrivateDebtAll } from './sectorBalances';
 import { BIS_CB_ASSETS_SAMPLE_URL, BIS_USD_CREDIT_SAMPLE_URL, parseBisCbAssets, parseBisUsdCredit } from './bisCreditCycle';
 import { NYFED_SWAPS_SAMPLE_URL, parseNyfedSwaps } from './fedSwapLines';
+import { NASA_POWER_SAMPLE_URL, parseNasaPower } from './weatherPower';
 import { BIS_PROPERTY_SAMPLE_URL, ILO_EARNINGS_ENV, ILO_EARNINGS_ID, ILO_TOC_URLS, iloEarningsCandidates, iloEarningsRows, iloEarningsSampleUrl, iloIdRefused, parseBisPropertyAll, parseIloEarnings, quarterLabel, wageReading } from './wagesHousing';
 import { debtStructureUrl, parseDebtStructure, currencyValue } from './debtStructure';
 import { INVESTOR_BASE_SETUP_HELP, investorBaseValue } from './investorBase';
@@ -305,6 +306,7 @@ export const SOURCE_IDS = [
   'bis_cb_assets',
   'bis_usd_credit',
   'nyfed_swaps',
+  'nasa_power',
   'imf_gov_levels',
   'eurostat_activity',
   'ons_activity',
@@ -694,6 +696,25 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       },
       undefined,
       'It answered, but not with the swap operations layout the app reads (fxSwaps.operations with counterparty, settlementDate, maturityDate, amount). The New York Fed may have changed its API.'
+    )
+  );
+
+  add('nasa_power', () =>
+    httpCheck(
+      { id: 'nasa_power', name: 'NASA POWER weather', group: 'free', feeds: 'Monthly temperature and rainfall at each capital since 1981 (History & data)' },
+      fetchFn,
+      NASA_POWER_SAMPLE_URL,
+      T,
+      (r) => {
+        const got = parseNasaPower(parseJson(r.text));
+        if (!got) return null;
+        const m = Object.keys(got.temp).sort().pop();
+        if (!m) return null;
+        const rain = got.rain[m];
+        return `Washington, D.C. ${m}: ${fmt(got.temp[m])} °C${rain === undefined ? '' : `, rainfall ${fmt(rain)} mm`}`;
+      },
+      undefined,
+      'It answered, but not with the POWER layout the app reads (properties.parameter.T2M and PRECTOTCORR by YYYYMM). NASA may have changed its API.'
     )
   );
 

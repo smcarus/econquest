@@ -25,6 +25,7 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['ecb', /\bECB\b|Frankfurter/i],
   ['erapi', /ExchangeRate-API|er-api\.com/i],
   ['nyfed', /\bNY Fed\b|New York Fed|\bEFFR\b|\bSOFR\b/i],
+  ['nasa_power', /NASA POWER/i],
   ['fred', /\bFRED\b/],
   ['fed_h10', /\bH\.10\b/],
   ['oecd', /\bOECD\b(?! via FRED)|DBnomics/i],
