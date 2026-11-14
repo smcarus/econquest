@@ -18,6 +18,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # The commit citations name (src/utils/buildInfo.ts); `npm run go` sets it from git.
+        APP_COMMIT: ${APP_COMMIT:-}
     container_name: econquest-orchestrator
     restart: unless-stopped
     # Published on this Mac/PC only (127.0.0.1), so other machines on the network cannot reach the

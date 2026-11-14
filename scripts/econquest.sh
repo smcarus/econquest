@@ -92,6 +92,7 @@ run_daily_now() {
     # rebuild and restart it first (the same as `npm run update`), then wait for it to answer.
     if ! docker compose exec -T econquest node -e "process.exit(require('./package.json').scripts?.daily ? 0 : 1)" >/dev/null 2>&1; then
       echo "The Docker app runs code from before the last update; rebuilding it first..."
+      APP_COMMIT="$(git rev-parse --short=12 HEAD 2>/dev/null || true)"; export APP_COMMIT
       OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://host.docker.internal:11434}" docker compose up -d --build econquest || return 1
       for _ in $(seq 1 45); do http_ok "${DOCKER_PORT}" && break; sleep 2; done
     fi
@@ -168,6 +169,8 @@ if ! docker_up && [ -d /Applications/Docker.app ]; then
   for _ in $(seq 1 60); do docker_up && break; sleep 2; done
 fi
 if docker_up; then
+  # The commit the image is built from, so citations name the exact code (src/utils/buildInfo.ts).
+  APP_COMMIT="$(git rev-parse --short=12 HEAD 2>/dev/null || true)"; export APP_COMMIT
   docker compose build econquest || failed+=("docker build")
   # Data saved by an older version that ran as root is handed to the app user (uid 1000) once.
   docker compose run --rm --no-deps --user root --entrypoint chown econquest -R 1000:1000 /app/data >/dev/null 2>&1 || true

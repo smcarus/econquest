@@ -4,6 +4,8 @@ import { REQUIRED_CREDITS } from '../data/requiredCredits';
 import { SourceCredits } from './SourceCredits';
 import { useT } from '../i18n/useLang';
 import { MENU } from '../i18n/messages/menu';
+import { APP_CITATION } from '../utils/citation';
+import { versionWithCommit } from '../utils/buildInfo';
 import { licenceCheckDue, DATA_LICENCES, LICENCE_STATUS_LABEL, openLicenceQuestions, type LicenceStatus } from '../data/dataLicences';
 
 /**
@@ -51,6 +53,7 @@ export function AboutDialog({ focusId, onClose }: { focusId?: string | null; onC
         </div>
         <div className="p-4 space-y-3 overflow-y-auto ui-body">
           <p>{t('ab_what')}</p>
+          <p className="text-slate-500 dark:text-slate-400" data-app-version>{t('ab_version', { v: versionWithCommit(APP_CITATION.version) })}</p>
           <p className="border border-amber-200 dark:border-amber-800 p-2 text-amber-800 dark:text-amber-300" data-research-notice>
             {t('ab_notice')}
           </p>

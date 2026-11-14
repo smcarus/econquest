@@ -11,6 +11,7 @@
 import type { LicenceRow } from '../data/dataLicences';
 import { creditLine } from './creditLines';
 import { licenceRowsForSource } from './licenceLookup';
+import { appCommit, versionWithCommit } from './buildInfo';
 
 /** The app as it cites itself; matches CITATION.cff and package.json (a test checks). */
 export const APP_CITATION = {
@@ -32,6 +33,8 @@ export interface CiteInput {
   accessed: string;
   /** Day the figures were read from their sources, when known (YYYY-MM-DD). */
   asOf?: string;
+  /** The code's commit; defaults to the one this build recorded (src/utils/buildInfo.ts). */
+  commit?: string;
 }
 
 export interface CitedSource {
@@ -86,9 +89,13 @@ export function citation(input: CiteInput): Citation {
   const asOf = input.asOf ? ` Figures as read from their sources on ${longDate(input.asOf)}.` : '';
   const calcNote = ownCalculation ? ' Some figures are worked out by the app from the sources listed.' : '';
   const readOn = input.asOf || input.accessed;
+  // The commit pins the exact code; the version alone stays the same across many changes.
+  const commit = input.commit ?? appCommit();
+  const ver = versionWithCommit(app.version, commit);
+  const commitNote = commit ? ` Code commit ${commit}.` : '';
 
   const text = [
-    `${app.authors} (${year}). "${input.title}" [${label.toLowerCase()}]. ${app.title}, version ${app.version}. Accessed ${longDate(input.accessed)}.${asOf}${calcNote}`,
+    `${app.authors} (${year}). "${input.title}" [${label.toLowerCase()}]. ${app.title}, version ${ver}. Accessed ${longDate(input.accessed)}.${asOf}${calcNote}`,
     ...(cited.length ? ['', 'Data sources:', ...cited.map((s) => `- ${s.credit} Retrieved through ${app.title} on ${longDate(readOn)}.`)] : []),
   ].join('\n');
 
@@ -98,10 +105,10 @@ export function citation(input: CiteInput): Citation {
       `@misc{${key},`,
       `  author = {{${bib(app.authors)}}},`,
       `  title = {{${bib(input.title)}}},`,
-      `  howpublished = {${bib(`${label} in ${app.title}, version ${app.version}`)}},`,
+      `  howpublished = {${bib(`${label} in ${app.title}, version ${ver}`)}},`,
       `  year = {${year}},`,
       `  urldate = {${input.accessed}},`,
-      `  note = {${bib(`Accessed ${input.accessed}.${asOf}${calcNote}`.trim())}}`,
+      `  note = {${bib(`Accessed ${input.accessed}.${asOf}${calcNote}${commitNote}`.trim())}}`,
       '}',
     ].join('\n'),
     ...cited.map((s) =>
@@ -119,7 +126,7 @@ export function citation(input: CiteInput): Citation {
 
   const risDate = (d: string) => d.replace(/-/g, '/');
   const ris = [
-    ['TY  - ' + (input.kind === 'answer' ? 'GEN' : 'DATA'), `AU  - ${app.authors}`, `TI  - ${input.title}`, `PY  - ${year}`, `Y2  - ${risDate(input.accessed)}`, `PB  - ${app.title}`, `ET  - ${app.version}`, `M3  - ${label}`, `N1  - ${`Accessed ${input.accessed}.${asOf}${calcNote}`.trim()}`, 'ER  - '].join('\n'),
+    ['TY  - ' + (input.kind === 'answer' ? 'GEN' : 'DATA'), `AU  - ${app.authors}`, `TI  - ${input.title}`, `PY  - ${year}`, `Y2  - ${risDate(input.accessed)}`, `PB  - ${app.title}`, `ET  - ${app.version}`, `M3  - ${label}`, `N1  - ${`Accessed ${input.accessed}.${asOf}${calcNote}${commitNote}`.trim()}`, 'ER  - '].join('\n'),
     ...cited.map((s) => ['TY  - DATA', `TI  - ${s.name}`, `PY  - ${readOn.slice(0, 4)}`, `Y2  - ${risDate(readOn)}`, `N1  - ${s.credit} Retrieved through ${app.title} on ${readOn}.`, 'ER  - '].join('\n')),
   ].join('\n\n') + '\n';
 
@@ -132,7 +139,7 @@ export function citationFileStem(title: string): string {
 }
 
 /** CITATION.cff for a replication pack: the app, plus a note on what the pack holds and when it was made. */
-export function packCitationCff(title: string, made: string): string {
+export function packCitationCff(title: string, made: string, commit: string = appCommit()): string {
   const app = APP_CITATION;
   const q = (s: string) => JSON.stringify(s);
   return [
@@ -150,6 +157,7 @@ export function packCitationCff(title: string, made: string): string {
     '    authors:',
     `      - name: ${q(app.authors)}`,
     `    version: ${q(app.version)}`,
+    ...(commit ? [`    commit: ${q(commit)}`] : []),
     '',
   ].join('\n');
 }
