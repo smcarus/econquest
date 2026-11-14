@@ -298,7 +298,8 @@ connect is in [DATA_API.md](./DATA_API.md) and [DEPLOYMENT.md](./DEPLOYMENT.md).
    - **Key help** (the default): how to read each chart, what it means in real life, and *What is
      this?* on the main figures;
    - **Full help**: *What is this?* on every figure and term, and why each missing figure is missing;
-   - **Help off**: figures, sources and observations only, without forecast ranges.
+   - **Help off**: figures, sources and observations only, without forecast ranges;
+   - **Expert**: figures, sources and forecast ranges, with no plain-language explanations.
 
 Figures, source names and series names stay as the source wrote them. Some lines the app writes about
 a country are still in English, as the screenshot shows; the council agents work in English.

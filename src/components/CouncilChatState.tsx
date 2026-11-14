@@ -2,7 +2,7 @@
  * Council chat's conversation, kept above the pages (CouncilChatProvider). The screens that draw it
  * (CouncilChatView.tsx) load only when the chat is first shown, so they stay out of the start-up code.
  */
-import { readHelpLevel } from '../utils/helpLevel';
+import { promptHelpLevel, readHelpLevel } from '../utils/helpLevel';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { councilBriefMarkdown } from '../utils/briefExport';
 import type { CouncilAssessmentRun, CROOverrideState, LiveWatchlistItem, WatchlistItem } from '../types/council';
@@ -199,7 +199,7 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
       const r = await fetch('/api/council/synthesise', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: text, askedAt, ...(pinned ? { dataPinnedAt: pinned.at } : {}), answers: answersForModel(answers), scope: plan.scopeNote, countries: plan.countries.length, earlier: history.map((t) => ({ question: t.question, headline: t.headline })), ...(plan.explain ? { explain: { ...plan.explain, helpLevel: readHelpLevel() } } : {}), runtimeConfig: runtimeConfig() }),
+        body: JSON.stringify({ question: text, askedAt, ...(pinned ? { dataPinnedAt: pinned.at } : {}), answers: answersForModel(answers), scope: plan.scopeNote, countries: plan.countries.length, earlier: history.map((t) => ({ question: t.question, headline: t.headline })), ...(plan.explain ? { explain: { ...plan.explain, helpLevel: promptHelpLevel(readHelpLevel()) } } : {}), runtimeConfig: runtimeConfig() }),
       });
       setSynthesis(r.ok ? ((await r.json()) as SynthesisResult) : { brief: null, removed: [], reason: `The summary step did not answer (HTTP ${r.status}).` });
     } catch {

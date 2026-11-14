@@ -52,6 +52,8 @@ export const SHELL_FR: Messages<typeof SHELL> = {
   worked: 'Exemples guidés',
   helpOff: 'Aide désactivée',
   helpOffNote: 'Chiffres et sources uniquement, sans explications ni fourchettes de prévision.',
+  helpExpert: 'Expert',
+  helpExpertNote: 'Chiffres, sources et fourchettes de prévision, sans explications en langage courant.',
   helpKey: 'Aide essentielle',
   helpKeyNote: 'Explique les graphiques, les principaux chiffres et ce que chaque lecture signifie dans la vie réelle.',
   helpFull: 'Aide complète',

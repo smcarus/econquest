@@ -19,6 +19,8 @@ switch) sets the level, and each press moves to the next:
   a short introduction on each panel, a "What it means" line under each brief observation, and
   *What is this?* on the main figures, about half of them.
 - *Full help*: everything in Key help, plus *What is this?* on every figure and term.
+- *Expert*: like Help off, but forecast ranges stay on screen. Explain answers are written for a
+  reader who knows the terms.
 - *Help off*: figures, sources and observations only; the reason a figure is missing stays as hover
   text. Explain answers are then written for a reader who knows the terms. Forecast ranges are hidden
   too (see *Uncertainty ranges* below).
@@ -566,8 +568,8 @@ fan chart shades the 10-90 and 25-75 percentile bands of its 2,000 paths. Where 
 range the app says *No range available* and why, and never makes one up: IMF projections (the IMF
 publishes one figure per country), projection years in the gross financing need table, and the small
 gap model (it runs on your own numbers). The fiscal what-if gives each result as a range from the
-lowest to the highest published multiplier, which is not a probability band. Ranges show at *Key help*
-and *Full help*; at *Help off* they are hidden from the screen and a short line says so. Downloads,
+lowest to the highest published multiplier, which is not a probability band. Ranges show at *Key help*,
+*Full help* and *Expert*; at *Help off* they are hidden from the screen and a short line says so. Downloads,
 the data API and *Explain* keep the ranges at every level. Bands on estimates of the past (inflation
 and the currency after rate changes, the output gap) and on the global shock scenarios always show.
 
