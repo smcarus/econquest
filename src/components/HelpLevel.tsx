@@ -9,6 +9,7 @@ const LEVEL_KEYS = [
   { label: 'helpOff', note: 'helpOffNote' },
   { label: 'helpKey', note: 'helpKeyNote' },
   { label: 'helpFull', note: 'helpFullNote' },
+  { label: 'helpExpert', note: 'helpExpertNote' },
 ] as const;
 
 function subscribe(cb: () => void): () => void {
@@ -45,7 +46,7 @@ export const RangeNote: React.FC<{ none?: 'noRangeImf' | 'noRangeOwn' | 'noRange
   return <p className={className} data-ranges-hidden="true">{t('rangesHidden')}</p>;
 };
 
-/** Header button: shows the level and moves to the next one (Key help, Full help, Off). */
+/** Header button: shows the level and moves to the next one (Key help, Full help, Expert, Off). */
 export const HelpLevelButton: React.FC = () => {
   const level = useHelpLevel();
   const t = useT(SHELL);

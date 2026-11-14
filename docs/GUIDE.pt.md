@@ -313,7 +313,8 @@ um programador precisa para conectar está em [DATA_API.md](./DATA_API.md) e
      nos números principais;
    - **Ajuda completa**: *O que é isto?* em todo número e termo, e por que cada número ausente está
      ausente;
-   - **Ajuda desativada**: só números, fontes e observações, sem faixas de previsão.
+   - **Ajuda desativada**: só números, fontes e observações, sem faixas de previsão;
+   - **Especialista**: números, fontes e faixas de previsão, sem explicações em linguagem simples.
 
 Números e nomes de fontes e séries ficam como a fonte os escreve. Algumas frases que o app escreve sobre um
 país ainda estão em inglês, como mostra a captura; os agentes do conselho trabalham em inglês.

@@ -11,7 +11,7 @@ const SAME_IN_FRENCH = new Set(['Inflation (%)', 'Distance', 'Question {n}', 'mo
   'Articles', 'Coefficient', 'Date', 'Excel', 'Inflation {inf}, {basis}{gap}', 'Option', 'Point', 'Programmes', 'Sanctions', 'Sources',
   'Violence', 'Violence (%)', 'violence', '{n} points', '{n} pt', '{n} pts', '{value} pts', 'Population', 'projection',
   ' · notes', 'Client', 'Duration', 'Inflation, %', 'Instrument', 'Long', 'long', 'Record', 'Source', 'Type', 'taylor', 'CDS (protection)',
-  'Expansion', 'expansion', 'Expansion ({date})', 'Expansion, {detail} ({date})', '{num} points', 'France']);
+  'Expansion', 'expansion', 'Expansion ({date})', 'Expansion, {detail} ({date})', '{num} points', 'France', 'Expert']);
 
 test('languages: English, Spanish, French and Portuguese; anything else reads as English', () => {
   assert.deepEqual(LANGS.map((l) => l.code), ['en', 'es', 'fr', 'pt']);

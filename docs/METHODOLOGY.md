@@ -366,7 +366,8 @@ Plain-language help is shown at one of three levels, set with the help button at
 and kept in the user's browser. **Key help**, the default, puts a guide on every chart (how to read
 it, and what it means in real life), a short introduction on each panel, a "What it means" line under
 each brief observation, and *What is this?* on the main figures. **Full help** adds *What is this?* on
-every figure and term. **Help off** shows figures, sources and observations only.
+every figure and term. **Help off** shows figures, sources and observations only. **Expert** shows figures, sources and
+forecast ranges, without plain-language explanations.
 
 These guides, introductions, "What it means" lines and glossary entries are fixed text, written in
 advance and stored in the code (for example `src/data/chartGuides.ts` and the [Glossary](./GLOSSARY.md)).

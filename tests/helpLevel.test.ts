@@ -2,15 +2,27 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { GLOSSARY, figureHelp } from '../src/data/glossary.ts';
 import { CHART_GUIDES } from '../src/data/chartGuides.ts';
-import { DEFAULT_HELP_LEVEL, nextHelpLevel, parseHelpLevel, showFigureHelp, showGuides, showMissingHelp, showRanges, HELP_LEVELS } from '../src/utils/helpLevel.ts';
+import { DEFAULT_HELP_LEVEL, nextHelpLevel, promptHelpLevel, parseHelpLevel, showFigureHelp, showGuides, showMissingHelp, showRanges, HELP_LEVELS } from '../src/utils/helpLevel.ts';
 import { joinMeaning, MEANS, splitMeaning } from '../src/utils/countryNotes.ts';
 
-test('three levels, key help by default, the header button cycles key, full, off', () => {
+test('four levels, key help by default, the header button cycles key, full, expert, off', () => {
   assert.equal(DEFAULT_HELP_LEVEL, 1);
   assert.equal(parseHelpLevel('2'), 2);
   assert.equal(parseHelpLevel('0'), 0);
   assert.equal(parseHelpLevel('x'), 1);
-  assert.deepEqual([nextHelpLevel(1), nextHelpLevel(2), nextHelpLevel(0)], [2, 0, 1]);
+  assert.equal(parseHelpLevel('3'), 3);
+  assert.deepEqual([nextHelpLevel(1), nextHelpLevel(2), nextHelpLevel(3), nextHelpLevel(0)], [2, 3, 0, 1]);
+  assert.equal(HELP_LEVELS.length, 4);
+});
+
+test('expert: no teaching text, like off, but forecast ranges stay and Explain writes for an expert', () => {
+  const entry = GLOSSARY.find((e) => e.key === true);
+  assert.equal(showFigureHelp(entry, 3), false);
+  assert.equal(showGuides(3), false);
+  assert.equal(showMissingHelp(3), false);
+  assert.equal(showRanges(3), true);
+  assert.equal(promptHelpLevel(3), 0);
+  assert.equal(promptHelpLevel(2), 2);
 });
 
 test('figure help: none when off, the main figures at key help (about half), all at full help', () => {

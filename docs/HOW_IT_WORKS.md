@@ -327,6 +327,7 @@ The help button at the top of the page sets how much the app explains:
   means" line under each observation, and *What is this?* on the main figures.
 - **Full help:** *What is this?* on every figure and term as well.
 - **Help off:** figures, sources and observations only.
+- **Expert:** figures, sources and forecast ranges, without the plain-language explanations.
 
 These explanations are written in advance and stored in the app. They are not produced by AI and
 contain no figures of their own. The one exception is the **Explain** button on a figure, which asks

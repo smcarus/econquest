@@ -244,7 +244,8 @@ docker compose exec ollama ollama pull qwen2.5:32b
 4. **Save the data for offline use** (optional): Menu > Offline data > Download all country data.
 5. **Set the help level** with the help button next to the dark-mode switch: Key help (the
    default) explains charts and what policies mean for everyday life; Full help explains
-   everything; Help off hides the explanations.
+   everything; Help off hides the explanations; Expert keeps figures, sources and forecast ranges
+   without explanations.
 
 The full guide to every screen is in Menu > User manual.
 

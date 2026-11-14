@@ -52,6 +52,8 @@ export const SHELL_ES: Messages<typeof SHELL> = {
   worked: 'Ejemplos resueltos',
   helpOff: 'Ayuda desactivada',
   helpOffNote: 'Solo cifras y fuentes, sin explicaciones ni rangos de previsión.',
+  helpExpert: 'Experto',
+  helpExpertNote: 'Cifras, fuentes y rangos de previsión, sin explicaciones en lenguaje sencillo.',
   helpKey: 'Ayuda clave',
   helpKeyNote: 'Explica los gráficos, las cifras principales y qué significa cada lectura en la vida real.',
   helpFull: 'Ayuda completa',

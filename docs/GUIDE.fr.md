@@ -320,7 +320,8 @@ dans [DATA_API.md](./DATA_API.md) et [DEPLOYMENT.md](./DEPLOYMENT.md) (en anglai
      réelle et *Qu'est-ce que c'est ?* sur les principaux chiffres ;
    - **Aide complète** : *Qu'est-ce que c'est ?* sur chaque chiffre et terme, et pourquoi chaque chiffre
      absent manque ;
-   - **Aide désactivée** : chiffres, sources et observations seulement, sans intervalles de prévision.
+   - **Aide désactivée** : chiffres, sources et observations seulement, sans intervalles de prévision ;
+   - **Expert** : chiffres, sources et intervalles de prévision, sans explications en langage courant.
 
 Les chiffres et les noms de sources et de séries restent tels que la source les écrit. Certaines phrases
 que l'application écrit sur un pays sont encore en anglais, comme le montre la capture ; les agents du

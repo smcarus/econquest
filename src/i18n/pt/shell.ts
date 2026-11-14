@@ -52,6 +52,8 @@ export const SHELL_PT: Messages<typeof SHELL> = {
   worked: "Exemplos resolvidos",
   helpOff: "Ajuda desativada",
   helpOffNote: "Só números e fontes, sem explicações nem faixas de previsão.",
+  helpExpert: "Especialista",
+  helpExpertNote: "Números, fontes e faixas de previsão, sem explicações em linguagem simples.",
   rangesHidden: "Faixas ocultas com a ajuda desativada. Ative a ajuda para ver quanto o número pode errar.",
   noRange: "Nenhuma faixa disponível: {reason}",
   noRangeImf: "o FMI publica um único número para cada país, sem faixa.",

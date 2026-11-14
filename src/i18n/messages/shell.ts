@@ -53,6 +53,8 @@ export const SHELL = defineMessages(
     worked: 'Worked examples',
     helpOff: 'Help off',
     helpOffNote: 'Figures and sources only, no explanations or forecast ranges.',
+    helpExpert: 'Expert',
+    helpExpertNote: 'Figures, sources and forecast ranges, with no plain-language explanations.',
     rangesHidden: 'Ranges hidden at Help off. Switch help on to see how far the figure could be off.',
     noRange: 'No range available: {reason}',
     noRangeImf: 'the IMF publishes a single figure for each country, without a range.',

@@ -314,7 +314,8 @@ inicio de sesión muestra entonces **Iniciar sesión con** y el nombre del prove
    - **Ayuda clave** (por defecto): cómo leer cada gráfico, qué significa en la vida real y *¿Qué es
      esto?* en las cifras principales;
    - **Ayuda completa**: *¿Qué es esto?* en cada cifra y término, y por qué falta cada cifra ausente;
-   - **Ayuda desactivada**: solo cifras, fuentes y observaciones, sin rangos de previsión.
+   - **Ayuda desactivada**: solo cifras, fuentes y observaciones, sin rangos de previsión;
+   - **Experto**: cifras, fuentes y rangos de previsión, sin explicaciones en lenguaje sencillo.
 
 Las cifras y los nombres de fuentes y series quedan como los escribe la fuente. Algunas frases que la
 aplicación escribe sobre un país siguen en inglés, como muestra la captura; los agentes del consejo
