@@ -589,6 +589,14 @@ export const GLOSSARY_ES: Record<string, string> = {
     "Una forma estándar de subir el listón cuando se hacen muchas pruebas a la vez, para descartar los aprobados por suerte. El valor p más pequeño debe superar un umbral más estricto, el siguiente uno algo menos estricto, y así sucesivamente.",
   "Without it, running many tests guarantees some false passes. The track record shows which passes survive it across every test on record.":
     "Sin ella, hacer muchas pruebas garantiza algunos falsos aprobados. El historial muestra qué aprobados la superan entre todas las pruebas registradas.",
+  "Pre-registered test":
+    "Prueba prerregistrada",
+  "A test whose rule, data, pass mark and costs were written down and hashed (given a SHA-256 fingerprint) before it was run. The hash shows the rule was not changed after the result was seen.":
+    "Una prueba cuya regla, datos, umbral de aprobación y costes se escribieron y se sellaron con un hash (una huella SHA-256) antes de ejecutarla. El hash muestra que la regla no se cambió después de ver el resultado.",
+  "It stops a rule being re-tuned until it passes. A changed rule is a new version and counts as a new test.":
+    "Impide reajustar una regla hasta que apruebe. Una regla cambiada es una versión nueva y cuenta como una prueba nueva.",
+  "Most of the app's tests were written down on the same day they ran, on data that was already public. For those, the hash shows the rule did not change after the run, not that it was fixed before anyone looked at the data, so the track record calls them specified and hashed before the run. Only a test written down before its data exist rules out both. The track record shows the registration and run dates side by side.":
+    "La mayoría de las pruebas de la app se escribieron el mismo día en que se ejecutaron, con datos que ya eran públicos. En esas, el hash muestra que la regla no cambió después de la ejecución, no que se fijara antes de que nadie mirara los datos; por eso el historial las describe como especificadas y selladas antes de la ejecución. Solo una prueba escrita antes de que existan sus datos descarta ambas cosas. El historial muestra juntas las fechas de registro y de ejecución.",
   "Bootstrap":
     "Remuestreo (bootstrap)",
   "Re-running a calculation thousands of times on random re-samples of the data to see how much the answer could vary by chance.":

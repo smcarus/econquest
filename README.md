@@ -410,6 +410,9 @@ saves your holdings, watchlists and settings, without the keys, as one file.
   due. Most signals have not passed; the app says so.
 - **The track record** keeps every pre-registered test, passed or failed, and a forward record of
   live predictions ([docs/TRACK_RECORD.md](./docs/TRACK_RECORD.md), [docs/METHODS.md](./docs/METHODS.md)).
+  Each test was written down and hashed before it ran; so far that was the same day or the day before,
+  on public data, so the hash shows the rule did not change after the run, not that it was fixed
+  before anyone looked at the data. The forward record is the stronger check.
 - **An audit log** records what was asked, which figures were used and who signed off a report.
 
 The full method is in [docs/METHODOLOGY.md](./docs/METHODOLOGY.md); the same in plain words is

@@ -541,6 +541,14 @@ a badge beside the panel and under Menu > Models & validation (`src/utils/eviden
 multiple-testing correction, or a forward record confirmed it. It is not independent model
 validation in the regulatory sense, and it is not investment advice.
 
+**What "pre-registered" means here.** Each test's rule, data, pass mark and costs were written down
+and hashed before it was run, so the rule cannot have changed after the result was seen. The tests
+on record so far were written down on the day they ran or the day before, on data that was already
+public. For those the hash does not show that the rule was fixed before anyone looked at the data,
+so read them as specified and hashed before the run. Only a test written down before its data exist
+(the forward record, below) rules out both. docs/TRACK_RECORD.md gives the registration and run
+dates of every test.
+
 ### 9.1 Industry grounding
 
 The grades follow practices used by model-validation and quantitative research teams:
