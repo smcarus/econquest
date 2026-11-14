@@ -17,6 +17,7 @@ import { changeLines } from '../utils/whatChanged';
 import { AgentNetwork, useCouncilProgress } from './AgentNetwork';
 import { ExplainAnswer } from './ExplainAnswer';
 import { parseWhatIf } from '../utils/fiscalWhatIf';
+import { noModelDigest } from '../utils/noModelDigest';
 import { DocumentCards, DocumentViewer, SaveToReportsButton } from './CouncilDocuments';
 import { toAgentDocuments, toSynthesisDocument, type CouncilDocument } from '../utils/agentDocument';
 import { askCouncilColumns, fullCouncilColumns } from '../utils/councilNetwork';
@@ -200,9 +201,54 @@ export const AskCouncilPanel: React.FC<{
               {removedNotes(t)}
             </>
           ) : (
-            <p className="text-sm text-slate-600 dark:text-slate-300" data-council-no-summary="true">
-              {tr('noSummary')} <SettingsText text={t.synthesis?.reason || ''} /> {tr('noSummaryTail')}
-            </p>
+            <>
+              <p className="text-sm text-slate-600 dark:text-slate-300" data-council-no-summary="true">
+                {tr('noSummary')} <SettingsText text={t.synthesis?.reason || ''} /> {tr('noSummaryTail')}
+              </p>
+              {/* No model: the agents' own readings and key figures here, and what nothing answered (src/utils/noModelDigest.ts). */}
+              {(() => {
+                const d = noModelDigest(t.asked.question, t.asked.answers, !!parseWhatIf(t.asked.question));
+                return (
+                  <div className="space-y-2" data-council-digest="true">
+                    {d.lines.length > 0 && (
+                      <div>
+                        <div className="ui-label mt-1">{tr('digestFound')}</div>
+                        <ul className="list-disc pl-5 text-sm text-slate-800 dark:text-slate-200 space-y-1">
+                          {d.lines.map((l) => (
+                            <li key={`${l.agent}-${l.country}-${l.reading}`} data-digest-line={l.agent}>
+                              <span className="font-medium">{tx(l.agent)}</span> · {l.country}: {tx(l.reading)}
+                              {l.figures.length > 0 && <span className="block text-xs text-slate-500 dark:text-slate-400">{l.figures.join(' · ')}</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {d.unanswered.length > 0 && (
+                      <div data-digest-unanswered="true">
+                        <div className="ui-label mt-1">{tr('digestNotAnswered')}</div>
+                        <ul className="list-disc pl-5 text-sm text-slate-800 dark:text-slate-200 space-y-1">
+                          {d.unanswered.map((u) => (
+                            <li key={u.said}>
+                              “{u.said}”: {tx(u.where)}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {d.gaps.length > 0 && (
+                      <div data-digest-gaps="true">
+                        <div className="ui-label mt-1">{tr('digestGaps')}</div>
+                        <ul className="list-disc pl-5 text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                          {d.gaps.map((g) => (
+                            <li key={g}>{tx(g)}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </>
           )}
         </div>
 

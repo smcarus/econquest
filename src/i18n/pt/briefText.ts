@@ -3,6 +3,8 @@
  * like src/i18n/fr/briefText.ts. Brazilian Portuguese, polite "você" (Sam, 2026-11-12). Not yet checked by a native speaker.
  */
 export const BRIEF_TEXT_PT: Record<string, string> = {
+  "No agent works out the effect of a rate change. Research > History & data > Debt sustainability runs a stated interest rate shock (the effective rate up to 2 points higher, phased in as debt rolls over) on the debt path; Research > Markets & signals shows the policy rate and its history.": "Nenhum agente calcula o efeito de uma mudança de juros. Pesquisa > Histórico e dados > Sustentabilidade da dívida aplica um choque de juros declarado (a taxa efetiva até 2 pontos mais alta, introduzida à medida que a dívida é rolada) à trajetória da dívida; Pesquisa > Mercados e sinais mostra a taxa básica e o seu histórico.",
+  "No agent found figures for this question. Try naming a country, or open Research for that country to see what the app holds.": "Nenhum agente encontrou números para esta pergunta. Tente nomear um país, ou abra Pesquisa para esse país para ver o que o app tem.",
   "Growth and inflation": "Crescimento e inflação",
   "Monetary policy": "Política monetária",
   "Fiscal and debt": "Contas públicas e dívida",

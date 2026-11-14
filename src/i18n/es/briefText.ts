@@ -12,6 +12,8 @@
  * Not yet checked by a native speaker.
  */
 export const BRIEF_TEXT_ES: Record<string, string> = {
+  "No agent works out the effect of a rate change. Research > History & data > Debt sustainability runs a stated interest rate shock (the effective rate up to 2 points higher, phased in as debt rolls over) on the debt path; Research > Markets & signals shows the policy rate and its history.": "Ningún agente calcula el efecto de un cambio de tasas. Investigación > Historia y datos > Sostenibilidad de la deuda aplica un choque de tasa de interés declarado (la tasa efectiva hasta 2 puntos más alta, introducida a medida que se renueva la deuda) a la trayectoria de la deuda; Investigación > Mercados y señales muestra la tasa de política y su historia.",
+  "No agent found figures for this question. Try naming a country, or open Research for that country to see what the app holds.": "Ningún agente encontró cifras para esta pregunta. Pruebe a nombrar un país, o abra Investigación para ese país y vea qué tiene la aplicación.",
   // Panel titles.
   'Growth and inflation': 'Crecimiento e inflación',
   'Monetary policy': 'Política monetaria',
