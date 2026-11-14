@@ -13,7 +13,21 @@ import { writeFileAtomic } from '../../utils/atomicWrite';
 import { BIS_ISO2 } from '../../utils/bisDebtSecurities';
 import { EUROSTAT_GEO } from '../../utils/govSpending';
 import { SOVEREIGN_CATALOG } from '../../data/presetsAndBaselines';
-import { dbnomicsLevelsUrl, eurostatLevelsUrl, type GovLevelsPull, type GovLevelsReading, imfLevelIds, mergeLevels, parseDbnomicsLevels, parseEurostatLevels } from '../../utils/govLevels';
+import {
+  DBNOMICS_GFSMAB_URL,
+  dbnomicsLevelsUrl,
+  eurostatLevelsUrl,
+  GFS_DEFAULT,
+  GFS_UNIT_ENV,
+  type GfsCodes,
+  type GovLevelsPull,
+  type GovLevelsReading,
+  imfLevelIds,
+  mergeLevels,
+  parseDbnomicsLevels,
+  parseEurostatLevels,
+  pickGfsCodes,
+} from '../../utils/govLevels';
 
 const HOUR = 60 * 60 * 1000;
 const WEEK = 7 * 24 * HOUR;
@@ -57,21 +71,33 @@ export function fetchGovLevels(opts: { force?: boolean } = {}): Promise<GovLevel
     const isos = SOVEREIGN_CATALOG.map((c) => c.iso3);
     const geos = isos.filter((i) => EUROSTAT_GEO[i]).map((i) => EUROSTAT_GEO[i]);
     const iso2s = isos.map((i) => BIS_ISO2[i]).filter(Boolean);
-    const ids = imfLevelIds(iso2s);
-    const batches: string[][] = [];
-    for (let k = 0; k < ids.length; k += BATCH) batches.push(ids.slice(k, k + BATCH));
     const since = new Date().getUTCFullYear() - 10;
-    const [euro, ...imfReplies] = await Promise.all([
-      geos.length ? getJson(eurostatLevelsUrl(geos, since), 'Eurostat gov_10a_main') : Promise.resolve(null),
-      ...batches.map((b, k) => getJson(dbnomicsLevelsUrl(b), `IMF GFS via DBnomics (batch ${k + 1} of ${batches.length})`)),
-    ]);
-    const geoToIso3 = Object.fromEntries(Object.entries(EUROSTAT_GEO).map(([iso3, g]) => [g, iso3]));
     const iso2ToIso3 = Object.fromEntries(Object.entries(BIS_ISO2).map(([iso3, iso2]) => [iso2, iso3]));
+    const unitSet = process.env[GFS_UNIT_ENV]?.trim();
+    const askImf = async (codes: GfsCodes) => {
+      const ids = imfLevelIds(iso2s, codes);
+      const batches: string[][] = [];
+      for (let k = 0; k < ids.length; k += BATCH) batches.push(ids.slice(k, k + BATCH));
+      const replies = await Promise.all(batches.map((b, k) => getJson(dbnomicsLevelsUrl(b), `IMF GFS via DBnomics (batch ${k + 1} of ${batches.length})`)));
+      // One country's series can be split across batches: parse them together.
+      const docs = replies.flatMap((r) => ((r as { series?: { docs?: unknown[] } } | null)?.series?.docs as unknown[]) || []);
+      return { answered: replies.some(Boolean), imf: parseDbnomicsLevels({ series: { docs } }, iso2ToIso3, codes) };
+    };
+    const first: GfsCodes = { ...GFS_DEFAULT, ...(unitSet ? { unit: unitSet } : {}) };
+    const [euro, firstImf] = await Promise.all([geos.length ? getJson(eurostatLevelsUrl(geos, since), 'Eurostat gov_10a_main') : Promise.resolve(null), askImf(first)]);
+    let { imf } = firstImf;
+    if (firstImf.answered && !Object.keys(imf).length) {
+      // None of the series asked for came back: read the dataset's own codes and ask again with them.
+      const picked = pickGfsCodes(await getJson(DBNOMICS_GFSMAB_URL, 'IMF GFS dataset codes via DBnomics'));
+      const next: GfsCodes = { unit: unitSet || picked.codes.unit || first.unit, revenue: picked.codes.revenue || first.revenue, spending: picked.codes.spending || first.spending };
+      if (JSON.stringify(next) !== JSON.stringify(first)) imf = (await askImf(next)).imf;
+      if (!Object.keys(imf).length)
+        console.warn(
+          `[IMF GFS via DBnomics] answered, but none of the GFSMAB series the app asks for came back${picked.codes.unit ? '' : '; the dataset lists no unit labelled as a percent of GDP'}${picked.units.length ? ` (units: ${picked.units.join('; ')})` : ''}. npm run check:data row imf_gov_levels lists the codes DBnomics holds; ${GFS_UNIT_ENV} in .env sets the unit.`
+        );
+    }
+    const geoToIso3 = Object.fromEntries(Object.entries(EUROSTAT_GEO).map(([iso3, g]) => [g, iso3]));
     const eurostat = euro ? parseEurostatLevels(euro, geoToIso3) : {};
-    // One country's series can be split across batches: parse them together.
-    const docs = imfReplies.flatMap((r) => ((r as { series?: { docs?: unknown[] } } | null)?.series?.docs as unknown[]) || []);
-    const imf = parseDbnomicsLevels({ series: { docs } }, iso2ToIso3);
-    if (imfReplies.some(Boolean) && !Object.keys(imf).length) console.warn('[IMF GFS via DBnomics] answered, but none of the GFSMAB series the app asks for came back; npm run check:data row imf_gov_levels lists the codes DBnomics holds.');
     const countries: Record<string, GovLevelsReading> = mergeLevels(eurostat, imf);
     if (!Object.keys(countries).length) {
       memory = { pull: saved, triedAt: Date.now() };

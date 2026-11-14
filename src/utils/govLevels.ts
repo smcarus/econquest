@@ -7,11 +7,13 @@
  *   S1314 social security funds and S13 general government; total revenue (TR) and total
  *   expenditure (TE), % of GDP (PC_GDP). Used first where it has the year.
  * - IMF Government Finance Statistics, main aggregates and balances, read through DBnomics (no key):
- *   IMF/GFSMAB/A.{ISO2}.{sector}.XDC_R_B1GQ.{G1 revenue | G2M expenditure}, the same key layout as
- *   the COFOG table the app already reads (src/utils/govSpending.ts). The GFSMAB codes cannot be
- *   checked from this project's cloud session; `npm run check:data` row imf_gov_levels confirms
- *   them and reports how many catalogue countries publish state or local figures, which decides
- *   whether the per-state screen (step 2) is built.
+ *   IMF/GFSMAB/A.{ISO2}.{sector}.{unit}.{item}, where item is G1__Z (revenue) or G2M__Z
+ *   (expenditure) and unit is the % of GDP unit. DBnomics lists Brazil's central government series
+ *   as A.BR.S1311.XDC.G1__Z (domestic currency); the % of GDP unit code is not confirmed, so when
+ *   none of the series asked for come back the app reads the dataset's own list of codes and labels
+ *   (DBNOMICS_GFSMAB_URL) and picks the unit labelled as a percent of GDP and the item labelled
+ *   Expenditure. IMF_GFS_UNIT in .env sets the unit by hand. `npm run check:data` row
+ *   imf_gov_levels prints the codes it found.
  *
  * The figures for each level are unconsolidated: money one level passes to another (grants to
  * states, for example) is counted at both, so the levels add up to more than general government.
@@ -122,11 +124,63 @@ export function parseEurostatLevels(reply: unknown, geoToIso3: Record<string, st
 
 // --- IMF GFS through DBnomics ---
 
-const IMF_ITEM: Record<LevelMeasure, string> = { revenue: 'G1', spending: 'G2M' };
-export const imfLevelSeriesId = (iso2: string, level: GovLevel, m: LevelMeasure) => `IMF/GFSMAB/A.${iso2}.${LEVEL_SECTOR[level]}.XDC_R_B1GQ.${IMF_ITEM[m]}`;
-export function imfLevelIds(iso2s: string[]): string[] {
-  return iso2s.flatMap((iso2) => LEVELS.flatMap((l) => (['revenue', 'spending'] as LevelMeasure[]).map((m) => imfLevelSeriesId(iso2, l, m))));
+/** The unit and item codes of the GFSMAB series the app asks for. */
+export interface GfsCodes {
+  unit: string;
+  revenue: string;
+  spending: string;
 }
+export const GFS_UNIT_ENV = 'IMF_GFS_UNIT';
+export const GFS_DEFAULT: GfsCodes = { unit: 'XDC_R_B1GQ', revenue: 'G1__Z', spending: 'G2M__Z' };
+/** DBnomics' description of the GFSMAB dataset: every dimension with its codes and labels. */
+export const DBNOMICS_GFSMAB_URL = 'https://api.db.nomics.world/v22/datasets/IMF/GFSMAB';
+
+export const imfLevelSeriesId = (iso2: string, level: GovLevel, m: LevelMeasure, codes: GfsCodes = GFS_DEFAULT) => `IMF/GFSMAB/A.${iso2}.${LEVEL_SECTOR[level]}.${codes.unit}.${codes[m]}`;
+export function imfLevelIds(iso2s: string[], codes: GfsCodes = GFS_DEFAULT): string[] {
+  return iso2s.flatMap((iso2) => LEVELS.flatMap((l) => (['revenue', 'spending'] as LevelMeasure[]).map((m) => imfLevelSeriesId(iso2, l, m, codes))));
+}
+
+/** Codes and labels of each dimension in a DBnomics dataset reply (labels given as an object or as [code, label] pairs). */
+export function datasetDimensions(reply: unknown): Record<string, Record<string, string>> {
+  const doc = (reply as { datasets?: { docs?: unknown[] } })?.datasets?.docs?.[0] ?? (reply as { dataset?: unknown })?.dataset;
+  const raw = (doc as { dimensions_values_labels?: Record<string, unknown> } | undefined)?.dimensions_values_labels;
+  if (!raw || typeof raw !== 'object') return {};
+  const out: Record<string, Record<string, string>> = {};
+  for (const [dim, v] of Object.entries(raw)) {
+    const pairs: Array<[string, string]> = Array.isArray(v)
+      ? v.filter((x) => Array.isArray(x) && x.length >= 2).map((x) => [String(x[0]), String(x[1])])
+      : v && typeof v === 'object'
+        ? Object.entries(v as Record<string, unknown>).map(([k, l]) => [k, String(l)])
+        : [];
+    if (pairs.length) out[dim] = Object.fromEntries(pairs);
+  }
+  return out;
+}
+
+const PCT_GDP = /(percent|per cent|%)[^,;]*\bGDP\b/i;
+
+/**
+ * From the GFSMAB dataset description: the unit labelled as a percent of GDP, and the revenue and
+ * expenditure items (G1__Z and G2M__Z, or the items labelled Revenue and Expenditure). Also every
+ * unit code with its label, for the connection check. A code it cannot find stays absent.
+ */
+export function pickGfsCodes(reply: unknown): { codes: Partial<GfsCodes>; units: string[] } {
+  const dims = datasetDimensions(reply);
+  const entries = Object.values(dims);
+  const unitDim = entries.find((d) => Object.keys(d).includes('XDC')) || entries.find((d) => Object.values(d).some((l) => PCT_GDP.test(l)));
+  const itemDim = entries.find((d) => Object.keys(d).some((k) => /^G1(__Z)?$/.test(k)));
+  const codes: Partial<GfsCodes> = {};
+  const unit = unitDim && Object.entries(unitDim).find(([, l]) => PCT_GDP.test(l) && !/change/i.test(l));
+  if (unit) codes.unit = unit[0];
+  const item = (code: RegExp, label: RegExp) => itemDim && (Object.keys(itemDim).find((k) => code.test(k)) || Object.entries(itemDim).find(([, l]) => label.test(l.trim()))?.[0]);
+  const rev = item(/^G1(__Z)?$/, /^(total )?revenue$/i);
+  const spend = item(/^G2M(__Z)?$/, /^(total )?expenditure$/i);
+  if (rev) codes.revenue = rev;
+  if (spend) codes.spending = spend;
+  const units = unitDim ? Object.entries(unitDim).map(([k, l]) => `${k} (${l})`) : [];
+  return { codes, units };
+}
+
 export function dbnomicsLevelsUrl(ids: string[]): string {
   return `https://api.db.nomics.world/v22/series?series_ids=${ids.map(encodeURIComponent).join(',')}&observations=1&limit=${ids.length}`;
 }
@@ -140,30 +194,32 @@ export function dbnomicsGfsListUrl(iso2: string, level: GovLevel = 'central'): s
   return `https://api.db.nomics.world/v22/series/IMF/GFSMAB?dimensions=${dims}&observations=0&limit=200`;
 }
 
-/** Up to `n` "code (name)" pairs from a DBnomics series list, revenue and expenditure first. */
+/** Up to `n` "code (name)" pairs from a DBnomics series list, totals first. */
 export function gfsCodeSample(reply: unknown, n = 6): string[] {
   const docs = (reply as { series?: { docs?: Array<{ series_code?: unknown; series_name?: unknown }> } })?.series?.docs;
   if (!Array.isArray(docs)) return [];
-  const rank = (name: string) => (/revenue|expenditure|expense/i.test(name) ? 0 : 1);
+  // Totals first (revenue, expense, expenditure), then other revenue and expense lines.
+  const rank = (d: { code: string; name: string }) => (/\.G(1|2|2M)(__Z)?$/.test(d.code) || /expenditure/i.test(d.name) ? 0 : /revenue|expense/i.test(d.name) ? 1 : 2);
   return docs
     .map((d) => ({ code: String(d?.series_code || ''), name: String(d?.series_name || '') }))
     .filter((d) => d.code)
-    .sort((a, b) => rank(a.name) - rank(b.name))
+    .sort((a, b) => rank(a) - rank(b))
     .slice(0, n)
     .map((d) => (d.name ? `${d.code} (${d.name})` : d.code));
 }
 
 /** DBnomics series reply -> latest figures per country (a share under 0.001% of GDP is a scale error and dropped). */
-export function parseDbnomicsLevels(reply: unknown, iso2ToIso3: Record<string, string>): Record<string, GovLevelsReading> {
+export function parseDbnomicsLevels(reply: unknown, iso2ToIso3: Record<string, string>, codes: GfsCodes = GFS_DEFAULT): Record<string, GovLevelsReading> {
   const docs = (reply as { series?: { docs?: unknown[] } })?.series?.docs;
   if (!Array.isArray(docs)) return {};
   const cells: Cells = {};
   for (const doc of docs as Array<{ series_code?: unknown; period?: unknown[]; value?: unknown[] }>) {
-    const x = /^A\.([A-Z0-9]{2})\.(S13\d{0,2})\.XDC_R_B1GQ\.(G1|G2M)$/.exec(String(doc?.series_code || ''));
+    const x = /^A\.([A-Z0-9]{2})\.(S13\d{0,2})\.([A-Z0-9_]+)\.([A-Z0-9_]+)$/.exec(String(doc?.series_code || ''));
     const iso3 = x && iso2ToIso3[x[1]];
     const level = x && SECTOR_LEVEL[x[2]];
-    if (!x || !iso3 || !level || !Array.isArray(doc.period) || !Array.isArray(doc.value)) continue;
-    const m: LevelMeasure = x[3] === 'G1' ? 'revenue' : 'spending';
+    const m: LevelMeasure | undefined = x?.[4] === codes.revenue ? 'revenue' : x?.[4] === codes.spending ? 'spending' : undefined;
+    // Only the % of GDP unit: a domestic-currency series would be read as a share otherwise.
+    if (!x || !iso3 || !level || !m || x[3] !== codes.unit || !Array.isArray(doc.period) || !Array.isArray(doc.value)) continue;
     doc.period.forEach((p, k) => {
       const v = doc.value![k];
       if (typeof v === 'number' && Number.isFinite(v) && v >= 0.001 && /^\d{4}$/.test(String(p))) add(cells, iso3, m, String(p), level, v);

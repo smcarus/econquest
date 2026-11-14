@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- IMF GFS by level of government (DBnomics): the 14 November Mac run showed the real GFSMAB codes
+  (A.BR.S1311.XDC.G1__Z, domestic currency). The app now asks for items G1__Z and G2M__Z, and when
+  nothing comes back it reads DBnomics' description of the dataset, picks the unit labelled as a
+  percent of GDP and asks again. Domestic-currency series are never read as shares. If no % of GDP
+  unit exists, the figures stay Missing and `npm run check:data` row imf_gov_levels lists every unit
+  code with its label; IMF_GFS_UNIT in .env sets the unit by hand.
 - IMF GFS by level of government (DBnomics): the connection check said OK while no series came back
   ("0 of 30 countries"). It now says the GFSMAB series the app asks for did not come back and lists
   the codes DBnomics holds for Brazil's central government, so the right codes can be set from the
