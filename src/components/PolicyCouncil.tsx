@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Save, Trash2 } from 'lucide-react';
 import { DISCOUNT_RATES } from '../data/discountRates';
 import { COUNCIL_SIZE_LABEL, COUNCIL_SIZE_UNITS, type CouncilSizeUnit, type PolicyReview, type ReviewFrame, type ReviewStep, type StepState } from '../utils/policyReview';
-import { costBenefitResults, councilPartState, type CbLine, type CostBenefit, type CouncilPart } from '../utils/policyCouncil';
+import { costBenefitResults, councilPartState, GROUP_EFFECTS, GROUP_SUGGESTIONS, groupTally, type CbLine, type CostBenefit, type CouncilPart, type GroupEffect, type WinnersLosers } from '../utils/policyCouncil';
+import { incidence, QUINTILES, type IncomeShares } from '../utils/policyIncidence';
 import { useT, useTx } from '../i18n/useLang';
 import { REPORTS } from '../i18n/messages/reports';
 
@@ -227,12 +228,236 @@ const CostBenefitPanel: React.FC<{ review: PolicyReview; frame: ReviewFrame; cha
   );
 };
 
+type GroupDraft = { group: string; effect: GroupEffect; why: string; size: string; sizeUnit: string; source: string; link: string };
+const EMPTY_GROUP: GroupDraft = { group: '', effect: 'loses', why: '', size: '', sizeUnit: '', source: '', link: '' };
+
+const GroupsPanel: React.FC<{ review: PolicyReview; frame: ReviewFrame; changed: boolean; onSaved: Saved }> = ({ review, frame, changed, onSaved }) => {
+  const t = useT(REPORTS);
+  const tx = useTx();
+  const rec = review.councilParts?.groups;
+  const saved = rec?.content as WinnersLosers | undefined;
+  const state = councilPartState(rec, review.steps.frame?.hash);
+  const [rows, setRows] = useState<GroupDraft[]>([]);
+  const [useFifths, setUseFifths] = useState(false);
+  const [direction, setDirection] = useState<'pay' | 'gain'>('pay');
+  const [fSize, setFSize] = useState('');
+  const [shares, setShares] = useState<string[]>(Array(QUINTILES).fill(''));
+  const [fSource, setFSource] = useState('');
+  const [income, setIncome] = useState<IncomeShares | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    setRows(saved ? saved.rows.map((r) => ({ group: r.group, effect: r.effect, why: r.why, size: r.size !== undefined ? String(r.size) : '', sizeUnit: r.sizeUnit ?? '', source: r.source ?? '', link: r.link ?? '' })) : [{ ...EMPTY_GROUP }]);
+    setUseFifths(Boolean(saved?.fifths));
+    setDirection(saved?.fifths?.direction ?? 'pay');
+    setFSize(saved?.fifths ? String(saved.fifths.sizePctGdp) : frame.council?.size?.unit === 'pct_gdp' ? String(Math.abs(frame.council.size.value)) : '');
+    setShares(saved?.fifths ? saved.fifths.shares.map(String) : Array(QUINTILES).fill(''));
+    setFSource(saved?.fifths?.source ?? '');
+    setError('');
+  }, [review.id, rec?.hash]);
+  useEffect(() => {
+    let live = true;
+    fetch(`/api/policy-incidence/${encodeURIComponent(frame.iso3)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => live && setIncome(j?.incomeShares ?? null))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [frame.iso3]);
+  const set = (i: number, patch: Partial<GroupDraft>) => setRows((d) => d.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+  const save = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      const content = {
+        rows: rows.map((r) => ({ group: r.group, effect: r.effect, why: r.why, ...(r.size.trim() ? { size: r.size, sizeUnit: r.sizeUnit } : {}), ...(r.source.trim() ? { source: r.source } : {}), ...(r.link.trim() ? { link: r.link } : {}) })),
+        ...(useFifths ? { fifths: { direction, sizePctGdp: fSize, shares, source: fSource } } : {}),
+      };
+      await onSaved(await postPart(review.id, 'groups', content));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const tally = saved ? groupTally(saved) : null;
+  const inc = saved?.fifths ? incidence({ direction: saved.fifths.direction, sizePctGdp: saved.fifths.sizePctGdp, shares: saved.fifths.shares, source: saved.fifths.source }, income) : null;
+  const effectLabel = (e: GroupEffect) => t(e === 'gains' ? 'pk_gains' : e === 'loses' ? 'pk_loses' : 'pk_mixed');
+
+  return (
+    <div className="space-y-2 border-t border-slate-200 dark:border-slate-700 pt-3" data-council-part="groups">
+      <p className="ui-section-title">{t('pk_grTitle')}</p>
+      <p className="ui-label">{t('pk_grHint')}</p>
+      {changed && <p className="text-xs text-amber-700 dark:text-amber-400">{t('pk_changed')}</p>}
+      {rec && state === 'out_of_date' && <p className="text-xs text-amber-700 dark:text-amber-400">{t('pk_outOfDate')}</p>}
+      <datalist id="pk-group-suggestions">
+        {GROUP_SUGGESTIONS.map((g) => (
+          <option key={g} value={tx(g)} />
+        ))}
+      </datalist>
+      {rows.map((r, i) => (
+        <div key={i} className="grid gap-1.5 sm:grid-cols-2 border border-slate-200 dark:border-slate-700 p-2" data-council-group={i}>
+          <label className="ui-label">
+            {t('pk_group')}
+            <input className={INPUT} list="pk-group-suggestions" value={r.group} maxLength={80} onChange={(e) => set(i, { group: e.target.value })} />
+          </label>
+          <label className="ui-label">
+            {t('pk_effect')}
+            <select className={INPUT} value={r.effect} onChange={(e) => set(i, { effect: e.target.value as GroupEffect })}>
+              {GROUP_EFFECTS.map((g) => (
+                <option key={g} value={g}>
+                  {effectLabel(g)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="ui-label sm:col-span-2">
+            {t('pk_why')}
+            <input className={INPUT} value={r.why} maxLength={300} onChange={(e) => set(i, { why: e.target.value })} />
+          </label>
+          <label className="ui-label">
+            {t('pk_size')}
+            <input className={INPUT} inputMode="decimal" value={r.size} onChange={(e) => set(i, { size: e.target.value })} />
+          </label>
+          <label className="ui-label">
+            {t('pk_sizeUnit')}
+            <input className={INPUT} value={r.sizeUnit} maxLength={60} placeholder={t('pk_sizeUnitPh')} onChange={(e) => set(i, { sizeUnit: e.target.value })} />
+          </label>
+          <label className="ui-label">
+            {t('pk_source')}
+            <input className={INPUT} value={r.source} maxLength={300} onChange={(e) => set(i, { source: e.target.value })} />
+          </label>
+          <label className="ui-label">
+            {t('pk_link')}
+            <input className={INPUT} value={r.link} maxLength={400} onChange={(e) => set(i, { link: e.target.value })} />
+          </label>
+          <div>
+            <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setRows((x) => x.filter((_, j) => j !== i))}>
+              <Trash2 className="w-3.5 h-3.5" /> {t('pk_remove')}
+            </button>
+          </div>
+        </div>
+      ))}
+      <button type="button" className="ui-btn" onClick={() => setRows((x) => [...x, { ...EMPTY_GROUP }])}>
+        <Plus className="w-3.5 h-3.5" /> {t('pk_addGroup')}
+      </button>
+      <label className="flex gap-2 text-xs text-slate-800 dark:text-slate-200">
+        <input type="checkbox" checked={useFifths} onChange={(e) => setUseFifths(e.target.checked)} />
+        <span>{t('pk_fifthsToggle')}</span>
+      </label>
+      {useFifths && (
+        <div className="grid gap-1.5 sm:grid-cols-2 border border-slate-200 dark:border-slate-700 p-2" data-council-fifths="true">
+          <label className="ui-label">
+            {t('pk_fifthsDirection')}
+            <select className={INPUT} value={direction} onChange={(e) => setDirection(e.target.value as 'pay' | 'gain')}>
+              <option value="pay">{t('pk_fifthsPay')}</option>
+              <option value="gain">{t('pk_fifthsGain')}</option>
+            </select>
+          </label>
+          <label className="ui-label">
+            {t('pk_fifthsSize')}
+            <input className={INPUT} inputMode="decimal" value={fSize} onChange={(e) => setFSize(e.target.value)} />
+          </label>
+          {shares.map((v, q) => (
+            <label key={q} className="ui-label">
+              {t('pk_fifth', { n: String(q + 1) })}
+              <input className={INPUT} inputMode="decimal" value={v} onChange={(e) => setShares((x) => x.map((y, j) => (j === q ? e.target.value : y)))} />
+            </label>
+          ))}
+          <label className="ui-label sm:col-span-2">
+            {t('pk_fifthsSource')}
+            <input className={INPUT} value={fSource} maxLength={300} onChange={(e) => setFSource(e.target.value)} />
+          </label>
+        </div>
+      )}
+      <button type="button" className="ui-btn ui-btn-primary" disabled={busy} onClick={save}>
+        <Save className="w-3.5 h-3.5" /> {busy ? t('pk_saving') : t('pk_saveGroups')}
+      </button>
+      {error && (
+        <p className="text-xs text-amber-700 dark:text-amber-400" role="alert">
+          {error}
+        </p>
+      )}
+      {saved && tally && (
+        <div className="space-y-1" data-council-results="groups">
+          <p className="text-xs text-slate-800 dark:text-slate-200">{t('pk_tally', { g: String(tally.gains), l: String(tally.loses), m: String(tally.mixed) })}</p>
+          <div className="overflow-x-auto">
+            <table className="text-xs w-full">
+              <thead>
+                <tr className="text-left text-slate-500 dark:text-slate-400">
+                  <th className="pr-2">{t('pk_group')}</th>
+                  <th className="pr-2">{t('pk_effect')}</th>
+                  <th className="pr-2">{t('pk_why')}</th>
+                  <th className="pr-2">{t('pk_size')}</th>
+                  <th>{t('pk_source')}</th>
+                </tr>
+              </thead>
+              <tbody className="text-slate-900 dark:text-white">
+                {saved.rows.map((r, i) => (
+                  <tr key={i}>
+                    <td className="pr-2">{r.group}</td>
+                    <td className="pr-2">{effectLabel(r.effect)}</td>
+                    <td className="pr-2">{r.why}</td>
+                    <td className="pr-2 tabular-nums">{r.size !== undefined ? `${r.size} ${r.sizeUnit}` : <span className="text-amber-700 dark:text-amber-400">{t('pk_missingSize')}</span>}</td>
+                    <td>
+                      {r.link ? (
+                        <a href={r.link} target="_blank" rel="noopener noreferrer" className="underline">
+                          {r.source || t('pk_link')}
+                        </a>
+                      ) : (
+                        r.source ?? ''
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {inc && inc.ok && (
+            <div className="overflow-x-auto" data-council-fifths-result="true">
+              <p className="ui-label">{t('pk_fifthsResult', { source: inc.source, year: income ? String(income.year) : '' })}</p>
+              <table className="text-xs tabular-nums w-full">
+                <thead>
+                  <tr className="text-left text-slate-500 dark:text-slate-400">
+                    <th className="pr-2">{t('pk_fifthCol')}</th>
+                    <th className="pr-2">{t('pk_shareCol')}</th>
+                    <th className="pr-2">{t('pk_amountCol')}</th>
+                    <th className="pr-2">{t('pk_incomeCol')}</th>
+                    <th>{t('pk_ratioCol')}</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-900 dark:text-white">
+                  {inc.groups.map((g) => (
+                    <tr key={g.q}>
+                      <td className="pr-2">{t('pk_fifth', { n: String(g.q) })}</td>
+                      <td className="pr-2">{g.sharePct}%</td>
+                      <td className="pr-2">{g.amountPctGdp}</td>
+                      <td className="pr-2">{g.incomeSharePct !== undefined ? `${g.incomeSharePct}%` : t('pk_missing')}</td>
+                      <td>{g.ratio ?? t('pk_missing')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="text-xs text-slate-800 dark:text-slate-200">
+                {inc.reading === 'regressive' ? t('pk_regressive') : inc.reading === 'progressive' ? t('pk_progressive') : inc.reading === 'proportional' ? t('pk_proportional') : t('pk_noIncome')}
+              </p>
+            </div>
+          )}
+          <p className="text-xs text-slate-500 dark:text-slate-400">{t('pk_saved', { when: rec!.savedAt.slice(0, 16).replace('T', ' '), hash: rec!.hash.slice(0, 12) })}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const PolicyCouncil: React.FC<{ review: PolicyReview; frame: ReviewFrame; changed?: string[]; onSaved: Saved }> = ({ review, frame, changed, onSaved }) => {
   const t = useT(REPORTS);
   return (
     <div className="space-y-4" data-policy-council="true">
       <p className="ui-label">{t('pk_label2')}</p>
       <CostBenefitPanel review={review} frame={frame} changed={Boolean(changed?.includes('costBenefit'))} onSaved={onSaved} />
+      <GroupsPanel review={review} frame={frame} changed={Boolean(changed?.includes('groups'))} onSaved={onSaved} />
     </div>
   );
 };

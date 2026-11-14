@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Policy council winners and losers (PK3): for the measure in a policy review, one row per group
+  that gains or loses and why, with a size only when it has a unit and a source (otherwise
+  Missing), and optionally the share each fifth of people carries set against its share of income
+  (World Bank household surveys), read as regressive, progressive or about proportional. Spanish,
+  French and Portuguese text.
 - Policy council costs and benefits (PK2): for the measure in a policy review frame, enter costs
   and benefits by year, each with its source; the app shows present values at the official
   discount rates you tick (UK Green Book, US OMB Circular A-4 3% and 7%, European Commission 3%,
