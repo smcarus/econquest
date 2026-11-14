@@ -1,6 +1,6 @@
 # How EconQuest works, in plain words
 
-**Version 1.2, 13 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
+**Version 1.3, 14 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
 validated advice.
 
 This guide explains, without jargon, where EconQuest's figures come from, what its AI does and does
@@ -26,9 +26,11 @@ Any term you don't know is explained in the [Glossary](./GLOSSARY.md).
 9. [Reading one result, step by step](#9-reading-one-result-step-by-step)
 10. [Geopolitical risk VaR, explained](#10-geopolitical-risk-var-explained)
 11. [What if a past crisis happened again?](#11-what-if-a-past-crisis-happened-again)
-12. [Quests: coming later](#12-quests-coming-later)
-13. [How much the app explains](#13-how-much-the-app-explains)
-14. [What it cannot do](#14-what-it-cannot-do)
+12. [Weighing one measure: the policy council](#12-weighing-one-measure-the-policy-council)
+13. [Weather, disasters and insurance, explained](#13-weather-disasters-and-insurance-explained)
+14. [Quests: coming later](#14-quests-coming-later)
+15. [How much the app explains](#15-how-much-the-app-explains)
+16. [What it cannot do](#16-what-it-cannot-do)
 
 ---
 
@@ -129,7 +131,8 @@ appear on any screen or in anything sent out; the app then shows only how many a
   see exactly what the app showed on any past date.
 - **Figures for poorer countries too.** Money sent home by workers abroad (remittances), aid received,
   who has a bank account, commodity prices and what they mean for the country, food prices and
-  natural disasters all come from the World Bank and other public sources. A few sources do not allow
+  natural disasters all come from the World Bank and other public sources, as do the weather series
+  for the capital and the whole country. A few sources do not allow
   the app to download or pass on their files; for those, you download the file yourself and put it in
   a folder the [install guide](./INSTALL.md#files-you-save-yourself) names, and until then the parts
   that need it read Missing.
@@ -305,7 +308,64 @@ the 2022 rate rises.
   that part reads Missing with the reason, and the position's total is left blank rather than
   guessed.
 
-## 12. Quests: coming later
+## 12. Weighing one measure: the policy council
+
+A policy review can look at one measure in detail, for example removing a fuel subsidy or raising a
+tax. You enter what you know, each figure with its source, and the app does the arithmetic:
+
+- **Costs and benefits.** Money spent and gained in each year is worth less the further away it is,
+  so the app "discounts" later years. It uses the rates governments publish for this (the UK, the US,
+  the European Commission and the Asian Development Bank, each named and cited) or your own. It says
+  whether benefits beat costs, the year it pays back, and how much the figures would have to change
+  to flip the answer.
+- **Who gains and who loses.** One line per group, with a size only when you give its unit and source.
+  You can also say how much each fifth of people, from poorest to richest, carries, and the app says
+  whether the measure falls harder on the poor (regressive) or the rich (progressive).
+- **What follows.** Each knock-on effect ("higher fuel prices raise bus fares") must rest on a figure
+  in the review, a source you name, or be marked as an assumption. The app counts how many are which.
+- **What could go differently.** Two to five stories of how it could turn out, each with its own
+  result, and with your odds a weighted result and the chance of a loss.
+
+The council then ranks other options against the measure, using only these figures and the review's
+own. Instead of a measure, you can weigh what an event means for one market (the currency or
+government bonds): the app copies in its own market figures as they stood on the review's date. None
+of this is a forecast. It lays out the case so that someone else can check every step.
+
+## 13. Weather, disasters and insurance, explained
+
+Droughts, floods and storms hit food prices, farm incomes and government budgets hardest in the
+countries least able to absorb them. The app has a set of tools for this:
+
+- **Weather.** Monthly temperature and rainfall at the capital since 1981 (NASA) and averaged over the
+  whole country since 1901 (World Bank climate portal), each month set against the same month's
+  average over 1991-2020. Rice, wheat, maize and soybean world prices go back to 1960, so a drought
+  can be set beside a price spike.
+- **Parametric insurance.** Some insurance pays when a measured number crosses a line (rainfall below
+  a level, for example) instead of after someone assesses the damage. It pays fast, which matters in a
+  crisis. You can sketch one: pick the season, the level where payment starts (the trigger) and the
+  level where the full amount is paid (the exit), and the app replays it over every past season. It
+  shows the years it would have paid and the average payout a year, which insurers call the **burn
+  cost**.
+- **A fair price.** An insurer charges more than the burn cost to cover its costs and the risk of a
+  very bad year. You pick that extra (the loading), and the app gives a price as a share of the cover.
+  It is a teaching price, not a quote.
+- **How rare is it?** "1 year in 20" means a level passed in about 5% of years, not once every twenty
+  years on schedule. The app works this out from the record and from a curve fitted to the worst
+  years, and marks levels rarer than the record can show.
+- **Basis risk.** The rainfall measured over a city or a whole country is not the loss on one farm.
+  The app checks the cover against a second measure of the same weather and says how many bad years it
+  would have missed.
+- **Disaster losses.** From the EM-DAT disaster file you save, the app splits yearly damage into how
+  often damaging events happen and how large each one is, then simulates 20,000 years to give the
+  average yearly loss and the loss passed 1 year in 100. Many events report no damage, so these are
+  low.
+- **Tropical cyclones.** Hurricanes, typhoons and cyclones that passed near the country since 1980,
+  from NOAA's storm tracks, by strength and season.
+
+All of these describe the past; none is a tested forecast, and the records are short for the rarest
+events.
+
+## 14. Quests: coming later
 
 Quests are built but **switched off**: you can't use them yet. When they go live, a Quest will be an
 open question that anyone can answer, for example "Will Brazil's policy rate be above 14% on 31
@@ -319,7 +379,7 @@ reserves?"). These are **Debate Quests**: people argue a position, the app check
 quote against its own, and nobody is ever scored or declared right. An AI model writes a short opening
 brief on each side; it is labelled as AI-written and is not allowed to state any figure of its own.
 
-## 13. How much the app explains
+## 15. How much the app explains
 
 The help button at the top of the page sets how much the app explains:
 
@@ -334,7 +394,7 @@ contain no figures of their own. The one exception is the **Explain** button on 
 the council: that answer is written by the AI model, labelled as such, and number-checked like any
 other.
 
-## 14. What it cannot do
+## 16. What it cannot do
 
 - **The past is not the future.** A rule that worked on past data may stop working. That is why
   passing rules keep writing down their calls in advance and are scored as the results come in.
@@ -351,6 +411,8 @@ other.
   rough.
 - **Not a compliance tool.** The sanctions panel counts entries on official lists; it does not screen
   names properly.
+- **Rare events need long records.** Weather, disaster and storm records cover a few decades, which is
+  short for a 1-in-100-year event. A parametric cover's index is not anyone's real loss.
 - **Crisis replays are rough.** They use monthly averages and the simplest bond arithmetic, so they
   understate the worst days of a crisis.
 - **The log can be checked, not made unbreakable.** Every entry in the app's log is linked to the one
@@ -359,5 +421,5 @@ other.
 
 ---
 
-*How EconQuest works, version 1.2 (13 November 2026). Text licensed under CC BY 4.0: you may share and
+*How EconQuest works, version 1.3 (14 November 2026). Text licensed under CC BY 4.0: you may share and
 adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*

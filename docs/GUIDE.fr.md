@@ -137,12 +137,44 @@ indiquent la fraîcheur des données. **Actualiser maintenant** récupère de no
    **Catastrophes naturelles**. L'inflation alimentaire et les catastrophes sont lues dans des fichiers
    que vous enregistrez vous-même dans `data/local/fao-cpi/` et `data/local/emdat/` ; d'ici là, ces
    parties affichent Manquant et disent où obtenir le fichier
-   ([INSTALL.md](./INSTALL.md#files-you-save-yourself), en anglais).
-6. La **Fiche de risque pays** met côte à côte la gouvernance, les conflits armés, les troubles, le
-   risque géopolitique, l’ouverture du compte de capital (l’indice de Chinn et Ito, cité comme Chinn et
-   Ito 2006) et l’économie, chaque donnée avec sa source et son année. Elle ne donne pas de note
-   globale. Un test pour savoir si une gouvernance faible précède un défaut a été fixé à l’avance le
-   13 novembre 2026 ; tant qu’il n’est pas exécuté, le badge du panneau indique Non validé.
+   ([INSTALL.md](./INSTALL.md#files-you-save-yourself), en anglais). Sous Catastrophes naturelles,
+   **Modèle de pertes** sépare les dégâts de chaque année entre le nombre d'événements dommageables
+   par an et la taille de chacun, et simule 20 000 années pour donner la perte annuelle moyenne et la
+   perte dépassée 1 année sur 10, 50 et 100, aussi en % du PIB.
+6. **Chiffres avec un historique** montre aussi comment la monnaie et le financement en dollars
+   fonctionnent en pratique : le **régime de change** (comment la monnaie est gérée dans les faits,
+   mois par mois, d'après le classeur d'Ilzetzki, Reinhart et Rogoff que vous enregistrez dans
+   `data/local/irr/`), les **actifs de la banque centrale** (son bilan en % du PIB, de la BRI) et la
+   **tension sur le financement en dollars** (prêts et obligations en dollars dus par les agents non
+   bancaires du pays, de la BRI, et les lignes de swap en dollars de la Réserve fédérale, de la Fed de
+   New York).
+7. La même liste montre la **météo** : température et pluie mensuelles dans la capitale depuis 1981
+   (NASA POWER) et en moyenne sur tout le pays depuis 1901 (portail climatique de la Banque mondiale),
+   chaque mois face à sa moyenne 1991-2020. Les prix mondiaux du riz, du blé, du maïs et du soja
+   remontent à 1960, pour placer une sécheresse à côté d'une flambée des prix.
+8. **Assurance paramétrique** vous permet d'esquisser une couverture qui paie selon un chiffre mesuré
+   (pluie, température ou prix alimentaire) et non selon une perte évaluée :
+   1. Choisissez l'indice, la saison, si elle paie quand l'indice est bas ou haut, le déclencheur où le
+      paiement commence, la sortie où la couverture entière est payée, et le montant couvert. Le
+      panneau s'ouvre sur une conception tirée de l'historique (déclencheur dépassé environ 1 année sur
+      5, sortie environ 1 sur 20).
+   2. L'analyse de sinistralité rejoue la conception sur chaque saison passée : les années où elle a
+      payé et le paiement annuel moyen (le coût de sinistralité).
+   3. **Prix équitable** ajoute un chargement que vous choisissez (un % du paiement attendu, ou k
+      écarts-types du paiement annuel) et donne le prix en % de la couverture par an.
+   4. **Quelle rareté ?** dit à quelle fréquence le déclencheur et la sortie sont dépassés, d'après
+      l'historique et d'après une courbe de valeurs extrêmes ajustée, avec une fourchette à 90 %.
+   5. **Risque de base** compare la couverture avec l'autre série météo (capitale face au pays
+      entier) : combien de mauvaises années elle a payées, et combien elle a manquées.
+9. **Cyclones tropicaux** liste les ouragans, typhons et cyclones passés à moins de 50, 100 ou 200 km
+   du pays depuis 1980, d'après les trajectoires IBTrACS de la NOAA. Rien n'est téléchargé avant que
+   vous appuyiez sur **Télécharger les trajectoires des tempêtes depuis la NOAA** ; vous pouvez aussi
+   enregistrer un fichier IBTrACS dans `data/local/ibtracs/`.
+10. La **Fiche de risque pays** met côte à côte la gouvernance, les conflits armés, les troubles, le
+    risque géopolitique, l’ouverture du compte de capital (l’indice de Chinn et Ito, cité comme Chinn et
+    Ito 2006) et l’économie, chaque donnée avec sa source et son année. Elle ne donne pas de note
+    globale. Un test pour savoir si une gouvernance faible précède un défaut a été fixé à l’avance le
+    13 novembre 2026 ; tant qu’il n’est pas exécuté, le badge du panneau indique Non validé.
 
 ![Écart de production du Brésil : le milieu de trois estimations avec une bande qui montre leur dispersion, en pointillés pour les années de projection du FMI](images/07-output-gap.png)
 
@@ -280,6 +312,9 @@ Le **Menu** rassemble tout ce qui n'est pas une page. À connaître d'abord :
 - **Données hors ligne** : téléchargez les données de tous les pays pour un usage sans internet et voyez
   la place qu'elles prennent.
 - **État des données** : quelles sources arrivent, lesquelles échouent et quels chiffres ont été révisés.
+  Son onglet **Daily download** (en anglais) suit le téléchargement quotidien pendant qu'il tourne :
+  chaque partie, ce qui a échoué et pourquoi, les sources qui demandent une clé ou un fichier, et ce
+  qu'il faut télécharger à la main.
 - **Modèles et validation** : le registre des modèles, les résultats des tests et **Vos tests**.
 - **Vos données** : chargez vos propres séries depuis un fichier CSV.
 - **Mode examen** : désactive toutes les étapes d'IA pour un examen.

@@ -136,12 +136,43 @@ indican lo recientes que son los datos. **Actualizar ahora** vuelve a traer las 
    PIB), **Ayuda recibida**, **Precios de los alimentos y seguridad alimentaria** y **Desastres
    naturales**. La inflación de alimentos y los desastres se leen de archivos que usted guarda en
    `data/local/fao-cpi/` y `data/local/emdat/`; hasta entonces esas partes dicen Faltante e indican
-   dónde obtener el archivo ([INSTALL.md](./INSTALL.md#files-you-save-yourself), en inglés).
-6. La **Ficha de riesgo país** pone lado a lado la gobernanza, los conflictos armados, el malestar
-   social, el riesgo geopolítico, la apertura de la cuenta de capital (el índice de Chinn e Ito, citado
-   como Chinn e Ito 2006) y la economía, cada dato con su fuente y su año. No da una puntuación global.
-   El 13 de noviembre de 2026 se fijó de antemano una prueba de si una gobernanza débil precede a un
-   impago; mientras no se ejecute, la insignia del panel dice No validada.
+   dónde obtener el archivo ([INSTALL.md](./INSTALL.md#files-you-save-yourself), en inglés). Bajo
+   Desastres naturales, **Modelo de pérdidas** separa el daño de cada año en cuántos eventos dañinos
+   hay en un año y qué tan grande es cada uno, y simula 20.000 años para dar la pérdida anual promedio
+   y la pérdida superada 1 año de cada 10, 50 y 100, también en % del PIB.
+6. **Cifras con historia** también muestra cómo funcionan en la práctica la moneda y la financiación en
+   dólares: el **régimen cambiario** (cómo se maneja la moneda de hecho, mes a mes, según el libro de
+   Ilzetzki, Reinhart y Rogoff que usted guarda en `data/local/irr/`), los **activos del banco
+   central** (su balance en % del PIB, del BIS) y la **tensión de financiación en dólares** (préstamos
+   y bonos en dólares de los no bancos del país, del BIS, y las líneas de swap en dólares de la Reserva
+   Federal, de la Fed de Nueva York).
+7. La misma lista muestra el **clima**: temperatura y lluvia mensuales en la capital desde 1981 (NASA
+   POWER) y en promedio sobre todo el país desde 1901 (portal climático del Banco Mundial), cada mes
+   frente a su promedio de 1991-2020. Los precios mundiales del arroz, el trigo, el maíz y la soja
+   llegan hasta 1960, para poner una sequía junto a un alza de precios.
+8. **Seguro paramétrico** le permite esbozar una cobertura que paga según una cifra medida (lluvia,
+   temperatura o un precio de alimentos) y no según una pérdida evaluada:
+   1. Elija el índice, la temporada, si paga cuando el índice es bajo o alto, el disparador donde
+      empieza el pago, la salida donde se paga la cobertura completa y el monto cubierto. El panel abre
+      con un diseño tomado del registro (disparador superado cerca de 1 año de cada 5, salida cerca de
+      1 de cada 20).
+   2. El análisis de siniestralidad repite el diseño en cada temporada pasada: los años en que pagó y
+      el pago anual promedio (el costo de siniestralidad).
+   3. **Precio justo** suma un recargo que usted elige (un % del pago esperado, o k desviaciones
+      estándar del pago anual) y da el precio en % de la cobertura al año.
+   4. **¿Qué tan raro es?** dice con qué frecuencia se superan el disparador y la salida, según el
+      registro y según una curva de valores extremos ajustada, con un rango del 90%.
+   5. **Riesgo de base** compara la cobertura con la otra serie de clima (capital frente a todo el
+      país): en cuántos años malos pagó y en cuántos no.
+9. **Ciclones tropicales** lista los huracanes, tifones y ciclones que pasaron a menos de 50, 100 o
+   200 km del país desde 1980, según las trayectorias IBTrACS de NOAA. No se descarga nada hasta que
+   usted pulsa **Descargar trayectorias de tormentas de NOAA**; también puede guardar un archivo
+   IBTrACS en `data/local/ibtracs/`.
+10. La **Ficha de riesgo país** pone lado a lado la gobernanza, los conflictos armados, el malestar
+    social, el riesgo geopolítico, la apertura de la cuenta de capital (el índice de Chinn e Ito, citado
+    como Chinn e Ito 2006) y la economía, cada dato con su fuente y su año. No da una puntuación global.
+    El 13 de noviembre de 2026 se fijó de antemano una prueba de si una gobernanza débil precede a un
+    impago; mientras no se ejecute, la insignia del panel dice No validada.
 
 ![Brecha del producto de Brasil: el centro de tres estimaciones con una banda que muestra su dispersión, discontinua en los años de proyección del FMI](images/07-output-gap.png)
 
@@ -274,7 +305,9 @@ El **Menú** reúne todo lo que no es una página. Lo primero que conviene conoc
 - **Herramientas**: todas las herramientas agrupadas por lo que quiere hacer, y **Conexiones de datos**.
 - **Datos sin conexión**: descargue los datos de todos los países para usarlos sin internet y vea cuánto
   ocupan.
-- **Estado de los datos**: qué fuentes llegan, cuáles fallan y qué cifras se revisaron.
+- **Estado de los datos**: qué fuentes llegan, cuáles fallan y qué cifras se revisaron. Su pestaña
+  **Daily download** (en inglés) sigue la descarga diaria mientras corre: cada parte, qué falló y por
+  qué, las fuentes que necesitan una clave o un archivo, y qué descargar a mano.
 - **Modelos y validación**: el registro de modelos, los resultados de las pruebas y **Sus pruebas**.
 - **Sus datos**: cargue sus propias series desde un archivo CSV.
 - **Modo examen**: desactiva todos los pasos de IA para un examen.

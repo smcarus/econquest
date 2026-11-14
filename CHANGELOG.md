@@ -5,6 +5,16 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Documentation brought up to date with the feed fixes, the usability fixes, markets and financing
+  data (Group B), the policy council and weather and insurance: README and walk-through guide in
+  English, Spanish, French and Portuguese (History & data: exchange rate regime, central bank assets,
+  dollar funding, weather, parametric insurance, tropical cyclones, the disaster loss model; Data
+  health > Daily download); methodology version 1.3 (new sources, the policy council in 5.2, weather,
+  disasters and parametric insurance in 5.3, short-record limits, references); the plain-language
+  guide version 1.3 (new sections on the policy council and on weather, disasters and insurance);
+  the install guide (data/local/ibtracs/, the data/live/ weather and storm folders, the newest
+  check:data rows); the data API (series ids added on 14 November); data sources (IBTrACS); the
+  roadmap.
 - Tropical cyclones (I8): History & data shows hurricanes, typhoons and cyclones since 1980 whose
   centre passed within 50, 100 or 200 km of the country, from NOAA's IBTrACS tracks: storms by
   strength (tropical storm, hurricane, major), each season, the share of seasons with each (about

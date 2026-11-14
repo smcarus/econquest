@@ -93,10 +93,10 @@ in downloads or shared copies.
 | Task | Where | What you get |
 | --- | --- | --- |
 | Ask a question in plain words | **Workspace** (Council chat) | Specialist agents answer from the app's figures, each naming its source; with an AI model, a summary agent writes a short brief that may quote only their figures, and a number check flags any figure it cannot trace |
-| Study one country | **Research > One country** | Summary, Markets & signals, History & data and Sources: charts going back years, nowcasts and forecasts with ranges, output gap, debt sustainability, reserve adequacy, policy rules, crisis early-warning, yield curve, inflation drivers, growth accounting, IMF forecasts by edition, and "as of" views of what was known on a past day. For lower-income countries: remittances, aid received, financial inclusion, commodity prices and terms of trade, food prices and food security, and natural disasters |
+| Study one country | **Research > One country** | Summary, Markets & signals, History & data and Sources: charts going back years, nowcasts and forecasts with ranges, output gap, debt sustainability, reserve adequacy, policy rules, crisis early-warning, yield curve, inflation drivers, growth accounting, IMF forecasts by edition, and "as of" views of what was known on a past day. For lower-income countries: remittances, aid received, financial inclusion, commodity prices and terms of trade, food prices and food security, and natural disasters. Weather at the capital since 1981 and across the country since 1901, rice, wheat, maize and soybean prices since 1960, a parametric insurance designer (burn cost, fair price, return periods, basis risk), a disaster loss model and tropical cyclone tracks. How the currency is run in fact, central bank assets and dollar funding stress |
 | Compare countries | **Research > Compare countries** | Your watchlist side by side (the 19 G20 member countries to start with), story leads and where market prices and the data disagree |
 | Follow your holdings | **Research > My holdings** | A list of bonds or positions you load, against the risks and signals |
-| Test a policy choice | **Reports > New policy review** | A step-by-step case file: frame the problem, diagnose, rank options, check the evidence and precedents, write a recommendation memo and a one-page brief for non-economists, then track what happened. Compare the diagnosis with up to six peer countries, get a warning on the start page when a watched figure crosses its trigger, and see what changed when you review the same policy again |
+| Test a policy choice | **Reports > New policy review** | A step-by-step case file: frame the problem, diagnose, rank options, check the evidence and precedents, write a recommendation memo and a one-page brief for non-economists, then track what happened. Compare the diagnosis with up to six peer countries, get a warning on the start page when a watched figure crosses its trigger, and see what changed when you review the same policy again. The policy council weighs one measure (costs and benefits at official discount rates, who gains and who loses, what follows, scenarios) or what an event means for one market |
 | Try a fiscal what-if | **History & data**, or from Council chat | Change government spending or taxes and see the likely effect on growth and debt, using published multipliers and budget elasticities, with a range |
 | Write a report | **Reports** | Country notes, issuer notes, debt sustainability assessments, portfolio and client reviews and council briefs, as Markdown or PDF with sources and dates |
 | Learn as you go | Header buttons, **Menu > User manual**, **Menu > Worked examples** | Three help levels, a plain-language glossary, four worked case studies, teaching episodes and exam mode |
@@ -122,7 +122,7 @@ The full walk-through, with numbered steps for each task, is in **[docs/GUIDE.md
 (also in [Spanish](./docs/GUIDE.es.md), [French](./docs/GUIDE.fr.md) and [Portuguese](./docs/GUIDE.pt.md)).
 It covers: the first start, asking the council, studying a country, comparing countries, writing a
 policy review and a report, choosing an AI model, the tools and data checks, language and help levels,
-using it on a phone, and trying Quests.
+the weather and insurance tools, using it on a phone, and trying Quests.
 
 | | |
 | --- | --- |
@@ -376,24 +376,26 @@ All of these are free. A few need a free key, which you add in Menu > Settings.
 | Area | Sources |
 | --- | --- |
 | Growth, debt, budgets, trade | World Bank (indicators and debt statistics), IMF (World Economic Outlook, past editions, reserves, balance of payments, reserve currency shares, government spending by purpose), OECD (leading indicators, prices, quarterly GDP, read through DBnomics), IMF monthly consumer prices, Eurostat (inflation, industrial production, government spending), UN Comtrade and WITS (trade partners) |
-| Interest rates and bonds | BIS (central bank policy rates, debt securities, real exchange rates), FRED (official 10-year yields; free key), New York Fed rates, US Treasury (foreign holders, auctions), Brazil Treasury, Peru's central bank (EMBIG spreads), and monthly OECD 10-year yields and Federal Reserve H.10 exchange rates from FRED since 1990 for the past-crisis replays |
-| Currencies and commodities | Spot exchange rates (open.er-api.com), ECB reference rates, World Bank commodity prices (Pink Sheet), US EIA oil prices (free key) |
+| Interest rates and bonds | BIS (central bank policy rates, debt securities, real exchange rates, central bank total assets, US dollar credit to non-banks), New York Fed dollar swap lines, FRED (official 10-year yields; free key), New York Fed rates, US Treasury (foreign holders, auctions), Brazil Treasury, Peru's central bank (EMBIG spreads), and monthly OECD 10-year yields and Federal Reserve H.10 exchange rates from FRED since 1990 for the past-crisis replays |
+| Currencies and commodities | Spot exchange rates (open.er-api.com), ECB reference rates, World Bank commodity prices (Pink Sheet; rice, wheat, maize and soybeans since 1960), US EIA oil prices (free key), the Ilzetzki, Reinhart and Rogoff exchange rate regime classification (a workbook you save yourself; the authors ask for a citation and state no licence) |
 | Surveys and expectations | EU business and consumer surveys (European Commission, via Eurostat; a free stand-in for paid PMIs, labelled as such), ECB Survey of Professional Forecasters, Brazil's Focus survey, NY Fed supply chain pressure index |
 | Central banks and calendar | Banco Central do Brasil, Banco de México (free token), official central bank decision dates, CPI and GDP release dates from statistics offices' own calendars |
 | Institutions and openness | World Bank Worldwide Governance Indicators, the Chinn-Ito index of capital account openness (downloaded to your computer once a month at most, credited to Chinn and Ito 2006, and never passed on) |
 | Politics, conflict and shipping | GDELT news events, UCDP and ACLED conflict data (ACLED files are downloaded by hand), OFAC and UN sanctions lists, the Geopolitical Risk index, IMF PortWatch (ships through chokepoints and port calls) |
 | Markets and positioning | Kalshi and Polymarket prediction markets, CFTC Commitments of Traders |
 | Lower-income countries | World Bank (remittances and the cost of sending them, Global Findex accounts, aid received as republished from the OECD, food security, commodity trade shares and terms of trade); two files you save yourself: FAOSTAT consumer prices for food price inflation, and EM-DAT natural disasters, downloaded with your own free EM-DAT account (its terms do not allow the app to ship it) |
+| Weather and hazards | NASA POWER (monthly temperature and rainfall at each capital since 1981), World Bank Climate Change Knowledge Portal (CRU TS country averages since 1901, CC BY 4.0), NOAA IBTrACS tropical cyclone tracks since 1980 (downloaded only when you press the button, or read from a file you save) |
 
 The full list, with what each source fills and how often it is fetched, is in
 [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md). What each source's terms allow (showing figures to
 others, commercial use, credit) is in [docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md).
 
 **How data is kept.** The daily download fetches every free feed once a day in the background, so
-opening a page never waits on the internet (log: `data/local/logs/daily.log`). If a source fails, the
-last good figure is kept with "kept from the <date> pull" on its label. Every pull is archived by day
-in `data/archive/`, so the data as it stood on a past date is never lost. Menu > Settings > Backup
-saves your holdings, watchlists and settings, without the keys, as one file.
+opening a page never waits on the internet (log: `data/local/logs/daily.log`; Menu > Data health >
+Daily download follows it as it runs). If a source fails, the last good figure is kept with "kept from
+the <date> pull" on its label. Every pull is archived by day in `data/archive/`, so the data as it
+stood on a past date is never lost. Menu > Settings > Backup saves your holdings, watchlists and
+settings, without the keys, as one file.
 
 ---
 
@@ -441,7 +443,7 @@ The full method is in [docs/METHODOLOGY.md](./docs/METHODOLOGY.md); the same in 
 
 ## Roadmap
 
-Where things stand on 13 November 2026 (details and status in [docs/ROADMAP.md](./docs/ROADMAP.md)):
+Where things stand on 14 November 2026 (details and status in [docs/ROADMAP.md](./docs/ROADMAP.md)):
 
 **Done**
 
@@ -463,6 +465,16 @@ Where things stand on 13 November 2026 (details and status in [docs/ROADMAP.md](
    country snapshots, positions sent in, hidden names, scenarios and crisis replays, a sealed audit
    log, a deployment guide and OpenID Connect sign-in.
 7. **Languages and teaching**: the whole app in Portuguese, and four worked examples.
+8. **Markets and financing data** (brought forward on 14 November): how the currency is run in fact
+   (exchange rate regime), central bank balance sheets, and dollar funding stress (BIS dollar credit
+   and Federal Reserve swap lines). Capital controls are covered by the Chinn-Ito index.
+9. **Policy council** (14 November): inside a policy review, weigh one measure with costs and
+   benefits, who gains and who loses, second-order effects and scenarios, or weigh what an event
+   means for the currency or government bonds; the council ranks the options against it, and the
+   one-page brief carries the result.
+10. **Weather and insurance** (14 November): weather at the capital and across the country, food
+    prices since 1960, a parametric insurance trigger designer with burn cost, fair price, return
+    periods and basis risk, a disaster loss model from EM-DAT, and tropical cyclone tracks.
 
 **Next**
 
@@ -477,9 +489,12 @@ Where things stand on 13 November 2026 (details and status in [docs/ROADMAP.md](
   two professors); building starts when the maintainer says go.
 - **Arabic and Swahili**: planned, paused by the maintainer.
 - **The phone app**: paused until after the public release.
-- **Parked ideas** for checkpoint 1: markets and financing data (exchange rate regimes, central bank
-  balance sheets, dollar funding stress) and teaching and sharing (an offline country report, a
-  macro lab with textbook models, more worked examples).
+- **Parked ideas** for checkpoint 1: teaching and sharing (an offline country report, a macro lab
+  with textbook models, more worked examples).
+- **Checks on the maintainer's computer**: the newest sources (weather, storm tracks, central bank
+  assets, dollar funding, the exchange rate regime file) are built and tested on saved replies, but
+  could not be reached from the build machine; `npm run check:data` on a computer that reaches them
+  confirms each one.
 
 ---
 

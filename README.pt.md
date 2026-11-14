@@ -99,10 +99,10 @@ repassados em downloads ou cópias compartilhadas.
 | Tarefa | Onde | O que você recebe |
 | --- | --- | --- |
 | Fazer uma pergunta com palavras simples | **Área de trabalho** (Chat do conselho) | Agentes especializados respondem com os números do app, cada um com sua fonte; com um modelo de IA, um agente de síntese escreve um breve resumo que só pode citar esses números, e uma checagem aponta qualquer número que não consiga rastrear |
-| Estudar um país | **Pesquisa > Um país** | Resumo, Mercados e sinais, Histórico e dados, e Fontes: gráficos de muitos anos, estimativas do presente e previsões com faixas, hiato do produto, sustentabilidade da dívida, adequação das reservas, regras de política monetária, alerta antecipado de crise, curva de juros, fatores da inflação, contabilidade do crescimento, previsões do FMI por edição e visões "em um dia passado". Para países de renda mais baixa: remessas, ajuda recebida, inclusão financeira, preços de commodities e termos de troca, preços dos alimentos e segurança alimentar, e desastres naturais |
+| Estudar um país | **Pesquisa > Um país** | Resumo, Mercados e sinais, Histórico e dados, e Fontes: gráficos de muitos anos, estimativas do presente e previsões com faixas, hiato do produto, sustentabilidade da dívida, adequação das reservas, regras de política monetária, alerta antecipado de crise, curva de juros, fatores da inflação, contabilidade do crescimento, previsões do FMI por edição e visões "em um dia passado". Para países de renda mais baixa: remessas, ajuda recebida, inclusão financeira, preços de commodities e termos de troca, preços dos alimentos e segurança alimentar, e desastres naturais. Clima na capital desde 1981 e no país inteiro desde 1901, preços de arroz, trigo, milho e soja desde 1960, um desenhador de seguro paramétrico (custo de sinistralidade, preço justo, períodos de retorno, risco de base), um modelo de perdas por desastres e trajetórias de ciclones tropicais. Como a moeda é administrada de fato, ativos do banco central e pressão no financiamento em dólares |
 | Comparar países | **Pesquisa > Comparar países** | Sua lista de acompanhamento lado a lado (os 19 países membros do G20 no início), pautas e onde os preços de mercado e os dados discordam |
 | Acompanhar suas posições | **Pesquisa > Minhas posições** | Uma lista de títulos ou posições que você carrega, diante dos riscos e sinais |
-| Avaliar uma escolha de política | **Relatórios > Nova revisão de política** | Um dossiê passo a passo: definir o problema, diagnosticar, ordenar opções, checar evidências e precedentes, escrever um memorando de recomendação e um resumo de uma página para quem não é economista, e depois acompanhar o que aconteceu. Compare o diagnóstico com até seis países pares, receba um aviso na página inicial quando um número acompanhado cruzar seu gatilho, e veja o que mudou ao revisar de novo a mesma política |
+| Avaliar uma escolha de política | **Relatórios > Nova revisão de política** | Um dossiê passo a passo: definir o problema, diagnosticar, ordenar opções, checar evidências e precedentes, escrever um memorando de recomendação e um resumo de uma página para quem não é economista, e depois acompanhar o que aconteceu. Compare o diagnóstico com até seis países pares, receba um aviso na página inicial quando um número acompanhado cruzar seu gatilho, e veja o que mudou ao revisar de novo a mesma política. O conselho de políticas pesa uma medida (custos e benefícios a taxas de desconto oficiais, quem ganha e quem perde, o que vem depois, cenários) ou o que um evento significa para um mercado |
 | Testar um "e se" fiscal | **Histórico e dados**, ou a partir do Chat do conselho | Mude os gastos do governo ou os impostos e veja o efeito provável no crescimento e na dívida, com multiplicadores e elasticidades publicados e uma faixa |
 | Escrever um relatório | **Relatórios** | Notas de país e de emissor, avaliações de sustentabilidade, revisões de carteira e resumos do conselho, em Markdown ou PDF com fontes e datas |
 | Aprender pelo caminho | Botões do cabeçalho, **Menu > Manual do usuário**, **Menu > Exemplos resolvidos** | Três níveis de ajuda, um glossário em linguagem simples, quatro casos resolvidos, episódios didáticos e modo prova |
@@ -130,7 +130,7 @@ marcada como escrita por IA.
 O guia completo, com passos numerados para cada tarefa, está em **[docs/GUIDE.pt.md](./docs/GUIDE.pt.md)**.
 Ele cobre: o primeiro início, perguntar ao conselho, estudar um país, comparar países, fazer uma revisão
 de política e um relatório, escolher um modelo de IA, as ferramentas e a checagem dos dados, idioma e
-níveis de ajuda, uso no celular e como experimentar as Quests.
+níveis de ajuda, as ferramentas de clima e seguros, uso no celular e como experimentar as Quests.
 
 | | |
 | --- | --- |
@@ -374,14 +374,15 @@ Todas são gratuitas. Algumas precisam de uma chave gratuita, adicionada em Menu
 | Área | Fontes |
 | --- | --- |
 | Crescimento, dívida, orçamentos, comércio | Banco Mundial (indicadores e estatísticas de dívida), FMI (Panorama Econômico Mundial e edições passadas, reservas, balanço de pagamentos, composição das reservas, gasto público por função), OCDE (indicadores antecedentes, preços, PIB trimestral, via DBnomics), preços ao consumidor mensais do FMI, Eurostat, UN Comtrade e WITS |
-| Juros e títulos | BIS (taxas básicas, títulos de dívida, taxas de câmbio reais), FRED (rendimentos oficiais de 10 anos; chave gratuita), Fed de Nova York, Tesouro dos EUA (detentores estrangeiros, leilões), Tesouro Nacional do Brasil, banco central do Peru (spreads EMBIG), e rendimentos de 10 anos da OCDE e taxas de câmbio H.10 do Federal Reserve, mensais desde 1990 via FRED, para repetir crises passadas |
-| Câmbio e commodities | Câmbio à vista (open.er-api.com), taxas de referência do BCE, preços de commodities do Banco Mundial, preços do petróleo da EIA (chave gratuita) |
+| Juros e títulos | BIS (taxas básicas, títulos de dívida, taxas de câmbio reais, ativos totais dos bancos centrais, crédito em dólares aos não bancos), linhas de swap em dólares do Fed de Nova York, FRED (rendimentos oficiais de 10 anos; chave gratuita), Fed de Nova York, Tesouro dos EUA (detentores estrangeiros, leilões), Tesouro Nacional do Brasil, banco central do Peru (spreads EMBIG), e rendimentos de 10 anos da OCDE e taxas de câmbio H.10 do Federal Reserve, mensais desde 1990 via FRED, para repetir crises passadas |
+| Câmbio e commodities | Câmbio à vista (open.er-api.com), taxas de referência do BCE, preços de commodities do Banco Mundial (Pink Sheet; arroz, trigo, milho e soja desde 1960), preços do petróleo da EIA (chave gratuita), a classificação de regimes cambiais de Ilzetzki, Reinhart e Rogoff (uma planilha que você salva; os autores pedem citação e não indicam licença) |
 | Pesquisas e expectativas | Pesquisas com empresas e consumidores da UE (Comissão Europeia, via Eurostat; substituto gratuito dos PMIs pagos, identificado como tal), pesquisa de previsores profissionais do BCE, boletim Focus do Brasil, índice de pressão das cadeias de suprimentos do Fed de Nova York |
 | Bancos centrais e calendário | Banco Central do Brasil, Banco de México (token gratuito), datas oficiais das decisões, datas de divulgação de inflação e PIB dos institutos de estatística |
 | Instituições e abertura | Indicadores de governança do Banco Mundial (WGI), índice de abertura da conta de capital de Chinn e Ito (baixado no seu computador no máximo uma vez por mês, citado como Chinn e Ito 2006 e nunca repassado) |
 | Política, conflitos e transporte marítimo | Notícias do GDELT, dados de conflito do UCDP e do ACLED (o ACLED é baixado à mão), listas de sanções da OFAC e da ONU, índice de risco geopolítico, IMF PortWatch |
 | Mercados e posicionamento | Mercados de previsão Kalshi e Polymarket, relatório Commitments of Traders da CFTC |
 | Países de renda mais baixa | Banco Mundial (remessas e o custo de enviá-las, contas do Global Findex, ajuda recebida como republicada a partir da OCDE, segurança alimentar, peso das commodities no comércio e termos de troca); dois arquivos que você mesmo salva: preços ao consumidor da FAOSTAT para a inflação de alimentos, e desastres naturais do EM-DAT, baixados com sua própria conta gratuita do EM-DAT (os termos não permitem que o app os inclua) |
+| Clima e ameaças naturais | NASA POWER (temperatura e chuva mensais em cada capital desde 1981), Portal de Conhecimento sobre Mudança do Clima do Banco Mundial (médias por país do CRU TS desde 1901, CC BY 4.0), trajetórias de ciclones tropicais IBTrACS da NOAA desde 1980 (baixadas só quando você clica no botão, ou lidas de um arquivo que você salva) |
 
 A lista completa está em [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md) e o que cada fonte permite em
 [docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md) (em inglês).
@@ -407,7 +408,7 @@ O método completo está em [docs/METHODOLOGY.md](./docs/METHODOLOGY.md) (em ing
 
 ## Roteiro
 
-Situação em 13 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./docs/ROADMAP.md), em inglês):
+Situação em 14 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./docs/ROADMAP.md), em inglês):
 
 **Feito**
 
@@ -432,6 +433,18 @@ Situação em 13 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./docs/ROADM
    indicadores, resumos de país, posições enviadas de fora, nomes ocultos, cenários e repetições de
    crises, um registro de auditoria selado, um guia de implantação e login com OpenID Connect.
 7. **Idiomas e ensino**: o app inteiro em português e quatro exemplos resolvidos.
+8. **Dados de mercados e financiamento** (antecipados em 14 de novembro): como a moeda é administrada
+   de fato (regime cambial), os balanços dos bancos centrais e a pressão no financiamento em dólares
+   (crédito em dólares do BIS e linhas de swap do Federal Reserve). Os controles de capital já são
+   cobertos pelo índice de Chinn e Ito.
+9. **Conselho de políticas** (14 de novembro): dentro de uma revisão de política, pesar uma medida com
+   custos e benefícios, quem ganha e quem perde, efeitos de segunda ordem e cenários, ou pesar o que um
+   evento significa para a moeda ou os títulos do governo; o conselho ordena as opções contra ela e o
+   resumo de uma página traz o resultado.
+10. **Clima e seguros** (14 de novembro): clima na capital e no país inteiro, preços de alimentos desde
+    1960, um desenhador de gatilho de seguro paramétrico com custo de sinistralidade, preço justo,
+    períodos de retorno e risco de base, um modelo de perdas por desastres a partir do EM-DAT e
+    trajetórias de ciclones tropicais.
 
 **Próximo**
 
@@ -447,10 +460,12 @@ Situação em 13 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./docs/ROADM
   semestre com dois professores); a construção começa quando o responsável pelo projeto disser.
 - **Árabe e suaíli**: planejados, pausados pelo responsável pelo projeto.
 - **O app para celular**: pausado até depois do lançamento.
-- **Ideias em espera** para o ponto de controle 1: dados de mercados e financiamento (regimes
-  cambiais, balanços dos bancos centrais, aperto no financiamento em dólares) e ensino e
-  compartilhamento (um relatório de país offline, um laboratório macro com modelos de livro-texto e
-  mais exemplos resolvidos).
+- **Ideias em espera** para o ponto de controle 1: ensino e compartilhamento (um relatório de país
+  offline, um laboratório macro com modelos de livro-texto e mais exemplos resolvidos).
+- **Checagens no computador do responsável**: as fontes mais novas (clima, trajetórias de tempestades,
+  ativos do banco central, financiamento em dólares, o arquivo de regime cambial) estão construídas e
+  testadas com respostas salvas, mas não puderam ser alcançadas da máquina de compilação;
+  `npm run check:data` num computador que chegue a elas confirma cada uma.
 
 ---
 

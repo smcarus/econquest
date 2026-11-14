@@ -135,12 +135,41 @@ dados. **Atualizar agora** busca de novo os números daquele país.
    segurança alimentar** e **Desastres naturais**. A inflação de alimentos e os desastres são lidos de
    arquivos que você mesmo salva em `data/local/fao-cpi/` e `data/local/emdat/`; até lá essas partes
    mostram Ausente e dizem onde obter o arquivo ([INSTALL.md](./INSTALL.md#files-you-save-yourself), em
-   inglês).
-6. O **Painel de risco-país** coloca lado a lado a governança, os conflitos armados, a agitação social,
-   o risco geopolítico, a abertura da conta de capital (o índice de Chinn e Ito, citado como Chinn e Ito
-   2006) e a economia, cada dado com sua fonte e seu ano. Ele não dá uma nota geral. Em 13 de novembro
-   de 2026 foi fixado de antemão um teste para saber se uma governança fraca vem antes de um calote;
-   enquanto ele não rodar, o selo do painel diz Não validado.
+   inglês). Em Desastres naturais, **Modelo de perdas** separa o dano de cada ano em quantos eventos
+   danosos ocorrem num ano e o tamanho de cada um, e simula 20.000 anos para dar a perda anual média e
+   a perda superada 1 ano em 10, 50 e 100, também em % do PIB.
+6. **Números com histórico** também mostra como a moeda e o financiamento em dólares funcionam na
+   prática: o **regime cambial** (como a moeda é administrada de fato, mês a mês, pela planilha de
+   Ilzetzki, Reinhart e Rogoff que você salva em `data/local/irr/`), os **ativos do banco central** (o
+   balanço do banco central em % do PIB, do BIS) e a **pressão no financiamento em dólares**
+   (empréstimos e títulos em dólares devidos pelos não bancos do país, do BIS, e as linhas de swap em
+   dólares do Federal Reserve, do Fed de Nova York).
+7. A mesma lista mostra o **clima**: temperatura e chuva mensais na capital desde 1981 (NASA POWER) e na
+   média do país inteiro desde 1901 (portal climático do Banco Mundial), cada mês contra sua média de
+   1991-2020. Os preços mundiais de arroz, trigo, milho e soja vão até 1960, para pôr uma seca ao lado
+   de uma alta de preços.
+8. **Seguro paramétrico** permite esboçar uma cobertura que paga por um número medido (chuva,
+   temperatura ou preço de alimentos) e não por uma perda avaliada:
+   1. Escolha o índice, a estação, se paga quando o índice está baixo ou alto, o gatilho onde o
+      pagamento começa, a saída onde a cobertura inteira é paga e o valor coberto. O painel abre com um
+      desenho tirado do histórico (gatilho superado cerca de 1 ano em 5, saída cerca de 1 em 20).
+   2. A análise de sinistralidade repete o desenho em cada estação passada: os anos em que pagou e o
+      pagamento anual médio (o custo de sinistralidade).
+   3. **Preço justo** soma um carregamento que você escolhe (um % do pagamento esperado, ou k
+      desvios-padrão do pagamento anual) e dá o preço em % da cobertura por ano.
+   4. **Quão raro é?** diz com que frequência o gatilho e a saída são superados, pelo histórico e por
+      uma curva de valores extremos ajustada, com uma faixa de 90%.
+   5. **Risco de base** compara a cobertura com a outra série de clima (capital contra o país inteiro):
+      em quantos anos ruins pagou e quantos deixou passar.
+9. **Ciclones tropicais** lista os furacões, tufões e ciclones que passaram a menos de 50, 100 ou
+   200 km do país desde 1980, pelas trajetórias IBTrACS da NOAA. Nada é baixado até você clicar em
+   **Baixar trajetórias de tempestades da NOAA**; você também pode salvar um arquivo IBTrACS em
+   `data/local/ibtracs/`.
+10. O **Painel de risco-país** coloca lado a lado a governança, os conflitos armados, a agitação social,
+    o risco geopolítico, a abertura da conta de capital (o índice de Chinn e Ito, citado como Chinn e Ito
+    2006) e a economia, cada dado com sua fonte e seu ano. Ele não dá uma nota geral. Em 13 de novembro
+    de 2026 foi fixado de antemão um teste para saber se uma governança fraca vem antes de um calote;
+    enquanto ele não rodar, o selo do painel diz Não validado.
 
 ![Hiato do produto do Brasil: o meio de três estimativas com uma faixa que mostra a dispersão, tracejado nos anos de projeção do FMI](images/07-output-gap.png)
 
@@ -272,7 +301,9 @@ O **Menu** reúne tudo o que não é uma página. O que vale conhecer primeiro:
 
 - **Ferramentas**: todas as ferramentas agrupadas pelo que você quer fazer, e **Conexões de dados**.
 - **Dados offline**: baixe os dados de todos os países para usar sem internet e veja quanto espaço ocupam.
-- **Saúde dos dados**: quais fontes chegam, quais falham e quais números foram revisados.
+- **Saúde dos dados**: quais fontes chegam, quais falham e quais números foram revisados. A aba
+  **Daily download** (em inglês) acompanha o download diário enquanto ele roda: cada parte, o que
+  falhou e por quê, as fontes que pedem uma chave ou um arquivo, e o que baixar à mão.
 - **Modelos e validação**: o registro de modelos, os resultados dos testes e **Seus testes**.
 - **Seus dados**: carregue suas próprias séries a partir de um arquivo CSV.
 - **Modo prova**: desliga todos os passos de IA para uma prova.

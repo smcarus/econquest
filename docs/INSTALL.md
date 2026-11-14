@@ -69,6 +69,8 @@ network use before and after a run.
 | Every day | The daily run (`npm run go -- daily`, started by `npm run go`) | Roughly 150 to 200 MB | Estimate, broken down below |
 | Every week | IMF past editions (only editions not yet saved), the Geopolitical Risk index, the weekly tests | Usually nothing to a few MB; up to about 10 MB when a new IMF edition appears | Measured file sizes; the tests use saved data only |
 | Every month | New UCDP conflict file | About 1.3 MB | Measured |
+| When you open a country's History & data | Weather at the capital and across the country for that country (two requests, kept 7 and 30 days) | Small; not measured yet | The build machine cannot reach NASA or the World Bank climate portal |
+| Once, if you press the button | NOAA IBTrACS storm tracks since 1980 | A large file, deleted once read; not measured yet | Same reason; the panel shows the megabytes as they arrive |
 | While the app is open | Background refresh of the figures on screen | A few MB at a time | Estimate: the same feeds as the daily run, only for the countries you look at |
 
 The daily run, part by part (estimate):
@@ -289,6 +291,7 @@ the file read Missing and say where to get it.
 | `data/local/weo-vintages/` | Past IMF World Economic Outlook editions | IMF WEO database page | IMF forecasts by edition |
 | `data/local/acled/` | ACLED aggregated files (.xlsx or .csv, zipped or not) | acleddata.com, with your own account | Conflict events |
 | `data/local/aiddata/` | A newer AidData Chinese development finance file (optional) | aiddata.org | China lending; a shipped summary is used otherwise |
+| `data/local/ibtracs/` | An IBTrACS v04 CSV (optional: the since-1980 file or a basin file) | https://www.ncei.noaa.gov/products/international-best-track-archive | Tropical cyclones (History & data), instead of the download button in the panel |
 | `data/local/cb-statements/<ISO3>/` | Central bank statements, one text, Markdown or web page file each, named from its date (for example `2026-10-29.txt`) | The central bank's own site | Central bank word count |
 
 [USER_MANUAL.md](./USER_MANUAL.md) explains each panel, and [DATA_LICENCES.md](./DATA_LICENCES.md)
@@ -319,8 +322,20 @@ here so you know what the folders are. Each one can also be fetched by hand from
 | `data/local/gpr/` | The Geopolitical Risk index (Caldara and Iacoviello) | Once a week at most | `npm run gpr:pull` |
 | `data/local/sanctions/`, `data/local/ucdp/` | OFAC and UN sanctions lists; newer UCDP conflict files | With each daily download | `npm run sanctions:pull`, `npm run ucdp:pull` |
 
+A few sources are fetched for one country at a time, the first time you open its History & data
+page, and kept under `data/live/`:
+
+| Folder | What it holds | How often |
+| --- | --- | --- |
+| `data/live/nasa-power/` | Monthly temperature and rainfall at each capital since 1981, one file per country (NASA POWER) | Downloaded again after 7 days |
+| `data/live/wb-cckp/` | Monthly temperature and rainfall averaged over each country since 1901, one file per country (World Bank climate portal, CRU TS) | Downloaded again after 30 days |
+| `data/live/ibtracs/` | Tropical cyclone tracks since 1980 (NOAA IBTrACS), cut down to the tracks the app needs | Only when you press *Download storm tracks from NOAA*; offered again after 30 days. The download is a large file, streamed and then deleted once the tracks are read |
+
 If a download fails, the copy saved before is kept and nothing is filled in. `npm run check:data`
-then shows which source did not answer (for the two newest, rows `fed_h10` and `chinn_ito`).
+then shows which source did not answer. The newest rows are `fed_h10` and `chinn_ito` (crisis
+replays and capital account openness), `bis_cb_assets`, `bis_usd_credit` and `nyfed_swaps` (central
+bank assets and dollar funding), `nasa_power` and `wb_cckp` (weather), `ibtracs` (storm tracks) and
+`irr_file` (the exchange rate regime workbook you save).
 
 ## Files that hold your connections
 

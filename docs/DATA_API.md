@@ -140,6 +140,29 @@ Every address answers a plain `GET`. Tables also come as Excel: change `.csv` to
 An address that has nothing to give answers with a short JSON note, for example
 `404 NO_SERIES` with the reason the series is Missing.
 
+## Series added on 14 November
+
+These series come through the same addresses as every other series, with the same columns and
+labels. Weather series for a country are filled the first time its History & data page is opened
+(or the series list is asked for), and then kept for 7 days (capital) or 30 days (country average).
+
+| Series id | What it is | Source |
+| --- | --- | --- |
+| `weather_temp`, `weather_temp_anom` | Monthly temperature at the capital, °C, and °C warmer or colder than the same month's 1991-2020 average | NASA POWER |
+| `weather_rain`, `weather_rain_pct` | Monthly rainfall at the capital, mm, and as % of the same month's 1991-2020 average | NASA POWER |
+| `country_temp`, `country_temp_anom` | Monthly temperature averaged over the country since 1901, and against 1991-2020 | World Bank climate portal (CRU TS, CC BY 4.0) |
+| `country_rain`, `country_rain_pct` | Monthly rainfall averaged over the country since 1901, and as % of 1991-2020 | World Bank climate portal (CRU TS, CC BY 4.0) |
+| `cb_assets_gdp`, `cb_assets_usd` | Central bank total assets, % of GDP and US$ bn, quarterly | BIS |
+| `usd_credit`, `usd_credit_yoy` | US dollar loans and bonds owed by the country's non-banks, US$ bn and change on a year earlier | BIS global liquidity indicators |
+| `fed_swaps_total`, `fed_swaps_cb` | Federal Reserve dollar swap lines outstanding each Wednesday, all central banks and the country's own | New York Fed |
+| `fx_regime_coarse`, `fx_regime_fine` | Exchange rate regime code by month (coarse 1 to 6, fine 1 to 15) | Ilzetzki, Reinhart and Rogoff workbook you save in `data/local/irr/`; held back in Sharing mode, because the authors state no licence for passing it on |
+| `commodity_pink_sheet_rice_05`, `commodity_pink_sheet_wheat_us_hrw`, `commodity_pink_sheet_maize`, `commodity_pink_sheet_soybeans` | World prices of rice (Thai 5%), wheat (US HRW), maize and soybeans, US$ per tonne, monthly since 1960 (world series) | World Bank Pink Sheet |
+
+The insurance tools (trigger designer, fair price, return periods, basis risk, disaster loss model,
+tropical cyclones) and the policy council are calculations on these series and on files you save;
+they are not served as separate tables. Use the series above to rebuild them in your own code, with
+the rules in [METHODS.md](./METHODS.md).
+
 ## How fast, and how often
 
 The addresses answer from the app's saved copies first; a first download that is slow finishes in

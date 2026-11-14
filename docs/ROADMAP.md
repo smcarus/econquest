@@ -1,6 +1,6 @@
 # Roadmap
 
-What is planned for EconQuest, in the order it will be built. Last updated 13 November 2026.
+What is planned for EconQuest, in the order it will be built. Last updated 14 November 2026.
 
 ## How the work is done
 
@@ -24,7 +24,7 @@ The same rules hold for every change:
 | Area | What was added |
 | --- | --- |
 | Languages | The whole app in Spanish (formal *usted*), French (formal *vous*) and Brazilian Portuguese (*você*), each downloaded only when picked; Arabic and Swahili planned but paused by the maintainer on 12 November, not started |
-| Documentation | README and walk-through guide with screenshots in English, Spanish, French and Portuguese; recommended AI models, settings and measured download and disk sizes; a table of the files you save yourself in the install guide; a deployment guide for running the app as a service, a plain-language guide to how the app works (docs/HOW_IT_WORKS.md), and every document brought up to date with the console integration on 13 November |
+| Documentation | README and walk-through guide with screenshots in English, Spanish, French and Portuguese; recommended AI models, settings and measured download and disk sizes; a table of the files you save yourself in the install guide; a deployment guide for running the app as a service, a plain-language guide to how the app works (docs/HOW_IT_WORKS.md), every document brought up to date with the console integration on 13 November, and again on 14 November with the feed fixes, the usability fixes, markets and financing data, the policy council, and weather and insurance (README and guide in four languages, methodology version 1.3, the plain-language guide, install guide, data API and data sources) |
 | Researcher tools | Opt-in 14B referee for smaller computers; a small gap model you fill in yourself, with a council link; the data API with R, Python and Stata helpers; register and run your own tests, with their own Holm correction |
 | Your own data | Load your own CSV series and use them across the app |
 | Fiscal what-ifs | Spending multipliers by type, defence and spending by purpose, OECD and European Commission budget elasticities, an editable what-if card |
@@ -181,9 +181,9 @@ written here on the day of the release.
 ## Parked ideas (looked at in checkpoint 1)
 
 Ideas raised on 13 November 2026 that are not on the build list. Groups A (data for lower-income
-countries) and C (policy review tools) were brought forward that day and are done; they are listed
-under "The build order from here". Groups B and D wait for checkpoint 1, unless the maintainer brings
-one forward. A source marked "terms to confirm" would be read only from a file you save in
+countries) and C (policy review tools) were brought forward that day, and group B (markets and
+financing data) on 14 November; all three are done and listed under "The build order from here".
+Group D waits for checkpoint 1, unless the maintainer brings it forward. A source marked "terms to confirm" would be read only from a file you save in
 `data/local/` until its terms are confirmed.
 
 **Group B: markets and financing data**
@@ -221,6 +221,8 @@ validated, with the reason.
 | Dollar funding (PB4) | `npm run check:data` (rows bis_usd_credit, nyfed_swaps) on the Mac |
 | Weather (W1) | `npm run check:data` (row nasa_power) and open History & data for one country on the Mac |
 | Weather (W2) | `npm run check:data` (row wb_cckp) on the Mac |
+| Tropical cyclones (I8) | A first press of *Download storm tracks from NOAA* on a computer that reaches NOAA, then `npm run check:data` (row ibtracs); the file layout is tested only on made-up rows so far |
+| Disaster loss model (I1, I2) | The EM-DAT file saved in `data/local/emdat/` on the Mac; the model is tested only on made-up events so far |
 | Central bank assets (PB3) | `npm run check:data` (row bis_cb_assets) on the Mac; the BIS layout was read from a live answer, but the app's request has not run from the cloud |
 | Exchange rate regime (PB1) | The IRR monthly workbook saved in `data/local/irr/`, then `npm run check:data` (row irr_file); the file layout is tested only on made-up rows so far |
 | Capital account openness (C13) | A first run of `npm run chinn-ito:pull`, then `npm run check:data` (row chinn_ito); the file layout is tested only on made-up rows so far |

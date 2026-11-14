@@ -99,10 +99,10 @@ les Réglages, et ne sont jamais transmises dans les téléchargements ou les co
 | Tâche | Où | Ce que vous obtenez |
 | --- | --- | --- |
 | Poser une question en langage courant | **Espace de travail** (Chat du conseil) | Des agents spécialisés répondent à partir des chiffres de l'application, chacun avec sa source ; avec un modèle d'IA, un agent de synthèse rédige une courte note qui ne peut citer que leurs chiffres, et un contrôle signale tout chiffre impossible à retracer |
-| Étudier un pays | **Recherche > Un pays** | Résumé, Marchés et signaux, Historique et données, Sources : graphiques sur des années, estimations du présent et prévisions avec intervalles, écart de production, soutenabilité de la dette, adéquation des réserves, règles de politique monétaire, alerte précoce de crise, courbe des taux, moteurs de l'inflation, comptabilité de la croissance, prévisions du FMI par édition, et vues « à une date passée ». Pour les pays à revenu plus faible : envois de fonds, aide reçue, inclusion financière, prix des matières premières et termes de l’échange, prix alimentaires et sécurité alimentaire, et catastrophes naturelles |
+| Étudier un pays | **Recherche > Un pays** | Résumé, Marchés et signaux, Historique et données, Sources : graphiques sur des années, estimations du présent et prévisions avec intervalles, écart de production, soutenabilité de la dette, adéquation des réserves, règles de politique monétaire, alerte précoce de crise, courbe des taux, moteurs de l'inflation, comptabilité de la croissance, prévisions du FMI par édition, et vues « à une date passée ». Pour les pays à revenu plus faible : envois de fonds, aide reçue, inclusion financière, prix des matières premières et termes de l’échange, prix alimentaires et sécurité alimentaire, et catastrophes naturelles. Météo dans la capitale depuis 1981 et sur tout le pays depuis 1901, prix du riz, du blé, du maïs et du soja depuis 1960, un outil de conception d'assurance paramétrique (coût de sinistralité, prix équitable, périodes de retour, risque de base), un modèle de pertes dues aux catastrophes et les trajectoires des cyclones tropicaux. Comment la monnaie est gérée dans les faits, actifs de la banque centrale et tension sur le financement en dollars |
 | Comparer des pays | **Recherche > Comparer des pays** | Votre liste de suivi côte à côte (les 19 pays membres du G20 au départ), des pistes d'articles et les écarts entre prix de marché et données |
 | Suivre vos positions | **Recherche > Mes positions** | Une liste d'obligations ou de positions que vous chargez, face aux risques et aux signaux |
-| Évaluer un choix de politique | **Rapports > Nouvelle revue de politique** | Un dossier pas à pas : poser le problème, diagnostiquer, classer les options, examiner les preuves et les précédents, rédiger une note de recommandation et une synthèse d'une page pour les non-économistes, puis suivre ce qui s'est passé. Comparez le diagnostic avec jusqu'à six pays pairs, recevez une alerte sur la page d'accueil quand un chiffre suivi franchit son seuil, et voyez ce qui a changé quand vous reprenez la même politique |
+| Évaluer un choix de politique | **Rapports > Nouvelle revue de politique** | Un dossier pas à pas : poser le problème, diagnostiquer, classer les options, examiner les preuves et les précédents, rédiger une note de recommandation et une synthèse d'une page pour les non-économistes, puis suivre ce qui s'est passé. Comparez le diagnostic avec jusqu'à six pays pairs, recevez une alerte sur la page d'accueil quand un chiffre suivi franchit son seuil, et voyez ce qui a changé quand vous reprenez la même politique. Le conseil des politiques pèse une mesure (coûts et avantages aux taux d'actualisation officiels, qui gagne et qui perd, ce qui suit, scénarios) ou ce qu'un événement signifie pour un marché |
 | Tester une hypothèse budgétaire | **Historique et données**, ou depuis le Chat du conseil | Modifiez les dépenses publiques ou les impôts et voyez l'effet probable sur la croissance et la dette, avec des multiplicateurs et élasticités publiés et un intervalle |
 | Rédiger un rapport | **Rapports** | Notes pays et émetteur, évaluations de soutenabilité, revues de portefeuille et synthèses du conseil, en Markdown ou PDF avec sources et dates |
 | Apprendre en chemin | Boutons de l'en-tête, **Menu > Manuel d'utilisation**, **Menu > Exemples guidés** | Trois niveaux d'aide, un glossaire en langage clair, quatre cas guidés, des séquences pédagogiques et un mode examen |
@@ -132,8 +132,8 @@ comme écrite par une IA.
 Le guide complet, avec des étapes numérotées pour chaque tâche, se trouve dans
 **[docs/GUIDE.fr.md](./docs/GUIDE.fr.md)**. Il couvre : le premier démarrage, interroger le conseil,
 étudier un pays, comparer des pays, mener une revue de politique et rédiger un rapport, choisir un modèle
-d'IA, les outils et la vérification des données, la langue et les niveaux d'aide, l'usage sur téléphone,
-et l'essai des Quêtes.
+d'IA, les outils et la vérification des données, la langue et les niveaux d'aide, les outils météo et assurance,
+l'usage sur téléphone et l'essai des Quêtes.
 
 | | |
 | --- | --- |
@@ -384,14 +384,15 @@ Toutes sont gratuites. Quelques-unes demandent une clé gratuite, à ajouter dan
 | Domaine | Sources |
 | --- | --- |
 | Croissance, dette, budgets, commerce | Banque mondiale (indicateurs et statistiques de dette), FMI (Perspectives de l'économie mondiale et éditions passées, réserves, balance des paiements, composition des réserves, dépenses publiques par fonction), OCDE (indicateurs avancés, prix, PIB trimestriel, via DBnomics), prix à la consommation mensuels du FMI, Eurostat, UN Comtrade et WITS |
-| Taux et obligations | BRI (taux directeurs, titres de dette, taux de change réels), FRED (rendements officiels à 10 ans ; clé gratuite), Fed de New York, Trésor américain (détenteurs étrangers, adjudications), Trésor brésilien, banque centrale du Pérou (écarts EMBIG), et rendements à 10 ans de l’OCDE et taux de change H.10 de la Réserve fédérale, mensuels depuis 1990 via FRED, pour rejouer les crises passées |
-| Change et matières premières | Taux de change au comptant (open.er-api.com), taux de référence de la BCE, prix des matières premières de la Banque mondiale, prix du pétrole de l'EIA (clé gratuite) |
+| Taux et obligations | BRI (taux directeurs, titres de dette, taux de change réels, actifs totaux des banques centrales, crédit en dollars aux agents non bancaires), lignes de swap en dollars de la Fed de New York, FRED (rendements officiels à 10 ans ; clé gratuite), Fed de New York, Trésor américain (détenteurs étrangers, adjudications), Trésor brésilien, banque centrale du Pérou (écarts EMBIG), et rendements à 10 ans de l’OCDE et taux de change H.10 de la Réserve fédérale, mensuels depuis 1990 via FRED, pour rejouer les crises passées |
+| Change et matières premières | Taux de change au comptant (open.er-api.com), taux de référence de la BCE, prix des matières premières de la Banque mondiale (Pink Sheet ; riz, blé, maïs et soja depuis 1960), prix du pétrole de l'EIA (clé gratuite), la classification des régimes de change d'Ilzetzki, Reinhart et Rogoff (un classeur que vous enregistrez ; les auteurs demandent une citation et n'indiquent pas de licence) |
 | Enquêtes et anticipations | Enquêtes auprès des entreprises et des consommateurs de l'UE (Commission européenne, via Eurostat ; substitut gratuit des PMI payants, signalé comme tel), enquête de la BCE auprès des prévisionnistes professionnels, enquête Focus du Brésil, indice de tension des chaînes d'approvisionnement de la Fed de New York |
 | Banques centrales et calendrier | Banco Central do Brasil, Banco de México (jeton gratuit), dates officielles des décisions, dates de publication de l'IPC et du PIB des instituts statistiques |
 | Institutions et ouverture | Indicateurs de gouvernance de la Banque mondiale (WGI), indice d’ouverture du compte de capital de Chinn et Ito (téléchargé sur votre ordinateur au plus une fois par mois, cité comme Chinn et Ito 2006 et jamais retransmis) |
 | Politique, conflits et transport maritime | Actualités GDELT, données de conflit UCDP et ACLED (ACLED se télécharge à la main), listes de sanctions de l'OFAC et de l'ONU, indice de risque géopolitique, IMF PortWatch |
 | Marchés et positionnement | Marchés de prédiction Kalshi et Polymarket, rapport Commitments of Traders de la CFTC |
 | Pays à revenu plus faible | Banque mondiale (envois de fonds et leur coût d'envoi, comptes Global Findex, aide reçue telle que republiée à partir de l'OCDE, sécurité alimentaire, part des matières premières dans les échanges et termes de l’échange) ; deux fichiers que vous enregistrez vous-même : les prix à la consommation de FAOSTAT pour l'inflation alimentaire, et les catastrophes naturelles d'EM-DAT, téléchargées avec votre propre compte EM-DAT gratuit (ses conditions ne permettent pas à l'application de les fournir) |
+| Météo et aléas naturels | NASA POWER (température et pluie mensuelles dans chaque capitale depuis 1981), portail climatique de la Banque mondiale (moyennes par pays de CRU TS depuis 1901, CC BY 4.0), trajectoires des cyclones tropicaux IBTrACS de la NOAA depuis 1980 (téléchargées seulement quand vous appuyez sur le bouton, ou lues dans un fichier que vous enregistrez) |
 
 La liste complète est dans [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md) et ce que permet chaque source
 dans [docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md) (en anglais).
@@ -417,7 +418,7 @@ La méthode complète est dans [docs/METHODOLOGY.md](./docs/METHODOLOGY.md) (en 
 
 ## Feuille de route
 
-Où en est le projet au 13 novembre 2026 (détail dans [docs/ROADMAP.md](./docs/ROADMAP.md), en anglais) :
+Où en est le projet au 14 novembre 2026 (détail dans [docs/ROADMAP.md](./docs/ROADMAP.md), en anglais) :
 
 **Fait**
 
@@ -443,6 +444,18 @@ Où en est le projet au 13 novembre 2026 (détail dans [docs/ROADMAP.md](./docs/
    scénarios et rejeux de crises, un journal d’audit scellé, un guide de déploiement et la connexion
    par OpenID Connect.
 7. **Langues et enseignement** : toute l’application en portugais et quatre exemples guidés.
+8. **Données de marchés et de financement** (avancées le 14 novembre) : comment la monnaie est gérée
+   dans les faits (régime de change), les bilans des banques centrales et la tension sur le
+   financement en dollars (crédit en dollars de la BRI et lignes de swap de la Réserve fédérale). Les
+   contrôles de capitaux sont couverts par l’indice de Chinn et Ito.
+9. **Conseil des politiques** (14 novembre) : dans une revue de politique, peser une mesure avec ses
+   coûts et avantages, qui gagne et qui perd, les effets de second ordre et des scénarios, ou peser ce
+   qu’un événement signifie pour la monnaie ou les obligations d’État ; le conseil classe les options
+   face à elle et la synthèse d’une page reprend le résultat.
+10. **Météo et assurance** (14 novembre) : météo dans la capitale et sur tout le pays, prix
+    alimentaires depuis 1960, un outil de conception de déclencheur d’assurance paramétrique avec coût
+    de sinistralité, prix équitable, périodes de retour et risque de base, un modèle de pertes dues aux
+    catastrophes à partir d’EM-DAT et les trajectoires des cyclones tropicaux.
 
 **Ensuite**
 
@@ -459,9 +472,12 @@ Où en est le projet au 13 novembre 2026 (détail dans [docs/ROADMAP.md](./docs/
   avec deux professeurs) ; la construction commence quand le responsable du projet le décide.
 - **Arabe et swahili** : prévus, mis en pause par le responsable du projet.
 - **L’application mobile** : en pause jusqu’après la publication.
-- **Idées en attente** pour le point d’étape 1 : données de marchés et de financement (régimes de change,
-  bilans des banques centrales, tensions sur le financement en dollars) et enseignement et partage (un
-  rapport pays hors ligne, un laboratoire macro avec des modèles de manuel, d’autres exemples guidés).
+- **Idées en attente** pour le point d’étape 1 : enseignement et partage (un rapport pays hors ligne, un
+  laboratoire macro avec des modèles de manuel, d’autres exemples guidés).
+- **Vérifications sur l’ordinateur du responsable** : les sources les plus récentes (météo, trajectoires
+  des tempêtes, actifs des banques centrales, financement en dollars, fichier des régimes de change)
+  sont construites et testées sur des réponses enregistrées, mais n’ont pas pu être jointes depuis la
+  machine de compilation ; `npm run check:data` sur un ordinateur qui les atteint confirme chacune.
 
 ---
 
