@@ -419,6 +419,16 @@ function readme(result: ChartResult, tests: ChartTest[], s: PackSettings | null,
     '- `data-manifest.csv`: one row per column: label, unit, first and last date, source, the licence register row behind it and the date the pack was made.',
     '- `CITATION.cff`: how to cite this pack and the app; cite each data source in `data-manifest.csv` too.',
     '',
+    '## How to run',
+    '',
+    `Unzipping gives one folder, \`${packFolder(result)}\`, holding every file. Open a terminal in that folder (for example \`cd ~/Downloads/${packFolder(result)}\`; if your unzip tool made an extra folder around it, go one level further in), then:`,
+    '',
+    '- R (base R, any 4.x): `Rscript replicate.R`',
+    '- Python 3 with numpy, pandas and scipy: `python3 replicate.py`',
+    '- Stata 13 or later: `do replicate.do` in Stata, or `stata -b do replicate.do` from a terminal (writes `replicate.log`; the command may be `stata-se` or `stata-mp`)',
+    '',
+    'Each prints the same figures as the section below, which come from the app.',
+    '',
     '## Columns',
     '',
   ];
@@ -471,9 +481,14 @@ export function replicationPack(result: ChartResult, now: Date = new Date()): Re
   };
 }
 
+/** The folder every file sits in inside the zip, so unzipping never scatters files. */
+export function packFolder(result: Pick<ChartResult, 'title'>): string {
+  return result.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 50).replace(/^-|-$/g, '') || 'chart';
+}
+
 export function replicationZip(result: ChartResult, now: Date = new Date()): Uint8Array {
   const { files } = replicationPack(result, now);
-  const stem = result.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 50).replace(/^-|-$/g, '') || 'chart';
+  const stem = packFolder(result);
   return zipSync(Object.fromEntries(Object.entries(files).map(([name, text]) => [`${stem}/${name}`, strToU8(text)])));
 }
 

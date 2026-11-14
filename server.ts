@@ -233,7 +233,7 @@ import { fetchGovSpendingPull } from './src/server/feeds/govSpending';
 import { gdeltPausedUntil, gdeltFetch, GDELT_REFRESH_MS } from './src/server/feeds/gdelt';
 import { fetchImfPull, fetchCoferPull, fetchImfCpiPull, loadImfCpi } from './src/server/feeds/imf';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
-import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, forgetNationalCpi, fetchMonthlyActivity, fetchEuSurveyPull, loadEuSurveys } from './src/server/feeds/oecd';
+import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, nationalCpiOrSaved, forgetNationalCpi, fetchMonthlyActivity, fetchEuSurveyPull, loadEuSurveys } from './src/server/feeds/oecd';
 import { commodityMemory, fetchCommodities, forgetCommodityPulls } from './src/server/feeds/commodities';
 import { officialYieldCache, fetchOfficial10YYield, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, loadFxHistory, pullFxHistory, fetchFxHistory, fetchFxExtra, loadFxExtra, fetchBisCreditCycle, fetchIdsCreditors, fetchSovereignDefaults, fetchInflationExpectations, fetchInflationSurveys, fetchStressPulls, fetchPortWatchChokepoints, fetchPortWatchPorts, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds, fetchFedBalanceSheet } from './src/server/feeds/rates';
 import { fetchTradeExposure } from './src/server/feeds/markets';
@@ -1459,7 +1459,7 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
     cbpolPullQuick(),
     Promise.race([fetchCliPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
     Promise.race([fetchCpiPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
-    Promise.race([fetchNationalCpi(), new Promise<NationalCpiPull | null>((resolve) => setTimeout(() => resolve(nationalCpiMemory?.pull ?? null), 8000))]),
+    nationalCpiOrSaved(),
     // Comtrade pulls one country at a time; the watchlist shows what is saved and the pull fills in later.
     Promise.race([fetchComtrade(), new Promise<ComtradeFile | null>((resolve) => setTimeout(() => resolve(comtradeMemory?.file ?? null), 3000))]),
     // IMF reserves and BOP: many small requests; the first pull fills the cache for next time.
@@ -3980,7 +3980,7 @@ async function startServer() {
     Promise.race([p.catch(() => null), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]);
   async function seriesFor(iso3: string) {
     const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna, activity, fxHistory, fxExtra, bisCredit, idsCreditors, sovereignDefaults, inflationExpectations, inflationSurveys, portWatch] = await Promise.all([
-      quick(fetchCbpolPull()), quick(fetchCliPull()), quick(fetchCpiPull()), quick(fetchNationalCpi()), quick(fetchCftcPull()), quick(fetchTicPull()),
+      quick(fetchCbpolPull()), quick(fetchCliPull()), quick(fetchCpiPull()), nationalCpiOrSaved(), quick(fetchCftcPull()), quick(fetchTicPull()),
       // Saved history answers at once; a first download that takes longer than 8 s finishes in the background.
       quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
       quick(fetchHcSpread()).then((h) => h ?? loadMarketExtras().hcSpread ?? null),
@@ -4549,7 +4549,7 @@ async function startServer() {
   // Every country's monthly inflation with its source and age (src/utils/inflationHealth.ts): old OECD copies flagged.
   app.get('/api/data/health/inflation', async (_req, res) => {
     const quick = <T,>(p: Promise<T>) => Promise.race([p, new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000))]);
-    const [cpi, nationalCpi] = await Promise.all([quick(fetchCpiPull()), quick(fetchNationalCpi())]);
+    const [cpi, nationalCpi] = await Promise.all([quick(fetchCpiPull()), nationalCpiOrSaved()]);
     const merged = mergeNationalCpi(cpi?.series, (nationalCpi ?? nationalCpiMemory?.pull)?.series || {}, loadImfCpi()?.series || {});
     res.json(inflationHealth(SOVEREIGN_CATALOG.map((c) => c.iso3), (iso3) => cpiFor(iso3, merged)));
   });

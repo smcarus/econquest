@@ -59,7 +59,7 @@ import { CBPOL_AREA, CBPOL_NOT_COVERED } from '../../utils/bisPolicyRates';
 import { countrySeries } from '../../utils/seriesHistory';
 import path from 'path';
 import { SOVEREIGN_CATALOG } from '../../data/presetsAndBaselines.ts';
-import { oecdFetch, fetchQnaPull, fetchNationalCpi, fetchMonthlyActivity } from '../feeds/oecd';
+import { oecdFetch, fetchQnaPull, fetchNationalCpi, nationalCpiOrSaved, fetchMonthlyActivity } from '../feeds/oecd';
 import { GSCPI_SOURCE, STRESS_INDICES, stressIndex } from '../../utils/stressIndices';
 import { fetchBisCreditCycle, fetchDebtSchedule, fetchFxHistory, fetchPolicyDaily, fetchReerLong, fetchStressPulls, fetchAlfred, loadFxHistory, fetchFredHistory } from '../feeds/rates';
 import { beer, beerSentence } from '../../utils/beer';
@@ -727,7 +727,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const today = new Date().toISOString().slice(0, 10);
     const asOf = parseAsOfDate(req.query.asOf) ?? today;
     if (asOf > today) return res.status(400).json({ error: 'BAD_DATE', message: 'The As-of date cannot be in the future.' });
-    const [qna, activity, hist, nationalCpi] = await Promise.all([quick(fetchQnaPull()), quick(fetchMonthlyActivity()), modelHistory(), quick(fetchNationalCpi())]);
+    const [qna, activity, hist, nationalCpi] = await Promise.all([quick(fetchQnaPull()), quick(fetchMonthlyActivity()), modelHistory(), nationalCpiOrSaved()]);
     const gdpPts = qnaFor(iso3, qna?.series)?.qoq ?? [];
     const act = activity?.series?.[iso3];
     const cliPts = areaSeries(iso3, hist?.cli ?? undefined);
@@ -759,7 +759,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const [qna, hist, nationalCpi, official] = await Promise.all([
       quick(fetchQnaPull()),
       modelHistory(),
-      quick(fetchNationalCpi()),
+      nationalCpiOrSaved(),
       quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
     ]);
     const imfSeries = (id: string) => {
