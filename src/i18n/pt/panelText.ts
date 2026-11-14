@@ -845,4 +845,6 @@ export const PANEL_TEXT_PT: Record<string, string> = {
   "For a cover that pays when the index is low, the exit must be below the trigger": "Em uma cobertura que paga quando o índice está baixo, a saída deve ficar abaixo do gatilho",
   "For a cover that pays when the index is high, the exit must be above the trigger": "Em uma cobertura que paga quando o índice está alto, a saída deve ficar acima do gatilho",
   "The loading must be a number of 0 or more": "O carregamento deve ser um número igual ou maior que 0",
+  "Fewer than 20 complete seasons, so no extreme value fit": "Menos de 20 estações completas, então não há ajuste de valores extremos",
+  "The extreme value fit did not converge on these seasons": "O ajuste de valores extremos não convergiu com estas estações",
 };

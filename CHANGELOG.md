@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Return periods and extreme values (I3 + I4): the trigger designer says how often the trigger and
+  exit are passed, from the record and from a GEV curve fitted by L-moments (low tail for low-index
+  covers), with the season passed 1 year in 2, 5, 10, 20, 50 and 100, a 90% bootstrap range,
+  extrapolation marked, the burn cost from the fitted curve and a fit check. Glossary entries for
+  return period and extreme value fit; Spanish, French and Portuguese.
 - Fair price for the parametric cover (I6): under the burn analysis, pick the loading as a % of the
   expected payout or as k standard deviations of the yearly payout, and price on the whole record or
   since 1991. Shows the price as % of the cover a year and in money, the multiple of the burn cost,

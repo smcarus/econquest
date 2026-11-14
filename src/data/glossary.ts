@@ -1229,6 +1229,26 @@ export const GLOSSARY: GlossaryEntry[] = [
     limits: "The app's fair price comes from the record alone. Real quotes also depend on reinsurance prices, taxes, brokerage and the insurer's own models, and can be well above it for rare, large losses.",
     match: [/insurance loading/i, /rate on line/i],
   },
+  {
+    id: 'return_period',
+    term: "Return period (1 year in N)",
+    group: 'risk',
+    what: "How often, on average, a level is reached or passed: a 1-in-20-year drought is one that dry or drier happens in about 5% of years. It is a probability, not a schedule.",
+    why: "Insurers, engineers and disaster planners size covers, dams and reserves by return period. A trigger passed 1 year in 5 pays often and costs more; one passed 1 year in 50 is cheap but rarely helps.",
+    read: "A 1-in-20 level can come two years running, or not for 60 years. Over 30 years, a 1-in-20 event has about a 79% chance of happening at least once.",
+    limits: "From a record of n years, return periods much longer than n are guesses from a fitted curve. A changing climate shortens or lengthens them over time.",
+    match: [/return period/i, /1-in-\d+/i],
+  },
+  {
+    id: 'extreme_value_fit',
+    term: "Extreme value fit (GEV, L-moments)",
+    group: 'risk',
+    what: "A curve fitted to the yearly or seasonal values that describes how often very high or very low values happen, including ones rarer than any in the record. The generalised extreme value (GEV) distribution is the standard family; L-moments are a fitting method that is not thrown much by one wild year.",
+    why: "A short record holds few bad years, so the record alone cannot say how bad a 1-in-100 season is. The fitted curve gives an estimate, which insurers and hydrologists use for rare events.",
+    read: "Read the fitted level with its range: a wide range means the record cannot pin it down. Check that about the expected number of past seasons pass the fitted 1-in-10 level; a large gap means a poor fit.",
+    limits: "Beyond the length of the record it is extrapolation. It assumes every past season comes from the same curve, which a trend in the climate or a market breaks.",
+    match: [/extreme value/i, /\bGEV\b/, /L-moments/i],
+  },
 ];
 
 /** Plain-words introductions for the panels in the Research briefs, keyed by panel title (prefix match). */

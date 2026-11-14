@@ -892,6 +892,26 @@ The amount an insurer adds to the expected payout (the burn cost) to set a price
 
 **Limits.** The app's fair price comes from the record alone. Real quotes also depend on reinsurance prices, taxes, brokerage and the insurer's own models, and can be well above it for rare, large losses.
 
+### Return period (1 year in N)
+
+How often, on average, a level is reached or passed: a 1-in-20-year drought is one that dry or drier happens in about 5% of years. It is a probability, not a schedule.
+
+**Why it matters.** Insurers, engineers and disaster planners size covers, dams and reserves by return period. A trigger passed 1 year in 5 pays often and costs more; one passed 1 year in 50 is cheap but rarely helps.
+
+**How to read it.** A 1-in-20 level can come two years running, or not for 60 years. Over 30 years, a 1-in-20 event has about a 79% chance of happening at least once.
+
+**Limits.** From a record of n years, return periods much longer than n are guesses from a fitted curve. A changing climate shortens or lengthens them over time.
+
+### Extreme value fit (GEV, L-moments)
+
+A curve fitted to the yearly or seasonal values that describes how often very high or very low values happen, including ones rarer than any in the record. The generalised extreme value (GEV) distribution is the standard family; L-moments are a fitting method that is not thrown much by one wild year.
+
+**Why it matters.** A short record holds few bad years, so the record alone cannot say how bad a 1-in-100 season is. The fitted curve gives an estimate, which insurers and hydrologists use for rare events.
+
+**How to read it.** Read the fitted level with its range: a wide range means the record cannot pin it down. Check that about the expected number of past seasons pass the fitted 1-in-10 level; a large gap means a poor fit.
+
+**Limits.** Beyond the length of the record it is extrapolation. It assumes every past season comes from the same curve, which a trend in the climate or a market breaks.
+
 ## Behavioural economics
 
 ### Present bias
