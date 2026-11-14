@@ -757,4 +757,13 @@ export const PANEL_TEXT_FR: Record<string, string> = {
   "Infestation": "Invasion de ravageurs",
   "Animal incident": "Incident animal",
   "Impact": "Impact extraterrestre",
+  // PB1: exchange rate regime (IRR)
+  "Exchange rate regime (IRR coarse, 1 peg to 6)": "Régime de change (IRR large, de 1 ancrage à 6)",
+  "Exchange rate regime (IRR fine, 1 to 15)": "Régime de change (IRR détaillé, de 1 à 15)",
+  "code, 1 to 6": "code, de 1 à 6",
+  "code, 1 to 15": "code, de 1 à 15",
+  "IRR exchange rate classification file not saved in data/local/irr/": "Le fichier de classification des changes IRR n'est pas enregistré dans data/local/irr/",
+  "The IRR file you saved holds only coarse codes": "Le fichier IRR que vous avez enregistré ne contient que les codes larges",
+  "Not in the IRR file you saved ({range})": "Absent du fichier IRR que vous avez enregistré ({range})",
+  "no IRR exchange rate classification file in data/local/irr/ (download the monthly workbook from https://www.ilzetzki.com/irr-data and put it there)": "aucun fichier de classification des changes IRR dans data/local/irr/ (téléchargez le classeur mensuel sur https://www.ilzetzki.com/irr-data et placez-le dans ce dossier)",
 };

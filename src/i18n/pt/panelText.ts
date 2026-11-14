@@ -750,4 +750,13 @@ export const PANEL_TEXT_PT: Record<string, string> = {
   "Infestation": "Infestação",
   "Animal incident": "Incidente com animais",
   "Impact": "Impacto",
+  // PB1: exchange rate regime (IRR)
+  "Exchange rate regime (IRR coarse, 1 peg to 6)": "Regime cambial (IRR amplo, de 1 câmbio fixo a 6)",
+  "Exchange rate regime (IRR fine, 1 to 15)": "Regime cambial (IRR detalhado, de 1 a 15)",
+  "code, 1 to 6": "código, de 1 a 6",
+  "code, 1 to 15": "código, de 1 a 15",
+  "IRR exchange rate classification file not saved in data/local/irr/": "O arquivo de classificação cambial IRR não está salvo em data/local/irr/",
+  "The IRR file you saved holds only coarse codes": "O arquivo IRR que você salvou só tem códigos amplos",
+  "Not in the IRR file you saved ({range})": "Não consta no arquivo IRR que você salvou ({range})",
+  "no IRR exchange rate classification file in data/local/irr/ (download the monthly workbook from https://www.ilzetzki.com/irr-data and put it there)": "não há nenhum arquivo de classificação cambial IRR em data/local/irr/ (baixe a planilha mensal em https://www.ilzetzki.com/irr-data e coloque-a lá)",
 };

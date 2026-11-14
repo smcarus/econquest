@@ -28,6 +28,7 @@ import { privateDebtSeries, sectorBalanceSeries } from './sectorBalances';
 import { idsCreditorSeries, type IdsCreditors } from './idsCreditors';
 import { sovereignDefaultSeries, type SovereignDefaults } from './sovereignDefaults';
 import { chinnItoSeries, type ChinnItoTable } from './chinnIto';
+import { fxRegimeSeries, type FxRegimeTable } from './fxRegime';
 import { inflationExpectationSeries, type InflationExpectations } from './inflationExpectations';
 import { focusSeries, type InflationSurveys } from './inflationSurveys';
 import { portActivitySeries, type PortWatchPorts } from './portWatch';
@@ -117,6 +118,9 @@ export interface SeriesInputs {
   /** Capital account openness, Chinn-Ito file (src/utils/chinnIto.ts), when saved; with the reason when not. */
   chinnIto?: ChinnItoTable | null;
   chinnItoMissing?: string;
+  /** Exchange rate regime, IRR file the user saved (src/utils/fxRegime.ts); with the reason when not. */
+  fxRegime?: FxRegimeTable | null;
+  fxRegimeMissing?: string;
   /** US inflation expectations from FRED (src/utils/inflationExpectations.ts), US only. */
   inflationExpectations?: InflationExpectations | null;
   /** Survey expectations (src/utils/inflationSurveys.ts): the Focus series on Brazil's page. */
@@ -383,6 +387,7 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
     ...idsCreditorSeries(inputs.idsCreditors),
     ...sovereignDefaultSeries(code, inputs.sovereignDefaults),
     ...chinnItoSeries(code, inputs.chinnIto, inputs.chinnItoMissing),
+    ...fxRegimeSeries(code, inputs.fxRegime, inputs.fxRegimeMissing),
     ...inflationExpectationSeries(code, inputs.inflationExpectations),
     ...focusSeries(code, inputs.inflationSurveys),
     ...portActivitySeries(code, inputs.portWatch),

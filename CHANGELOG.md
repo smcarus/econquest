@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Exchange rate regime (Group B, PB1): History & data shows the Ilzetzki, Reinhart and Rogoff
+  classification of how a country's currency is run in fact, by month: the coarse code (1 peg,
+  2 crawling peg, 3 managed floating, 4 freely floating, 5 freely falling, 6 dual market) and the
+  fine code (1 to 15). Read from the monthly workbook you download from www.ilzetzki.com/irr-data
+  into data/local/irr/; the authors ask for a citation and state no licence, so nothing is shipped.
+  Data health row irr_file, licence row, glossary entry, Spanish, French and Portuguese text.
+
 - Fixes from the usability review for economists and researchers:
   - Data health > Daily download shows the daily download as it goes: each of its five parts, what
     failed and why, sources that need a key or a file, and what to download by hand. While it runs,

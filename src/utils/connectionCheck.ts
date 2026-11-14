@@ -12,6 +12,7 @@
  * Keys and passwords are never put in a row: only whether they are set.
  */
 import { CHINN_ITO_PAGE, chinnItoLinks } from './chinnIto';
+import { FX_REGIME_SETUP_HELP, fxRegimeReading, fxRegimeValue } from './fxRegime';
 import { parseFredCsvSeries } from './fedBalanceSheet';
 import { EMISSIONS_CODE, OWID_ENERGY_URL, energyColumns } from './climateEnergy';
 import { DBNOMICS_GFSMAB_URL, dbnomicsGfsListUrl, dbnomicsLevelsUrl, GFS_DEFAULT, GFS_UNIT_ENV, type GfsCodes, gfsCodeSample, imfLevelSeriesId, pickGfsCodes } from './govLevels';
@@ -137,6 +138,7 @@ export interface CheckOptions {
   aiddata?: () => AiddataData | null;
   investorBase?: () => import('./investorBaseStore').InvestorBaseData | null;
   fiscalRules?: () => import('./fiscalRulesStore').FiscalRulesData | null;
+  fxRegime?: () => import('./fxRegimeStore').FxRegimeLoad;
   dpi?: () => import('./dpiStore').DpiData | null;
   /** Only these source ids. */
   only?: string[];
@@ -354,6 +356,7 @@ export const SOURCE_IDS = [
   'aiddata_file',
   'imf_investor_base',
   'imf_fiscal_rules',
+  'irr_file',
   'dpi',
   'eia',
   'own_cds',
@@ -1661,6 +1664,33 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       ...setRow(def, 'connected', `Read ${t.file}: ${t.countries.size} countries, ${t.firstYear}-${t.lastYear}.`, host),
       ...(c ? { sample: `${code} ${c.year}: ${RULE_KINDS.filter((k) => c.has[k]).map((k) => RULE_KIND_NAME[k]).join(', ') || 'no rule'}` } : {}),
       ...(warning ? { warning } : {}),
+    };
+  });
+
+  add('irr_file', async () => {
+    const def: Def = {
+      id: 'irr_file',
+      name: 'IRR exchange rate regime classification (downloaded)',
+      group: 'free',
+      feeds: 'Exchange rate regime by country and month (peg, crawl, managed or free float, freely falling) in History & data',
+      setup: FX_REGIME_SETUP_HELP,
+    };
+    const host = 'your files';
+    if (!opts.fxRegime) return setRow(def, 'optional', 'The folder data/local/irr/ was not checked from here.', host);
+    let load: import('./fxRegimeStore').FxRegimeLoad;
+    try {
+      load = opts.fxRegime();
+    } catch (err: any) {
+      return setRow(def, 'bad_reply', `The folder data/local/irr/ could not be read (${err?.message || err}).`, host);
+    }
+    if (!load.ok) return /^no IRR /.test(load.reason) ? setRow(def, 'optional', 'No IRR exchange rate classification file in data/local/irr/.', host) : setRow(def, 'bad_reply', `The file in data/local/irr/ did not read: ${load.reason}.`, host);
+    const t = load.table;
+    const r = fxRegimeReading(t, SAMPLE_ISO3);
+    const unmatched = t.unmatched.length ? `Names not matched to a country: ${t.unmatched.slice(0, 12).join(', ')}${t.unmatched.length > 12 ? ` and ${t.unmatched.length - 12} more` : ''}.` : '';
+    return {
+      ...setRow(def, 'connected', `Read ${t.file}: ${Object.keys(t.countries).length} countries, ${t.firstMonth} to ${t.lastMonth}, ${t.fine ? 'fine codes 1-15' : 'coarse codes 1-6'}.`, host),
+      ...('missing' in r ? {} : { sample: `${SAMPLE_NAME}: ${fxRegimeValue(r)}` }),
+      ...(unmatched ? { warning: unmatched } : {}),
     };
   });
 
