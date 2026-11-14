@@ -114,3 +114,31 @@ test('winners and losers: a size needs its source and unit; no size reads Missin
   assert.deepEqual(w.fifths!.shares, [10, 15, 20, 25, 30]);
   assert.deepEqual(groupTally(w), { gains: 1, loses: 1, mixed: 0, noFigure: ['Government budget'] });
 });
+
+test('second-order links: a figure is copied from Diagnose with its source; no figure or source means assumption', async () => {
+  const { parseChain, chainTally } = await import('../src/utils/policyCouncil');
+  const figures = [
+    { ref: 1, field: 'cpi', group: 'Prices', label: 'Inflation', unit: '%', value: 6.2, status: 'Live' as const, period: '2026-09', source: 'IMF CPI', reason: '' },
+    { ref: 2, field: 'gdp', group: 'Growth', label: 'Growth', unit: '%', value: null, status: 'Missing' as const, period: '', source: '', reason: 'not saved yet' },
+  ];
+  const bad = parseChain({ links: [{ from: 'Fuel price', to: 'Bus fares', direction: 'up', basis: 'figure', ref: 2 }, { from: 'Bus fares', to: 'Wages', direction: 'raises', basis: 'source', source: '' }] }, figures);
+  assert.ok('errors' in bad);
+  const e = (bad as { errors: string[] }).errors.join(' ');
+  for (const m of [/raises, lowers or unclear/, /\[2\] is Missing \(not saved yet\)/, /name the source/]) assert.match(e, m);
+  assert.match((parseChain({ links: [{ from: 'A b', to: 'C d', direction: 'raises', basis: 'figure', ref: 1 }] }, undefined) as { errors: string[] }).errors[0], /run Diagnose first/);
+  const good = parseChain(
+    {
+      links: [
+        { from: 'Diesel price', to: 'Inflation', direction: 'raises', lag: '1 to 3 months', basis: 'figure', ref: 1 },
+        { from: 'Inflation', to: 'Policy rate', direction: 'raises', basis: 'source', source: 'Central bank reaction function, IMF WP/24/10' },
+        { from: 'Policy rate', to: 'Credit', direction: 'lowers', basis: 'nonsense' },
+      ],
+    },
+    figures,
+  );
+  assert.ok('content' in good);
+  const c = (good as { content: import('../src/utils/policyCouncil').EffectChain }).content;
+  assert.deepEqual(c.links[0].figure, { ref: 1, label: 'Inflation', value: 6.2, unit: '%', period: '2026-09', source: 'IMF CPI' });
+  assert.equal(c.links[2].basis, 'assumption');
+  assert.deepEqual(chainTally(c), { figure: 1, source: 1, assumption: 1 });
+});

@@ -14,17 +14,22 @@
  * user gives one with its source, otherwise "Missing"; optionally the share of the change each fifth
  * of people carries (G30, src/utils/policyIncidence.ts), set against each fifth's share of income.
  *
+ * PK4 second-order effects: a chain of links (this leads to that), each resting on a figure from the
+ * review's saved Diagnose step (copied in with its source and period), a source the user names, or
+ * marked "assumption" when it rests on neither.
+ *
  * No figure is filled in for the user. Browser-safe.
  */
 import { DISCOUNT_RATES, discountRateById, type DiscountRate } from '../data/discountRates';
 import { COUNCIL_SIZE_UNITS, type CouncilSizeUnit } from './policyReview';
 import { incidence, QUINTILES, type Direction } from './policyIncidence';
+import type { DiagnosisFigure } from './reviewDiagnosis';
 
 export const COUNCIL_TEMPLATE_VERSION = 'policy-council-v1';
 export const COUNCIL_LABEL = 'Description, not a tested signal';
 
 /** The parts saved beside the steps, in the order they are shown. */
-export const COUNCIL_PARTS = ['costBenefit', 'groups'] as const;
+export const COUNCIL_PARTS = ['costBenefit', 'groups', 'chain'] as const;
 export type CouncilPart = (typeof COUNCIL_PARTS)[number];
 
 export interface CouncilPartRecord<T = unknown> {
@@ -369,12 +374,103 @@ export function groupTally(w: WinnersLosers): { gains: number; loses: number; mi
   };
 }
 
+// ---------------------------------------------------------------- PK4 second-order effects
+
+export const MAX_LINKS = 24;
+export const LINK_DIRECTIONS = ['raises', 'lowers', 'unclear'] as const;
+export type LinkDirection = (typeof LINK_DIRECTIONS)[number];
+export const LINK_BASES = ['figure', 'source', 'assumption'] as const;
+export type LinkBasis = (typeof LINK_BASES)[number];
+
+export interface LinkFigure {
+  ref: number;
+  label: string;
+  value: number;
+  unit: string;
+  period: string;
+  source: string;
+}
+
+export interface ChainLink {
+  from: string;
+  to: string;
+  direction: LinkDirection;
+  /** How long it takes, in the user's words (e.g. "6 to 12 months"). */
+  lag?: string;
+  basis: LinkBasis;
+  figure?: LinkFigure;
+  source?: string;
+  link?: string;
+}
+
+export interface EffectChain {
+  links: ChainLink[];
+}
+
+export function parseChain(v: unknown, figures: DiagnosisFigure[] | undefined): { content: EffectChain } | { errors: string[] } {
+  const errors: string[] = [];
+  const b = (v ?? {}) as Record<string, unknown>;
+  const raw = Array.isArray(b.links) ? b.links : [];
+  if (!raw.length) errors.push('Enter at least one link.');
+  if (raw.length > MAX_LINKS) errors.push(`At most ${MAX_LINKS} links.`);
+  const links: ChainLink[] = [];
+  raw.slice(0, MAX_LINKS).forEach((x, i) => {
+    const l = (x ?? {}) as Record<string, unknown>;
+    const n = i + 1;
+    const from = str(l.from, 160);
+    const to = str(l.to, 160);
+    const direction = LINK_DIRECTIONS.includes(l.direction as LinkDirection) ? (l.direction as LinkDirection) : null;
+    const lag = str(l.lag, 60);
+    const basis = LINK_BASES.includes(l.basis as LinkBasis) ? (l.basis as LinkBasis) : 'assumption';
+    const source = str(l.source, 300);
+    const link = str(l.link, 400);
+    let ok = true;
+    const bad = (m: string) => {
+      errors.push(m);
+      ok = false;
+    };
+    if (from.length < 2) bad(`Link ${n}: say what leads to the next thing.`);
+    if (to.length < 2) bad(`Link ${n}: say what it leads to.`);
+    if (!direction) bad(`Link ${n}: pick raises, lowers or unclear.`);
+    let figure: LinkFigure | undefined;
+    if (basis === 'figure') {
+      const ref = num(l.ref);
+      const f = ref === null ? undefined : figures?.find((x) => x.ref === ref);
+      if (!figures?.length) bad(`Link ${n}: run Diagnose first to cite one of its figures.`);
+      else if (!f) bad(`Link ${n}: pick a figure from the Diagnose step.`);
+      else if (f.status !== 'Live' || f.value === null) bad(`Link ${n}: figure [${f.ref}] is Missing (${f.reason || 'no value'}); cite a source or mark it as an assumption.`);
+      else figure = { ref: f.ref, label: f.label, value: f.value, unit: f.unit, period: f.period, source: f.source };
+    }
+    if (basis === 'source' && source.length < 3) bad(`Link ${n}: name the source, or mark it as an assumption.`);
+    if (link && !/^https?:\/\//i.test(link)) bad(`Link ${n}: the link must start with http:// or https://.`);
+    if (ok)
+      links.push({
+        from,
+        to,
+        direction: direction!,
+        ...(lag ? { lag } : {}),
+        basis,
+        ...(figure ? { figure } : {}),
+        ...(basis === 'source' ? { source, ...(link ? { link } : {}) } : {}),
+      });
+  });
+  if (errors.length) return { errors };
+  return { content: { links } };
+}
+
+/** How many links rest on a figure, a source or an assumption. */
+export function chainTally(c: EffectChain): Record<LinkBasis, number> {
+  return { figure: c.links.filter((l) => l.basis === 'figure').length, source: c.links.filter((l) => l.basis === 'source').length, assumption: c.links.filter((l) => l.basis === 'assumption').length };
+}
+
 /** Checks the content of one part. */
-export function parseCouncilPart(part: CouncilPart, v: unknown, defaults: { unit?: CouncilSizeUnit; firstYear: number }): { content: unknown } | { errors: string[] } {
+export function parseCouncilPart(part: CouncilPart, v: unknown, defaults: { unit?: CouncilSizeUnit; firstYear: number; figures?: DiagnosisFigure[] }): { content: unknown } | { errors: string[] } {
   switch (part) {
     case 'costBenefit':
       return parseCostBenefit(v, defaults);
     case 'groups':
       return parseWinnersLosers(v);
+    case 'chain':
+      return parseChain(v, defaults.figures);
   }
 }

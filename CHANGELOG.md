@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Policy council second-order effects (PK4): for the measure in a policy review, a chain of links
+  (this raises or lowers that, and how long it takes), each resting on a figure from the review's
+  Diagnose step with its source and period, a source the user names, or marked as an assumption,
+  with a count of each. Spanish, French and Portuguese text.
 - Policy council winners and losers (PK3): for the measure in a policy review, one row per group
   that gains or loses and why, with a size only when it has a unit and a source (otherwise
   Missing), and optionally the share each fifth of people carries set against its share of income
