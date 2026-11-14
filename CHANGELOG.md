@@ -5,6 +5,8 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- `npm run council:record` no longer stops with "fetch failed" when the set takes more than five
+  minutes on a 32B model: the long request has no time limit, and an error names its cause.
 - Dollar funding stress (Group B, PB4): History & data shows US dollar loans and bonds owed by
   the country's non-banks (BIS global liquidity indicators, US$ bn and y/y) and the Federal
   Reserve's dollar swap lines (New York Fed), amount outstanding each Wednesday for all central
