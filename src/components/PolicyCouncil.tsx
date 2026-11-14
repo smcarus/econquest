@@ -417,7 +417,7 @@ const GroupsPanel: React.FC<{ review: PolicyReview; frame: ReviewFrame; changed:
           </div>
           {inc && inc.ok && (
             <div className="overflow-x-auto" data-council-fifths-result="true">
-              <p className="ui-label">{t('pk_fifthsResult', { source: inc.source, year: income ? String(income.year) : '' })}</p>
+              <p className="ui-label">{income ? t('pk_fifthsResult', { source: inc.source, year: String(income.year) }) : t('pk_fifthsResultNoIncome', { source: inc.source })}</p>
               <table className="text-xs tabular-nums w-full">
                 <thead>
                   <tr className="text-left text-slate-500 dark:text-slate-400">
@@ -431,7 +431,7 @@ const GroupsPanel: React.FC<{ review: PolicyReview; frame: ReviewFrame; changed:
                 <tbody className="text-slate-900 dark:text-white">
                   {inc.groups.map((g) => (
                     <tr key={g.q}>
-                      <td className="pr-2">{t('pk_fifth', { n: String(g.q) })}</td>
+                      <td className="pr-2">{t('pk_fifthShort', { n: String(g.q) })}</td>
                       <td className="pr-2">{g.sharePct}%</td>
                       <td className="pr-2">{g.amountPctGdp}</td>
                       <td className="pr-2">{g.incomeSharePct !== undefined ? `${g.incomeSharePct}%` : t('pk_missing')}</td>
