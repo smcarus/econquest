@@ -102,3 +102,11 @@ test('reviews are kept in a file, newest first, and can be deleted', () => {
   assert.equal(deleteReview(file, a.id), false);
   assert.equal(loadReviews(file).reviews.length, 1);
 });
+
+test('PK7: a market council keeps its market and event, and takes no size', async () => {
+  const { parseCouncil } = await import('../src/utils/policyReview');
+  assert.deepEqual(parseCouncil({ kind: 'market', market: 'dollar_bonds', measure: 'A ratings downgrade', years: '2' }, []), { kind: 'market', market: 'dollar_bonds', measure: 'A ratings downgrade', years: 2 });
+  const e: string[] = [];
+  parseCouncil({ kind: 'market', market: 'gold', measure: 'x' }, e);
+  assert.match(e[0], /Describe the event/);
+});

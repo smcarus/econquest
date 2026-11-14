@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ClipboardList, Download, Pencil, Play, Plus, Trash2 } from 'lucide-react';
-import { COUNCIL_MAX_YEARS, COUNCIL_SIZE_LABEL, COUNCIL_SIZE_UNITS, REVIEW_STEPS, STEP_HINT, STEP_LABEL, STEP_STATE_LABEL, type CouncilSizeUnit, type PolicyReview, type ReviewFrame, type ReviewStep, type ReviewSummary, type StepState } from '../utils/policyReview';
+import { COUNCIL_MAX_YEARS, COUNCIL_SIZE_LABEL, COUNCIL_SIZE_UNITS, MARKET_KINDS, MARKET_LABEL, type MarketKind, REVIEW_STEPS, STEP_HINT, STEP_LABEL, STEP_STATE_LABEL, type CouncilSizeUnit, type PolicyReview, type ReviewFrame, type ReviewStep, type ReviewSummary, type StepState } from '../utils/policyReview';
 import { GOAL_INDICATORS, type Diagnosis, type DiagnosisFigure } from '../utils/reviewDiagnosis';
 import type { EvidenceStep } from '../utils/reviewEvidence';
 import { defaultMemoInputs, memoFileName, RESEARCH_BANNER, VALIDATED_BANNER, type MemoInputs, type MemoStep } from '../utils/reviewMemo';
@@ -146,11 +146,34 @@ const FrameForm: React.FC<{ countries: Country[]; initial: ReviewFrame; submitLa
         </label>
         {f.council && (
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="sm:col-span-2 flex flex-wrap gap-4 text-sm" role="radiogroup" data-council-kind={f.council.kind}>
+              <label className="flex items-center gap-1.5">
+                <input type="radio" name="council-kind" checked={f.council.kind !== 'market'} onChange={() => setF({ ...f, council: { kind: 'policy', measure: f.council!.measure, start: f.council!.start, years: f.council!.years } })} />
+                {t('pr_councilKindPolicy')}
+              </label>
+              <label className="flex items-center gap-1.5">
+                <input type="radio" name="council-kind" checked={f.council.kind === 'market'} onChange={() => setF({ ...f, council: { kind: 'market', market: 'currency', measure: f.council!.measure, start: f.council!.start, years: f.council!.years } })} />
+                {t('pr_councilKindMarket')}
+              </label>
+            </div>
+            {f.council.kind === 'market' && (
+              <label className="block sm:col-span-2">
+                <span className="ui-label block mb-1">{t('pr_councilMarket')}</span>
+                <select className={INPUT} value={f.council.market ?? 'currency'} onChange={(e) => setF({ ...f, council: { ...f.council!, market: e.target.value as MarketKind } })}>
+                  {MARKET_KINDS.map((m) => (
+                    <option key={m} value={m}>
+                      {tx(MARKET_LABEL[m])}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             <label className="block sm:col-span-2">
-              <span className="ui-label block mb-1">{t('pr_councilMeasure')}</span>
-              <textarea className={INPUT} rows={2} maxLength={300} value={f.council.measure} onChange={(e) => setF({ ...f, council: { ...f.council!, measure: e.target.value } })} placeholder={t('pr_councilMeasurePh')} required />
+              <span className="ui-label block mb-1">{f.council.kind === 'market' ? t('pr_councilEvent') : t('pr_councilMeasure')}</span>
+              <textarea className={INPUT} rows={2} maxLength={300} value={f.council.measure} onChange={(e) => setF({ ...f, council: { ...f.council!, measure: e.target.value } })} placeholder={f.council.kind === 'market' ? t('pr_councilEventPh') : t('pr_councilMeasurePh')} required />
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            {f.council.kind !== 'market' && (
+              <div className="grid grid-cols-2 gap-2">
               <label className="block">
                 <span className="ui-label block mb-1">{t('pr_councilSize')}</span>
                 <input
@@ -174,7 +197,8 @@ const FrameForm: React.FC<{ countries: Country[]; initial: ReviewFrame; submitLa
                   ))}
                 </select>
               </label>
-            </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <label className="block">
                 <span className="ui-label block mb-1">{t('pr_councilStart')}</span>
@@ -886,6 +910,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                     <>
                       <dt className="ui-label">{t('pr_councilDt')}</dt>
                       <dd className="text-slate-900 dark:text-white">
+                        {frame.council.kind === 'market' && frame.council.market ? `${tx(MARKET_LABEL[frame.council.market])}: ` : ''}
                         {frame.council.measure}
                         {frame.council.size ? ` (${frame.council.size.value} ${tx(COUNCIL_SIZE_LABEL[frame.council.size.unit])})` : ''}
                         {frame.council.start ? t('pr_councilFrom', { d: frame.council.start }) : ''}

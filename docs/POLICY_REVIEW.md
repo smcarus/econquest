@@ -40,6 +40,28 @@ The council parts of the review are built on top of the measure:
 | What could go differently (PK5) | Two to five cases (base, good and bad to start), each a short story with the costs and benefits of the PK2 table scaled by your percentages and the benefits arriving later by the years you give, and what each rests on (none means assumption). Odds for every case or none. The app shows the net present value of each case at one PK2 rate, and with odds the odds-weighted net and the chance of a negative net. | Your cases, the frame hash, their own hash and an audit log entry. |
 | The council weighs it (PK6) | Run the Options step as usual. With a measure in the frame, the council is handed the measure and every part above that is up to date with the frame (an out-of-date part is left out and named as not entered). Option 1 is always the measure itself; the council judges it against the goal, the diagnosis and your entries, says which entries rest on a source and which on an assumption, puts the assumptions in what must be true, and ranks two or more alternatives or changes against it. It may use only numbers from the diagnosis and your entries; a sentence with any other number is removed and listed. If you change a part after the Options step ran, the step says so and asks you to run it again. | The Options step as before, plus the hash of each council part it was given. |
 
+### Market council (PK7)
+
+Instead of a measure, the frame can ask what an event means for one market of the country: pick
+**What an event means for a market**, choose the market (the currency against the US dollar,
+government bonds in local currency, or government bonds in US dollars) and describe the event, for
+example "The Fed keeps rates where they are through 2027". The review then carries the title
+"market council". Its parts are:
+
+| Part | What you do | What is recorded |
+| --- | --- | --- |
+| Market readings | Press **Copy in the market readings**. The app takes, from its own saved history, the newest value whose period ended on or before the As of day: policy rate, carry against the US (the policy rate minus the US policy rate on that day, with both dates), exchange rate, 10-year yield, dollar bond spread, CFTC leveraged-fund positioning, Fed dollar swap lines (all central banks and the country's own), BIS US dollar credit to non-banks and its growth, central bank assets and US Treasury holdings. Each has its date and source, or reads **Missing** with the reason. Nothing you send is used. | The readings, the As of day, the frame hash, their own hash and an audit log entry. |
+| Who gains and who loses | As for a measure. | As for a measure. |
+| What follows | As for a measure. | As for a measure. |
+| What could go differently | Two to five cases, each a short story and the change in value over the horizon for someone holding the market (in US dollars for a foreign holder), with what it rests on (none means assumption). Odds for every case or none. With odds, the app shows the odds-weighted change and the chance of a loss. | Your cases, the frame hash, their own hash and an audit log entry. |
+
+In the Options step the council is given the event, the market, the readings and your entries.
+Option 1 is keeping the current stance unchanged, as the baseline; the other options are responses
+by the central bank, the finance ministry or a holder of the market, ranked against it. As for a
+measure, only numbers from the diagnosis, the readings and your entries may stay in the answer.
+Scenario exposure (Markets page) is not copied in: it has no saved history, so it cannot be read as
+of a past day.
+
 The official discount rates offered, each with the passage it comes from, checked 14 November 2026
 (`src/data/discountRates.ts`):
 

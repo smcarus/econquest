@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Save, Trash2 } from 'lucide-react';
 import { DISCOUNT_RATES } from '../data/discountRates';
 import { COUNCIL_SIZE_LABEL, COUNCIL_SIZE_UNITS, type CouncilSizeUnit, type PolicyReview, type ReviewFrame, type ReviewStep, type StepState } from '../utils/policyReview';
-import { costBenefitResults, councilPartState, GROUP_EFFECTS, GROUP_SUGGESTIONS, groupTally, chainTally, cbSchedules, scenarioResults, type Scenarios, LINK_BASES, LINK_DIRECTIONS, type ChainLink, type EffectChain, type LinkBasis, type LinkDirection, type CbLine, type CostBenefit, type CouncilPart, type GroupEffect, type WinnersLosers } from '../utils/policyCouncil';
+import { costBenefitResults, councilPartState, GROUP_EFFECTS, GROUP_SUGGESTIONS, groupTally, chainTally, cbSchedules, scenarioResults, marketScenarioResults, type MarketReadings, type MarketScenarios, type Scenarios, LINK_BASES, LINK_DIRECTIONS, type ChainLink, type EffectChain, type LinkBasis, type LinkDirection, type CbLine, type CostBenefit, type CouncilPart, type GroupEffect, type WinnersLosers } from '../utils/policyCouncil';
 import { incidence, QUINTILES, type IncomeShares } from '../utils/policyIncidence';
 import type { Diagnosis } from '../utils/reviewDiagnosis';
 import { useT, useTx } from '../i18n/useLang';
@@ -749,15 +749,356 @@ const ScenariosPanel: React.FC<{ review: PolicyReview; changed: boolean; onSaved
   );
 };
 
+// ---------------------------------------------------------------- PK7 market council
+
+const MarketReadingsPanel: React.FC<{
+  review: PolicyReview;
+  frame: ReviewFrame;
+  changed: boolean;
+  onSaved: Saved;
+}> = ({ review, frame, changed, onSaved }) => {
+  const t = useT(REPORTS);
+  const tx = useTx();
+  const rec = review.councilParts?.market;
+  const saved = rec?.content as MarketReadings | undefined;
+  const state = councilPartState(rec, review.steps.frame?.hash);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const copy = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      await onSaved(await postPart(review.id, "market", {}));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="space-y-2" data-council-part="market">
+      <p className="ui-section-title">{t("pk_mkTitle")}</p>
+      <p className="ui-label">{t("pk_mkHint", { d: frame.asOf })}</p>
+      {changed && (
+        <p className="text-xs text-amber-700 dark:text-amber-400">
+          {t("pk_changed")}
+        </p>
+      )}
+      {rec && state === "out_of_date" && (
+        <p className="text-xs text-amber-700 dark:text-amber-400">
+          {t("pk_outOfDate")}
+        </p>
+      )}
+      <div>
+        <button
+          type="button"
+          className="ui-btn ui-btn-primary"
+          disabled={busy}
+          onClick={copy}
+        >
+          <Save className="w-3.5 h-3.5" />{" "}
+          {busy ? t("pk_saving") : saved ? t("pk_mkAgain") : t("pk_mkCopy")}
+        </button>
+      </div>
+      {error && (
+        <p className="text-xs text-amber-700 dark:text-amber-400" role="alert">
+          {error}
+        </p>
+      )}
+      {saved && (
+        <div className="space-y-1" data-council-results="market">
+          <table className="text-xs tabular-nums w-full">
+            <thead>
+              <tr className="text-left text-slate-500 dark:text-slate-400">
+                <th className="pr-2">{t("pk_mkReading")}</th>
+                <th className="pr-2">{t("pk_mkValue")}</th>
+                <th className="pr-2">{t("pk_mkDate")}</th>
+                <th>{t("pk_mkSource")}</th>
+              </tr>
+            </thead>
+            <tbody className="text-slate-900 dark:text-white">
+              {saved.readings.map((r) => (
+                <tr key={r.id} data-market-reading={r.id}>
+                  <td className="pr-2">{tx(r.label)}</td>
+                  {r.value === null ? (
+                    <td
+                      className="pr-2 text-amber-700 dark:text-amber-400"
+                      colSpan={3}
+                    >
+                      {t("pk_mkMissing", { why: tx(r.reason ?? "") })}
+                    </td>
+                  ) : (
+                    <>
+                      <td className="pr-2 font-semibold">
+                        {fmt(r.value)} {tx(r.unit)}
+                      </td>
+                      <td className="pr-2 whitespace-nowrap">{r.date}</td>
+                      <td>
+                        {r.source}
+                        {r.method ? (
+                          <span className="block text-slate-500 dark:text-slate-400">
+                            {r.method}
+                          </span>
+                        ) : null}
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {t("pk_saved", {
+              when: rec!.savedAt.slice(0, 16).replace("T", " "),
+              hash: rec!.hash.slice(0, 12),
+            })}
+          </p>
+        </div>
+      )}
+      <p className="ui-label">{t("pk_mkMethod")}</p>
+    </div>
+  );
+};
+
+type MoveDraft = {
+  name: string;
+  story: string;
+  move: string;
+  odds: string;
+  source: string;
+};
+const moveDraft = (name: string): MoveDraft => ({
+  name,
+  story: "",
+  move: "",
+  odds: "",
+  source: "",
+});
+
+const MarketScenariosPanel: React.FC<{
+  review: PolicyReview;
+  changed: boolean;
+  onSaved: Saved;
+}> = ({ review, changed, onSaved }) => {
+  const t = useT(REPORTS);
+  const rec = review.councilParts?.marketScenarios;
+  const saved = rec?.content as MarketScenarios | undefined;
+  const state = councilPartState(rec, review.steps.frame?.hash);
+  const [cases, setCases] = useState<MoveDraft[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    setCases(
+      saved
+        ? saved.scenarios.map((c) => ({
+            name: c.name,
+            story: c.story,
+            move: String(c.move),
+            odds: c.odds !== undefined ? String(c.odds) : "",
+            source: c.source ?? "",
+          }))
+        : [
+            moveDraft(t("pk_caseBase")),
+            moveDraft(t("pk_caseGood")),
+            moveDraft(t("pk_caseBad")),
+          ],
+    );
+    setError("");
+  }, [review.id, rec?.hash]);
+  const set = (i: number, patch: Partial<MoveDraft>) =>
+    setCases((d) => d.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+  const save = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      await onSaved(
+        await postPart(review.id, "marketScenarios", { scenarios: cases }),
+      );
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const out = saved ? marketScenarioResults(saved) : null;
+  return (
+    <div
+      className="space-y-2 border-t border-slate-200 dark:border-slate-700 pt-3"
+      data-council-part="marketScenarios"
+    >
+      <p className="ui-section-title">{t("pk_scTitle")}</p>
+      <p className="ui-label">{t("pk_msHint")}</p>
+      {changed && (
+        <p className="text-xs text-amber-700 dark:text-amber-400">
+          {t("pk_changed")}
+        </p>
+      )}
+      {rec && state === "out_of_date" && (
+        <p className="text-xs text-amber-700 dark:text-amber-400">
+          {t("pk_outOfDate")}
+        </p>
+      )}
+      {cases.map((c, i) => (
+        <div
+          key={i}
+          className="grid gap-1.5 sm:grid-cols-3 border border-slate-200 dark:border-slate-700 p-2"
+          data-council-case={i}
+        >
+          <label className="ui-label">
+            {t("pk_caseName")}
+            <input
+              className={INPUT}
+              value={c.name}
+              maxLength={60}
+              onChange={(e) => set(i, { name: e.target.value })}
+            />
+          </label>
+          <label className="ui-label sm:col-span-2">
+            {t("pk_caseStory")}
+            <input
+              className={INPUT}
+              value={c.story}
+              maxLength={400}
+              onChange={(e) => set(i, { story: e.target.value })}
+            />
+          </label>
+          <label className="ui-label">
+            {t("pk_msMove")}
+            <input
+              className={INPUT}
+              inputMode="decimal"
+              value={c.move}
+              onChange={(e) => set(i, { move: e.target.value })}
+            />
+          </label>
+          <label className="ui-label">
+            {t("pk_odds")}
+            <input
+              className={INPUT}
+              inputMode="decimal"
+              value={c.odds}
+              onChange={(e) => set(i, { odds: e.target.value })}
+            />
+          </label>
+          <label className="ui-label">
+            {t("pk_caseSource")}
+            <input
+              className={INPUT}
+              value={c.source}
+              maxLength={300}
+              onChange={(e) => set(i, { source: e.target.value })}
+            />
+          </label>
+          <div>
+            <button
+              type="button"
+              className="ui-btn ui-btn-ghost"
+              onClick={() => setCases((x) => x.filter((_, j) => j !== i))}
+            >
+              <Trash2 className="w-3.5 h-3.5" /> {t("pk_remove")}
+            </button>
+          </div>
+        </div>
+      ))}
+      {cases.length < 5 && (
+        <button
+          type="button"
+          className="ui-btn"
+          onClick={() => setCases((x) => [...x, moveDraft("")])}
+        >
+          <Plus className="w-3.5 h-3.5" /> {t("pk_addCase")}
+        </button>
+      )}
+      <div>
+        <button
+          type="button"
+          className="ui-btn ui-btn-primary"
+          disabled={busy}
+          onClick={save}
+        >
+          <Save className="w-3.5 h-3.5" />{" "}
+          {busy ? t("pk_saving") : t("pk_saveCases")}
+        </button>
+      </div>
+      {error && (
+        <p className="text-xs text-amber-700 dark:text-amber-400" role="alert">
+          {error}
+        </p>
+      )}
+      {saved && (
+        <div className="space-y-1" data-council-results="marketScenarios">
+          <table className="text-xs tabular-nums w-full">
+            <thead>
+              <tr className="text-left text-slate-500 dark:text-slate-400">
+                <th className="pr-2">{t("pk_caseName")}</th>
+                <th className="pr-2">{t("pk_msMove")}</th>
+                <th className="pr-2">{t("pk_odds")}</th>
+                <th>{t("pk_basis")}</th>
+              </tr>
+            </thead>
+            <tbody className="text-slate-900 dark:text-white">
+              {saved.scenarios.map((r, i) => (
+                <tr key={i}>
+                  <td className="pr-2">{r.name}</td>
+                  <td className="pr-2 font-semibold">{fmt(r.move, 1)}%</td>
+                  <td className="pr-2">
+                    {r.odds !== undefined ? `${r.odds}%` : ""}
+                  </td>
+                  <td>
+                    {r.source ? (
+                      r.source
+                    ) : (
+                      <span className="text-amber-700 dark:text-amber-400">
+                        {t("pk_basisAssumption")}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {out?.expected !== null && out?.expected !== undefined && (
+            <p className="text-xs text-slate-800 dark:text-slate-200">
+              {t("pk_msExpected", {
+                v: fmt(out.expected, 1),
+                p: fmt(out.chanceLoss ?? 0, 1),
+              })}
+            </p>
+          )}
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {t("pk_saved", {
+              when: rec!.savedAt.slice(0, 16).replace("T", " "),
+              hash: rec!.hash.slice(0, 12),
+            })}
+          </p>
+        </div>
+      )}
+      <p className="ui-label">{t("pk_msMethod")}</p>
+    </div>
+  );
+};
+
 export const PolicyCouncil: React.FC<{ review: PolicyReview; frame: ReviewFrame; changed?: string[]; onSaved: Saved }> = ({ review, frame, changed, onSaved }) => {
   const t = useT(REPORTS);
   return (
     <div className="space-y-4" data-policy-council="true">
-      <p className="ui-label">{t('pk_label2')}</p>
-      <CostBenefitPanel review={review} frame={frame} changed={Boolean(changed?.includes('costBenefit'))} onSaved={onSaved} />
-      <GroupsPanel review={review} frame={frame} changed={Boolean(changed?.includes('groups'))} onSaved={onSaved} />
-      <ChainPanel review={review} changed={Boolean(changed?.includes('chain'))} onSaved={onSaved} />
-      <ScenariosPanel review={review} changed={Boolean(changed?.includes('scenarios'))} onSaved={onSaved} />
+      {frame.council?.kind === 'market' ? (
+        <>
+          <p className="ui-label">{t('pk_mkLabel')}</p>
+          <MarketReadingsPanel review={review} frame={frame} changed={Boolean(changed?.includes('market'))} onSaved={onSaved} />
+          <GroupsPanel review={review} frame={frame} changed={Boolean(changed?.includes('groups'))} onSaved={onSaved} />
+          <ChainPanel review={review} changed={Boolean(changed?.includes('chain'))} onSaved={onSaved} />
+          <MarketScenariosPanel review={review} changed={Boolean(changed?.includes('marketScenarios'))} onSaved={onSaved} />
+        </>
+      ) : (
+        <>
+          <p className="ui-label">{t('pk_label2')}</p>
+          <CostBenefitPanel review={review} frame={frame} changed={Boolean(changed?.includes('costBenefit'))} onSaved={onSaved} />
+          <GroupsPanel review={review} frame={frame} changed={Boolean(changed?.includes('groups'))} onSaved={onSaved} />
+          <ChainPanel review={review} changed={Boolean(changed?.includes('chain'))} onSaved={onSaved} />
+          <ScenariosPanel review={review} changed={Boolean(changed?.includes('scenarios'))} onSaved={onSaved} />
+        </>
+      )}
     </div>
   );
 };

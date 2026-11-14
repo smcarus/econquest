@@ -348,7 +348,7 @@ test('council regression set: each case is checked and reported as it is (stand-
   });
   assert.equal(res.status, 200);
   const report = await res.json();
-  assert.equal(report.total, 9);
+  assert.equal(report.total, 10);
   assert.match(report.setHash, /^[0-9a-f]{64}$/);
   const by = Object.fromEntries(report.results.map((r: { id: string }) => [r.id, r]));
   // The stand-in always writes about Turkey: right for the Turkey case, wrong for the others.
@@ -362,6 +362,7 @@ test('council regression set: each case is checked and reported as it is (stand-
   assert.equal(by['options-brazil-inflation'].model, 'qwen2.5:32b');
   // The policy council case runs through the same Options step, with the measure and the entries.
   assert.ok(by['options-council-egypt-subsidy'].failures.some((f: string) => /at least 2 expected/.test(f)), JSON.stringify(by['options-council-egypt-subsidy'].failures));
+  assert.ok(by['options-council-turkey-lira-fed'].failures.some((f: string) => /at least 2 expected/.test(f)), JSON.stringify(by['options-council-turkey-lira-fed'].failures));
   assert.equal(by['supreme-brazil-tight'].pass, false);
   // The stand-in wrote none of the Supreme Council's fields: each reads Missing, never the built-in report.
   assert.ok(by['supreme-brazil-tight'].answer.every((l: string) => /Missing: model gave no answer for this field\./.test(l)), JSON.stringify(by['supreme-brazil-tight'].answer));
@@ -983,6 +984,19 @@ test('policy reviews: a frame starts a review, a bad one is refused, and both ar
   assert.equal(sv.review.councilParts.costBenefit.frameHash, pc.review.steps.frame.hash);
   assert.equal(sv.review.councilParts.costBenefit.content.firstYear, 2027);
   assert.deepEqual((await (await fetch(`${base}/api/reviews/${pc.review.id}`)).json()).changedCouncil, []);
+  // Market council (PK7): a measure's parts are refused; the app copies in its market readings at As of.
+  assert.equal((await cb(pc.review.id, 'market', {})).status, 404);
+  const mc = await (await post({ frame: { iso3: 'BRA', problem: 'Foreign holders may sell local bonds if the Fed holds.', goal: { indicator: 'Local 10-year yield', direction: 'lower' }, constraints: [], asOf, council: { kind: 'market', market: 'local_bonds', measure: 'The Fed keeps rates where they are through 2027' } } })).json();
+  assert.match(mc.review.title, /market council: Government bonds in local currency/);
+  assert.equal((await cb(mc.review.id, 'costBenefit', { lines: [line], rateIds: ['adb_9'] })).status, 404);
+  const mk = await cb(mc.review.id, 'market', { readings: [{ id: 'policy_rate', value: 99 }] });
+  assert.equal(mk.status, 200);
+  const readings = (await mk.json()).review.councilParts.market.content;
+  assert.equal(readings.asOf, asOf);
+  assert.ok(readings.readings.some((x: { id: string }) => x.id === 'carry_vs_us'));
+  // What the client sent is ignored; every reading has a value with date and source, or a reason.
+  assert.ok(readings.readings.every((x: { value: number | null; date: string; source: string; reason?: string }) => (x.value !== null ? x.date && x.source && x.value !== 99 : x.reason)));
+  assert.equal((await cb(mc.review.id, 'marketScenarios', { scenarios: [{ name: 'Base', story: 'Rates stay put.', move: '1' }, { name: 'Bad', story: 'Foreign holders sell.', move: '-8' }] })).status, 200);
   const diag = await fetch(`${base}/api/reviews/${review.id}/diagnose`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
   if (diag.status === 200) {
     const d = await diag.json();

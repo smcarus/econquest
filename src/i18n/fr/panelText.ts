@@ -815,4 +815,9 @@ export const PANEL_TEXT_FR: Record<string, string> = {
   "Government budget": "Budget de l'État",
   "Foreign investors": "Investisseurs étrangers",
   "Future generations": "Générations futures",
+  "The currency against the US dollar": "La monnaie face au dollar américain",
+  "Government bonds in local currency": "Obligations d'État en monnaie locale",
+  "Government bonds in US dollars": "Obligations d'État en dollars américains",
+  "Carry against the US (policy rate minus US policy rate)": "Portage face aux États-Unis (taux directeur moins taux directeur américain)",
+  "percentage points": "points de pourcentage",
 };

@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Market council (PK7): a policy review can weigh what an event means for one market of the country
+  (the currency, local-currency or US-dollar government bonds). The app copies in its market
+  readings as they stood on the As of day (policy rate, carry against the US, exchange rate,
+  10-year yield, dollar bond spread, CFTC positioning, Fed swap lines, BIS dollar credit, central
+  bank assets, US Treasury holdings), each with date and source or Missing; the user sets cases as a
+  change in value for a holder, with odds. The council ranks responses against keeping the current
+  stance. Spanish, French and Portuguese text. A new council regression case; the council recording
+  needs one new run.
 - Policy council weighs the measure (PK6): with a measure in the policy review frame, the Options
   step hands the council the measure and the up-to-date costs and benefits, groups, chain of effects
   and scenarios. Option 1 is the measure itself, alternatives are ranked against it, and only

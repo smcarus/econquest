@@ -68,10 +68,22 @@ export const COUNCIL_SIZE_UNITS: CouncilSizeUnit[] = ['pct_gdp', 'lcu_bn', 'usd_
 export const COUNCIL_SIZE_LABEL: Record<CouncilSizeUnit, string> = { pct_gdp: '% of GDP a year', lcu_bn: 'billion in local currency a year', usd_bn: 'US$ billion a year' };
 export const COUNCIL_MAX_YEARS = 30;
 
+/** Market council (PK7): the market whose response to an event is weighed. */
+export type MarketKind = 'currency' | 'local_bonds' | 'dollar_bonds';
+export const MARKET_KINDS: MarketKind[] = ['currency', 'local_bonds', 'dollar_bonds'];
+export const MARKET_LABEL: Record<MarketKind, string> = {
+  currency: 'The currency against the US dollar',
+  local_bonds: 'Government bonds in local currency',
+  dollar_bonds: 'Government bonds in US dollars',
+};
+
 export interface CouncilQuestion {
-  kind: 'policy';
-  /** The measure in the principal's words, e.g. "Cut the fuel tax by half for two years". */
+  /** policy: one measure (PK1). market: what an event means for one market (PK7). */
+  kind: 'policy' | 'market';
+  /** The measure (or, for a market, the event) in the principal's words, e.g. "Cut the fuel tax by half for two years". */
   measure: string;
+  /** PK7: the market, for kind market. */
+  market?: MarketKind;
   /** Its size a year, as the user states it (positive = cost to the budget or money spent). */
   size?: { value: number; unit: CouncilSizeUnit };
   /** YYYY-MM the measure starts. */
@@ -206,13 +218,18 @@ export function parseCouncil(v: unknown, errors: string[]): CouncilQuestion | un
   if (v === undefined || v === null || v === false) return undefined;
   const c = v as Record<string, unknown>;
   const measure = str(c.measure, 300);
+  const kind = c.kind === 'market' ? 'market' : 'policy';
   if (measure.length < 5) {
-    errors.push('Describe the measure the policy council should weigh.');
+    errors.push(kind === 'market' ? 'Describe the event the market council should weigh.' : 'Describe the measure the policy council should weigh.');
     return undefined;
   }
-  const out: CouncilQuestion = { kind: 'policy', measure };
+  const out: CouncilQuestion = { kind, measure };
+  if (kind === 'market') {
+    if (!MARKET_KINDS.includes(c.market as MarketKind)) errors.push('Pick the market the council should weigh.');
+    else out.market = c.market as MarketKind;
+  }
   const size = (c.size ?? null) as Record<string, unknown> | null;
-  if (size && size.value !== '' && size.value !== undefined && size.value !== null) {
+  if (kind === 'policy' && size && size.value !== '' && size.value !== undefined && size.value !== null) {
     const value = Number(size.value);
     const unit = COUNCIL_SIZE_UNITS.includes(size.unit as CouncilSizeUnit) ? (size.unit as CouncilSizeUnit) : null;
     if (!Number.isFinite(value) || Math.abs(value) > 1e6) errors.push('The size must be a number.');
@@ -234,6 +251,7 @@ export function parseCouncil(v: unknown, errors: string[]): CouncilQuestion | un
 
 /** A short title from the frame, e.g. "BRA: lower Headline inflation (as of 2026-11-01)". */
 export function frameTitle(frame: ReviewFrame): string {
+  if (frame.council?.kind === 'market') return `${frame.iso3} market council: ${frame.council.market ? `${MARKET_LABEL[frame.council.market]}, ` : ''}${frame.council.measure} (as of ${frame.asOf})`.slice(0, 160);
   if (frame.council) return `${frame.iso3} policy council: ${frame.council.measure} (as of ${frame.asOf})`.slice(0, 160);
   const verb = { lower: 'lower', higher: 'raise', stable: 'stabilise' }[frame.goal.direction];
   return `${frame.iso3}: ${verb} ${frame.goal.indicator}${frame.goal.target ? ` to ${frame.goal.target}` : ''} (as of ${frame.asOf})`.slice(0, 160);

@@ -28,10 +28,19 @@
  * against the principal's own entries. Numbers in those entries become numbers the council may
  * quote; every other number is still removed by the number check.
  *
+ * PK7 market council: the same review for what an event means for one market of the country (the
+ * currency, local-currency or US-dollar government bonds). In place of the budget parts, the app
+ * copies in market readings from its own saved history at the frame's As of day (policy rate, carry
+ * against the US, exchange rate, 10-year yield, dollar bond spread, CFTC positioning, Fed swap lines,
+ * BIS dollar credit, central bank assets, US Treasury holdings), each with its date and source or
+ * Missing with the reason; the user sets cases as a change in value for a holder, with odds.
+ * Winners and losers and the chain of effects are the same as for a measure.
+ *
  * No figure is filled in for the user. Browser-safe.
  */
 import { DISCOUNT_RATES, discountRateById, type DiscountRate } from '../data/discountRates';
-import { COUNCIL_SIZE_LABEL, COUNCIL_SIZE_UNITS, type CouncilSizeUnit, type PolicyReview, type ReviewFrame } from './policyReview';
+import { COUNCIL_SIZE_LABEL, COUNCIL_SIZE_UNITS, MARKET_LABEL, type CouncilSizeUnit, type MarketKind, type PolicyReview, type ReviewFrame } from './policyReview';
+import type { Series, SeriesMissing } from './seriesHistory';
 import { incidence, QUINTILES, type Direction } from './policyIncidence';
 import type { DiagnosisFigure } from './reviewDiagnosis';
 
@@ -39,8 +48,15 @@ export const COUNCIL_TEMPLATE_VERSION = 'policy-council-v1';
 export const COUNCIL_LABEL = 'Description, not a tested signal';
 
 /** The parts saved beside the steps, in the order they are shown. */
-export const COUNCIL_PARTS = ['costBenefit', 'groups', 'chain', 'scenarios'] as const;
+export const COUNCIL_PARTS = ['costBenefit', 'groups', 'chain', 'scenarios', 'market', 'marketScenarios'] as const;
 export type CouncilPart = (typeof COUNCIL_PARTS)[number];
+/** The parts for a measure (PK2 to PK5) and for a market (PK7). */
+export const POLICY_PARTS: CouncilPart[] = ['costBenefit', 'groups', 'chain', 'scenarios'];
+export const MARKET_PARTS: CouncilPart[] = ['market', 'groups', 'chain', 'marketScenarios'];
+export function councilPartsFor(frame: ReviewFrame | undefined): CouncilPart[] {
+  if (!frame?.council) return [];
+  return frame.council.kind === 'market' ? MARKET_PARTS : POLICY_PARTS;
+}
 
 export interface CouncilPartRecord<T = unknown> {
   templateVersion: string;
@@ -575,6 +591,188 @@ export function scenarioResults(cb: CostBenefit, sc: Scenarios): { rate: { id: s
   };
 }
 
+// ---------------------------------------------------------------- PK7 market council
+
+/** One market reading copied in from the app's saved history, as it stood on the As of day. */
+export interface MarketReading {
+  id: string;
+  label: string;
+  value: number | null;
+  unit: string;
+  /** The date of the value (on or before As of). */
+  date: string;
+  source: string;
+  /** Why it is Missing. */
+  reason?: string;
+  /** How a worked-out reading is made (carry). */
+  method?: string;
+}
+export interface MarketReadings {
+  /** The day the readings stand at (the frame's As of). */
+  asOf: string;
+  readings: MarketReading[];
+}
+
+/** The history series copied in for a market council, in the order shown. */
+export const MARKET_SERIES: Array<{ id: string; markets: MarketKind[] }> = [
+  { id: 'policy_rate', markets: ['currency', 'local_bonds', 'dollar_bonds'] },
+  { id: 'fx_per_usd', markets: ['currency', 'local_bonds', 'dollar_bonds'] },
+  { id: 'yield_10y', markets: ['currency', 'local_bonds', 'dollar_bonds'] },
+  { id: 'hc_spread', markets: ['currency', 'local_bonds', 'dollar_bonds'] },
+  { id: 'cftc_lev_net', markets: ['currency', 'local_bonds', 'dollar_bonds'] },
+  { id: 'fed_swaps_total', markets: ['currency', 'local_bonds', 'dollar_bonds'] },
+  { id: 'fed_swaps_cb', markets: ['currency', 'local_bonds', 'dollar_bonds'] },
+  { id: 'usd_credit', markets: ['currency', 'local_bonds', 'dollar_bonds'] },
+  { id: 'usd_credit_yoy', markets: ['currency', 'local_bonds', 'dollar_bonds'] },
+  { id: 'cb_assets_gdp', markets: ['currency', 'local_bonds', 'dollar_bonds'] },
+  { id: 'tic_holdings', markets: ['currency', 'local_bonds', 'dollar_bonds'] },
+];
+export const CARRY_ID = 'carry_vs_us';
+
+/** The last day a history date covers: 2026-03 -> 2026-03-31, 2026-Q1 -> 2026-03-31, 2026 -> 2026-12-31. */
+export function periodEnd(date: string): string {
+  const q = /^(\d{4})-Q([1-4])$/.exec(date);
+  const lastDay = (y: number, m: number) => new Date(Date.UTC(y, m, 0)).getUTCDate();
+  if (q) {
+    const m = Number(q[2]) * 3;
+    return `${q[1]}-${String(m).padStart(2, '0')}-${lastDay(Number(q[1]), m)}`;
+  }
+  if (/^\d{4}$/.test(date)) return `${date}-12-31`;
+  const ym = /^(\d{4})-(\d{2})$/.exec(date);
+  if (ym) return `${date}-${String(lastDay(Number(ym[1]), Number(ym[2]))).padStart(2, '0')}`;
+  return date.slice(0, 10);
+}
+
+/** The newest point whose period has ended on or before the day. */
+export function pointAt(s: Series, asOf: string): { date: string; value: number } | null {
+  let best: { date: string; value: number } | null = null;
+  for (const p of s.points) if (periodEnd(p.date) <= asOf && (!best || periodEnd(p.date) >= periodEnd(best.date))) best = p;
+  return best;
+}
+
+/**
+ * The market readings for a country on the As of day, from its history set (and the United States'
+ * policy rate for carry). Pure: the server passes the series it has; nothing is estimated.
+ */
+export function buildMarketReadings(market: MarketKind, asOf: string, set: { series: Series[]; missing: SeriesMissing[] }, us?: { series: Series[] } | null): MarketReadings {
+  const readings: MarketReading[] = [];
+  for (const spec of MARKET_SERIES.filter((x) => x.markets.includes(market))) {
+    const s = set.series.find((x) => x.id === spec.id);
+    const miss = set.missing.find((x) => x.id === spec.id);
+    if (!s) {
+      readings.push({ id: spec.id, label: miss?.label ?? spec.id, value: null, unit: '', date: '', source: '', reason: miss?.reason ?? 'The app has no history of this for the country' });
+      continue;
+    }
+    const p = pointAt(s, asOf);
+    readings.push(
+      p
+        ? { id: s.id, label: s.label, value: p.value, unit: s.unit, date: p.date, source: s.source }
+        : { id: s.id, label: s.label, value: null, unit: s.unit, date: '', source: s.source, reason: `No value on or before ${asOf}` }
+    );
+  }
+  // Carry: the country's policy rate minus the US policy rate, both on or before As of.
+  const own = readings.find((r) => r.id === 'policy_rate');
+  const usSeries = us?.series.find((x) => x.id === 'policy_rate');
+  const usPoint = usSeries ? pointAt(usSeries, asOf) : null;
+  const label = 'Carry against the US (policy rate minus US policy rate)';
+  if (own?.value !== null && own?.value !== undefined && usPoint && usSeries) {
+    readings.splice(1, 0, {
+      id: CARRY_ID,
+      label,
+      value: Math.round((own.value - usPoint.value) * 100) / 100,
+      unit: 'percentage points',
+      date: own.date < usPoint.date ? own.date : usPoint.date,
+      source: `${own.source}; ${usSeries.source}`,
+      method: `Policy rate ${own.value}% (${own.date}) minus US policy rate ${usPoint.value}% (${usPoint.date}).`,
+    });
+  } else {
+    readings.splice(1, 0, { id: CARRY_ID, label, value: null, unit: 'percentage points', date: '', source: '', reason: own?.value === null || own?.value === undefined ? 'No policy rate for the country on or before As of' : 'No US policy rate on or before As of' });
+  }
+  return { asOf, readings };
+}
+
+/** Checks saved market readings (they come from the server; the shape is checked all the same). */
+export function parseMarketReadings(v: unknown): { content: MarketReadings } | { errors: string[] } {
+  const b = (v ?? {}) as Record<string, unknown>;
+  const asOf = str(b.asOf, 10);
+  const raw = Array.isArray(b.readings) ? b.readings : null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(asOf) || !raw || raw.length > 40) return { errors: ['The market readings are not in the expected form.'] };
+  const readings: MarketReading[] = raw.map((x) => {
+    const r = (x ?? {}) as Record<string, unknown>;
+    const value = typeof r.value === 'number' && Number.isFinite(r.value) ? r.value : null;
+    return {
+      id: str(r.id, 40),
+      label: str(r.label, 160),
+      value,
+      unit: str(r.unit, 60),
+      date: str(r.date, 10),
+      source: str(r.source, 300),
+      ...(value === null ? { reason: str(r.reason, 300) || 'Missing' } : {}),
+      ...(r.method ? { method: str(r.method, 300) } : {}),
+    };
+  });
+  return { content: { asOf, readings } };
+}
+
+export interface MarketScenario {
+  name: string;
+  story: string;
+  /** Change in value for a holder of the market over the horizon, % (in US dollars for a foreign holder). */
+  move: number;
+  odds?: number;
+  source?: string;
+}
+export interface MarketScenarios {
+  scenarios: MarketScenario[];
+}
+export const MAX_MOVE = 100;
+
+export function parseMarketScenarios(v: unknown): { content: MarketScenarios } | { errors: string[] } {
+  const errors: string[] = [];
+  const b = (v ?? {}) as Record<string, unknown>;
+  const raw = Array.isArray(b.scenarios) ? b.scenarios : [];
+  if (raw.length < 2) errors.push('Enter at least two cases (for example a base and a bad case).');
+  if (raw.length > MAX_SCENARIOS) errors.push(`At most ${MAX_SCENARIOS} cases.`);
+  const scenarios: MarketScenario[] = [];
+  raw.slice(0, MAX_SCENARIOS).forEach((x, i) => {
+    const c = (x ?? {}) as Record<string, unknown>;
+    const n = i + 1;
+    const name = str(c.name, 60);
+    const story = str(c.story, 400);
+    const move = num(c.move);
+    const odds = c.odds === '' || c.odds === undefined || c.odds === null ? undefined : num(c.odds);
+    const source = str(c.source, 300);
+    let ok = true;
+    const bad = (m: string) => {
+      errors.push(m);
+      ok = false;
+    };
+    if (name.length < 2) bad(`Case ${n}: give it a name.`);
+    if (story.length < 5) bad(`Case ${n}: say what happens in it.`);
+    if (move === null || move < -MAX_MOVE || move > 10 * MAX_MOVE) bad(`Case ${n}: the change in value must be a % from -${MAX_MOVE} to ${10 * MAX_MOVE}.`);
+    if (odds === null || (odds !== undefined && (odds < 0 || odds > 100))) bad(`Case ${n}: the odds must be a % from 0 to 100.`);
+    if (ok) scenarios.push({ name, story, move: move!, ...(typeof odds === 'number' ? { odds } : {}), ...(source ? { source } : {}) });
+  });
+  const given = scenarios.filter((x) => x.odds !== undefined);
+  if (given.length && given.length !== scenarios.length) errors.push('Give odds for every case or for none.');
+  else if (given.length) {
+    const sum = given.reduce((a, x) => a + x.odds!, 0);
+    if (Math.abs(sum - 100) > 0.5) errors.push(`The odds add up to ${Math.round(sum * 100) / 100}%, not 100%.`);
+  }
+  if (errors.length) return { errors };
+  return { content: { scenarios } };
+}
+
+/** With odds for every case: the odds-weighted change in value and the chance of a loss. */
+export function marketScenarioResults(sc: MarketScenarios): { expected: number | null; chanceLoss: number | null } {
+  const withOdds = sc.scenarios.length > 0 && sc.scenarios.every((x) => x.odds !== undefined);
+  if (!withOdds) return { expected: null, chanceLoss: null };
+  return {
+    expected: sc.scenarios.reduce((a, x) => a + (x.move * x.odds!) / 100, 0),
+    chanceLoss: sc.scenarios.filter((x) => x.move < 0).reduce((a, x) => a + x.odds!, 0),
+  };
+}
+
 // ---------------------------------------------------------------- PK6 council run
 
 /** The council parts handed to the Options step: only those saved against the current frame. */
@@ -583,13 +781,16 @@ export interface CouncilInputs {
   groups?: WinnersLosers;
   chain?: EffectChain;
   scenarios?: Scenarios;
+  market?: MarketReadings;
+  marketScenarios?: MarketScenarios;
 }
 
 export function currentCouncilInputs(review: PolicyReview): { inputs: CouncilInputs; hashes: Partial<Record<CouncilPart, string>> } {
   const frameHash = review.steps.frame?.hash;
   const inputs: CouncilInputs = {};
   const hashes: Partial<Record<CouncilPart, string>> = {};
-  for (const p of COUNCIL_PARTS) {
+  const frame = review.steps.frame?.content as ReviewFrame | undefined;
+  for (const p of councilPartsFor(frame)) {
     const rec = review.councilParts?.[p];
     if (rec && councilPartState(rec, frameHash) === 'done') {
       (inputs as Record<string, unknown>)[p] = rec.content;
@@ -600,7 +801,7 @@ export function currentCouncilInputs(review: PolicyReview): { inputs: CouncilInp
 }
 
 const r2 = (v: number) => String(Math.round(v * 100) / 100);
-const PART_NAME: Record<CouncilPart, string> = { costBenefit: 'costs and benefits', groups: 'who gains and who loses', chain: 'what follows', scenarios: 'scenarios' };
+const PART_NAME: Record<CouncilPart, string> = { costBenefit: 'costs and benefits', groups: 'who gains and who loses', chain: 'what follows', scenarios: 'scenarios', market: 'market readings', marketScenarios: 'scenarios' };
 
 /** True when the up-to-date council parts differ from those the Options step was given. */
 export function councilChangedSince(review: PolicyReview, given: Partial<Record<CouncilPart, string>> | undefined): boolean {
@@ -613,6 +814,7 @@ export function councilChangedSince(review: PolicyReview, given: Partial<Record<
 export function councilPromptLines(frame: ReviewFrame, inputs: CouncilInputs | undefined): string[] {
   const c = frame.council;
   if (!c) return [];
+  if (c.kind === 'market') return marketPromptLines(frame, inputs);
   const lines = [
     `Measure the principal wants weighed: ${c.measure}${c.size ? ` (size ${c.size.value} ${COUNCIL_SIZE_LABEL[c.size.unit]})` : ''}${c.start ? `, from ${c.start}` : ''}${c.years ? `, looking ${c.years} years ahead` : ''}`,
   ];
@@ -644,7 +846,41 @@ export function councilPromptLines(frame: ReviewFrame, inputs: CouncilInputs | u
     lines.push(`Scenarios the principal set (net present value at ${out.rate?.label ?? 'the first rate'}):`);
     sc.scenarios.forEach((x, k) => lines.push(`- ${x.name}: ${x.story} Costs ${r2(x.costScale)}% and benefits ${r2(x.benefitScale)}% of the table${x.delayYears ? `, benefits ${x.delayYears} years later` : ''}${x.odds !== undefined ? `, odds ${r2(x.odds)}%` : ''}; net ${r2(out.results[k]?.npv ?? 0)}; rests on ${x.source ? `source: ${x.source}` : 'an assumption'}`));
   }
-  const missing = COUNCIL_PARTS.filter((p) => !(i as Record<string, unknown>)[p] || (p === 'scenarios' && !cb));
+  const missing = POLICY_PARTS.filter((p) => !(i as Record<string, unknown>)[p] || (p === 'scenarios' && !cb));
+  if (missing.length) lines.push(`Not entered by the principal (or out of date): ${missing.map((p) => PART_NAME[p]).join(', ')}.`);
+  lines.push('');
+  return lines;
+}
+
+const chainLines = (ch: EffectChain): string[] =>
+  ch.links.map((l) => `- ${l.from} ${l.direction === 'unclear' ? 'has an unclear effect on' : l.direction} ${l.to}${l.lag ? ` (${l.lag})` : ''}; rests on ${l.basis === 'figure' && l.figure ? `diagnosis figure [${l.figure.ref}]` : l.basis === 'source' ? `source: ${l.source}` : 'an assumption'}`);
+
+/** PK7: the event, the market, the app's market readings and the principal's entries, as prompt lines. */
+export function marketPromptLines(frame: ReviewFrame, inputs: CouncilInputs | undefined): string[] {
+  const c = frame.council!;
+  const lines = [`Event the principal wants weighed: ${c.measure}${c.start ? `, from ${c.start}` : ''}${c.years ? `, looking ${c.years} years ahead` : ''}`, `Market: ${c.market ? MARKET_LABEL[c.market] : 'not given'} of ${frame.iso3}`];
+  const i = inputs ?? {};
+  if (i.market) {
+    lines.push(`Market readings from the app's saved history, as of ${i.market.asOf}:`);
+    for (const r of i.market.readings) lines.push(r.value === null ? `- ${r.label}: Missing (${r.reason ?? 'no value'})` : `- ${r.label}: ${r2(r.value)} ${r.unit} (${r.date}, ${r.source})`);
+  }
+  const g = i.groups;
+  if (g) {
+    lines.push('Who gains and who loses (the principal\'s entries):');
+    for (const r of g.rows) lines.push(`- ${r.group} ${r.effect === 'mixed' ? 'gains and loses' : r.effect}: ${r.why}${r.size !== undefined ? ` (${r2(r.size)} ${r.sizeUnit}, source: ${r.source})` : ' (no figure entered)'}`);
+  }
+  if (i.chain) {
+    lines.push('What follows (the principal\'s chain of effects):');
+    lines.push(...chainLines(i.chain));
+  }
+  const ms = i.marketScenarios;
+  if (ms) {
+    const out = marketScenarioResults(ms);
+    lines.push('Cases the principal set (change in value for a holder of the market):');
+    for (const x of ms.scenarios) lines.push(`- ${x.name}: ${x.story} Change in value ${r2(x.move)}%${x.odds !== undefined ? `, odds ${r2(x.odds)}%` : ''}; rests on ${x.source ? `source: ${x.source}` : 'an assumption'}`);
+    if (out.expected !== null) lines.push(`- Odds-weighted change in value ${r2(out.expected)}%; chance of a loss ${r2(out.chanceLoss!)}%.`);
+  }
+  const missing = MARKET_PARTS.filter((p) => !(i as Record<string, unknown>)[p]);
   if (missing.length) lines.push(`Not entered by the principal (or out of date): ${missing.map((p) => PART_NAME[p]).join(', ')}.`);
   lines.push('');
   return lines;
@@ -653,6 +889,14 @@ export function councilPromptLines(frame: ReviewFrame, inputs: CouncilInputs | u
 /** The task and rules for a council frame, written into the prompt (the system instruction stays the same). */
 export function councilTask(frame: ReviewFrame, maxOptions: number): string[] {
   const c = frame.council!;
+  if (c.kind === 'market') {
+    const m = c.market ? MARKET_LABEL[c.market].toLowerCase() : 'the market';
+    return [
+      `Rules for weighing the event: the options are responses to it, by the central bank, the finance ministry or a holder of ${m}. Option 1 must be to keep the current stance unchanged, as the baseline, with fromUser false. Judge each against the goal, the diagnosis, the market readings and the principal's entries above. Say which entries rest on a source and which on an assumption, and put the assumptions in mustBeTrue. Use the principal's group entries for whoBears. Name in risks the reading or entry that would most change the answer. Give 2 to ${maxOptions - 1} responses after the baseline, ranked. Do not add figures of your own.`,
+      '',
+      `Task: weigh what "${c.measure}" means for ${m} of ${frame.iso3}, against the goal of moving ${frame.goal.indicator} ${frame.goal.direction === 'stable' ? 'to stability' : frame.goal.direction}, within the constraints.`,
+    ];
+  }
   return [
     `Rules for weighing the measure: option 1 must be the measure itself as the principal states it ("${c.measure}"), with fromUser true. Judge it against the goal, the diagnosis and the principal's entries above. Treat the entries as the principal's claims: say which rest on a source and which on an assumption, and put the assumptions it depends on in mustBeTrue. Use the principal's group entries for whoBears. Name in risks the entry that would most change the answer. Then give 2 to ${maxOptions - 1} alternatives or changes to the measure, ranked against it. Do not add figures of your own.`,
     '',
@@ -671,5 +915,9 @@ export function parseCouncilPart(part: CouncilPart, v: unknown, defaults: { unit
       return parseChain(v, defaults.figures);
     case 'scenarios':
       return parseScenarios(v);
+    case 'market':
+      return parseMarketReadings(v);
+    case 'marketScenarios':
+      return parseMarketScenarios(v);
   }
 }
