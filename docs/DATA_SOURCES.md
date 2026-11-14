@@ -227,7 +227,11 @@ Notes from the first check on Sam's Mac (2026-11-05):
   BIS, daily for most countries. The app asks twice for every country at once: the latest daily
   figure, and about 25 months of month-end figures for the change over 12 months and when the
   rate last moved. It keeps both on disk (`data/live/bis-policy-rates.json`) and asks again after
-  12 hours. Every figure carries its date and the central bank's name; a figure more than 45 days
+  12 hours. Once the weekly long-history download (`data/live/model-history.json`, month-ends from
+  1990) is on disk, charts, downloads and the data API put those older month-ends in front of the
+  25 months, so the policy rate starts where the BIS record starts. The OECD leading indicator and
+  OECD inflation are extended the same way; inflation only where both runs are the OECD
+  year-on-year series. Every figure carries its date and the central bank's name; a figure more than 45 days
   old is flagged as possibly out of date. The US figure is the mid-point of the Fed's target
   range; the EU benchmark uses the ECB deposit rate. Egypt is not in the dataset and reads Missing
   for that reason. `GET /api/data/policy-rates` lists what the app holds for each country.

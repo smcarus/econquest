@@ -1,6 +1,8 @@
 // Reads .env and the data folder before anything else (src/server/config.ts).
 import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, SCHEDULED_JOBS_FILE, LAST_ALERT_FILE, DATA_DIR, DATA_HEALTH_FILES, ENV_FILE_KEYS, FIGURE_WATCH_FILES, RESEARCH_FILE, REVIEW_FILE, SETTINGS_FILE, SIGNOFF_FILE, SPEC_DIR, VALIDATION_FILE, WATCH_RULES_FILE, WORKSPACE_FILE, savedSettings, setSavedSettings } from './src/server/config';
 import { geminiModel } from './src/utils/geminiModel';
+import { loadModelHistoryCached } from './src/utils/modelHistory';
+import { withLongCli, withLongCpi, withLongPolicy } from './src/utils/longHistory';
 import { refreshModelHistory, registerAnalysisRoutes } from './src/server/routes/analysis';
 import { BY_HAND, FILE_PULLS, dailyDue, dailyFilePath, formatDaily, interestingLines, readDaily, sweepNote, testsDue, writeDaily, type DailyRun, type DailyStep } from './src/utils/dailyRun';
 import { spawn } from 'child_process';
@@ -3995,14 +3997,17 @@ async function startServer() {
       quick(fetchPortWatchPorts(iso3)),
     ]);
     const imfCpi = loadImfCpi();
-    const merged = mergeNationalCpi(cpi?.series, nationalCpi?.series || {}, imfCpi?.series || {});
+    // The weekly long-history file (src/utils/longHistory.ts) puts older observations in front of
+    // the short everyday windows, so charts and downloads start where the source starts.
+    const long = loadModelHistoryCached(DATA_DIR);
+    const merged = mergeNationalCpi(withLongCpi(cpi?.series, long?.cpi), nationalCpi?.series || {}, imfCpi?.series || {});
     const archive: ArchivedSnapshot[] = listArchivedDays(ARCHIVE_DIR, iso3)
       .map((d) => readArchivedPull<ArchivedSnapshot['snapshot']>(ARCHIVE_DIR, iso3, d))
       .filter((x): x is NonNullable<typeof x> => Boolean(x))
       .map((x) => ({ date: x.date, pulledAt: x.pulledAt, snapshot: x.snapshot }));
     const set = countrySeries(iso3, {
-      cbpol,
-      cli,
+      cbpol: withLongPolicy(cbpol, long?.policyMonthly),
+      cli: withLongCli(cli, long?.cli),
       qna,
       activity,
       cpiOecdAnswered: Boolean(cpi),

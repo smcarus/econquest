@@ -49,6 +49,22 @@ export function loadModelHistory(dataDir: string): ModelHistory | null {
   }
 }
 
+let cached: { file: string; mtimeMs: number; history: ModelHistory | null } | null = null;
+
+/** loadModelHistory, read again only when the file changes (the series screens ask on every view). */
+export function loadModelHistoryCached(dataDir: string): ModelHistory | null {
+  const file = modelHistoryFile(dataDir);
+  let mtimeMs = -1;
+  try {
+    mtimeMs = fs.statSync(file).mtimeMs;
+  } catch {
+    return null;
+  }
+  if (cached && cached.file === file && cached.mtimeMs === mtimeMs) return cached.history;
+  cached = { file, mtimeMs, history: loadModelHistory(dataDir) };
+  return cached.history;
+}
+
 /** Pulls the three long runs. A source that fails keeps the previous run's copy and is named in problems. */
 export async function pullModelHistory(fetcher: TextFetcher, prev: ModelHistory | null = null): Promise<ModelHistory> {
   const problems: string[] = [];
