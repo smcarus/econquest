@@ -522,6 +522,7 @@ export const REPORTS_FR: Messages<typeof REPORTS> = {
   pr_v_too_early: 'Trop tôt',
   pr_v_missing: 'Manquant',
   pr_autoWarn: 'Alertes précoces : {list}.',
+  pr_autoCases: "Cas de marché : {r}",
   pr_w_shown: 'alerte déclenchée',
   pr_w_not_shown: 'pas d’alerte',
   pr_w_too_early: 'trop tôt',

@@ -92,6 +92,11 @@ export function PolicyTrackRecord() {
                           Early warnings: {c.warnings.map((w) => `${w.label} [${w.ref}] ${WARNING_LABEL[w.result].toLowerCase()} (${w.reason})`).join('; ')}
                         </span>
                       ) : null}
+                      {c.cases ? (
+                        <span className="block" data-policy-cases>
+                          Cases: {c.cases.reason}
+                        </span>
+                      ) : null}
                       {c.now?.source ? <span className="block text-slate-400 dark:text-slate-500">Source: {c.now.source}</span> : null}
                     </td>
                   </tr>

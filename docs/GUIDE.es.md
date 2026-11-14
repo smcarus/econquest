@@ -230,6 +230,18 @@ Para revisar una política:
    los datos de hoy. La nueva revisión abre **Qué cambió desde la revisión anterior**: el planteamiento,
    la opción que recomendó cada memorando, cada cifra entonces y ahora, y si el indicador objetivo se
    movió en la dirección buscada.
+9. Para sopesar una medida (un cambio de impuesto, una reforma de un subsidio, un programa de gasto),
+   marque **Pregunta para el consejo de políticas** en el planteamiento y elija **Una medida**. Bajo la
+   revisión, complete **Costos y beneficios** (las cifras de cada año con su fuente, con tasas de descuento
+   oficiales o las suyas: la aplicación da el valor presente y el año en que se recupera), **Quién gana y
+   quién pierde**, **Lo que sigue** (efectos de segundo orden, cada uno basado en una cifra, una fuente o
+   un supuesto) y **Lo que podría salir distinto** (de dos a cinco casos, con probabilidades si quiere).
+   El paso de opciones ordena entonces alternativas frente a la medida. Elija en cambio **Qué significa
+   un evento para un mercado** para sopesar un evento para la moneda o los bonos del Estado: **Copiar las
+   lecturas de mercado** toma las cifras de la propia aplicación tal como estaban en la fecha de
+   referencia, y sus casos son el cambio de valor para un tenedor. El resumen de una página termina con
+   estas partes, y a los 12 y 24 meses los casos de una revisión sobre la moneda se comparan con lo que
+   hizo el tipo de cambio.
 
 ## 8. Elegir un modelo de IA
 

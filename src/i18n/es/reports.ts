@@ -526,6 +526,7 @@ export const REPORTS_ES: Partial<Record<Keys, string>> = {
   pr_v_too_early: 'Demasiado pronto',
   pr_v_missing: 'Falta',
   pr_autoWarn: 'Alertas tempranas: {list}.',
+  pr_autoCases: "Casos de mercado: {r}",
   pr_w_shown: 'alerta activada',
   pr_w_not_shown: 'sin alerta',
   pr_w_too_early: 'demasiado pronto',

@@ -110,10 +110,29 @@ test('tally: hits out of judged checks, small samples said as such', () => {
 test('early warnings from the pre-mortem are judged at each check', () => {
   const two = (pullDate: string, cpi: number | null, rate: number | null, period: string): Diagnosis => ({ ...diag(pullDate, cpi, period), figures: [fig(cpi, period), { ...fig(rate, period), ref: 2, field: 'market.policyRatePct', label: 'Policy rate' }] });
   const c = judgeCheck({ frame, frameHash: 'h', months: 12, then: two('2026-01-30', 4.4, 13, '2025'), now: two('2027-01-25', 4.8, 12, '2026'), checkedOn: '2027-02-01', warnings: [{ ref: 1, signal: 'rises' }, { ref: 2, signal: 'rises' }, { ref: 7, signal: 'falls' }] });
-  assert.equal(c.version, 'outcome-check-v2');
+  assert.equal(c.version, 'outcome-check-v3');
   assert.deepEqual(c.warnings!.map((w) => [w.label, w.result]), [['Inflation', 'shown'], ['Policy rate', 'not_shown'], ['Figure [7]', 'missing']]);
   assert.match(c.warnings![0].reason, /4\.4% \(2025\) to 4\.8% \(2026\); a warning if it rises/);
   const early = judgeCheck({ frame, frameHash: 'h', months: 12, then: two('2026-01-30', 4.4, 13, '2025'), now: two('2027-01-25', 4.4, 13, '2025'), checkedOn: '2027-02-01', warnings: [{ ref: 2, signal: 'falls' }] });
   assert.equal(early.warnings![0].result, 'too_early');
   assert.equal(judge(diag('2027-01-25', 2.9, '2026')).warnings, undefined, 'no pre-mortem, no warnings field');
+});
+
+test('PK9: a market council on the currency checks its cases; bonds record the move only; a policy council gets no case check', () => {
+  const fx = (pullDate: string, v: number | null, period: string): Diagnosis => ({ ...diag(pullDate, 30, period), figures: [{ ...fig(v, period), ref: 8, field: 'market.exchangeRatePerUsd', label: 'Exchange rate per USD', unit: 'TRY per USD' }, { ...fig(30, period), ref: 7, field: 'market.sovereign10YBondYieldPct', label: '10Y yield' }] });
+  const cases = { scenarios: [{ name: 'Base', story: 'Carry holds.', move: -5, odds: 55 }, { name: 'Bad', story: 'Holders leave.', move: -20, odds: 45 }] };
+  const mf: ReviewFrame = { ...frame, iso3: 'TUR', goal: { indicator: 'Lira', direction: 'stable' }, council: { kind: 'market', market: 'currency', measure: 'The Fed holds rates' } };
+  const c = judgeCheck({ frame: mf, frameHash: 'h', months: 12, then: fx('2026-01-30', 40, '2026-01-29'), now: fx('2027-01-25', 50, '2027-01-22'), checkedOn: '2027-02-01', cases });
+  assert.equal(c.cases?.result, 'checked');
+  assert.equal(c.cases?.measured, -20);
+  assert.equal(c.cases?.closest, 'Bad');
+  assert.match(c.cases!.reason, /a change in value of -20% for a holder in US dollars\. Closest case: Bad \(-20%\)\. The cases put the chance of a loss at 100%; there was a loss\./);
+  const early = judgeCheck({ frame: mf, frameHash: 'h', months: 12, then: fx('2026-01-30', 40, '2026-01-29'), now: fx('2027-01-25', 40, '2026-01-29'), checkedOn: '2027-02-01', cases });
+  assert.equal(early.cases?.result, 'too_early');
+  const bonds = judgeCheck({ frame: { ...mf, council: { ...mf.council!, market: 'local_bonds' } }, frameHash: 'h', months: 12, then: fx('2026-01-30', 40, '2026-01-29'), now: fx('2027-01-25', 50, '2027-01-22'), checkedOn: '2027-02-01', cases });
+  assert.equal(bonds.cases?.result, 'not_checkable');
+  assert.match(bonds.cases!.reason, /^10Y yield from 30% \(2026-01-29\) to 30% \(2027-01-22\)\. Not turned into a change in value: that needs the bonds' duration/);
+  assert.equal(judgeCheck({ frame: { ...mf, council: { kind: 'policy', measure: 'Cut the fuel tax' } }, frameHash: 'h', months: 12, then: fx('2026-01-30', 40, '2026-01-29'), now: fx('2027-01-25', 50, '2027-01-22'), checkedOn: '2027-02-01', cases }).cases, undefined);
+  const missing = judgeCheck({ frame: mf, frameHash: 'h', months: 12, then: fx('2026-01-30', null, ''), now: fx('2027-01-25', 50, '2027-01-22'), checkedOn: '2027-02-01', cases });
+  assert.equal(missing.cases?.result, 'missing');
 });

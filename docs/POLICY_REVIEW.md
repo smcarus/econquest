@@ -23,8 +23,8 @@ It lives in **Reports > Policy reviews**. A review can also be started from a Co
 ## Policy council
 
 A policy review can weigh one measure instead of a broad goal: a tax change, a subsidy reform, a
-spending programme, a new rule. Tick **Weigh one measure (policy council)** in the frame and
-describe the measure; its size (% of GDP, local currency or US$ billion a year), the month it
+spending programme, a new rule. Tick **Policy council question** in the frame, pick **One measure**
+and describe the measure; its size (% of GDP, local currency or US$ billion a year), the month it
 starts and how many years to look ahead are optional. The review then carries the title "policy
 council" and keeps the measure in the frame, so it is part of the frame hash and a change to it
 marks every later step out of date.
@@ -42,7 +42,9 @@ The council parts of the review are built on top of the measure:
 
 The one-page brief (PDF, memo step) ends with these parts when they are up to date with the frame
 (PK8): present values, who gains and who loses, the count of links by what they rest on, and the
-cases with the odds-weighted result; parts not entered or out of date are named.
+cases with the odds-weighted result; parts not entered or out of date are named. The automatic
+outcome checks set a currency market council's cases against what happened (PK9, below), and the
+glossary explains present value, discount rate, incidence and second-order effect.
 
 ### Market council (PK7)
 
@@ -93,7 +95,7 @@ no longer matches); `GET /api/expert-reviews.csv` downloads every review on this
 ## Automatic outcome checks (12 and 24 months)
 
 Every saved review is checked on its own 12 and 24 months after its As of day
-(src/utils/outcomeChecks.ts, rules version `outcome-check-v1`). A check reads the goal from the frame
+(src/utils/outcomeChecks.ts, first rules version `outcome-check-v1`). A check reads the goal from the frame
 and the goal indicator from the Diagnose step, then the same indicator from the saved pull on or
 before the due day. So a check made late, when the app was not running on the day, gives the same
 result.
@@ -115,6 +117,16 @@ From rules version `outcome-check-v2`, each check also judges the early-warning 
 recommended option's pre-mortem (step 3): **Warning shown** when the figure moved the way the
 pre-mortem said would signal failure, **No warning**, **Too early** or **Missing**, on the same pull
 and with the same 45-day rule. The memo lists them and pre-fills them under What to watch.
+
+From rules version `outcome-check-v3` (PK9), a market council review also has its cases checked.
+For the currency, the check reads the exchange rate in the pull the review started from and in the
+pull read for the check, turns it into the change in value for a holder in US dollars, names the
+case closest to it and, when odds were given, the chance of a loss the cases gave and whether there
+was one. For government bonds the check records how the 10-year yield or the dollar bond spread
+moved but does not turn it into a change in value, because that needs the bonds' duration, which
+the app does not have. **Too early** and **Missing** follow the same rules as the goal. A policy
+council's cases are net present values of the user's own figures, which no published series
+measures, so they are not checked.
 
 The results show under step 6 and in Menu > Models & validation > Track record > Policy track record,
 with hits out of the checks that could be judged. They say only whether the goal written in the

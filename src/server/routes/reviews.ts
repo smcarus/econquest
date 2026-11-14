@@ -116,12 +116,14 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
         const past = archivedSnapshot(frame.iso3, d.due);
         const pulledAt = past ? new Date(past.pulledAt).toISOString() : '';
         const nowDiag = past ? withModelFigures(buildDiagnosis(figureRows({ ...past.snapshot, fetchedAt: pulledAt }), { iso3: frame.iso3, asOf: d.due, pullDate: past.date, pulledAt, incomplete: past.incomplete })) : null;
-        const check = judgeCheck({ frame, frameHash: r.steps.frame!.hash, months: d.months, then, now: nowDiag, checkedOn: today, warnings });
+        // Market council cases (PK9), when they are up to date with the frame.
+        const cases = frame.council?.kind === 'market' ? currentCouncilInputs(r).inputs.marketScenarios : undefined;
+        const check = judgeCheck({ frame, frameHash: r.steps.frame!.hash, months: d.months, then, now: nowDiag, checkedOn: today, warnings, cases });
         next = appendOutcomeCheck(next, check);
         appendAudit(AUDIT_FILES, {
           kind: 'research',
           summary: `${d.months}-month outcome check of policy review "${r.title}": ${VERDICT_LABEL[check.verdict]}`,
-          detail: { id: r.id, months: d.months, due: d.due, verdict: check.verdict, reason: check.reason, ...(check.warnings ? { warnings: check.warnings.map((w) => `${w.label} [${w.ref}]: ${w.result}`) } : {}), hash: next.outcomeChecks![next.outcomeChecks!.length - 1].hash, version: check.version },
+          detail: { id: r.id, months: d.months, due: d.due, verdict: check.verdict, reason: check.reason, ...(check.warnings ? { warnings: check.warnings.map((w) => `${w.label} [${w.ref}]: ${w.result}`) } : {}), ...(check.cases ? { cases: check.cases.reason } : {}), hash: next.outcomeChecks![next.outcomeChecks!.length - 1].hash, version: check.version },
         });
         made += 1;
       }

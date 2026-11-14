@@ -217,6 +217,16 @@ To review a policy:
 8. On the review date, **Review again** starts a new review with the same frame on today's data. The
    new review opens **What changed since the earlier review**: the frame, the option each memo
    recommended, each figure then and now, and whether the goal indicator moved the right way.
+9. To weigh one measure (a tax change, a subsidy reform, a spending programme), tick **Policy council
+   question** in the frame and pick **One measure**. Under the review, fill in **Costs and benefits**
+   (each year's figures with their source, at official or your own discount rates: the app gives the
+   present value and the year it pays back), **Who gains and who loses**, **What follows** (second-order
+   effects, each resting on a figure, a source or an assumption) and **What could go differently** (two
+   to five cases, with odds if you like). The Options step then ranks alternatives against the measure.
+   Pick **What an event means for a market** instead to weigh an event for the currency or government
+   bonds: **Copy in the market readings** takes the app's own figures as they stood on the As of day,
+   and your cases are the change in value for a holder. The one-page brief ends with these parts, and
+   at 12 and 24 months a currency review's cases are checked against what the exchange rate did.
 
 ## 8. Choose an AI model
 

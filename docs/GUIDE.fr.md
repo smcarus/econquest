@@ -233,6 +233,19 @@ Pour examiner une politique :
    La nouvelle revue ouvre **Ce qui a changé depuis la revue précédente** : le cadrage, l'option
    recommandée par chaque note, chaque chiffre alors et maintenant, et si l'indicateur visé a évolué
    dans le bon sens.
+9. Pour peser une mesure (un changement d'impôt, une réforme d'une subvention, un programme de
+   dépenses), cochez **Question pour le conseil de politique** dans le cadrage et choisissez **Une
+   mesure**. Sous la revue, remplissez **Coûts et avantages** (les chiffres de chaque année avec leur
+   source, à des taux d'actualisation officiels ou aux vôtres : l'application donne la valeur actuelle et
+   l'année où la mesure se rembourse), **Qui gagne et qui perd**, **Ce qui suit** (effets de second
+   ordre, chacun fondé sur un chiffre, une source ou une hypothèse) et **Ce qui pourrait se passer
+   autrement** (deux à cinq cas, avec des probabilités si vous le souhaitez). L'étape des options classe
+   alors des solutions de rechange par rapport à la mesure. Choisissez plutôt **Ce qu'un événement
+   signifie pour un marché** pour peser un événement pour la monnaie ou les obligations d'État :
+   **Reprendre les relevés de marché** prend les chiffres de l'application tels qu'ils étaient à la date
+   de référence, et vos cas sont la variation de valeur pour un détenteur. La synthèse d'une page se
+   termine par ces parties, et à 12 et 24 mois les cas d'une revue sur la monnaie sont comparés à
+   l'évolution du taux de change.
 
 ## 8. Choisir un modèle d'IA
 

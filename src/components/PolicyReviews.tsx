@@ -1164,6 +1164,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                       <p key={c.hash} data-review-auto-check={c.verdict}>
                         {t('pr_autoRow', { months: String(c.months), date: c.due, verdict: t(`pr_v_${c.verdict}` as 'pr_v_hit') })}. {c.reason}
                         {c.warnings?.length ? ` ${t('pr_autoWarn', { list: c.warnings.map((w) => `${w.label} [${w.ref}]: ${t(`pr_w_${w.result}` as 'pr_w_shown')}`).join('; ') })}` : ''}
+                        {c.cases ? ` ${t('pr_autoCases', { r: c.cases.reason })}` : ''}
                       </p>
                     ))}
                 </div>
