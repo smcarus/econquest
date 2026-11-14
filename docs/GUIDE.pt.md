@@ -228,6 +228,18 @@ Para revisar uma política:
    dados de hoje. A nova revisão abre **O que mudou desde a revisão anterior**: o enquadramento, a opção
    recomendada por cada memorando, cada número antes e agora, e se o indicador-alvo andou na direção
    certa.
+9. Para pesar uma medida (uma mudança de imposto, uma reforma de subsídio, um programa de gastos),
+   marque **Pergunta para o conselho de políticas** no enquadramento e escolha **Uma medida**. Abaixo da
+   revisão, preencha **Custos e benefícios** (os números de cada ano com sua fonte, a taxas de desconto
+   oficiais ou às suas: o aplicativo dá o valor presente e o ano em que a medida se paga), **Quem ganha
+   e quem perde**, **O que vem depois** (efeitos de segunda ordem, cada um apoiado em um número, uma
+   fonte ou uma suposição) e **O que pode sair diferente** (de dois a cinco casos, com probabilidades se
+   você quiser). O passo de opções então ordena alternativas em relação à medida. Escolha em vez disso
+   **O que um evento significa para um mercado** para pesar um evento para a moeda ou os títulos do
+   governo: **Copiar as leituras de mercado** pega os números do próprio aplicativo como estavam na data
+   de referência, e seus casos são a mudança de valor para quem detém o ativo. O resumo de uma página
+   termina com essas partes, e em 12 e 24 meses os casos de uma revisão sobre a moeda são comparados com
+   o que o câmbio fez.
 
 ## 8. Escolher um modelo de IA
 

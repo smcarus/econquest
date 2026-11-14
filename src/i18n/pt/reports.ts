@@ -520,6 +520,7 @@ export const REPORTS_PT: Messages<typeof REPORTS> = {
   pr_v_too_early: "Cedo demais",
   pr_v_missing: "Ausente",
   pr_autoWarn: "Alertas antecipados: {list}.",
+  pr_autoCases: "Casos de mercado: {r}",
   pr_w_shown: "alerta mostrado",
   pr_w_not_shown: "nenhum alerta",
   pr_w_too_early: "cedo demais",

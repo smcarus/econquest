@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Policy council check-back and docs (PK9): automatic outcome checks (rules version
+  outcome-check-v3) set a currency market council's cases against the change in value for a holder
+  in US dollars and name the closest case; for bonds they record how the yield or spread moved. The
+  user manual and the guide (English, Spanish, French, Portuguese) explain the policy and market
+  council, and the glossary adds present value, discount rate, incidence and second-order effect.
 - Policy council in the one-page brief (PK8): the brief PDF ends with the council parts that are up
   to date with the frame (present values, who gains and who loses, the chain count by basis, cases
   with the odds-weighted result; for a market, the readings and cases). English, Spanish, French

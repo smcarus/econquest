@@ -528,6 +528,7 @@ export const REPORTS = defineMessages('reports', {
   pr_v_too_early: 'Too early',
   pr_v_missing: 'Missing',
   pr_autoWarn: 'Early warnings: {list}.',
+  pr_autoCases: "Market cases: {r}",
   pr_w_shown: 'warning shown',
   pr_w_not_shown: 'no warning',
   pr_w_too_early: 'too early',

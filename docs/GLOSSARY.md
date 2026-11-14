@@ -554,6 +554,16 @@ The US government sells its bills, notes and bonds at regular auctions. Bid-to-c
 
 **Limits.** One auction can be weak for passing reasons (a holiday week, a big supply of other bonds). Only the United States has a free auction feed the app can read; other countries' auctions are not shown.
 
+### Incidence (who really pays)
+
+Who ends up bearing a tax, subsidy or price change, which is often not who pays it on paper. A tax on companies can fall on workers through lower pay or on buyers through higher prices.
+
+**Why it matters.** Two measures that raise the same money can hit very different groups. The policy council's groups step asks who gains and who loses.
+
+**How to read it.** Look at the share of the cost or gain falling on each group, and at poorer households in particular.
+
+**Limits.** Incidence depends on how buyers and sellers respond, so estimates differ between studies.
+
 ## Trade, the currency and money from abroad
 
 ### Goods exports and imports by group
@@ -1035,3 +1045,29 @@ A set of specialist AI agents, each covering one area (for example the central b
 **Why it matters.** Splitting the work keeps each answer tied to named figures and sources, and makes it clear which agent said what.
 
 **Limits.** Answers are written by an AI model and are labelled so. They are interpretation of the figures shown, not advice, and the app checks that every number they quote appears in the source figures.
+
+### Present value
+
+What a stream of future gains or costs is worth today, after each year is shrunk by the discount rate. Net present value is the present value of the gains minus the present value of the costs.
+
+**Why it matters.** A measure that costs money now and pays back over many years can only be compared with one that pays back quickly once both are put in today's money. The policy council's cost-benefit step uses it.
+
+**How to read it.** Above zero: the measure gains more than it costs at that discount rate. The flip rate shown beside it is the discount rate at which the answer changes sign.
+
+**Limits.** It is only as good as the yearly figures typed in, and it leaves out effects nobody wrote down.
+
+### Discount rate
+
+The yearly rate used to shrink future amounts to today's money. At 5%, 105 next year is worth 100 today.
+
+**Why it matters.** A higher rate counts the future for less, which favours measures that pay back quickly. Many governments publish an official rate for public projects.
+
+**How to read it.** Try more than one rate. If the answer changes between plausible rates, the case depends on how much weight you give the future.
+
+### Second-order effect
+
+A knock-on result of a measure: not what it does directly, but what happens when people and markets respond. A fuel subsidy lowers prices (first order), then raises fuel use and the budget cost (second order).
+
+**Why it matters.** Many policies fail through effects nobody planned for. The policy council's chain step writes them out in order.
+
+**How to read it.** Read each link and ask how sure it is. A long chain of uncertain links is weak support.

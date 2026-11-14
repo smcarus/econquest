@@ -918,6 +918,35 @@ becomes the problem). Six steps, in order:
    moved the way the goal wants between the two. What moved is not what the earlier recommendation
    caused, and the app does not know whether it was followed. Nothing is saved.
 
+**Policy council** (PK1 to PK7). A review can weigh one measure (a tax change, a subsidy reform, a
+spending programme) instead of a broad goal. In the frame, tick *Policy council question*, pick
+*One measure* and describe it; its size, start month and years ahead are optional. You then fill in the council
+parts, each saved with its own hash and marked Out of date when the frame changes:
+- *Costs and benefits*: one line per cost or benefit with a value for each year and its source. Tick
+  the official discount rates to use (HM Treasury, US OMB, European Commission, Asian Development
+  Bank, each with the passage it comes from) or add your own with a reason. The app shows the present
+  value of costs and benefits at each rate, the net, the year it pays back, how far costs would have
+  to rise to flip the answer and the rate at which the net turns.
+- *Who gains and who loses*: one row per group, gains or loses and why, a size only with a source
+  (otherwise Missing), and optionally the share each fifth of people carries from a published
+  incidence study, set against its share of income.
+- *What follows*: a chain of second-order effects, each link resting on a Diagnose figure, a named
+  source or marked as an assumption; the app counts each kind.
+- *What could go differently*: two to five cases scaled from the costs and benefits, with odds for
+  all or none; the app shows each case's net present value, the odds-weighted net and the chance of a
+  negative net.
+Then run the Options step: option 1 is the measure, and the council ranks alternatives against it,
+using only numbers from the diagnosis and your entries.
+
+**Market council** (PK7). Instead of a measure, pick *What an event means for a market*, choose the
+currency, local-currency bonds or US-dollar bonds and describe the event. *Copy in the market
+readings* takes the policy rate, carry against the US, exchange rate, yields, spreads, positioning,
+Fed swap lines, dollar credit and central bank assets from the app's own history as they stood on
+the As of day, each with its date and source or Missing. Your cases are the change in value for a
+holder in US dollars, with odds. In the Options step, option 1 is keeping the current stance and the
+council ranks responses against it. Present value, discount rate, incidence and second-order effect
+are explained in the glossary. Full detail: docs/POLICY_REVIEW.md.
+
 **Expert review** (P4). At the bottom of a review whose memo is written, *Fill in an expert review*
 gives a pilot economist or professor a short form on the memo: how clear it is and how well it uses
 evidence (each 1 to 5), whether the sources are correct (yes, some are wrong, or not checked), whether
@@ -935,7 +964,10 @@ its As of day, from the pull saved on or before that day. Each check reads **Hit
 met, or with no number in the target, the figure moved the way the goal wants), **Miss**, **Too
 early** (no newer figure than the one the review started from) or **Missing**, with the reason.
 Each check also looks at the early-warning figures from the recommended option's pre-mortem: warning
-shown, no warning, too early or missing. The
+shown, no warning, too early or missing. For a market council on the currency, it also
+sets the change in value for a holder in US dollars against your cases and names the closest one;
+for bonds it records how the yield or spread moved (turning that into a change in value needs the
+bonds' duration, which the app does not have). The
 results show under step 6 and in **Menu > Models & validation > Track record > Policy track record**.
 They record only whether the goal was met, not whether the advice was followed or caused it.
 
