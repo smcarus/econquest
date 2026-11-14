@@ -29,7 +29,7 @@ import { dueChecks, judgeCheck, nextCheck, tallyChecks, tallySentence, OUTCOME_C
 import { figureRows } from '../../utils/csvExport';
 import { listArchivedDays } from '../../utils/pullArchive';
 import { parseEffects } from '../../utils/behaviouralCheck';
-import { COUNCIL_PARTS, parseCouncilPart, type CouncilPart } from '../../utils/policyCouncil';
+import { COUNCIL_PARTS, currentCouncilInputs, parseCouncilPart, type CouncilInputs, type CouncilPart } from '../../utils/policyCouncil';
 import type { DiagnosisFigure } from '../../utils/reviewDiagnosis';
 import { CONSENTS, expertCsv, expertSummaryMarkdown, parseExpertForm } from '../../utils/expertReview';
 import { findPrecedents, parseFeatures, type HistoryInput } from '../../utils/precedentFinder';
@@ -52,7 +52,8 @@ export interface ReviewDeps {
     frame: ReviewFrame,
     diagnosis: Diagnosis,
     userOptions: UserOption[],
-    runtimeConfig: Partial<AIRuntimeConfig>
+    runtimeConfig: Partial<AIRuntimeConfig>,
+    council?: CouncilInputs
   ) => Promise<{ status: 502 | 503; error: string; model?: string } | { content: Pick<OptionsStepT, 'model' | 'options' | 'ranking' | 'gaps' | 'removed'>; step: { model?: string; temperature?: number; seed?: number } }>;
   withModelFigures: (d: Diagnosis) => Diagnosis;
   /** Every country's saved yearly history (data/history/), for the precedent finder. */
@@ -265,15 +266,17 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
     const diagnosis = r.steps.diagnose!.content as Diagnosis;
     const userOptions = parseUserOptions(req.body?.userOptions);
     const ownOnly = req.body?.ownOnly === true;
-    const prompt = optionsPrompt(frame, diagnosis, userOptions);
+    // Policy council (PK6): a frame that names one measure hands the council the up-to-date council parts.
+    const council = frame.council ? currentCouncilInputs(r) : null;
+    const prompt = optionsPrompt(frame, diagnosis, userOptions, council?.inputs);
     const promptHash = crypto.createHash('sha256').update(OPTIONS_INSTRUCTION + '\n' + prompt).digest('hex');
-    const base = { templateVersion: OPTIONS_TEMPLATE_VERSION, temperature: 0, promptHash, userOptions };
+    const base = { templateVersion: OPTIONS_TEMPLATE_VERSION, temperature: 0, promptHash, userOptions, ...(council ? { councilHashes: council.hashes } : {}) };
     let content: OptionsStep;
     if (ownOnly) {
       if (!userOptions.length) return res.status(400).json({ error: 'Add at least one option of your own, or ask the council.' });
       content = { ...base, model: null, options: unassessedOptions(userOptions), ranking: '', gaps: [], removed: [], reason: 'saved with your own options only; the council was not asked' };
     } else {
-      const step = await reviewOptionsStep(frame, diagnosis, userOptions, req.body?.runtimeConfig || {});
+      const step = await reviewOptionsStep(frame, diagnosis, userOptions, req.body?.runtimeConfig || {}, council?.inputs);
       if (!('content' in step)) return res.status(step.status).json({ error: step.error });
       content = { ...base, ...step.content };
     }

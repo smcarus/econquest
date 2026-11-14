@@ -11,6 +11,7 @@
  *
  * Browser-safe; the server calls the model.
  */
+import { councilPromptLines, councilTask, type CouncilInputs, type CouncilPart } from './policyCouncil';
 import type { ReviewFrame } from './policyReview';
 import type { Diagnosis } from './reviewDiagnosis';
 import { traces } from './askCouncil';
@@ -98,6 +99,8 @@ export interface OptionsStep {
   removed: string[];
   /** When no model answered: why. */
   reason?: string;
+  /** Policy council (PK6): hashes of the council parts the council was given, so a later change shows. */
+  councilHashes?: Partial<Record<CouncilPart, string>>;
 }
 
 export const OPTIONS_INSTRUCTION = [
@@ -117,7 +120,7 @@ export const OPTIONS_INSTRUCTION = [
 const unitText = (unit: string) => (unit === '%' ? '%' : ` ${unit}`);
 
 /** The prompt: frame, diagnosis table, the principal's options, then the task (last, for local models). */
-export function optionsPrompt(frame: ReviewFrame, d: Diagnosis, userOptions: UserOption[]): string {
+export function optionsPrompt(frame: ReviewFrame, d: Diagnosis, userOptions: UserOption[], council?: CouncilInputs): string {
   const lines = [
     `Country: ${frame.iso3}`,
     `Problem: ${frame.problem}`,
@@ -131,6 +134,8 @@ export function optionsPrompt(frame: ReviewFrame, d: Diagnosis, userOptions: Use
     ...d.readings.map((r) => (r.value === null ? `${r.label}: ${r.reason}` : `${r.label}: ${r.value} percentage points (${r.method}${r.caveat ? ` ${r.caveat}` : ''})`)),
     '',
   ];
+  // A frame that names one measure (policy council, PK6): the measure and the principal's entries.
+  lines.push(...councilPromptLines(frame, council));
   if (userOptions.length) {
     lines.push('Options the principal wants assessed:');
     userOptions.forEach((o, i) => lines.push(`${i + 1}. ${o.title}${o.how ? `: ${o.how}` : ''}`));
@@ -142,7 +147,7 @@ export function optionsPrompt(frame: ReviewFrame, d: Diagnosis, userOptions: Use
     '- ranking: two or three sentences on why the options are in this order.',
     '- gaps: what the missing figures stop the council from judging.',
     '',
-    `Task: rank the options most likely to move ${frame.goal.indicator} ${frame.goal.direction === 'stable' ? 'to stability' : frame.goal.direction} in ${frame.iso3} within the constraints.`
+    ...(frame.council ? councilTask(frame, MAX_OPTIONS) : [`Task: rank the options most likely to move ${frame.goal.indicator} ${frame.goal.direction === 'stable' ? 'to stability' : frame.goal.direction} in ${frame.iso3} within the constraints.`])
   );
   return lines.join('\n');
 }
@@ -152,10 +157,10 @@ export const OPTIONS_SCHEMA_KEYS = ['options', 'ranking', 'gaps'];
 const NUM = /\d+(?:\.\d+)?/g;
 
 /** Numbers the model may write: every figure, reading and reference in the diagnosis, and every number in the frame. */
-export function allowedReviewNumbers(frame: ReviewFrame, d: Diagnosis, userOptions: UserOption[]): number[] {
+export function allowedReviewNumbers(frame: ReviewFrame, d: Diagnosis, userOptions: UserOption[], council?: CouncilInputs): number[] {
   const set = new Set<number>();
   const add = (s: string) => (s.match(NUM) || []).forEach((n) => set.add(Number(n)));
-  add(optionsPrompt(frame, d, userOptions));
+  add(optionsPrompt(frame, d, userOptions, council));
   d.figures.forEach((x) => (set.add(x.ref), x.value !== null && set.add(x.value)));
   d.readings.forEach((r) => r.value !== null && set.add(r.value));
   for (let i = 1; i <= MAX_OPTIONS + MAX_USER_OPTIONS; i++) set.add(i);
@@ -163,8 +168,8 @@ export function allowedReviewNumbers(frame: ReviewFrame, d: Diagnosis, userOptio
 }
 
 /** Checks and tidies the model's answer: untraceable sentences removed, refs kept only if they exist. */
-export function checkOptions(raw: unknown, frame: ReviewFrame, d: Diagnosis, userOptions: UserOption[]): Pick<OptionsStep, 'options' | 'ranking' | 'gaps' | 'removed'> {
-  const allowed = allowedReviewNumbers(frame, d, userOptions);
+export function checkOptions(raw: unknown, frame: ReviewFrame, d: Diagnosis, userOptions: UserOption[], council?: CouncilInputs): Pick<OptionsStep, 'options' | 'ranking' | 'gaps' | 'removed'> {
+  const allowed = allowedReviewNumbers(frame, d, userOptions, council);
   const removed: string[] = [];
   const clean = (v: unknown, max = 600): string => {
     if (typeof v !== 'string') return '';

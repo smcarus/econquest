@@ -298,6 +298,8 @@ export const REPORTS_ES: Partial<Record<Keys, string>> = {
   pk_scResults: "Valor presente neto de cada caso a {rate}, en la unidad de la tabla",
   pk_expected: "Neto ponderado por probabilidad: {v}. Probabilidad de un neto negativo: {p}%.",
   pk_scMethod: "Método: cada caso multiplica las líneas de costos y de beneficios de la tabla por sus porcentajes y retrasa los beneficios los años indicados; luego descuenta como arriba. Las probabilidades son suyas. Descripción, no una previsión.",
+  pk_optionsNote: "Esta revisión pondera una medida: el consejo recibe la medida y sus entradas actualizadas del consejo de políticas, juzga la medida como opción 1 y luego clasifica alternativas frente a ella. Solo puede citar cifras del diagnóstico y de sus entradas.",
+  pk_optionsStale: "Sus entradas del consejo de políticas cambiaron después de consultar al consejo. Consúltelo de nuevo para ponderar las entradas actuales.",
   pr_constraintsDt: 'Restricciones',
   pr_noneStated: 'Ninguna indicada',
   pr_for: 'Para',

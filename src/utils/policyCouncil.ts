@@ -23,10 +23,15 @@
  * sets. The net present value of each at one of the PK2 rates, and the odds-weighted net and the
  * chance of a negative net when odds are given.
  *
+ * PK6 council run: when the frame names a measure, the Options step hands the council the measure
+ * and the parts above that are up to date (councilPromptLines), so the agents weigh the measure
+ * against the principal's own entries. Numbers in those entries become numbers the council may
+ * quote; every other number is still removed by the number check.
+ *
  * No figure is filled in for the user. Browser-safe.
  */
 import { DISCOUNT_RATES, discountRateById, type DiscountRate } from '../data/discountRates';
-import { COUNCIL_SIZE_UNITS, type CouncilSizeUnit } from './policyReview';
+import { COUNCIL_SIZE_LABEL, COUNCIL_SIZE_UNITS, type CouncilSizeUnit, type PolicyReview, type ReviewFrame } from './policyReview';
 import { incidence, QUINTILES, type Direction } from './policyIncidence';
 import type { DiagnosisFigure } from './reviewDiagnosis';
 
@@ -568,6 +573,91 @@ export function scenarioResults(cb: CostBenefit, sc: Scenarios): { rate: { id: s
     expected: withOdds ? results.reduce((a, r) => a + (r.npv * r.odds!) / 100, 0) : null,
     chanceNegative: withOdds ? results.filter((r) => r.npv < 0).reduce((a, r) => a + r.odds!, 0) : null,
   };
+}
+
+// ---------------------------------------------------------------- PK6 council run
+
+/** The council parts handed to the Options step: only those saved against the current frame. */
+export interface CouncilInputs {
+  costBenefit?: CostBenefit;
+  groups?: WinnersLosers;
+  chain?: EffectChain;
+  scenarios?: Scenarios;
+}
+
+export function currentCouncilInputs(review: PolicyReview): { inputs: CouncilInputs; hashes: Partial<Record<CouncilPart, string>> } {
+  const frameHash = review.steps.frame?.hash;
+  const inputs: CouncilInputs = {};
+  const hashes: Partial<Record<CouncilPart, string>> = {};
+  for (const p of COUNCIL_PARTS) {
+    const rec = review.councilParts?.[p];
+    if (rec && councilPartState(rec, frameHash) === 'done') {
+      (inputs as Record<string, unknown>)[p] = rec.content;
+      hashes[p] = rec.hash;
+    }
+  }
+  return { inputs, hashes };
+}
+
+const r2 = (v: number) => String(Math.round(v * 100) / 100);
+const PART_NAME: Record<CouncilPart, string> = { costBenefit: 'costs and benefits', groups: 'who gains and who loses', chain: 'what follows', scenarios: 'scenarios' };
+
+/** True when the up-to-date council parts differ from those the Options step was given. */
+export function councilChangedSince(review: PolicyReview, given: Partial<Record<CouncilPart, string>> | undefined): boolean {
+  const now = currentCouncilInputs(review).hashes;
+  const was = given ?? {};
+  return COUNCIL_PARTS.some((p) => (now[p] ?? '') !== (was[p] ?? ''));
+}
+
+/** The measure and the principal's council entries, as prompt lines (empty when the frame names no measure). */
+export function councilPromptLines(frame: ReviewFrame, inputs: CouncilInputs | undefined): string[] {
+  const c = frame.council;
+  if (!c) return [];
+  const lines = [
+    `Measure the principal wants weighed: ${c.measure}${c.size ? ` (size ${c.size.value} ${COUNCIL_SIZE_LABEL[c.size.unit]})` : ''}${c.start ? `, from ${c.start}` : ''}${c.years ? `, looking ${c.years} years ahead` : ''}`,
+  ];
+  const i = inputs ?? {};
+  const cb = i.costBenefit;
+  if (cb) {
+    lines.push(`Costs and benefits the principal entered (${COUNCIL_SIZE_LABEL[cb.unit]}, first value for ${cb.firstYear}):`);
+    for (const l of cb.lines) lines.push(`- ${l.kind === 'cost' ? 'Cost' : 'Benefit'}: ${l.label}: ${l.values.map(r2).join(', ')} (source: ${l.source})`);
+    const { results, flip } = costBenefitResults(cb);
+    for (const x of results)
+      lines.push(`- Present value at ${x.id === 'own' ? `the principal's own rate of ${x.rateText}` : x.label}: costs ${r2(x.pvCosts)}, benefits ${r2(x.pvBenefits)}, net ${r2(x.npv)}, ${x.breakEvenYear ? `pays back from ${x.breakEvenYear}` : 'never pays back within the table'}`);
+    if (flip !== null) lines.push(`- The net changes sign at a flat discount rate of ${r2(flip)}%.`);
+  }
+  const g = i.groups;
+  if (g) {
+    lines.push('Who gains and who loses (the principal\'s entries):');
+    for (const r of g.rows) lines.push(`- ${r.group} ${r.effect === 'mixed' ? 'gains and loses' : r.effect}: ${r.why}${r.size !== undefined ? ` (${r2(r.size)} ${r.sizeUnit}, source: ${r.source})` : ' (no figure entered)'}`);
+    if (g.fifths) lines.push(`- Share of the change by fifth of people, poorest first, households ${g.fifths.direction === 'pay' ? 'pay' : 'gain'} ${r2(g.fifths.sizePctGdp)}% of GDP: ${g.fifths.shares.map(r2).join(', ')}% (source: ${g.fifths.source})`);
+  }
+  const ch = i.chain;
+  if (ch) {
+    lines.push('What follows (the principal\'s chain of effects):');
+    for (const l of ch.links)
+      lines.push(`- ${l.from} ${l.direction === 'unclear' ? 'has an unclear effect on' : l.direction} ${l.to}${l.lag ? ` (${l.lag})` : ''}; rests on ${l.basis === 'figure' && l.figure ? `diagnosis figure [${l.figure.ref}]` : l.basis === 'source' ? `source: ${l.source}` : 'an assumption'}`);
+  }
+  const sc = i.scenarios;
+  if (sc && cb) {
+    const out = scenarioResults(cb, sc);
+    lines.push(`Scenarios the principal set (net present value at ${out.rate?.label ?? 'the first rate'}):`);
+    sc.scenarios.forEach((x, k) => lines.push(`- ${x.name}: ${x.story} Costs ${r2(x.costScale)}% and benefits ${r2(x.benefitScale)}% of the table${x.delayYears ? `, benefits ${x.delayYears} years later` : ''}${x.odds !== undefined ? `, odds ${r2(x.odds)}%` : ''}; net ${r2(out.results[k]?.npv ?? 0)}; rests on ${x.source ? `source: ${x.source}` : 'an assumption'}`));
+  }
+  const missing = COUNCIL_PARTS.filter((p) => !(i as Record<string, unknown>)[p] || (p === 'scenarios' && !cb));
+  if (missing.length) lines.push(`Not entered by the principal (or out of date): ${missing.map((p) => PART_NAME[p]).join(', ')}.`);
+  lines.push('');
+  return lines;
+}
+
+/** The task and rules for a council frame, written into the prompt (the system instruction stays the same). */
+export function councilTask(frame: ReviewFrame, maxOptions: number): string[] {
+  const c = frame.council!;
+  return [
+    `Rules for weighing the measure: option 1 must be the measure itself as the principal states it ("${c.measure}"), with fromUser true. Judge it against the goal, the diagnosis and the principal's entries above. Treat the entries as the principal's claims: say which rest on a source and which on an assumption, and put the assumptions it depends on in mustBeTrue. Use the principal's group entries for whoBears. Name in risks the entry that would most change the answer. Then give 2 to ${maxOptions - 1} alternatives or changes to the measure, ranked against it. Do not add figures of your own.`,
+    '',
+    `Task: weigh "${c.measure}" for ${frame.iso3} against the goal of moving ${frame.goal.indicator} ${frame.goal.direction === 'stable' ? 'to stability' : frame.goal.direction}, within the constraints.`,
+  ];
 }
 
 /** Checks the content of one part. */

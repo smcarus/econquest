@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Policy council weighs the measure (PK6): with a measure in the policy review frame, the Options
+  step hands the council the measure and the up-to-date costs and benefits, groups, chain of effects
+  and scenarios. Option 1 is the measure itself, alternatives are ranked against it, and only
+  numbers from the diagnosis and the user's entries are allowed. The step says when a part changed
+  after it ran. A new council regression case; the council recording needs one new run.
 - Policy council scenarios (PK5): for the measure in a policy review, two to five cases, each a
   short story with the costs and benefits table scaled by the user's percentages and benefits
   arriving later if they say so, with optional odds; net present value of each case, and with odds
