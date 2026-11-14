@@ -126,6 +126,8 @@ import { PanelBoundary } from './components/PanelBoundary';
 import { reviveMissing, reviveWatchlistGroups } from './utils/reviveMissing';
 import { loadCouncilBrief } from './utils/askCouncil';
 import { loadShareMode, saveShareMode } from './utils/shareMode';
+import { dailyLine, dailyProgress } from './utils/dailyProgress';
+import type { DataHealthTab } from './components/DataHealthDialog';
 
 // Desks load on first use, so the first screen does not download all 41 of them.
 // The menu dialogs load when first opened, keeping them out of the first download.
@@ -264,6 +266,30 @@ export default function App() {
       clearInterval(t);
     };
   }, [isDataHealthOpen]);
+  // The daily download while it runs (src/utils/dailyProgress.ts): one line at the top, read every
+  // minute until the run ends, with a link to Menu > Data health > Daily download.
+  const [dailyNote, setDailyNote] = useState<string | null>(null);
+  const [dailyNoteHidden, setDailyNoteHidden] = useState(false);
+  const [dataHealthTab, setDataHealthTab] = useState<DataHealthTab | undefined>(undefined);
+  useEffect(() => {
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const load = () =>
+      fetch('/api/daily-run')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => {
+          if (!alive || !j) return;
+          const line = dailyLine(dailyProgress(j.run));
+          setDailyNote(line);
+          if (line) timer = setTimeout(load, 60_000);
+        })
+        .catch(() => undefined);
+    load();
+    return () => {
+      alive = false;
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
   // Menu > Models & validation; a status badge anywhere opens it on its row (undefined = closed).
   const [registerFocus, setRegisterFocus] = useState<string | null | undefined>(undefined);
   // Menu > Idea journal, or "Log idea" on a Council chat answer.
@@ -1580,6 +1606,20 @@ export default function App() {
         </div>
       </section>
 
+      {dailyNote && !dailyNoteHidden && (
+        <div data-testid="daily-download-line" role="status" className="px-6 py-2 border-b text-xs flex items-center justify-between gap-4 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60 text-blue-800 dark:text-blue-200">
+          <span>{dailyNote}</span>
+          <span className="flex gap-3 shrink-0">
+            <button type="button" onClick={() => (setDataHealthTab('download'), setIsDataHealthOpen(true))} className="underline">
+              See progress
+            </button>
+            <button type="button" onClick={() => setDailyNoteHidden(true)} className="underline opacity-75 hover:opacity-100">
+              Dismiss
+            </button>
+          </span>
+        </div>
+      )}
+
       {/* STATUS BANNER */}
       {statusBanner && (
         <div
@@ -1901,7 +1941,7 @@ export default function App() {
 
       {isOfflineDataOpen && <OfflineDataDialog onClose={() => setIsOfflineDataOpen(false)} />}
       <Suspense fallback={null}>{isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}</Suspense>
-      <Suspense fallback={null}>{isDataHealthOpen && <DataHealthDialog onClose={() => setIsDataHealthOpen(false)} />}</Suspense>
+      <Suspense fallback={null}>{isDataHealthOpen && <DataHealthDialog initialTab={dataHealthTab} onClose={() => (setIsDataHealthOpen(false), setDataHealthTab(undefined))} />}</Suspense>
       <Suspense fallback={null}>{isIdeasOpen && <IdeaJournalDialog onClose={() => setIsIdeasOpen(false)} />}</Suspense>
       <Suspense fallback={null}>
         {isWorkedOpen && (

@@ -1174,6 +1174,11 @@ hold no figures of their own; the handout reads them from the app's series when 
     the old value, the new one and the date the change was seen. Revised IMF projections are hidden
     unless you tick *Include IMF projections* (every WEO revises them). The History tab shows the same
     as "Revised from X on <date>" beside the year.
+  - *Daily download*: the daily download in its five parts (free feeds, files, long histories and
+    forecasts, weekly tests, connection check): which parts are done, which failed and why, how much
+    came down, which sources need a key or a file from you, and what must be downloaded by hand. It
+    reads the run's file as it goes, so it shows progress on the first start too. While the run is
+    going, a line at the top of the screen says which part it is on, with *See progress*.
   - *Scheduled*: jobs the server runs by itself and how each run ended.
   - *Inflation*: every country's monthly inflation figure with its source, month and age in days.
     Each country uses the freshest source that answered (its own statistics office or central bank,

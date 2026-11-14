@@ -2,7 +2,7 @@
 import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, SCHEDULED_JOBS_FILE, LAST_ALERT_FILE, DATA_DIR, DATA_HEALTH_FILES, ENV_FILE_KEYS, FIGURE_WATCH_FILES, RESEARCH_FILE, REVIEW_FILE, SETTINGS_FILE, SIGNOFF_FILE, SPEC_DIR, VALIDATION_FILE, WATCH_RULES_FILE, WORKSPACE_FILE, savedSettings, setSavedSettings } from './src/server/config';
 import { geminiModel } from './src/utils/geminiModel';
 import { refreshModelHistory, registerAnalysisRoutes } from './src/server/routes/analysis';
-import { FILE_PULLS, dailyDue, dailyFilePath, formatDaily, interestingLines, readDaily, sweepNote, testsDue, writeDaily, type DailyRun, type DailyStep } from './src/utils/dailyRun';
+import { BY_HAND, FILE_PULLS, dailyDue, dailyFilePath, formatDaily, interestingLines, readDaily, sweepNote, testsDue, writeDaily, type DailyRun, type DailyStep } from './src/utils/dailyRun';
 import { spawn } from 'child_process';
 import { registerReviewRoutes } from './src/server/routes/reviews';
 import type { HistoryInput } from './src/utils/precedentFinder';
@@ -4447,6 +4447,11 @@ async function startServer() {
     });
   });
   // Scheduled jobs: what is switched on, and each job's last runs (Menu > Data health > Scheduled).
+  // The daily download as it goes (Menu > Data health > Daily download): data/local/daily-run.json,
+  // saved after each step, plus what the app cannot fetch by itself.
+  app.get('/api/daily-run', (_req, res) => {
+    res.json({ run: readDaily(dailyFilePath(DATA_DIR)).last ?? null, byHand: BY_HAND, file: 'data/local/daily-run.json' });
+  });
   app.get('/api/scheduled-jobs', (_req, res) => {
     const jobs = readJobs(SCHEDULED_JOBS_FILE);
     res.json({
