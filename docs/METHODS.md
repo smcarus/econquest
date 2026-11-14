@@ -63,6 +63,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Peer comparison for a policy review | Research | Description, not a tested signal | None |
 | Review-to-review comparison | Research | Description, not a tested signal | None |
 | Trade-off chart | Research | Description, not a tested signal | None |
+| Policy council (one measure) | Research | Description, not a tested signal | None |
 | Global shock scenarios | Research | Description, not a tested signal | None |
 | Currency carry | Research | Signal test passed | v1, 2026-11-07 |
 | Currency value (five-year real depreciation) | Research | Signal test failed | v1, 2026-11-07 |
@@ -822,6 +823,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: the app's own calculations on stated assumptions, not a forecast or a recommendation.
 - **Limits:** Only as good as the multiplier ranges behind each item; items ending in different years are flagged; kept what-ifs live in page memory only.
 - **Code:** `src/utils/tradeOff.ts, src/components/TradeOffChart.tsx`
+
+### Policy council (one measure)
+
+- **Says:** For one measure in a policy review: present values of the costs and benefits you enter, at official discount rates you tick or your own, with the year it pays back and how far figures would have to move to flip the answer.
+- **Rule:** Discounted sums: the first year is not discounted, each later year divided by one plus that year's rate (schedules as published, e.g. the UK Green Book). The flat rate where the net is zero is found by bisection between -50% and 100%. Official rates from src/data/discountRates.ts, each with document, passage and the day checked.
+- **Reads:** Costs and benefits you enter by year, each with its source; official discount rates (HM Treasury Green Book, US OMB Circular A-4, European Commission, Asian Development Bank)
+- **Shows in:** Reports > Policy reviews (Policy council, beside the frame)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: arithmetic on the figures you enter, not a forecast or a recommendation.
+- **Limits:** Only as good as the figures entered. Sums of % of GDP across years treat each year's GDP as the same size. No figure is filled in for you.
+- **Code:** `src/utils/policyCouncil.ts, src/data/discountRates.ts, src/components/PolicyCouncil.tsx`
 
 ### Global shock scenarios
 

@@ -24,11 +24,12 @@ import { parsePeerList, peerTable } from '../../utils/reviewPeers';
 import { cutAt, EPISODE_METHOD, EVIDENCE_TEMPLATE_VERSION, isResearchOnly, packRequests, pastEpisodes, perOption, runAnalysis, signalsFor, type EvidenceStep } from '../../utils/reviewEvidence';
 import { OPTIONS_INSTRUCTION, OPTIONS_TEMPLATE_VERSION, optionsPrompt, parseUserOptions, unassessedOptions, type OptionsStep } from '../../utils/reviewOptions';
 import { frameOf, parseFrame, summarise as summariseReview, stepStates, REVIEW_TEMPLATE_VERSION } from '../../utils/policyReview';
-import { appendOutcomeCheck, appendExpertReview, setExpertConsent, verifyExpertReviews, behaviourChanged, saveBehaviour, deleteReview, loadReviews, newReview, putReview, saveStep, verifyOutcomeChecks, verifyReview } from '../../utils/policyReviewStore';
+import { appendOutcomeCheck, appendExpertReview, setExpertConsent, verifyExpertReviews, behaviourChanged, saveBehaviour, councilPartsChanged, saveCouncilPart, deleteReview, loadReviews, newReview, putReview, saveStep, verifyOutcomeChecks, verifyReview } from '../../utils/policyReviewStore';
 import { dueChecks, judgeCheck, nextCheck, tallyChecks, tallySentence, OUTCOME_CHECK_CAVEAT, VERDICT_LABEL } from '../../utils/outcomeChecks';
 import { figureRows } from '../../utils/csvExport';
 import { listArchivedDays } from '../../utils/pullArchive';
 import { parseEffects } from '../../utils/behaviouralCheck';
+import { COUNCIL_PARTS, parseCouncilPart, type CouncilPart } from '../../utils/policyCouncil';
 import { CONSENTS, expertCsv, expertSummaryMarkdown, parseExpertForm } from '../../utils/expertReview';
 import { findPrecedents, parseFeatures, type HistoryInput } from '../../utils/precedentFinder';
 import express from 'express';
@@ -191,7 +192,7 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
   app.get('/api/reviews/:id', (req, res) => {
     const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
     if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
-    res.json({ review: r, states: stepStates(r), changed: verifyReview(r), changedChecks: verifyOutcomeChecks(r), changedBehaviour: behaviourChanged(r), changedExpert: verifyExpertReviews(r), nextCheck: nextCheck(r, new Date().toISOString().slice(0, 10)) });
+    res.json({ review: r, states: stepStates(r), changed: verifyReview(r), changedChecks: verifyOutcomeChecks(r), changedBehaviour: behaviourChanged(r), changedCouncil: councilPartsChanged(r), changedExpert: verifyExpertReviews(r), nextCheck: nextCheck(r, new Date().toISOString().slice(0, 10)) });
   });
   const writeReview = (res: express.Response, review: Parameters<typeof putReview>[1]): boolean => {
     try {
@@ -390,6 +391,30 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
       kind: 'research',
       summary: `Behavioural check sizes for policy review "${out.review.title}" (${parsed.effects.length} entered)`,
       detail: { id: r.id, step: 'behaviour', hash: out.review.behaviour!.hash, optionsHash: out.review.behaviour!.optionsHash, effects: parsed.effects.map((e) => `option ${e.rank}, ${e.channel}: ${e.effect} (${e.source})`) },
+    });
+    res.json({ review: out.review, states: stepStates(out.review) });
+  });
+  // Policy council parts (PK2 to PK5): entered by the user with a source for every figure, saved
+  // beside the steps and tied to the frame hash; no AI and no built-in figures.
+  app.post('/api/reviews/:id/council/:part', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const part = req.params.part as CouncilPart;
+    if (!COUNCIL_PARTS.includes(part)) return res.status(404).json({ error: 'No such policy council part.' });
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const frame = frameOf(r);
+    if (!frame?.council) return res.status(400).json({ error: 'Tick "Weigh one measure" in the frame first.' });
+    const firstYear = Number((frame.council.start ?? frame.asOf).slice(0, 4));
+    const parsed = parseCouncilPart(part, req.body?.content, { unit: frame.council.size?.unit, firstYear });
+    if ('errors' in parsed) return res.status(400).json({ error: parsed.errors.join(' ') });
+    const out = saveCouncilPart(r, part, parsed.content);
+    if ('error' in out) return res.status(400).json({ error: out.error });
+    if (!writeReview(res, out.review)) return;
+    const rec = out.review.councilParts![part]!;
+    appendAudit(AUDIT_FILES, {
+      kind: 'research',
+      summary: `Policy council ${part} for policy review "${out.review.title}"`,
+      detail: { id: r.id, step: `council:${part}`, hash: rec.hash, frameHash: rec.frameHash },
     });
     res.json({ review: out.review, states: stepStates(out.review) });
   });

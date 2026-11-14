@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Policy council costs and benefits (PK2): for the measure in a policy review frame, enter costs
+  and benefits by year, each with its source; the app shows present values at the official
+  discount rates you tick (UK Green Book, US OMB Circular A-4 3% and 7%, European Commission 3%,
+  Asian Development Bank 9% and 6%, each cited) and your own, the net, benefits per unit of cost,
+  the pay-back year, how far figures would have to move to flip the answer and the flat rate where
+  it flips. Saved beside the steps, tied to the frame, hashed and audited. Spanish, French and
+  Portuguese text.
 - Policy council question (PK1): a policy review can weigh one measure (a tax change, a subsidy
   reform, a spending programme). Tick "Weigh one measure" in the frame, describe the measure and
   optionally its size, start month and years ahead. It is part of the frame and its hash. Spanish,

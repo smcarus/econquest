@@ -9,6 +9,7 @@ import { canonicalJson } from './auditLog';
 import { writeFileAtomic } from './atomicWrite';
 import type { OutcomeCheck, UnsavedCheck } from './outcomeChecks';
 import { EXPERT_TEMPLATE_VERSION, MAX_EXPERT_REVIEWS, type Consent, type ExpertAnswers, type ExpertReview, type UnsavedExpertReview } from './expertReview';
+import { COUNCIL_TEMPLATE_VERSION, COUNCIL_PARTS, type CouncilPart, type CouncilPartRecord } from './policyCouncil';
 import { BEHAVIOUR_TEMPLATE_VERSION, type BehaviourEffect, type BehaviourRecord } from './behaviouralCheck';
 import { MAX_REVIEWS, MAX_RUNS, REVIEW_STEPS, REVIEW_TEMPLATE_VERSION, canSaveStep, frameTitle, prevStep, stepStates, type PolicyReview, type ReviewFile, type ReviewFrame, type ReviewRun, type ReviewStep, type ReviewStepRecord } from './policyReview';
 
@@ -94,6 +95,29 @@ export function saveBehaviour(review: PolicyReview, effects: BehaviourEffect[], 
 /** True when the saved entries no longer match their hash (edited outside the app). */
 export function behaviourChanged(review: PolicyReview): boolean {
   return Boolean(review.behaviour && behaviourHash(review.behaviour) !== review.behaviour.hash);
+}
+
+/** Policy council part (PK2 to PK5): hash of the content and the frame it was entered against. */
+export function councilPartHash(rec: Pick<CouncilPartRecord, 'templateVersion' | 'frameHash' | 'content'>): string {
+  return createHash('sha256').update(canonicalJson({ templateVersion: rec.templateVersion, frameHash: rec.frameHash, content: rec.content })).digest('hex');
+}
+
+/** Saves one policy council part beside the steps, tied to the frame saved now. Needs a frame with a measure to weigh. */
+export function saveCouncilPart(review: PolicyReview, part: CouncilPart, content: unknown, now: Date = new Date()): { review: PolicyReview } | { error: string } {
+  const frame = review.steps.frame;
+  if (!frame || !(frame.content as ReviewFrame).council) return { error: 'Tick "Weigh one measure" in the frame first.' };
+  const at = now.toISOString();
+  const base = { templateVersion: COUNCIL_TEMPLATE_VERSION, frameHash: frame.hash, content };
+  const rec: CouncilPartRecord = { ...base, savedAt: at, hash: councilPartHash(base) };
+  return { review: { ...review, updatedAt: at, councilParts: { ...review.councilParts, [part]: rec } } };
+}
+
+/** The council parts whose saved content no longer matches its hash (edited outside the app). */
+export function councilPartsChanged(review: PolicyReview): CouncilPart[] {
+  return COUNCIL_PARTS.filter((p) => {
+    const rec = review.councilParts?.[p];
+    return rec ? councilPartHash(rec) !== rec.hash : false;
+  });
 }
 
 /** Expert review (P4): hash of the answers, the memo read and the review before (consent is not hashed). */
