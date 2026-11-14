@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- IMF GFS by level of government (DBnomics): the connection check said OK while no series came back
+  ("0 of 30 countries"). It now says the GFSMAB series the app asks for did not come back and lists
+  the codes DBnomics holds for Brazil's central government, so the right codes can be set from the
+  next Mac run; the daily run logs the same.
 - IMF monthly consumer prices: on the 13 November run no IMF code name matched for any of the 19
   countries. The structure reader now also finds a dimension's codelist through its concept, or by
   the name CL_ plus the dimension; when still nothing matches, the app asks for every monthly

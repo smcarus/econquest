@@ -14,7 +14,7 @@
 import { CHINN_ITO_PAGE, chinnItoLinks } from './chinnIto';
 import { parseFredCsvSeries } from './fedBalanceSheet';
 import { EMISSIONS_CODE, OWID_ENERGY_URL, energyColumns } from './climateEnergy';
-import { dbnomicsLevelsUrl, imfLevelSeriesId } from './govLevels';
+import { dbnomicsGfsListUrl, dbnomicsLevelsUrl, gfsCodeSample, imfLevelSeriesId } from './govLevels';
 import { ECB_RTD_SERIES, ecbRtdUrl, parseEcbHistory } from './ecbRealTime';
 import { latestEditionUri, ONS_TRIANGLE_PAGE } from './onsTriangles';
 import { bcbActivityUrl, eurostatActivityUrl, monthText, onsActivityUrl, parseBcbActivity, parseEurostatActivity, parseOnsSeries } from './monthlyIndicators';
@@ -488,23 +488,40 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
 
   // Levels of government (G42 step 1): state and local spending for every BIS country, which also
   // says how many publish them (the coverage that decides the per-state screen).
-  add('imf_gov_levels', () => {
+  add('imf_gov_levels', async () => {
     const iso2s = Object.values(BIS_ISO2);
     const ids = iso2s.flatMap((i) => [imfLevelSeriesId(i, 'state', 'spending'), imfLevelSeriesId(i, 'local', 'spending'), imfLevelSeriesId(i, 'central', 'spending')]);
-    return httpCheck(
-      { id: 'imf_gov_levels', name: 'IMF GFS by level of government (via DBnomics)', group: 'free', feeds: 'Revenue and spending by level of government (country brief, Fiscal Agent)' },
-      fetchFn,
-      dbnomicsLevelsUrl(ids),
-      T,
-      (r) => {
-        const docs = (JSON.parse(r.text || '') as { series?: { docs?: Array<{ series_code?: string; value?: unknown[] }> } })?.series?.docs;
-        if (!Array.isArray(docs)) return null;
-        const has = (d: { value?: unknown[] }) => Array.isArray(d.value) && d.value.some((v) => typeof v === 'number');
-        const sub = new Set(docs.filter((d) => /\.S131[23]\./.test(String(d.series_code)) && has(d)).map((d) => String(d.series_code).split('.')[1]));
-        const central = new Set(docs.filter((d) => /\.S1311\./.test(String(d.series_code)) && has(d)).map((d) => String(d.series_code).split('.')[1]));
-        return `Central government spending for ${central.size} of ${iso2s.length} countries; state or local spending for ${sub.size}${sub.size ? ` (${[...sub].sort().join(', ')})` : ''}`;
+    const def = { id: 'imf_gov_levels' as SourceId, name: 'IMF GFS by level of government (via DBnomics)', group: 'free' as const, feeds: 'Revenue and spending by level of government (country brief, Fiscal Agent)' };
+    let none = false;
+    const row = await httpCheck(def, fetchFn, dbnomicsLevelsUrl(ids), T, (r) => {
+      const docs = (JSON.parse(r.text || '') as { series?: { docs?: Array<{ series_code?: string; value?: unknown[] }> } })?.series?.docs;
+      if (!Array.isArray(docs)) return null;
+      const has = (d: { value?: unknown[] }) => Array.isArray(d.value) && d.value.some((v) => typeof v === 'number');
+      const sub = new Set(docs.filter((d) => /\.S131[23]\./.test(String(d.series_code)) && has(d)).map((d) => String(d.series_code).split('.')[1]));
+      const central = new Set(docs.filter((d) => /\.S1311\./.test(String(d.series_code)) && has(d)).map((d) => String(d.series_code).split('.')[1]));
+      if (!central.size && !sub.size) {
+        none = true;
+        return null;
       }
-    );
+      return `Central government spending for ${central.size} of ${iso2s.length} countries; state or local spending for ${sub.size}${sub.size ? ` (${[...sub].sort().join(', ')})` : ''}`;
+    });
+    if (!none) return row;
+    // None of the series the app asks for came back: show which codes DBnomics holds instead.
+    const sampleIso2 = BIS_ISO2[SAMPLE_ISO3] || 'BR';
+    const list = await probe(fetchFn, dbnomicsGfsListUrl(sampleIso2), T);
+    let codes: string[] = [];
+    try {
+      codes = list.ok ? gfsCodeSample(JSON.parse(list.text || '')) : [];
+    } catch {
+      codes = [];
+    }
+    const asked = imfLevelSeriesId(sampleIso2, 'central', 'spending');
+    return {
+      ...row,
+      detail: `DBnomics answered, but none of the ${ids.length} GFSMAB series the app asks for (for example ${asked}) came back, so revenue and spending by level of government stay Missing. ${
+        codes.length ? `For ${SAMPLE_NAME}, central government, DBnomics holds: ${codes.join('; ')}.` : `DBnomics listed no GFSMAB series for ${SAMPLE_NAME}, central government${list.ok ? '' : ` (${list.networkError || `HTTP ${list.status}`})`}; the dataset may have moved.`
+      }`,
+    };
   });
 
   // Monthly activity (G41): one sample per source the daily run reads (FRED has its own row).

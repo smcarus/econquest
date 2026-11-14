@@ -149,3 +149,19 @@ test('the download: saved to data/live, kept when a later run fails, read back f
     globalThis.fetch = realFetch;
   }
 });
+
+test('connection check: no GFSMAB series back is not OK, and the codes DBnomics holds are listed', async () => {
+  const fetchFn = async (u: string) =>
+    new Response(
+      JSON.stringify(
+        u.includes('/series/IMF/GFSMAB?dimensions=')
+          ? { series: { docs: [{ series_code: 'A.BR.S1311.XDC.G2', series_name: 'Annual – Brazil – Central government – Domestic currency – Expense' }, { series_code: 'A.BR.S1311.XDC.G1', series_name: 'Annual – Brazil – Central government – Domestic currency – Revenue' }] } }
+          : { series: { docs: [] } }
+      ),
+      { status: 200 }
+    );
+  const row = (await checkConnections({ env: {}, only: ['imf_gov_levels'], fetchFn } as never)).results[0];
+  assert.equal(row.state, 'bad_reply');
+  assert.match(row.detail, /none of the \d+ GFSMAB series the app asks for \(for example IMF\/GFSMAB\/A\.BR\.S1311\.XDC_R_B1GQ\.G2M\) came back/);
+  assert.match(row.detail, /DBnomics holds: A\.BR\.S1311\.XDC\.G2 \(.*Expense\); A\.BR\.S1311\.XDC\.G1/);
+});
