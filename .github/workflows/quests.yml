@@ -18,7 +18,7 @@ jobs:
     steps:
       # The checker comes from the base branch, never from the pull request, so a pull request
       # cannot change the rules it is checked by. The entry files are read from its head commit.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           fetch-depth: 0
