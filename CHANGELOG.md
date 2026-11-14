@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Parametric insurance trigger designer (I5): History & data lets you design an index cover on
+  country or capital rainfall or temperature, or the world price of rice, wheat, maize or soybeans:
+  season, low or high trigger, trigger, exit and cover, with defaults from the record (wettest or
+  hottest months, trigger 1 year in 5, exit 1 in 20). Burn analysis over every complete past season:
+  years that paid, average yearly payout (burn cost) with its standard deviation, largest payout,
+  the same since 1991, and a table by year. Reads series the app already holds; nothing new is
+  fetched. Glossary entries for parametric insurance and burn cost; Spanish, French and Portuguese.
 - Long food price history (W3): rice (Thai 5%), wheat (US HRW), maize and soybeans now keep the
   whole World Bank Pink Sheet monthly history from 1960 instead of the last 60 months, so History &
   data can chart them over decades next to the weather series. Other Pink Sheet prices still keep
