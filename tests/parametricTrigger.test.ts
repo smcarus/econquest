@@ -79,3 +79,29 @@ test('suggestLevels: 1 in 5 and 1 in 20 from the record; peakSeason finds the we
   assert.deepEqual(peakSeason(summerSouth, 3), { startMonth: 12, endMonth: 2 });
   assert.equal(peakSeason([], 3), null);
 });
+
+test('priceCover: loading as % of expected payout or k x SD, multiple, range from a short record, cap at 100%', async () => {
+  const { priceCover, priceSentence, loadingProblem } = await import('../src/utils/parametricTrigger.ts');
+  const s = { from: 1981, to: 2020, years: 40, paying: 2, frequencyPct: 5, burnPct: 4, burnAmount: 40_000, sdPct: 16 };
+  const pe = priceCover(s, 1_000_000, { method: 'expected', value: 50 })!;
+  assert.equal(pe.premiumPct, 6);
+  assert.equal(pe.loadingPct, 2);
+  assert.equal(pe.premiumAmount, 60_000);
+  assert.equal(pe.multiple, 1.5);
+  const se = 16 / Math.sqrt(40);
+  assert.equal(pe.sePct, Math.round(se * 100) / 100);
+  assert.equal(pe.low, Math.round(Math.max(0, 4 - 1.645 * se) * 1.5 * 100) / 100);
+  assert.equal(pe.high, Math.round((4 + 1.645 * se) * 1.5 * 100) / 100);
+  const ps = priceCover(s, 1_000_000, { method: 'sd', value: 0.5 })!;
+  assert.equal(ps.premiumPct, 12, '4 + 0.5 x 16');
+  assert.equal(ps.multiple, 3);
+  assert.match(priceSentence(ps, { method: 'sd', value: 0.5 }), /fair price is 12% of the cover a year \(burn cost 4% plus 8% loading, 3 times the burn cost\)/);
+  const capped = priceCover({ ...s, burnPct: 80, sdPct: 60 }, 100, { method: 'sd', value: 1 })!;
+  assert.equal(capped.premiumPct, 100);
+  assert.equal(capped.capped, true);
+  const zero = priceCover({ ...s, burnPct: 0, sdPct: 0, paying: 0 }, 100, { method: 'expected', value: 30 })!;
+  assert.equal(zero.premiumPct, 0);
+  assert.equal(zero.multiple, undefined);
+  assert.match(loadingProblem({ method: 'sd', value: -1 })!, /0 or more/);
+  assert.equal(priceCover(s, 100, { method: 'sd', value: -1 }), null);
+});

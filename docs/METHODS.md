@@ -779,14 +779,14 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### Parametric insurance trigger designer
 
-- **Says:** What a parametric cover on season rainfall, temperature or a world food price would have paid in each past season, how often it pays, and the average yearly payout (burn cost).
-- **Rule:** Season index from complete monthly records (rainfall summed, temperature and prices averaged; a season across the new year counts in the year it ends); payout rises in a straight line from 0 at the trigger to the full cover at the exit; burn cost = mean yearly payout as % of the cover, with its sample standard deviation, the share of years paying, the largest year, and the same figures since 1991. Default season: the wettest 4 or hottest 3 calendar months; default trigger and exit passed 1 year in 5 and 1 in 20 (empirical quantiles).
+- **Says:** What a parametric cover on season rainfall, temperature or a world food price would have paid in each past season, how often it pays, the average yearly payout (burn cost), and a fair price with a loading you pick.
+- **Rule:** Season index from complete monthly records (rainfall summed, temperature and prices averaged; a season across the new year counts in the year it ends); payout rises in a straight line from 0 at the trigger to the full cover at the exit; burn cost = mean yearly payout as % of the cover, with its sample standard deviation, the share of years paying, the largest year, and the same figures since 1991. Default season: the wettest 4 or hottest 3 calendar months; default trigger and exit passed 1 year in 5 and 1 in 20 (empirical quantiles). Fair price (I6) on the whole record or since 1991: burn cost x (1 + loading %) or burn cost + k x SD of the yearly payout, as the user picks (defaults 30% and k = 0.5), capped at 100% of the cover; 90% range applies the same loading to burn cost +/- 1.645 x SD / sqrt(seasons).
 - **Reads:** World Bank CCKP country rainfall and temperature (CRU TS); NASA POWER at the capital; World Bank Pink Sheet rice, wheat, maize and soybeans
 - **Shows in:** Country Research > History & data (Parametric insurance: trigger designer)
 - **Use:** Research
 - **Status:** Description, not a tested signal
 - **How it is tested:** Description, not a tested signal: a replay of a stated design over past seasons, not a forecast or a price.
-- **Limits:** Burn cost is the expected loss before any loading, not a premium; past seasons stand for the future, so a climate or price trend biases it; the index is not the insured loss (basis risk); a capital grid cell is not the farm; the World Bank country series is published once a year.
+- **Limits:** The fair price is a teaching figure from the record alone, not a market quote (reinsurance, taxes, brokerage and insurer models are left out); burn cost is the expected loss before loading; past seasons stand for the future, so a climate or price trend biases it; the index is not the insured loss (basis risk); a capital grid cell is not the farm; the World Bank country series is published once a year.
 - **Code:** `src/utils/parametricTrigger.ts, src/components/ParametricTriggerPanel.tsx`
 
 ### Policy review watch
