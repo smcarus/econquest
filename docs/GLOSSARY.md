@@ -922,6 +922,26 @@ The gap between what an index cover pays and the loss it is meant to cover. A fa
 
 **Limits.** In the app the loss is stood in for by a second measure of the same weather (capital against whole country), so it shows only part of basis risk. Real losses also depend on crops, timing, prices and local conditions.
 
+### Frequency-severity model
+
+A way to model yearly losses by splitting them into two parts: how many damaging events happen in a year (frequency) and how large each one is (severity). Insurers use it for storms, floods and other events that come one at a time.
+
+**Why it matters.** Splitting the loss lets each part be fitted on its own data, and then many years can be simulated to show how bad a rare year can get, which a short record of real years cannot show.
+
+**How to read it.** Frequency says how often; severity says how much per event. A negative binomial count means bad years cluster. The simulated loss passed 1 year in 100 is the figure a disaster fund or insurance layer would be sized against.
+
+**Limits.** Only as good as the record behind it: EM-DAT has no damage figure for many events, and a curve fitted on about 25 years says little about a 1 in 100 year. It assumes the past is like the future, with no change in climate or in what is exposed.
+
+### Average annual loss
+
+The average yearly cost of disasters over many years, counting the quiet years as zero. Often shortened to AAL.
+
+**Why it matters.** It is the cost a country carries every year on average, whether or not a disaster strikes, and the starting point for budgeting a disaster fund or pricing insurance.
+
+**How to read it.** Compare it with GDP or with the budget for disasters. A loss passed 1 year in 100 many times larger than the average means most of the risk sits in rare, very bad years.
+
+**Limits.** A long-run average: a given year is usually much lower or much higher. In the app it counts only damage EM-DAT reports, so it is understated.
+
 ## Behavioural economics
 
 ### Present bias

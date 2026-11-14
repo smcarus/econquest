@@ -1259,6 +1259,26 @@ export const GLOSSARY: GlossaryEntry[] = [
     limits: "In the app the loss is stood in for by a second measure of the same weather (capital against whole country), so it shows only part of basis risk. Real losses also depend on crops, timing, prices and local conditions.",
     match: [/basis risk/i],
   },
+  {
+    id: 'frequency_severity',
+    term: "Frequency-severity model",
+    group: 'risk',
+    what: "A way to model yearly losses by splitting them into two parts: how many damaging events happen in a year (frequency) and how large each one is (severity). Insurers use it for storms, floods and other events that come one at a time.",
+    why: "Splitting the loss lets each part be fitted on its own data, and then many years can be simulated to show how bad a rare year can get, which a short record of real years cannot show.",
+    read: "Frequency says how often; severity says how much per event. A negative binomial count means bad years cluster. The simulated loss passed 1 year in 100 is the figure a disaster fund or insurance layer would be sized against.",
+    limits: "Only as good as the record behind it: EM-DAT has no damage figure for many events, and a curve fitted on about 25 years says little about a 1 in 100 year. It assumes the past is like the future, with no change in climate or in what is exposed.",
+    match: [/frequency-severity/i, /loss model/i],
+  },
+  {
+    id: 'average_annual_loss',
+    term: "Average annual loss",
+    group: 'risk',
+    what: "The average yearly cost of disasters over many years, counting the quiet years as zero. Often shortened to AAL.",
+    why: "It is the cost a country carries every year on average, whether or not a disaster strikes, and the starting point for budgeting a disaster fund or pricing insurance.",
+    read: "Compare it with GDP or with the budget for disasters. A loss passed 1 year in 100 many times larger than the average means most of the risk sits in rare, very bad years.",
+    limits: "A long-run average: a given year is usually much lower or much higher. In the app it counts only damage EM-DAT reports, so it is understated.",
+    match: [/average annual loss/i, /average yearly loss/i],
+  },
 ];
 
 /** Plain-words introductions for the panels in the Research briefs, keyed by panel title (prefix match). */

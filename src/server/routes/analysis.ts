@@ -41,7 +41,8 @@ import { commodityTerms, ctSentence, CT_IDS } from '../../utils/commodityTerms';
 import { aidProfile, aidSentence, AID_IDS } from '../../utils/aidReceived';
 import { foodView, foodSentence, FOOD_IDS } from '../../utils/foodPrices';
 import { faoCpiInput } from '../../utils/faoCpiStore';
-import { disasterView, disasterSentence, DISASTER_IDS } from '../../utils/disasters';
+import { disasterView, disasterSentence } from '../../utils/disasters';
+import { lossModels } from '../../utils/lossModel';
 import { emdatInput } from '../../utils/disasterStore';
 import { fetchCommodities } from '../feeds/commodities';
 import { type OutputGapResult } from '../../utils/outputGap';
@@ -518,9 +519,14 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       const s = fig ? officialSeries(file, fig) : null;
       return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
     };
-    const v = disasterView({ iso3, emdat: emdatInput(DATA_DIR), series: Object.fromEntries(DISASTER_IDS.map((id) => [id, pick(id)])) });
+    const emdat = emdatInput(DATA_DIR);
+    const gdp = pick('gdp_usd');
+    const v = disasterView({ iso3, emdat, series: { gdp_usd: gdp, population: pick('population') } });
     const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
-    res.json({ iso3, ...v, sentence: disasterSentence(v, name) });
+    // Loss history and frequency-severity model (src/utils/lossModel.ts).
+    const evs = !v.missing && emdat.table ? emdat.table.countries.get(iso3) : undefined;
+    const losses = evs ? lossModels(evs, emdat.table!.latestYear, new Map((gdp ?? []).map((p) => [p.year, p.value]))) : [];
+    res.json({ iso3, ...v, losses, sentence: disasterSentence(v, name) });
   });
   // Who pays for a policy (src/utils/policyIncidence.ts): the saved context; the incidence itself is worked out in the browser on shares the user types.
   app.get('/api/policy-incidence/:iso3', async (req, res) => {
