@@ -208,7 +208,7 @@ How far a month's temperature or rainfall is from its normal: the average of the
 
 **How to read it.** Temperature: degrees above (warmer) or below (colder) normal. Rainfall: % of normal, where 100 is a normal month, 50 half the usual rain and 200 twice. A run of dry months matters more than one.
 
-**Limits.** In the app the figures are for one grid cell at the capital (NASA POWER), not the whole country, and the normal comes from the same series.
+**Limits.** In the app the capital series is one grid cell at the capital (NASA POWER) and the country series is an average over the country (World Bank, CRU TS); each normal comes from its own series.
 
 ## Prices and inflation
 

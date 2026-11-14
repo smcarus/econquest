@@ -36,6 +36,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | ExchangeRate-API open access (open.er-api.com) | Permission needed for client or commercial use | Do not pass on | Not allowed to redistribute; rates may be used for your own end purposes with a credit link on the page. | Allowed for your own currency conversion, not in a product that passes rates on to others. | Rates By Exchange Rate API (linked to https://www.exchangerate-api.com) on every page that uses the rates. |
 | New York Fed markets data | Allowed with conditions | Free sharing allowed | Allowed for personal or business purposes; reference rates (SOFR, EFFR and others) must carry the New York Fed's notice. | Allowed for business purposes; no general ban on data. | "© <year> Federal Reserve Bank of New York. Content from the New York Fed subject to the Terms of Use at newyorkfed.org." For SOFR and EFFR also: "The <rate> is subject to the Terms of Use posted at newyorkfed.org. The New York Fed is not responsible for publication of the <rate> by <publisher>, does not sanction or endorse any particular republication, and has no liability for your use." |
 | NASA POWER (Prediction Of Worldwide Energy Resources) | Allowed with conditions | Free sharing allowed | Allowed; no restriction is stated. NASA asks for the service, version and date of access to be cited. | No restriction stated. | The data was obtained from the POWER Project's monthly <version> on <YYYY/MM/DD> (NASA Langley Research Center POWER Project). |
+| World Bank Climate Change Knowledge Portal (observed climate, CRU TS) | Open with attribution | Free sharing allowed | Allowed with attribution (CC BY 4.0). | Allowed with attribution (CC BY 4.0). | World Bank Climate Change Knowledge Portal, observed climate (CRU TS, Climatic Research Unit, University of East Anglia), CC BY 4.0. |
 | FRED (St. Louis Fed): 10Y government yields from the OECD; St. Louis Fed and Chicago Fed stress indices; US inflation expectations | Permission needed for client or commercial use | Sharing unclear | The series are labelled "Copyrighted: Citation Required" (owner: OECD). FRED's terms say to contact the data owner before any use beyond personal use, and that FRED cannot give that permission. | Unclear in FRED's own terms (one section allows reports to clients with attribution for citation-required series; others require the owner's permission). | OECD (year), Main Economic Indicators, long-term interest rates, retrieved from FRED, Federal Reserve Bank of St. Louis. With the FRED API key: "This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis." |
 | Federal Reserve Board H.10 exchange rates (monthly, via FRED) | Terms not confirmed | Sharing unclear | Not confirmed. The series are published by the Federal Reserve Board; the copyright label on each FRED series page and the Board's own website terms were not read (federalreserve.gov could not be reached from the session that built this, 13 November 2026). | Not confirmed. | Board of Governors of the Federal Reserve System (US), <series name> [<series id>], retrieved from FRED, Federal Reserve Bank of St. Louis. |
 | OECD leading indicators and consumer prices (via DBnomics) | Terms not confirmed | Sharing unclear | DBnomics passes on the OECD's own licence. The OECD terms page could not be read past its navigation, so the OECD data licence is not confirmed here. | Not confirmed. | OECD (year), <dataset name>, <data source>, via DBnomics (citation form quoted on FRED's OECD series notes). |
@@ -258,6 +259,22 @@ From the terms:
 > the Project requests notification if POWER data is transmitted to other researchers.
 >
 > NASA data are freely accessible
+
+### World Bank Climate Change Knowledge Portal (observed climate, CRU TS)
+
+- **Used for:** Monthly temperature and rainfall averaged over each country since 1901, with the app's comparison against 1991-2020 (History & data)
+- **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0: sharing allowed with attribution.
+- **Terms read:** [World Bank data catalog: CCKP observed climate data (CRU TS)](https://datacatalog.worldbank.org/search/dataset/0040276); [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/) (checked 2026-11-14)
+- **Show to others:** Allowed with attribution (CC BY 4.0).
+- **Commercial use:** Allowed with attribution (CC BY 4.0).
+- **Credit:** World Bank Climate Change Knowledge Portal, observed climate (CRU TS, Climatic Research Unit, University of East Anglia), CC BY 4.0.
+
+From the terms:
+
+> License: Creative Commons Attribution 4.0
+>
+> Data is available as global gridded or spatially aggregated to national, subnational, watershed, and Exclusive Economic Zone scaled.
 
 ### FRED (St. Louis Fed): 10Y government yields from the OECD; St. Louis Fed and Chicago Fed stress indices; US inflation expectations
 

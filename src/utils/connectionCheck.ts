@@ -23,6 +23,7 @@ import { BIS_PRIVATE_DEBT_SAMPLE_URL, parseBisPrivateDebtAll } from './sectorBal
 import { BIS_CB_ASSETS_SAMPLE_URL, BIS_USD_CREDIT_SAMPLE_URL, parseBisCbAssets, parseBisUsdCredit } from './bisCreditCycle';
 import { NYFED_SWAPS_SAMPLE_URL, parseNyfedSwaps } from './fedSwapLines';
 import { NASA_POWER_SAMPLE_URL, parseNasaPower } from './weatherPower';
+import { CCKP_SAMPLE_URL, parseCckp } from './weatherCountry';
 import { BIS_PROPERTY_SAMPLE_URL, ILO_EARNINGS_ENV, ILO_EARNINGS_ID, ILO_TOC_URLS, iloEarningsCandidates, iloEarningsRows, iloEarningsSampleUrl, iloIdRefused, parseBisPropertyAll, parseIloEarnings, quarterLabel, wageReading } from './wagesHousing';
 import { debtStructureUrl, parseDebtStructure, currencyValue } from './debtStructure';
 import { INVESTOR_BASE_SETUP_HELP, investorBaseValue } from './investorBase';
@@ -307,6 +308,7 @@ export const SOURCE_IDS = [
   'bis_usd_credit',
   'nyfed_swaps',
   'nasa_power',
+  'wb_cckp',
   'imf_gov_levels',
   'eurostat_activity',
   'ons_activity',
@@ -715,6 +717,24 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       },
       undefined,
       'It answered, but not with the POWER layout the app reads (properties.parameter.T2M and PRECTOTCORR by YYYYMM). NASA may have changed its API.'
+    )
+  );
+
+  add('wb_cckp', () =>
+    httpCheck(
+      { id: 'wb_cckp', name: 'World Bank climate portal (CRU TS)', group: 'free', feeds: 'Country-average monthly temperature and rainfall since 1901 (History & data)' },
+      fetchFn,
+      CCKP_SAMPLE_URL,
+      T,
+      (r) => {
+        const got = parseCckp(parseJson(r.text), 'KEN');
+        const m = got ? Object.keys(got.temp).sort().pop() : undefined;
+        if (!got || !m) return null;
+        const rain = got.rain[m];
+        return `Kenya ${m}: ${fmt(got.temp[m])} °C${rain === undefined ? '' : `, rainfall ${fmt(rain)} mm`} (CRU TS 4.07)`;
+      },
+      undefined,
+      'It answered, but not with the climate portal layout the app reads (data.tas and data.pr by country and YYYY-MM). The World Bank may have changed its API or the CRU TS version names.'
     )
   );
 
