@@ -1219,6 +1219,16 @@ export const GLOSSARY: GlossaryEntry[] = [
     limits: "It assumes the future looks like the past. A warming climate or a shift in prices makes old years a poor guide, so compare the recent years with the whole record. Short records give unstable figures.",
     match: [/burn cost/i, /burn analysis/i],
   },
+  {
+    id: 'insurance_loading',
+    term: "Insurance loading (rate on line)",
+    group: 'risk',
+    what: "The amount an insurer adds to the expected payout (the burn cost) to set a price. It pays for running costs, the capital held against a bad year and the uncertainty in the estimate. The price as a % of the cover is called the rate on line.",
+    why: "Two covers with the same expected payout can need very different prices. One that pays a little most years is cheap to carry; one that pays everything once in twenty years needs much more capital, so it carries a larger loading.",
+    read: "A loading of 30% of the expected payout turns a burn cost of 4% into a price of 5.2% of the cover. With the standard-deviation rule, k = 0.5 adds half the spread of the yearly payouts. The multiple, price over burn cost, shows how much of the price is loading.",
+    limits: "The app's fair price comes from the record alone. Real quotes also depend on reinsurance prices, taxes, brokerage and the insurer's own models, and can be well above it for rare, large losses.",
+    match: [/insurance loading/i, /rate on line/i],
+  },
 ];
 
 /** Plain-words introductions for the panels in the Research briefs, keyed by panel title (prefix match). */

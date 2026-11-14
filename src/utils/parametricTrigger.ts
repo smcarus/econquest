@@ -247,3 +247,79 @@ export function burnSentence(b: BurnResult, d: TriggerDesign, indexLabel: string
     `average yearly payout (burn cost) ${b.burnPct}% of the cover, standard deviation ${b.sdPct}%, largest ${b.maxPct}%${b.maxYear ? ` in ${b.maxYear}` : ''}.${recent}`
   );
 }
+
+// ---------------------------------------------------------------------------------------------
+// Fair price with a loading (I6). The user picks how the loading is set: a % of the expected payout
+// (burn cost x (1 + p)), or k standard deviations of the yearly payout (burn cost + k x SD, the
+// standard-deviation premium principle). The price is shown as a % of the cover (the rate on line)
+// and as money, with the multiple of the burn cost. A short record makes the burn cost itself
+// uncertain: its standard error is SD / sqrt(years), and the 90% range applies the same loading to
+// burn cost +/- 1.645 standard errors.
+
+export type LoadingMethod = 'expected' | 'sd';
+
+export interface Loading {
+  method: LoadingMethod;
+  /** % of the expected payout when method is 'expected'; k (number of SDs) when 'sd'. */
+  value: number;
+}
+
+export interface CoverPrice {
+  basis: { from: number; to: number; years: number };
+  burnPct: number;
+  loadingPct: number;
+  /** Price as % of the cover (rate on line), capped at 100. */
+  premiumPct: number;
+  premiumAmount: number;
+  /** Price over burn cost; undefined when the burn cost is 0. */
+  multiple?: number;
+  /** Standard error of the burn cost, % of the cover. */
+  sePct: number;
+  /** Price at burn cost -/+ 1.645 standard errors, % of the cover. */
+  low: number;
+  high: number;
+  capped: boolean;
+}
+
+export const DEFAULT_LOADING: Record<LoadingMethod, number> = { expected: 30, sd: 0.5 };
+
+/** What is wrong with a loading, or null. */
+export function loadingProblem(l: Loading): string | null {
+  if (!Number.isFinite(l.value) || l.value < 0) return 'The loading must be a number of 0 or more';
+  return null;
+}
+
+function priceAt(burnPct: number, sdPct: number, l: Loading): number {
+  return l.method === 'expected' ? burnPct * (1 + l.value / 100) : burnPct + l.value * sdPct;
+}
+
+/** Fair price of the cover from burn statistics (whole record or recent years) and a loading. */
+export function priceCover(s: BurnStats, cover: number, l: Loading): CoverPrice | null {
+  if (loadingProblem(l) || !(cover > 0) || s.years < 2) return null;
+  const raw = priceAt(s.burnPct, s.sdPct, l);
+  const premiumPct = Math.min(100, raw);
+  const se = s.sdPct / Math.sqrt(s.years);
+  const lo = Math.max(0, s.burnPct - 1.645 * se);
+  const hi = s.burnPct + 1.645 * se;
+  return {
+    basis: { from: s.from, to: s.to, years: s.years },
+    burnPct: s.burnPct,
+    loadingPct: r2(premiumPct - s.burnPct),
+    premiumPct: r2(premiumPct),
+    premiumAmount: Math.round((premiumPct / 100) * cover),
+    ...(s.burnPct > 0 ? { multiple: r2(premiumPct / s.burnPct) } : {}),
+    sePct: r2(se),
+    low: r2(Math.min(100, priceAt(lo, s.sdPct, l))),
+    high: r2(Math.min(100, priceAt(hi, s.sdPct, l))),
+    capped: raw > 100,
+  };
+}
+
+/** One English sentence on the price, for Explain. */
+export function priceSentence(p: CoverPrice, l: Loading): string {
+  const how = l.method === 'expected' ? `a loading of ${l.value}% of the expected payout` : `a loading of ${l.value} standard deviations of the yearly payout`;
+  return (
+    `On ${p.basis.from}-${p.basis.to} (${p.basis.years} seasons), with ${how}, the fair price is ${p.premiumPct}% of the cover a year (burn cost ${p.burnPct}% plus ${p.loadingPct}% loading` +
+    `${p.multiple !== undefined ? `, ${p.multiple} times the burn cost` : ''}); 90% range from the length of the record ${p.low}% to ${p.high}%.`
+  );
+}

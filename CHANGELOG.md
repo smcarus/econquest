@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Fair price for the parametric cover (I6): under the burn analysis, pick the loading as a % of the
+  expected payout or as k standard deviations of the yearly payout, and price on the whole record or
+  since 1991. Shows the price as % of the cover a year and in money, the multiple of the burn cost,
+  and a 90% range from the length of the record; capped at 100% with a note. Glossary entry for the
+  insurance loading; Spanish, French and Portuguese.
 - Parametric insurance trigger designer (I5): History & data lets you design an index cover on
   country or capital rainfall or temperature, or the world price of rice, wheat, maize or soybeans:
   season, low or high trigger, trigger, exit and cover, with defaults from the record (wettest or

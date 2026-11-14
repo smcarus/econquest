@@ -5,6 +5,11 @@ import { explainInChat } from '../utils/explainHandoff';
 import {
   burnAnalysis,
   burnSentence,
+  DEFAULT_LOADING,
+  loadingProblem,
+  priceCover,
+  priceSentence,
+  type LoadingMethod,
   designProblem,
   peakSeason,
   seasonMonths,
@@ -58,6 +63,9 @@ export const ParametricTriggerPanel: React.FC<{ iso3: string; countryName: strin
   const [missing, setMissing] = useState<string | null>(null);
   const [design, setDesign] = useState<TriggerDesign | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [loadMethod, setLoadMethod] = useState<LoadingMethod>('expected');
+  const [loadValue, setLoadValue] = useState<number>(DEFAULT_LOADING.expected);
+  const [basis, setBasis] = useState<'all' | 'recent'>('all');
   const def = INDEXES[which];
   const monthName = (m: number) => new Date(Date.UTC(2000, m - 1, 1)).toLocaleString(lang, { month: 'long', timeZone: 'UTC' });
 
@@ -97,7 +105,11 @@ export const ParametricTriggerPanel: React.FC<{ iso3: string; countryName: strin
     const levels = suggestLevels(seasons, design.direction);
     if (levels) set(levels);
   };
-  const sentence = burn && design ? burnSentence(burn, design, def.label, unit) : '';
+  const loading = { method: loadMethod, value: loadValue };
+  const basisStats = burn ? (basis === 'recent' && burn.recent ? burn.recent : burn) : null;
+  const price = burn && design && basisStats ? priceCover(basisStats, design.cover, loading) : null;
+  const loadProblem = loadingProblem(loading);
+  const sentence = burn && design ? `${burnSentence(burn, design, def.label, unit)}${price ? ` ${priceSentence(price, loading)}` : ''}` : '';
   const rows = burn ? (showAll ? burn.rows : burn.rows.filter((r) => r.payoutPct > 0)) : [];
   const seasonLabel = design ? t('ins_seasonOf', { from: monthName(design.startMonth), to: monthName(design.endMonth), n: String(seasonMonths(design.startMonth, design.endMonth).length) }) : '';
 
@@ -122,7 +134,10 @@ export const ParametricTriggerPanel: React.FC<{ iso3: string; countryName: strin
                   asOf: String(burn.to),
                   iso3,
                   countryName,
-                  detail: ['Straight-line payout from trigger to exit, replayed over every complete past season; burn cost = average yearly payout as % of the cover, before any loading.'],
+                  detail: [
+                    'Straight-line payout from trigger to exit, replayed over every complete past season; burn cost = average yearly payout as % of the cover, before any loading.',
+                    'Fair price = burn cost x (1 + loading %) or burn cost + k x standard deviation of the yearly payout, as the user picks; 90% range applies the same loading to burn cost +/- 1.645 standard errors (SD / square root of the number of seasons).',
+                  ],
                 })
               }
             >
@@ -243,6 +258,53 @@ export const ParametricTriggerPanel: React.FC<{ iso3: string; countryName: strin
                 {Math.abs(burn.recent.burnPct - burn.burnPct) >= Math.max(1, burn.burnPct * 0.5) && ` ${t('ins_trendWarn')}`}
               </p>
             )}
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-2" data-ins-price-block="true">
+              <h3 className="ui-label">{t('ins_priceTitle')}</h3>
+              <div className="flex flex-wrap gap-3 items-end text-xs">
+                <label className="flex flex-col gap-1">
+                  <span className="ui-label">{t('ins_loadMethod')}</span>
+                  <select
+                    className={field}
+                    value={loadMethod}
+                    onChange={(e) => {
+                      const m = e.target.value as LoadingMethod;
+                      setLoadMethod(m);
+                      setLoadValue(DEFAULT_LOADING[m]);
+                    }}
+                    data-ins-load-method="true"
+                  >
+                    <option value="expected">{t('ins_loadExpected')}</option>
+                    <option value="sd">{t('ins_loadSd')}</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="ui-label">{loadMethod === 'expected' ? t('ins_loadPct') : t('ins_loadK')}</span>
+                  <input type="number" min={0} step={loadMethod === 'expected' ? 5 : 0.1} className={input} value={loadValue} onChange={(e) => setLoadValue(Number(e.target.value))} data-ins-load-value="true" />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="ui-label">{t('ins_basis')}</span>
+                  <select className={field} value={basis} onChange={(e) => setBasis(e.target.value as 'all' | 'recent')} data-ins-basis="true">
+                    <option value="all">{t('ins_basisAll', { from: String(burn.from), to: String(burn.to) })}</option>
+                    {burn.recent && <option value="recent">{t('ins_basisRecent', { from: String(burn.recent.from), to: String(burn.recent.to) })}</option>}
+                  </select>
+                </label>
+              </div>
+              {loadProblem && <p className={`text-sm ${amber}`}>{tx(loadProblem)}</p>}
+              {price && (
+                <>
+                  <p className="ui-body" data-ins-price={String(price.premiumPct)}>
+                    {t('ins_priceLine', { pct: n(price.premiumPct, 2), amount: n(price.premiumAmount), burn: n(price.burnPct, 2), load: n(price.loadingPct, 2) })}
+                    {price.multiple !== undefined && ` ${t('ins_multiple', { m: n(price.multiple, 2) })}`}
+                  </p>
+                  <p className="text-xs" data-ins-range="true">
+                    {t('ins_range', { low: n(price.low, 2), high: n(price.high, 2), years: String(price.basis.years), se: n(price.sePct, 2) })}
+                  </p>
+                  {price.capped && <p className={`text-xs ${amber}`}>{t('ins_capped')}</p>}
+                  {price.burnPct === 0 && <p className={`text-xs ${amber}`}>{t('ins_zeroBurn')}</p>}
+                </>
+              )}
+              <p className={muted}>{t('ins_priceMethod')}</p>
+            </div>
             <div className="flex items-center gap-2">
               <h3 className="ui-label">{showAll ? t('ins_allYears') : t('ins_payingYears')}</h3>
               <button type="button" className="ui-btn text-xs" onClick={() => setShowAll((v) => !v)} data-ins-show-all="true">

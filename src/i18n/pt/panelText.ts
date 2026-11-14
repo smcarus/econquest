@@ -844,4 +844,5 @@ export const PANEL_TEXT_PT: Record<string, string> = {
   "The cover must be above 0": "A cobertura deve ser maior que 0",
   "For a cover that pays when the index is low, the exit must be below the trigger": "Em uma cobertura que paga quando o índice está baixo, a saída deve ficar abaixo do gatilho",
   "For a cover that pays when the index is high, the exit must be above the trigger": "Em uma cobertura que paga quando o índice está alto, a saída deve ficar acima do gatilho",
+  "The loading must be a number of 0 or more": "O carregamento deve ser um número igual ou maior que 0",
 };
