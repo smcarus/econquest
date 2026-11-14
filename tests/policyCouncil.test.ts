@@ -93,3 +93,24 @@ test('a council part is saved against the frame, reads out of date when the fram
   (rec.content as CostBenefit).lines[0].values[0] = 1;
   assert.deepEqual(councilPartsChanged(r), ['costBenefit']);
 });
+
+test('winners and losers: a size needs its source and unit; no size reads Missing; by-fifth shares must add to 100', async () => {
+  const { parseWinnersLosers, groupTally } = await import('../src/utils/policyCouncil');
+  const bad = parseWinnersLosers({ rows: [{ group: 'X', effect: 'wins', why: '', size: 3 }], fifths: { direction: 'pay', sizePctGdp: 1, shares: [10, 10, 10, 10, 10], source: '' } });
+  assert.ok('errors' in bad);
+  const e = (bad as { errors: string[] }).errors.join(' ');
+  for (const m of [/name/, /gains, loses or mixed/, /why/, /needs its source/, /add up to 50%/, /where the shares/]) assert.match(e, m);
+  const good = parseWinnersLosers({
+    rows: [
+      { group: 'Poorer households', effect: 'loses', why: 'They spend more of their income on fuel.', size: '2.1', sizeUnit: '% of spending', source: 'CEQ Assessment 2024, table 3' },
+      { group: 'Government budget', effect: 'gains', why: 'The subsidy bill falls.' },
+    ],
+    fifths: { direction: 'pay', sizePctGdp: '1', shares: ['10', '15', '20', '25', '30'], source: 'CEQ Assessment 2024' },
+  });
+  assert.ok('content' in good);
+  const w = (good as { content: import('../src/utils/policyCouncil').WinnersLosers }).content;
+  assert.equal(w.rows[0].size, 2.1);
+  assert.equal(w.rows[1].size, undefined);
+  assert.deepEqual(w.fifths!.shares, [10, 15, 20, 25, 30]);
+  assert.deepEqual(groupTally(w), { gains: 1, loses: 1, mixed: 0, noFigure: ['Government budget'] });
+});

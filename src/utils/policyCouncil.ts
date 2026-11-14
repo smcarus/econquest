@@ -10,16 +10,21 @@
  * rate; net present value, benefit-cost ratio, the year the running total turns positive, how far
  * costs or benefits would have to move to flip the answer, and the discount rate at which it flips.
  *
+ * PK3 winners and losers: one row per group (who gains, who loses, why), with a size only when the
+ * user gives one with its source, otherwise "Missing"; optionally the share of the change each fifth
+ * of people carries (G30, src/utils/policyIncidence.ts), set against each fifth's share of income.
+ *
  * No figure is filled in for the user. Browser-safe.
  */
 import { DISCOUNT_RATES, discountRateById, type DiscountRate } from '../data/discountRates';
 import { COUNCIL_SIZE_UNITS, type CouncilSizeUnit } from './policyReview';
+import { incidence, QUINTILES, type Direction } from './policyIncidence';
 
 export const COUNCIL_TEMPLATE_VERSION = 'policy-council-v1';
 export const COUNCIL_LABEL = 'Description, not a tested signal';
 
 /** The parts saved beside the steps, in the order they are shown. */
-export const COUNCIL_PARTS = ['costBenefit'] as const;
+export const COUNCIL_PARTS = ['costBenefit', 'groups'] as const;
 export type CouncilPart = (typeof COUNCIL_PARTS)[number];
 
 export interface CouncilPartRecord<T = unknown> {
@@ -250,10 +255,126 @@ export function costBenefitResults(cb: CostBenefit): { results: (CbResult & { id
   return { results: cbSchedules(cb).map((s) => ({ id: s.id, ...cbAt(cb, s.label, s.steps) })), flip: flipRate(cb) };
 }
 
+// ---------------------------------------------------------------- PK3 winners and losers
+
+export const MAX_GROUPS = 20;
+export const GROUP_EFFECTS = ['gains', 'loses', 'mixed'] as const;
+export type GroupEffect = (typeof GROUP_EFFECTS)[number];
+
+/** Suggested group names (the user can type any other). */
+export const GROUP_SUGGESTIONS = [
+  'Poorer households',
+  'Middle-income households',
+  'Richer households',
+  'Rural households',
+  'Urban households',
+  'Workers in the sector',
+  'Firms in the sector',
+  'Consumers',
+  'Exporters',
+  'Importers',
+  'Savers',
+  'Borrowers',
+  'Government budget',
+  'Foreign investors',
+  'Future generations',
+];
+
+export interface GroupRow {
+  group: string;
+  effect: GroupEffect;
+  /** Why this group gains or loses, in a line. */
+  why: string;
+  size?: number;
+  /** What the size is in, as the source states it (e.g. "% of income", "US$ per household a year"). */
+  sizeUnit?: string;
+  source?: string;
+  link?: string;
+}
+
+export interface FifthShares {
+  direction: Direction;
+  sizePctGdp: number;
+  /** Share of the change each fifth carries, %, poorest first. */
+  shares: number[];
+  source: string;
+}
+
+export interface WinnersLosers {
+  rows: GroupRow[];
+  fifths?: FifthShares;
+}
+
+export function parseWinnersLosers(v: unknown): { content: WinnersLosers } | { errors: string[] } {
+  const errors: string[] = [];
+  const b = (v ?? {}) as Record<string, unknown>;
+  const raw = Array.isArray(b.rows) ? b.rows : [];
+  if (!raw.length) errors.push('Name at least one group that gains or loses.');
+  if (raw.length > MAX_GROUPS) errors.push(`At most ${MAX_GROUPS} groups.`);
+  const rows: GroupRow[] = [];
+  raw.slice(0, MAX_GROUPS).forEach((x, i) => {
+    const r = (x ?? {}) as Record<string, unknown>;
+    const n = i + 1;
+    const group = str(r.group, 80);
+    const effect = GROUP_EFFECTS.includes(r.effect as GroupEffect) ? (r.effect as GroupEffect) : null;
+    const why = str(r.why, 300);
+    const size = num(r.size);
+    const sizeUnit = str(r.sizeUnit, 60);
+    const source = str(r.source, 300);
+    const link = str(r.link, 400);
+    let ok = true;
+    const bad = (m: string) => {
+      errors.push(m);
+      ok = false;
+    };
+    if (group.length < 2) bad(`Group ${n}: give it a name.`);
+    if (!effect) bad(`Group ${n}: pick gains, loses or mixed.`);
+    if (why.length < 5) bad(`Group ${n}: say why in a line.`);
+    if (r.size !== undefined && r.size !== '' && r.size !== null) {
+      if (size === null || Math.abs(size) > 1e9) bad(`Group ${n}: the size must be a number.`);
+      else if (source.length < 3) bad(`Group ${n}: a size needs its source.`);
+      else if (!sizeUnit) bad(`Group ${n}: say what the size is in.`);
+    }
+    if (link && !/^https?:\/\//i.test(link)) bad(`Group ${n}: the link must start with http:// or https://.`);
+    if (ok) rows.push({ group, effect: effect!, why, ...(size !== null ? { size, sizeUnit, source } : source ? { source } : {}), ...(link ? { link } : {}) });
+  });
+  let fifths: FifthShares | undefined;
+  const f = b.fifths as Record<string, unknown> | undefined | null;
+  if (f && typeof f === 'object') {
+    const shares = Array.isArray(f.shares) ? f.shares.map(num) : [];
+    const direction = f.direction === 'pay' || f.direction === 'gain' ? f.direction : null;
+    const out = incidence({ direction, sizePctGdp: num(f.sizePctGdp), shares, source: str(f.source, 300) }, null);
+    if (!out.ok) {
+      const say: Record<string, string> = {
+        direction: 'By fifth: pick whether households pay or gain.',
+        size: 'By fifth: the size must be above 0 and at most 50% of GDP.',
+        shares: `By fifth: enter all ${QUINTILES} shares, each from 0 to 100.`,
+        sum: `By fifth: the shares add up to ${out.sharesSum}%, not 100%.`,
+        source: 'By fifth: say where the shares come from.',
+      };
+      for (const p of out.problems) errors.push(say[p]);
+    } else fifths = { direction: out.direction, sizePctGdp: out.sizePctGdp, shares: out.groups.map((g) => g.sharePct), source: out.source };
+  }
+  if (errors.length) return { errors };
+  return { content: { rows, ...(fifths ? { fifths } : {}) } };
+}
+
+/** Counts for the summary line. */
+export function groupTally(w: WinnersLosers): { gains: number; loses: number; mixed: number; noFigure: string[] } {
+  return {
+    gains: w.rows.filter((r) => r.effect === 'gains').length,
+    loses: w.rows.filter((r) => r.effect === 'loses').length,
+    mixed: w.rows.filter((r) => r.effect === 'mixed').length,
+    noFigure: w.rows.filter((r) => r.size === undefined).map((r) => r.group),
+  };
+}
+
 /** Checks the content of one part. */
 export function parseCouncilPart(part: CouncilPart, v: unknown, defaults: { unit?: CouncilSizeUnit; firstYear: number }): { content: unknown } | { errors: string[] } {
   switch (part) {
     case 'costBenefit':
       return parseCostBenefit(v, defaults);
+    case 'groups':
+      return parseWinnersLosers(v);
   }
 }
