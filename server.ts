@@ -397,13 +397,17 @@ function allHistories(): { histories: HistoryInput[]; pulledAt?: string } {
   allHistoriesCache = { at: Date.now(), value };
   return value;
 }
+/** Requests in flight at once while downloading one country's history. */
+const HISTORY_PARALLEL = 4;
 async function downloadOfficialHistory(iso3: string): Promise<OfficialHistoryFile | null> {
   const prev = loadOfficialHistory(iso3);
   const series: OfficialHistoryFile['series'] = {};
   const failed: Record<string, string> = {};
   const lastYear = new Date().getUTCFullYear() + 1;
   let answered = 0;
-  for (const fig of OFFICIAL_FIGURES) {
+  // A few requests at a time (about 100 figures per country; one after another took more than the
+  // 3-minute preload limit on a slow line), each worker keeping a polite gap between its requests.
+  const one = async (fig: (typeof OFFICIAL_FIGURES)[number]) => {
     const url =
       fig.source === 'wb'
         ? `https://api.worldbank.org/v2/country/${iso3}/indicator/${fig.code}?format=json&per_page=200&date=1960:${lastYear}`
@@ -421,8 +425,16 @@ async function downloadOfficialHistory(iso3: string): Promise<OfficialHistoryFil
       if (prev?.series?.[fig.id]?.points?.length) series[fig.id] = prev.series[fig.id];
       else failed[fig.id] = `${name} did not answer (${err?.name === 'AbortError' ? 'timed out' : err?.message || 'error'})`;
     }
-    await new Promise((r) => setTimeout(r, 200)); // polite gap between requests
-  }
+  };
+  const queue = [...OFFICIAL_FIGURES];
+  await Promise.all(
+    Array.from({ length: HISTORY_PARALLEL }, async () => {
+      for (let fig = queue.shift(); fig; fig = queue.shift()) {
+        await one(fig);
+        await new Promise((r) => setTimeout(r, 200)); // polite gap between requests
+      }
+    })
+  );
   if (!answered) return prev; // nothing answered (offline?): keep what is saved
   const pulledAt = new Date().toISOString();
   // Revision tracking: values the IMF or World Bank changed since the last download are kept with the old value.
@@ -876,10 +888,12 @@ function startPreload(opts: { fresh?: boolean; log?: (line: string) => void } = 
       let result: PreloadStepResult;
       try {
         let timer: NodeJS.Timeout | undefined;
+        // A country's full history is about 100 downloads, so it gets twice the limit of other steps.
+        const limitMs = step.id.endsWith(':history') ? 2 * PRELOAD_STEP_TIMEOUT_MS : PRELOAD_STEP_TIMEOUT_MS;
         const limit = new Promise<Omit<PreloadStepResult, 'at'>>((resolve) => {
           timer = setTimeout(
-            () => resolve({ outcome: 'failed', note: `took longer than ${PRELOAD_STEP_TIMEOUT_MS >= 120000 ? `${Math.round(PRELOAD_STEP_TIMEOUT_MS / 60000)} minutes` : `${Math.round(PRELOAD_STEP_TIMEOUT_MS / 1000)} s`}; moved on (it may still finish in the background)` }),
-            PRELOAD_STEP_TIMEOUT_MS
+            () => resolve({ outcome: 'failed', note: `took longer than ${limitMs >= 120000 ? `${Math.round(limitMs / 60000)} minutes` : `${Math.round(limitMs / 1000)} s`}; moved on (it may still finish in the background)` }),
+            limitMs
           );
         });
         result = { ...(await (NO_TIME_LIMIT_STEPS.has(step.id) ? runPreloadStep(step) : Promise.race([runPreloadStep(step), limit]))), at: new Date().toISOString() };

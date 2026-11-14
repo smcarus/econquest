@@ -471,7 +471,7 @@ export const MENU = defineMessages('menu', {
   od_notSaved: 'Not saved',
   od_needsSetup: 'Needs setup',
   od_missing: 'Missing',
-  od_foot: 'Takes a few minutes per country. A step that takes longer than 3 minutes is listed as not saved and the run moves on. You can close this window; the download carries on, and a stopped one picks up where it left off. Same as {cmd} in a terminal. Saved in data/live, data/history and data/archive; progress in {file}.',
+  od_foot: 'Takes a few minutes per country. A step that takes longer than 3 minutes (6 for a country\'s full history) is listed as not saved and the run moves on. You can close this window; the download carries on, and a stopped one picks up where it left off. Same as {cmd} in a terminal. Saved in data/live, data/history and data/archive; progress in {file}.',
   // User manual window
   mn_title: 'User manual and glossary',
   mn_manual: 'User manual',

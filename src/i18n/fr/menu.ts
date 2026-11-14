@@ -455,7 +455,7 @@ export const MENU_FR: Messages<typeof MENU> = {
   od_notSaved: "Non enregistré",
   od_needsSetup: "À configurer",
   od_missing: "Manquant",
-  od_foot: "Prend quelques minutes par pays. Une étape qui dure plus de 3 minutes est listée comme non enregistrée et le téléchargement passe à la suite. Vous pouvez fermer cette fenêtre ; le téléchargement continue, et un téléchargement arrêté reprend là où il s'était arrêté. Équivaut à {cmd} dans un terminal. Enregistré dans data/live, data/history et data/archive ; progression dans {file}.",
+  od_foot: "Prend quelques minutes par pays. Une étape qui dure plus de 3 minutes (6 pour l'historique complet d'un pays) est listée comme non enregistrée et le téléchargement passe à la suite. Vous pouvez fermer cette fenêtre ; le téléchargement continue, et un téléchargement arrêté reprend là où il s'était arrêté. Équivaut à {cmd} dans un terminal. Enregistré dans data/live, data/history et data/archive ; progression dans {file}.",
   mn_title: "Manuel d'utilisation et glossaire",
   mn_manual: "Manuel d'utilisation",
   mn_manualNote: "Comment utiliser chaque partie de l'application, étape par étape.",

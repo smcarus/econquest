@@ -1240,7 +1240,8 @@ docker compose exec econquest npm run preload   # when the app runs in Docker
 Each step prints one line (ok, FAIL with the reason, or needs setup when a key is needed). Ctrl+C stops after
 the current step; the next run skips every step saved within the last day and carries on. Progress is
 kept in `data/local/preload.json`. A step that takes longer than 3 minutes (`PRELOAD_STEP_TIMEOUT_S`
-in `.env` changes it) is recorded as not saved and the run moves on. GDELT allows few requests: the
+in `.env` changes it; a country's full history, about 100 downloads made four at a time, gets twice
+that) is recorded as not saved and the run moves on. GDELT allows few requests: the
 run does not wait out its 15-minute pause; GDELT news tone fills in on a later hourly refresh. A feed that fails leaves its figures Missing with
 the reason; nothing is filled in.
 
