@@ -72,6 +72,7 @@ export const WORLD_STEPS: PreloadStep[] = [
   { id: 'world:ilostat_wages', kind: 'world', label: 'Wages (ILOSTAT average monthly earnings, weekly) and World Bank inflation' },
   { id: 'world:bis_property', kind: 'world', label: 'House prices (BIS residential property prices, real and nominal)' },
   { id: 'world:bis_private_debt', kind: 'world', label: 'Household and company debt (BIS total credit)' },
+  { id: 'world:fed_swaps', kind: 'world', label: 'Federal Reserve dollar swap lines (New York Fed)' },
   { id: 'world:monthly_activity', kind: 'world', label: 'Industrial production, retail sales and monthly unemployment' },
   { id: 'world:gov_levels', kind: 'world', label: 'Revenue and spending by level of government (Eurostat, IMF GFS)' },
   { id: 'world:first_published_ea', kind: 'world', label: 'Euro area figures as first published (ECB real-time database)' },

@@ -100,6 +100,7 @@ import { peopleFromSnapshot } from './src/utils/peopleLiving';
 import { tradeMixFromSnapshot } from './src/utils/tradeMix';
 import { climateFromSnapshot } from './src/utils/climateEnergy';
 import { loadOwidEnergy, fetchOwidEnergyPull } from './src/server/feeds/owidEnergy';
+import { loadFedSwaps, fetchFedSwaps } from './src/server/feeds/fedSwaps';
 import { loadWages, fetchWagesPull, loadHousePrices, fetchHousePricesPull, loadPrivateDebt, fetchPrivateDebtPull } from './src/server/feeds/wagesHousing';
 import { sectorBalances } from './src/utils/sectorBalances';
 import { activitySnapshot } from './src/utils/monthlyIndicators';
@@ -681,6 +682,13 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       const quarters = Object.values(got.countries).map((c) => c.quarter).sort();
       const note = `${Object.keys(got.countries).length} countries to ${quarters.pop() || '?'}`;
       return fresh ? { outcome: 'done', note } : { outcome: 'done', note: `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
+    }
+    case 'world:fed_swaps': {
+      const got = await fetchFedSwaps();
+      if (!got) return { outcome: 'failed', note: 'The New York Fed did not answer for swap line operations' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const note = `${got.operations.length} operations since December 2007`;
+      return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
     }
     case 'world:bis_private_debt': {
       const got = await fetchPrivateDebtPull();
@@ -3982,7 +3990,7 @@ async function startServer() {
   const quick = <T,>(p: Promise<T | null>): Promise<T | null> =>
     Promise.race([p.catch(() => null), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]);
   async function seriesFor(iso3: string) {
-    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna, activity, fxHistory, fxExtra, bisCredit, idsCreditors, sovereignDefaults, inflationExpectations, inflationSurveys, portWatch] = await Promise.all([
+    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna, activity, fxHistory, fxExtra, bisCredit, idsCreditors, sovereignDefaults, inflationExpectations, inflationSurveys, portWatch, fedSwaps] = await Promise.all([
       quick(fetchCbpolPull()), quick(fetchCliPull()), quick(fetchCpiPull()), nationalCpiOrSaved(), quick(fetchCftcPull()), quick(fetchTicPull()),
       // Saved history answers at once; a first download that takes longer than 8 s finishes in the background.
       quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
@@ -3998,6 +4006,7 @@ async function startServer() {
       iso3.toUpperCase() === 'USA' ? quick(fetchInflationExpectations()) : Promise.resolve(null),
       iso3.toUpperCase() === 'BRA' ? quick(fetchInflationSurveys()) : Promise.resolve(null),
       quick(fetchPortWatchPorts(iso3)),
+      quick(fetchFedSwaps()).then((s) => s ?? loadFedSwaps()),
     ]);
     const imfCpi = loadImfCpi();
     // The weekly long-history file (src/utils/longHistory.ts) puts older observations in front of
@@ -4036,6 +4045,7 @@ async function startServer() {
       inflationExpectations,
       inflationSurveys,
       portWatch,
+      fedSwaps,
       ustAuctions: iso3.toUpperCase() === 'USA' ? loadUstAuctions() : null,
       euSurveys: loadEuSurveys(),
       monthlyIndicators: loadMonthlyIndicators(),

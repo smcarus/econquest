@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bisCbAssetsUrl, bisCreditGapUrl, bisCreditSeries, bisDsrUrl, bisPropertyUrl, parseBisCbAssets, parseBisCreditGap, parseBisDsr, parseBisProperty } from '../src/utils/bisCreditCycle.ts';
+import { bisCbAssetsUrl, bisCreditGapUrl, bisCreditSeries, bisDsrUrl, bisPropertyUrl, bisUsdCreditUrl, parseBisCbAssets, parseBisUsdCredit, parseBisCreditGap, parseBisDsr, parseBisProperty } from '../src/utils/bisCreditCycle.ts';
 import { checkConnections } from '../src/utils/connectionCheck.ts';
 import { countrySeries } from '../src/utils/seriesHistory.ts';
 
@@ -88,4 +88,26 @@ test('Data health row bis_cb_assets reads the sample answer', async () => {
   assert.match(rep.results[0].sample || '', /central bank assets 21\.2% of GDP, US\$ 6,735\.6 bn \(2026 Q2\)/);
   const bad = await checkConnections({ env: {}, only: ['bis_cb_assets'], fetchFn: async () => new Response('a,b\n1,2', { status: 200 }) } as never);
   assert.equal(bad.results[0].state, 'bad_reply');
+});
+
+// PB4: US dollar credit to non-banks (WS_GLI), rows as the BIS answered on 2026-11-14 (Brazil).
+const GLI = `FREQ,CURR_DENOM,BORROWERS_CTY,BORROWERS_SECTOR,LENDERS_SECTOR,L_POS_TYPE,L_INSTR,UNIT_MEASURE,TITLE,UNIT_MULT,DECIMALS,COLLECTION,AVAILABILITY,TIME_PERIOD,OBS_VALUE,OBS_STATUS,OBS_PRE_BREAK,OBS_CONF
+Q,USD,BR,N,A,I,B,USD,x,6,0,,A,2026-Q1,197689.632,A,,F
+Q,USD,BR,N,A,I,B,USD,x,6,0,,A,2026-Q2,199599.546,A,,F
+Q,USD,BR,N,B,I,G,USD,x,6,0,,A,2026-Q2,108485.496,A,,F
+Q,USD,BR,N,A,I,B,771,x,0,2,,A,2026-Q1,7.934,A,,F
+Q,USD,BR,N,A,I,B,771,x,0,2,,A,2026-Q2,6.906,A,,F`;
+
+test('dollar credit to non-banks: US$ bn and y/y, bank-loan-only rows left out', () => {
+  const p = parseBisUsdCredit(GLI);
+  assert.deepEqual(p.usdCredit, { '2026Q1': 197.6896, '2026Q2': 199.5995 });
+  assert.deepEqual(p.usdCreditYoy, { '2026Q1': 7.934, '2026Q2': 6.906 });
+  assert.match(bisUsdCreditUrl('BR'), /WS_GLI\/Q\.USD\.BR\.N\.A\.I\.B\.\/all\?format=csv$/);
+  assert.deepEqual(parseBisUsdCredit(''), {});
+});
+
+test('Data health row bis_usd_credit', async () => {
+  const rep = await checkConnections({ env: {}, only: ['bis_usd_credit'], fetchFn: async () => new Response(GLI, { status: 200 }) } as never);
+  assert.equal(rep.results[0].state, 'connected');
+  assert.match(rep.results[0].sample || '', /dollar credit to non-banks US\$ 199\.6 bn, 6\.9% on a year earlier \(2026 Q2\)/);
 });

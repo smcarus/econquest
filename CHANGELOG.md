@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Dollar funding stress (Group B, PB4): History & data shows US dollar loans and bonds owed by
+  the country's non-banks (BIS global liquidity indicators, US$ bn and y/y) and the Federal
+  Reserve's dollar swap lines (New York Fed), amount outstanding each Wednesday for all central
+  banks and for the country's own central bank when it has drawn. The cross-currency basis is left
+  out because it needs paid data. Data health rows bis_usd_credit and nyfed_swaps, glossary entry,
+  Spanish, French and Portuguese text.
 - Central bank assets (Group B, PB3): History & data shows each central bank's total assets from
   the BIS, as % of GDP and in US$ bn, quarterly, so asset purchases and emergency lending show as
   a fast rise. Free BIS series with citation. Data health row bis_cb_assets, glossary entry,

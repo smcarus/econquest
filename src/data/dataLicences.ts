@@ -180,7 +180,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'bis',
     name: 'BIS statistics (policy rates, real exchange rates, debt securities, credit cycle)',
-    usedFor: 'Central bank policy rates and their history, real exchange rates, government debt securities, credit-to-GDP gaps, debt service ratios, residential property prices (real and nominal, country brief and History & data) household and company debt (total credit) and central bank total assets (History & data)',
+    usedFor: 'Central bank policy rates and their history, real exchange rates, government debt securities, credit-to-GDP gaps, debt service ratios, residential property prices (real and nominal, country brief and History & data) household and company debt (total credit), central bank total assets and US dollar credit to non-banks (global liquidity, History & data)',
     terms: [
       { label: 'Terms of permitted use of BIS statistics', url: 'https://data.bis.org/help/legal' },
       { label: 'BIS terms and conditions', url: 'https://www.bis.org/terms_conditions.htm' },
@@ -245,7 +245,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'nyfed',
     name: 'New York Fed markets data',
-    usedFor: 'Fed funds, SOFR, reverse repo; Global Supply Chain Pressure Index (GSCPI, a factor in the global shock scenarios and a world series; built by the New York Fed from transport and manufacturing data)',
+    usedFor: 'Fed funds, SOFR, reverse repo; Federal Reserve dollar swap line operations (History & data); Global Supply Chain Pressure Index (GSCPI, a factor in the global shock scenarios and a world series; built by the New York Fed from transport and manufacturing data)',
     terms: [{ label: 'Terms of Use', url: 'https://www.newyorkfed.org/privacy/termsofuse' }],
     status: 'conditions',
     display: 'Allowed for personal or business purposes; reference rates (SOFR, EFFR and others) must carry the New York Fed\'s notice.',

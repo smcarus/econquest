@@ -758,6 +758,16 @@ World prices of raw materials such as oil, gas, copper, wheat and gold, from the
 
 **Why it matters.** For a country that exports a commodity, a higher price means more export income and tax revenue; for one that imports it, a higher price raises inflation and the import bill.
 
+### Dollar funding stress
+
+Trouble for banks and companies outside the United States in borrowing the US dollars they need to repay dollar debts or pay for trade.
+
+**Why it matters.** Much of world trade and lending is in dollars. When dollars become scarce, borrowers sell other assets and currencies to get them, which pushes the dollar up and can turn a local problem into a crisis.
+
+**How to read it.** History & data shows two signs: US dollar loans and bonds owed by the country's non-banks (BIS global liquidity indicators), and dollars the Federal Reserve has lent to foreign central banks through swap lines (New York Fed). Heavy swap line use marks acute stress, as in late 2008 and March 2020.
+
+**Limits.** Only a few central banks have a swap line with the Fed, so for most countries only the world total is shown. Market measures such as the cross-currency basis are not included because they need paid data.
+
 ## Politics, conflict and news
 
 ### Physical climate risk (ND-GAIN)

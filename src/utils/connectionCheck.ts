@@ -20,7 +20,8 @@ import { ECB_RTD_SERIES, ecbRtdUrl, parseEcbHistory } from './ecbRealTime';
 import { latestEditionUri, ONS_TRIANGLE_PAGE } from './onsTriangles';
 import { bcbActivityUrl, eurostatActivityUrl, monthText, onsActivityUrl, parseBcbActivity, parseEurostatActivity, parseOnsSeries } from './monthlyIndicators';
 import { BIS_PRIVATE_DEBT_SAMPLE_URL, parseBisPrivateDebtAll } from './sectorBalances';
-import { BIS_CB_ASSETS_SAMPLE_URL, parseBisCbAssets } from './bisCreditCycle';
+import { BIS_CB_ASSETS_SAMPLE_URL, BIS_USD_CREDIT_SAMPLE_URL, parseBisCbAssets, parseBisUsdCredit } from './bisCreditCycle';
+import { NYFED_SWAPS_SAMPLE_URL, parseNyfedSwaps } from './fedSwapLines';
 import { BIS_PROPERTY_SAMPLE_URL, ILO_EARNINGS_ENV, ILO_EARNINGS_ID, ILO_TOC_URLS, iloEarningsCandidates, iloEarningsRows, iloEarningsSampleUrl, iloIdRefused, parseBisPropertyAll, parseIloEarnings, quarterLabel, wageReading } from './wagesHousing';
 import { debtStructureUrl, parseDebtStructure, currencyValue } from './debtStructure';
 import { INVESTOR_BASE_SETUP_HELP, investorBaseValue } from './investorBase';
@@ -302,6 +303,8 @@ export const SOURCE_IDS = [
   'bis_property',
   'bis_private_debt',
   'bis_cb_assets',
+  'bis_usd_credit',
+  'nyfed_swaps',
   'imf_gov_levels',
   'eurostat_activity',
   'ons_activity',
@@ -655,6 +658,42 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       },
       undefined,
       'It answered, but not with the BIS central bank assets columns the app reads (UNIT_MEASURE XDF_R_B1GQ or USD, TIME_PERIOD, OBS_VALUE). The BIS may have changed the series key.'
+    )
+  );
+
+  add('bis_usd_credit', () =>
+    httpCheck(
+      { id: 'bis_usd_credit', name: 'BIS global liquidity (dollar credit)', group: 'free', feeds: 'US dollar credit to non-banks per country, US$ bn and y/y (History & data)' },
+      fetchFn,
+      BIS_USD_CREDIT_SAMPLE_URL,
+      T,
+      (r) => {
+        const { usdCredit, usdCreditYoy } = parseBisUsdCredit(r.text || '');
+        const q = usdCredit ? Object.keys(usdCredit).sort().pop() : undefined;
+        if (!q || !usdCredit) return null;
+        const yoy = usdCreditYoy?.[q];
+        return `${SAMPLE_NAME} dollar credit to non-banks US$ ${fmt(usdCredit[q])} bn${yoy === undefined ? '' : `, ${fmt(yoy)}% on a year earlier`} (${q.replace(/^(\d{4})Q/, '$1 Q')})`;
+      },
+      undefined,
+      'It answered, but not with the BIS global liquidity columns the app reads (CURR_DENOM, BORROWERS_SECTOR, LENDERS_SECTOR, L_POS_TYPE, L_INSTR, UNIT_MEASURE, TIME_PERIOD, OBS_VALUE). The BIS may have changed the series key.'
+    )
+  );
+
+  add('nyfed_swaps', () =>
+    httpCheck(
+      { id: 'nyfed_swaps', name: 'New York Fed dollar swap lines', group: 'free', feeds: 'Federal Reserve dollar swap lines outstanding, all central banks and the country\'s own (History & data)' },
+      fetchFn,
+      NYFED_SWAPS_SAMPLE_URL,
+      T,
+      (r) => {
+        const ops = parseNyfedSwaps(parseJson(r.text));
+        if (!ops) return null;
+        if (!ops.length) return 'Answered (no recent operations)';
+        const last = [...ops].sort((a, b) => (a.settle < b.settle ? 1 : -1))[0];
+        return `Latest operation: ${last.counterparty}, US$ ${fmt(last.usdBn, 3)} bn settled ${last.settle}`;
+      },
+      undefined,
+      'It answered, but not with the swap operations layout the app reads (fxSwaps.operations with counterparty, settlementDate, maturityDate, amount). The New York Fed may have changed its API.'
     )
   );
 
