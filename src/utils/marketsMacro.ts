@@ -18,6 +18,7 @@ import { shockSummary, shockWatch } from './shockWatch';
 import { TURN_WINDOW_MONTHS, UNWIND_PTS, UNWIND_WINDOW_WEEKS, recordText } from './signalRecord';
 import { HOLD_AFTER_MONTHS, cliCycleText, cycleClock, nextDecisionText, policyCycleText } from './cycleClock';
 import { cpiMissing, cpiSource } from './oecdInflation';
+import { latestInflation } from './latestInflation';
 import { TAYLOR_BAND_PTS, outputGapLabel, taylorCheck, taylorMethod } from './taylorRule';
 import { COFER_CCY_BY_ISO3, ccyName } from './imfCofer';
 import { cftcMissing, CFTC_CURRENCY_CODES, ordinal, positioningLabel } from './cftcPositioning';
@@ -145,9 +146,10 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
   const status = getSnapshotDataStatus(open);
   const L = status.live;
   const self = peers.find((p) => p.iso3 === run.iso3);
-  // The OECD's monthly figure, where it has one, is fresher than the IMF's annual one.
-  const oecdCpi = self?.oecdCpi;
-  const cpi = oecdCpi?.yoyPct ?? L('imf.cpiInflationPct');
+  // The same inflation figure as the Summary tab (src/utils/latestInflation.ts): monthly where there
+  // is one, fresher than the IMF's yearly average.
+  const infl = latestInflation(open, L('imf.cpiInflationPct'), self);
+  const cpi = infl?.pct;
   const policy = L('market.policyRatePct');
   const y10 = L('market.sovereign10YBondYieldPct');
   const cds = L('market.cds5YSpreadBps');
@@ -168,7 +170,7 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
   const j: string[] = [];
   if (cpi !== undefined)
     j.push(
-      `Inflation is ${pct(cpi)}${oecdCpi ? ` (${cpiSource(oecdCpi)})` : ''}${target && gap !== undefined ? `, ${Math.abs(gap).toFixed(1)} pts ${gap >= 0 ? 'above' : 'below'} the ${pct(target.pct)} target` : ' (no inflation target on file)'}${
+      `Inflation is ${pct(cpi)} (${infl!.source})${target && gap !== undefined ? `, ${Math.abs(gap).toFixed(1)} pts ${gap >= 0 ? 'above' : 'below'} the ${pct(target.pct)} target` : ' (no inflation target on file)'}${
         realPolicy !== undefined && policy !== undefined ? `; with the policy rate at ${pct(policy, 2)}, the real rate is ${pct(realPolicy)}, so policy looks ${policyStance(realPolicy, gap)}` : ''
       }.`
     );
