@@ -2,12 +2,13 @@
  * The scopes an API token can have, as the Settings screen lists them (console integration item 2).
  * Browser-safe; the server side is src/utils/apiTokens.ts.
  */
-export const SCOPES = ['read:data', 'read:council', 'read:events', 'write:holdings', 'write:exclusions', 'run:scenarios'] as const;
+export const SCOPES = ['read:data', 'read:council', 'ask:council', 'read:events', 'write:holdings', 'write:exclusions', 'run:scenarios'] as const;
 export type Scope = (typeof SCOPES)[number];
 
 export const SCOPE_LABEL: Record<Scope, string> = {
   'read:data': 'Read figures and series',
   'read:council': 'Read council runs',
+  'ask:council': 'Ask Council chat questions (uses the AI model)',
   'read:events': 'Receive events and set watches',
   'write:holdings': 'Send positions',
   'write:exclusions': 'Set hidden names',

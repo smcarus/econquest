@@ -76,6 +76,7 @@ token's secret is shown once; the app keeps only its SHA-256 hash.
 |---|---|
 | `read:data` | read series, panels, country lists and snapshots |
 | `read:council` | read the last council run per country |
+| `ask:council` | ask Council chat a new question (uses the AI model; counts against the AI request limit) |
 | `read:events` | read and stream events, set webhooks and indicator watches |
 | `write:holdings` | send its positions |
 | `write:exclusions` | change the hidden-names list |

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "EconQuest API",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "description": "Addresses an outside system can call over HTTP: the data API (series, panels and tables, docs/DATA_API.md) and the integration API (council output, webhooks and the event stream). Every country is named by ISO 3166 alpha-2 and alpha-3; either code is accepted wherever an address names a country. Values without a source read Missing with the reason; nothing is estimated."
   },
   "servers": [
@@ -23,7 +23,7 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "eqt_<id>_<secret>",
-        "description": "A scoped API token made in Menu > Settings > API tokens, sent as Authorization: Bearer <token> (or X-SMCR-API-Key). Each address names the scope it needs in x-scope. Scopes: read:data, read:council, read:events, write:holdings, write:exclusions, run:scenarios. The legacy integration key has the three read scopes."
+        "description": "A scoped API token made in Menu > Settings > API tokens, sent as Authorization: Bearer <token> (or X-SMCR-API-Key). Each address names the scope it needs in x-scope. Scopes: read:data, read:council, ask:council, read:events, write:holdings, write:exclusions, run:scenarios. The legacy integration key has the three read scopes."
       }
     },
     "parameters": {
@@ -790,6 +790,242 @@
                 "type": "integer"
               }
             }
+          }
+        }
+      },
+      "CouncilAnswer": {
+        "type": "object",
+        "description": "Council chat's answer to one question, from the same steps as the chat in the app.",
+        "required": [
+          "answer",
+          "agents",
+          "citations",
+          "checks",
+          "hidden_count",
+          "model",
+          "cost_usd",
+          "run_id",
+          "disclaimer"
+        ],
+        "properties": {
+          "answer": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The headline and points as one text; null when no summary was written (see reason)."
+          },
+          "brief": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "headline": {
+                "type": "string"
+              },
+              "points": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "disagreements": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "gaps": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why there is no summary, when there is none."
+          },
+          "agents": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "label",
+                "summary",
+                "stance"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "summary": {
+                  "type": "string"
+                },
+                "stance": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "iso3": {
+                        "type": "string"
+                      },
+                      "dim": {
+                        "type": "string"
+                      },
+                      "call": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "citations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "label",
+                "value",
+                "source",
+                "date",
+                "badge",
+                "url",
+                "shareable"
+              ],
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "string"
+                },
+                "date": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "The period read from the source text: YYYY-MM-DD, YYYY-MM, YYYY-Qn or YYYY; null when it names none."
+                },
+                "badge": {
+                  "enum": [
+                    "official",
+                    "not_validated"
+                  ]
+                },
+                "url": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "The source's terms page from the licence register."
+                },
+                "iso3": {
+                  "type": "string"
+                },
+                "agent": {
+                  "type": "string"
+                },
+                "shareable": {
+                  "const": true
+                }
+              }
+            }
+          },
+          "checks": {
+            "type": "object",
+            "properties": {
+              "number_trace": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "enum": [
+                      "pass",
+                      "no_answer"
+                    ]
+                  },
+                  "removed": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "stance_check": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "enum": [
+                      "pass",
+                      "no_answer"
+                    ]
+                  },
+                  "removed": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          },
+          "hidden_count": {
+            "type": "integer",
+            "description": "Hidden names left out of the question, history, countries, figures and summary."
+          },
+          "hidden_note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "left_out": {
+            "type": "object",
+            "properties": {
+              "not_shareable": {
+                "type": "integer"
+              },
+              "not_real": {
+                "type": "integer"
+              }
+            }
+          },
+          "scope": {
+            "type": "string"
+          },
+          "chooser_note": {
+            "type": "string"
+          },
+          "model": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cost_usd": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Upper estimate in US dollars: 0 for a model on this computer; null when a cloud model answered and no prices are set in .env."
+          },
+          "run_id": {
+            "type": "string",
+            "pattern": "^ask_[0-9a-f]+$"
+          },
+          "asked_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "disclaimer": {
+            "type": "string"
           }
         }
       }
@@ -2732,6 +2968,166 @@
           },
           "403": {
             "description": "TOKEN_SCOPE: the token lacks run:scenarios. The legacy key cannot run scenarios."
+          }
+        }
+      }
+    },
+    "/api/v1/council/ask": {
+      "post": {
+        "summary": "Ask Council chat a new question: the same agents, figures and checks as the chat in the app",
+        "tags": [
+          "Council"
+        ],
+        "x-scope": "ask:council",
+        "security": [
+          {
+            "ApiToken": [
+              "ask:council"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "question"
+                ],
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "iso3": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z]{3}$",
+                    "description": "One country, as the chat's country picker. Optional: without it the countries come from the question or the watchlist."
+                  },
+                  "history": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "description": "Earlier turns, oldest first; nothing is remembered between calls.",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "role",
+                        "content"
+                      ],
+                      "properties": {
+                        "role": {
+                          "enum": [
+                            "user",
+                            "council"
+                          ]
+                        },
+                        "content": {
+                          "type": "string",
+                          "maxLength": 2000
+                        }
+                      }
+                    }
+                  },
+                  "max_cost_usd": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Refuse with 402 cost_limit before any model call that would pass it."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The answer, the agents, every figure cited with source, period, badge and terms page, the checks, the hidden count, the model and the cost.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouncilAnswer"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "TOKEN_REQUIRED, or INVALID_TOKEN (unknown or revoked)."
+          },
+          "402": {
+            "description": "cost_limit: the next model call would pass max_cost_usd, or could reach a cloud model with no price set. Nothing more was run.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "TOKEN_SCOPE: the token lacks ask:council. The legacy key cannot ask."
+          },
+          "404": {
+            "description": "HIDDEN: iso3 is on the hidden-names list."
+          },
+          "422": {
+            "description": "question_empty, question_too_long (over 2,000 characters), history_too_long (over 10 turns), bad_history, bad_iso3, bad_max_cost or unknown_iso3.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The AI request limit (shared with the token maker's own questions); see Retry-After.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "no_model: no AI model answered (set one up under Menu > Settings > AI model); exam_mode: AI steps are off while exam mode is on.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }

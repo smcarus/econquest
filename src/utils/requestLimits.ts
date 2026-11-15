@@ -32,7 +32,7 @@ export const isWrite = (method: string) => WRITE.has(String(method).toUpperCase(
 /** Calls that run the AI model (and so cost minutes of GPU time or paid tokens). */
 export function isAiCall(method: string, pathname: string): boolean {
   if (!isWrite(method)) return false;
-  return /^\/api\/council\//.test(pathname) || /^\/api\/ai\/(try-model|ollama-test)$/.test(pathname);
+  return /^\/api\/council\//.test(pathname) || /^\/api\/v1\/council\//.test(pathname) || /^\/api\/ai\/(try-model|ollama-test)$/.test(pathname);
 }
 
 export interface Bucket {

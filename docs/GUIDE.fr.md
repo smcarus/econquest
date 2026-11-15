@@ -338,13 +338,19 @@ d’EconQuest, vous pouvez lui donner accès sans partager votre mot de passe.
 
 1. Ouvrez **Menu > Réglages > Jetons d’API**.
 2. Donnez un nom au jeton (par exemple « Console de portefeuille ») et cochez seulement ce qu’il peut
-   faire : lire les chiffres et les séries, lire les séances du conseil, recevoir les événements et
-   définir des surveillances, envoyer des positions, définir les noms masqués ou lancer des scénarios
-   sur un portefeuille.
+   faire : lire les chiffres et les séries, lire les séances du conseil, poser des questions au chat du
+   Conseil, recevoir les événements et définir des surveillances, envoyer des positions, définir les noms
+   masqués ou lancer des scénarios sur un portefeuille.
 3. Appuyez sur **Créer le jeton** et copiez-le tout de suite : il n’est affiché qu’une fois, et l’application n’en garde
    qu’une empreinte. Chaque usage est inscrit au journal d’audit ; **Révoquer** l’arrête aussitôt.
 4. Les positions envoyées par l’autre programme apparaissent dans **Recherche > Mes positions**, marquées
    « Envoyée par » suivi du nom du jeton.
+5. Un jeton autorisé à poser des questions au chat du Conseil reçoit la même réponse que vous
+   obtiendriez dans le chat pour la même question : les mêmes agents, chiffres et contrôles. Chaque
+   question utilise votre modèle d’IA et compte dans la même limite de requêtes d’IA que vos propres
+   questions. Les noms masqués n’apparaissent jamais dans ses réponses, et seuls les chiffres dont les
+   sources permettent le partage sont utilisés. Chaque question est inscrite au journal d’audit avec le
+   nom du jeton.
 
 Pour qu’un pays ou un titre n’apparaisse sur aucun écran, dans aucune réponse ni aucun événement,
 ajoutez-le dans **Menu > Réglages > Noms masqués** (par code ISO du pays, ticker ou votre propre

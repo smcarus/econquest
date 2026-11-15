@@ -583,8 +583,8 @@ The full reference, with examples, is "Connecting an outside portfolio system" i
 [docs/DATA_API.md](docs/DATA_API.md); every address is in [docs/openapi.json](docs/openapi.json).
 
 - **Sign-in with a token.** Make a named API token in **Menu > Settings > API tokens** (or with
-  `npm run tokens`), tick only what it may do (`read:data`, `read:council`, `read:events`,
-  `write:holdings`, `write:exclusions`, `run:scenarios`), and revoke it at any time. The secret is
+  `npm run tokens`), tick only what it may do (`read:data`, `read:council`, `ask:council`,
+  `read:events`, `write:holdings`, `write:exclusions`, `run:scenarios`), and revoke it at any time. The secret is
   shown once; the app keeps only its fingerprint. Every use is written to the audit log.
   `SMCR_INTEGRATION_API_KEY` in `.env` still works as a legacy key with the three read scopes.
 - **Names both sides agree on.** Countries by ISO alpha-2 or alpha-3 (every answer carries both);
@@ -610,6 +610,10 @@ The full reference, with examples, is "Connecting an outside portfolio system" i
   2013, 2020, 2022) on a portfolio sent in the request. Results are per position, labelled
   hypothetical (a first-order estimate, not a valuation), and a move with no source is Missing with
   the reason.
+- **Ask Council chat.** With `ask:council`, `POST /api/v1/council/ask` asks a new question and gets
+  the answer the chat gives in the app: the same agents, figures and checks, every figure cited with
+  source, period, badge and terms page, hidden names left out, the model and the cost. It counts
+  against the AI request limit, and `max_cost_usd` refuses a call before it would cost more.
 - **Council output.** `/api/v1/integration/*` (desks, bundle, publish, a live stream and
   deliveries) answers `404 NO_COUNCIL_RUN` until the full council has run on that country, and never
   sends built-in figures. `SMCR_WEBHOOK_HMAC_SECRET` fixes its signing secret.

@@ -92,8 +92,12 @@ import { formatDuration, isCouncilTiming, stepTiming, timingTable, totalMs, type
 import { glossaryMarkdown } from './src/data/glossary';
 import { EXPLAIN_INSTRUCTION, explainInstruction, checkExplain, cleanFocus, explainTask, focusAsText, lensCoverage, LENS_ORDER, type ExplainPlan, type LensId, type RawExplain } from './src/utils/explain';
 import { documentsAsText, isCouncilDocument, toAgentDocuments, type AgentDocument, type CouncilDocument } from './src/utils/agentDocument';
-import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, synthesisTask, isDocFinding, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult, planCouncil, runCouncil, type SavedCouncilBrief } from './src/utils/askCouncil';
-import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
+import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, answersForModel, offWatchlistCodes, sentenceCheck, checkBrief, earlierAsText, synthesisTask, isDocFinding, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult, planCouncil, runCouncil, type SavedCouncilBrief } from './src/utils/askCouncil';
+import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, marketEdgePeers, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
+import { councilAnswers, hasFindings, NO_FIGURES_REASON } from './src/utils/councilQuestion';
+import { agentsFrom, answersForApi, answerText, ASK_DISCLAIMER, briefWithoutHidden, checksFrom, citationsFrom, hiddenCountryPatterns, hiddenText, hideNames, historyTurns, isProblem, newRunId, parseAskRequest } from './src/server/councilAsk';
+import { addCost, isLocalAddress, mayUseCloud, OUTPUT_ALLOWANCE, pricesFromEnv, roundUsd, spentOn, stepCost } from './src/utils/aiCost';
+import { DEFAULT_HELP_LEVEL, promptHelpLevel } from './src/utils/helpLevel';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
 import { distTaxFromSnapshot } from './src/utils/distributionTaxes';
 import { peopleFromSnapshot } from './src/utils/peopleLiving';
@@ -1700,6 +1704,11 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
 /** Up to this many countries outside the catalog per request (each is a full snapshot pull). */
 const MAX_EXTRA_COUNTRIES = 5;
 
+/** The ask:council route's own reads of this server (see the internal-read step in startServer). */
+const INTERNAL_READ_HEADER = 'x-econquest-internal-read';
+const INTERNAL_READ_KEY = crypto.randomBytes(32).toString('hex');
+const INTERNAL_READ_PATHS = /^\/api\/(series|nowcast|forecast)\//;
+
 /** Live rows for the countries asked for: catalog rows from the cache, others pulled for this request. */
 async function liveRowsFor(codes: string[]): Promise<WatchlistItem[]> {
   const catalog = await fetchLiveWatchlistCatalog([], true);
@@ -1787,7 +1796,7 @@ function tracked<T extends { usedFallback: boolean }>(progress: ReturnType<typeo
 
 /** The synthesis agent: a short brief from the agents' answers only, checked for untraceable numbers (Council chat and the morning brief). */
 /** Audit log entry for one council answer: question, model, every figure with source and period. */
-function auditCouncilAnswer(question: string, answers: AgentAnswer[], out: SynthesisResult, scope: string | undefined, via: string, snap?: AnswerSnapshot): void {
+function auditCouncilAnswer(question: string, answers: AgentAnswer[], out: SynthesisResult, scope: string | undefined, via: string, snap?: AnswerSnapshot, extra?: Record<string, unknown>): void {
   appendAudit(AUDIT_FILES, {
     kind: 'council',
     summary: `Council answer: "${question.slice(0, 200)}"`,
@@ -1818,6 +1827,7 @@ function auditCouncilAnswer(question: string, answers: AgentAnswer[], out: Synth
       ...(out.brief?.explain
         ? { mode: 'explain', lenses: out.brief.explain.lenses.map((l) => l.lens), ...(out.brief.explain.focus ? { explained: out.brief.explain.focus } : {}) }
         : {}),
+      ...(extra || {}),
     },
   });
 }
@@ -1833,6 +1843,8 @@ interface SynthesisTrace {
 }
 
 interface SynthesisOpts {
+  /** More fields for the audit entry, worked out once the summary is written (the data API: token, run ID, cost). */
+  auditExtra?: (out: SynthesisResult, trace: { prompt?: string }) => Record<string, unknown>;
   scope?: string;
   countries?: number;
   earlier?: Array<{ question: string; headline?: string }>;
@@ -1854,7 +1866,7 @@ const ANSWER_SNAPSHOT_DIR = snapshotDir(DATA_DIR);
 async function answerAndRecord(question: string, answers: AgentAnswer[], opts: SynthesisOpts & { asOf?: string | null }, via: string, rerunOf?: string): Promise<SynthesisResult> {
   const askedAt = opts.askedAt || new Date().toISOString();
   const earlier = (opts.earlier || []).map((t) => ({ question: String(t.question).slice(0, 500), ...(t.headline ? { headline: String(t.headline).slice(0, 600) } : {}) }));
-  const trace: SynthesisTrace = {};
+  const trace: SynthesisTrace = opts.trace ?? {};
   const out = await synthesiseAnswers(question, answers, { ...opts, earlier, askedAt, trace });
   let snap: AnswerSnapshot | undefined;
   try {
@@ -1897,8 +1909,44 @@ async function answerAndRecord(question: string, answers: AgentAnswer[], opts: S
   } catch (error: any) {
     console.warn(`[snapshot] could not save the answer snapshot: ${error?.message || error}`);
   }
-  auditCouncilAnswer(question, answers, out, opts.scope, via, snap);
+  auditCouncilAnswer(question, answers, out, opts.scope, via, snap, opts.auditExtra?.(out, trace));
   return snap ? { ...out, snapshot: summariseSnapshot(snap) } : out;
+}
+
+/** The AI step that picks the agents for a Council chat question (the chat and the data API's ask:council). */
+async function chooseAgentsStep(question: string, earlier: Array<{ question: string }>, runtimeConfig: any): Promise<{ out: AgentChoiceResult; step?: { providerUsed: string; usedFallback: boolean } }> {
+  try {
+    const step = await executeResilientLlmStep<{ agents: Array<{ id: string; why: string }> }>({
+      stepName: 'COUNCIL_CHOOSE_AGENTS',
+      providerMode: runtimeConfig?.providerMode || 'gemini',
+      runtimeConfig: runtimeConfig || {},
+      thinkingLevel: ThinkingLevel.LOW,
+      systemInstruction: AGENT_CHOICE_INSTRUCTION,
+      prompt: agentChoicePrompt(question, earlier),
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          agents: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: { id: { type: Type.STRING, description: 'Agent id from the list.' }, why: { type: Type.STRING, description: 'Short reason.' } },
+              required: ['id', 'why'],
+            },
+          },
+        },
+        required: ['agents'],
+      },
+      fallbackValue: { agents: [] },
+      maxRetries: 0,
+    });
+    const out: AgentChoiceResult = step.usedFallback
+      ? { agents: null, reason: `no AI model answered (${step.failure || 'no model is set up'})` }
+      : { agents: Array.isArray(step.data?.agents) ? step.data.agents.slice(0, 5) : [], provider: step.providerUsed };
+    return { out, step: { providerUsed: step.providerUsed, usedFallback: step.usedFallback } };
+  } catch (error: any) {
+    return { out: { agents: null, reason: `the AI step failed (${error?.message || 'unknown error'})` } };
+  }
 }
 
 async function synthesiseAnswers(
@@ -2092,9 +2140,9 @@ let serverJobAccount: () => Account | null = () => null;
 const jobWorkspaceFile = () => workspaceFileForAccount(serverJobAccount());
 
 /** The watchlists saved in the app (workspace file), or the starting ones. */
-function savedWatchlists(): Array<{ id: string; name: string; iso3: string[] }> {
+function savedWatchlists(file: string = jobWorkspaceFile()): Array<{ id: string; name: string; iso3: string[] }> {
   try {
-    const raw = loadWorkspace(jobWorkspaceFile()).values['sovereign_council_watchlists_v1'];
+    const raw = loadWorkspace(file).values['sovereign_council_watchlists_v1'];
     const groups = raw ? JSON.parse(raw) : null;
     if (Array.isArray(groups) && groups.length) {
       return groups
@@ -2107,9 +2155,9 @@ function savedWatchlists(): Array<{ id: string; name: string; iso3: string[] }> 
   return DEFAULT_WATCHLISTS.map((g) => ({ id: g.id, name: g.name, iso3: g.items.map((i) => i.iso3) }));
 }
 
-function savedAiConfig(): any {
+function savedAiConfig(file: string = jobWorkspaceFile()): any {
   try {
-    const raw = loadWorkspace(jobWorkspaceFile()).values['econquest_ai_runtime_config_v1'];
+    const raw = loadWorkspace(file).values['econquest_ai_runtime_config_v1'];
     return raw ? JSON.parse(raw) : serverGuiRuntimeConfig;
   } catch {
     return serverGuiRuntimeConfig;
@@ -3039,6 +3087,14 @@ async function startServer() {
       });
     });
   };
+  // The data API's ask:council reads the app's own series, nowcast and forecast addresses, as the
+  // browser's Council chat does. It calls this server with a key made at start-up and never shown,
+  // for GET on those addresses only.
+  app.use((req, res, next) => {
+    const given = req.headers[INTERNAL_READ_HEADER];
+    if (typeof given === 'string' && keyMatches(given, INTERNAL_READ_KEY) && req.method === 'GET' && INTERNAL_READ_PATHS.test(req.path)) res.locals.internalRead = true;
+    next();
+  });
   app.use((req, res, next) => {
     if (req.path === '/api/v1/integration/openapi.json') return next();
     const given = apiKeyFrom(req.headers as Record<string, string | string[] | undefined>);
@@ -3084,7 +3140,7 @@ async function startServer() {
       const a = hit.account;
       return actorStore.run({ id: a.id, username: a.username, name: a.displayName }, next);
     }
-    if (mode === 'off' || hit || openPath(req.method, req.path) || res.locals.apiToken) return next();
+    if (mode === 'off' || hit || openPath(req.method, req.path) || res.locals.apiToken || res.locals.internalRead) return next();
     // The integration API keeps its own key check when that is switched on in Settings.
     if (req.path.startsWith('/api/v1/integration/') && (serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG).requireApiKey) return next();
     // Scripts reading data (docs/DATA_API.md): the same key, sent in a header, opens the read-only data addresses.
@@ -3118,7 +3174,7 @@ async function startServer() {
   // Data reads that come from no signed-in account (scripts, or the single user with sign-in off): one
   // limit per address, so a script in a loop cannot slow the app (src/server/dataApi.ts).
   app.use((req, res, next) => {
-    if (signedIn(res) || res.locals.apiToken || !isDataApiRead(req.method, req.path)) return next();
+    if (signedIn(res) || res.locals.apiToken || res.locals.internalRead || !isDataApiRead(req.method, req.path)) return next();
     const wait = limiter.take(`data:${req.socket.remoteAddress || 'unknown'}`, DATA_API_LIMIT);
     if (!wait) return next();
     res.setHeader('Retry-After', String(wait));
@@ -3487,16 +3543,17 @@ async function startServer() {
   const consoleStream = registerConsoleEventRoutes(app, { files: EVENT_FILES, webhooks: consoleWebhooks, urlProblem: consoleUrlProblem, hidden: eventHidden });
   registerConsoleWatchRoutes(app, { rulesFile: WATCH_RULES_FILE, readStates: readWatchStates });
   registerExclusionRoutes(app, { store: HIDDEN, refuseRemoteChange: (req, res) => refuseRemoteChange(req, res) });
+  // The account that made the token; a token made with sign-in off (or by a removed account) uses
+  // the first admin's workspace when accounts exist, else the shared one.
+  const workspaceForToken = (t: { createdById?: string }) => {
+    const accounts = auth.list();
+    const maker = t.createdById ? accounts.find((a) => a.id === t.createdById) : undefined;
+    const firstAdmin = accounts.filter((a) => a.role === 'admin').sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
+    return workspaceFileForAccount(maker ?? firstAdmin ?? null);
+  };
   registerConsoleHoldingsRoutes(app, {
     hidden: (h) => HIDDEN.holdingHidden(h),
-    // The account that made the token; a token made with sign-in off (or by a removed account) uses
-    // the first admin's workspace when accounts exist, else the shared one.
-    workspaceForToken: (t) => {
-      const accounts = auth.list();
-      const maker = t.createdById ? accounts.find((a) => a.id === t.createdById) : undefined;
-      const firstAdmin = accounts.filter((a) => a.role === 'admin').sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
-      return workspaceFileForAccount(maker ?? firstAdmin ?? null);
-    },
+    workspaceForToken,
   });
   // Scenarios read only saved files: the replay series (daily download) and the ECB rates (item 9).
   const replayFilePath = path.join(DATA_DIR, 'local', 'replays', 'replay-series.json');
@@ -5950,44 +6007,164 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
   // Ask the council: the synthesis agent writes a brief from the desk agents' answers only.
   // The agents run in the browser on figures the app already holds; this step only summarises,
   // and checkBrief removes any sentence with a number that is not in the agents' figures.
+  // Data API: ask Council chat a new question (scope ask:council; src/server/councilAsk.ts,
+  // docs/DATA_API.md). The same steps as the browser's chat: the AI model picks the agents
+  // (chooseAgentsStep), the desk agents answer on the app's own figures (councilAnswers), and the
+  // synthesis agent writes the summary under the number and stance checks (answerAndRecord).
+  const internalGet: typeof fetch = (u) => {
+    const bind = (process.env.HOST || '').trim();
+    const host = !bind || bind === '0.0.0.0' || bind === '::' || bind === 'localhost' ? '127.0.0.1' : bind.includes(':') ? `[${bind}]` : bind;
+    return fetch(`http://${host}:${PORT}${String(u)}`, { headers: { [INTERNAL_READ_HEADER]: INTERNAL_READ_KEY }, signal: AbortSignal.timeout(120_000) });
+  };
+  app.post('/api/v1/council/ask', async (req, res) => {
+    const token = res.locals.apiToken as { id: string; name: string; createdById?: string } | undefined;
+    if (!token) return res.status(401).json({ error: 'TOKEN_REQUIRED', message: 'This address needs an API token with the ask:council scope.' });
+    const parsed = parseAskRequest(req.body);
+    if (isProblem(parsed)) return res.status(parsed.status).json({ error: parsed.code, message: parsed.message });
+    // The AI request limit: the same bucket as the account that made the token uses in the app.
+    const wait = limiter.take(`${token.createdById || `token:${token.id}`}:ai`, LIMITS.ai);
+    if (wait) {
+      res.setHeader('Retry-After', String(wait));
+      return res.status(429).json({ error: 'ai_limit', message: `Too many AI requests. Try again in ${wait} seconds.` });
+    }
+    if (loadExamMode().on) return res.status(503).json({ error: 'exam_mode', message: EXAM_REASON });
+    if (parsed.iso3 && HIDDEN.countryHidden(parsed.iso3)) return res.status(404).json({ error: 'HIDDEN', message: `Not shown: it is on the hidden-names list (${hiddenNote(1)}).`, hidden: 1 });
+    const runId = newRunId(() => crypto.randomBytes(10).toString('hex'));
+    const via = `Data API (token "${token.name}")`;
+    try {
+      // Hidden names never reach a step: replaced in the question and history, and out of the pool.
+      const patterns = hiddenCountryPatterns(HIDDEN);
+      let hiddenCount = 0;
+      const q = hideNames(parsed.question, HIDDEN, patterns);
+      hiddenCount += q.count;
+      const history = parsed.history.map((t) => {
+        const r = hideNames(t.content, HIDDEN, patterns);
+        hiddenCount += r.count;
+        return { ...t, content: r.text };
+      });
+      const earlier = historyTurns(history);
+      const ws = workspaceForToken(token);
+      const runtimeConfig = savedAiConfig(ws);
+      // The countries the chat would answer on: the first saved watchlist, the market benchmarks,
+      // and the country asked for or named in the question (pulled for this request, as "Add" does in the chat).
+      const list = savedWatchlists(ws)[0];
+      const listRows = await liveRowsFor([...new Set(list?.iso3 || [])]);
+      const peers = await fetchMarketEdgeAnchors().then((r) => r.peers || []).catch(() => []);
+      let pool = marketEdgePeers(listRows.map((r) => toLive(r)), peers);
+      const wanted = [...new Set([...(parsed.iso3 ? [parsed.iso3] : []), ...offWatchlistCodes(q.text, pool).map((o) => o.iso3)])].filter((c) => !pool.some((p) => p.iso3 === c));
+      if (wanted.length) pool = [...pool, ...(await liveRowsFor(wanted)).filter((r) => !pool.some((p) => p.iso3 === r.iso3)).map((r) => toLive(r))];
+      const before = pool.length;
+      pool = pool.filter((p) => !HIDDEN.countryHidden(p.iso3));
+      hiddenCount += before - pool.length;
+      if (parsed.iso3 && !pool.some((p) => p.iso3 === parsed.iso3)) return res.status(422).json({ error: 'unknown_iso3', message: `The app has no figures for ${parsed.iso3}.` });
+
+      // Cost: priced before each model call (src/utils/aiCost.ts); over max_cost_usd, refused first.
+      const prices = pricesFromEnv(process.env);
+      const cloud = mayUseCloud(runtimeConfig, process.env);
+      const openAiLocal = isLocalAddress(runtimeConfig?.openAiBaseUrl || process.env.OPENAI_COMPATIBLE_BASE_URL || 'http://localhost:8000/v1');
+      let spent: number | null = 0;
+      const over = (estimate: number | null) => parsed.maxCostUsd !== undefined && (estimate === null || spent === null || spent + estimate > parsed.maxCostUsd);
+      const refuse = (step: string, estimate: number | null) =>
+        res.status(402).json({
+          error: 'cost_limit',
+          message:
+            estimate === null
+              ? `The ${step} step could go to a cloud model and the app has no price for it, so it cannot keep to max_cost_usd. Set AI_PRICE_INPUT_PER_MTOK and AI_PRICE_OUTPUT_PER_MTOK in .env, or leave max_cost_usd out.`
+              : `The ${step} step could cost up to $${roundUsd(estimate)}, which with $${roundUsd(spent)} spent passes max_cost_usd ($${parsed.maxCostUsd}). Nothing more was run.`,
+          max_cost_usd: parsed.maxCostUsd,
+          estimate_usd: roundUsd(estimate),
+          spent_usd: roundUsd(spent),
+          run_id: runId,
+        });
+      const chooseQuestion = q.text.slice(0, 500);
+      const chooseChars = AGENT_CHOICE_INSTRUCTION.length + agentChoicePrompt(chooseQuestion, earlier.map((t) => ({ question: t.question }))).length;
+      const chooseEstimate = stepCost(chooseChars, OUTPUT_ALLOWANCE.choose, cloud, prices);
+      if (over(chooseEstimate)) return refuse('agent choice', chooseEstimate);
+
+      const { plan, answers: allAnswers } = await councilAnswers(
+        { question: q.text, items: pool, history: earlier, previous: earlier.length ? planCouncil(earlier[earlier.length - 1]!.question, pool) : undefined, scopeIso3: parsed.iso3 },
+        {
+          chooseAgents: async (question, h) => {
+            const r = await chooseAgentsStep(question.slice(0, 500), h.map((t) => ({ question: t.question })), runtimeConfig);
+            spent = addCost(spent, r.step ? spentOn(r.step, openAiLocal, chooseChars, OUTPUT_ALLOWANCE.choose * 4, prices) : 0);
+            return r.out;
+          },
+          get: internalGet,
+        }
+      );
+      // Only real figures whose sources allow passing them on; hidden names left out.
+      const filtered = answersForApi(allAnswers, HIDDEN, patterns);
+      hiddenCount += filtered.counts.hidden;
+      const answers = filtered.answers;
+      const askedAt = new Date().toISOString();
+      const auditExtra = () => ({
+        token: token.id,
+        tokenName: token.name,
+        runId,
+        costUsd: roundUsd(spent),
+        hiddenCount,
+        leftOut: { notShareable: filtered.counts.notShareable, notReal: filtered.counts.notReal },
+      });
+      const reply = (out: SynthesisResult) => {
+        const clean = briefWithoutHidden(out, HIDDEN, patterns);
+        hiddenCount += clean.count;
+        return {
+          answer: answerText(clean.out),
+          brief: clean.out.brief ? { headline: clean.out.brief.headline, points: clean.out.brief.points, disagreements: clean.out.brief.disagreements, gaps: clean.out.brief.gaps } : null,
+          ...(clean.out.reason ? { reason: clean.out.reason } : {}),
+          agents: agentsFrom(answers),
+          citations: citationsFrom(answers),
+          checks: checksFrom(clean.out),
+          hidden_count: hiddenCount,
+          hidden_note: hiddenText(hiddenCount),
+          left_out: { not_shareable: filtered.counts.notShareable, not_real: filtered.counts.notReal },
+          scope: plan.scopeNote,
+          ...(plan.chooserNote ? { chooser_note: plan.chooserNote } : {}),
+          model: clean.out.provider || null,
+          cost_usd: roundUsd(spent),
+          run_id: runId,
+          asked_at: askedAt,
+          disclaimer: ASK_DISCLAIMER,
+        };
+      };
+      if (!hasFindings(answers)) {
+        const out: SynthesisResult = { brief: null, removed: [], reason: NO_FIGURES_REASON };
+        auditCouncilAnswer(q.text, answers, out, plan.scopeNote, via, undefined, auditExtra());
+        return res.json(reply(out));
+      }
+      const forModel = answersForModel(answers);
+      const opts = { scope: plan.scopeNote, countries: plan.countries.length, askedAt };
+      const synthChars = SYNTHESIS_INSTRUCTION.length + (earlierAsText(earlier) + councilDocsText(q.text, forModel, opts)).slice(0, 22000).length + synthesisTask(q.text).length;
+      const synthEstimate = stepCost(synthChars, OUTPUT_ALLOWANCE.synthesis, cloud, prices);
+      if (over(synthEstimate)) return refuse('summary', synthEstimate);
+      const out = await answerAndRecord(
+        q.text,
+        forModel,
+        {
+          ...opts,
+          earlier,
+          runtimeConfig,
+          explain: explainFromBody(plan.explain ? { explain: { ...plan.explain, helpLevel: promptHelpLevel(DEFAULT_HELP_LEVEL) } } : {}),
+          auditExtra: (o, trace) => {
+            spent = addCost(spent, spentOn({ providerUsed: o.provider, usedFallback: !o.provider }, openAiLocal, SYNTHESIS_INSTRUCTION.length + (trace.prompt || '').length, OUTPUT_ALLOWANCE.synthesis * 4, prices));
+            return auditExtra();
+          },
+        },
+        via
+      );
+      if (!out.provider && /^No AI model answered/.test(out.reason || '')) return res.status(503).json({ error: 'no_model', message: out.reason, run_id: runId });
+      res.json(reply(out));
+    } catch (error: any) {
+      res.status(500).json({ error: 'ask_failed', message: `The question could not be answered (${error?.message || 'unknown error'}).`, run_id: runId });
+    }
+  });
+
   app.post('/api/council/choose-agents', async (req, res) => {
     const question = typeof req.body?.question === 'string' ? req.body.question.trim().slice(0, 500) : '';
     if (!question) return res.status(400).json({ error: 'A question is needed.' });
     if (loadExamMode().on) return res.json({ agents: null, reason: EXAM_CHOICE_REASON });
     const earlier = Array.isArray(req.body?.earlier) ? req.body.earlier.filter((t: any) => t && typeof t.question === 'string') : [];
-    try {
-      const step = await executeResilientLlmStep<{ agents: Array<{ id: string; why: string }> }>({
-        stepName: 'COUNCIL_CHOOSE_AGENTS',
-        providerMode: req.body?.runtimeConfig?.providerMode || 'gemini',
-        runtimeConfig: req.body?.runtimeConfig || {},
-        thinkingLevel: ThinkingLevel.LOW,
-        systemInstruction: AGENT_CHOICE_INSTRUCTION,
-        prompt: agentChoicePrompt(question, earlier),
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            agents: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: { id: { type: Type.STRING, description: 'Agent id from the list.' }, why: { type: Type.STRING, description: 'Short reason.' } },
-                required: ['id', 'why'],
-              },
-            },
-          },
-          required: ['agents'],
-        },
-        fallbackValue: { agents: [] },
-        maxRetries: 0,
-      });
-      const out: AgentChoiceResult = step.usedFallback
-        ? { agents: null, reason: `no AI model answered (${step.failure || 'no model is set up'})` }
-        : { agents: Array.isArray(step.data?.agents) ? step.data.agents.slice(0, 5) : [], provider: step.providerUsed };
-      res.json(out);
-    } catch (error: any) {
-      const out: AgentChoiceResult = { agents: null, reason: `the AI step failed (${error?.message || 'unknown error'})` };
-      res.json(out);
-    }
+    res.json((await chooseAgentsStep(question, earlier, req.body?.runtimeConfig || {})).out);
   });
 
   app.post('/api/council/debate', async (req, res) => {

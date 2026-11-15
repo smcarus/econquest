@@ -107,6 +107,7 @@ export function scopeFor(method: string, pathname: string): Scope | null {
   if (/^\/api\/v1\/holdings(\/|$)/.test(p)) return 'write:holdings';
   if (/^\/api\/v1\/exclusions(\/|$)/.test(p)) return 'write:exclusions';
   if (/^\/api\/v1\/scenarios(\/|$)/.test(p)) return 'run:scenarios';
+  if (m === 'POST' && p === '/api/v1/council/ask') return 'ask:council';
   return null;
 }
 

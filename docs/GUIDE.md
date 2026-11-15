@@ -314,12 +314,17 @@ in without sharing your password.
 
 1. Open **Menu > Settings > API tokens**.
 2. Give the token a name (for example "Portfolio console") and tick only what it may do: read
-   figures and series, read council runs, receive events and set watches, send positions, set hidden
-   names, or run scenarios on a portfolio.
+   figures and series, read council runs, ask Council chat questions, receive events and set watches,
+   send positions, set hidden names, or run scenarios on a portfolio.
 3. Press **Make token** and copy the token at once: it is shown only once, and the app keeps only a
    fingerprint of it. Every use is written to the audit log; **Revoke** stops it straight away.
 4. Positions the other program sends appear in **Research > My holdings** marked "Sent by" and the
    token's name.
+5. A token that may ask Council chat questions gets the same answer you would get in the chat for
+   the same question: the same agents, figures and checks. Each question uses your AI model and
+   counts against the same limit on AI requests as your own questions. Hidden names never appear in
+   its answers, and only figures whose sources allow passing them on are used. Each question is
+   written to the audit log with the token's name.
 
 To keep a country or a security out of every screen, reply and event, add it under **Menu > Settings
 > Hidden names** (by ISO country code, ticker or your own entity ID). Screens then show only how many

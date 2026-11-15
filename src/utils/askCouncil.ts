@@ -186,6 +186,19 @@ function namesCountry(question: string, iso3: string, name: string, byCode = tru
 }
 
 const baseName = (n: string) => n.replace(/\s*\(.*\)\s*$/, '').trim();
+
+/**
+ * Every way a text can name a country, as global patterns for finding each mention: the name and
+ * its other names (also as the start of a longer word, so "Brazilian" counts), the capitals-only
+ * short forms and the ISO code. Group 1 is what comes before the mention. Used to keep hidden
+ * names out of answers (src/server/councilAsk.ts).
+ */
+export function countryMentionPatterns(iso3: string, name: string): RegExp[] {
+  return [
+    ...[baseName(name), ...(ALIASES[iso3] || [])].map((n) => new RegExp(`(^|[^\\p{L}])${escapeRe(n)}\\p{L}*`, 'giu')),
+    ...[...(CAPS_ALIASES[iso3] || []), iso3].map((n) => new RegExp(`(^|[^\\p{L}])${escapeRe(n)}(?=$|[^\\p{L}])`, 'gu')),
+  ];
+}
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export interface CouncilPlan {
