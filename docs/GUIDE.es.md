@@ -331,12 +331,17 @@ acceso sin compartir su contraseña.
 
 1. Abra **Menú > Configuración > Tokens de API**.
 2. Dé un nombre al token (por ejemplo «Consola de cartera») y marque solo lo que puede hacer: leer
-   cifras y series, leer las sesiones del consejo, recibir eventos y fijar vigilancias, enviar
-   posiciones, fijar nombres ocultos o ejecutar escenarios sobre una cartera.
+   cifras y series, leer las sesiones del consejo, hacer preguntas al chat del Consejo, recibir eventos
+   y fijar vigilancias, enviar posiciones, fijar nombres ocultos o ejecutar escenarios sobre una cartera.
 3. Pulse **Crear token** y cópielo enseguida: solo se muestra una vez, y la aplicación guarda solo una huella
    de él. Cada uso queda en el registro de auditoría; **Revocar** lo detiene al instante.
 4. Las posiciones que envíe el otro programa aparecen en **Investigación > Mis posiciones** marcadas
    «Enviada por» y el nombre del token.
+5. Un token que puede hacer preguntas al chat del Consejo recibe la misma respuesta que usted
+   obtendría en el chat para la misma pregunta: los mismos agentes, cifras y comprobaciones. Cada
+   pregunta usa su modelo de IA y cuenta para el mismo límite de solicitudes de IA que sus propias
+   preguntas. Los nombres ocultos nunca aparecen en sus respuestas, y solo se usan cifras cuyas fuentes
+   permiten compartirlas. Cada pregunta queda en el registro de auditoría con el nombre del token.
 
 Para que un país o un valor no aparezca en ninguna pantalla, respuesta o evento, añádalo en **Menú >
 Configuración > Nombres ocultos** (por código ISO del país, ticker o su propio identificador). Las

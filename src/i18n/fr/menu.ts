@@ -87,6 +87,7 @@ export const MENU_FR: Messages<typeof MENU> = {
   tk_scopes: "Ce qu’il peut faire",
   tk_scope_read_data: "Lire les chiffres et les séries",
   tk_scope_read_council: "Lire les séances du conseil",
+  tk_scope_ask_council: "Poser des questions au chat du Conseil (utilise le modèle d'IA et compte dans la limite de requêtes d'IA)",
   tk_scope_read_events: "Recevoir les événements et définir des surveillances",
   tk_scope_write_holdings: "Envoyer des positions",
   tk_scope_write_exclusions: "Définir les noms masqués",

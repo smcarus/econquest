@@ -8,7 +8,7 @@
  *        prints the secret once; --account puts positions it sends in that account's workspace
  *   npm run tokens -- revoke <id>
  *
- * Scopes: read:data, read:council, read:events, write:holdings, write:exclusions, run:scenarios.
+ * Scopes: read:data, read:council, ask:council, read:events, write:holdings, write:exclusions, run:scenarios.
  * Under Docker: docker compose exec econquest npm run tokens -- list
  * Uses DATA_DIR like the server (default ./data).
  */

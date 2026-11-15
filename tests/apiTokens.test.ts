@@ -9,7 +9,7 @@ import { ApiTokenStore, apiTokensFile } from '../src/utils/apiTokenStore.ts';
 import { SCOPE_LABEL } from '../src/utils/apiTokenScopes.ts';
 
 test('the six scopes, each with a label; the legacy key has the three read scopes', () => {
-  assert.deepEqual([...SCOPES], ['read:data', 'read:council', 'read:events', 'write:holdings', 'write:exclusions', 'run:scenarios']);
+  assert.deepEqual([...SCOPES], ['read:data', 'read:council', 'ask:council', 'read:events', 'write:holdings', 'write:exclusions', 'run:scenarios']);
   for (const s of SCOPES) assert.ok(SCOPE_LABEL[s]);
   assert.deepEqual([...LEGACY_SCOPES], ['read:data', 'read:council', 'read:events']);
 });
@@ -26,6 +26,8 @@ test('every address maps to one scope, and anything unlisted is closed to tokens
   assert.equal(scopeFor('GET', '/api/v1/holdings'), 'write:holdings');
   assert.equal(scopeFor('DELETE', '/api/v1/exclusions/x'), 'write:exclusions');
   assert.equal(scopeFor('POST', '/api/v1/scenarios/run'), 'run:scenarios');
+  assert.equal(scopeFor('POST', '/api/v1/council/ask'), 'ask:council');
+  assert.equal(scopeFor('GET', '/api/v1/council/ask'), null);
   for (const p of ['/api/audit', '/api/settings/keys', '/api/settings/api-tokens', '/api/backup/download', '/api/workspace/x']) assert.equal(scopeFor('GET', p), null, p);
   assert.equal(scopeFor('POST', '/api/panel'), null);
   assert.ok(tokenOnly('/api/v1/holdings'));

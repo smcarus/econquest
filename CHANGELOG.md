@@ -5,6 +5,17 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Ask Council chat from another program (scope `ask:council`): `POST /api/v1/council/ask` asks a
+  new question and gets the answer the chat gives in the app, from the same code: the AI model picks
+  the agents, the agents answer on the app's own figures, and the summary goes through the number
+  and stance checks. Every figure is cited with source, period, badge and terms page; only real
+  figures whose sources allow passing them on are used (the rest left out and counted); hidden names
+  never appear, only a count; up to 10 earlier turns; `max_cost_usd` refuses a model call before it
+  would pass the limit (prices for cloud models from `AI_PRICE_INPUT_PER_MTOK` and
+  `AI_PRICE_OUTPUT_PER_MTOK` in `.env`; a model on this computer costs nothing). Counts against the
+  AI request limit; each question is in the audit log with the token's name, correlation ID, model,
+  figures and cost. Settings > API tokens, docs/DATA_API.md, docs/openapi.json (1.4.0) and the guide
+  in English, Spanish, French and Portuguese.
 - Documentation brought up to date with the feed fixes, the usability fixes, markets and financing
   data (Group B), the policy council and weather and insurance: README and walk-through guide in
   English, Spanish, French and Portuguese (History & data: exchange rate regime, central bank assets,

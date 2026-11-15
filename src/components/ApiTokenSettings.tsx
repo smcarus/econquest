@@ -12,6 +12,7 @@ import { SCOPES, type PublicTokenView, type Scope } from '../utils/apiTokenScope
 const SCOPE_KEY: Record<Scope, Parameters<MenuT>[0]> = {
   'read:data': 'tk_scope_read_data',
   'read:council': 'tk_scope_read_council',
+  'ask:council': 'tk_scope_ask_council',
   'read:events': 'tk_scope_read_events',
   'write:holdings': 'tk_scope_write_holdings',
   'write:exclusions': 'tk_scope_write_exclusions',

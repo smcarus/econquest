@@ -90,6 +90,7 @@ export const MENU_ES: Partial<Record<Keys, string>> = {
   tk_scopes: 'Qué puede hacer',
   tk_scope_read_data: 'Leer cifras y series',
   tk_scope_read_council: 'Leer las sesiones del consejo',
+  tk_scope_ask_council: "Hacer preguntas al chat del Consejo (usa el modelo de IA y cuenta para el límite de solicitudes de IA)",
   tk_scope_read_events: 'Recibir eventos y fijar vigilancias',
   tk_scope_write_holdings: 'Enviar posiciones',
   tk_scope_write_exclusions: 'Fijar nombres ocultos',

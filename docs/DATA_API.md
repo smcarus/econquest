@@ -222,6 +222,7 @@ API tokens: give it a name (the system that will use it) and tick only what it n
 | --- | --- |
 | `read:data` | The data addresses above (series, panels, tables) and country snapshots |
 | `read:council` | The last council run per country (`/api/v1/integration/desks/...` and `/bundle/...`) |
+| `ask:council` | Ask Council chat a new question (`POST /api/v1/council/ask`); uses your AI model |
 | `read:events` | The event stream, webhooks and indicator watches |
 | `write:holdings` | Positions sent in by the outside system |
 | `write:exclusions` | The hidden-names list |
@@ -250,7 +251,7 @@ tokens only, even on a computer with sign-in off, since they are meant for outsi
 
 **The legacy key.** The integration key in `.env` (`SMCR_INTEGRATION_API_KEY`) keeps working as it
 did, and counts as a token with the three read scopes (`read:data`, `read:council`,
-`read:events`). It cannot send positions, set hidden names or run scenarios. For a new connection,
+`read:events`). It cannot ask Council chat, send positions, set hidden names or run scenarios. For a new connection,
 prefer a named token: it can be limited and revoked without changing `.env`.
 
 ### Correlation IDs
@@ -461,3 +462,111 @@ Then the position's `pnl_usd` is `null` and `pnl_known_usd` gives the known part
 `"hypothetical": true`: it is a first-order estimate (duration times the yield or spread move,
 notional times the currency move), not a forecast or a valuation. GET `/api/v1/scenarios` lists the
 episodes and which countries the saved series cover for each.
+
+### Asking Council chat
+
+With a token that has `ask:council`, an outside system can ask Council chat a new question and get
+the answer the chat in the app gives for the same question and figures: the AI model picks the desk
+agents, the agents answer on the app's own figures, and the synthesis agent writes the summary under
+the usual checks (a sentence with a number that is not in the agents' figures, or one that calls an
+agent's stance the opposite way, is removed). It runs the same code as the chat; there is no second
+answer path.
+
+POST `/api/v1/council/ask` with:
+
+```json
+{
+  "question": "Whose government debt is high and rising?",
+  "iso3": "TUR",
+  "history": [
+    { "role": "user", "content": "Which central banks look behind the curve?" },
+    { "role": "council", "content": "Turkey looks behind the curve." }
+  ],
+  "max_cost_usd": 0.05
+}
+```
+
+- `question`: up to 2,000 characters.
+- `iso3` (optional): one country, as the chat's country picker. Without it the countries come from
+  the question, or the whole watchlist when it names none.
+- `history` (optional): at most 10 earlier turns of the same conversation, oldest first. A `user`
+  turn is an earlier question and the `council` turn after it is that answer's headline, as the chat
+  sends them to the model. Nothing is remembered between calls.
+- `max_cost_usd` (optional): the most this question may cost. See "Cost" below.
+
+The countries are the token maker's first saved watchlist (Menu > Watchlists), the market benchmarks
+the chat adds, and any country named in the question or in `iso3` that is off the watchlist (its
+figures are pulled for this request, as "Add" does in the chat). The AI model is the one saved under
+Menu > Settings > AI model.
+
+The reply:
+
+```json
+{
+  "answer": "Headline.\n- Point one.\n- Point two.",
+  "brief": { "headline": "...", "points": ["..."], "disagreements": ["..."], "gaps": ["..."] },
+  "agents": [ { "id": "fiscal", "label": "Fiscal & Debt", "summary": "Turkey: Government debt is ...", "stance": [ { "iso3": "TUR", "dim": "policy", "call": "tight" } ] } ],
+  "citations": [ { "label": "Turkey: Government debt", "value": "25.1% of GDP", "source": "IMF World Economic Outlook, 2025", "date": "2025", "badge": "official", "url": "https://www.imf.org/en/About/copyright-and-terms", "iso3": "TUR", "agent": "Fiscal & Debt", "shareable": true } ],
+  "checks": { "number_trace": { "status": "pass", "removed": 0 }, "stance_check": { "status": "pass", "removed": 0 } },
+  "hidden_count": 0,
+  "hidden_note": null,
+  "left_out": { "not_shareable": 0, "not_real": 0 },
+  "scope": "the countries asked",
+  "model": "Local Ollama (qwen2.5:32b · Referee)",
+  "cost_usd": 0,
+  "run_id": "ask_0f3a...",
+  "asked_at": "2026-11-15T09:00:00.000Z",
+  "disclaimer": "Research output from the app's own figures, not investment advice. ..."
+}
+```
+
+- `answer` is the headline and points as one text; `brief` has them apart. When no summary was
+  written, both are `null` and `reason` says why (for example, the agents found no figures).
+- `citations`: every figure the answer rests on, once each, with its source and the period read
+  from the source text (`date`: a day, month, quarter or year, or `null` when the source names none).
+  `badge` is `official` for a published figure and `not_validated` for one the app worked out (a gap,
+  a rule rate); such a figure names its method as the source, and has no `date` or `url` of its own.
+  `url` is the source's terms page from the licence register (docs/DATA_LICENCES.md).
+- `checks`: `pass` when a summary was written, with the number of sentences each check removed;
+  `no_answer` when none was.
+- `run_id` names this call in the audit log.
+
+**Only real figures that may be passed on.** Estimates, built-in samples and your own documents are
+never used. A figure whose source the licence register does not mark as free to share is left out,
+with the finding it belongs to (its reading quotes the figure), and counted in `left_out`. A figure
+the app worked out from other figures counts as the app's own; the figures it came from are in the
+same finding and are checked. Central banks' stated inflation targets are not in the licence
+register yet, so findings that use one (most of the central bank agent's) are left out and counted.
+
+**Hidden names.** Hidden names in the question and history are replaced with `[hidden]` before any
+step sees them, hidden countries are taken out of the countries the agents answer on, and any
+finding, figure or sentence of the summary that still names one is left out. The reply carries only
+`hidden_count` and `hidden_note` ("1 item hidden"). An `iso3` on the list answers `404 HIDDEN`.
+Countries are recognised by name, other common names (also as the start of a longer word, so
+"Brazilian" counts), short forms and ISO code; securities by ISIN, LEI, CIK, ticker (in capitals)
+and entity ID.
+
+**Cost.** A model on this computer (Ollama, or an OpenAI-compatible server on localhost) costs
+nothing, and `cost_usd` is `0`. The app has no price list for cloud models: set
+`AI_PRICE_INPUT_PER_MTOK` and `AI_PRICE_OUTPUT_PER_MTOK` (US dollars per million tokens) in `.env`
+to price them. The estimate counts characters / 4 as tokens and each step's answer at its longest
+allowance, so it is an upper estimate, not the provider's bill (Gemini's thinking tokens are not
+counted). With `max_cost_usd`, each model call is priced before it is made; one that would take the
+total past the limit is refused with `402` and `"error": "cost_limit"`, and nothing more runs. A
+call that could reach a cloud model with no price set is refused the same way, since its cost is
+not known. Without prices, `cost_usd` is `null` when a cloud model answered. Google Gemini counts as
+reachable whenever `GEMINI_API_KEY` is set, because the app tries it when the chosen model does not
+answer.
+
+**Limits and the audit log.** Each question counts against the same AI request limit as the token
+maker's own questions in the app (about 10 a minute, 20 at once). Every call is in the audit log: an
+"API tokens" entry for the call, and a "Council" entry with the token's name, the correlation ID
+(when the call sent `X-Correlation-Id`), the question as it reached the model, the model, every
+figure used with its source, the run ID and the cost.
+
+Errors: `401` without a token; `403 TOKEN_SCOPE` without `ask:council`; `422` for an empty question,
+one over 2,000 characters, more than 10 history turns, or a malformed field (`error` names which);
+`402 cost_limit`; `429` at the AI request limit (with `Retry-After`); `503` with `"error": "no_model"`
+when no AI model answered (set one up under Menu > Settings > AI model), or `"exam_mode"` while
+exam mode is on.
+

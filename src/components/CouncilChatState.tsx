@@ -13,12 +13,11 @@ import { pickPrevious, whatChanged, type ChangeReport } from '../utils/whatChang
 import type { PolicyDoc } from '../utils/policyDocs';
 import { findChallenges, type DebateResult } from '../utils/agentDebate';
 import { type FullCouncilPhase } from '../utils/councilNetwork';
-import { planCouncil, planFollowUp, applyAgentChoice, type AgentChoiceResult, type EarlierTurn, runCouncil, chartAnswer, answersForModel, type AgentAnswer, type CouncilPlan, type SavedCouncilBrief, type SynthesisResult } from '../utils/askCouncil';
+import { type AgentChoiceResult, type EarlierTurn, answersForModel, type AgentAnswer, type CouncilPlan, type SavedCouncilBrief, type SynthesisResult } from '../utils/askCouncil';
 import type { CouncilTiming } from '../utils/councilTiming';
-import { focusQuestion, withExplainAgents, type ExplainFocus } from '../utils/explain';
+import { focusQuestion, type ExplainFocus } from '../utils/explain';
 import { EXPLAIN_EVENT } from '../utils/explainHandoff';
-import { computeChart, fetchChartSeries } from '../utils/councilChart';
-import { asksForecast, forecastAnswer, type CountryModels } from '../utils/forecastAgent';
+import { councilAnswers, hasFindings, NO_FIGURES_REASON } from '../utils/councilQuestion';
 
 const AI_RUNTIME_STORAGE_KEY = 'econquest_ai_runtime_config_v1';
 export function runtimeConfig(): Record<string, unknown> {
@@ -27,13 +26,6 @@ export function runtimeConfig(): Record<string, unknown> {
   } catch {
     return {};
   }
-}
-
-/** The full nine-agent council on the country open now, run from the conversation. */
-/** The app's nowcast and forecast for each country (src/utils/forecastAgent.ts); a failed call reads Missing. */
-async function fetchCountryModels(countries: Array<{ iso3: string; countryName: string }>): Promise<CountryModels[]> {
-  const get = (u: string) => fetch(u).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-  return Promise.all(countries.map(async (c) => ({ iso3: c.iso3, countryName: c.countryName, nowcast: await get(`/api/nowcast/${encodeURIComponent(c.iso3)}`), forecast: await get(`/api/forecast/${encodeURIComponent(c.iso3)}`) })));
 }
 
 export interface FullCouncilStep {
@@ -175,23 +167,28 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
     else if (mode === 'new') setPast([]);
     setEarlier(history);
     setQuestion('');
-    const wordPlan = asFollowUp && asked ? planFollowUp(text, asked.plan, items) : planCouncil(text, items, scope || undefined);
-    setChoosing(true);
-    // Explain questions ("why…", "what does it mean for…") also bring the agents for each lens.
-    const plan = withExplainAgents(applyAgentChoice(wordPlan, await chooseAgents(text, history)), text, focus);
-    setChoosing(false);
-    const desk = runCouncil(text, plan, items, new Date(), docs);
-    // The Chart Agent: fetch the series the question names from the app's own history, draw, test.
-    const charted = plan.chart ? [chartAnswer(plan.chart, computeChart(plan.chart, await fetchChartSeries(plan.chart))), ...desk] : desk;
-    // Nowcast & Forecast: the app's own estimates join when the question asks about the path ahead.
-    const answers = asksForecast(text) && plan.countries.length ? [...charted, forecastAnswer(await fetchCountryModels(plan.countries.slice(0, 4)))] : charted;
+    // The same steps as the data API's ask:council (src/utils/councilQuestion.ts).
+    const { plan, answers } = await councilAnswers(
+      { question: text, items, history, previous: asFollowUp && asked ? asked.plan : undefined, scopeIso3: asFollowUp ? undefined : scope || undefined, focus, docs },
+      {
+        chooseAgents: async (q, h) => {
+          setChoosing(true);
+          try {
+            return await chooseAgents(q, h);
+          } finally {
+            setChoosing(false);
+          }
+        },
+        get: (u) => fetch(u),
+      }
+    );
     const askedAt = new Date().toISOString();
     setAsked({ question: text, plan, answers, askedAt, startedAt: (asFollowUp || mode === 'replace') && asked ? asked.startedAt : askedAt });
     setSynthesis(null);
     setDebate(null);
     setCopied(null);
-    if (!answers.some((a) => a.findings.length)) {
-      setSynthesis({ brief: null, removed: [], reason: 'The agents found no figures to answer with, so there is nothing to summarise.' });
+    if (!hasFindings(answers)) {
+      setSynthesis({ brief: null, removed: [], reason: NO_FIGURES_REASON });
       return;
     }
     setWriting(true);

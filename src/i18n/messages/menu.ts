@@ -93,6 +93,7 @@ export const MENU = defineMessages('menu', {
   tk_scopes: 'What it may do',
   tk_scope_read_data: 'Read figures and series',
   tk_scope_read_council: 'Read council runs',
+  tk_scope_ask_council: 'Ask Council chat questions (uses the AI model and counts against the AI request limit)',
   tk_scope_read_events: 'Receive events and set watches',
   tk_scope_write_holdings: 'Send positions',
   tk_scope_write_exclusions: 'Set hidden names',
