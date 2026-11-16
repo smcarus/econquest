@@ -122,12 +122,16 @@ try {
     }
     where = 'one country: History & data';
     await page.locator('[data-country-page] button.ui-tab', { hasText: 'History & data' }).first().click();
-    await page.waitForSelector('#tool-forecast', { state: 'attached', timeout: 15_000 });
+    // The tools sit behind a grouped menu; one opens at a time.
+    await page.waitForSelector('[data-tool-menu]', { timeout: 15_000 });
     const tabs = await page.locator('[data-country-page] button.ui-tab').count();
     if (tabs !== 4) throw new Error(`the country page has ${tabs} section tabs, expected 4`);
 
     // Small gap model: offline, the fill button names what is missing and fills nothing; typed numbers draw a path.
     where = 'one country: small gap model';
+    if (await page.locator('[data-tool-open="tool-gap-model"]').count()) await page.locator('[data-tool-open="tool-gap-model"]').click();
+    else await page.locator('[data-tool-select]').selectOption('tool-gap-model');
+    await page.waitForSelector('#tool-gap-model', { state: 'attached', timeout: 15_000 });
     const gm = page.locator('[data-gap-model]');
     await gm.waitFor({ timeout: 15_000 });
     await gm.locator('[data-gap-fill]').click();

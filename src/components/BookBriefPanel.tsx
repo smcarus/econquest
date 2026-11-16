@@ -55,7 +55,7 @@ export const BookBriefPanel: React.FC<{
         </header>
         <BriefSummary brief={brief} />
       </section>
-      <BriefGroups brief={brief} />
+      <BriefGroups brief={brief} picker />
     </div>
   );
 };

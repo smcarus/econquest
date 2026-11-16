@@ -60,6 +60,7 @@ import { BookBriefPanel } from './components/BookBriefPanel';
 import { HoldingsPanel } from './components/HoldingsPanel';
 import { PortfolioOverlayPanel } from './components/PortfolioOverlayPanel';
 import { START_REVIEW_EVENT } from './utils/reviewHandoff';
+import { COUNTRY_TOOL_EVENT, isCountryTool } from './utils/countryTools';
 import { OPEN_IDEAS_EVENT } from './utils/ideaHandoff';
 import { EXPLAIN_EVENT } from './utils/explainHandoff';
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './utils/refereeModel';
@@ -1134,6 +1135,8 @@ export default function App() {
     let tries = 0;
     const go = () => {
       const el = document.getElementById(anchor);
+      // A History & data tool draws only once picked: ask the country page to open it.
+      if (!el && isCountryTool(anchor)) window.dispatchEvent(new CustomEvent(COUNTRY_TOOL_EVENT, { detail: anchor }));
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       else if (tries++ < 25) window.setTimeout(go, 200);
     };
