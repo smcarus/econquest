@@ -8,6 +8,17 @@ export const REPORTS = defineMessages('reports', {
   // Reports page
   rp_aria: 'Reports sections',
   rp_title: 'Reports',
+  rp_tab_note: 'Write a note',
+  rp_tab_note_hint: 'Country note, issuer note, sustainability, portfolio and client reviews, and the council brief. Every figure names its source.',
+  rp_tab_reviews: 'Policy reviews',
+  rp_tab_reviews_hint: 'Step-by-step case files for finding ways to improve policy in one country.',
+  rp_tab_docs: 'Council documents',
+  rp_tab_docs_hint: 'Agent and synthesis documents you saved from Council chat.',
+  rp_tab_notebooks: 'Notebooks',
+  rp_tab_notebooks_hint: 'Saved research grouped by topic, with your notes, downloaded as one Markdown file.',
+  rp_tab_teaching: 'Teaching',
+  rp_tab_teaching_hint: 'A past rate decision as a student handout and a teacher copy.',
+  im_showText: 'Edit text',
   rp_subtitle: 'Documents to hand to the investment committee, risk and clients. Current country: {country}',
   rp_tools: '{tab} tools',
   // Teaching episodes

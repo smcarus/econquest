@@ -6,6 +6,17 @@ export const REPORTS_ES: Partial<Record<Keys, string>> = {
   // Reports page
   rp_aria: 'Secciones de Informes',
   rp_title: 'Informes',
+  rp_tab_note: 'Escribir una nota',
+  rp_tab_note_hint: 'Nota de país, nota de emisor, sostenibilidad, revisiones de cartera y de clientes, y el informe del consejo. Cada cifra indica su fuente.',
+  rp_tab_reviews: 'Revisiones de política',
+  rp_tab_reviews_hint: 'Expedientes paso a paso para encontrar formas de mejorar la política de un país.',
+  rp_tab_docs: 'Documentos del consejo',
+  rp_tab_docs_hint: 'Documentos de agentes y de síntesis que usted guardó desde el chat del consejo.',
+  rp_tab_notebooks: 'Cuadernos',
+  rp_tab_notebooks_hint: 'Investigación guardada agrupada por tema, con sus notas, descargada como un solo archivo Markdown.',
+  rp_tab_teaching: 'Docencia',
+  rp_tab_teaching_hint: 'Una decisión de tipos pasada como hoja para estudiantes y copia para el docente.',
+  im_showText: 'Editar texto',
   rp_subtitle: 'Documentos para entregar al comité de inversiones, a riesgos y a los clientes. País actual: {country}',
   rp_tools: 'Herramientas de {tab}',
   // Teaching episodes

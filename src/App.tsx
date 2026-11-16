@@ -54,8 +54,6 @@ import {
   WorkspacePage,
 
   PORTFOLIO_TABS,
-  REPORTS_TABS,
-  findTabForDesk,
 } from './components/WorkspacePage';
 import { PortfolioSummary } from './components/PortfolioSummary';
 import { BookBriefPanel } from './components/BookBriefPanel';
@@ -202,7 +200,16 @@ type NavSectionId =
 
 
 /** Reports in the core view: the note builder alone. */
-const CORE_REPORTS_TABS: WorkspaceTab[] = [{ id: 'ic', label: 'Notes', hint: '', desks: ['ic_memo_builder'] }];
+/** Reports: one tab per job, so each opens on its own instead of five panels stacked down one page. */
+type ReportsView = 'ic' | 'reviews' | 'docs' | 'notebooks' | 'teaching';
+const REPORTS_VIEWS: ReportsView[] = ['ic', 'reviews', 'docs', 'notebooks', 'teaching'];
+/** Which Reports tab holds each anchor that Tools, worked examples and the chat link to. */
+const REPORTS_VIEW_BY_ANCHOR: Record<string, ReportsView> = {
+  'tool-policy-reviews': 'reviews',
+  'tool-council-docs': 'docs',
+  'tool-notebooks': 'notebooks',
+  'tool-episodes': 'teaching',
+};
 
 export default function App() {
   // Countries the user added (names only) go into SOVEREIGN_CATALOG on boot.
@@ -366,7 +373,7 @@ export default function App() {
   const [countryTab, setCountryTab] = useState<CountryTabId>(DEFAULT_COUNTRY_TAB_ID as CountryTabId);
   const [countryBriefView, setCountryBriefView] = useState<BriefView>('economist');
   const [portfolioTab, setPortfolioTab] = useState<string>(PORTFOLIO_TABS[0].id);
-  const [reportsTab, setReportsTab] = useState<string>(REPORTS_TABS[0].id);
+  const [reportsTab, setReportsTab] = useState<ReportsView>('ic');
   // Report template asked for from a brief or Workspace; otherwise the council brief.
   const [requestedReport, setRequestedReport] = useState<ReportTemplate | null>(null);
   // Bumped when Today sends a new council brief, so Reports rebuilds from it.
@@ -396,14 +403,11 @@ export default function App() {
     setHoldingsState(full);
     saveHoldings(full);
   };
-  const openWorkspace = (area: 'portfolio' | 'reports', deskId?: string) => {
-    const tabs = area === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS;
-    const current = area === 'portfolio' ? portfolioTab : reportsTab;
-    const tab = (deskId && findTabForDesk(tabs, deskId)) || tabs.find((t) => t.id === current) || tabs[0];
-    (area === 'portfolio' ? setPortfolioTab : setReportsTab)(tab.id);
-    const desk = deskId && tab.desks.includes(deskId) ? deskId : tab.desks.includes(activeNavSection) ? activeNavSection : tab.desks[0];
-    setActiveNavSection(desk as NavSectionId);
-    setAppArea(area);
+  /** Opens Reports on a tab (the one last open when none is named). */
+  const openWorkspace = (_area: 'reports', view?: ReportsView) => {
+    if (view) setReportsTab(view);
+    setActiveNavSection('ic_memo_builder' as NavSectionId);
+    setAppArea('reports');
     window.scrollTo({ top: 0 });
   };
   const openCountryPage = (tabId?: string) => {
@@ -1155,7 +1159,7 @@ export default function App() {
       window.scrollTo({ top: 0 });
       if (t.anchor) scrollToAnchor(t.anchor);
     } else {
-      openWorkspace('reports', t.anchor ? 'ic_memo_builder' : undefined);
+      openWorkspace('reports', t.anchor ? REPORTS_VIEW_BY_ANCHOR[t.anchor] ?? 'ic' : undefined);
       if (t.anchor) scrollToAnchor(t.anchor);
     }
   };
@@ -1184,11 +1188,11 @@ export default function App() {
   const sendCouncilToReports = () => {
     setRequestedReport('council');
     setReportNonce((n) => n + 1);
-    openWorkspace('reports', 'ic_memo_builder');
+    openWorkspace('reports', 'ic');
   };
   // "Start a policy review" from a Council chat answer: open Reports, where the panel picks up the prefill.
   useEffect(() => {
-    const go = () => openWorkspace('reports', 'ic_memo_builder');
+    const go = () => openWorkspace('reports', 'reviews');
     window.addEventListener(START_REVIEW_EVENT, go);
     return () => window.removeEventListener(START_REVIEW_EVENT, go);
   });
@@ -1768,7 +1772,7 @@ export default function App() {
               briefView={countryBriefView}
               onWriteNote={(view) => {
                 setRequestedReport(view);
-                openWorkspace('reports', 'ic_memo_builder');
+                openWorkspace('reports', 'ic');
               }}
             />
             </PanelBoundary>
@@ -1802,7 +1806,7 @@ export default function App() {
                       view="pm"
                       onWriteReport={(view) => {
                         setRequestedReport(view === 'client' ? 'client_review' : 'book');
-                        openWorkspace('reports', 'ic_memo_builder');
+                        openWorkspace('reports', 'ic');
                       }}
                     />
                   </PanelBoundary>
@@ -1868,24 +1872,27 @@ export default function App() {
               ariaLabel={trp('rp_aria')}
               title={trp('rp_title')}
               subtitle={trp('rp_subtitle', { country: run.countryName })}
-              tabs={CORE_REPORTS_TABS}
+              tabs={REPORTS_VIEWS.map((id) => ({
+                id,
+                label: trp(id === 'ic' ? 'rp_tab_note' : id === 'reviews' ? 'rp_tab_reviews' : id === 'docs' ? 'rp_tab_docs' : id === 'notebooks' ? 'rp_tab_notebooks' : 'rp_tab_teaching'),
+                hint: trp(id === 'ic' ? 'rp_tab_note_hint' : id === 'reviews' ? 'rp_tab_reviews_hint' : id === 'docs' ? 'rp_tab_docs_hint' : id === 'notebooks' ? 'rp_tab_notebooks_hint' : 'rp_tab_teaching_hint'),
+                desks: ['ic_memo_builder'],
+              }))}
               activeTabId={reportsTab}
-              activeDesk={activeNavSection}
-              onChangeTab={(tabId) => {
-                setReportsTab(tabId);
-                const cfg = REPORTS_TABS.find((t) => t.id === tabId) || REPORTS_TABS[0];
-                setActiveNavSection(cfg.desks[0] as NavSectionId);
-              }}
-              onChangeDesk={(d) => setActiveNavSection(d as NavSectionId)}
-              renderDesk={(d) =>
-                d === 'ic_memo_builder' ? (
-                  <Suspense fallback={<DeskLoading />}>
-                  <div id="tool-policy-reviews" className="mb-3 scroll-mt-4">
+              activeDesk="ic_memo_builder"
+              onChangeTab={(tabId) => setReportsTab(tabId as ReportsView)}
+              onChangeDesk={() => undefined}
+              renderDesk={() => (
+                <Suspense fallback={<DeskLoading />}>
+                  {reportsTab === 'reviews' && (
+                  <div id="tool-policy-reviews" className="scroll-mt-4">
                     <PanelBoundary name="Policy reviews">
                       <PolicyReviews countries={liveWatchlistItems} defaultIso3={run.iso3} />
                     </PanelBoundary>
                   </div>
-                  <div id="tool-council-docs" className="mb-3 scroll-mt-4">
+                  )}
+                  {reportsTab === 'docs' && (
+                  <div id="tool-council-docs" className="scroll-mt-4">
                     <PanelBoundary name="Council documents">
                       <SavedCouncilDocuments
                         items={liveWatchlistItems}
@@ -1897,8 +1904,10 @@ export default function App() {
                       />
                     </PanelBoundary>
                   </div>
+                  )}
+                  {reportsTab === 'ic' && (
                   <IcMemoBuilder
-                    key={`${d}-${requestedReport || openingReport}-${reportNonce}`}
+                    key={`ic_memo_builder-${requestedReport || openingReport}-${reportNonce}`}
                     run={run}
                     holdings={holdings}
                     riskLookup={liveRiskLookup}
@@ -1906,19 +1915,23 @@ export default function App() {
                     defaultAudience={visibleReport(requestedReport || openingReport)}
                     audiences={CORE_REPORTS}
                   />
-                  <div id="tool-notebooks" className="mt-3 scroll-mt-4">
+                  )}
+                  {reportsTab === 'notebooks' && (
+                  <div id="tool-notebooks" className="scroll-mt-4">
                     <PanelBoundary name="Research notebooks">
                       <ResearchNotebooks countries={liveWatchlistItems} />
                     </PanelBoundary>
                   </div>
-                  <div id="tool-episodes" className="mt-3 scroll-mt-4">
+                  )}
+                  {reportsTab === 'teaching' && (
+                  <div id="tool-episodes" className="scroll-mt-4">
                     <PanelBoundary name="Teaching episodes">
                       <TeachingEpisodes countries={liveWatchlistItems} />
                     </PanelBoundary>
                   </div>
-                  </Suspense>
-                ) : null
-              }
+                  )}
+                </Suspense>
+              )}
             />
             </PanelBoundary>
           )}

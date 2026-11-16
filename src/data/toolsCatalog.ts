@@ -378,7 +378,7 @@ export const READY_TOOLS: ReadyTool[] = [
     title: 'Research notebooks',
     what: 'Saved council conversations and documents grouped by topic, with your notes, downloaded as one Markdown file with every source and reference.',
     sources: 'Your saved research (data/local/research.json)',
-    target: { area: 'reports' },
+    target: { area: 'reports', anchor: 'tool-notebooks' },
   },
   {
     id: 'teaching_episodes',
@@ -386,7 +386,7 @@ export const READY_TOOLS: ReadyTool[] = [
     title: 'Teaching episodes',
     what: 'A country, a past rate decision and your questions; a student handout with the data the week before and a teacher copy with what the bank did.',
     sources: 'BIS policy rates, monthly inflation, OECD leading indicator, central bank targets',
-    target: { area: 'reports' },
+    target: { area: 'reports', anchor: 'tool-episodes' },
   },
 ];
 
