@@ -269,7 +269,7 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
           <p className="ui-label">{t('h_pick')}</p>
         </header>
         <div className="p-2">
-          <ul>
+          <ul className="max-h-[26rem] overflow-y-auto">
             {(list || []).map((s) => (
               <li key={s.id}>
                 <button
@@ -289,8 +289,11 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
             ))}
           </ul>
           {missing.length > 0 && (
-            <>
-              <h3 className="mt-3 px-2 text-xs font-medium text-slate-500 dark:text-slate-400">{t('h_noHistory')}</h3>
+            // Folded so the list of figures to chart stays short; each reason is one click away.
+            <details className="mt-3" data-no-history={missing.length}>
+              <summary className="cursor-pointer px-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                {t('h_noHistory')} ({missing.length})
+              </summary>
               <ul className="mt-1">
                 {groupMissing(missing).map((g) => (
                   <li key={g.reason} className="px-2 py-1 text-xs" data-missing="true">
@@ -299,7 +302,7 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
                   </li>
                 ))}
               </ul>
-            </>
+            </details>
           )}
         </div>
       </section>

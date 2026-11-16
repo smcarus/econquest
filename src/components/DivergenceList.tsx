@@ -1,12 +1,13 @@
 import { CDS_HIDDEN } from '../utils/cdsHidden';
 import { ValidationBadge } from './ValidationBadge';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import type { LiveWatchlistItem } from '../types/council';
 import { QUALITY_LABEL, rankDivergences, type LastLook, type Quality } from '../utils/divergences';
 import { formatPeriod } from '../utils/officialYields';
 import { useT, useTx } from '../i18n/useLang';
 import { TOOLS } from '../i18n/messages/tools';
+import { RESEARCH } from '../i18n/messages/research';
 
 const QUALITY_CLASS: Record<Quality, string> = {
   live: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
@@ -23,11 +24,17 @@ export const DivergenceList: React.FC<{
   lastLook?: LastLook | null;
   onOpenCountry: (item: LiveWatchlistItem) => void;
   limit?: number;
-}> = ({ items, lastLook, onOpenCountry, limit = 8 }) => {
+  /** Show only this many until "Show all" is pressed. */
+  collapsed?: number;
+}> = ({ items, lastLook, onOpenCountry, limit = 8, collapsed }) => {
   const t = useT(TOOLS);
+  const tr = useT(RESEARCH);
   const tx = useTx();
+  const [all, setAll] = useState(false);
   const ranked = useMemo(() => rankDivergences(items, lastLook), [items, lastLook]);
-  const shown = ranked.slice(0, limit);
+  const capped = ranked.slice(0, limit);
+  const folds = !!collapsed && capped.length > collapsed;
+  const shown = folds && !all ? capped.slice(0, collapsed) : capped;
 
   return (
     <section className="ui-panel" data-divergences="true">
@@ -85,6 +92,11 @@ export const DivergenceList: React.FC<{
             );
           })}
         </ol>
+      )}
+      {folds && (
+        <button type="button" className="mx-4 mt-1 text-xs text-blue-700 dark:text-blue-300 hover:underline" onClick={() => setAll((v) => !v)} data-divergences-more>
+          {all ? tr('showFewer') : tr('showAllN', { n: capped.length })}
+        </button>
       )}
       <p className="px-4 py-2 text-xs text-slate-500 dark:text-slate-400">
         {t('dv_rules')}

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import { toLive } from '../utils/liveFigures';
 import { emptyGroupReasons, marketsMacroBrief, splitEmptyGroups } from '../utils/marketsMacro';
@@ -8,6 +8,7 @@ import { useMarketEdgeAnchors } from './MarketEdgeScreen';
 import type { BriefRow } from '../utils/countryNotes';
 import { useT, useTx } from '../i18n/useLang';
 import { BRIEF } from '../i18n/messages/brief';
+import { RESEARCH } from '../i18n/messages/research';
 
 /** Rows the Brief tab already shows; MarketEdge leaves them out of its first group. */
 const ON_BRIEF = new Set(['Real GDP growth', 'CPI inflation', 'Primary balance', 'Debt / GDP', 'Current account', 'FX reserves']);
@@ -41,7 +42,10 @@ export const MarketsMacroPanel: React.FC<{
   afterSummary?: React.ReactNode;
 }> = ({ run, peers, onOpenCompare, afterSummary }) => {
   const t = useT(BRIEF);
+  const tr = useT(RESEARCH);
   const tx = useTx();
+  // One of the three parts at a time (Economy and policy first), so the section stays about two screens.
+  const [part, setPart] = useState<string | null>(null);
   const anchors = useMarketEdgeAnchors();
   // Peers without their built-in figures (utils/liveFigures.ts).
   const livePeers = useMemo(() => peers.map(toLive), [peers]);
@@ -85,14 +89,26 @@ export const MarketsMacroPanel: React.FC<{
         <BriefSummary brief={brief} />
       </section>
       {afterSummary}
-      {split.shown.map((sec) =>
-        sec.groups.length ? (
-          <div key={sec.title} className="space-y-2">
-            <h3 className="ui-section-title pt-2">{t(sec.key)}</h3>
+      {(() => {
+        const parts = split.shown.filter((sec) => sec.groups.length);
+        const sec = parts.find((x) => x.key === part) ?? parts[0];
+        if (!sec) return null;
+        return (
+          <div className="space-y-2" data-markets-part={sec.key}>
+            {parts.length > 1 && (
+              <div className="flex flex-wrap gap-1.5 pt-1" role="tablist" aria-label={tr('mk_aria')}>
+                {parts.map((x) => (
+                  <button key={x.key} type="button" role="tab" aria-selected={x.key === sec.key} className="ui-pill" onClick={() => setPart(x.key)} data-markets-pick={x.key}>
+                    {t(x.key)}
+                  </button>
+                ))}
+              </div>
+            )}
+            {parts.length === 1 && <h3 className="ui-section-title pt-2">{t(sec.key)}</h3>}
             <BriefGroups brief={{ ...brief, groups: sec.groups }} country={run} />
           </div>
-        ) : null
-      )}
+        );
+      })()}
 
       {split.empty.length > 0 && (
         <details className="ui-panel" data-empty-panels={split.empty.length}>

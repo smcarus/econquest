@@ -74,7 +74,8 @@ export const RegimeQuadrant: React.FC<{ items: LiveWatchlistItem[]; onOpenCountr
             </div>
           )}
         </div>
-        <div className="lg:col-span-2 space-y-2">
+        {/* The country list scrolls beside the chart instead of running far below it. */}
+        <div className="lg:col-span-2 space-y-2 max-h-80 overflow-y-auto pr-1" data-regime-list="true">
           <ul className="divide-y divide-slate-100 dark:divide-slate-800">
             {points.map((p) => {
               const item = items.find((i) => i.iso3 === p.iso3);
