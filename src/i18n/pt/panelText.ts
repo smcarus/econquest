@@ -702,6 +702,7 @@ export const PANEL_TEXT_PT: Record<string, string> = {
   "IMF Fiscal Monitor, general government net lending/borrowing (GGXCNL_G01_GDP_PT)": "Monitor Fiscal do FMI, capacidade/necessidade de financiamento do governo geral (GGXCNL_G01_GDP_PT)",
   // PA1 remittances
   "No saved World Bank history for this country yet (Data health > World Bank)": "Ainda não há histórico do Banco Mundial salvo para este país (Saúde dos dados > Banco Mundial)",
+  "The file has no month with spending yet, so nothing can be set against the year": "O arquivo ainda não tem nenhum mês com gasto, então nada pode ser comparado com o ano",
   "The IDA statement of credits could not be read, so no paid-out share is shown": "Não foi possível ler o extrato de créditos da AID, então a parte desembolsada não é mostrada",
   "None of these projects is an IDA credit or grant in the IDA statement (IBRD loans have no paid-out figure here yet)": "Nenhum destes projetos é um crédito ou doação da AID no extrato da AID (os empréstimos do BIRD ainda não têm número de desembolso aqui)",
   "The World Bank lists no active project in this country": "O Banco Mundial não tem nenhum projeto ativo neste país",

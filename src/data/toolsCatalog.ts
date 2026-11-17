@@ -277,6 +277,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-budget-credibility' },
   },
   {
+    id: 'budget_execution',
+    category: 'history',
+    title: "Budget execution (your file)",
+    what: "Load your approved budget and monthly spending by ministry or programme from a CSV file and see spending against the share of the fiscal year gone, lines behind or ahead, and a same-pace year-end figure. Kept on this computer only.",
+    sources: "Your own file",
+    target: { area: 'country', tab: 'history', anchor: 'tool-budget-execution' },
+  },
+  {
     id: 'remittances',
     category: 'history',
     title: 'Remittances',

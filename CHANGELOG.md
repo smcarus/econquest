@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Budget execution tracker (R4): Research > History & data takes your approved budget and monthly
+  spending by ministry or programme from a CSV file (columns line, approved, month, spent; a
+  template is offered) and shows each line's share spent against the share of the fiscal year gone,
+  lines running behind or ahead by more than 10 points, the gap in points, months missing, and a
+  same-pace year-end figure only where no month is missing. The fiscal year start month, unit and
+  source are required. The file is kept on this computer only (data/local/budget-execution/); the
+  audit log records the file's SHA-256, never its contents. Four languages.
+
 - World Bank projects (R5): Research > History & data lists the active World Bank projects in the
   country with the amount committed, approval and closing dates and the share of each project's
   planned time gone, largest first. For IDA credits and grants it adds the share paid out, from the

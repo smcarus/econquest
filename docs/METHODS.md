@@ -43,6 +43,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Behavioural policy check | Research | Description, not a tested signal | None |
 | Fiscal rules check | Research | Description, not a tested signal | None |
 | World Bank projects | Research | Description, not a tested signal | None |
+| Budget execution (your file) | Research | Description, not a tested signal | None |
 | Budget credibility | Research | Description, not a tested signal | None |
 | Who pays for a policy | Research | Description, not a tested signal | None |
 | Debt restructuring calculator | Research | Description, not a tested signal | None |
@@ -552,6 +553,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: published project amounts and dates, no forward call.
 - **Limits:** IBRD loans have no paid-out figure yet; projects often pay out slowly at first (an S-shaped curve), so the 25-point rule is a prompt to look, not a finding; other donors are not included (IATI parked); the list is downloaded weekly.
 - **Code:** `src/utils/wbProjects.ts, src/server/feeds/wbProjects.ts, src/components/WbProjectsPanel.tsx`
+
+### Budget execution (your file)
+
+- **Says:** For a budget file you load: how much of each line's approved budget has been spent against the share of the fiscal year gone, which lines are behind or ahead, and where spending at the same pace would end the year.
+- **Rule:** Months gone = months from the first month of the fiscal year (set by you) to the latest month in the file. Spent % = sum of monthly spending ÷ approved × 100; gap = spent % - months gone ÷ 12 × 100; behind below -10 points, ahead above +10. Same pace = spent ÷ months gone × 12, only when every month gone has a figure.
+- **Reads:** Your own CSV file (line, approved, month, spent), kept in data/local/budget-execution/
+- **Shows in:** Country Research > History & data (Budget execution)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: arithmetic on your own figures, no forward call.
+- **Limits:** Spending is uneven through the year, so straight-line pace and the 10-point band are rough; the figures are only as good as your file; supplementary budgets need a new file with the revised amounts.
+- **Code:** `src/engine/budgetExecution.ts, src/server/routes/budgetExecution.ts, src/components/BudgetExecutionPanel.tsx`
 
 ### Budget credibility
 

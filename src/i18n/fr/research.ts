@@ -94,6 +94,7 @@ export const RESEARCH_FR: Messages<typeof RESEARCH> = {
   tl_fiscal_reaction: "Réaction budgétaire",
   tl_fiscal_rules: "Règles budgétaires",
   tl_budget_credibility: "Crédibilité du budget",
+  tl_budget_execution: "Exécution du budget (votre fichier)",
   tl_fiscal_multipliers: "Multiplicateurs budgétaires",
   tl_restructuring: "Calculateur de restructuration de dette",
   tl_bank_sovereign: "Banques et État",
