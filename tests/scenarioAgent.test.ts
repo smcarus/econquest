@@ -105,7 +105,10 @@ test('the answer: Missing with reasons, the largest past move offered when no si
   const sq = parseScenario('What if the Fed hikes?')!;
   const a = scenarioAnswer(sq, [TUR], [{ iso3: 'TUR', countryName: 'Turkey', largest: [{ kind: 'us_rate', move: 0.75, month: '2022-06', from: '2011-11', source: 'BIS, US policy rate, monthly' }] }]);
   assert.equal(a.id, 'scenario');
-  assert.equal(a.findings.length, 0);
+  // Without a size nothing is run; only the published research for a Fed rise is shown.
+  assert.equal(a.findings.length, 1);
+  assert.ok(a.findings[0].figures.some((f) => f.label.startsWith('Research:')));
+  assert.ok(!a.findings[0].figures.some((f) => f.label.startsWith('After the shock')));
   assert.match(a.missing.join(' '), /largest monthly move since November 2011 was \+0\.75 pts in June 2022/);
   // Sample figures never start the scenario.
   const sample = scenarioFinding(parseScenario('What if the lira fell 20% against the dollar?')!, { ...TUR, cpiSource: 'sample', policyRateSource: 'sample' } as LiveWatchlistItem, undefined).finding!;
