@@ -3559,36 +3559,38 @@ async function startServer() {
   const replayFilePath = path.join(DATA_DIR, 'local', 'replays', 'replay-series.json');
   let replayCache: { mtimeMs: number; file: ReplayFile | null } | null = null;
   const ecbMonthlyCache = new Map<string, { at: string | undefined; months: Record<string, number> | null }>();
+  const replayFile = (): ReplayFile | null => {
+    let mtimeMs = -1;
+    try {
+      mtimeMs = fs.statSync(replayFilePath).mtimeMs;
+    } catch {
+      return null;
+    }
+    if (replayCache?.mtimeMs !== mtimeMs) {
+      let file: ReplayFile | null = null;
+      try {
+        file = readReplayFile(JSON.parse(fs.readFileSync(replayFilePath, 'utf8')));
+      } catch {
+        file = null;
+      }
+      replayCache = { mtimeMs, file };
+    }
+    return replayCache.file;
+  };
+  const ecbMonthly = (ccy: string): Record<string, number> | null => {
+    const saved = loadFxHistory();
+    const at = fxHistoryPulledAt(saved);
+    const hit = ecbMonthlyCache.get(ccy);
+    if (hit && hit.at === at) return hit.months;
+    const s = fxDailySeries(saved, ccy);
+    const months = 'points' in s && s.source && /ECB/.test(s.source) ? monthlyAverages(s.points) : null;
+    ecbMonthlyCache.set(ccy, { at, months });
+    return months;
+  };
   registerConsoleScenarioRoutes(app, {
     hidden: (h) => HIDDEN.holdingHidden(h),
-    replayFile: () => {
-      let mtimeMs = -1;
-      try {
-        mtimeMs = fs.statSync(replayFilePath).mtimeMs;
-      } catch {
-        return null;
-      }
-      if (replayCache?.mtimeMs !== mtimeMs) {
-        let file: ReplayFile | null = null;
-        try {
-          file = readReplayFile(JSON.parse(fs.readFileSync(replayFilePath, 'utf8')));
-        } catch {
-          file = null;
-        }
-        replayCache = { mtimeMs, file };
-      }
-      return replayCache.file;
-    },
-    ecbMonthly: (ccy) => {
-      const saved = loadFxHistory();
-      const at = fxHistoryPulledAt(saved);
-      const hit = ecbMonthlyCache.get(ccy);
-      if (hit && hit.at === at) return hit.months;
-      const s = fxDailySeries(saved, ccy);
-      const months = 'points' in s && s.source && /ECB/.test(s.source) ? monthlyAverages(s.points) : null;
-      ecbMonthlyCache.set(ccy, { at, months });
-      return months;
-    },
+    replayFile,
+    ecbMonthly,
     ecbFirstMonth: () => {
       const q = Object.keys(loadFxHistory().chunks).sort()[0];
       const m = q && /^(\d{4})-Q([1-4])$/.exec(q);
@@ -4198,7 +4200,17 @@ async function startServer() {
     return { series: [], missing: [...got.series, ...got.missing].map((x) => ({ id: x.id, label: x.label, reason: PAID_WITHHELD_REASON })) };
   };
   registerQuestRoutes(app, { seriesFor, refuseRemoteChange, signedIn, loadOfficialHistory });
-  registerAnalysisRoutes(app, { quick, seriesFor, fetchOfficialHistory, loadOfficialHistory, outputGapFrom, dsaFrom, examOn: () => loadExamMode().on });
+  registerAnalysisRoutes(app, {
+    quick,
+    seriesFor,
+    fetchOfficialHistory,
+    loadOfficialHistory,
+    outputGapFrom,
+    dsaFrom,
+    examOn: () => loadExamMode().on,
+    replayInputs: () => ({ file: replayFile(), ecbMonthly, shareable: () => true }),
+    allHistories,
+  });
   app.get('/api/series/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const [set, paid] = await Promise.all([seriesFor(iso3), paidFor(req, iso3)]);

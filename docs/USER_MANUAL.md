@@ -191,6 +191,15 @@ full council and saved research.
   balance from the country's net trade in that group. A level ("oil at $150", "rates to 45%") is
   measured against today's figure. A part with no inputs on file reads *Missing* with the reason;
   when you gave no size, the answer offers the largest monthly move on record, with its month.
+  The agent also says what history shows: what the country's currency, 10-year yield and USD bond
+  spread did in past episodes of the same kind of shock (for a Fed rise: the 2013 taper tantrum and
+  2022; for financial stress: 1998, 2008 and 2020; a fixed list for each kind of shock, and each
+  episode is named in the answer), read from the saved monthly series; for a change in growth, inflation or the
+  currency, how many times since 1980 a country's figure moved that far in one year, the medians of
+  what followed over the next three years (growth, inflation, debt, currency), and the eight cases
+  that started closest to where the country is now; and where the policy rate, inflation or the
+  10-year yield would sit in the country's own record after the change ("the highest since June
+  2024"). These describe the past; they are not a forecast.
 - *Explain on a figure, chart or panel*: an *Explain* link sits beside every figure in an agent
   document and on the Research pages (point at a row on a wide screen to see it), at the top of
   each Research panel, and on every chat chart. It sends that exact figure, with its source and

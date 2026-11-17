@@ -308,7 +308,27 @@ function shockMove(h: Holding, f: Factor, req: Extract<ScenarioRequest, { kind: 
   return c.local_yield_bp ?? 0;
 }
 
-function replayComponent(h: Holding, f: Factor, ep: Episode, inp: ReplayInputs): Component {
+/** One country's move in one past episode, from the saved monthly series; move null with the reason when it cannot be read. */
+export interface EpisodeMove {
+  factor: Factor;
+  move: number | null;
+  /** The move before rounding, for the P&L. */
+  exact?: number;
+  unit: '%' | 'bp';
+  from?: { period: string; value: number };
+  to?: { period: string; value: number };
+  source: string | null;
+  reason?: string;
+}
+
+const noMove = (factor: Factor, reason: string): EpisodeMove => ({ factor, move: null, unit: factor === 'fx' ? '%' : 'bp', source: null, reason });
+
+/**
+ * What the country's currency (% against the US dollar, + = weaker), 10-year local yield, USD bond
+ * spread or the US 10-year yield (bp) did between an episode's two months. Shared by the console
+ * replays and the Scenario Agent's past episodes (src/utils/scenarioHistory.ts).
+ */
+export function episodeMove(iso3: string, f: Factor, ep: Episode, inp: ReplayInputs): EpisodeMove {
   const series = inp.file?.series ?? {};
   const pick = (id: string | undefined): ReplaySeries | undefined => (id ? series[id] : undefined);
   const between = (months: Record<string, number> | undefined) => {
@@ -318,10 +338,10 @@ function replayComponent(h: Holding, f: Factor, ep: Episode, inp: ReplayInputs):
   };
   const noFile = 'The replay series have not been downloaded yet (the daily download saves them; npm run replays:pull)';
   if (f === 'fx') {
-    if (h.iso3 === 'USA') return { factor: 'fx', status: 'Live', move: 0, unit: '%', pnl_usd: 0, source: 'The US dollar is the base currency', shareable: true };
-    const cur = REPLAY_CURRENCY[h.iso3];
-    if (!cur) return missing('fx', `No free monthly exchange rate history for ${h.iso3} is set up (not in the Fed H.10 list or the ECB reference rates)`);
-    if (cur.ccy === 'EUR' && ep.from < '1999-01') return missing('fx', 'The euro did not exist before January 1999');
+    if (iso3 === 'USA') return { factor: 'fx', move: 0, unit: '%', source: 'The US dollar is the base currency' };
+    const cur = REPLAY_CURRENCY[iso3];
+    if (!cur) return noMove('fx', `No free monthly exchange rate history for ${iso3} is set up (not in the Fed H.10 list or the ECB reference rates)`);
+    if (cur.ccy === 'EUR' && ep.from < '1999-01') return noMove('fx', 'The euro did not exist before January 1999');
     let rates: { a: number; b: number } | null = null;
     let source = '';
     const h10 = pick(cur.h10?.id);
@@ -341,40 +361,47 @@ function replayComponent(h: Holding, f: Factor, ep: Episode, inp: ReplayInputs):
       }
     }
     if (!rates) {
-      if (!inp.file && !inp.ecbMonthly(cur.ccy)) return missing('fx', noFile);
+      if (!inp.file && !inp.ecbMonthly(cur.ccy)) return noMove('fx', noFile);
       const early = !cur.h10 && ep.from < '1999-01' ? ' (the ECB reference rates start in January 1999 and the Fed H.10 list has no series for it)' : '';
-      return missing('fx', `No saved ${cur.ccy} per US dollar rate for both ${ep.from} and ${ep.to}${early}`);
+      return noMove('fx', `No saved ${cur.ccy} per US dollar rate for both ${ep.from} and ${ep.to}${early}`);
     }
     // Local currency against the dollar: per-USD going up means the local currency is weaker.
     const move = (rates.a / rates.b - 1) * 100;
-    return { factor: 'fx', status: 'Live', move: roundMove(move), unit: '%', pnl_usd: round(pnlOf(h, 'fx', move)), from: { period: ep.from, value: rates.a }, to: { period: ep.to, value: rates.b }, source, shareable: inp.shareable(source) };
+    return { factor: 'fx', move: roundMove(move), exact: move, unit: '%', from: { period: ep.from, value: rates.a }, to: { period: ep.to, value: rates.b }, source };
   }
-  if (f === 'spread' && h.assetClass === 'CDS') return missing('spread', 'No free CDS history; the USD bond spread is a different contract, so it is not used for CDS');
   let id: string | undefined;
   let what = '';
   if (f === 'us_rates') {
     id = US_10Y_SERIES;
     what = 'US 10Y yield';
   } else if (f === 'local_yield') {
-    id = FRED_10Y_SERIES[h.iso3];
-    what = `${h.iso3} 10Y local yield`;
-    if (!id) return missing(f, `No free monthly 10Y yield history for ${h.iso3} (the OECD series on FRED cover OECD members and a few others)`);
+    id = FRED_10Y_SERIES[iso3];
+    what = `${iso3} 10Y local yield`;
+    if (!id) return noMove(f, `No free monthly 10Y yield history for ${iso3} (the OECD series on FRED cover OECD members and a few others)`);
   } else {
-    if (!BCRP_EMBIG_SERIES[h.iso3]) return missing(f, `No free USD bond spread history for ${h.iso3} (the BCRP publishes the EMBI spread for eight Latin American countries only)`);
-    id = `embig:${h.iso3}`;
-    what = `${h.iso3} USD bond spread`;
+    if (!BCRP_EMBIG_SERIES[iso3]) return noMove(f, `No free USD bond spread history for ${iso3} (the BCRP publishes the EMBI spread for eight Latin American countries only)`);
+    id = `embig:${iso3}`;
+    what = `${iso3} USD bond spread`;
   }
-  if (!inp.file) return missing(f, noFile);
+  if (!inp.file) return noMove(f, noFile);
   const s = pick(id);
-  if (!s) return missing(f, `The ${what} series was not saved by the last download`);
+  if (!s) return noMove(f, `The ${what} series was not saved by the last download`);
   const got = between(s.months);
   if (!got) {
     const first = Object.keys(s.months).sort()[0];
-    return missing(f, `The ${what} series has no value for ${!(ep.from in s.months) ? ep.from : ep.to}${first && first > ep.from ? ` (it starts in ${first})` : ''}`);
+    return noMove(f, `The ${what} series has no value for ${!(ep.from in s.months) ? ep.from : ep.to}${first && first > ep.from ? ` (it starts in ${first})` : ''}`);
   }
   // Yields are in %, spreads in bp.
   const move = f === 'spread' ? got.b - got.a : (got.b - got.a) * 100;
-  return { factor: f, status: 'Live', move: roundMove(move), unit: 'bp', pnl_usd: round(pnlOf(h, f, move)), from: { period: ep.from, value: got.a }, to: { period: ep.to, value: got.b }, source: s.source, shareable: inp.shareable(s.source) };
+  return { factor: f, move: roundMove(move), exact: move, unit: 'bp', from: { period: ep.from, value: got.a }, to: { period: ep.to, value: got.b }, source: s.source };
+}
+
+function replayComponent(h: Holding, f: Factor, ep: Episode, inp: ReplayInputs): Component {
+  if (f === 'spread' && h.assetClass === 'CDS') return missing('spread', 'No free CDS history; the USD bond spread is a different contract, so it is not used for CDS');
+  const m = episodeMove(h.iso3, f, ep, inp);
+  if (m.move === null) return missing(f, m.reason || 'Not available');
+  const source = m.source ?? '';
+  return { factor: f, status: 'Live', move: m.move, unit: m.unit, pnl_usd: round(pnlOf(h, f, m.exact ?? m.move)), ...(m.from ? { from: m.from, to: m.to } : {}), source: m.source, shareable: h.iso3 === 'USA' && f === 'fx' ? true : inp.shareable(source) };
 }
 
 /** Runs a scenario on positions. Positions of type OTHER get no components and count as partial. */
