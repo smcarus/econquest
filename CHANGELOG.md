@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Scenario Agent history (WI3): past episodes of the same kind of shock (the country's currency,
+  10-year yield and USD bond spread between the episode's months, from the saved replay series);
+  cases since 1980 where growth, inflation or the currency moved as far in one year, with the medians
+  of what followed over three years and the eight closest starting points; and where the level after
+  the shock would sit in the country's own record. Replays and the Scenario Agent share one reading of
+  episode moves (`episodeMove`).
 - Scenario Agent in Council chat (WI2): for a what-if question, today's figures beside what they
   would be after the stated change, for up to four countries. Uses the app's own tools: the
   scenario engine (Fed, dollar, financial stress, supply chains), local projections (inflation

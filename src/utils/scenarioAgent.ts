@@ -31,6 +31,8 @@ import { applyScenario, RESPONSES, type FactorId, type ScenarioModel, type Scena
 import type { LpOutcome } from './localProjections';
 import { engineShock, SHOCK_KINDS, shockLabel, type ScenarioQuestion, type Shock, type ShockKind, type ShockKindInfo } from './scenarioQuestion';
 import { semiElasticityFor } from '../data/spendingMultipliers';
+import type { EpisodeRead, LevelContext, ShockPrecedentOutcome } from './scenarioHistory';
+import type { PrecedentOutcome } from './precedentFinder';
 import type { LiveWatchlistItem } from '../types/council';
 
 export { SCENARIO_AGENT_NAME, SCENARIO_AGENT_COVERS } from './scenarioAgentInfo';
@@ -91,6 +93,16 @@ export interface ScenarioCountryData {
   lp?: LpRun;
   /** Factors the engine had no history for. */
   missingFactors?: string[];
+  /** What history says (WI3, src/utils/scenarioHistory.ts). */
+  history?: ScenarioHistory;
+}
+
+export interface ScenarioHistory {
+  episodes?: EpisodeRead[];
+  precedents?: ShockPrecedentOutcome[];
+  levels?: LevelContext[];
+  /** Why a reading could not run at all (no replay series, no yearly histories). */
+  missing?: string[];
 }
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
@@ -332,9 +344,68 @@ export function scenarioFinding(sq: ScenarioQuestion, it: LiveWatchlistItem, dat
     } else if (sq.shocks.some((s) => ['interest_cost', 'growth', 'inflation'].includes(s.kind) && s.change !== null)) missing.push(`${name}: debt path (${data.dsa.reason})`);
   } else if (sq.shocks.some((s) => ['interest_cost', 'growth', 'inflation'].includes(s.kind) && s.change !== null)) missing.push(`${name}: debt path (the app's debt tool did not answer)`);
 
-  const shockFigures = figures.filter((f) => f.label.startsWith('After the shock'));
+  // What history says (WI3).
+  const hist = data?.history;
+  if (hist) historyFigures(hist, name, figures, parts, missing);
+
+  const shockFigures = figures.filter((f) => /^(After the shock|Past episode|When it happened before|Record)/.test(f.label));
   if (!shockFigures.length) return { finding: null, missing };
   return { finding: { iso3: it.iso3, countryName: name, reading: parts.join(' '), figures, weight }, missing };
+}
+
+const FACTOR_WORDS: Record<string, string> = { fx: 'currency against the US dollar (+ = weaker)', local_yield: '10-year local yield', spread: 'USD bond spread', us_rates: 'US 10-year yield' };
+const OUTCOME_WORDS: Partial<Record<PrecedentOutcome, { label: string; unit: string }>> = {
+  growth_avg: { label: 'average real growth over the next 3 years', unit: '%' },
+  inflation_after: { label: 'inflation 3 years later', unit: '%' },
+  debt_change: { label: 'change in government debt over 3 years', unit: ' pts of GDP' },
+  currency_change: { label: 'currency against the dollar over 3 years (+ = weaker)', unit: '%' },
+};
+
+/** Past episodes, cases elsewhere and record context as figures, with what could not be read. */
+export function historyFigures(hist: ScenarioHistory, name: string, figures: AgentFigure[], parts: string[], missing: string[]): void {
+  for (const m of hist.missing || []) missing.push(`${name}: ${m}`);
+  for (const ep of hist.episodes || []) {
+    const read = ep.moves.filter((m) => m.move !== null);
+    const notRead = ep.moves.filter((m) => m.move === null);
+    // The replays give the currency as % change of its value (- = weaker); shown here as + = weaker, like the rest of this agent.
+    const shown = (m: (typeof read)[number]) => (m.factor === 'fx' ? -(m.move as number) || 0 : (m.move as number));
+    for (const m of read) {
+      const d = m.unit === '%' ? 1 : 0;
+      figures.push({ label: `Past episode, ${ep.label}: ${FACTOR_WORDS[m.factor]}`, value: `${sgn(shown(m), d)}${m.unit === '%' ? '%' : ' bp'} (${monthName(ep.from)} to ${monthName(ep.to)}, monthly averages)`, source: `${m.source}; ${ep.about}`, tag: 'official' });
+    }
+    if (notRead.length) missing.push(`${name}, ${ep.label}: ${notRead.map((m) => `${FACTOR_WORDS[m.factor]} (${m.reason})`).join('; ')}`);
+    const fx = read.find((m) => m.factor === 'fx');
+    if (fx) parts.push(`In the ${ep.label.replace(/,.*$/, '')} episode the currency ${shown(fx) > 0 ? 'lost' : 'gained'} ${Math.abs(fx.move!).toFixed(1)}% against the dollar.`);
+  }
+  for (const p of hist.precedents || []) {
+    if (!p.ok) {
+      missing.push(`${name}: cases elsewhere (${p.reason})`);
+      continue;
+    }
+    const size = p.measure === 'pct' ? `${Math.abs(p.threshold)}%` : `${Math.abs(p.threshold)} pts`;
+    const dir = p.threshold > 0 ? (p.measure === 'pct' ? 'up' : 'up') : 'down';
+    figures.push({ label: `When it happened before: ${p.figure} ${dir} ${size} or more in one year`, value: `${p.cases} country-years in ${p.countries} countries, ${p.firstYear} to ${p.lastYear}`, source: `app calculation on ${p.source} yearly history from 1980, each case with three later years saved; description of the past, not a forecast`, tag: 'model' });
+    for (const [k, w] of Object.entries(OUTCOME_WORDS) as Array<[PrecedentOutcome, { label: string; unit: string }]>) {
+      const sm = p.summary[k];
+      if (sm.median === null) continue;
+      figures.push({ label: `When it happened before: median ${w.label}`, value: `${sm.median > 0 && k !== 'growth_avg' && k !== 'inflation_after' ? '+' : ''}${sm.median}${w.unit} (${sm.n} cases)`, source: 'medians over every case above; IMF WEO and World Bank yearly figures', tag: 'model' });
+    }
+    if (p.closest.length) {
+      figures.push({
+        label: `When it happened before: closest ${p.rankedBy === 'start' ? 'starting points' : 'moves'}`,
+        value: p.closest.map((c) => `${c.name} ${c.year} (${sgn(c.move, p.measure === 'pct' ? 1 : 1)}${p.measure === 'pct' ? '%' : ' pts'})`).join(', '),
+        source: p.rankedBy === 'start' ? `ranked by how close debt, inflation, reserves and current account the year before were to ${name} in ${p.startYear}; each country once` : 'ranked by how close the move was to the stated change; each country once',
+        tag: 'model',
+      });
+    }
+    const g = p.summary.growth_avg.median;
+    parts.push(`Since ${p.firstYear}, ${p.figure} has moved this far in one year ${p.cases} times in ${p.countries} countries${g !== null ? `; growth over the following three years had a median of ${g}%` : ''}.`);
+  }
+  for (const l of hist.levels || []) {
+    const when = l.since ? `the ${l.direction} since ${monthName(l.since.slice(0, 7))}` : `the ${l.direction} on record (since ${monthName(l.first.slice(0, 7))})`;
+    figures.push({ label: `Record context: ${l.label} after the shock`, value: `${l.after.toFixed(2)}%, ${when}`, source: `${l.source}; latest ${l.now.value.toFixed(2)}% (${l.now.date}) plus the stated change`, tag: 'model' });
+    parts.push(`A ${l.label} of ${l.after.toFixed(2)}% would be ${when}.`);
+  }
 }
 
 export function scenarioAnswer(sq: ScenarioQuestion, countries: LiveWatchlistItem[], data: ScenarioCountryData[]): AgentAnswer {

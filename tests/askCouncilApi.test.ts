@@ -375,6 +375,12 @@ test('Scenario Agent (WI2): the server applies the stated shocks; a what-if ques
   assert.ok(d.dsa.ok ? d.dsa.runs.length === 1 && d.dsa.runs[0].kind === 'interest_cost' : typeof d.dsa.reason === 'string', JSON.stringify(d.dsa));
   assert.ok(d.lp.ok ? d.lp.steps.length > 0 : typeof d.lp.reason === 'string', JSON.stringify(d.lp));
   for (const l of d.largest || []) assert.match(l.month, /^\d{4}-\d{2}$/);
+  // History (WI3): episodes for a Fed rise and higher borrowing costs, each move read or Missing with its reason.
+  assert.deepEqual(d.history.episodes.map((e: { id: string }) => e.id), ['russia_1998', 'taper_2013', 'year_2022']);
+  for (const e of d.history.episodes) for (const m of e.moves) assert.ok(m.move === null ? typeof m.reason === 'string' : Number.isFinite(m.move), JSON.stringify(m));
+  const growth = await (await fetch(`${base}/api/council/scenario/TUR?shocks=${encodeURIComponent(JSON.stringify([{ kind: 'growth', direction: -1, change: -2, target: null }]))}`)).json();
+  const p = growth.history.precedents[0];
+  assert.ok(p.ok ? p.cases >= 5 && p.closest.length > 0 : typeof p.reason === 'string', JSON.stringify(p).slice(0, 500));
 
   const rows = ((await (await fetch(`${base}/api/data/watchlist-live?iso3=TUR`)).json()).items || []) as WatchlistItem[];
   const { plan, answers } = await councilAnswers(

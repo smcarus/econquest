@@ -122,7 +122,7 @@ function median(xs: number[]): number | null {
   return round(s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2);
 }
 
-function outcomesFor(get: (id: string) => Years, y: number): Record<PrecedentOutcome, number | null> {
+export function outcomesFor(get: (id: string) => Map<number, number>, y: number): Record<PrecedentOutcome, number | null> {
   const H = PRECEDENT_HORIZON;
   const at = (id: string, year: number) => get(id).get(year);
   const growth = Array.from({ length: H }, (_, i) => at('gdp_growth', y + i + 1));

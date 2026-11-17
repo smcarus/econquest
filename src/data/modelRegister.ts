@@ -542,8 +542,8 @@ export const MODEL_REGISTER: RegisterEntry[] = [
   {
     id: 'scenario_agent',
     name: 'Scenario Agent (what-if questions)',
-    says: 'For a what-if question, today\'s figures beside what they would be after the stated shock: the currency and policy rate, inflation after a rate change, the debt path, debt from dollar bonds and the first-round trade effect of price changes.',
-    method: 'Scenario engine co-movement (US rate, dollar, stress, supply chains); local projections of inflation on the policy rate, scaled; the debt identity on the IMF projected inputs with the shock; dollar bonds over GDP x currency move; net trade in the group x price change. Sizes only from the question.',
+    says: 'For a what-if question, today\'s figures beside what they would be after the stated shock: the currency and policy rate, inflation after a rate change, the debt path, debt from dollar bonds and the first-round trade effect of price changes; and what history shows: past episodes of the same shock, cases since 1980 where the figure moved as far, and where the level would sit in the country\'s own record.',
+    method: 'Scenario engine co-movement (US rate, dollar, stress, supply chains); local projections of inflation on the policy rate, scaled; the debt identity on the IMF projected inputs with the shock; dollar bonds over GDP x currency move; net trade in the group x price change. History: episode moves from the saved monthly series (fixed list per shock: src/utils/scenarioHistory.ts SHOCK_EPISODES); every country-year from 1980 with a one-year move at least the stated size, medians of the next three years, closest starts on debt, inflation, reserves and current account. Sizes only from the question.',
     inputs: 'BIS policy rates, ECB rates, FRED stress index, NY Fed GSCPI, monthly CPI, IMF WEO and Fiscal Monitor, BIS international debt securities, World Bank trade shares, World Bank Pink Sheet',
     where: 'Council chat (Scenario Agent, on what-if questions)',
     use: 'Research',

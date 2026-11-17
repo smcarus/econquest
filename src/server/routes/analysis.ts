@@ -72,6 +72,9 @@ import { fxDailySeries } from '../../utils/fxHistory';
 import { fitScenarioModel, monthEnd, monthlyChanges, PRESETS, SCENARIO_METHOD, FACTORS, RESPONSES, type FactorId, type ScenarioModel } from '../../utils/scenarioEngine';
 import { dsaRuns, engineRuns, largestMove, lpRun, scenarioFromQuery, type LargestMove, type ScenarioCountryData } from '../../utils/scenarioAgent';
 import type { ShockKind } from '../../utils/scenarioQuestion';
+import { episodeReads, episodesFor, levelContext, shockPrecedents, SHOCK_YEARLY, type LevelContext } from '../../utils/scenarioHistory';
+import type { ReplayInputs } from '../../utils/scenarioReplay';
+import type { HistoryInput } from '../../utils/precedentFinder';
 import { grVar, grVarSentence, GRVAR_METHOD, type GrVarOutcome } from '../../utils/grVar';
 import { gprData } from '../../utils/gprStore';
 import { storyLeads, STORY_LEADS_METHOD, type LeadSeries } from '../../utils/storyLeads';
@@ -94,6 +97,9 @@ export interface AnalysisDeps {
   dsaFrom: (file: OfficialHistoryFile | null | undefined) => DsaOutcome;
   /** Exam mode (src/utils/examMode.ts): answer keys are held back while it is on. */
   examOn?: () => boolean;
+  /** Scenario Agent history (WI3): the replay series for past episodes, and every country's yearly history. */
+  replayInputs?: () => ReplayInputs;
+  allHistories?: () => { histories: HistoryInput[] };
 }
 
 // Nowcasts (src/utils/nowcast.ts) and forecasts: long histories for the fits come from
@@ -803,6 +809,37 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       const r = dsaFrom(file);
       out.dsa = r.ok ? dsaRuns(r, sq, iso3) : { ok: false, reason: r.reason };
     }
+    // What history says (WI3, src/utils/scenarioHistory.ts).
+    const history: NonNullable<ScenarioCountryData['history']> = {};
+    const epIds = episodesFor(sq.shocks);
+    if (epIds.length) {
+      if (deps.replayInputs) history.episodes = episodeReads(iso3, epIds, deps.replayInputs());
+      else history.missing = [...(history.missing || []), 'past episodes (the replay series are not set up on this server)'];
+    }
+    const yearly = sq.shocks.filter((x) => SHOCK_YEARLY[x.kind] && x.change !== null);
+    if (yearly.length) {
+      const all = deps.allHistories?.().histories || [];
+      const year = new Date().getUTCFullYear();
+      history.precedents = yearly.map((x) => shockPrecedents(iso3, year, x.kind, x.change as number, all));
+    }
+    const LEVELS: Array<{ kind: ShockKind; series: LevelContext['series']; label: string }> = [
+      { kind: 'policy_rate', series: 'policy_rate', label: 'policy rate' },
+      { kind: 'inflation', series: 'cpi_monthly', label: 'inflation rate' },
+      { kind: 'interest_cost', series: 'yield_10y', label: '10-year yield' },
+    ];
+    const levelShocks = LEVELS.filter((l) => sq.shocks.some((x) => x.kind === l.kind && x.change !== null));
+    if (levelShocks.length) {
+      const set = await seriesFor(iso3);
+      const levels: LevelContext[] = [];
+      for (const l of levelShocks) {
+        const ser = set.series.find((x) => x.id === l.series);
+        const change = sq.shocks.find((x) => x.kind === l.kind)!.change as number;
+        const c = ser ? levelContext(l.series, l.label, ser.points, change, ser.source || l.series) : null;
+        if (c) levels.push(c);
+      }
+      if (levels.length) history.levels = levels;
+    }
+    if (Object.keys(history).length) out.history = history;
     res.json(out);
   });
   app.get('/api/nowcast/:iso3', async (req, res) => {
