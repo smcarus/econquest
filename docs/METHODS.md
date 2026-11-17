@@ -43,6 +43,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Behavioural policy check | Research | Description, not a tested signal | None |
 | Fiscal rules check | Research | Description, not a tested signal | None |
 | World Bank projects | Research | Description, not a tested signal | None |
+| Regional figures | Research | Description, not a tested signal | None |
 | Budget execution (your file) | Research | Description, not a tested signal | None |
 | Budget credibility | Research | Description, not a tested signal | None |
 | Who pays for a policy | Research | Description, not a tested signal | None |
@@ -553,6 +554,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: published project amounts and dates, no forward call.
 - **Limits:** IBRD loans have no paid-out figure yet; projects often pay out slowly at first (an S-shaped curve), so the 25-point rule is a prompt to look, not a finding; other donors are not included (IATI parked); the list is downloaded weekly.
 - **Code:** `src/utils/wbProjects.ts, src/server/feeds/wbProjects.ts, src/components/WbProjectsPanel.tsx`
+
+### Regional figures
+
+- **Says:** How far apart the regions of a country are: output per person by region against the national figure, the gap between the richest and poorest regions and whether it has narrowed; for EU and EFTA countries GDP per person and unemployment by NUTS 2 region; and, from your file, the Human Development Index by region.
+- **Rule:** Gap = region ÷ national figure - 1. DOSE national figure = regions weighted by population where every region has one, else the simple mean (labelled). Spread = highest ÷ lowest region and the coefficient of variation (standard deviation ÷ mean, population-weighted where possible), compared with ten years before. DOSE year = latest year with at least two thirds of the regions. Eurostat national figure = the country row of the same table; unemployment gap in points.
+- **Reads:** DOSE (Zenodo, CC BY 4.0, constant 2015 US$ per person where present); Eurostat nama_10r_2gdp (PPS per person) and lfst_r_lfu3rt (unemployment 15-74); Global Data Lab subnational HDI from data/local/gdl/
+- **Shows in:** Country Research > History & data (Regional figures)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published regional figures, no forward call.
+- **Limits:** DOSE gathers figures from national statistics offices that measure regions in different ways and ends a few years back; GDP by region is counted where people work, so commuter regions look richer; regions with no figure are left out, not filled in; the Global Data Lab file is non-commercial and is never shipped.
+- **Code:** `src/utils/regional.ts, src/server/feeds/regional.ts, src/components/RegionalPanel.tsx`
 
 ### Budget execution (your file)
 

@@ -5,6 +5,16 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Regional figures (R6): Research > History & data shows how far apart a country's regions are.
+  Output per person for each first-level region from DOSE (Wenz et al. 2023, Zenodo, CC BY 4.0; 83
+  countries, constant 2015 US$), the gap to the national figure, the richest-to-poorest ratio and
+  the spread compared with ten years before; for EU and EFTA countries GDP per person in PPS and the
+  unemployment rate by NUTS 2 region from Eurostat; and the subnational Human Development Index
+  from a Global Data Lab CSV you save in data/local/gdl/ (non-commercial terms, never shipped or
+  downloaded). DOSE and Eurostat come with the daily download once a week (step `world:regional`;
+  DOSE is downloaded again only when Zenodo lists a new version). New Data health rows `dose` and
+  `eurostat_regions`, licence rows `dose` and `gdl`, four languages.
+
 - Budget execution tracker (R4): Research > History & data takes your approved budget and monthly
   spending by ministry or programme from a CSV file (columns line, approved, month, spent; a
   template is offered) and shows each line's share spent against the share of the fiscal year gone,

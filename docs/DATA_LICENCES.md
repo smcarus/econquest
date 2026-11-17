@@ -42,7 +42,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | FRED (St. Louis Fed): 10Y government yields from the OECD; St. Louis Fed and Chicago Fed stress indices; US inflation expectations | Permission needed for client or commercial use | Sharing unclear | The series are labelled "Copyrighted: Citation Required" (owner: OECD). FRED's terms say to contact the data owner before any use beyond personal use, and that FRED cannot give that permission. | Unclear in FRED's own terms (one section allows reports to clients with attribution for citation-required series; others require the owner's permission). | OECD (year), Main Economic Indicators, long-term interest rates, retrieved from FRED, Federal Reserve Bank of St. Louis. With the FRED API key: "This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis." |
 | Federal Reserve Board H.10 exchange rates (monthly, via FRED) | Terms not confirmed | Sharing unclear | Not confirmed. The series are published by the Federal Reserve Board; the copyright label on each FRED series page and the Board's own website terms were not read (federalreserve.gov could not be reached from the session that built this, 13 November 2026). | Not confirmed. | Board of Governors of the Federal Reserve System (US), <series name> [<series id>], retrieved from FRED, Federal Reserve Bank of St. Louis. |
 | OECD leading indicators and consumer prices (via DBnomics) | Terms not confirmed | Sharing unclear | DBnomics passes on the OECD's own licence. The OECD terms page could not be read past its navigation, so the OECD data licence is not confirmed here. | Not confirmed. | OECD (year), <dataset name>, <data source>, via DBnomics (citation form quoted on FRED's OECD series notes). |
-| Eurostat HICP, government expenditure by function (COFOG) and EU business and consumer surveys | Open with attribution | Free sharing allowed | Allowed without a licence if Eurostat is named and any change to the data is stated. | Allowed for EU, EFTA and candidate countries (the app reads EU and EFTA members only). | Source: Eurostat (prc_hicp_minr, gov_10a_exp, gov_10a_main, ei_bssi_m_r2, ei_bsee_m_r2, sts_inpr_m, sts_trtu_m, une_rt_m); surveys by the European Commission (DG ECFIN). |
+| Eurostat HICP, government expenditure by function (COFOG) and EU business and consumer surveys | Open with attribution | Free sharing allowed | Allowed without a licence if Eurostat is named and any change to the data is stated. | Allowed for EU, EFTA and candidate countries (the app reads EU and EFTA members only). | Source: Eurostat (prc_hicp_minr, gov_10a_exp, gov_10a_main, ei_bssi_m_r2, ei_bsee_m_r2, sts_inpr_m, sts_trtu_m, une_rt_m, nama_10r_2gdp, lfst_r_lfu3rt); surveys by the European Commission (DG ECFIN). |
 | Office for National Statistics (UK) | Open with attribution | Free sharing allowed | Open Government Licence v3.0: reuse is allowed with ONS named as the source. | Allowed ("whether commercially or privately", ONS licences page; "exploit the Information commercially and non-commercially", OGL v3.0). | Source: Office for National Statistics licensed under the Open Government Licence v.3.0 |
 | CFTC Commitments of Traders | Open with attribution | Free sharing allowed | Public domain. | Allowed. | Source: CFTC Commitments of Traders (acknowledgement requested). |
 | US Treasury TIC (major foreign holders) | Terms not confirmed | Sharing unclear | No terms, licence or copyright statement was found on the TIC or Treasury site-policy pages. | Not stated. | Source: US Treasury, Treasury International Capital (TIC) system. |
@@ -75,6 +75,8 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | Penn World Table (Groningen Growth and Development Centre) | Open with attribution | Free sharing allowed | Allowed under CC BY 4.0. | Allowed (CC BY 4.0 sets no commercial limit). | Feenstra, Robert C., Robert Inklaar and Marcel P. Timmer (2015), "The Next Generation of the Penn World Table", American Economic Review, 105(10), 3150-3182. |
 | IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies (Arslanalp and Tsuda) | Permission needed for client or commercial use | Free sharing allowed | Allowed with credit under the IMF data terms; the workbook itself states no terms. | Needs permission: email copyright@imf.org. | Source: International Monetary Fund, Sovereign Debt Investor Base for Emerging Markets and Developing Economies; Arslanalp and Tsuda (2014), IMF Working Paper WP/14/39. |
 | IMF Fiscal Rules Dataset, 1985-2024 | Terms not confirmed | Sharing unclear | Not stated on the dataset page. | Not stated on the dataset page. | "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page. |
+| DOSE, global dataset of reported subnational economic output (Wenz, Carr, Kögel, Kotz and Kalkuhl, Zenodo) | Open with attribution | Free sharing allowed | Allowed: the dataset is published under CC BY 4.0. | Allowed (CC BY 4.0 sets no commercial limit). | Wenz, L., Carr, R. D., Kögel, N., Kotz, M. and Kalkuhl, M. (2023). DOSE – Global data set of reported sub-national economic output. Scientific Data 10, 425; data on Zenodo, doi:10.5281/zenodo.20035157. |
+| Global Data Lab subnational Human Development Index (Radboud University) | Allowed with conditions | Do not pass on | Allowed for non-commercial purposes with the Global Data Lab named and a link to its website, with the data version. | Only with written permission of the Global Data Lab. | Global Data Lab (globaldatalab.org), Subnational Human Development Index, with the version of your download. |
 | Database of Political Institutions 2020 (Inter-American Development Bank) | Terms not confirmed | Sharing unclear | Not stated on the publication page. | Not stated. | Database of Political Institutions 2020 (DPI2020), Inter-American Development Bank (Cruz, Keefer and Scartascini); take the full citation from the download page. |
 | EM-DAT, the international disaster database (CRED, UCLouvain) | Terms not confirmed | Do not pass on | Figures and charts built from the data may be shown with the citation; the data itself may not be passed on. | Free accounts are for non-commercial use by universities, non-profit research bodies, public bodies and the media; other users need a paid licence from CRED. | EM-DAT, CRED / UCLouvain, Brussels, Belgium, www.emdat.be (year of access). |
 | FAOSTAT Consumer Price Indices (FAO) | Terms not confirmed | Sharing unclear | FAO statistical databases are CC BY 4.0 by default; whether that covers this table is not confirmed. | Not confirmed for this table. | FAO. FAOSTAT: Consumer Price Indices. Rome (year of access). |
@@ -366,13 +368,13 @@ From the terms:
 
 ### Eurostat HICP, government expenditure by function (COFOG) and EU business and consumer surveys
 
-- **Used for:** Monthly inflation for EU members (Poland on the defaults); government spending by function, % of GDP (gov_10a_exp); revenue and spending by level of government (gov_10a_main); the European Commission's business and consumer surveys as Eurostat republishes them (ei_bssi_m_r2, ei_bsee_m_r2); monthly industrial production, retail trade volume and unemployment rate (sts_inpr_m, sts_trtu_m, une_rt_m)
+- **Used for:** Monthly inflation for EU members (Poland on the defaults); government spending by function, % of GDP (gov_10a_exp); revenue and spending by level of government (gov_10a_main); the European Commission's business and consumer surveys as Eurostat republishes them (ei_bssi_m_r2, ei_bsee_m_r2); monthly industrial production, retail trade volume and unemployment rate (sts_inpr_m, sts_trtu_m, une_rt_m); GDP per person in PPS and unemployment by NUTS 2 region (nama_10r_2gdp, lfst_r_lfu3rt) for Regional figures
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. Free reuse with Eurostat named.
 - **Terms read:** [Eurostat copyright and reuse](https://ec.europa.eu/eurostat/about-us/policies/copyright) (checked 2026-11-06)
 - **Show to others:** Allowed without a licence if Eurostat is named and any change to the data is stated.
 - **Commercial use:** Allowed for EU, EFTA and candidate countries (the app reads EU and EFTA members only).
-- **Credit:** Source: Eurostat (prc_hicp_minr, gov_10a_exp, gov_10a_main, ei_bssi_m_r2, ei_bsee_m_r2, sts_inpr_m, sts_trtu_m, une_rt_m); surveys by the European Commission (DG ECFIN).
+- **Credit:** Source: Eurostat (prc_hicp_minr, gov_10a_exp, gov_10a_main, ei_bssi_m_r2, ei_bsee_m_r2, sts_inpr_m, sts_trtu_m, une_rt_m, nama_10r_2gdp, lfst_r_lfu3rt); surveys by the European Commission (DG ECFIN).
 
 From the terms:
 
@@ -847,6 +849,37 @@ From the terms:
 - **Credit:** "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page.
 - **Open question:** The page gives a citation but no terms. Read only from the workbook the user downloads and saves (G35, built 12 November 2026 on the maintainer's choice); nothing from it is shipped. Probably under the general IMF statistical data terms; confirm with copyright@imf.org with the other IMF questions.
 
+### DOSE, global dataset of reported subnational economic output (Wenz, Carr, Kögel, Kotz and Kalkuhl, Zenodo)
+
+- **Used for:** Output per person for each first-level region of 83 countries, the gap to the national figure and the spread between regions, for Regional figures (downloaded by the daily run when Zenodo lists a new version)
+- **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0 allows sharing with credit.
+- **Terms read:** [DOSE on Zenodo (latest version)](https://zenodo.org/records/20035157); [Data descriptor, Scientific Data 2023](https://www.nature.com/articles/s41597-023-02323-8) (checked 2026-11-17)
+- **Show to others:** Allowed: the dataset is published under CC BY 4.0.
+- **Commercial use:** Allowed (CC BY 4.0 sets no commercial limit).
+- **Credit:** Wenz, L., Carr, R. D., Kögel, N., Kotz, M. and Kalkuhl, M. (2023). DOSE – Global data set of reported sub-national economic output. Scientific Data 10, 425; data on Zenodo, doi:10.5281/zenodo.20035157.
+
+From the terms:
+
+> Creative Commons Attribution 4.0 International
+
+### Global Data Lab subnational Human Development Index (Radboud University)
+
+- **Used for:** The Human Development Index by region, for Regional figures, only from the CSV you download and put in data/local/gdl/
+- **Status:** Allowed with conditions
+- **Free non-commercial sharing:** Do not pass on. Sharing for non-profit purposes is allowed; commercial use needs permission. The file is not shipped.
+- **Terms read:** [Global Data Lab terms of use](https://globaldatalab.org/termsofuse/) (checked 2026-11-17)
+- **Show to others:** Allowed for non-commercial purposes with the Global Data Lab named and a link to its website, with the data version.
+- **Commercial use:** Only with written permission of the Global Data Lab.
+- **Credit:** Global Data Lab (globaldatalab.org), Subnational Human Development Index, with the version of your download.
+- **Open question:** Non-commercial only, so the file is read from data/local/gdl/ and never shipped or downloaded by the app (R6, built 17 November 2026).
+
+From the terms:
+
+> can be freely downloaded and used for noncommercial purposes by any interested person or party, provided that the Global Data Lab is mentioned as the source of the indicators
+>
+> Commercial use is only possible after written permission of the Global Data Lab.
+
 ### Database of Political Institutions 2020 (Inter-American Development Bank)
 
 - **Used for:** Checks and balances, fractionalisation, polarisation and years left in the term, for Political feasibility in Policy review, from the file you put in data/local/dpi/
@@ -1021,7 +1054,8 @@ From the terms:
 32. **Our World in Data energy file (Energy Institute Statistical Review of World Energy)** (Permission needed for client or commercial use): The energy mix shares come from the Energy Institute, whose website terms allow private, non-commercial use only. The maintainer chose (2026-11-11, personal non-commercial use) to have each computer download the file itself and never ship it. Do not show these figures to others or use them commercially without the Energy Institute's permission; ask the Energy Institute before any wider use.
 33. **IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies (Arslanalp and Tsuda)** (Permission needed for client or commercial use): The workbook (version of 6 November 2026, read 2026-11-11, given by the maintainer) and the working paper state no terms; the paper PDF is marked "Not for Redistribution", so neither is shipped with the app. The general IMF statistical data terms are taken to apply (publish with credit; commercial reuse needs permission). Confirm with copyright@imf.org with the other IMF questions.
 34. **IMF Fiscal Rules Dataset, 1985-2024** (Terms not confirmed): The page gives a citation but no terms. Read only from the workbook the user downloads and saves (G35, built 12 November 2026 on the maintainer's choice); nothing from it is shipped. Probably under the general IMF statistical data terms; confirm with copyright@imf.org with the other IMF questions.
-35. **Database of Political Institutions 2020 (Inter-American Development Bank)** (Terms not confirmed): The IDB page has no licence or data link. Read only from the file the user downloads and saves (G36, built 13 November 2026); nothing from it is shipped. Find the download page in a browser and read its licence before anything built from it is shared.
-36. **EM-DAT, the international disaster database (CRED, UCLouvain)** (Terms not confirmed): Read only from the file each user downloads with their own account (PA6, built 13 November 2026); nothing from it is shipped or fetched. Each user must check that their own use fits the account terms. Re-read the terms page in a browser and add quotes.
-37. **FAOSTAT Consumer Price Indices (FAO)** (Terms not confirmed): This table is built from IMF, OECD and national figures, so FAO's default CC BY 4.0 may not cover it. Read only from the file the user saves (PA2, built 13 November 2026); nothing from it is shipped. Confirm the terms for this table before anything built from it is shared.
-38. **DSSI and Common Framework status (World Bank, Paris Club)** (Terms not confirmed): Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.
+35. **Global Data Lab subnational Human Development Index (Radboud University)** (Allowed with conditions): Non-commercial only, so the file is read from data/local/gdl/ and never shipped or downloaded by the app (R6, built 17 November 2026).
+36. **Database of Political Institutions 2020 (Inter-American Development Bank)** (Terms not confirmed): The IDB page has no licence or data link. Read only from the file the user downloads and saves (G36, built 13 November 2026); nothing from it is shipped. Find the download page in a browser and read its licence before anything built from it is shared.
+37. **EM-DAT, the international disaster database (CRED, UCLouvain)** (Terms not confirmed): Read only from the file each user downloads with their own account (PA6, built 13 November 2026); nothing from it is shipped or fetched. Each user must check that their own use fits the account terms. Re-read the terms page in a browser and add quotes.
+38. **FAOSTAT Consumer Price Indices (FAO)** (Terms not confirmed): This table is built from IMF, OECD and national figures, so FAO's default CC BY 4.0 may not cover it. Read only from the file the user saves (PA2, built 13 November 2026); nothing from it is shipped. Confirm the terms for this table before anything built from it is shared.
+39. **DSSI and Common Framework status (World Bank, Paris Club)** (Terms not confirmed): Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.

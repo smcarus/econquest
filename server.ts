@@ -108,6 +108,7 @@ import { climateFromSnapshot } from './src/utils/climateEnergy';
 import { loadOwidEnergy, fetchOwidEnergyPull } from './src/server/feeds/owidEnergy';
 import { loadFedSwaps, fetchFedSwaps } from './src/server/feeds/fedSwaps';
 import { fetchWbProjects } from './src/server/feeds/wbProjects';
+import { fetchRegional } from './src/server/feeds/regional';
 import { loadWeather, fetchWeather } from './src/server/feeds/nasaPower';
 import { loadCountryWeather, fetchCountryWeather } from './src/server/feeds/wbClimate';
 import { loadWages, fetchWagesPull, loadHousePrices, fetchHousePricesPull, loadPrivateDebt, fetchPrivateDebtPull } from './src/server/feeds/wagesHousing';
@@ -706,6 +707,15 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
       const note = `${got.projects.length} active projects, ${got.ida ? `IDA amounts for ${Object.keys(got.ida).length} projects` : 'no IDA amounts (statement not read)'}`;
       return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}, downloaded again after a week` };
+    }
+    case 'world:regional': {
+      const got = await fetchRegional();
+      if (!got.dose && !got.euro) return { outcome: 'failed', note: 'Neither Zenodo (DOSE) nor Eurostat answered for the regional figures' };
+      const parts = [
+        got.dose ? `DOSE ${got.dose.file}: ${Object.keys(got.dose.countries).length} countries` : 'DOSE not read',
+        got.euro ? `Eurostat NUTS 2: ${Object.keys(got.euro.countries).length} countries (copy of ${got.euro.pulledAt.slice(0, 10)})` : 'Eurostat not read',
+      ];
+      return { outcome: 'done', note: parts.join('; ') };
     }
     case 'world:bis_private_debt': {
       const got = await fetchPrivateDebtPull();
