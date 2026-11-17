@@ -64,11 +64,13 @@ export function isCitable(source: string | undefined, tag?: string): boolean {
 /** Numbers sources in the order they are first cited; the same source keeps its number. */
 export class References {
   readonly list: Reference[] = [];
-  cite(source: string): number {
+  /** `url` names the page when the source's own name does not (a published study's DOI). */
+  cite(source: string, url?: string): number {
     const key = source.trim();
     const hit = this.list.find((r) => r.source === key);
     if (hit) return hit.n;
-    const ref: Reference = { n: this.list.length + 1, source: key, ...(sourceUrl(key) ? { url: sourceUrl(key) } : {}) };
+    const link = url || sourceUrl(key);
+    const ref: Reference = { n: this.list.length + 1, source: key, ...(link ? { url: link } : {}) };
     this.list.push(ref);
     return ref.n;
   }

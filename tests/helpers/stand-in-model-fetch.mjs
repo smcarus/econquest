@@ -4,6 +4,8 @@
  * from the recorded replies and the model from here. Its replies are fixed by what it is asked:
  *   - the agent choice: the central bank agent when the question names policy rates or inflation,
  *     the fiscal agent when it names debt;
+ *   - a what-if answer (src/utils/whatIfAnswer.ts): the first percentage under "start", the second
+ *     under "effects", a sentence under a section marked Missing (the check drops it), the rest empty;
  *   - the summary: one sentence per percentage in the agents' documents (the first two), which
  *     traces to their figures, and one sentence naming Brazil (the hidden-names test removes it).
  * Every call is written to STANDIN_LOG (one JSON line: step, prompt, reply), so a test can check
@@ -26,6 +28,23 @@ function reply(system, prompt) {
     };
   }
   const pcts = [...new Set(prompt.match(/-?\d+(?:\.\d+)?%/g) || [])].slice(0, 2);
+  if (system.includes('answering a what-if question')) {
+    const missing = (prompt.match(/^- (\w+) \([^)]*\): Missing/m) || [])[1];
+    return {
+      headline: 'The change would add to pressures the agents already see.',
+      start: pcts[0] ? [`One figure today is ${pcts[0]}.`] : [],
+      shock: [],
+      effects: pcts[1] ? [`After the change one figure is ${pcts[1]}.`] : [],
+      spread: [],
+      history: [],
+      research: [],
+      trends: [],
+      watch: ['A wide band would change the answer.'],
+      ...(missing ? { [missing]: ['Written although Missing.'] } : {}),
+      disagreements: [],
+      gaps: ['No market prices were asked for.'],
+    };
+  }
   return {
     headline: 'The agents\' figures answer the question.',
     points: [...pcts.map((p) => `One figure the agents gave is ${p}.`), 'Brazil is often compared with these countries.'],

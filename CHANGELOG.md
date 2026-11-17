@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- What-if answer layout (WI5): when the Scenario Agent answers, the council's answer comes in eight
+  sections, from where things stand now through the change, first effects, how it spreads, history,
+  research and trends to what would change the answer (`src/utils/whatIfAnswer.ts`). Each section
+  is written only from the figures that belong to it and shows the kind of evidence (data, app
+  calculation, past, published study, interpretation); a section with no figures reads Missing with
+  the reason. Every sentence is checked like any summary sentence. Studies are cited with their DOI.
+  New synthesis instruction for what-if questions; the existing regression cases are unchanged.
+
 - Scenario Agent research (WI4): a short list of peer-reviewed studies by kind of shock
   (`src/data/shockResearch.ts`: Iacoviello and Navarro 2019; Ha, Stocker and Yilmazkuday 2020;
   Kilian 2009; Reinhart and Rogoff 2009; Cerra and Saxena 2008), each checked against the paper with

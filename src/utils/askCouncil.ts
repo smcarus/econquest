@@ -1353,6 +1353,8 @@ export interface CouncilBrief {
   gaps: string[];
   /** An explanation (src/utils/explain.ts): facts apart from interpretation, by lens. `points` holds the same sentences, flat. */
   explain?: import('./explain').ExplainBrief;
+  /** A what-if answer (src/utils/whatIfAnswer.ts): eight sections from now to what would change it. `points` holds the same sentences, flat. */
+  whatIf?: import('./whatIfAnswer').WhatIfBrief;
 }
 
 export interface SynthesisResult {

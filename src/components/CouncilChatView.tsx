@@ -16,6 +16,7 @@ import { MAX_DOCS } from '../utils/policyDocs';
 import { changeLines } from '../utils/whatChanged';
 import { AgentNetwork, useCouncilProgress } from './AgentNetwork';
 import { ExplainAnswer } from './ExplainAnswer';
+import { WhatIfAnswer } from './WhatIfAnswer';
 import { ScenarioReadNote } from './ScenarioReadNote';
 import { parseWhatIf } from '../utils/fiscalWhatIf';
 import { noModelDigest } from '../utils/noModelDigest';
@@ -176,6 +177,11 @@ export const AskCouncilPanel: React.FC<{
         <div className="space-y-2" data-council-summary="true">
           {writingNow ? (
             <p className="text-sm text-slate-500 dark:text-slate-400">{tr('writing')}</p>
+          ) : b?.whatIf ? (
+            <>
+              <WhatIfAnswer headline={b.headline} whatIf={b.whatIf} disagreements={b.disagreements} answers={t.asked.answers} />
+              {removedNotes(t)}
+            </>
           ) : b?.explain ? (
             <>
               <ExplainAnswer headline={b.headline} explain={b.explain} answers={t.asked.answers} />
@@ -378,7 +384,7 @@ export const AskCouncilPanel: React.FC<{
           </summary>
           <div className="mt-2 space-y-3">
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {tr(t.synthesis?.brief?.explain ? 'aiExplanationBy' : 'aiSummaryBy', { model: t.synthesis?.provider || tr('configuredModel') })}
+              {tr(t.synthesis?.brief?.explain || t.synthesis?.brief?.whatIf ? 'aiExplanationBy' : 'aiSummaryBy', { model: t.synthesis?.provider || tr('configuredModel') })}
               {t.synthesis && t.synthesis.removed.length > 0 && tr('removedNumbers', { n: t.synthesis.removed.length })}
               {t.synthesis && (t.synthesis.contradicted?.length ?? 0) > 0 && tr('removedContradicted', { n: t.synthesis.contradicted!.length })}
             </p>

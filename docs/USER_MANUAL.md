@@ -210,6 +210,17 @@ full council and saved research.
   emerging economies as the country is classed by the IMF. A study's number is an average over the
   countries it covers, not an estimate for the country you asked about. No study is cited that is
   not on the list.
+  When the Scenario Agent has answered, the AI model writes the answer in eight parts, in this
+  order: *Where things stand now*, *The change*, *First effects*, *How it spreads*, *What history
+  shows*, *What research finds*, *Trends now* and *What would change the answer*. Each part is marked
+  with the kind of evidence it rests on: *Data* (today's figures), *App calculation* (the app's own
+  sum on your change; the scenario engine and local projections show co-movement, not cause),
+  *Past* (what happened before), *Published study* (an average over many countries) or
+  *Interpretation* (the AI model's reading). The model writes a part only from the figures that
+  belong to it, and every sentence goes through the same number check as any summary. A part with
+  no figures reads *Missing* with the reason; the model is not asked to fill it. Sentences that
+  quote a figure carry its reference number, and a study links to its DOI. Pressing *Explain* on a
+  figure still gives an explanation, not this layout.
 - *Explain on a figure, chart or panel*: an *Explain* link sits beside every figure in an agent
   document and on the Research pages (point at a row on a wide screen to see it), at the top of
   each Research panel, and on every chat chart. It sends that exact figure, with its source and
