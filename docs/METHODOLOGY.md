@@ -1,6 +1,6 @@
 # EconQuest Terminal: Methodology
 
-**Version 1.0, 7 November 2026.** Describes the software as of release 0.1.0.
+**Version 1.4, 17 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of release 0.1.0.
 Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not validated advice.
 
 This document sets out how the EconQuest Terminal sources its data, how its council of agents
@@ -11,7 +11,7 @@ teachers, students and journalists) and for anyone who wants to check or reprodu
 
 Every statement here is meant to be checkable against the open code. Where a claim depends on a
 file, the file is named. The per-model detail (rule, inputs, limits, pre-registered tests and
-recorded verdicts for each of some 60 entries) is in the companion [Methods note](./METHODS.md),
+recorded verdicts for each of some 65 entries) is in the companion [Methods note](./METHODS.md),
 generated from the code; this document explains the framework those entries sit in.
 
 ---
@@ -25,10 +25,11 @@ tests whether simple rules built on them say anything useful about what comes ne
 - **Every number has a source.** Each figure on screen names where it came from and when. If no real
   source provided it, the app shows "Missing" and says why. It never fills a gap with a guess, a
   sample number or an estimate from an AI model.
-- **The AI explains; it does not invent figures.** The council of agents is a set of AI models, each
-  covering one area (the central bank, the budget, politics and so on), that read the figures and
-  write an answer. The app checks that every number in an answer appears in the figures the agents
-  were given, and labels the answer as written by an AI model. It is an interpretation, not advice.
+- **The AI explains; it does not invent figures.** The council's agents, each covering one area (the
+  central bank, the budget, politics and so on), are fixed code that read the figures and state what
+  they show. An AI model only writes the short summary on top, and may quote only the agents'
+  figures. The app checks that every number in the summary appears in those figures, and labels it
+  as written by an AI model. It is an interpretation, not advice.
 - **Rules are tested before they are trusted.** A signal is a rule that claims to say something
   about the future, for example that currencies paying high interest tend to earn more than they
   lose. Before a rule is tested, its details and pass mark are written down and locked with a digital
@@ -44,12 +45,16 @@ tests whether simple rules built on them say anything useful about what comes ne
 - **What it does not do.** It does not give investment advice, does not promise any forecast, and
   does not replace assessments by the IMF, the World Bank or credit rating agencies.
 
-Every technical term used here and in the app is explained in the [Glossary](./GLOSSARY.md).
+Every technical term used here and in the app is explained in the [Glossary](./GLOSSARY.md). A longer
+companion guide, [How EconQuest works, in plain words](./HOW_IT_WORKS.md), explains the same framework
+without jargon, with one result read step by step. This document is the exact technical statement;
+where the two seem to differ, this one governs.
 
 ---
 
 ## Contents
 
+- [Why EconQuest exists](#why-econquest-exists)
 1. [What the terminal is](#1-what-the-terminal-is)
 2. [Principles](#2-principles)
 3. [Data](#3-data)
@@ -61,12 +66,42 @@ Every technical term used here and in the app is explained in the [Glossary](./G
 9. [Evidence grades](#9-evidence-grades)
 10. [The forward record](#10-the-forward-record)
 11. [Results on record](#11-results-on-record)
-12. [Reproducibility](#12-reproducibility)
-13. [Limitations and what stays Missing](#13-limitations-and-what-stays-missing)
-14. [Changing the methodology](#14-changing-the-methodology)
-15. [References](#15-references)
+12. [Quests (built, switched off)](#12-quests-built-switched-off)
+13. [Reproducibility](#13-reproducibility)
+14. [Limitations and what stays Missing](#14-limitations-and-what-stays-missing)
+15. [Changing the methodology](#15-changing-the-methodology)
+16. [References](#16-references)
+- [Version history](#version-history)
 
 ---
+
+## Why EconQuest exists
+
+> *"In 2026 we feel and see the economic effects of poor economic policies. I wanted to see if I could
+> make a tool that could assist people in learning and understanding economics, finding multiple and
+> optimal financial and policy options, and attempting to bring the best tools to the most
+> underserved countries."*
+
+In the maintainer's words.
+
+Sovereign and macroeconomic risk analysis is concentrated in expensive, closed systems. Commercial
+terminals and rating data are priced for large institutions, which leaves students, teachers,
+journalists, smaller institutions and many analysts in the countries being assessed without
+comparable tools. Many tools fill data gaps with estimates without saying so, and the forward claims
+behind their signals are seldom tested in public: models that stop working tend to be retired
+without a report. Large language models add a further risk, fluent commentary with plausible but
+untraceable figures.
+
+The terminal was built to show that the work can be done on free public data under stricter rules
+than are common in the industry: every figure traceable to its source, gaps shown as gaps, every
+forward claim tested against a specification fixed before the run, every verdict published and never
+edited, and AI confined to explaining figures it is given, with automatic checks on what it writes.
+Its aims are to help people learn and understand economics, to set out several costed financial and
+policy options rather than a single answer, and to bring research-grade tools to the economies least
+served by commercial ones. It
+began as a geopolitical-risk desk built around a geopolitical risk VaR measure (section 5.1) and grew
+into a terminal for sovereign and macroeconomic risk. It is a non-commercial, open-source research
+project; its methods and results cannot be bought or changed for money (see `GOVERNANCE.md`).
 
 ## 1. What the terminal is
 
@@ -84,6 +119,29 @@ macroeconomic risk. It runs on the user's own computer (or a server they control
 It is a research and teaching tool. It does not place trades, size positions, issue ratings or give
 investment advice, and nothing it shows has been independently validated by a third party. Every
 export carries the notice "Research, not validated advice" (`src/utils/disclaimer.ts`).
+
+### 1.1 Where it runs
+
+There is no EconQuest website to sign up to and no hosted copy run by the project. Each person runs
+the terminal themselves: on their own computer through Docker Desktop (a ready-made app image is
+built from the public repository for Apple Silicon and ordinary Intel or AMD computers), from the
+code with Node.js, or on a server they control. The terminal fetches figures straight from the public
+sources; it only reaches out, and nothing has to be opened to the internet. Setup is explained step
+by step for non-technical readers in [INSTALL.md](./INSTALL.md).
+
+This is a deliberate choice, for three reasons:
+
+- **Source terms.** Several free sources allow personal or research use but not redistribution to
+  others (section 3.7). When each person fetches their own figures, no one redistributes them.
+- **Keys and saved work stay with the user.** Keys for sources such as FRED, saved research, uploaded
+  documents and the audit log live on the user's computer. A shared copy would have to hold everyone's
+  keys in one place.
+- **The AI model is the user's choice.** The council's AI model can run on the user's own computer
+  through Ollama, so questions never leave it, or through a service the user picks with their own key.
+  A shared copy would need one paid model for everyone.
+
+The consequence for this document: every verdict in section 11 came from a run on the maintainer's
+computer, and anyone can rerun the same tests on theirs (section 13).
 
 ## 2. Principles
 
@@ -118,9 +176,9 @@ what each fills, its address, how long it is cached and how to set it up is in
 
 | Group | Examples |
 | --- | --- |
-| Free feeds, no key | World Bank (indicators, governance, debt statistics, Pink Sheet commodity prices), IMF (World Economic Outlook, reserves and balance of payments, COFER), BIS (policy rates, real exchange rates, debt securities, credit gap), OECD (via DBnomics), ECB reference rates, Eurostat, CFTC Commitments of Traders, US Treasury, New York Fed, UN Comtrade, WITS, national central banks (for example BCB, BCRP), GDELT, Polymarket and Kalshi odds |
+| Free feeds, no key | World Bank (indicators, governance, debt statistics, Pink Sheet commodity prices, remittances and remittance prices, Global Findex, aid received as republished from the OECD DAC, food security), IMF (World Economic Outlook, reserves and balance of payments, COFER), BIS (policy rates, real exchange rates, debt securities, credit gap, central bank total assets, US dollar credit to non-banks), OECD (via DBnomics), ECB reference rates, Eurostat, CFTC Commitments of Traders, US Treasury, New York Fed (rates and dollar swap lines), NASA POWER (weather at each capital since 1981), World Bank Climate Change Knowledge Portal (CRU TS country weather since 1901), UN Comtrade, WITS, national central banks (for example BCB, BCRP), GDELT, Polymarket and Kalshi odds (Kalshi CPI market snapshots saved before each US CPI release for the data surprises), World Bank Projects and Operations API and the IDA statement of credits, World Bank budget outturn from PEFA assessments (GF.XPD.BUDG.ZS), the DOSE regional output dataset (Zenodo, CC BY 4.0), Eurostat regional accounts and labour force survey (NUTS 2), the US Treasury daily par yield curve, the ECB euro area government yield curve, BLS consumer prices |
 | Free with the user's own key | FRED and ALFRED (St. Louis Fed), US EIA |
-| Free files the user downloads | IMF WEO past editions, Caldara-Iacoviello Geopolitical Risk index, OFAC and UN sanctions lists, UCDP conflict data (one release ships with the code under CC BY 4.0), ACLED aggregated files |
+| Free files the user downloads | IMF WEO past editions, Caldara-Iacoviello Geopolitical Risk index, Chinn-Ito capital account openness index, OFAC and UN sanctions lists, UCDP conflict data (one release ships with the code under CC BY 4.0), ACLED aggregated files, NOAA IBTrACS tropical cyclone tracks (downloaded only when the user presses the button, or read from a file the user saves). Read from `data/local/` and never shipped, because their terms are unconfirmed or forbid passing them on: FAOSTAT Consumer Price Indices, EM-DAT disasters (each user's own account), IMF Fiscal Rules Dataset, Database of Political Institutions 2020, IMF investor base workbook, the Ilzetzki-Reinhart-Rogoff exchange rate regime workbook, the Global Data Lab subnational Human Development Index (non-commercial terms), central bank statements the user saves, and the user's own budget execution file. The full table is in [INSTALL.md](./INSTALL.md#files-you-save-yourself) |
 | The user's own paid data (off by default) | Their own CDS file or their own LSEG account |
 
 Prediction-market odds (Polymarket, Kalshi) are shown as market prices, labelled as such, and are
@@ -134,7 +192,7 @@ Every figure the agents and screens use carries one of four tags: **Live data** 
 one of these never reaches the council: its finding is dropped and the gap is stated
 (`src/utils/askCouncil.ts`).
 
-Each country's snapshot is pulled weekly. If a source fails during a pull, the last good figure from
+The daily download runs in the background at most once every 20 hours and refreshes each feed whose saved copy is older than that feed's own interval ([DATA_SOURCES.md](./DATA_SOURCES.md)); each country's snapshot is refreshed weekly, and pages read the saved copy. If a source fails during a pull, the last good figure from
 that same source is kept, with "kept from the *date* pull" on its label, and the pull is retried
 within the hour. A built-in value is never kept in its place.
 
@@ -149,8 +207,9 @@ The rule is applied without exception. Examples of what reads Missing today, and
 - **Sovereign CDS** has no free source. It is hidden from screens and prompts
   (`src/utils/cdsHidden.ts`); the USD bond spread over Treasuries (J.P. Morgan EMBI Global as
   published by BCRP) stands in, and is labelled "a bond spread, not CDS".
-- **Credit ratings, PMIs, government bond auction results and consensus forecasts** have no free
-  source that the terminal can use, so they read Missing.
+- **Credit ratings, PMIs, government bond auction results outside the United States and consensus
+  forecasts** have no free source that the terminal can use, so they read Missing. (US Treasury
+  auction results come from the Treasury's Fiscal Data API.)
 - **Egypt's policy rate** is not in the BIS dataset, so it reads Missing.
 
 Where an AI model writes the council's final report and leaves a field empty, the field reads
@@ -196,13 +255,70 @@ or commercial use, or terms not confirmed. Every figures download carries a lice
 reference list in a brief ends each source with its licence class. A figure worked out from several
 sources takes the strictest class among them.
 
+### 3.8 Figures served to outside systems
+
+Another program, such as a portfolio console, can read the terminal's figures over HTTP with a named
+API token limited to the scopes the user ticks ([DATA_API.md](./DATA_API.md)). The same rules hold
+there as on screen:
+
+- **Same figures, same labels.** A country snapshot returns only saved figures, each with its source,
+  date, model register badge and whether its licence allows passing it on; a figure with no source is
+  Missing with the reason. In sharing mode, figures whose terms do not allow passing them on (for
+  example the Chinn-Ito index, whose authors give no licence) are withheld, as in downloads.
+- **Stable names.** Countries are named by both ISO 3166 codes; positions by ISIN, LEI, CIK or ticker
+  plus the caller's own entity ID, returned unchanged, so the two systems can match records without
+  guessing.
+- **Hidden names.** Countries and securities on the user's hidden-names list are removed before
+  anything is shown, replied or sent, and only a count is reported. The list is stored as keyed
+  fingerprints, so the file does not reveal the names.
+- **Scenario estimates are hypothetical.** A shock (emerging-market currencies against the US dollar,
+  US rates, per-country currency, spread and yield moves) or a replay of a past episode (1997, 1998,
+  2001, 2008, 2013, 2020, 2022) is applied to a portfolio sent in the request. The estimate is first
+  order: duration times the yield or spread move, and notional times the currency move.
+  Carry, convexity, roll-down and the path inside the window are left out, so it is neither a
+  forecast nor a valuation (`src/utils/scenarioReplay.ts`). A replay's move is the change between the
+  monthly averages of the last calm month and the stress month, from OECD 10-year yields and Federal
+  Reserve H.10 exchange rates (FRED, from 1990) and J.P. Morgan EMBI Global spreads (BCRP, from 2016),
+  so it is smaller than the worst day inside the window. A move with no source (for example spreads
+  before 2016, or CDS) is Missing with the reason, and that position's total is left blank rather
+  than filled with a proxy.
+- **Events, not judgements.** Events report what changed (a badge, a revision, a stale feed, a
+  threshold crossed); indicator watches are set by the caller, and none is built in.
+- **Council chat questions over the API.** With the `ask:council` scope, a program can ask Council
+  chat a new question (`POST /api/v1/council/ask`). It runs the same code as the chat in the app: the
+  same agent choice, desk agents (including the Scenario Agent for a what-if question), synthesis and
+  checks (4.3). Only real figures whose licence allows passing them on are used; the rest are left out
+  with their findings and counted. Hidden names never appear, only a count. A cost limit can refuse a
+  model call before it is made. The Quant desk (3.9) never runs for a program.
+
+### 3.9 Figures from an outside research-tools server
+
+The user may connect Council chat to a research-tools server they run themselves (MCP, JSON-RPC 2.0
+over HTTP; contract in `docs/contracts/research-tools.json`, guide in
+[RESEARCH_TOOLS.md](./RESEARCH_TOOLS.md)). It is off until an address and a token are set.
+
+- **Chat only.** The Quant desk calls the server for a chat question that asks for a backtest, a
+  forecast, volatility, a nowcast, an option price, a drawdown or a Sharpe ratio, or when the AI model
+  picks it. Scheduled council runs, the daily download, briefs, the pre-registered tests, the data API
+  and every score, badge and signal never call it.
+- **Labelled as the server's.** Each figure is taken from the reply with its link, its data-through
+  date and the server's label ("Hypothetical, past performance; not a recommendation"); a result
+  without that cite block is not used. The server's models and data are not checked by the app. The
+  register lists the desk as Description, not a tested signal.
+- **Bounded and logged.** Only tools the server lists for the token are called, at most four per
+  question by default, within a time limit (20 s by default). Every call goes in the audit log with
+  the tool, a correlation ID and the outcome; the token never does. A refusal or time-out reads
+  "Research tools unavailable" and the other desks still answer.
+
 ## 4. The council of agents
 
 ### 4.1 Council chat
 
 A user asks a question about their watchlist. Desk agents that cover the question answer it: Central
 Bank, Fiscal & Debt, Politics & Events, Relative Value, FX, Global Spillover, Calendar, Timing,
-Nowcast & Forecast, and a Document agent for policy files the user uploads. The AI model chooses
+Nowcast & Forecast, Behavioural Finance, a Chart Agent for charts and statistical tests, a Document
+agent for policy files the user uploads, the Scenario Agent for what-if questions (5.4) and, only when
+the user has set up outside research tools, the Quant desk (3.9). The AI model chooses
 which agents to ask when one is set up; otherwise stated keyword rules do. Either way the reason each
 agent was asked is shown.
 
@@ -211,6 +327,14 @@ and the register's rules and returns findings, each with its source and tag. A s
 is a language model (a local model through Ollama, Google Gemini, or any OpenAI-compatible server the
 user chooses), then writes a short brief from the agents' findings alone. Every AI-written answer is
 labelled as such in the terminal, with the model that wrote it.
+
+For a what-if question the summary agent follows a separate instruction and writes eight sections in
+a fixed order: where things stand now, the change, first effects, how it spreads, what history shows,
+what research finds, trends now, and what would change the answer (`src/utils/whatIfAnswer.ts`).
+Each section is written only from the findings that belong to it and is marked with its kind of
+evidence (data, app calculation, past, published study, interpretation). A section with no findings
+reads Missing with the reason; the model is not asked to fill it. Every sentence goes through the
+same checks (4.3).
 
 ### 4.2 The referee model
 
@@ -253,7 +377,13 @@ missing), and every save, delete, download, settings change, backtest and sign-o
 local audit log. Each line is chained to the one before by SHA-256, and the chain is checked when the
 log is opened (`src/utils/auditLog.ts`). This detects a changed or removed line; it cannot stop
 someone who rewrites the whole chain, which the risk and compliance note states
-([RISK_AND_COMPLIANCE.md](./RISK_AND_COMPLIANCE.md)).
+([RISK_AND_COMPLIANCE.md](./RISK_AND_COMPLIANCE.md)). Two optional settings close that gap. With a
+seal key held outside the data folder, every entry also carries an HMAC-SHA256 of its hash, which a
+rewritten chain cannot reproduce without the key; and each entry can be copied, in order, to an
+S3-compatible bucket with object lock, where it cannot be changed or deleted before its retention
+date ([SECURITY.md](./SECURITY.md), "Audit seal and locked copies"). A call from another program may
+carry a correlation ID, which is written into the entries it causes, so a decision in that program can
+be traced to the figures it read.
 
 ### 4.6 Regression testing of the council
 
@@ -264,6 +394,22 @@ without a new recording, if the checked answers differ from the baseline, if a c
 fails, or if any answer contains a number that no input gave. Cases that failed when recorded are
 listed as known failures, not edited to pass
 ([council-regression/README.md](./validation/council-regression/README.md)).
+
+### 4.7 Explanations and help levels
+
+Plain-language help is shown at one of three levels, set with the help button at the top of the page
+and kept in the user's browser. **Key help**, the default, puts a guide on every chart (how to read
+it, and what it means in real life), a short introduction on each panel, a "What it means" line under
+each brief observation, and *What is this?* on the main figures. **Full help** adds *What is this?* on
+every figure and term. **Help off** shows figures, sources and observations only. **Expert** shows figures, sources and
+forecast ranges, without plain-language explanations.
+
+These guides, introductions, "What it means" lines and glossary entries are fixed text, written in
+advance and stored in the code (for example `src/data/chartGuides.ts` and the [Glossary](./GLOSSARY.md)).
+They describe standard economics in general terms, contain no figures of their own and are not written
+by an AI model at the time of reading. The one exception is **Explain** on a figure, which asks the
+council what the figure means for that country: that answer is written by the AI model, labelled as
+such, and goes through the same number check as any council answer (section 4.3).
 
 ## 5. The model and signal register
 
@@ -279,10 +425,153 @@ Each entry carries one status:
 | Backtest / forecast evaluation / signal test **passed** | Met a pass mark fixed and hashed before the run |
 | **Failed** | Did not meet it. Shown as failed; never tuned afterwards |
 | **Too few cases** | The registered minimum sample was not reached; no verdict |
-| **Not validated** | Makes a forward claim that has not yet been tested |
-| **Description, not a tested signal** | Shows published figures or past co-movement and makes no forward call (for example, the country risk scorecard, gross financing need, geopolitical risk VaR) |
+| **Not validated** | Makes a forward claim, or has a forward test registered, that has not yet been run or passed (for example, the country risk scorecard, whose test that weak governance comes before a sovereign default was fixed and hashed on 13 November 2026, before any run) |
+| **Description, not a tested signal** | Shows published figures or past co-movement and makes no forward call (for example, gross financing need, geopolitical risk VaR, sanctions list counts) |
 | **Model-assisted, not validated** | AI-written output with automatic checks (the council summary); not testable as a rule |
 | **Stated method, no call to test** | A calculation or teaching tool with a published method and no forward claim |
+
+### 5.1 Geopolitical risk VaR
+
+The project began from the question of how much a country's markets can lose in periods of high
+geopolitical tension. The *Geopolitical risk VaR* panel (Country Research > History & data > Global
+shock scenarios; `src/utils/grVar.ts`) answers it for the currency, from public data only.
+
+- **Stress months.** Months in which the Caldara and Iacoviello (2022) Geopolitical Risk index (world,
+  and the country index where the file has one) is at or above its 90th percentile, computed over the
+  months that also have the currency. At least 100 overlapping months and 20 stress months are
+  required; otherwise the panel reads Missing.
+- **VaR and expected shortfall.** The 95th percentile of the monthly currency change against the US
+  dollar (100 × log change of units per dollar, month-end ECB rates; positive means weaker), and the
+  mean change at or beyond it, each computed in stress months and in all months.
+- **Global channels.** The mean US policy rate and dollar moves of the stress months are put through
+  the country's fitted scenario model (Global shock scenarios), with a 90% band from Newey-West
+  coefficient standard errors.
+- **Status.** Description, not a tested signal: it measures past co-movement with a news-based index
+  and makes no forward call.
+- **Limits.** The index is persistent, so stress months are fewer independent episodes than their
+  count, and a 95% tail read from 20 to 40 months is imprecise. Currency only; no bond or equity
+  prices. The index counts newspaper coverage, a proxy for risk rather than risk itself.
+
+A plain-language account, with a worked reading, is in [How EconQuest works](./HOW_IT_WORKS.md#10-geopolitical-risk-var-explained).
+
+### 5.2 The policy council
+
+A policy review can weigh one measure (a tax change, a subsidy reform, a spending programme) or what
+an event means for one market of the country (the currency, local-currency or US-dollar government
+bonds). The parts are arithmetic on what the user enters, and the AI step sees only those entries and
+the review's diagnosis (`src/utils/policyCouncil.ts`, `src/data/discountRates.ts`).
+
+- **Costs and benefits.** The user enters each year's costs and benefits with a source. Present values
+  are discounted sums at the official rates the user ticks (HM Treasury Green Book, US OMB Circular
+  A-4 at 3% and 7%, the European Commission's 3%, the Asian Development Bank's 9% and 6%, each with the
+  document, passage and the day it was checked) or at the user's own rate. The app reports the net,
+  benefits per unit of cost, the pay-back year, how far figures would have to move to flip the sign
+  (switching values) and the flat rate where the net is zero, found by bisection.
+- **Who gains and who loses.** One row per group, with a size only when it has a unit and a source;
+  otherwise Missing. Optional by-fifth shares are set against each fifth's share of income from World
+  Bank household surveys and read as regressive, progressive or about proportional.
+- **What follows.** Each link of a second-order chain rests on a figure from the review's Diagnose
+  step (with source and period), a source the user names, or is marked as an assumption; the panel
+  counts each kind.
+- **Scenarios.** Two to five cases scale the cost-benefit table by the user's percentages, with
+  optional odds; the panel gives each case's net present value and, with odds, the odds-weighted net
+  and the chance of a negative net. For a market, the app copies in its own readings as they stood on
+  the review's As of day, and cases are a change in value for a holder.
+- **The council step.** In the Options step the council ranks alternatives against the measure (or,
+  for a market, against keeping the current stance), using only numbers from the diagnosis and the
+  entries. The same traceability checks as Council chat apply (4.3), and the council regression set
+  (4.6) carries one policy and one market case. Outcome checks at 12 and 24 months set a currency
+  market council's cases against the change in value for a holder in US dollars.
+- **Status.** Description, not a tested signal: arithmetic on stated figures, not a forecast or a
+  recommendation. Sums of % of GDP across years treat each year's GDP as the same size.
+
+### 5.3 Weather, disasters and parametric insurance
+
+These tools describe past weather and losses and replay simple insurance designs over the record.
+None makes a forward call; all are listed as Description, not a tested signal. The full rules are in
+the [Methods note](./METHODS.md).
+
+- **Weather.** Monthly temperature and rainfall at the capital's grid cell from NASA POWER (MERRA-2
+  reanalysis, since 1981) and averaged over the country from CRU TS through the World Bank climate
+  portal (since 1901). Each month is compared with the same calendar month's 1991-2020 average in the
+  same series; a month needs 25 of the 30 base years, otherwise the comparison reads Missing.
+- **Trigger designer and burn analysis.** A season index (rainfall summed; temperature and prices
+  averaged) pays in a straight line from the trigger to the exit. Burn cost is the mean yearly payout
+  as % of the cover over every complete past season, with its standard deviation, and the same since
+  1991.
+- **Fair price.** Burn cost × (1 + loading %), or burn cost + k × the standard deviation of the yearly
+  payout, as the user picks; capped at 100% of the cover; a 90% range from the length of the record.
+  A teaching price from the record alone, not a market quote.
+- **Return periods and extreme values.** From the record, the r-th most extreme of n seasons counts as
+  about 1 year in (n + 1)/r. A generalised extreme value (GEV) curve is fitted by L-moments (Hosking
+  1990), on the low tail for low-index covers, with a 90% range from 400 bootstrap resamples at a fixed
+  seed; levels beyond the record are marked as extrapolation. At least 20 seasons are needed.
+- **Basis risk.** With no loss records in the app, the other weather series (capital against country)
+  stands in for the loss: the worst 1 in 5 of its seasons count as bad years, and the panel counts
+  bad years paid and missed, payouts in other years and the Spearman rank correlation. It is a lower
+  bound on basis risk.
+- **Disaster loss model.** From the EM-DAT file the user saves: events per year as a Poisson count, or
+  negative binomial when the yearly variance is more than 1.5 times the mean; damage per event as a
+  lognormal, checked against the record's 1-in-10 event; 20,000 simulated years give the average
+  annual loss and the loss passed 1 year in 10, 50 and 100. At least 5 events with a damage figure are
+  needed. Damage is understated because many events report none.
+- **Tropical cyclones.** IBTrACS tracks since 1980 whose centre passes within 50, 100 or 200 km of the
+  country with winds of 34 knots or more there; strength on the Saffir-Simpson scale from the highest
+  wind within that distance. The distance of the centre is not the reach of the winds, and wind is
+  not damage.
+
+### 5.4 What-if questions: the Scenario Agent
+
+Council chat reads the changes a question states (a central bank or Fed rate, government borrowing
+costs, the dollar, the currency, oil, food or commodity prices, financial stress, supply chain
+pressure, growth, inflation), each with the size in the user's words; a change with no size is asked
+for and never filled in (`src/utils/scenarioQuestion.ts`). The agents holding the figures each change
+moves are always asked. The Scenario Agent (`src/utils/scenarioAgent.ts`, register `scenario_agent`)
+then sets today's figures beside the figures after the change, for up to four countries:
+
+- **Fed, dollar, financial stress, supply chains:** the currency and policy rate from 15 years of
+  monthly co-movement in the scenario engine, with a 90% band, flagged when the shock is larger than
+  any month on record.
+- **A rate change:** inflation 6, 12 and 24 months on from local projections, and the real rate on
+  impact. Local projections show co-movement, not the effect of the rate alone.
+- **Borrowing costs, growth, inflation:** government debt at the end of the IMF's five-year inputs
+  against the baseline, from the debt identity.
+- **A currency fall:** the rise in debt from government bonds owed abroad, a lower bound.
+- **Oil, food or commodity prices:** the first-round change in the trade balance from the country's
+  net trade in that group.
+- **History:** moves of the currency, 10-year yield and USD bond spread over a fixed list of past
+  episodes of the same kind (`episodeMove`, shared with the crisis replays); for growth, inflation or
+  the currency, the cases since 1980 with a move as large in one year and the medians of what
+  followed over three years, with the eight closest starting points; and where the new level would
+  sit in the country's own record.
+- **Published research:** a fixed list of peer-reviewed studies by kind of shock
+  (`src/data/shockResearch.ts`: Iacoviello and Navarro 2019; Ha, Stocker and Yilmazkuday 2020; Kilian
+  2009; Reinhart and Rogoff 2009; Cerra and Saxena 2008), each number checked against the paper with
+  its page and the paper's own words, and the finding shown for the country's IMF group (advanced or
+  emerging). It is labelled as a published average, not an estimate for the country.
+
+A part with no inputs reads Missing with the reason. A debt path can be kept for the trade-off chart
+under Debt sustainability, in the browser tab only. Status: Description, not a tested signal.
+
+### 5.5 Tools for five kinds of users
+
+On 17 November 2026 the app was checked against what a policy researcher, a public administrator, a
+politician, an economist and a market trader need, and eleven tools were added (group R in the
+[roadmap](./ROADMAP.md)). All are listed in the register; the rules are in the
+[Methods note](./METHODS.md).
+
+| Tool | What it does | Status |
+| --- | --- | --- |
+| Budget credibility | Spending as % of the budget first approved (World Bank GF.XPD.BUDG.ZS from PEFA assessments, UN goal 16.6.1), the PEFA PI-1 band of each year and a grade on the PEFA rule over the latest three years, labelled as the app's, not the official score | Description |
+| Budget execution | The user's approved budget and monthly spending by line, against the share of the fiscal year gone; behind or ahead by more than 10 points; a same-pace year-end figure only when no month is missing. The file stays in `data/local/budget-execution/`; the audit log keeps its SHA-256, never its contents | Description |
+| World Bank projects | Active projects, amounts committed, share of planned time gone, and for IDA credits and grants the share paid out; a project a quarter or more through its time and more than 25 points behind is marked as paying out slowly (budget support never marked) | Description |
+| Regional figures | DOSE output per person by first-level region (constant 2015 US$), the gap to the national figure, the richest-to-poorest ratio and the spread against ten years before; Eurostat NUTS 2 GDP per person in PPS and unemployment; the Global Data Lab subnational HDI from the user's file | Description |
+| For people | A plain summary of a policy review for constituents (cost per person, who gains and who pays, regions furthest behind, precedents) from fixed sentences, no AI | Description |
+| Working-paper bundle and replication check | Pinned Chart Agent figures with their As of day and a SHA-256 fingerprint; a zip with the draft, data, Python, R and Stata scripts, `CITATION.cff` and a manifest; a later check reads the series again and reports Same, Revised or Source no longer answers (`npm run notebook:check`) | Stated method |
+| Ranges from past misses | 70% and 90% ranges from the 15th-85th and 5th-95th percentiles of past misses: IMF WEO editions (same season, same horizon) against the newest edition's outturn, and the app's forecasts against their out-of-sample misses for the country; fewer than 8 cases reads Missing | Description |
+| Full yield curves | US Treasury par curve and ECB euro area spot curve each day; a Nelson-Siegel-Svensson fit (decay times on a grid, weights by least squares); level, slope, curvature and their moves; three-month carry and roll-down before costs | Description |
+| Data surprises | Each release against an expectation published before it (BCB Focus for Brazil's IPCA, ECB SPF for euro area HICP, the Kalshi CPI market for US CPI, the app's own GDP nowcast on the forward record), scaled by the spread of earlier surprises once there are 8 | Description |
+| Inflation surprise index | The scaled inflation surprises with a 90-day half-life, a year at most and 3 needed. Its test (a reading above +0.5 followed by a policy rate rise within three months more often than usual) was registered and hashed before any run (`docs/validation/pending/surprise_index.json`) and runs once 60 month ends qualify | Not validated |
 
 ## 6. The signal standard
 
@@ -355,6 +644,29 @@ Diebold-Mariano test with the Harvey-Leybourne-Newbold small-sample correction i
 for reference, and the coverage of the 70% and 90% bands is reported beside the verdict
 (`src/utils/forecastEval.ts`). A forecast that fails is not drawn by default in the terminal.
 
+### 7.4 Conventions in the charts and tables
+
+These settings apply wherever the terminal computes a statistic (`src/utils/stats.ts`), and the
+replication packs use the same ones.
+
+- **Unit-root test (ADF).** The lag is chosen by AIC, with every candidate lag fitted on one common
+  sample; the test statistic is then refitted at the chosen lag on every usable row, as statsmodels
+  `adfuller` does.
+- **Year-on-year change of a daily series.** Each point is compared with the last observation on or
+  before the same date a year earlier, at most 7 days older; 29 February compares with 28 February.
+  With no observation in that window the change is left out.
+- **Hodrick-Prescott smoothing.** The trend on a chart uses a smoothing parameter that follows the
+  Ravn-Uhlig rule: 6.25 for annual, 1,600 for quarterly, 129,600 for monthly, 6.25 × 52⁴ for weekly
+  and 6.25 × 252⁴ for daily data. The output gap panels set their own (100 and 6.25 on yearly GDP,
+  [METHODS.md](./METHODS.md)).
+- **US dollar amounts.** World Bank dollar series (reserves, external debt, debt service, exports,
+  balance of payments flows, trade totals) are kept in billions to six decimals, the nearest $1,000,
+  so small economies do not round to zero. Ratios built from them use the unrounded inputs and round
+  only the result.
+- **Watch triggers.** A policy review trigger is read only when its number is unambiguous: "2,5" and
+  "0,750" read as 2.5 and 0.75, but a thousands separator such as "above 1,500" reads as "cannot read"
+  rather than being guessed.
+
 ## 8. Multiple testing
 
 The more rules are tried, the more likely one passes by chance. Each verdict is therefore shown with
@@ -383,6 +695,14 @@ a badge beside the panel and under Menu > Models & validation (`src/utils/eviden
 "Validated" here is a research label with a defined meaning: a pre-registered test survived a
 multiple-testing correction, or a forward record confirmed it. It is not independent model
 validation in the regulatory sense, and it is not investment advice.
+
+**What "pre-registered" means here.** Each test's rule, data, pass mark and costs were written down
+and hashed before it was run, so the rule cannot have changed after the result was seen. The tests
+on record so far were written down on the day they ran or the day before, on data that was already
+public. For those the hash does not show that the rule was fixed before anyone looked at the data,
+so read them as specified and hashed before the run. Only a test written down before its data exist
+(the forward record, below) rules out both. docs/TRACK_RECORD.md gives the registration and run
+dates of every test.
 
 ### 9.1 Industry grounding
 
@@ -443,7 +763,70 @@ The grade shown in the terminal is computed from all tests on record at the time
 A failed result is a result. Most of the forecasting models fail to beat naive benchmarks, which is
 consistent with the wider literature on macroeconomic forecasting, and they are shown that way.
 
-## 12. Reproducibility
+### 11.1 Which countries the results rest on
+
+A result says something only about the countries and years it was tested on. The terminal's default
+watchlist is the 19 member countries of the G20 (Argentina, Australia, Brazil, Canada, China, France,
+Germany, India, Indonesia, Italy, Japan, Korea, Mexico, Russia, Saudi Arabia, South Africa, Turkey,
+the United Kingdom and the United States; the European Union and the African Union are not countries
+and are left out). The tests do not all cover the same countries, because each uses only the series a
+free source publishes over a long enough history. The coverage below is copied from the
+pre-registered test files and the recorded runs.
+
+| Test | What it covered |
+| --- | --- |
+| Crowded futures positioning (CFTC) and Timing Agent | 6 currency futures traded in Chicago: Mexican peso, Brazilian real, South African rand, Japanese yen, British pound and euro; June 2007 to September 2026 |
+| Cycle clock | 24 countries' policy rates (BIS), from January 1995 |
+| Currency carry, momentum | 25 currencies against the US dollar: Australian, Canadian and New Zealand dollars, Swiss franc, British pound, Japanese yen, Norwegian and Swedish kronor, euro, Czech koruna, Hungarian forint, Polish zloty, Israeli shekel, Korean won, Mexican peso, South African rand, Brazilian real, Indian rupee, Indonesian rupiah, Philippine peso, Thai baht, Malaysian ringgit, Turkish lira, Romanian leu and Icelandic krona; January 2000 to September 2026 |
+| Currency value | The same list, of which 20 currencies had the price data, January 2004 to February 2026 |
+| GDP nowcast | 35 countries' quarterly GDP, fourth quarter 2007 to fourth quarter 2025 |
+| Taylor-rule gap | 13 countries, February 2000 to February 2026 |
+| Unrest spikes to conflict onset | 113 countries, 2018 to 2024 |
+| CPI, GDP, policy rate and debt forecasts | Between 24 and 184 series, from 2008 (each count is in the [Track record](./TRACK_RECORD.md)) |
+
+Pegged and tightly managed currencies are left out of the currency tests by rule. Several G20
+countries (China, Saudi Arabia, Argentina, Russia) are therefore absent from some tests, and a result
+from mostly advanced and large emerging economies may not carry over to smaller or frontier ones.
+
+## 12. Quests (built, switched off)
+
+**Status: built and tested, but switched off.** Quests are not available to users yet. The menu shows
+"Quests: Not yet available", greyed out, and they stay off until every item on the go-live checklist
+in [QUESTS.md](./QUESTS.md) is ticked. They are described here because their method is fixed in code
+and should be open to criticism before launch.
+
+A Quest is an open question about an economy, a sovereign or geopolitical risk that anyone can answer,
+argue and check, for example "Will Brazil's policy rate be above 14% on 31 March?". Each Quest is one
+file in the public repository (`quests/`) with a fingerprint, like a pre-registered test, and states in
+advance exactly which feed and which value will settle it.
+
+- **Settled from the feeds, by a stated rule.** When a Forecast Quest's date passes, the app reads the
+  answer from the named feed exactly as the rule says: for daily and weekly series, the first value
+  published on or after the date; for yearly IMF and World Bank figures, the value as first published,
+  with later revisions undone. A missing value is never settled automatically. A Quest may settle only
+  on a source whose terms allow its figures to be shown with credit.
+- **A tamper-evident results file.** Each result is one line in `quests/resolutions.jsonl`, chained to
+  the line before by a SHA-256 fingerprint, like the forward record (section 10). Anyone may dispute a
+  result within 7 days; a disputed result can only stand or become "unresolvable", never be replaced by
+  a different answer.
+- **Scored against the simplest guess.** A forecast is scored by how much better it did than the base
+  rate (for yes-or-no questions, the Brier score of the base rate minus the person's Brier score) or
+  than assuming nothing changes (for number questions). Each statistic is shown only once a person has
+  enough settled forecasts for it to mean something (12 for skill, 30 for calibration), with a 90%
+  bootstrap range. Rankings need 12 settled forecasts and a GitHub account at least 90 days old.
+- **Debate Quests are never scored.** Some questions have no single figure that settles them ("What
+  would most reliably rebuild Egypt's foreign reserves?"). A Debate Quest lists two to four positions;
+  people argue them, and nobody is called right. While an argument is typed, Claim Check compares each
+  figure it states with the app's own figure, by fixed rules and no AI. After entries close, an
+  evidence map shows each argument with its Claim Check readings and the results of related Forecast
+  Quests.
+- **The opening brief is labelled AI-written and states no figures.** Before a debate opens, the
+  app's AI model (the referee model, at least 32 billion parameters, temperature 0, fixed seed) writes
+  the strongest case and the weakest point of each position. The script refuses any brief that states
+  a number not already in the Quest, so no figure comes from a model. The brief is saved with its model
+  and settings and never replaced.
+
+## 13. Reproducibility
 
 - **Open code and specifications.** All code, every pre-registered specification and the manifest of
   their hashes are public. A specification changed after registration is refused by the runner, and
@@ -458,8 +841,9 @@ consistent with the wider literature on macroeconomic forecasting, and they are 
 - **Replication packs.** A chart result can be downloaded as a zip containing the data it drew
   (`data.csv`), the same statistical tests written out in Python, R and Stata with the settings the
   terminal used, and a README listing each column's source, licence and the terminal's own figures to
-  check against. The scripts implement the arithmetic directly (OLS, Granger F test, ADF with lag
-  chosen by AIC, Hodrick-Prescott filter) so they match the terminal's statistics rather than a
+  check against. The scripts implement the arithmetic directly (OLS, Granger F test, ADF with the lag
+  chosen by AIC on one common sample and the test refitted at that lag on every usable row,
+  Hodrick-Prescott filter) so they match the terminal's statistics rather than a
   package's defaults (`src/utils/replicationPack.ts`).
 - **Point-in-time views.** *As of a past day* shows every figure the terminal held on a date;
   *Replicate a rate decision* shows the inputs a simple rule would have had before a central bank
@@ -467,13 +851,13 @@ consistent with the wider literature on macroeconomic forecasting, and they are 
 - **Exports.** Every brief, note, memo and figures download carries its sources, periods, licence
   classes and the research notice.
 
-## 13. Limitations and what stays Missing
+## 14. Limitations and what stays Missing
 
 The terminal states what it cannot do. In particular:
 
 - **No free source, so Missing:** sovereign CDS (hidden; a USD bond spread stands in, labelled as
-  such), credit ratings, PMIs, government bond auction results, consensus forecasts, and some
-  countries' series (for example Egypt's policy rate).
+  such), credit ratings, PMIs, government bond auction results outside the United States, consensus
+  forecasts, and some countries' series (for example Egypt's policy rate).
 - **Revised data.** Where real-time vintages are not available, tests use today's revised data and
   say so. OECD figures obtained through DBnomics can lag the official release by about five months.
 - **Small samples.** Many emerging-market series are short and stress episodes cluster. Results from a
@@ -482,17 +866,35 @@ The terminal states what it cannot do. In particular:
   forecast of future performance; only the forward record speaks to that.
 - **AI-written text.** The traceability checks catch untraceable numbers and contradicted stances, not
   emphasis, omission or poor reasoning. A different model can lean differently on the same figures.
-- **Descriptive tools make no forward claim.** The country risk scorecard, geopolitical risk VaR,
-  gross financing need, reserve adequacy and similar panels describe; they are not tested signals.
+- **Descriptive tools make no forward claim.** Geopolitical risk VaR, gross financing need, reserve
+  adequacy and similar panels describe; they are not tested signals. The country risk scorecard also
+  gives no overall score; its registered default test has no runner yet, so it reads Not validated.
+- **Scenario estimates are first order.** Shock and replay results on a portfolio leave out carry,
+  convexity and the path inside the window, and replays use monthly averages; they understate the
+  worst day and are labelled hypothetical.
+- **Weather and insurance tools rest on short records.** About 45 seasons of NASA POWER, 25 years of
+  EM-DAT damage and 45 seasons of storm tracks are short for 1-in-50 or 1-in-100 events; fitted
+  levels beyond the record assume no trend in climate or markets. The index of a parametric cover is
+  not the insured loss, and the fair price leaves out reinsurance, taxes, brokerage and the insurer's
+  own models.
+- **What-if answers are arithmetic on stated changes.** The scenario engine and local projections
+  show past co-movement, not cause; the debt identity leaves out feedback from the shock to growth and
+  rates; a published study is an average over its sample. None is a forecast for the country.
+- **The five-roles tools rest on what is published.** Budget credibility has only the years a PEFA
+  assessment covered; regional figures come out years late and GDP is counted where people work; IBRD
+  loans have no paid-out figure yet; US data surprises build up only from the user's first daily run,
+  and the surprise index's test needs years of releases before it can run.
+- **Outside research tools are not checked.** Figures from the user's own research-tools server are
+  shown with the server's label and link; the app does not check that server's models or data.
 - **Not a compliance tool.** The sanctions panel counts entries on official lists; it does no alias
   or fuzzy matching and does not apply ownership rules. EU and UK lists are not yet read.
 - **Single-user controls.** On a single-user installation, a report "approved" by its author is
   labelled self-approved. Audit-log integrity relies on a hash chain, which detects edits but not a
-  full rewrite of the chain.
+  full rewrite of the chain, unless the optional seal key and locked bucket copies are set up.
 - **Source terms.** Some free sources require permission for client or commercial use. The licence
   register states each case; users are responsible for respecting the terms of the sources they use.
 
-## 14. Changing the methodology
+## 15. Changing the methodology
 
 Changes to rules, specifications, the register or this document go through public pull requests with
 a sign-off under the Developer Certificate of Origin (see `CONTRIBUTING.md`). A new or changed test is
@@ -500,7 +902,7 @@ a new registered version with its own hash; a recorded verdict is never edited, 
 only from a real run. Material changes to this document are listed in the project changelog with a new
 version number.
 
-## 15. References
+## 16. References
 
 - Basel Committee on Banking Supervision (1996). *Supervisory framework for the use of "backtesting"
   in conjunction with the internal models approach to market risk capital requirements.* Bank for
@@ -509,23 +911,66 @@ version number.
   (2011). *Supervisory Guidance on Model Risk Management* (SR 11-7 / OCC 2011-12).
 - Caldara, D. and Iacoviello, M. (2022). Measuring geopolitical risk. *American Economic Review*,
   112(4), 1194-1225.
+- Chinn, M. D. and Ito, H. (2006). What matters for financial development? Capital controls,
+  institutions, and interactions. *Journal of Development Economics*, 81(1), 163-192.
+- Cerra, V. and Saxena, S. C. (2008). Growth dynamics: the myth of economic recovery. *American
+  Economic Review*, 98(1), 439-457. doi:10.1257/aer.98.1.439.
 - CFA Institute. *Global Investment Performance Standards (GIPS)*, 2020 edition.
 - Diebold, F. X. and Mariano, R. S. (1995). Comparing predictive accuracy. *Journal of Business &
   Economic Statistics*, 13(3), 253-263.
+- Gahtan, J., Knapp, K. R., Schreck, C. J., Diamond, H. J., Kossin, J. P. and Kruk, M. C. (2024).
+  International Best Track Archive for Climate Stewardship (IBTrACS) Project, Version 4r01. NOAA
+  National Centers for Environmental Information. doi:10.25921/82ty-9e16.
+- Ha, J., Stocker, M. and Yilmazkuday, H. (2020). Inflation and exchange rate pass-through. *Journal of
+  International Money and Finance*, 105, 102187. doi:10.1016/j.jimonfin.2020.102187.
 - Harvey, C. R., Liu, Y. and Zhu, H. (2016). ... and the cross-section of expected returns. *Review of
   Financial Studies*, 29(1), 5-68.
 - Harvey, D., Leybourne, S. and Newbold, P. (1997). Testing the equality of prediction mean squared
   errors. *International Journal of Forecasting*, 13(2), 281-291.
+- HM Treasury. *The Green Book: Central Government Guidance on Appraisal and Evaluation* (edition
+  and discount rate schedule as cited in the app).
 - Holm, S. (1979). A simple sequentially rejective multiple test procedure. *Scandinavian Journal of
   Statistics*, 6(2), 65-70.
+- Hosking, J. R. M. (1990). L-moments: analysis and estimation of distributions using linear
+  combinations of order statistics. *Journal of the Royal Statistical Society, Series B*, 52(1),
+  105-124.
+- Iacoviello, M. and Navarro, G. (2019). Foreign effects of higher U.S. interest rates. *Journal of
+  International Money and Finance*, 95, 232-250. doi:10.1016/j.jimonfin.2018.06.012.
+- Ilzetzki, E., Reinhart, C. M. and Rogoff, K. S. (2019). Exchange arrangements entering the
+  twenty-first century: which anchor will hold? *Quarterly Journal of Economics*, 134(2), 599-646.
+- Kilian, L. (2009). Not all oil price shocks are alike: disentangling demand and supply shocks in the
+  crude oil market. *American Economic Review*, 99(3), 1053-1069. doi:10.1257/aer.99.3.1053.
+- Nelson, C. R. and Siegel, A. F. (1987). Parsimonious modeling of yield curves. *Journal of
+  Business*, 60(4), 473-489.
+- PEFA Secretariat (2016). *Framework for assessing public financial management* (PI-1, aggregate
+  expenditure outturn). Washington, DC.
+- Reinhart, C. M. and Rogoff, K. S. (2009). The aftermath of financial crises. *American Economic
+  Review*, 99(2), 466-472 (NBER Working Paper 14656). doi:10.3386/w14656.
+- Svensson, L. E. O. (1994). Estimating and interpreting forward interest rates: Sweden 1992-1994.
+  NBER Working Paper 4871.
 - Taylor, J. B. (1993). Discretion versus policy rules in practice. *Carnegie-Rochester Conference
   Series on Public Policy*, 39, 195-214.
+- US Office of Management and Budget (2003). *Circular A-4: Regulatory Analysis.*
 - US Securities and Exchange Commission (2020). *Investment Adviser Marketing* (Rule 206(4)-1, the
   Marketing Rule). Release No. IA-5653.
 
+- Wenz, L., Carr, R. D., Kögel, N., Kotz, M. and Kalkuhl, M. (2023). DOSE: global data set of reported
+  sub-national economic output. *Scientific Data*, 10, 425. Data on Zenodo,
+  doi:10.5281/zenodo.20035157.
+
 Per-model references are given in the [Methods note](./METHODS.md).
+
+## Version history
+
+| Version | Date | Changes |
+| --- | --- | --- |
+| 1.0 | 7 November 2026 | First version |
+| 1.1 | 8 November 2026 | Opening section on why EconQuest exists; a plain-language companion, [How EconQuest works](./HOW_IT_WORKS.md); where it runs (1.1), explanations and help levels (4.7), geopolitical risk VaR (5.1), which countries the results rest on (11.1) and Quests (12). Published on the project website; joined the repository with version 1.2 |
+| 1.2 | 13 November 2026 | Sources and the files you save (3.1), statistics conventions in the charts and tables (7.4), figures served to outside systems and hypothetical scenario estimates (3.8), the audit seal and locked copies (4.5), the country risk scorecard listed as Not validated with its registered default test (5, 14), scenario limits (14). The short version corrected: the council's chat agents are fixed code, and only the summary writer is an AI model |
+| 1.3 | 14 November 2026 | New sources in 3.1 (BIS central bank assets and dollar credit, New York Fed swap lines, NASA POWER, the World Bank climate portal, IBTrACS, the exchange rate regime workbook); the policy council (5.2); weather, disasters and parametric insurance (5.3); short-record limits of those tools (14); references for L-moments, IBTrACS, the exchange rate regime classification and the official discount rates |
+| 1.4 | 17 November 2026 | New sources in 3.1 (World Bank projects and IDA credits, PEFA budget outturn, DOSE and Eurostat regional figures, the Global Data Lab file, US Treasury and ECB yield curves, BLS prices, Kalshi CPI snapshots, the user's budget file); Council chat questions over the API and figures from an outside research-tools server (3.8, 3.9); the Chart Agent, Scenario Agent and Quant desk in 4.1, with the eight-section what-if answer; the Scenario Agent (5.4); the tools for five kinds of users (5.5); limits of what-if answers, the new tools and outside figures (14); references for the shock studies, DOSE, PEFA and the Nelson-Siegel-Svensson curve |
 
 ---
 
-*EconQuest Terminal methodology, version 1.0 (7 November 2026). Text licensed under CC BY 4.0: you may
+*EconQuest Terminal methodology, version 1.4 (17 November 2026). Text licensed under CC BY 4.0: you may
 share and adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*

@@ -100,7 +100,7 @@ const raw = (code: Code, skipZero = false) => (y: string, c: IdsCreditors) => {
 };
 
 export const IDS_CREDITOR_DEFS: Def[] = [
-  { id: 'ppg_external_usd', label: 'Public external debt (PPG)', unit: 'USD bn', about: `${ABOUT_HOLDERS} All creditors.`, value: (y, c) => (c.world['DT.DOD.DPPG.CD']?.[y] !== undefined ? Number((c.world['DT.DOD.DPPG.CD']![y] / 1e9).toFixed(2)) : undefined) },
+  { id: 'ppg_external_usd', label: 'Public external debt (PPG)', unit: 'USD bn', about: `${ABOUT_HOLDERS} All creditors.`, value: (y, c) => (c.world['DT.DOD.DPPG.CD']?.[y] !== undefined ? Number((c.world['DT.DOD.DPPG.CD']![y] / 1e9).toFixed(6)) : undefined) },
   { id: 'ppg_multilateral_share', label: 'Owed to multilateral lenders', unit: '% of public external debt', about: SHARE('multilateral lenders (IMF, World Bank, regional development banks and others)'), value: share('DT.DOD.MLAT.CD') },
   { id: 'ppg_bilateral_share', label: 'Owed to other governments (bilateral)', unit: '% of public external debt', about: SHARE('other governments and their agencies'), value: share('DT.DOD.BLAT.CD') },
   { id: 'ppg_bonds_share', label: 'Owed to bondholders', unit: '% of public external debt', about: SHARE('holders of bonds issued abroad'), value: share('DT.DOD.PBND.CD') },

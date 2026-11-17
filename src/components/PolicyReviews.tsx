@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import type { PeopleExtras } from '../utils/peopleSummary';
 import { ClipboardList, Download, Pencil, Play, Plus, Trash2 } from 'lucide-react';
-import { REVIEW_STEPS, STEP_HINT, STEP_LABEL, STEP_STATE_LABEL, type PolicyReview, type ReviewFrame, type ReviewStep, type ReviewSummary, type StepState } from '../utils/policyReview';
+import { COUNCIL_MAX_YEARS, COUNCIL_SIZE_LABEL, COUNCIL_SIZE_UNITS, MARKET_KINDS, MARKET_LABEL, type MarketKind, REVIEW_STEPS, STEP_HINT, STEP_LABEL, STEP_STATE_LABEL, type CouncilSizeUnit, type PolicyReview, type ReviewFrame, type ReviewStep, type ReviewSummary, type StepState } from '../utils/policyReview';
 import { GOAL_INDICATORS, type Diagnosis, type DiagnosisFigure } from '../utils/reviewDiagnosis';
 import type { EvidenceStep } from '../utils/reviewEvidence';
 import { defaultMemoInputs, memoFileName, RESEARCH_BANNER, VALIDATED_BANNER, type MemoInputs, type MemoStep } from '../utils/reviewMemo';
@@ -13,6 +14,14 @@ import { LENSES, LENS_LABEL, LEVER_LABEL, MAX_USER_OPTIONS, type OptionsStep, ty
 import { withNotice } from '../utils/disclaimer';
 import { useLang, useT, useTx } from '../i18n/useLang';
 import { REPORTS } from '../i18n/messages/reports';
+import { BehaviouralCheck } from './BehaviouralCheck';
+import { PrecedentFinder } from './PrecedentFinder';
+import { ReviewPeers } from './ReviewPeers';
+import { ReviewCompare } from './ReviewCompare';
+import { PoliticalFeasibility } from './PoliticalFeasibility';
+import { ExpertReviewForm } from './ExpertReviewForm';
+import { PolicyCouncil } from './PolicyCouncil';
+import { councilChangedSince } from '../utils/policyCouncil';
 
 /**
  * Reports > Policy reviews: a guided, repeatable case file for one country and one problem.
@@ -21,7 +30,7 @@ import { REPORTS } from '../i18n/messages/reports';
  */
 
 type Country = { iso3: string; countryName: string };
-type Opened = { review: PolicyReview; states: Record<ReviewStep, StepState>; changed: ReviewStep[] };
+type Opened = { review: PolicyReview; states: Record<ReviewStep, StepState>; changed: ReviewStep[]; changedBehaviour?: boolean; changedCouncil?: string[]; changedExpert?: string[] };
 
 const INPUT = 'w-full px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white';
 const today = () => new Date().toISOString().slice(0, 10);
@@ -58,6 +67,7 @@ const FrameForm: React.FC<{ countries: Country[]; initial: ReviewFrame; submitLa
   const goal = (patch: Partial<ReviewFrame['goal']>) => setF((x) => ({ ...x, goal: { ...x.goal, ...patch } }));
   const known = countries.some((c) => c.iso3 === f.iso3);
   const t = useT(REPORTS);
+  const tx = useTx();
   return (
     <form
       className="grid gap-3 sm:grid-cols-2"
@@ -127,6 +137,83 @@ const FrameForm: React.FC<{ countries: Country[]; initial: ReviewFrame; submitLa
         <span className="ui-label block mb-1">{t('pr_audience')}</span>
         <input className={INPUT} maxLength={120} value={f.audience || ''} onChange={(e) => setF({ ...f, audience: e.target.value })} placeholder={t('pr_audiencePh')} />
       </label>
+      <fieldset className="sm:col-span-2 rounded-lg border border-slate-200 dark:border-slate-700 p-3" data-review-council="true">
+        <label className="flex items-start gap-2 text-sm">
+          <input type="checkbox" className="mt-1" checked={Boolean(f.council)} onChange={(e) => setF({ ...f, council: e.target.checked ? { kind: 'policy', measure: '' } : undefined })} />
+          <span>
+            <span className="font-semibold text-slate-900 dark:text-white">{t('pr_councilToggle')}</span>
+            <span className="block text-xs text-slate-500 dark:text-slate-400">{t('pr_councilHelp')}</span>
+          </span>
+        </label>
+        {f.council && (
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="sm:col-span-2 flex flex-wrap gap-4 text-sm" role="radiogroup" data-council-kind={f.council.kind}>
+              <label className="flex items-center gap-1.5">
+                <input type="radio" name="council-kind" checked={f.council.kind !== 'market'} onChange={() => setF({ ...f, council: { kind: 'policy', measure: f.council!.measure, start: f.council!.start, years: f.council!.years } })} />
+                {t('pr_councilKindPolicy')}
+              </label>
+              <label className="flex items-center gap-1.5">
+                <input type="radio" name="council-kind" checked={f.council.kind === 'market'} onChange={() => setF({ ...f, council: { kind: 'market', market: 'currency', measure: f.council!.measure, start: f.council!.start, years: f.council!.years } })} />
+                {t('pr_councilKindMarket')}
+              </label>
+            </div>
+            {f.council.kind === 'market' && (
+              <label className="block sm:col-span-2">
+                <span className="ui-label block mb-1">{t('pr_councilMarket')}</span>
+                <select className={INPUT} value={f.council.market ?? 'currency'} onChange={(e) => setF({ ...f, council: { ...f.council!, market: e.target.value as MarketKind } })}>
+                  {MARKET_KINDS.map((m) => (
+                    <option key={m} value={m}>
+                      {tx(MARKET_LABEL[m])}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <label className="block sm:col-span-2">
+              <span className="ui-label block mb-1">{f.council.kind === 'market' ? t('pr_councilEvent') : t('pr_councilMeasure')}</span>
+              <textarea className={INPUT} rows={2} maxLength={300} value={f.council.measure} onChange={(e) => setF({ ...f, council: { ...f.council!, measure: e.target.value } })} placeholder={f.council.kind === 'market' ? t('pr_councilEventPh') : t('pr_councilMeasurePh')} required />
+            </label>
+            {f.council.kind !== 'market' && (
+              <div className="grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="ui-label block mb-1">{t('pr_councilSize')}</span>
+                <input
+                  type="number"
+                  step="any"
+                  className={INPUT}
+                  value={f.council.size?.value ?? ''}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setF({ ...f, council: { ...f.council!, size: v === '' ? undefined : { value: Number(v), unit: f.council!.size?.unit ?? 'pct_gdp' } } });
+                  }}
+                />
+              </label>
+              <label className="block">
+                <span className="ui-label block mb-1">{t('pr_councilUnit')}</span>
+                <select className={INPUT} value={f.council.size?.unit ?? 'pct_gdp'} disabled={!f.council.size} onChange={(e) => setF({ ...f, council: { ...f.council!, size: { value: f.council!.size?.value ?? 0, unit: e.target.value as CouncilSizeUnit } } })}>
+                  {COUNCIL_SIZE_UNITS.map((u) => (
+                    <option key={u} value={u}>
+                      {tx(COUNCIL_SIZE_LABEL[u])}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="ui-label block mb-1">{t('pr_councilStart')}</span>
+                <input type="month" className={INPUT} value={f.council.start || ''} onChange={(e) => setF({ ...f, council: { ...f.council!, start: e.target.value || undefined } })} />
+              </label>
+              <label className="block">
+                <span className="ui-label block mb-1">{t('pr_councilYears')}</span>
+                <input type="number" min={1} max={COUNCIL_MAX_YEARS} step={1} className={INPUT} value={f.council.years ?? ''} onChange={(e) => setF({ ...f, council: { ...f.council!, years: e.target.value === '' ? undefined : Number(e.target.value) } })} />
+              </label>
+            </div>
+            <p className="sm:col-span-2 text-xs text-slate-500 dark:text-slate-400">{t('pr_councilNote')}</p>
+          </div>
+        )}
+      </fieldset>
       <div className="sm:col-span-2 flex gap-1.5">
         <button type="submit" className="ui-btn ui-btn-primary" disabled={busy}>
           {busy ? t('pr_saving') : submitLabel}
@@ -490,6 +577,7 @@ const MemoForm: React.FC<{ options: OptionsStep; initial: MemoInputs; busy: bool
       </label>
       <fieldset className="sm:col-span-2 space-y-1.5">
         <legend className="ui-label mb-1">{t('pr_watch')}</legend>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{t('pr_triggerHelp')}</p>
         {m.watch.map((w, i) => (
           <div key={i} className="grid gap-1.5 sm:grid-cols-[1fr_1fr_auto]">
             <input className={INPUT} value={w.indicator} maxLength={120} placeholder={t('pr_watchPh')} aria-label={t('pr_watchN', { n: i + 1 })} onChange={(e) => setM({ ...m, watch: m.watch.map((x, j) => (j === i ? { ...x, indicator: e.target.value } : x)) })} />
@@ -583,6 +671,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
   const [busy, setBusy] = useState('');
   const [own, setOwn] = useState<UserOption[]>([]);
   const [prefill, setPrefill] = useState<{ frame: ReviewFrame; previousId?: string } | null>(null);
+  const [people, setPeople] = useState<{ id: string; heading: string; lines: string[] } | null>(null);
   const t = useT(REPORTS);
   const tx = useTx();
   const lang = useLang();
@@ -603,6 +692,12 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
     const pick = () => {
       const p = takeReviewPrefill();
       if (!p) return;
+      if (p.openId) {
+        setCreating(false);
+        void open(p.openId);
+        document.getElementById('tool-policy-reviews')?.scrollIntoView({ block: 'start' });
+        return;
+      }
       setOpened(null);
       setPrefill({ frame: { ...emptyFrame(p.iso3 || defaultIso3), problem: (p.problem || '').slice(0, 600) }, previousId: p.previousId });
       setCreating(true);
@@ -616,6 +711,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
 
   const open = async (id: string | null) => {
     setEditingFrame(false);
+    setPeople(null);
     if (!id) return setOpened(null);
     try {
       setOpened(await api<Opened>(`/api/reviews/${encodeURIComponent(id)}`));
@@ -759,6 +855,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                 .
               </p>
             )}
+            {r.previousId && <ReviewCompare review={r} previousId={r.previousId} />}
             {opened!.changed.length > 0 && (
               <p className="text-xs text-rose-700 dark:text-rose-400" role="alert">
                 {opened!.changed.length === 1 ? t('pr_hashMismatch1', { steps: opened!.changed.map((s) => tx(STEP_LABEL[s])).join(', ') }) : t('pr_hashMismatch', { steps: opened!.changed.map((s) => tx(STEP_LABEL[s])).join(', ') })}
@@ -812,6 +909,18 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                   </dd>
                   <dt className="ui-label">{t('pr_constraintsDt')}</dt>
                   <dd className="text-slate-900 dark:text-white">{frame.constraints.length ? frame.constraints.join('; ') : t('pr_noneStated')}</dd>
+                  {frame.council && (
+                    <>
+                      <dt className="ui-label">{t('pr_councilDt')}</dt>
+                      <dd className="text-slate-900 dark:text-white">
+                        {frame.council.kind === 'market' && frame.council.market ? `${tx(MARKET_LABEL[frame.council.market])}: ` : ''}
+                        {frame.council.measure}
+                        {frame.council.size ? ` (${frame.council.size.value} ${tx(COUNCIL_SIZE_LABEL[frame.council.size.unit])})` : ''}
+                        {frame.council.start ? t('pr_councilFrom', { d: frame.council.start }) : ''}
+                        {frame.council.years ? t('pr_councilAhead', { n: String(frame.council.years) }) : ''}
+                      </dd>
+                    </>
+                  )}
                   {frame.audience && (
                     <>
                       <dt className="ui-label">{t('pr_for')}</dt>
@@ -827,6 +936,13 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                 </dl>
               )}
             </section>
+
+            {frame?.council && !editingFrame && (
+              <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="council">
+                <h4 className="ui-section-title">1b. {t('pk_title')}</h4>
+                <PolicyCouncil review={r} frame={frame} changed={opened!.changedCouncil} onSaved={apply} />
+              </section>
+            )}
 
             <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="diagnose">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -851,6 +967,22 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
               )}
             </section>
 
+            {frame && (
+              <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="precedents">
+                <h4 className="ui-section-title">2b. {t('pc_title')}</h4>
+                <p className="ui-label">{t('pc_hint')}</p>
+                <PrecedentFinder review={r} countryName={name(frame.iso3)} />
+              </section>
+            )}
+
+            {frame && diagnosis && opened!.states.diagnose === 'done' && (
+              <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="peers">
+                <h4 className="ui-section-title">2c. {t('pe_title')}</h4>
+                <p className="ui-label">{t('pe_hint')}</p>
+                <ReviewPeers review={r} iso3={frame.iso3} countries={countries} countryName={name} />
+              </section>
+            )}
+
             <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="options">
               <h4 className="ui-section-title">3. {tx(STEP_LABEL.options)}</h4>
               <p className="ui-label">{tx(STEP_HINT.options)} {t('pr_optionsNote')}</p>
@@ -870,6 +1002,12 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                   </div>
                 </>
               )}
+              {frame?.council && <p className="text-xs text-slate-600 dark:text-slate-300" data-council-options="true">{t('pk_optionsNote')}</p>}
+              {frame?.council && options?.model && councilChangedSince(r, options.councilHashes) && (
+                <p className="text-xs text-amber-700 dark:text-amber-400" data-council-stale="true">
+                  {t('pk_optionsStale')}
+                </p>
+              )}
               {options && <OptionsView s={options} d={diagnosis} />}
               {r.steps.options && (
                 <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -878,6 +1016,14 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                 </p>
               )}
             </section>
+
+            {frame && (
+              <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="political">
+                <h4 className="ui-section-title">3b. {t('pf_title')}</h4>
+                <p className="ui-label">{t('pf_hint')}</p>
+                <PoliticalFeasibility review={r} />
+              </section>
+            )}
 
             <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="evidence">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -904,6 +1050,12 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
               )}
             </section>
 
+            <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="behaviour">
+              <h4 className="ui-section-title">4b. {t('bc_title')}</h4>
+              <p className="ui-label">{t('bc_hint')}</p>
+              <BehaviouralCheck review={r} optionsState={opened!.states.options} changed={opened!.changedBehaviour} onSaved={apply} />
+            </section>
+
             <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="memo">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h4 className="ui-section-title">5. {tx(STEP_LABEL.memo)}</h4>
@@ -927,6 +1079,50 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                     >
                       <Download className="w-3.5 h-3.5" /> PDF
                     </button>
+                    <button
+                      type="button"
+                      className="ui-btn"
+                      data-review-brief="true"
+                      title={t('pr_briefTitle')}
+                      onClick={() =>
+                        run('brief', async () => {
+                          const [{ plainBrief, plainBriefFileName, asBriefLang }, { plainBriefPdf }, { peopleSummary }] = await Promise.all([import('../utils/plainBrief'), import('../utils/plainBriefPdf'), import('../utils/peopleSummary')]);
+                          // R7: the people section goes in when its figures can be read; the brief is made without it otherwise.
+                          const extras = await api<PeopleExtras>(`/api/reviews/${encodeURIComponent(r.id)}/people`).catch(() => null);
+                          const pp = extras ? peopleSummary(r, memo.inputs, extras, asBriefLang(lang), tx) : undefined;
+                          const pdf = await plainBriefPdf(plainBrief(r, memo.inputs, asBriefLang(lang), pp), r.steps.memo!.savedAt, r.steps.memo!.hash);
+                          saveFile(plainBriefFileName(r.title, asBriefLang(lang)), pdf.bytes, 'application/pdf');
+                        })
+                      }
+                    >
+                      <Download className="w-3.5 h-3.5" /> {t('pr_brief')}
+                    </button>
+                    <button
+                      type="button"
+                      className="ui-btn"
+                      data-review-people="true"
+                      title={t('pr_peopleTitle')}
+                      onClick={() =>
+                        run('people', async () => {
+                          const [{ peopleSummary }, { asBriefLang }] = await Promise.all([import('../utils/peopleSummary'), import('../utils/plainBrief')]);
+                          const extras = await api<PeopleExtras>(`/api/reviews/${encodeURIComponent(r.id)}/people`);
+                          setPeople({ id: r.id, ...peopleSummary(r, memo.inputs, extras, asBriefLang(lang), tx) });
+                        })
+                      }
+                    >
+                      {t('pr_people')}
+                    </button>
+                  </div>
+                )}
+                {memo && people?.id === r.id && (
+                  <div className="border border-slate-200 dark:border-slate-700 rounded p-3 space-y-1" data-review-people-text="true">
+                    <p className="text-sm font-medium">{people.heading}</p>
+                    <ul className="list-disc pl-4 text-sm space-y-0.5">
+                      {people.lines.map((l) => (
+                        <li key={l}>{l}</li>
+                      ))}
+                    </ul>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{t('pr_peopleNote')}</p>
                   </div>
                 )}
               </div>
@@ -1000,10 +1196,17 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                       <p key={c.hash} data-review-auto-check={c.verdict}>
                         {t('pr_autoRow', { months: String(c.months), date: c.due, verdict: t(`pr_v_${c.verdict}` as 'pr_v_hit') })}. {c.reason}
                         {c.warnings?.length ? ` ${t('pr_autoWarn', { list: c.warnings.map((w) => `${w.label} [${w.ref}]: ${t(`pr_w_${w.result}` as 'pr_w_shown')}`).join('; ') })}` : ''}
+                        {c.cases ? ` ${t('pr_autoCases', { r: c.cases.reason })}` : ''}
                       </p>
                     ))}
                 </div>
               )}
+            </section>
+
+            <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="expert">
+              <h4 className="ui-section-title">{t('xr_title')}</h4>
+              <p className="ui-label">{t('xr_hint')}</p>
+              <ExpertReviewForm review={r} memoState={opened!.states.memo} changed={opened!.changedExpert} onSaved={apply} />
             </section>
           </div>
         )}

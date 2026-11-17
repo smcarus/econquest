@@ -5,11 +5,16 @@
 
 import type { LiveWatchlistItem } from '../types/council';
 import { toLive } from './liveFigures';
+import { ID_FIELDS, idsOf, parseSecurityIds, type SecurityIds } from './securityIds';
 
 export type HoldingAssetClass = 'HC_BOND' | 'LC_BOND' | 'CDS' | 'FX' | 'OTHER';
 export type HoldingSide = 'LONG' | 'SHORT';
 
-export interface Holding {
+/**
+ * One position. The identifiers (ISIN, LEI, CIK, ticker, your own entity ID) are optional; see
+ * src/utils/securityIds.ts. The entity ID is given back exactly as it was sent.
+ */
+export interface Holding extends SecurityIds {
   id: string;
   iso3: string;
   instrument: string;
@@ -19,6 +24,9 @@ export interface Holding {
   notionalUsdMm: number;
   /** Modified duration in years (bonds) or spread duration (CDS). Optional. */
   durationYears?: number;
+  /** Sent by an outside system through the holdings API: the token's id and name. Absent = added in the app. */
+  from?: string;
+  fromName?: string;
 }
 
 export const ASSET_CLASS_LABEL: Record<HoldingAssetClass, string> = {
@@ -89,18 +97,23 @@ function splitCsvLine(line: string, delim: string): string[] {
 
 const HEADER_ALIASES: Record<string, string[]> = {
   country: ['country', 'iso3', 'iso', 'issuer', 'sovereign', 'country_code'],
-  instrument: ['instrument', 'security', 'name', 'description', 'bond', 'isin'],
+  instrument: ['instrument', 'security', 'name', 'description', 'bond'],
   type: ['type', 'asset_class', 'assetclass', 'class', 'asset'],
   side: ['side', 'direction', 'long_short', 'position'],
   notional: ['notional_usd_mm', 'notional', 'notional_mm', 'amount', 'face', 'nominal', 'size', 'usd_mm', 'mv_usd_mm'],
   duration: ['duration', 'mod_duration', 'modified_duration', 'dur', 'spread_duration'],
+  isin: ['isin'],
+  lei: ['lei'],
+  cik: ['cik'],
+  ticker: ['ticker', 'symbol'],
+  entityId: ['entity_id', 'entityid', 'position_id', 'your_id', 'external_id'],
 };
 
 function normaliseHeader(h: string): string {
   return h.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 }
 
-function parseAssetClass(v: string): HoldingAssetClass {
+export function parseAssetClass(v: string): HoldingAssetClass {
   const s = v.toLowerCase();
   if (!s) return 'HC_BOND';
   if (s.includes('cds') || s.includes('protection')) return 'CDS';
@@ -191,14 +204,21 @@ export function parseHoldingsCsv(text: string, known: CountryLookup[]): Holdings
     const sideRaw = get('side').toLowerCase();
     const side: HoldingSide = sideRaw.startsWith('s') || sideRaw === 'sell' || n < 0 ? 'SHORT' : 'LONG';
     const dur = parseNumber(get('duration'));
+    const ids = parseSecurityIds({ isin: get('isin'), lei: get('lei'), cik: get('cik'), ticker: get('ticker'), entityId: get('entityId') }, `Row ${rowNo}`);
+    if (ids.errors.length) {
+      errors.push(...ids.errors);
+      return;
+    }
     holdings.push({
       id: newHoldingId(),
       iso3,
-      instrument: get('instrument') || `${iso3} position`,
+      // A file with an ISIN column and no instrument column names each position by its ISIN.
+      instrument: get('instrument') || ids.ids.isin || `${iso3} position`,
       assetClass: parseAssetClass(get('type')),
       side,
       notionalUsdMm: Math.abs(n),
       durationYears: dur !== null && dur > 0 ? dur : undefined,
+      ...ids.ids,
     });
   });
   return { holdings, errors };
@@ -207,10 +227,13 @@ export function parseHoldingsCsv(text: string, known: CountryLookup[]): Holdings
 export function holdingsToCsv(holdings: Holding[]): string {
   const esc = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
   const typeCode: Record<HoldingAssetClass, string> = { HC_BOND: 'hc_bond', LC_BOND: 'lc_bond', CDS: 'cds', FX: 'fx', OTHER: 'other' };
+  // Identifier columns only when a position has one, so a plain book exports as before.
+  const idCols = ID_FIELDS.filter((k) => holdings.some((h) => h[k] !== undefined));
+  const idHeader: Record<string, string> = { isin: 'isin', lei: 'lei', cik: 'cik', ticker: 'ticker', entityId: 'entity_id' };
   return [
-    'country,instrument,type,side,notional_usd_mm,duration',
+    ['country,instrument,type,side,notional_usd_mm,duration', ...idCols.map((k) => idHeader[k])].join(','),
     ...holdings.map((h) =>
-      [h.iso3, esc(h.instrument), typeCode[h.assetClass], h.side.toLowerCase(), h.notionalUsdMm, h.durationYears ?? ''].join(',')
+      [h.iso3, esc(h.instrument), typeCode[h.assetClass], h.side.toLowerCase(), h.notionalUsdMm, h.durationYears ?? '', ...idCols.map((k) => esc(idsOf(h)[k] ?? ''))].join(',')
     ),
   ].join('\n');
 }

@@ -37,7 +37,7 @@ The server needs outbound internet for the free data feeds. Nothing has to be op
    `data`:
 
    ```sh
-   git clone https://github.com/smcarus/econquest.git
+   git clone https://github.com/e-conquest/econquest.git
    cd econquest/deploy/home-server
    cp env.example .env
    mkdir -p data ollama
@@ -116,6 +116,10 @@ After that everyone signs in; the admin adds accounts under Menu > Users. Locked
    443 reach this box, set `TLS_MODE` to your email address instead and Caddy gets a Let's Encrypt
    certificate.
 4. Get the setup code (above), create the admin account, then add the others under Menu > Users.
+5. Optional: let people sign in with an account they already have at Google, Microsoft, Okta,
+   Keycloak or another OpenID Connect provider, instead of a password made here. The settings
+   (`OIDC_ISSUER`, client ID and secret, which emails may sign in, and which are admins) are in
+   [SECURITY.md](./SECURITY.md).
 
 `ECONQUEST_SECRET_KEY` encrypts the keys you save in Menu > Settings. It is not in the data folder,
 so the data folder backup does not hold it: keep it in your password manager.
@@ -227,6 +231,7 @@ Config comes only from environment variables (`.env` here, or the full list in t
 | `TZ` | UTC | Time zone for the morning brief, the nightly data check and scheduled jobs |
 | `SCHEDULE_DOWNLOAD_ALL` | 02:30 | Daily Download all (every free feed for every country); `off` to stop |
 | `SCHEDULE_BACKTESTS` | sun 03:30 | Weekly run of the pre-registered tests: backtests, then forecast evaluations and currency signal tests, each adding to its forward record; `off` to stop. The app runs this weekly by default even outside the home server |
+| `DAILY_DOWNLOAD_DEADLINE` | empty | HH:MM in `SCHEDULE_TZ`: if no daily download has finished by then, a `feed_failed` event is sent ([DEPLOYMENT.md](./DEPLOYMENT.md)) |
 | `LOG_FORMAT` | json in the image | `json` or empty for plain text |
 | `SHUTDOWN_TIMEOUT_MS` | 8000 | How long a stop waits for open requests |
 

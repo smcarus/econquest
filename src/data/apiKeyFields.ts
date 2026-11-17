@@ -21,7 +21,7 @@ export interface ApiKeyField {
   /** False for settings that are not secret (a series code, a file path): shown in full. Default true. */
   secret?: boolean;
   /** Where Settings lists it: free sources with your own key (default), or your own paid data. */
-  section?: 'free_key' | 'own_account' | 'subscription' | 'ai' | 'alerts';
+  section?: 'free_key' | 'own_account' | 'subscription' | 'ai' | 'alerts' | 'research';
   /** Hint in the empty box, for settings that are not keys. */
   placeholder?: string;
   /** A pick-one setting (shown as a list) instead of a typed value. */
@@ -29,6 +29,10 @@ export interface ApiKeyField {
   /** Returns an error sentence, or null when the value looks right. */
   validate: (value: string) => string | null;
 }
+
+const RT_FEEDS = 'Lets Council chat call a research-tools server you run (backtests, volatility and price forecasts, nowcasts, option prices) from chat questions only.';
+const RT_WITHOUT = 'Off until both the address and the token are set; Council chat then works as before.';
+const RT_DOCS = 'https://github.com/e-conquest/econquest/blob/main/docs/RESEARCH_TOOLS.md';
 
 export const API_KEY_FIELDS: ApiKeyField[] = [
   {
@@ -149,7 +153,7 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     feeds:
       '5-year sovereign CDS on the watchlist, MarketEdge and the Country tab. No free source of CDS exists, so the app shows only quotes from your own file or your own LSEG account, labelled with whose data they are.',
     withoutIt: 'Off: CDS reads Missing.',
-    getKeyUrl: 'https://github.com/smcarus/econquest/blob/main/docs/DATA_SOURCES.md',
+    getKeyUrl: 'https://github.com/e-conquest/econquest/blob/main/docs/DATA_SOURCES.md',
     getKeySteps: 'Pick a file you export yourself (Bloomberg, LSEG, S&P) or your LSEG Data Platform account, then fill in the settings for it below.',
     checkId: 'own_cds',
     secret: false,
@@ -168,7 +172,7 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     provider: 'Your own licensed data',
     feeds: 'Full path to your CSV with columns iso3,date,cds5y_bps,source. The latest date per country is used.',
     withoutIt: 'Needed when the CDS source is My CSV file.',
-    getKeyUrl: 'https://github.com/smcarus/econquest/blob/main/docs/DATA_SOURCES.md',
+    getKeyUrl: 'https://github.com/e-conquest/econquest/blob/main/docs/DATA_SOURCES.md',
     getKeySteps: "Under Docker the app sees the project folder's data/local as /app/data/local, so put the file there and enter /app/data/local/cds.csv.",
     checkId: 'own_cds',
     secret: false,
@@ -236,7 +240,7 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     feeds:
       'Series you map from a data service you already pay for show next to the free ones, labelled "Your subscription". They stay on this computer: downloads, backups and shared copies say "Withheld: your subscription data" instead.',
     withoutIt: 'Off: the app uses free sources only.',
-    getKeyUrl: 'https://github.com/smcarus/econquest/blob/main/docs/DATA_SOURCES.md',
+    getKeyUrl: 'https://github.com/e-conquest/econquest/blob/main/docs/DATA_SOURCES.md',
     getKeySteps: 'Pick the service you subscribe to, enter your sign-in details below, then map the series you want under "Your series".',
     checkId: 'paid_data',
     secret: false,
@@ -288,6 +292,61 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     section: 'ai',
     validate: (v) => (/^[A-Za-z0-9_-]{20,128}$/.test(v) ? null : 'A Gemini key is a run of letters, digits, dashes and underscores (usually starting AIza). Check it was copied in full.'),
   },
+  // ---- Outside research tools (src/server/researchTools.ts): off until the address and token are set
+  {
+    id: 'RESEARCH_TOOLS_URL',
+    label: 'Research tools server address',
+    provider: 'Your own research-tools server (MCP)',
+    feeds: RT_FEEDS,
+    withoutIt: RT_WITHOUT,
+    getKeyUrl: RT_DOCS,
+    getKeySteps: 'The address of the server, for example https://research.example.net:8443. The app adds /mcp.',
+    checkId: 'research_tools',
+    section: 'research',
+    secret: false,
+    placeholder: 'https://research.example.net:8443',
+    validate: (v) => (/^https?:\/\/[^\s]+$/.test(v) ? null : 'The address starts with https:// (or http:// on your own network).'),
+  },
+  {
+    id: 'RESEARCH_TOOLS_TOKEN',
+    label: 'Research tools token',
+    provider: 'Your own research-tools server (MCP)',
+    feeds: RT_FEEDS,
+    withoutIt: RT_WITHOUT,
+    getKeyUrl: RT_DOCS,
+    getKeySteps: 'A key made for this app by the server\'s admin. It is sent only to that server and never logged.',
+    checkId: 'research_tools',
+    section: 'research',
+    validate: (v) => (/^\S{8,512}$/.test(v) ? null : 'A token has no spaces. Check it was copied in full.'),
+  },
+  {
+    id: 'RESEARCH_TOOLS_TIMEOUT_S',
+    label: 'Research tools time limit (seconds)',
+    provider: 'Your own research-tools server (MCP)',
+    feeds: 'How long Council chat waits for each tool call. 20 seconds when not set.',
+    withoutIt: RT_WITHOUT,
+    getKeyUrl: RT_DOCS,
+    getKeySteps: 'A whole number from 1 to 120.',
+    checkId: 'research_tools',
+    section: 'research',
+    secret: false,
+    placeholder: '20',
+    validate: (v) => (/^\d{1,3}$/.test(v) && Number(v) >= 1 && Number(v) <= 120 ? null : 'Use a whole number of seconds from 1 to 120.'),
+  },
+  {
+    id: 'RESEARCH_TOOLS_MAX_CALLS',
+    label: 'Research tool calls per question',
+    provider: 'Your own research-tools server (MCP)',
+    feeds: 'The most tool calls one Council chat question may make. 4 when not set.',
+    withoutIt: RT_WITHOUT,
+    getKeyUrl: RT_DOCS,
+    getKeySteps: 'A whole number from 1 to 10.',
+    checkId: 'research_tools',
+    section: 'research',
+    secret: false,
+    placeholder: '4',
+    validate: (v) => (/^\d{1,2}$/.test(v) && Number(v) >= 1 && Number(v) <= 10 ? null : 'Use a whole number from 1 to 10.'),
+  },
   // ---- Server alerts (src/utils/serverAlerts.ts) ---------------------------------------------
   // Test sends a real test message instead of a connection check, so checkId names no check row.
   {
@@ -329,7 +388,7 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     provider: 'Email',
     feeds: 'Who gets alert emails: one address, or several separated by commas.',
     withoutIt: 'Without it no alert email is sent.',
-    getKeyUrl: 'https://github.com/smcarus/econquest/blob/main/docs/HOME_SERVER.md#server-alerts',
+    getKeyUrl: 'https://github.com/e-conquest/econquest/blob/main/docs/HOME_SERVER.md#server-alerts',
     getKeySteps: 'Any address you read.',
     checkId: 'alert_email',
     section: 'alerts',
@@ -343,7 +402,7 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     provider: 'Email',
     feeds: 'The sender address on alert emails. Optional: without it the user name in the mail server address is used when it is an email address.',
     withoutIt: 'Many mail servers only accept their own account as the sender.',
-    getKeyUrl: 'https://github.com/smcarus/econquest/blob/main/docs/HOME_SERVER.md#server-alerts',
+    getKeyUrl: 'https://github.com/e-conquest/econquest/blob/main/docs/HOME_SERVER.md#server-alerts',
     getKeySteps: 'Usually the same account as the mail server.',
     checkId: 'alert_email',
     section: 'alerts',

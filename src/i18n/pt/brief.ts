@@ -1,0 +1,38 @@
+/** Portuguese for src/i18n/messages/brief.ts. Brazilian Portuguese, polite "você" (Sam, 2026-11-12). Not yet checked by a native speaker. */
+import type { Messages } from '../lang';
+import type { BRIEF } from '../messages/brief';
+
+export const BRIEF_PT: Messages<typeof BRIEF> = {
+  view_economist: "Economia",
+  title_economist: "Resumo do economista",
+  note_economist: "Crescimento, inflação e política, a trajetória fiscal e a posição externa.",
+  cta_economist: "Escrever a nota do país",
+  view_banker: "Emissor",
+  title_banker: "Resumo do emissor",
+  note_banker: "Acesso ao mercado, necessidade de financiamento, quando ir ao mercado e preço em relação aos pares.",
+  cta_banker: "Escrever a nota do emissor",
+  view_official: "Sustentabilidade",
+  title_official: "Resumo de sustentabilidade da dívida",
+  note_official: "Trajetória da dívida, uma projeção de cinco anos com choques padrão, o ajuste que estabilizaria a dívida e a posição externa.",
+  cta_official: "Escrever a avaliação",
+  viewAria: "Visão do resumo",
+  whatItMeans: "O que significa: ",
+  rulesNote: "Estas observações são regras simples aplicadas aos números ao vivo abaixo, não uma previsão nem um conselho. Números ausentes ficam de fora.",
+  rulesGuides: " \"O que é isto?\" explica um número em palavras simples, e \"Por que ausente?\" diz por que um número falta e o que o preencheria. O botão de ajuda no topo define quanto é explicado.",
+  rulesHover: " Passe o mouse sobre um número ausente para ver o motivo.",
+  whyMissing: "Por que ausente?",
+  whatIsThis: "O que é isto?",
+  howToRead: "Como ler: ",
+  explain: "Explicar",
+  explainPanelTitle: "Perguntar ao conselho o que este painel mostra e o que significa",
+  explainRowTitle: "Perguntar ao conselho o que este número significa e por que está onde está",
+  marketEdgeNote: "O que a economia está fazendo, o que os mercados estão precificando e onde os dois discordam.",
+  sec_economy: "Economia e política",
+  sec_markets: "Mercados e posicionamento",
+  sec_risks: "Riscos e ligações",
+  emptyOne: "Ainda não disponível: 1 painel não tem números para {country}",
+  emptyMany: "Ainda não disponível: {n} painéis não têm números para {country}",
+  emptyOpen: "{list}. Abra para ver o que cada um precisa.",
+  compareLine: "{country} em relação ao restante da sua lista de acompanhamento e aos mercados de referência está em Pesquisa › Comparar países.",
+  openCompare: "Abrir Comparar",
+};

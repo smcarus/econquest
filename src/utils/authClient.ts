@@ -12,6 +12,8 @@ export interface AuthStatus {
   sessionIdleHours: number;
   /** Sent as X-CSRF-Token on every change while signed in. */
   csrfToken: string | null;
+  /** OIDC sign-in, when the server has it set up: the provider's name for the button. */
+  oidc?: { name: string } | null;
 }
 
 export async function fetchAuthStatus(fetchFn: typeof fetch = fetch): Promise<AuthStatus | null> {

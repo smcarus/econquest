@@ -9,11 +9,12 @@ every control here runs by itself in the app, with no forms to fill in.
 
 | Control | Where | What it shows | What it cannot show |
 |---|---|---|---|
-| Audit log | Menu > Audit log; `data/local/audit/audit-log.jsonl` | Every council answer (question, AI model, each figure with source and period, what was missing), every save, delete, download, settings, key, AI model, backtest and sign-off step. Each line is chained to the one before by SHA-256, and the window checks the chain when it opens. | Someone with access to the file who rewrites the whole chain. Keep the latest hash or an export elsewhere; a keyed seal is the next step (below). |
+| Audit log | Menu > Audit log; `data/local/audit/audit-log.jsonl` | Every council answer (question, AI model, each figure with source and period, what was missing), every save, delete, download, settings, key, AI model, backtest and sign-off step, each Council chat question asked by another program with an `ask:council` token (token name, model, figures and cost), each call to an outside research-tools server (tool, correlation ID, outcome, never the token) and the fingerprint of a budget execution file you load (never its contents). Each line is chained to the one before by SHA-256, and the window checks the chain when it opens. | Someone with access to the file who rewrites the whole chain, unless the optional seal key (`AUDIT_SEAL_KEY`) and locked bucket copies (`AUDIT_BUCKET_URL`) are set up ([SECURITY.md](./SECURITY.md)). Without them, keep the latest hash or an export elsewhere. |
 | Model and signal register | Menu > Models & validation; badges beside each panel | Every rule that turns figures into a call, with its rule, inputs, limits and status: Not validated, Descriptive, Model-assisted, or a backtest verdict. | Whether a rule is right, only whether it has passed a test fixed in advance. |
 | Pre-registered backtests | `docs/validation/preregistered/` (hashes in `manifest.json`); Run backtests or `npm run backtest` | A verdict (passed, failed, too few cases) against a pass mark fixed before the run: enough cases, a lift over the base rate, a p-value. A changed test file is refused until it is registered again. | Out-of-sample performance after the run date; the leading indicator is today's vintage. |
 | Report sign-off | Saved research | Draft, Reviewed, Approved with names, times and the content hash; "Changed after sign-off" when the report moves; approved reports cannot be deleted. | Who a name belongs to: there are no accounts, so a name is what was typed. |
 | Number and stance checks | Council chat | A summary sentence whose number is not in an agent's figures, or that describes an agent's call in an opposing word, is removed and shown. | Wording and emphasis, which stay the model's. |
+| Replication check | Reports > Notebooks; `npm run notebook:check` | Whether each pinned figure in a research notebook is the same today, revised (old and new value) or no longer answers, against the SHA-256 fingerprint kept when it was pinned. | Why a figure was revised; only that it was. |
 | No sample figures | Everywhere | A figure without a live or official source reads Missing with the reason. | — |
 
 ## Single user: what "self-approved" means
@@ -25,8 +26,11 @@ pretended. Nothing in the app treats a self-approved report as independently rev
 
 ## What a multi-user server version would need
 
-Status 2026-11-06: items 1 and 2 are built as local accounts and Viewer / Analyst / Admin roles
-(the Approver duties sit with Admin for now); see [SECURITY.md](./SECURITY.md).
+Status 2026-11-13: items 1 and 2 are built as local accounts and Viewer / Analyst / Admin roles
+(the Approver duties sit with Admin for now), and since 13 November 2026 people can also sign in
+through an OpenID Connect provider, so a name on a sign-off can be a verified account. Item 4 is
+built as the optional audit seal and locked bucket copies. Programs that call the app use named API
+tokens with scopes, and every use is in the audit log. See [SECURITY.md](./SECURITY.md).
 
 Only worth building once a second person uses the app. In order:
 

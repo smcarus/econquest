@@ -20,13 +20,38 @@ import { markImfProjections, parseImfYears } from './officialHistory';
 import { realTimeOutputGap } from './outputGap';
 import { areaSeries } from './oecdSdmx';
 import { CFTC_CURRENCY_CODES, CFTC_LABEL, cftcUrl, parseCftcRows } from './cftcPositioning';
-import { cftcCrowdingCases, cliTurnPolicyCases, cycleClockCases, regimeQuadrantCases, taylorGapCases, ruleFamilyCases, timingUnwindCases, unrestOnsetCases, judgeWithRobustness, sampleCases, spanOf, type BacktestCase, type BacktestResult, type BacktestSpec, type OpenCall } from './backtest';
+import { expectationsDirectionCases, hitRateSpec, yieldCurveCases, type CurveCountry, cftcCrowdingCases, cliTurnPolicyCases, cycleClockCases, regimeQuadrantCases, taylorGapCases, ruleFamilyCases, timingUnwindCases, unrestOnsetCases, judgeWithRobustness, sampleCases, spanOf, type BacktestCase, type BacktestResult, type BacktestSpec, type OpenCall } from './backtest';
 import { forwardStep, type ForwardBody } from './forwardRecord';
 import { onsetYears } from './unrestOnset';
 import type { V1Month } from './gdeltDaily';
 import type { UcdpData } from './ucdpConflict';
 import { appendForward, loadForward } from './forwardRecordStore';
 import { writeFileAtomic } from './atomicWrite';
+import { EUROSTAT_GEO, parseEurostatHicp } from './nationalCpi';
+import { EU_PRICE_EXPECTATIONS, euSurveyUrl } from './euSurveys';
+import { FRED_10Y_SERIES } from './officialYields';
+import { parseFredCsvSeries } from './fedBalanceSheet';
+
+const EUROSTAT_API = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data';
+/** HICP annual rate, all items: prc_hicp_manr as registered (it stopped at December 2025), then its successor prc_hicp_minr for later months. */
+export const HICP_MANR_LABEL = 'Eurostat HICP, annual rate of change, all items (prc_hicp_manr, to its last month; prc_hicp_minr, coicop18 TOTAL, for later months)';
+export function hicpManrUrl(geos: string[], since = '1999-01'): string {
+  return `${EUROSTAT_API}/prc_hicp_manr?format=JSON&lang=EN&unit=RCH_A&coicop=CP00${geos.map((g) => `&geo=${encodeURIComponent(g)}`).join('')}&sinceTimePeriod=${since}`;
+}
+export function hicpMinrUrl(geos: string[], since: string): string {
+  return `${EUROSTAT_API}/prc_hicp_minr?format=JSON&lang=EN&unit=RCH_A&coicop18=TOTAL${geos.map((g) => `&geo=${encodeURIComponent(g)}`).join('')}&sinceTimePeriod=${since}`;
+}
+
+/** manr points, then minr points only for months after manr's last month for that country. */
+export function spliceHicp(manr: Record<string, { period: string; value: number }[]>, minr: Record<string, { period: string; value: number }[]>): Record<string, { period: string; value: number }[]> {
+  const out: Record<string, { period: string; value: number }[]> = {};
+  for (const geo of new Set([...Object.keys(manr), ...Object.keys(minr)])) {
+    const a = manr[geo] || [];
+    const last = a.length ? a[a.length - 1].period : '';
+    out[geo] = [...a, ...(minr[geo] || []).filter((p) => p.period > last)];
+  }
+  return out;
+}
 
 export interface ValidationFile {
   /** Latest version's result per test id (what the badges show). */
@@ -128,7 +153,54 @@ async function pullHistory(fetcher: Fetcher, problems: string[], methods: Set<st
     fetcher(cftcUrl(new Date(), undefined, { since: '2006-06-01', limit: 50_000 })).then((t) => parseCftcRows(JSON.parse(t))).catch((e) => (problems.push(`CFTC did not answer (${e.message})`), null)),
     methods.has('taylor_gap') || methods.has('regime_quadrant') || methods.has('rule_family') ? fetcher(cpiUrl()).then((t) => parseCpi(t, 100_000)).catch((e) => (problems.push(`OECD consumer prices did not answer (${e.message})`), null)) : Promise.resolve(null),
   ]);
-  return { bis, cli, cftc, cpi };
+  return { bis, cli, cftc, cpi, ...(methods.has('expectations_direction') ? await pullExpectations(fetcher, problems) : {}), ...(methods.has('yield_curve_recession') ? await pullCurve(fetcher, problems) : {}) };
+}
+
+/** FRED no-key CSV of a monthly series from 1990 (the long history the yield-curve test reads). */
+export const fredLongCsvUrl = (seriesId: string) => `https://fred.stlouisfed.org/graph/fredgraph.csv?id=${seriesId}&cosd=1990-01-01`;
+
+/** Monthly 10-year yields (FRED, OECD IRLTLT01) and IMF real GDP growth by year for every country with a FRED 10-year series (G25 test). */
+async function pullCurve(fetcher: Fetcher, problems: string[]) {
+  const yields: Record<string, { period: string; value: number }[]> = {};
+  const growth: Record<string, { year: string; value: number }[]> = {};
+  const noYield: string[] = [];
+  const noGrowth: string[] = [];
+  await Promise.all(
+    Object.entries(FRED_10Y_SERIES).map(async ([iso3, id]) => {
+      try {
+        const obs = parseFredCsvSeries(await fetcher(fredLongCsvUrl(id)));
+        if (obs.length) yields[iso3] = obs.map((o) => ({ period: o.date.slice(0, 7), value: o.value }));
+      } catch {
+        noYield.push(iso3);
+      }
+      try {
+        const years = parseImfYears(JSON.parse(await fetcher(imfGrowthUrl(iso3))), IMF_GROWTH, iso3);
+        if (years?.length) growth[iso3] = years.map(({ year, value }) => ({ year, value }));
+      } catch {
+        noGrowth.push(iso3);
+      }
+    })
+  );
+  if (noYield.length) problems.push(`FRED 10-year yields did not answer for ${noYield.sort().join(', ')}`);
+  if (noGrowth.length) problems.push(`IMF real GDP growth did not answer for ${noGrowth.sort().join(', ')}`);
+  return { curveYields: Object.keys(yields).length ? yields : null, curveGrowth: Object.keys(growth).length ? growth : null };
+}
+
+/** EC consumer survey price expectations and HICP inflation for every EU member, from 1999 (G32 test). */
+async function pullExpectations(fetcher: Fetcher, problems: string[]) {
+  const geos = Object.values(EUROSTAT_GEO);
+  const survey = await fetcher(euSurveyUrl(EU_PRICE_EXPECTATIONS, geos, '1999-01'))
+    .then((t) => parseEurostatHicp(JSON.parse(t)))
+    .catch((e) => (problems.push(`Eurostat consumer survey (ei_bsco_m, BS-PT-NY) did not answer (${e.message})`), null));
+  const manr = await fetcher(hicpManrUrl(geos))
+    .then((t) => parseEurostatHicp(JSON.parse(t)))
+    .catch((e) => (problems.push(`Eurostat HICP (prc_hicp_manr) did not answer (${e.message})`), null));
+  const minr = manr
+    ? await fetcher(hicpMinrUrl(geos, '2025-01'))
+        .then((t) => parseEurostatHicp(JSON.parse(t)))
+        .catch((e) => (problems.push(`Eurostat HICP (prc_hicp_minr) did not answer; months after prc_hicp_manr stopped are left out (${e.message})`), {}))
+    : null;
+  return { expSurvey: survey, expHicp: manr ? spliceHicp(manr, minr || {}) : null };
 }
 
 export async function runBacktests(opts: { specDir: string; resultFile: string; fetcher?: Fetcher; now?: Date; onResult?: (r: BacktestResult) => void; forwardFile?: string; /** Files on disk some tests read (GDELT months, UCDP), loaded only when such a test runs. */ local?: { gdeltMonths: () => V1Month[]; ucdp: () => UcdpData | null }; /** Never run a version that already has a verdict (your own tests: a recorded verdict never changes). */ skipRecorded?: boolean }): Promise<ValidationFile & { problems: string[] }> {
@@ -141,9 +213,17 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
     .filter((s) => s.spec && !(opts.skipRecorded && file.versions?.[`${s.spec.id} v${s.spec.version}`]))
     .sort((a, b) => a.spec!.id.localeCompare(b.spec!.id) || a.spec!.version - b.spec!.version);
   if (runnable.length) {
-    const h = await pullHistory(opts.fetcher || defaultFetcher, problems, new Set(runnable.map((s) => s.spec!.method)));
+    // One download per address per run: the IMF growth series feed both the output gaps and the yield-curve test.
+    const base = opts.fetcher || defaultFetcher;
+    const memo = new Map<string, Promise<string>>();
+    const fetcher: Fetcher = (url) => {
+      let p = memo.get(url);
+      if (!p) memo.set(url, (p = base(url)));
+      return p;
+    };
+    const h = await pullHistory(fetcher, problems, new Set(runnable.map((s) => s.spec!.method)));
     const needGap = runnable.some((s) => (s.spec!.method === 'taylor_gap' && Number(s.spec!.params?.outputWeight) > 0) || s.spec!.method === 'rule_family');
-    const gaps = needGap ? await pullOutputGaps(opts.fetcher || defaultFetcher, problems, opts.now || new Date()) : {};
+    const gaps = needGap ? await pullOutputGaps(fetcher, problems, opts.now || new Date()) : {};
     const at = (opts.now || new Date()).toISOString();
     const forwardFile = opts.forwardFile ?? path.join(path.dirname(opts.resultFile), 'forward.jsonl');
     const forward: ForwardBody[] = loadForward(forwardFile).lines;
@@ -246,11 +326,39 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
         const years = onsetYears(months, ucdp, { baselineMonths: s.params.baselineMonths, zSpike: s.params.zSpike, sdFloorPts: s.params.sdFloorPts });
         series = [...new Set(years.map((y) => y.where))];
         cases.push(...unrestOnsetCases(s, years, open));
+      } else if (s.method === 'expectations_direction') {
+        if (!h.expSurvey || !h.expHicp) continue;
+        data = `${HICP_MANR_LABEL}; European Commission consumer survey, price trends over the next 12 months (ei_bsco_m, BS-PT-NY, seasonally adjusted balance), via Eurostat`;
+        const lastFullYear = (opts.now || new Date()).getUTCFullYear() - 1;
+        for (const [iso3, geo] of Object.entries(EUROSTAT_GEO)) {
+          const sv = h.expSurvey[geo];
+          const hi = h.expHicp[geo];
+          if (!sv?.length || !hi?.length) continue;
+          series.push(iso3);
+          cases.push(...expectationsDirectionCases(s, iso3, sv, hi, lastFullYear, open));
+        }
+      } else if (s.method === 'yield_curve_recession') {
+        if (!h.bis || !h.curveYields || !h.curveGrowth) continue;
+        data = `FRED / OECD 10-year government bond yields (IRLTLT01, monthly averages, from 1990); BIS central bank policy rates (monthly, from 1990); IMF World Economic Outlook real GDP growth (NGDP_RPCH), outturn years only`;
+        // Outturns only: the last full calendar year is the newest year the WEO can hold as an outturn.
+        const lastOutturnYear = (opts.now || new Date()).getUTCFullYear() - 1;
+        const countries: CurveCountry[] = [];
+        for (const iso3 of Object.keys(FRED_10Y_SERIES).sort()) {
+          const area = CBPOL_AREA[iso3];
+          const pol = area ? h.bis[area]?.points : undefined;
+          const y = h.curveYields[iso3];
+          const g = h.curveGrowth[iso3];
+          if (!pol?.length || !y?.length || !g?.length) continue;
+          countries.push({ where: iso3, yields: y, policy: pol.map((x) => ({ period: x.period, value: x.pct })), growth: g.map((x) => ({ year: Number(x.year), value: x.value })).filter((x) => Number.isFinite(x.year)) });
+        }
+        cases.push(...yieldCurveCases(s, countries, lastOutturnYear, open));
+        series = [...new Set(cases.map((c) => c.where))];
       } else {
         problems.push(`${s.id}: unknown method ${String(s.method)}`);
         continue;
       }
-      const result: BacktestResult = { id: s.id, specVersion: s.version, specHash: hash, ranAt: at, ...judgeWithRobustness(s, cases), span: spanOf(cases), series, data, sample: sampleCases(cases) };
+      const judged = s.method === 'expectations_direction' ? judgeWithRobustness(hitRateSpec(s), cases) : judgeWithRobustness(s, cases);
+      const result: BacktestResult = { id: s.id, specVersion: s.version, specHash: hash, ranAt: at, ...judged, span: spanOf(cases), series, data, sample: sampleCases(cases) };
       // Rule 7: open calls of a passing test go on the forward record; recorded calls get their outcome.
       const step = forwardStep(forward, { key: `${s.id} v${s.version}`, specHash: hash, passing: result.status === 'passed' }, cases, open, at);
       forward.push(...step);

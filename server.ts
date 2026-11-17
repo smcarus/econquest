@@ -1,10 +1,13 @@
 // Reads .env and the data folder before anything else (src/server/config.ts).
 import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, SCHEDULED_JOBS_FILE, LAST_ALERT_FILE, DATA_DIR, DATA_HEALTH_FILES, ENV_FILE_KEYS, FIGURE_WATCH_FILES, RESEARCH_FILE, REVIEW_FILE, SETTINGS_FILE, SIGNOFF_FILE, SPEC_DIR, VALIDATION_FILE, WATCH_RULES_FILE, WORKSPACE_FILE, savedSettings, setSavedSettings } from './src/server/config';
 import { geminiModel } from './src/utils/geminiModel';
+import { loadModelHistoryCached } from './src/utils/modelHistory';
+import { withLongCli, withLongCpi, withLongPolicy } from './src/utils/longHistory';
 import { refreshModelHistory, registerAnalysisRoutes } from './src/server/routes/analysis';
-import { FILE_PULLS, dailyDue, dailyFilePath, formatDaily, interestingLines, readDaily, sweepNote, testsDue, writeDaily, type DailyRun, type DailyStep } from './src/utils/dailyRun';
+import { BY_HAND, FILE_PULLS, dailyDue, dailyFilePath, formatDaily, interestingLines, readDaily, sweepNote, testsDue, writeDaily, type DailyRun, type DailyStep } from './src/utils/dailyRun';
 import { spawn } from 'child_process';
 import { registerReviewRoutes } from './src/server/routes/reviews';
+import type { HistoryInput } from './src/utils/precedentFinder';
 import { registerIdeaRoutes } from './src/server/routes/ideas';
 import { registerFeedbackRoutes } from './src/server/routes/feedback';
 import { mountEngineRoutes } from './src/server/engineRoutes';
@@ -13,6 +16,7 @@ import { createNodePlatform } from './src/platform/node';
 import { secretBoxFromEnv } from './src/utils/secretBox';
 import type { Caller } from './src/engine/routes';
 import { registerOwnSeriesRoutes } from './src/server/routes/ownSeries';
+import { registerBudgetExecutionRoutes } from './src/server/routes/budgetExecution';
 import { ownSeriesViewsFor, OWN_NO_COUNTRY } from './src/engine/ownSeries';
 import { registerQuestRoutes } from './src/server/routes/quests';
 import { forwardSummary } from './src/utils/forwardRecord';
@@ -34,8 +38,30 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { refusal, requiredRole, roleAtLeast } from './src/utils/permissions';
 import { CSRF_HEADER, csrfMatches, csrfToken, isAiCall, isWrite, LIMITS, RateLimiter, SECURITY_HEADERS } from './src/utils/requestLimits';
 import { apiKeyFrom, DATA_API_LIMIT, isDataApiRead, keyMatches } from './src/server/dataApi';
+import { countryInPath, normaliseCountryQuery, normaliseCountryUrl, withoutHiddenCountries } from './src/server/countryCodes';
+import { ExclusionStore } from './src/server/exclusionStore';
+import { hiddenNote } from './src/utils/exclusions';
+import { iso2For } from './src/data/iso3166Alpha2';
+import type { ConsoleEvent, ValueBadge } from './src/utils/consoleEvents';
+import { entryBadge, validationHolm, type ProjectVerdict, type ValidationReply } from './src/utils/validationGrades';
+import { trackRowsFromRepo } from './src/utils/trackRecordDocNode';
+import { MODEL_REGISTER } from './src/data/modelRegister';
+import { EventHub, WebhookStore, emitEvents, eventFiles } from './src/server/eventBus';
+import { badgeChangeInputs, councilRunInput, dailyRunInputs, figureEventInputs, releaseUpcomingInputs, sanctionsChangeInputs, sanctionsCounts, signalChangeInputs, type SignalStates, watchCrossingInputs, type WatchStates } from './src/server/eventSources';
+import { registerConsoleWatchRoutes } from './src/server/routes/consoleWatches';
+import { buildCountrySnapshot } from './src/server/countrySnapshot';
+import { registerConsoleHoldingsRoutes } from './src/server/routes/consoleHoldings';
+import { registerExclusionRoutes } from './src/server/routes/consoleExclusions';
+import { registerConsoleScenarioRoutes } from './src/server/routes/consoleScenarios';
+import { deadlineInputs, parseDeadline } from './src/utils/dailyDeadline';
+import { monthlyAverages, readReplayFile, type ReplayFile } from './src/utils/scenarioReplay';
+import { fxDailySeries, fxHistoryPulledAt } from './src/utils/fxHistory';
+import { loadWatchRules as loadWatchRuleFile } from './src/utils/watchRulesStore';
+import { registerConsoleEventRoutes } from './src/server/routes/consoleEvents';
+import { LEGACY_SCOPES, TOKEN_PREFIX, publicToken, scopeFor, scopeRefusal, tokenOnly, type Scope } from './src/utils/apiTokens';
+import { ApiTokenStore, apiTokensFile } from './src/utils/apiTokenStore';
 import { registerUserTestRoutes } from './src/server/routes/userTests';
-import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, ROLES, type Account, type Role } from './src/utils/auth';
+import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newOidcAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, ROLES, type Account, type Role } from './src/utils/auth';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
 import { codeHash } from './src/utils/codeHash';
@@ -65,16 +91,30 @@ import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './src/utils/refereeModel';
 import { formatDuration, isCouncilTiming, stepTiming, timingTable, totalMs, type CouncilTiming, type StepTiming } from './src/utils/councilTiming';
 import { glossaryMarkdown } from './src/data/glossary';
+import { checkWhatIf, isWhatIfAnswer, whatIfCoverage, whatIfTask, WHATIF_INSTRUCTION, WHATIF_ORDER, type RawWhatIf } from './src/utils/whatIfAnswer';
 import { EXPLAIN_INSTRUCTION, explainInstruction, checkExplain, cleanFocus, explainTask, focusAsText, lensCoverage, LENS_ORDER, type ExplainPlan, type LensId, type RawExplain } from './src/utils/explain';
 import { documentsAsText, isCouncilDocument, toAgentDocuments, type AgentDocument, type CouncilDocument } from './src/utils/agentDocument';
-import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, synthesisTask, isDocFinding, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult, planCouncil, runCouncil, type SavedCouncilBrief } from './src/utils/askCouncil';
-import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
+import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, answersForModel, offWatchlistCodes, sentenceCheck, checkBrief, earlierAsText, synthesisTask, isDocFinding, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult, planCouncil, runCouncil, type SavedCouncilBrief } from './src/utils/askCouncil';
+import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, marketEdgePeers, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
+import { councilAnswers, hasFindings, NO_FIGURES_REASON } from './src/utils/councilQuestion';
+import { agentsFrom, answersForApi, answerText, ASK_DISCLAIMER, briefWithoutHidden, checksFrom, citationsFrom, hiddenCountryPatterns, hiddenText, hideNames, historyTurns, isProblem, newRunId, parseAskRequest } from './src/server/councilAsk';
+import { auditSummary as researchAuditSummary, modelLocation as researchModelLocation, researchToolsConfig, ResearchToolsSession, testConnection as testResearchTools, type CallRecord as ResearchCallRecord } from './src/server/researchTools';
+import { nowcastFollowUp, planToolCalls, quantAnswer, unavailableAnswer as quantUnavailable, type CallResult as QuantCallResult, type QuantCountry } from './src/utils/quantDesk';
+import { addCost, isLocalAddress, mayUseCloud, OUTPUT_ALLOWANCE, pricesFromEnv, roundUsd, spentOn, stepCost } from './src/utils/aiCost';
+import { DEFAULT_HELP_LEVEL, promptHelpLevel } from './src/utils/helpLevel';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
 import { distTaxFromSnapshot } from './src/utils/distributionTaxes';
 import { peopleFromSnapshot } from './src/utils/peopleLiving';
 import { tradeMixFromSnapshot } from './src/utils/tradeMix';
 import { climateFromSnapshot } from './src/utils/climateEnergy';
 import { loadOwidEnergy, fetchOwidEnergyPull } from './src/server/feeds/owidEnergy';
+import { loadFedSwaps, fetchFedSwaps } from './src/server/feeds/fedSwaps';
+import { fetchWbProjects } from './src/server/feeds/wbProjects';
+import { fetchRegional } from './src/server/feeds/regional';
+import { fetchCurves } from './src/server/feeds/fullCurves';
+import { fetchSurpriseInputs } from './src/server/feeds/dataSurprises';
+import { loadWeather, fetchWeather } from './src/server/feeds/nasaPower';
+import { loadCountryWeather, fetchCountryWeather } from './src/server/feeds/wbClimate';
 import { loadWages, fetchWagesPull, loadHousePrices, fetchHousePricesPull, loadPrivateDebt, fetchPrivateDebtPull } from './src/server/feeds/wagesHousing';
 import { sectorBalances } from './src/utils/sectorBalances';
 import { activitySnapshot } from './src/utils/monthlyIndicators';
@@ -85,22 +125,30 @@ import { debtStructureFromSnapshot } from './src/utils/debtStructure';
 import { licDebtReading, type LicDebtReading } from './src/utils/lowIncomeDebt';
 import { aiddataData } from './src/utils/aiddataStore';
 import { investorBaseData } from './src/utils/investorBaseStore';
+import { fiscalRulesData } from './src/utils/fiscalRulesStore';
+import { dpiData, dpiInput } from './src/utils/dpiStore';
 import { investorBaseReading } from './src/utils/investorBase';
 import { politicsFromSnapshot } from './src/utils/politicsEvents';
 import { acledReadingFor, forgetAcled } from './src/server/feeds/acled';
 import { ACLED_SHORT, acledCountryName } from './src/utils/acled';
-import { addBrief, addCouncilDoc, addDoc, addEpisode, addNotebook, briefId, isBrief, isDoc, removeBrief, removeCouncilDoc, removeDoc, removeEpisode, removeNotebook, summarise, updateEpisode, updateNotebook } from './src/utils/researchLibrary';
+import { addBrief, addCouncilDoc, addDoc, addEpisode, addNotebook, briefId, isBrief, isDoc, removeBrief, removeCouncilDoc, removeDoc, removeEpisode, removeNotebook, summarise, updateEpisode, updateNotebook, addPin, removePin } from './src/utils/researchLibrary';
+import { isChart, makePin, pinFingerprintText, trimChart } from './src/utils/notebookPins';
+import { notebookBundleFiles, notebookBundleZip } from './src/utils/notebookBundle';
+import { sha256Hex as sha256Text } from './src/engine/ownSeries';
 import { episodeFileName, episodeMarkdown } from './src/utils/episodeHandout';
 import { notebookFileName, notebookMarkdown } from './src/utils/notebookExport';
 import { loadLibrary, saveLibrary } from './src/utils/researchStore';
-import { appendAudit, rawAudit, readAudit, setAuditActor } from './src/utils/auditStore';
+import { appendAudit, rawAudit, readAudit, setAuditActor, setAuditCorrelation, setAuditSealKey } from './src/utils/auditStore';
+import { sealKeyFrom, sealKeyProblem } from './src/utils/auditSeal';
+import { bucketConfigFromEnv, bucketStateFile, readBucketState, shipAudit } from './src/server/auditBucket';
 import { defaultFetcher, loadSpecs, loadValidation, runBacktests } from './src/utils/backtestRun';
 import { loadSignOffs, recordFor, reportHash, signOffView } from './src/utils/signoff';
 import { buildDiagnosis, DIAGNOSIS_FIELDS, type Diagnosis } from './src/utils/reviewDiagnosis';
 import { reviewModelFigures } from './src/utils/reviewModels';
 import { checkOptions, OPTIONS_INSTRUCTION, optionsPrompt, LEVERS, type OptionsStep, type UserOption } from './src/utils/reviewOptions';
+import type { CouncilInputs } from './src/utils/policyCouncil';
 import { type ReviewFrame } from './src/utils/policyReview';
-import { AUDIT_HEADER, AUDIT_KIND_LABEL, auditRows, describeRequest, figuresFromAnswers, type AuditKind } from './src/utils/auditLog';
+import { AUDIT_HEADER, AUDIT_KIND_LABEL, CORRELATION_HEADER, auditRows, correlationIdProblem, describeRequest, figuresFromAnswers, type AuditKind } from './src/utils/auditLog';
 import { backupFileName, parseBackup, summariseBackup } from './src/utils/backup';
 import { currentBackup, restoreBackup } from './src/utils/backupStore';
 import { cleanSettings, isDue, localClock, morningQuestion, nextRunText, parseMorningFile, settingsProblem, type MorningBriefFile, type MorningBriefRun } from './src/utils/morningBrief';
@@ -138,7 +186,7 @@ import {
   withKey,
   withoutKey,
 } from './src/utils/userSettings';
-import { checkConnections, describeNetworkError, isFailure, type ConnectionReport } from './src/utils/connectionCheck';
+import { checkConnections, describeNetworkError, isFailure, type ConnectionReport, type ConnectionResult } from './src/utils/connectionCheck';
 import { notify, readLastAlert, testAlertRoute } from './src/server/alerts';
 import { backtestRegressionAlert, backtestRegressions, dataCheckAlert, jobFailedAlert } from './src/utils/alertEvents';
 import { calendarHealth, localDay } from './src/utils/calendarHealth';
@@ -192,6 +240,11 @@ import { gprForCountry } from './src/utils/gprIndex.ts';
 import { gprData } from './src/utils/gprStore.ts';
 import { countrySanctions, sanctionsSentence, searchSanctions, SANCTIONS_METHOD } from './src/utils/sanctionsLists.ts';
 import { sanctionsData, sanctionsDir } from './src/utils/sanctionsStore.ts';
+import { chinnItoData } from './src/utils/chinnItoStore.ts';
+import { fxRegimeData } from './src/utils/fxRegimeStore.ts';
+import { OidcClient } from './src/server/oidcClient';
+import { authorizationUrl, newPending, oidcConfigFromEnv, oidcCookie, oidcDecision, tokenRequest, usernameFromEmail, verifiedEmail, OIDC_COOKIE, OIDC_PENDING_MS, type OidcError } from './src/utils/oidc';
+import { chinnItoReading } from './src/utils/chinnIto.ts';
 import { countryRiskScorecard, scorecardSentence, ECONOMY_IDS, SCORECARD_METHOD, WGI_IDS, type ScorecardInputs } from './src/utils/countryRiskScorecard.ts';
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { US_10Y_SERIES } from './src/utils/officialYields.ts';
@@ -200,7 +253,7 @@ import { fetchGovSpendingPull } from './src/server/feeds/govSpending';
 import { gdeltPausedUntil, gdeltFetch, GDELT_REFRESH_MS } from './src/server/feeds/gdelt';
 import { fetchImfPull, fetchCoferPull, fetchImfCpiPull, loadImfCpi } from './src/server/feeds/imf';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
-import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, forgetNationalCpi, fetchMonthlyActivity, fetchEuSurveyPull, loadEuSurveys } from './src/server/feeds/oecd';
+import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, nationalCpiOrSaved, forgetNationalCpi, fetchMonthlyActivity, fetchEuSurveyPull, loadEuSurveys } from './src/server/feeds/oecd';
 import { commodityMemory, fetchCommodities, forgetCommodityPulls } from './src/server/feeds/commodities';
 import { officialYieldCache, fetchOfficial10YYield, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, loadFxHistory, pullFxHistory, fetchFxHistory, fetchFxExtra, loadFxExtra, fetchBisCreditCycle, fetchIdsCreditors, fetchSovereignDefaults, fetchInflationExpectations, fetchInflationSurveys, fetchStressPulls, fetchPortWatchChokepoints, fetchPortWatchPorts, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds, fetchFedBalanceSheet } from './src/server/feeds/rates';
 import { fetchTradeExposure } from './src/server/feeds/markets';
@@ -210,6 +263,26 @@ import { callOllamaOrOpenAICompatible, sanitizeAndParseJson, NO_MODEL_DESK, NO_M
 
 const __dirname = APP_ROOT;
 let validationRunning = false;
+// Events for outside systems (console integration item 4, src/server/eventBus.ts).
+const EVENT_FILES = eventFiles(DATA_DIR);
+const SIGNAL_STATE_FILE = path.join(DATA_DIR, 'local', 'events', 'signal-states.json');
+const WATCH_STATE_FILE = path.join(DATA_DIR, 'local', 'events', 'watch-states.json');
+/** Hidden names (item 8): fingerprints only, src/server/exclusionStore.ts. */
+const HIDDEN = new ExclusionStore(ExclusionStore.fileIn(DATA_DIR));
+function readWatchStates(): WatchStates | null {
+  try {
+    return JSON.parse(fs.readFileSync(WATCH_STATE_FILE, 'utf8')) as WatchStates;
+  } catch {
+    return null;
+  }
+}
+function readSignalStates(): SignalStates | null {
+  try {
+    return JSON.parse(fs.readFileSync(SIGNAL_STATE_FILE, 'utf8')) as SignalStates;
+  } catch {
+    return null;
+  }
+}
 
 /** MarketEdge benchmarks always on screen (see src/utils/marketEdgeAnchors.ts). */
 async function fetchMarketEdgeAnchors(): Promise<MarketEdgeAnchorsReply> {
@@ -324,13 +397,40 @@ function loadOfficialHistory(iso3: string): OfficialHistoryFile | null {
     return null;
   }
 }
+/** Every saved history file, for the precedent finder (G34); read again at most every five minutes. */
+let allHistoriesCache: { at: number; value: { histories: HistoryInput[]; pulledAt?: string } } | null = null;
+function allHistories(): { histories: HistoryInput[]; pulledAt?: string } {
+  if (allHistoriesCache && Date.now() - allHistoriesCache.at < 5 * 60 * 1000) return allHistoriesCache.value;
+  let codes: string[] = [];
+  try {
+    codes = fs.readdirSync(HISTORY_DIR).map((n) => /^([A-Z0-9]+)\.json$/.exec(n)?.[1]).filter((c): c is string => Boolean(c));
+  } catch {
+    // no history downloaded yet
+  }
+  const names = new Map(SOVEREIGN_CATALOG.map((c) => [c.iso3, c.countryName]));
+  const histories: HistoryInput[] = [];
+  let pulledAt: string | undefined;
+  for (const iso3 of codes.sort()) {
+    const file = loadOfficialHistory(iso3);
+    if (!file) continue;
+    histories.push({ iso3, name: names.get(iso3) || iso3, series: file.series });
+    if (!pulledAt || file.pulledAt > pulledAt) pulledAt = file.pulledAt;
+  }
+  const value = { histories, pulledAt };
+  allHistoriesCache = { at: Date.now(), value };
+  return value;
+}
+/** Requests in flight at once while downloading one country's history. */
+const HISTORY_PARALLEL = 4;
 async function downloadOfficialHistory(iso3: string): Promise<OfficialHistoryFile | null> {
   const prev = loadOfficialHistory(iso3);
   const series: OfficialHistoryFile['series'] = {};
   const failed: Record<string, string> = {};
   const lastYear = new Date().getUTCFullYear() + 1;
   let answered = 0;
-  for (const fig of OFFICIAL_FIGURES) {
+  // A few requests at a time (about 100 figures per country; one after another took more than the
+  // 3-minute preload limit on a slow line), each worker keeping a polite gap between its requests.
+  const one = async (fig: (typeof OFFICIAL_FIGURES)[number]) => {
     const url =
       fig.source === 'wb'
         ? `https://api.worldbank.org/v2/country/${iso3}/indicator/${fig.code}?format=json&per_page=200&date=1960:${lastYear}`
@@ -348,8 +448,16 @@ async function downloadOfficialHistory(iso3: string): Promise<OfficialHistoryFil
       if (prev?.series?.[fig.id]?.points?.length) series[fig.id] = prev.series[fig.id];
       else failed[fig.id] = `${name} did not answer (${err?.name === 'AbortError' ? 'timed out' : err?.message || 'error'})`;
     }
-    await new Promise((r) => setTimeout(r, 200)); // polite gap between requests
-  }
+  };
+  const queue = [...OFFICIAL_FIGURES];
+  await Promise.all(
+    Array.from({ length: HISTORY_PARALLEL }, async () => {
+      for (let fig = queue.shift(); fig; fig = queue.shift()) {
+        await one(fig);
+        await new Promise((r) => setTimeout(r, 200)); // polite gap between requests
+      }
+    })
+  );
   if (!answered) return prev; // nothing answered (offline?): keep what is saved
   const pulledAt = new Date().toISOString();
   // Revision tracking: values the IMF or World Bank changed since the last download are kept with the old value.
@@ -593,6 +701,41 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       const note = `${Object.keys(got.countries).length} countries to ${quarters.pop() || '?'}`;
       return fresh ? { outcome: 'done', note } : { outcome: 'done', note: `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
     }
+    case 'world:fed_swaps': {
+      const got = await fetchFedSwaps();
+      if (!got) return { outcome: 'failed', note: 'The New York Fed did not answer for swap line operations' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const note = `${got.operations.length} operations since December 2007`;
+      return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
+    }
+    case 'world:wb_projects': {
+      const got = await fetchWbProjects();
+      if (!got) return { outcome: 'failed', note: 'The World Bank did not answer for its project list' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const note = `${got.projects.length} active projects, ${got.ida ? `IDA amounts for ${Object.keys(got.ida).length} projects` : 'no IDA amounts (statement not read)'}`;
+      return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}, downloaded again after a week` };
+    }
+    case 'world:surprises': {
+      const got = await fetchSurpriseInputs();
+      if (!got) return { outcome: 'failed', note: 'None of BCB, Eurostat, BLS or Kalshi answered for the data surprises' };
+      const n = (x?: unknown[]) => x?.length ?? 0;
+      return { outcome: 'done', note: `Focus ${n(got.focus)} medians, IPCA ${n(got.ipca)} months, euro area HICP ${n(got.eaHicp)} months, US CPI ${n(got.usCpi)} months, Kalshi ${n(got.kalshi)} snapshots${got.problems.length ? `; ${got.problems.length} problems` : ''}` };
+    }
+    case 'world:curves': {
+      const got = await fetchCurves();
+      if (!got) return { outcome: 'failed', note: 'Neither the US Treasury nor the ECB answered for the yield curves' };
+      const last = (d?: { days: Array<{ date: string }> }) => d?.days[d.days.length - 1]?.date;
+      return { outcome: 'done', note: `US Treasury ${last(got.us) ? `to ${last(got.us)}` : 'not read'}; ECB euro area ${last(got.ea) ? `to ${last(got.ea)}` : 'not read'} (copy of ${got.pulledAt.slice(0, 16).replace('T', ' ')} UTC)` };
+    }
+    case 'world:regional': {
+      const got = await fetchRegional();
+      if (!got.dose && !got.euro) return { outcome: 'failed', note: 'Neither Zenodo (DOSE) nor Eurostat answered for the regional figures' };
+      const parts = [
+        got.dose ? `DOSE ${got.dose.file}: ${Object.keys(got.dose.countries).length} countries` : 'DOSE not read',
+        got.euro ? `Eurostat NUTS 2: ${Object.keys(got.euro.countries).length} countries (copy of ${got.euro.pulledAt.slice(0, 10)})` : 'Eurostat not read',
+      ];
+      return { outcome: 'done', note: parts.join('; ') };
+    }
     case 'world:bis_private_debt': {
       const got = await fetchPrivateDebtPull();
       if (!got) return { outcome: 'failed', note: 'The BIS did not answer for household and company debt' };
@@ -803,10 +946,12 @@ function startPreload(opts: { fresh?: boolean; log?: (line: string) => void } = 
       let result: PreloadStepResult;
       try {
         let timer: NodeJS.Timeout | undefined;
+        // A country's full history is about 100 downloads, so it gets twice the limit of other steps.
+        const limitMs = step.id.endsWith(':history') ? 2 * PRELOAD_STEP_TIMEOUT_MS : PRELOAD_STEP_TIMEOUT_MS;
         const limit = new Promise<Omit<PreloadStepResult, 'at'>>((resolve) => {
           timer = setTimeout(
-            () => resolve({ outcome: 'failed', note: `took longer than ${PRELOAD_STEP_TIMEOUT_MS >= 120000 ? `${Math.round(PRELOAD_STEP_TIMEOUT_MS / 60000)} minutes` : `${Math.round(PRELOAD_STEP_TIMEOUT_MS / 1000)} s`}; moved on (it may still finish in the background)` }),
-            PRELOAD_STEP_TIMEOUT_MS
+            () => resolve({ outcome: 'failed', note: `took longer than ${limitMs >= 120000 ? `${Math.round(limitMs / 60000)} minutes` : `${Math.round(limitMs / 1000)} s`}; moved on (it may still finish in the background)` }),
+            limitMs
           );
         });
         result = { ...(await (NO_TIME_LIMIT_STEPS.has(step.id) ? runPreloadStep(step) : Promise.race([runPreloadStep(step), limit]))), at: new Date().toISOString() };
@@ -941,7 +1086,8 @@ async function runDailyCli(): Promise<void> {
   if (offline) run.offline = true;
 
   // 2. Files that used to be downloaded by hand.
-  console.log('[daily] 2/5 Files: IMF WEO editions, sanctions lists, GPR index, UCDP');
+  console.log('[daily] 2/5 Files: IMF WEO editions, sanctions lists, GPR index, UCDP, scenario replay series');
+  const sanctionsBefore = sanctionsCounts(sanctionsData(DATA_DIR));
   for (const f of FILE_PULLS) {
     if (offline) {
       add({ id: f.id, label: f.label, outcome: 'skipped', note: 'offline' });
@@ -958,6 +1104,8 @@ async function runDailyCli(): Promise<void> {
       details: got.problems,
     }, r.bytes);
   }
+
+  emitEvents(EVENT_FILES, sanctionsChangeInputs(sanctionsBefore, sanctionsCounts(sanctionsData(DATA_DIR))));
 
   // 3. Nowcasts and forecasts: the long histories (weekly), then one of each for every country.
   console.log('[daily] 3/5 Nowcasts and forecasts');
@@ -1058,6 +1206,7 @@ async function runDailyCli(): Promise<void> {
 
   run.finishedAt = new Date().toISOString();
   save();
+  emitEvents(EVENT_FILES, [...dailyRunInputs(run, DAILY_DEADLINE), ...releaseUpcomingInputs(new Date(), loadUstAuctions()?.announced)]);
   console.log('');
   console.log(formatDaily(run, { full: true }));
   process.exit(0);
@@ -1365,7 +1514,7 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
     cbpolPullQuick(),
     Promise.race([fetchCliPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
     Promise.race([fetchCpiPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
-    Promise.race([fetchNationalCpi(), new Promise<NationalCpiPull | null>((resolve) => setTimeout(() => resolve(nationalCpiMemory?.pull ?? null), 8000))]),
+    nationalCpiOrSaved(),
     // Comtrade pulls one country at a time; the watchlist shows what is saved and the pull fills in later.
     Promise.race([fetchComtrade(), new Promise<ComtradeFile | null>((resolve) => setTimeout(() => resolve(comtradeMemory?.file ?? null), 3000))]),
     // IMF reserves and BOP: many small requests; the first pull fills the cache for next time.
@@ -1566,14 +1715,38 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
   try {
     const { ledger, events } = watchFigures(readLedger(FIGURE_WATCH_FILES), items.map((r) => toLive(r)));
     saveWatch(FIGURE_WATCH_FILES, ledger, events);
+    emitEvents(EVENT_FILES, figureEventInputs(events));
   } catch (e) {
     console.error('[figure-watch]', e);
+  }
+  // Signal states (policy cycle, CFTC positioning, growth and inflation regime): a change is an event.
+  try {
+    const { states, inputs } = signalChangeInputs(readSignalStates(), items.map((r) => toLive(r)), modelBadgesNow());
+    fs.mkdirSync(path.dirname(SIGNAL_STATE_FILE), { recursive: true });
+    writeFileAtomic(SIGNAL_STATE_FILE, JSON.stringify(states));
+    emitEvents(EVENT_FILES, inputs);
+  } catch (e) {
+    console.error('[events] signal states:', e);
+  }
+  // Indicator watches you set (item 5): a crossing is a threshold_crossed event.
+  try {
+    const { states, inputs } = watchCrossingInputs(loadWatchRuleFile(WATCH_RULES_FILE), items.map((r) => toLive(r)), readWatchStates());
+    fs.mkdirSync(path.dirname(WATCH_STATE_FILE), { recursive: true });
+    writeFileAtomic(WATCH_STATE_FILE, JSON.stringify(states));
+    emitEvents(EVENT_FILES, inputs);
+  } catch (e) {
+    console.error('[events] watches:', e);
   }
   return items;
 }
 
 /** Up to this many countries outside the catalog per request (each is a full snapshot pull). */
 const MAX_EXTRA_COUNTRIES = 5;
+
+/** The ask:council route's own reads of this server (see the internal-read step in startServer). */
+const INTERNAL_READ_HEADER = 'x-econquest-internal-read';
+const INTERNAL_READ_KEY = crypto.randomBytes(32).toString('hex');
+const INTERNAL_READ_PATHS = /^\/api\/(series|nowcast|forecast|council\/scenario)\//;
 
 /** Live rows for the countries asked for: catalog rows from the cache, others pulled for this request. */
 async function liveRowsFor(codes: string[]): Promise<WatchlistItem[]> {
@@ -1660,9 +1833,65 @@ function tracked<T extends { usedFallback: boolean }>(progress: ReturnType<typeo
   );
 }
 
+/** Each research tools request in the audit log: tool, correlation id, outcome and the arguments cut to a line; never the token. */
+function auditResearchCall(r: ResearchCallRecord): void {
+  appendAudit(AUDIT_FILES, {
+    kind: 'research_tools',
+    summary: researchAuditSummary(r),
+    ...(r.correlationId ? { correlationId: r.correlationId } : {}),
+    detail: {
+      method: r.method,
+      ...(r.tool ? { tool: r.tool } : {}),
+      ...(r.args ? { args: r.args } : {}),
+      outcome: r.outcome,
+      ...(r.reason ? { reason: r.reason.slice(0, 300) } : {}),
+      modelLocation: r.modelLocation,
+      ms: r.ms,
+      ...(r.citeId ? { resultId: r.citeId } : {}),
+    },
+  });
+}
+
+/** What every research tools session uses: the global fetch and the audit log. */
+function researchDeps() {
+  return { fetch: (u: string | URL | Request, init?: RequestInit) => fetch(u, init), onCall: auditResearchCall };
+}
+
+/** The Quant desk on one question: list the tools, plan from the words, call them in turn, build the answer. */
+async function runQuantDesk(question: string, why: string, countries: QuantCountry[], currencies: string[], session: ResearchToolsSession, maxCalls: number): Promise<AgentAnswer> {
+  const listed = await session.listTools();
+  if (!('tools' in listed)) return quantUnavailable(why, listed.reason || listed.outcome);
+  const names = listed.tools.map((t) => t.name);
+  const { calls, notes } = planToolCalls(question, countries, names, maxCalls, new Date(), currencies);
+  const results: QuantCallResult[] = [];
+  const queue = [...calls];
+  let made = 0;
+  while (queue.length && made < maxCalls) {
+    const call = queue.shift()!;
+    made++;
+    const r = await session.callTool(call.name, call.args);
+    results.push({ call, ok: r.ok, ...(r.data ? { data: r.data } : {}), ...(r.cite ? { cite: r.cite } : {}), ...(r.reason ? { reason: r.reason } : {}), ...(r.localOnly ? { localOnly: true } : {}) });
+    // Only local models may read results: stop here; the desk is left out of the answer.
+    if (r.localOnly) break;
+    if (r.ok && call.name === 'list_nowcasts' && r.data) queue.push(...nowcastFollowUp(r.data, countries, names));
+  }
+  if (queue.length && !results.some((r) => r.localOnly)) notes.push(`${queue.length} more tool ${queue.length === 1 ? 'call was' : 'calls were'} left out (limit of ${maxCalls} per question).`);
+  return quantAnswer(why, results, notes);
+}
+
+/** Settings > Research tools > Test on one of its rows, as a connection check line. */
+async function researchToolsCheck(field: { checkId: string; label: string; feeds: string }, env: Record<string, string | undefined>): Promise<ConnectionResult> {
+  const base = { id: field.checkId, name: field.label, group: 'free' as const, feeds: field.feeds, host: '' };
+  const cfg = researchToolsConfig(env);
+  if (!cfg) return { ...base, state: 'needs_setup', detail: 'Set the server address and the token first.' };
+  const r = await testResearchTools(cfg, researchModelLocation(mayUseCloud(serverGuiRuntimeConfig, env)), researchDeps());
+  if (r.ok) return { ...base, host: cfg.endpoint, state: 'connected', detail: `${r.tools.length} tools this token can see.`, sample: `${r.tools.length} tools: ${r.tools.map((t) => t.name).join(', ').slice(0, 400)}` };
+  return { ...base, host: cfg.endpoint, state: /no answer|could not be reached/.test(r.reason) ? 'no_answer' : 'refused', detail: r.reason };
+}
+
 /** The synthesis agent: a short brief from the agents' answers only, checked for untraceable numbers (Council chat and the morning brief). */
 /** Audit log entry for one council answer: question, model, every figure with source and period. */
-function auditCouncilAnswer(question: string, answers: AgentAnswer[], out: SynthesisResult, scope: string | undefined, via: string, snap?: AnswerSnapshot): void {
+function auditCouncilAnswer(question: string, answers: AgentAnswer[], out: SynthesisResult, scope: string | undefined, via: string, snap?: AnswerSnapshot, extra?: Record<string, unknown>): void {
   appendAudit(AUDIT_FILES, {
     kind: 'council',
     summary: `Council answer: "${question.slice(0, 200)}"`,
@@ -1690,9 +1919,11 @@ function auditCouncilAnswer(question: string, answers: AgentAnswer[], out: Synth
       figures: figuresFromAnswers(answers),
       missing: answers.flatMap((a) => (a.missing || []).map((m) => `${a.name}: ${String(m).slice(0, 200)}`)).slice(0, 60),
       removedSentences: (out.removed?.length ?? 0) + (out.contradicted?.length ?? 0),
+      ...(out.brief?.whatIf ? { mode: 'whatif', sections: out.brief.whatIf.sections.filter((x) => x.sentences.length).map((x) => x.id) } : {}),
       ...(out.brief?.explain
         ? { mode: 'explain', lenses: out.brief.explain.lenses.map((l) => l.lens), ...(out.brief.explain.focus ? { explained: out.brief.explain.focus } : {}) }
         : {}),
+      ...(extra || {}),
     },
   });
 }
@@ -1708,6 +1939,8 @@ interface SynthesisTrace {
 }
 
 interface SynthesisOpts {
+  /** More fields for the audit entry, worked out once the summary is written (the data API: token, run ID, cost). */
+  auditExtra?: (out: SynthesisResult, trace: { prompt?: string }) => Record<string, unknown>;
   scope?: string;
   countries?: number;
   earlier?: Array<{ question: string; headline?: string }>;
@@ -1729,7 +1962,7 @@ const ANSWER_SNAPSHOT_DIR = snapshotDir(DATA_DIR);
 async function answerAndRecord(question: string, answers: AgentAnswer[], opts: SynthesisOpts & { asOf?: string | null }, via: string, rerunOf?: string): Promise<SynthesisResult> {
   const askedAt = opts.askedAt || new Date().toISOString();
   const earlier = (opts.earlier || []).map((t) => ({ question: String(t.question).slice(0, 500), ...(t.headline ? { headline: String(t.headline).slice(0, 600) } : {}) }));
-  const trace: SynthesisTrace = {};
+  const trace: SynthesisTrace = opts.trace ?? {};
   const out = await synthesiseAnswers(question, answers, { ...opts, earlier, askedAt, trace });
   let snap: AnswerSnapshot | undefined;
   try {
@@ -1749,7 +1982,7 @@ async function answerAndRecord(question: string, answers: AgentAnswer[], opts: S
         },
         settings: {
           step: 'COUNCIL_SYNTHESIS',
-          mode: opts.explain ? 'explain' : 'summary',
+          mode: !opts.explain?.focus && isWhatIfAnswer(answers) ? 'whatif' : opts.explain ? 'explain' : 'summary',
           providerMode: String(opts.runtimeConfig?.providerMode || 'gemini'),
           model: trace.model ?? modelFromProvider(out.provider),
           temperature: trace.temperature ?? COUNCIL_TEMPERATURE,
@@ -1772,8 +2005,44 @@ async function answerAndRecord(question: string, answers: AgentAnswer[], opts: S
   } catch (error: any) {
     console.warn(`[snapshot] could not save the answer snapshot: ${error?.message || error}`);
   }
-  auditCouncilAnswer(question, answers, out, opts.scope, via, snap);
+  auditCouncilAnswer(question, answers, out, opts.scope, via, snap, opts.auditExtra?.(out, trace));
   return snap ? { ...out, snapshot: summariseSnapshot(snap) } : out;
+}
+
+/** The AI step that picks the agents for a Council chat question (the chat and the data API's ask:council). */
+async function chooseAgentsStep(question: string, earlier: Array<{ question: string }>, runtimeConfig: any, opts: { quant?: boolean } = {}): Promise<{ out: AgentChoiceResult; step?: { providerUsed: string; usedFallback: boolean } }> {
+  try {
+    const step = await executeResilientLlmStep<{ agents: Array<{ id: string; why: string }> }>({
+      stepName: 'COUNCIL_CHOOSE_AGENTS',
+      providerMode: runtimeConfig?.providerMode || 'gemini',
+      runtimeConfig: runtimeConfig || {},
+      thinkingLevel: ThinkingLevel.LOW,
+      systemInstruction: AGENT_CHOICE_INSTRUCTION,
+      prompt: agentChoicePrompt(question, earlier, opts),
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          agents: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: { id: { type: Type.STRING, description: 'Agent id from the list.' }, why: { type: Type.STRING, description: 'Short reason.' } },
+              required: ['id', 'why'],
+            },
+          },
+        },
+        required: ['agents'],
+      },
+      fallbackValue: { agents: [] },
+      maxRetries: 0,
+    });
+    const out: AgentChoiceResult = step.usedFallback
+      ? { agents: null, reason: `no AI model answered (${step.failure || 'no model is set up'})` }
+      : { agents: Array.isArray(step.data?.agents) ? step.data.agents.slice(0, 5) : [], provider: step.providerUsed };
+    return { out, step: { providerUsed: step.providerUsed, usedFallback: step.usedFallback } };
+  } catch (error: any) {
+    return { out: { agents: null, reason: `the AI step failed (${error?.message || 'unknown error'})` } };
+  }
 }
 
 async function synthesiseAnswers(
@@ -1782,6 +2051,8 @@ async function synthesiseAnswers(
   opts: SynthesisOpts = {}
 ): Promise<SynthesisResult> {
   const empty: CouncilBrief = { headline: '', points: [], disagreements: [], gaps: [] };
+  // A what-if the Scenario Agent answered gets the what-if layout; a figure pressed Explain on stays an explanation.
+  if (!opts.explain?.focus && isWhatIfAnswer(answers)) return whatIfAnswers(question, answers, opts);
   if (opts.explain) return explainAnswers(question, answers, opts as SynthesisOpts & { explain: ExplainPlan });
   try {
     // The synthesis reads the agents' standard documents (utils/agentDocument.ts), all in one template.
@@ -1921,6 +2192,59 @@ async function explainAnswers(
   }
 }
 
+/** What-if mode (src/utils/whatIfAnswer.ts): eight sections from now to what would change it, every sentence checked. */
+async function whatIfAnswers(question: string, answers: AgentAnswer[], opts: SynthesisOpts): Promise<SynthesisResult> {
+  const coverage = whatIfCoverage(answers);
+  try {
+    const prompt = (earlierAsText(opts.earlier || []) + councilDocsText(question, answers, opts)).slice(0, 22000) + whatIfTask(question, coverage);
+    if (opts.trace) Object.assign(opts.trace, { system: WHATIF_INSTRUCTION, prompt, template: WHATIF_INSTRUCTION + '\n' + whatIfTask('{question}', []) });
+    const list = (description: string) => ({ type: Type.ARRAY, items: { type: Type.STRING }, description });
+    const step = await executeResilientLlmStep<RawWhatIf>({
+      stepName: 'COUNCIL_SYNTHESIS',
+      providerMode: opts.runtimeConfig?.providerMode || 'gemini',
+      runtimeConfig: opts.runtimeConfig || {},
+      thinkingLevel: ThinkingLevel.LOW,
+      systemInstruction: WHATIF_INSTRUCTION,
+      prompt,
+      temperature: COUNCIL_TEMPERATURE,
+      seed: COUNCIL_SEED,
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          headline: { type: Type.STRING, description: 'One sentence that answers the what-if question.' },
+          ...Object.fromEntries(WHATIF_ORDER.map((id) => [id, list(`Sentences for the ${id} section; empty when Missing.`)])),
+          disagreements: list('Where the evidence points different ways.'),
+          gaps: list('What the agents could not answer.'),
+        },
+        required: ['headline', ...WHATIF_ORDER, 'disagreements', 'gaps'],
+      },
+      fallbackValue: {},
+      maxRetries: 1,
+    });
+    if (opts.trace) Object.assign(opts.trace, { model: step.model, temperature: step.temperature, seed: step.seed });
+    if (step.usedFallback) {
+      return { brief: null, removed: [], reason: `No AI model answered: ${step.failure || 'no model is set up'}. Set it up or test it under Menu > Settings > AI model.` };
+    }
+    const raw = step.data || {};
+    if (!Object.keys(raw).length) {
+      return { brief: null, removed: [], provider: step.providerUsed, reason: `${step.providerUsed} answered, but not in the shape asked for (no what-if sections), so nothing was shown.` };
+    }
+    const checked = checkWhatIf(raw, question, answers);
+    if (!checked.brief.headline && !checked.brief.points.length) {
+      return {
+        brief: null,
+        removed: checked.removed,
+        contradicted: checked.contradicted,
+        provider: step.providerUsed,
+        reason: `${step.providerUsed} answered, but every sentence it wrote had a number not in the agents' figures or contradicted an agent, so nothing was kept.`,
+      };
+    }
+    return { brief: checked.brief, removed: checked.removed, contradicted: checked.contradicted, provider: step.providerUsed };
+  } catch (error: any) {
+    return { brief: null, removed: [], reason: `The what-if step failed (${error?.message || 'unknown error'}).` };
+  }
+}
+
 /** Reads explain mode from a request body: the lenses (checked against the list) and the figure pointed at. */
 function explainFromBody(body: any): ExplainPlan | undefined {
   const e = body?.explain;
@@ -1967,9 +2291,9 @@ let serverJobAccount: () => Account | null = () => null;
 const jobWorkspaceFile = () => workspaceFileForAccount(serverJobAccount());
 
 /** The watchlists saved in the app (workspace file), or the starting ones. */
-function savedWatchlists(): Array<{ id: string; name: string; iso3: string[] }> {
+function savedWatchlists(file: string = jobWorkspaceFile()): Array<{ id: string; name: string; iso3: string[] }> {
   try {
-    const raw = loadWorkspace(jobWorkspaceFile()).values['sovereign_council_watchlists_v1'];
+    const raw = loadWorkspace(file).values['sovereign_council_watchlists_v1'];
     const groups = raw ? JSON.parse(raw) : null;
     if (Array.isArray(groups) && groups.length) {
       return groups
@@ -1982,9 +2306,9 @@ function savedWatchlists(): Array<{ id: string; name: string; iso3: string[] }> 
   return DEFAULT_WATCHLISTS.map((g) => ({ id: g.id, name: g.name, iso3: g.items.map((i) => i.iso3) }));
 }
 
-function savedAiConfig(): any {
+function savedAiConfig(file: string = jobWorkspaceFile()): any {
   try {
-    const raw = loadWorkspace(jobWorkspaceFile()).values['econquest_ai_runtime_config_v1'];
+    const raw = loadWorkspace(file).values['econquest_ai_runtime_config_v1'];
     return raw ? JSON.parse(raw) : serverGuiRuntimeConfig;
   } catch {
     return serverGuiRuntimeConfig;
@@ -2074,6 +2398,9 @@ async function runConnectionCheck(trigger: CheckTrigger): Promise<ConnectionRepo
     acledFiles: () => acledFileData(DATA_DIR),
     aiddata: () => aiddataData(DATA_DIR),
     investorBase: () => investorBaseData(DATA_DIR),
+    fiscalRules: () => fiscalRulesData(DATA_DIR),
+    fxRegime: () => fxRegimeData(DATA_DIR),
+    dpi: () => dpiData(DATA_DIR),
     paidMappingsText: paidMappingsText,
     env: process.env,
     keySources: keySources(ENV_FILE_KEYS, savedSettings),
@@ -2156,6 +2483,9 @@ const SIGNAL_RESULT_FILE = path.join(DATA_DIR, 'local', 'validation', 'signals.j
 /** Scheduled jobs (src/utils/scheduledJobs.ts): time zone for SCHEDULE_DOWNLOAD_ALL and SCHEDULE_BACKTESTS. */
 const SCHEDULE_TZ = (process.env.SCHEDULE_TZ || '').trim() || NIGHTLY_CHECK_TZ;
 const jobSchedule = (id: JobId) => jobScheduleFrom(id, process.env).schedule;
+/** DAILY_DOWNLOAD_DEADLINE (item 11): the daily download finishes by then, or a feed_failed event says it did not. */
+const DAILY_DEADLINE_PARSED = parseDeadline(process.env.DAILY_DOWNLOAD_DEADLINE, SCHEDULE_TZ);
+const DAILY_DEADLINE = DAILY_DEADLINE_PARSED.deadline;
 const jobRunning: Partial<Record<JobId, boolean>> = {};
 
 async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: string }> {
@@ -2169,6 +2499,7 @@ async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: strin
   // passing test's forward record (data/local/validation/forward.jsonl) grows without a hand run.
   // One part failing does not stop the others.
   validationRunning = true;
+  const badgesBefore = modelBadgesNow();
   try {
     const parts: TestsPart[] = [];
     const regressedAll: Parameters<typeof backtestRegressionAlert>[0] = [];
@@ -2220,10 +2551,77 @@ async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: strin
     // Server alert when a test that passed (same id and version) does not pass now.
     const regressed = backtestRegressionAlert(regressedAll.sort((a, b) => a.id.localeCompare(b.id)));
     if (regressed) void notify(regressed, LAST_ALERT_FILE);
+    emitEvents(EVENT_FILES, badgeChangeInputs(badgesBefore, modelBadgesNow(), Object.fromEntries(MODEL_REGISTER.map((m) => [m.id, m.name])), startedAt));
     return testsSummary(parts, startedAt);
   } finally {
     validationRunning = false;
   }
+}
+
+/**
+ * The project's published verdicts (docs/validation/recorded-verdicts.json, as docs/TRACK_RECORD.md
+ * shows them, with the Holm reading across them): the badges fall back to these on a computer that
+ * has not run a test yet (src/utils/validationGrades.ts). Read once; the file changes only with the code.
+ */
+let projectRecordCache: ProjectVerdict[] | null = null;
+function projectRecordNow(): ProjectVerdict[] {
+  if (projectRecordCache) return projectRecordCache;
+  try {
+    const rows = trackRowsFromRepo(APP_ROOT).filter((r) => r.kind !== 'quest');
+    projectRecordCache = rows.map((r) => ({
+      id: r.verdict.id,
+      ...(r.verdict.registerId ? { registerId: r.verdict.registerId } : {}),
+      kind: r.kind as ProjectVerdict['kind'],
+      version: r.verdict.version,
+      status: r.verdict.verdict,
+      ranAt: r.verdict.ranAt,
+      summary: r.verdict.summary,
+      ...(r.p !== undefined ? { p: r.p } : {}),
+      ...(r.adjusted !== undefined ? { adjusted: r.adjusted, holds: !!r.holds } : {}),
+      alpha: r.alpha,
+      tested: rows.length,
+    }));
+  } catch (e) {
+    console.warn(`[validation] project track record not read: ${String((e as Error)?.message || e)}`);
+    projectRecordCache = [];
+  }
+  return projectRecordCache;
+}
+
+/** What /api/validation answers: every recorded verdict, the specs, forecast and signal tests, and the forward record. */
+function validationReplyNow() {
+  const v = loadValidation(VALIDATION_FILE);
+  const specs = loadSpecs(SPEC_DIR).map((s) => ({ file: s.file, hash: s.hash, problem: s.problem, ...(s.spec ? { id: s.spec.id, version: s.spec.version, registeredOn: s.spec.registeredOn, hypothesis: s.spec.hypothesis, passMark: s.spec.passMark, params: s.spec.params, sample: s.spec.sample, knownLimits: s.spec.knownLimits, framework: s.spec.framework === 2 ? 2 : 1, retestOf: s.spec.retestOf } : {}) }));
+  const fv = loadForecastValidation(path.join(DATA_DIR, 'local', 'validation', 'forecasts.json'));
+  const forecasts = Object.fromEntries(Object.values(fv.results).map((r) => [r.id, { id: r.id, status: r.status, verdict: r.verdict, specVersion: r.specVersion, specHash: r.specHash, ranAt: r.ranAt }]));
+  // Every forecast evaluation version run, for the Holm correction across all tests on record:
+  // its p is its own p where it has one (fan coverage), else the largest horizon p (every horizon
+  // must pass); its alpha the registered pass mark.
+  const fSpecs = loadSpecs(path.join(APP_ROOT, 'docs', 'validation', 'forecasts'));
+  const forecastTests = Object.values({ ...fv.versions, ...Object.fromEntries(Object.values(fv.results).map((r) => [`${r.id} v${r.specVersion}`, r])) }).map((r) => ({
+    id: r.id,
+    version: r.specVersion,
+    status: r.status,
+    p: r.pValue ?? (r.horizons?.length ? Math.max(...r.horizons.map((h) => h.pValue)) : 1),
+    alpha: Number((fSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.1,
+  }));
+  // Currency factor tests (npm run signals:evaluate) sit beside the forecast evaluations: same
+  // verdict shape for the register, and their p enters the same Holm family.
+  const sv = loadSignalValidation(path.join(DATA_DIR, 'local', 'validation', 'signals.json'));
+  const sSpecs = loadSpecs(path.join(APP_ROOT, 'docs', 'validation', 'signals'));
+  for (const r of Object.values(sv.results)) forecasts[r.id] = { id: r.id, status: r.status, verdict: r.verdict, specVersion: r.specVersion, specHash: r.specHash, ranAt: r.ranAt, ...(r.crash ? { crash: crashSentence(r.crash) } : {}) };
+  for (const r of Object.values({ ...sv.versions, ...Object.fromEntries(Object.values(sv.results).map((r) => [`${r.id} v${r.specVersion}`, r])) })) {
+    forecastTests.push({ id: r.id, version: r.specVersion, status: r.status, p: r.pValue, alpha: Number((sSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.05 });
+  }
+  const fwd = loadForward(forwardFilePath(DATA_DIR));
+  return { ...v, specs, projectRecord: projectRecordNow(), running: validationRunning, file: 'data/local/validation/results.json', forecasts, forecastTests, forward: forwardSummary(fwd.lines), forwardCheck: { chainOk: fwd.chainOk, badLines: fwd.badLines, lines: fwd.lines.length, file: 'data/local/validation/forward.jsonl' } };
+}
+
+/** The badge of every registered model and signal now (src/utils/validationGrades.ts). */
+function modelBadgesNow(): Record<string, ValueBadge> {
+  const v = validationReplyNow() as unknown as ValidationReply;
+  const holmMap = validationHolm(v);
+  return Object.fromEntries(MODEL_REGISTER.map((m) => [m.id, entryBadge(m.id, m.status, v, holmMap)]));
 }
 
 /** Checked every minute; starts each switched-on job once per day or week after its set time. */
@@ -2271,9 +2669,10 @@ async function reviewOptionsStep(
   frame: ReviewFrame,
   diagnosis: Diagnosis,
   userOptions: UserOption[],
-  runtimeConfig: Partial<AIRuntimeConfig>
+  runtimeConfig: Partial<AIRuntimeConfig>,
+  council?: CouncilInputs
 ): Promise<{ status: 502 | 503; error: string; model?: string } | { content: Pick<OptionsStep, 'model' | 'options' | 'ranking' | 'gaps' | 'removed'>; step: { model?: string; temperature?: number; seed?: number } }> {
-  const prompt = optionsPrompt(frame, diagnosis, userOptions);
+  const prompt = optionsPrompt(frame, diagnosis, userOptions, council);
   const step = await executeResilientLlmStep<Record<string, unknown>>({
     stepName: 'REVIEW_OPTIONS',
     providerMode: runtimeConfig.providerMode || 'gemini',
@@ -2318,7 +2717,7 @@ async function reviewOptionsStep(
   if (step.usedFallback) {
     return { status: 503 as const, error: `No AI model answered (${step.failure || 'no model is set up'}). Set one up in Menu > Settings > AI model, or save your own options without the council.` };
   }
-  const checked = checkOptions(step.data, frame, diagnosis, userOptions);
+  const checked = checkOptions(step.data, frame, diagnosis, userOptions, council);
   if (!checked.options.length) return { status: 502 as const, error: 'The model answered but gave no usable options (each needs a title and how it works). Try again or use another model.', model: step.model };
   return { content: { model: step.providerUsed, ...checked }, step: { model: step.model, temperature: step.temperature, seed: step.seed } };
 }
@@ -2543,7 +2942,7 @@ ${MISSING_FIGURES_RULE}
 
 /** A regression case on Policy review step 3: a diagnosis built only from the case's frozen figures. */
 async function optionsRegressionCase(c: RegressionCase, runtimeConfig: Partial<AIRuntimeConfig>): Promise<RegressionCaseResult> {
-  const { frame, figures } = c.options!;
+  const { frame, figures, council } = c.options!;
   const rows: Array<Array<string | number | null>> = figures.map((f) => [frame.iso3, '', f.field, f.figure, f.value, f.unit, 'Live', f.period, f.source, '', '']);
   // Every other diagnosis figure is Missing with a plain reason; the model readings [13]+ read the
   // app's saved history, so they are left out to keep the case the same on every computer.
@@ -2553,9 +2952,9 @@ async function optionsRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
       rows.push([frame.iso3, '', d.field, f?.label ?? d.field, null, f?.unit ?? '', 'Missing', '', '', 'not in this test case', '']);
     }
   const diagnosis = buildDiagnosis(rows, { iso3: frame.iso3, asOf: frame.asOf, pullDate: frame.asOf, pulledAt: `${frame.asOf}T00:00:00.000Z`, incomplete: false });
-  const step = await reviewOptionsStep(frame, diagnosis, [], runtimeConfig);
+  const step = await reviewOptionsStep(frame, diagnosis, [], runtimeConfig, council);
   // A model that answered with nothing usable is a failing answer, not a missing one.
-  if (!('content' in step)) return { ...checkRegressionCase(c, { brief: null, removed: [], reason: step.error } as SynthesisResult), model: step.model ?? null, ...(step.model ? { temperature: COUNCIL_TEMPERATURE, seed: COUNCIL_SEED, promptHash: sha256(`${OPTIONS_INSTRUCTION}\n${optionsPrompt(frame, diagnosis, [])}`), outputHash: sha256('no usable options') } : {}), answer: [] };
+  if (!('content' in step)) return { ...checkRegressionCase(c, { brief: null, removed: [], reason: step.error } as SynthesisResult), model: step.model ?? null, ...(step.model ? { temperature: COUNCIL_TEMPERATURE, seed: COUNCIL_SEED, promptHash: sha256(`${OPTIONS_INSTRUCTION}\n${optionsPrompt(frame, diagnosis, [], council)}`), outputHash: sha256('no usable options') } : {}), answer: [] };
   const o = step.content;
   const brief = {
     headline: o.options[0]?.title || '',
@@ -2569,7 +2968,7 @@ async function optionsRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
     model: step.step.model ?? null,
     temperature: step.step.temperature,
     seed: step.step.seed,
-    promptHash: sha256(`${OPTIONS_INSTRUCTION}\n${optionsPrompt(frame, diagnosis, [])}`),
+    promptHash: sha256(`${OPTIONS_INSTRUCTION}\n${optionsPrompt(frame, diagnosis, [], council)}`),
     outputHash: sha256(JSON.stringify(answer)),
     answer,
   };
@@ -2724,6 +3123,44 @@ async function startServer() {
     next();
   });
 
+  // Correlation IDs (console integration item 3): an outside system may send X-Correlation-Id on
+  // any call; it is checked, sent back on the reply, and written into every audit entry the call
+  // makes, so one action can be traced across the systems' logs. Without one, the app makes one
+  // for the reply only (and the audit entry stays without).
+  const correlationStore = new AsyncLocalStorage<string>();
+  setAuditCorrelation(() => correlationStore.getStore());
+  // Audit seal and locked bucket copies (item 10). Keys come from the environment only.
+  {
+    const problem = sealKeyProblem(process.env.AUDIT_SEAL_KEY);
+    if (problem) console.warn(`[audit] ${problem}`);
+    setAuditSealKey(sealKeyFrom(process.env.AUDIT_SEAL_KEY));
+  }
+  app.use((req, res, next) => {
+    const raw = req.headers[CORRELATION_HEADER];
+    const given = (Array.isArray(raw) ? raw[0] : raw)?.trim();
+    if (given === undefined) {
+      res.setHeader('X-Correlation-Id', crypto.randomUUID());
+      return next();
+    }
+    const problem = correlationIdProblem(given);
+    if (problem) return res.status(400).json({ error: 'BAD_CORRELATION_ID', message: problem });
+    res.setHeader('X-Correlation-Id', given);
+    correlationStore.run(given, next);
+  });
+
+  // Countries by ISO alpha-2 or alpha-3 (src/server/countryCodes.ts): "BR" in an address or in
+  // iso3= / countries= becomes "BRA" before any route or check sees it.
+  app.use((req, _res, next) => {
+    const nextUrl = normaliseCountryUrl(req.url);
+    if (nextUrl !== req.url) {
+      req.url = nextUrl;
+      const q = normaliseCountryQuery(req.query as Record<string, unknown>);
+      if (q) req.query = q as typeof req.query;
+    }
+    next();
+  });
+
+
   // All state lives under DATA_DIR (one mounted volume in Docker). Stop at once with a clear
   // sentence if it cannot be written, instead of failing later on the first save.
   const dataProblem = dataDirProblem(DATA_DIR);
@@ -2769,6 +3206,10 @@ async function startServer() {
   const actorStore = new AsyncLocalStorage<{ id: string; username: string; name: string }>();
   setAuditActor(() => actorStore.getStore());
   let setupCode: string | null = null;
+  const oidcSetting = oidcConfigFromEnv(process.env);
+  if (oidcSetting.problem) console.warn(`[auth] ${oidcSetting.problem}`);
+  if (oidcSetting.config) console.log(`[auth] OIDC sign-in on: ${oidcSetting.config.issuer} ("Sign in with ${oidcSetting.config.name}")`);
+  const oidc = new OidcClient(oidcSetting.config);
   const currentMode = () => authMode(auth.count(), process.env);
   const announceSetupCode = () => {
     if (currentMode() !== 'setup' || setupCode) return;
@@ -2779,6 +3220,67 @@ async function startServer() {
   const secureCookie = (req: express.Request) => req.secure || String(process.env.COOKIE_SECURE || '').trim().toLowerCase() === 'true';
   const signedIn = (res: express.Response): Account | null => (res.locals.account as Account | undefined) ?? null;
   const accountName = (a: Account | null) => (a ? `${a.displayName} (${a.username})` : 'nobody signed in');
+  // Scoped API tokens (console integration item 2, src/utils/apiTokens.ts). A request carrying a
+  // token is checked here, before sign-in: the token must be active and have the scope the address
+  // needs. Console addresses (/api/v1/ outside the integration API) answer tokens only; the legacy
+  // integration key may do the three read scopes there. Every use goes to the audit log.
+  const apiTokens = new ApiTokenStore(apiTokensFile(DATA_DIR));
+  const limiter = new RateLimiter();
+  const auditTokenUse = (req: express.Request, res: express.Response, who: { id: string; name: string }, scope: Scope | null) => {
+    // 'finish' runs outside the request's async context, so the correlation ID is read now.
+    const correlationId = correlationStore.getStore();
+    res.on('finish', () => {
+      appendAudit(AUDIT_FILES, {
+        ...(correlationId ? { correlationId } : {}),
+        kind: 'api',
+        summary: `API token "${who.name}": ${req.method} ${req.path} (${res.statusCode})`,
+        detail: { token: who.id, scope, method: req.method, path: req.path, status: res.statusCode },
+      });
+    });
+  };
+  // The data API's ask:council reads the app's own series, nowcast and forecast addresses, as the
+  // browser's Council chat does. It calls this server with a key made at start-up and never shown,
+  // for GET on those addresses only.
+  app.use((req, res, next) => {
+    const given = req.headers[INTERNAL_READ_HEADER];
+    if (typeof given === 'string' && keyMatches(given, INTERNAL_READ_KEY) && req.method === 'GET' && INTERNAL_READ_PATHS.test(req.path)) res.locals.internalRead = true;
+    next();
+  });
+  app.use((req, res, next) => {
+    if (req.path === '/api/v1/integration/openapi.json') return next();
+    const given = apiKeyFrom(req.headers as Record<string, string | string[] | undefined>);
+    const isToken = given.startsWith(TOKEN_PREFIX);
+    const onlyTokens = tokenOnly(req.path);
+    if (!isToken && !onlyTokens) return next();
+    const needed = scopeFor(req.method, req.path);
+    if (isToken) {
+      const token = apiTokens.resolve(given);
+      if (!token) {
+        appendAudit(AUDIT_FILES, { kind: 'api', summary: `Refused an unknown or revoked API token: ${req.method} ${req.path}`, detail: { method: req.method, path: req.path, status: 401 } });
+        return res.status(401).json({ error: 'INVALID_TOKEN', message: 'This API token is unknown or has been revoked.' });
+      }
+      if (!needed || !token.scopes.includes(needed)) {
+        appendAudit(AUDIT_FILES, { kind: 'api', summary: `API token "${token.name}" refused: ${req.method} ${req.path} needs ${needed ?? 'no token'}`, detail: { token: token.id, scope: needed, method: req.method, path: req.path, status: 403 } });
+        return res.status(403).json({ error: 'TOKEN_SCOPE', message: scopeRefusal(token.name, needed), needed });
+      }
+      const wait = limiter.take(`token:${token.id}`, LIMITS.api);
+      if (wait) {
+        res.setHeader('Retry-After', String(wait));
+        return res.status(429).json({ error: `Too many requests with this token. Try again in ${wait} seconds.` });
+      }
+      res.locals.apiToken = { id: token.id, name: token.name, scopes: token.scopes, createdById: token.createdById };
+      auditTokenUse(req, res, token, needed);
+      return actorStore.run({ id: `token:${token.id}`, username: `token:${token.name}`, name: `API token "${token.name}"` }, next);
+    }
+    // A console address without a token: the legacy integration key may do the read scopes.
+    const integration = serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG;
+    if (needed && LEGACY_SCOPES.includes(needed) && keyMatches(given, integration.apiKey)) {
+      res.locals.apiToken = { id: 'legacy', name: 'legacy integration key', scopes: [...LEGACY_SCOPES] };
+      auditTokenUse(req, res, { id: 'legacy', name: 'legacy integration key' }, needed);
+      return next();
+    }
+    res.status(401).json({ error: 'TOKEN_REQUIRED', message: `This address needs an API token${needed ? ` with the ${needed} scope` : ''}, sent as Authorization: Bearer <token>. Make one in Menu > Settings > API tokens.` });
+  });
   app.use((req, res, next) => {
     const mode = currentMode();
     const hit = mode === 'off' ? null : auth.resolve(readCookie(req.headers.cookie, SESSION_COOKIE));
@@ -2789,7 +3291,7 @@ async function startServer() {
       const a = hit.account;
       return actorStore.run({ id: a.id, username: a.username, name: a.displayName }, next);
     }
-    if (mode === 'off' || hit || openPath(req.method, req.path)) return next();
+    if (mode === 'off' || hit || openPath(req.method, req.path) || res.locals.apiToken || res.locals.internalRead) return next();
     // The integration API keeps its own key check when that is switched on in Settings.
     if (req.path.startsWith('/api/v1/integration/') && (serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG).requireApiKey) return next();
     // Scripts reading data (docs/DATA_API.md): the same key, sent in a header, opens the read-only data addresses.
@@ -2806,7 +3308,6 @@ async function startServer() {
     res.status(403).json({ error: refusal(me.role, needed), role: me.role, needed });
   });
   // CSRF token and per-account rate limits (src/utils/requestLimits.ts), once someone is signed in.
-  const limiter = new RateLimiter();
   app.use((req, res, next) => {
     const me = signedIn(res);
     if (!me) return next();
@@ -2824,7 +3325,7 @@ async function startServer() {
   // Data reads that come from no signed-in account (scripts, or the single user with sign-in off): one
   // limit per address, so a script in a loop cannot slow the app (src/server/dataApi.ts).
   app.use((req, res, next) => {
-    if (signedIn(res) || !isDataApiRead(req.method, req.path)) return next();
+    if (signedIn(res) || res.locals.apiToken || res.locals.internalRead || !isDataApiRead(req.method, req.path)) return next();
     const wait = limiter.take(`data:${req.socket.remoteAddress || 'unknown'}`, DATA_API_LIMIT);
     if (!wait) return next();
     res.setHeader('Retry-After', String(wait));
@@ -2870,6 +3371,7 @@ async function startServer() {
       canCreateFirstAccount: auth.count() === 0 && (mode === 'setup' || trusted(req, res)),
       sessionIdleHours: Math.round(limits.idleMs / 3600_000),
       csrfToken: me ? csrfToken(res.locals.sessionHash as string) : null,
+      oidc: oidc.config ? { name: oidc.config.name } : null,
     };
   };
   app.get('/api/auth/status', (req, res) => res.json(authStatus(req, res)));
@@ -2924,12 +3426,75 @@ async function startServer() {
     if (me) appendAudit(AUDIT_FILES, { kind: 'access', summary: `Signed out: ${accountName(me)}` });
     res.json({ ok: true });
   });
+  // Sign-in through an OIDC provider (src/utils/oidc.ts), when OIDC_ISSUER and OIDC_CLIENT_ID are set.
+  const oidcRedirectUri = (req: express.Request) => oidc.config!.redirectUri || `${secureCookie(req) ? 'https' : req.protocol}://${req.get('host')}/api/auth/oidc/callback`;
+  const oidcFail = (res: express.Response, code: OidcError, why: string, address: string) => {
+    appendAudit(AUDIT_FILES, { kind: 'access', summary: `Failed OIDC sign-in (${code}): ${why.slice(0, 200)}`, detail: { address } });
+    res.setHeader('Set-Cookie', oidcCookie('', { secure: false, maxAgeMs: 0 }));
+    res.redirect(302, `/?signin_error=${code}`);
+  };
+  app.get('/api/auth/oidc/start', async (req, res) => {
+    if (!oidc.config) return res.status(404).json({ error: 'OIDC sign-in is not set up on this server (OIDC_ISSUER, OIDC_CLIENT_ID).' });
+    const address = req.ip || req.socket.remoteAddress || '';
+    const wait = signInLimiter.waitSeconds('(oidc)', address);
+    if (wait) return res.status(429).json({ error: `Too many tries. Wait ${Math.ceil(wait / 60)} minutes.` });
+    try {
+      const d = await oidc.discovery();
+      const p = newPending(oidcRedirectUri(req));
+      oidc.remember(p);
+      res.setHeader('Set-Cookie', oidcCookie(p.state, { secure: secureCookie(req), maxAgeMs: OIDC_PENDING_MS }));
+      res.redirect(302, authorizationUrl(d, oidc.config, p));
+    } catch (err: any) {
+      oidcFail(res, 'failed', `the provider could not be reached (${err?.message || err})`, address);
+    }
+  });
+  app.get('/api/auth/oidc/callback', async (req, res) => {
+    const c = oidc.config;
+    if (!c) return res.status(404).json({ error: 'OIDC sign-in is not set up on this server.' });
+    const address = req.ip || req.socket.remoteAddress || '';
+    const state = String(req.query.state || '');
+    const p = oidc.take(state);
+    if (!p || readCookie(req.headers.cookie, OIDC_COOKIE) !== state) return oidcFail(res, 'expired', 'the sign-in was not started in this browser, or took longer than 10 minutes', address);
+    if (req.query.error) return oidcFail(res, 'failed', `the provider said ${String(req.query.error).slice(0, 60)}`, address);
+    try {
+      const d = await oidc.discovery();
+      const tr = tokenRequest(c, p, String(req.query.code || ''));
+      const r = await fetch(d.token_endpoint, { method: 'POST', headers: tr.headers, body: tr.body, signal: AbortSignal.timeout(15_000) });
+      const body = (await r.json().catch(() => null)) as { id_token?: string } | null;
+      if (!r.ok || !body?.id_token) return oidcFail(res, 'failed', `the token request was refused (HTTP ${r.status})`, address);
+      const v = await oidc.verify(body.id_token, p.nonce);
+      if ('problem' in v) {
+        signInLimiter.failed('(oidc)', address);
+        return oidcFail(res, 'failed', v.problem, address);
+      }
+      const claims = v.claims;
+      const decision = oidcDecision(claims, c, auth.byOidc(c.issuer, claims.sub));
+      if ('refuse' in decision) return oidcFail(res, decision.refuse as OidcError, `${verifiedEmail(claims) || 'no verified email'}: ${decision.refuse}`, address);
+      let account: Account;
+      if ('use' in decision) account = auth.byId(decision.use)!;
+      else {
+        const username = usernameFromEmail(decision.create.email, (u) => Boolean(auth.byUsername(u)));
+        account = newOidcAccount({ username, displayName: String(claims.name || claims.preferred_username || username), role: decision.create.role, issuer: c.issuer, subject: claims.sub, email: decision.create.email });
+        const first = auth.count() === 0;
+        auth.add(account);
+        if (first) setupCode = null;
+        appendAudit(AUDIT_FILES, { kind: 'access', summary: `Created the ${account.role} account ${accountName(account)} at its first sign-in through ${c.name}${first ? '. Sign-in is now required for everyone.' : ''}`, detail: { email: decision.create.email } });
+      }
+      const token = auth.startSession(account.id);
+      res.setHeader('Set-Cookie', [sessionCookie(token, { secure: secureCookie(req), maxAgeMs: limits.maxMs }), oidcCookie('', { secure: secureCookie(req), maxAgeMs: 0 })]);
+      appendAudit(AUDIT_FILES, { kind: 'access', summary: `Signed in through ${c.name}: ${accountName(account)}`, detail: { address } });
+      res.redirect(302, '/');
+    } catch (err: any) {
+      oidcFail(res, 'failed', `the provider could not be reached (${err?.message || err})`, address);
+    }
+  });
   app.post('/api/auth/password', express.json({ limit: '10kb' }), (req, res) => {
     const me = signedIn(res);
     if (!me) return res.status(401).json({ error: 'Sign in first.', signIn: true });
     const address = req.ip || req.socket.remoteAddress || '';
     const wait = signInLimiter.waitSeconds(me.username, address);
     if (wait) return res.status(429).json({ error: `Too many wrong passwords. Try again in ${Math.ceil(wait / 60)} minutes.` });
+    if (me.provider === 'oidc') return res.status(400).json({ error: `This account signs in through ${oidc.config?.name || 'the OIDC provider'} and has no password here.` });
     if (!verifyPassword(String(req.body?.current || ''), me.passwordHash)) {
       signInLimiter.failed(me.username, address);
       return res.status(403).json({ error: 'The current password is wrong.' });
@@ -2988,6 +3553,7 @@ async function startServer() {
     const me = signedIn(res)!;
     const target = auth.byId(String(req.params.id));
     if (!target) return res.status(404).json({ error: 'No such account.' });
+    if (target.provider === 'oidc') return res.status(400).json({ error: `${target.username} signs in through ${oidc.config?.name || 'the OIDC provider'} and has no password here.` });
     const password = randomPassword();
     auth.update(target.id, (a) => ({ ...a, passwordHash: hashPassword(password), passwordChangedAt: new Date().toISOString() }));
     const ended = auth.endSessionsFor(target.id, target.id === me.id ? (res.locals.sessionHash as string) : undefined);
@@ -2999,20 +3565,46 @@ async function startServer() {
   // by what it did (route), never by its body, so keys and document text stay out of the log.
   app.use((req, res, next) => {
     const by = actorStore.getStore();
+    const correlationId = correlationStore.getStore();
     res.on('finish', () => {
       if (res.statusCode >= 400) return;
       const what = describeRequest(req.method, req.originalUrl || req.url);
-      if (what) appendAudit(AUDIT_FILES, by ? { ...what, by } : what);
+      if (what) appendAudit(AUDIT_FILES, { ...what, ...(by ? { by } : {}), ...(correlationId ? { correlationId } : {}) });
     });
     next();
   });
+  const auditBucket = bucketConfigFromEnv(process.env);
+  if (auditBucket.problem) console.warn(`[audit] ${auditBucket.problem}`);
+  const auditBucketState = bucketStateFile(DATA_DIR);
+  const auditBucketView = () => {
+    if (!auditBucket.config) return { on: false, ...(auditBucket.problem ? { problem: auditBucket.problem } : {}) };
+    const st = readBucketState(auditBucketState);
+    return { on: true, where: `${auditBucket.config.url.host}${auditBucket.config.url.pathname}/${auditBucket.config.prefix}`, lockMode: auditBucket.config.lockMode, retainDays: auditBucket.config.retainDays, ...st };
+  };
+  if (auditBucket.config) {
+    const cfg = auditBucket.config;
+    let shipping = false;
+    const tick = async () => {
+      if (shipping) return;
+      shipping = true;
+      try {
+        await shipAudit(cfg, rawAudit(AUDIT_FILES).split('\n'), auditBucketState);
+      } catch (e) {
+        console.warn(`[audit] bucket copy: ${(e as Error)?.message || e}`);
+      } finally {
+        shipping = false;
+      }
+    };
+    setInterval(() => void tick(), Math.max(200, Number(process.env.AUDIT_BUCKET_POLL_MS) || 5000)).unref();
+    void tick();
+  }
   app.get('/api/audit', (req, res) => {
-    const { check, entries } = readAudit(AUDIT_FILES);
+    const { check, entries, seals } = readAudit(AUDIT_FILES);
     const kind = typeof req.query.kind === 'string' && req.query.kind in AUDIT_KIND_LABEL ? (req.query.kind as AuditKind) : null;
     const q = typeof req.query.q === 'string' ? req.query.q.trim().toLowerCase().slice(0, 100) : '';
     const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 200));
     const hits = entries.filter((e) => (!kind || e.kind === kind) && (!q || JSON.stringify(e).toLowerCase().includes(q)));
-    res.json({ check, total: hits.length, entries: hits.slice(-limit).reverse(), kinds: AUDIT_KIND_LABEL, file: 'data/local/audit/audit-log.jsonl' });
+    res.json({ check, seals, bucket: auditBucketView(), total: hits.length, entries: hits.slice(-limit).reverse(), kinds: AUDIT_KIND_LABEL, file: 'data/local/audit/audit-log.jsonl' });
   });
   app.get('/api/audit/export.:fmt(csv|jsonl)', (req, res) => {
     const stamp = new Date().toISOString().slice(0, 10);
@@ -3021,11 +3613,34 @@ async function startServer() {
       res.attachment(`econquest-audit-log-${stamp}.jsonl`);
       return res.send(rawAudit(AUDIT_FILES));
     }
-    const { check, entries } = readAudit(AUDIT_FILES);
-    const note = check.ok ? `Checked: ${check.entries} entries, chain intact, last hash ${check.lastHash ?? '-'}` : `CHECK FAILED: ${check.problem}`;
+    const { check, entries, seals } = readAudit(AUDIT_FILES);
+    const sealNote = !seals.ok ? `; SEAL CHECK FAILED: ${seals.problem}` : seals.keySet ? `; ${seals.sealed} sealed with key ${seals.keyId}, ${seals.unsealed} unsealed` : '; not sealed (no AUDIT_SEAL_KEY)';
+    const note = (check.ok ? `Checked: ${check.entries} entries, chain intact, last hash ${check.lastHash ?? '-'}` : `CHECK FAILED: ${check.problem}`) + sealNote;
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.attachment(`econquest-audit-log-${stamp}.csv`);
-    res.send(toCsv(AUDIT_HEADER, [...auditRows(entries), ['', '', 'Check', '', note, '', '', '', '']]));
+    res.send(toCsv(AUDIT_HEADER, [...auditRows(entries), ['', '', 'Check', '', note, '', '', '', '', '']]));
+  });
+  // Menu > Settings > API tokens (admin only by the role table; this computer only while sign-in is off).
+  const tokensReply = () => ({ tokens: apiTokens.list().map(publicToken).sort((a, b) => Number(b.active) - Number(a.active) || b.createdAt.localeCompare(a.createdAt)) });
+  app.get('/api/settings/api-tokens', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    res.json(tokensReply());
+  });
+  app.post('/api/settings/api-tokens', express.json({ limit: '10kb' }), (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const by = signedIn(res) ? accountName(signedIn(res)) : 'this computer';
+    const made = apiTokens.create({ name: req.body?.name, scopes: req.body?.scopes, createdBy: by, createdById: signedIn(res)?.id });
+    if ('error' in made) return res.status(400).json({ error: made.error });
+    appendAudit(AUDIT_FILES, { kind: 'api', summary: `Made the API token "${made.token.name}" (${made.token.scopes.join(', ')})`, detail: { token: made.token.id, scopes: made.token.scopes } });
+    res.json({ ...tokensReply(), created: publicToken(made.token), secret: made.secret });
+  });
+  app.post('/api/settings/api-tokens/:id/revoke', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const by = signedIn(res) ? accountName(signedIn(res)) : 'this computer';
+    const t = apiTokens.revoke(String(req.params.id), by);
+    if (!t) return res.status(404).json({ error: 'No token with that id.' });
+    appendAudit(AUDIT_FILES, { kind: 'api', summary: `Revoked the API token "${t.name}"`, detail: { token: t.id } });
+    res.json(tokensReply());
   });
   // Backup and restore (Menu > Settings > Backup): saved research, policy reviews, watch alerts, holdings,
   // watchlists and AI settings in one file, never API keys. See src/utils/backup.ts. Restore takes
@@ -3052,7 +3667,142 @@ async function startServer() {
       res.status(500).json({ error: `Could not restore the backup (${error?.code || error?.message || 'unknown error'}). Nothing was lost: see data/local/backups/.` });
     }
   });
+  // Hidden names (item 8, src/utils/exclusions.ts): an address about a hidden country answers 404
+  // with a count only, and hidden countries are taken out of iso3= / countries= lists.
+  app.use((req, res, next) => {
+    if (!req.path.startsWith('/api/') || !HIDDEN.count()) return next();
+    const c = countryInPath(req.path);
+    const one = typeof req.query.iso3 === 'string' && !req.query.iso3.includes(',') ? req.query.iso3.trim().toUpperCase() : null;
+    if ((c && HIDDEN.countryHidden(c)) || (one && HIDDEN.countryHidden(one))) return res.status(404).json({ error: 'HIDDEN', message: `Not shown: it is on the hidden-names list (${hiddenNote(1)}).`, hidden: 1 });
+    const q = withoutHiddenCountries(req.query as Record<string, unknown>, (iso3) => HIDDEN.countryHidden(iso3));
+    if (q) {
+      req.query = q.query as typeof req.query;
+      res.setHeader('X-EconQuest-Hidden', String(q.removed));
+      res.locals.hiddenRemoved = q.removed;
+    }
+    next();
+  });
   app.use(express.json({ limit: '5mb' }));
+
+  // Console events (item 4): catch-up, live stream and signed webhooks. Events are written to
+  // data/local/events/events.jsonl by this server and by the daily download; the hub reads new
+  // lines, sends them to the live streams and delivers them to webhooks with retries.
+  const consoleWebhooks = new WebhookStore(EVENT_FILES, secretBoxFromEnv(process.env).box);
+  const consoleUrlProblem = (u: string) => outboundUrlProblem(u, PORT);
+  // An event about a hidden country, or a threshold on one, never leaves the app (item 8).
+  const eventHidden = (e: ConsoleEvent) => HIDDEN.countryHidden(e.entity.iso3);
+  const consoleStream = registerConsoleEventRoutes(app, { files: EVENT_FILES, webhooks: consoleWebhooks, urlProblem: consoleUrlProblem, hidden: eventHidden });
+  registerConsoleWatchRoutes(app, { rulesFile: WATCH_RULES_FILE, readStates: readWatchStates });
+  registerExclusionRoutes(app, { store: HIDDEN, refuseRemoteChange: (req, res) => refuseRemoteChange(req, res) });
+  // The account that made the token; a token made with sign-in off (or by a removed account) uses
+  // the first admin's workspace when accounts exist, else the shared one.
+  const workspaceForToken = (t: { createdById?: string }) => {
+    const accounts = auth.list();
+    const maker = t.createdById ? accounts.find((a) => a.id === t.createdById) : undefined;
+    const firstAdmin = accounts.filter((a) => a.role === 'admin').sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
+    return workspaceFileForAccount(maker ?? firstAdmin ?? null);
+  };
+  registerConsoleHoldingsRoutes(app, {
+    hidden: (h) => HIDDEN.holdingHidden(h),
+    workspaceForToken,
+  });
+  // Scenarios read only saved files: the replay series (daily download) and the ECB rates (item 9).
+  const replayFilePath = path.join(DATA_DIR, 'local', 'replays', 'replay-series.json');
+  let replayCache: { mtimeMs: number; file: ReplayFile | null } | null = null;
+  const ecbMonthlyCache = new Map<string, { at: string | undefined; months: Record<string, number> | null }>();
+  const replayFile = (): ReplayFile | null => {
+    let mtimeMs = -1;
+    try {
+      mtimeMs = fs.statSync(replayFilePath).mtimeMs;
+    } catch {
+      return null;
+    }
+    if (replayCache?.mtimeMs !== mtimeMs) {
+      let file: ReplayFile | null = null;
+      try {
+        file = readReplayFile(JSON.parse(fs.readFileSync(replayFilePath, 'utf8')));
+      } catch {
+        file = null;
+      }
+      replayCache = { mtimeMs, file };
+    }
+    return replayCache.file;
+  };
+  const ecbMonthly = (ccy: string): Record<string, number> | null => {
+    const saved = loadFxHistory();
+    const at = fxHistoryPulledAt(saved);
+    const hit = ecbMonthlyCache.get(ccy);
+    if (hit && hit.at === at) return hit.months;
+    const s = fxDailySeries(saved, ccy);
+    const months = 'points' in s && s.source && /ECB/.test(s.source) ? monthlyAverages(s.points) : null;
+    ecbMonthlyCache.set(ccy, { at, months });
+    return months;
+  };
+  registerConsoleScenarioRoutes(app, {
+    hidden: (h) => HIDDEN.holdingHidden(h),
+    replayFile,
+    ecbMonthly,
+    ecbFirstMonth: () => {
+      const q = Object.keys(loadFxHistory().chunks).sort()[0];
+      const m = q && /^(\d{4})-Q([1-4])$/.exec(q);
+      return m ? `${m[1]}-${String((Number(m[2]) - 1) * 3 + 1).padStart(2, '0')}` : null;
+    },
+  });
+  const consoleHub = new EventHub({
+    files: EVENT_FILES,
+    webhooks: consoleWebhooks,
+    urlProblem: consoleUrlProblem,
+    hidden: eventHidden,
+    broadcast: (e) => {
+      consoleStream.broadcast(e);
+      // After a daily download, rebuild the watchlist from the saved files: the figure watch, the
+      // signal states and your indicator watches are checked then.
+      if (e.type === 'daily_download_ready') void fetchLiveWatchlistCatalog([], true).catch((err) => console.error('[events] watchlist rebuild:', err));
+      // The older integration stream gets the same events, named by type.
+      const frame = `id: ${e.id}\nevent: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`;
+      sseClients.forEach((c) => {
+        try {
+          c.write(frame);
+        } catch {
+          sseClients.delete(c);
+        }
+      });
+    },
+  });
+  consoleHub.start();
+  const consolePollMs = Math.max(200, Number(process.env.EVENTS_POLL_MS) || 3000);
+  setInterval(() => {
+    try {
+      if (consoleHub.pull().length) void consoleHub.deliver().catch(() => undefined);
+    } catch (err) {
+      console.warn(`[events] could not read new events: ${(err as Error)?.message || err}`);
+    }
+  }, consolePollMs).unref();
+  setInterval(() => void consoleHub.deliver().catch(() => undefined), 10_000).unref();
+  // Releases due tomorrow: checked hourly; each release is sent once (idempotency key).
+  const announceReleases = () => {
+    try {
+      emitEvents(EVENT_FILES, releaseUpcomingInputs(new Date(), loadUstAuctions()?.announced));
+    } catch {
+      /* the calendar files are missing: nothing to announce */
+    }
+  };
+  setTimeout(announceReleases, 30_000).unref();
+  setInterval(announceReleases, 3_600_000).unref();
+  // The daily-download deadline (item 11): one feed_failed per day when today's run has not finished by then.
+  if (DAILY_DEADLINE_PARSED.problem) console.warn(`[daily] ${DAILY_DEADLINE_PARSED.problem}`);
+  if (DAILY_DEADLINE) {
+    const deadline = DAILY_DEADLINE;
+    const checkDeadline = () => {
+      try {
+        emitEvents(EVENT_FILES, deadlineInputs(readDaily(dailyFilePath(DATA_DIR)), deadline, new Date()));
+      } catch (err) {
+        console.error('[daily] deadline check:', (err as Error)?.message);
+      }
+    };
+    setInterval(checkDeadline, Math.max(200, Number(process.env.DEADLINE_CHECK_MS) || 60_000)).unref();
+    setTimeout(checkDeadline, 5000).unref();
+  }
 
   // 1. Live Open Data & Grounded Market Telemetry Snapshot Endpoint
   app.get('/api/data/sovereign-snapshot', async (req, res) => {
@@ -3119,11 +3869,13 @@ async function startServer() {
       // ?iso3=ARG,COL: rows for just those countries, pulled for one council question if not in the catalog.
       if (req.query.iso3) {
         const codes = String(req.query.iso3).toUpperCase().split(',').map((c) => c.trim().replace(/[^A-Z]/g, '')).filter((c) => c.length === 3);
-        return res.json({ items: await liveRowsFor([...new Set(codes)]), fetchedAt: new Date().toISOString() });
+        const rows = await liveRowsFor([...new Set(codes)].filter((c) => !HIDDEN.countryHidden(c)));
+        return res.json({ items: rows, fetchedAt: new Date().toISOString(), hidden: Number(res.locals.hiddenRemoved) || 0 });
       }
       // ?refresh=1 rebuilds the rows from what is saved now instead of the 4-minute copy.
-      const items = await fetchLiveWatchlistCatalog([], req.query.refresh === '1');
-      res.json({ items, fetchedAt: new Date().toISOString() });
+      const all = await fetchLiveWatchlistCatalog([], req.query.refresh === '1');
+      const items = all.filter((r) => !HIDDEN.countryHidden(r.iso3));
+      res.json({ items, fetchedAt: new Date().toISOString(), hidden: all.length - items.length });
     } catch (error: any) {
       res.status(500).json({ error: error?.message || 'Failed to refresh live watchlist' });
     }
@@ -3156,6 +3908,9 @@ async function startServer() {
       acledFiles: () => acledFileData(DATA_DIR),
       aiddata: () => aiddataData(DATA_DIR),
       investorBase: () => investorBaseData(DATA_DIR),
+    fiscalRules: () => fiscalRulesData(DATA_DIR),
+    fxRegime: () => fxRegimeData(DATA_DIR),
+    dpi: () => dpiData(DATA_DIR),
       paidMappingsText: paidMappingsText,
       env,
       only: [field.checkId],
@@ -3266,42 +4021,18 @@ async function startServer() {
       res.status(500).json({ error: `Could not save the workspace file (${error?.code || error?.message || 'unknown error'}).` });
     }
   });
-  registerReviewRoutes(app, { refuseRemoteChange, signedIn, archivedSnapshot: (iso3, date) => archivedSnapshot(iso3, date), seriesFor, fetchLiveOpenDataSnapshot, reviewOptionsStep, withModelFigures });
+  registerReviewRoutes(app, { refuseRemoteChange, signedIn, archivedSnapshot: (iso3, date) => archivedSnapshot(iso3, date), seriesFor, fetchLiveOpenDataSnapshot, reviewOptionsStep, withModelFigures, allHistories, politicalInputs: (iso3) => ({ dpi: dpiInput(DATA_DIR), gdelt: gdeltDailySeries(DATA_DIR, iso3) }) });
   // Pre-registered backtests: the tests as registered (with their hashes) and the latest verdicts.
-  app.get('/api/validation', (_req, res) => {
-    const v = loadValidation(VALIDATION_FILE);
-    const specs = loadSpecs(SPEC_DIR).map((s) => ({ file: s.file, hash: s.hash, problem: s.problem, ...(s.spec ? { id: s.spec.id, version: s.spec.version, registeredOn: s.spec.registeredOn, hypothesis: s.spec.hypothesis, passMark: s.spec.passMark, params: s.spec.params, sample: s.spec.sample, knownLimits: s.spec.knownLimits, framework: s.spec.framework === 2 ? 2 : 1, retestOf: s.spec.retestOf } : {}) }));
-    const fv = loadForecastValidation(path.join(DATA_DIR, 'local', 'validation', 'forecasts.json'));
-    const forecasts = Object.fromEntries(Object.values(fv.results).map((r) => [r.id, { id: r.id, status: r.status, verdict: r.verdict, specVersion: r.specVersion, specHash: r.specHash, ranAt: r.ranAt }]));
-    // Every forecast evaluation version run, for the Holm correction across all tests on record:
-    // its p is its own p where it has one (fan coverage), else the largest horizon p (every horizon
-    // must pass); its alpha the registered pass mark.
-    const fSpecs = loadSpecs(path.join(APP_ROOT, 'docs', 'validation', 'forecasts'));
-    const forecastTests = Object.values({ ...fv.versions, ...Object.fromEntries(Object.values(fv.results).map((r) => [`${r.id} v${r.specVersion}`, r])) }).map((r) => ({
-      id: r.id,
-      version: r.specVersion,
-      status: r.status,
-      p: r.pValue ?? (r.horizons?.length ? Math.max(...r.horizons.map((h) => h.pValue)) : 1),
-      alpha: Number((fSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.1,
-    }));
-    // Currency factor tests (npm run signals:evaluate) sit beside the forecast evaluations: same
-    // verdict shape for the register, and their p enters the same Holm family.
-    const sv = loadSignalValidation(path.join(DATA_DIR, 'local', 'validation', 'signals.json'));
-    const sSpecs = loadSpecs(path.join(APP_ROOT, 'docs', 'validation', 'signals'));
-    for (const r of Object.values(sv.results)) forecasts[r.id] = { id: r.id, status: r.status, verdict: r.verdict, specVersion: r.specVersion, specHash: r.specHash, ranAt: r.ranAt, ...(r.crash ? { crash: crashSentence(r.crash) } : {}) };
-    for (const r of Object.values({ ...sv.versions, ...Object.fromEntries(Object.values(sv.results).map((r) => [`${r.id} v${r.specVersion}`, r])) })) {
-      forecastTests.push({ id: r.id, version: r.specVersion, status: r.status, p: r.pValue, alpha: Number((sSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.05 });
-    }
-    const fwd = loadForward(forwardFilePath(DATA_DIR));
-    res.json({ ...v, specs, running: validationRunning, file: 'data/local/validation/results.json', forecasts, forecastTests, forward: forwardSummary(fwd.lines), forwardCheck: { chainOk: fwd.chainOk, badLines: fwd.badLines, lines: fwd.lines.length, file: 'data/local/validation/forward.jsonl' } });
-  });
+  app.get('/api/validation', (_req, res) => res.json(validationReplyNow()));
   registerUserTestRoutes(app, { dataDir: DATA_DIR, specDir: SPEC_DIR, refuseRemoteChange, signedIn, local: backtestLocal, audit: (summary, detail) => appendAudit(AUDIT_FILES, { kind: 'validation', summary, detail }) });
   app.post('/api/validation/run', async (req, res) => {
     if (refuseRemoteChange(req, res)) return;
     if (validationRunning) return res.status(409).json({ error: 'The backtests are already running.' });
     validationRunning = true;
+    const badgesBefore = modelBadgesNow();
     try {
       const out = await runBacktests({ specDir: SPEC_DIR, resultFile: VALIDATION_FILE, onResult: auditBacktestResult, local: backtestLocal });
+      emitEvents(EVENT_FILES, badgeChangeInputs(badgesBefore, modelBadgesNow(), Object.fromEntries(MODEL_REGISTER.map((m) => [m.id, m.name])), new Date().toISOString()));
       res.json(out);
     } catch (error: any) {
       res.status(500).json({ error: `The backtests could not run (${error?.message || 'unknown error'}).` });
@@ -3468,13 +4199,43 @@ async function startServer() {
     res.setHeader('Content-Disposition', `attachment; filename="${notebookFileName(nb)}"`);
     res.send(notebookMarkdown(nb, lib.briefs, lib.docs));
   });
+  // Working-paper bundle (R1, src/utils/notebookPins.ts): pin a chart to a notebook with its As of day and fingerprint; export the notebook as one zip.
+  app.post('/api/research/notebooks/:id/pins', async (req, res) => {
+    if (refuseRemoteResearch(req, res)) return;
+    const chart = req.body?.chart;
+    if (!isChart(chart)) return res.status(400).json({ error: 'A chart drawn by the app is needed.' });
+    const lib = loadLibrary(RESEARCH_FILE);
+    const nb = lib.notebooks.find((n) => n.id === req.params.id);
+    if (!nb) return res.status(404).json({ error: 'No notebook with that id.' });
+    const pin = makePin(chart, await sha256Text(pinFingerprintText(trimChart(chart))), new Date(), (nb.pins ?? []).map((p) => p.id));
+    const next = addPin(lib, nb.id, pin);
+    if (!next) return res.status(400).json({ error: 'At most 20 pinned figures in a notebook; remove one first.' });
+    writeResearch(res, () => next, { pin: { id: pin.id, asOf: pin.asOf, fingerprint: pin.fingerprint } });
+  });
+  app.delete('/api/research/notebooks/:id/pins/:pinId', (req, res) => {
+    if (refuseRemoteResearch(req, res)) return;
+    const next = removePin(loadLibrary(RESEARCH_FILE), req.params.id, req.params.pinId);
+    if (!next) return res.status(404).json({ error: 'No such pinned figure.' });
+    writeResearch(res, () => next);
+  });
+  app.get('/api/export/notebook/:id.zip', async (req, res) => {
+    const lib = loadLibrary(RESEARCH_FILE);
+    const nb = lib.notebooks.find((n) => n.id === req.params.id);
+    if (!nb) return res.status(404).json({ error: 'No notebook with that id.' });
+    const now = new Date();
+    const files = await notebookBundleFiles(nb, notebookMarkdown(nb, lib.briefs, lib.docs, now), sha256Text, now);
+    const stem = notebookFileName(nb, now).replace(/\.md$/, '');
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${stem}.zip"`);
+    res.send(Buffer.from(notebookBundleZip(files, stem)));
+  });
   // Watch alerts: thresholds you set, kept in data/local/watch-rules.json. Evaluated in the page.
   // Series history (src/utils/seriesHistory.ts): every figure's run of real observations.
   const quick = <T,>(p: Promise<T | null>): Promise<T | null> =>
     Promise.race([p.catch(() => null), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]);
   async function seriesFor(iso3: string) {
-    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna, activity, fxHistory, fxExtra, bisCredit, idsCreditors, sovereignDefaults, inflationExpectations, inflationSurveys, portWatch] = await Promise.all([
-      quick(fetchCbpolPull()), quick(fetchCliPull()), quick(fetchCpiPull()), quick(fetchNationalCpi()), quick(fetchCftcPull()), quick(fetchTicPull()),
+    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna, activity, fxHistory, fxExtra, bisCredit, idsCreditors, sovereignDefaults, inflationExpectations, inflationSurveys, portWatch, fedSwaps, weather, countryWeather] = await Promise.all([
+      quick(fetchCbpolPull()), quick(fetchCliPull()), quick(fetchCpiPull()), nationalCpiOrSaved(), quick(fetchCftcPull()), quick(fetchTicPull()),
       // Saved history answers at once; a first download that takes longer than 8 s finishes in the background.
       quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
       quick(fetchHcSpread()).then((h) => h ?? loadMarketExtras().hcSpread ?? null),
@@ -3489,16 +4250,22 @@ async function startServer() {
       iso3.toUpperCase() === 'USA' ? quick(fetchInflationExpectations()) : Promise.resolve(null),
       iso3.toUpperCase() === 'BRA' ? quick(fetchInflationSurveys()) : Promise.resolve(null),
       quick(fetchPortWatchPorts(iso3)),
+      quick(fetchFedSwaps()).then((s) => s ?? loadFedSwaps()),
+      quick(fetchWeather(iso3)).then((w) => w ?? loadWeather(iso3)),
+      quick(fetchCountryWeather(iso3)).then((w) => w ?? loadCountryWeather(iso3)),
     ]);
     const imfCpi = loadImfCpi();
-    const merged = mergeNationalCpi(cpi?.series, nationalCpi?.series || {}, imfCpi?.series || {});
+    // The weekly long-history file (src/utils/longHistory.ts) puts older observations in front of
+    // the short everyday windows, so charts and downloads start where the source starts.
+    const long = loadModelHistoryCached(DATA_DIR);
+    const merged = mergeNationalCpi(withLongCpi(cpi?.series, long?.cpi), nationalCpi?.series || {}, imfCpi?.series || {});
     const archive: ArchivedSnapshot[] = listArchivedDays(ARCHIVE_DIR, iso3)
       .map((d) => readArchivedPull<ArchivedSnapshot['snapshot']>(ARCHIVE_DIR, iso3, d))
       .filter((x): x is NonNullable<typeof x> => Boolean(x))
       .map((x) => ({ date: x.date, pulledAt: x.pulledAt, snapshot: x.snapshot }));
     const set = countrySeries(iso3, {
-      cbpol,
-      cli,
+      cbpol: withLongPolicy(cbpol, long?.policyMonthly),
+      cli: withLongCli(cli, long?.cli),
       qna,
       activity,
       cpiOecdAnswered: Boolean(cpi),
@@ -3513,9 +4280,20 @@ async function startServer() {
       bisCredit,
       idsCreditors,
       sovereignDefaults,
+      ...(() => {
+        const ci = chinnItoData(DATA_DIR);
+        return ci.ok ? { chinnIto: ci.table } : { chinnIto: null, chinnItoMissing: ci.reason };
+      })(),
+      ...(() => {
+        const fr = fxRegimeData(DATA_DIR);
+        return fr.ok ? { fxRegime: fr.table } : { fxRegime: null, fxRegimeMissing: fr.reason };
+      })(),
       inflationExpectations,
       inflationSurveys,
       portWatch,
+      fedSwaps,
+      weather,
+      countryWeather,
       ustAuctions: iso3.toUpperCase() === 'USA' ? loadUstAuctions() : null,
       euSurveys: loadEuSurveys(),
       monthlyIndicators: loadMonthlyIndicators(),
@@ -3590,6 +4368,7 @@ async function startServer() {
   registerIdeaRoutes(app, { quick, seriesFor, refuseRemoteChange, signedIn });
   registerFeedbackRoutes(app, { refuseRemoteChange });
   registerOwnSeriesRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
+  registerBudgetExecutionRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
   // Your paid data subscription (src/engine/paidData.ts): its figures show only on this computer's
   // own screens, beside (never inside) seriesFor, so nothing built from seriesFor (downloads, the
   // council, Quests, panels) can carry them.
@@ -3603,24 +4382,34 @@ async function startServer() {
     return { series: [], missing: [...got.series, ...got.missing].map((x) => ({ id: x.id, label: x.label, reason: PAID_WITHHELD_REASON })) };
   };
   registerQuestRoutes(app, { seriesFor, refuseRemoteChange, signedIn, loadOfficialHistory });
-  registerAnalysisRoutes(app, { quick, seriesFor, fetchOfficialHistory, loadOfficialHistory, outputGapFrom, dsaFrom, examOn: () => loadExamMode().on });
+  registerAnalysisRoutes(app, {
+    quick,
+    seriesFor,
+    fetchOfficialHistory,
+    loadOfficialHistory,
+    outputGapFrom,
+    dsaFrom,
+    examOn: () => loadExamMode().on,
+    replayInputs: () => ({ file: replayFile(), ecbMonthly, shareable: () => true }),
+    allHistories,
+  });
   app.get('/api/series/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const [set, paid] = await Promise.all([seriesFor(iso3), paidFor(req, iso3)]);
-    res.json({ iso3, series: [...set.series, ...paid.series].map(seriesSummary), missing: [...set.missing, ...paid.missing] });
+    res.json({ iso2: iso2For(iso3), iso3, series: [...set.series, ...paid.series].map(seriesSummary), missing: [...set.missing, ...paid.missing] });
   });
   app.get('/api/series/:iso3/:id', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (isPaidSeriesId(req.params.id)) {
       const paid = await paidFor(req, iso3);
       const hit = paid.series.find((x) => x.id === req.params.id);
-      if (hit) return res.json({ iso3, ...hit });
+      if (hit) return res.json({ iso2: iso2For(iso3), iso3, ...hit });
       const miss = paid.missing.find((m) => m.id === req.params.id);
       return res.status(miss?.reason === PAID_WITHHELD_REASON ? 403 : 404).json({ error: 'NO_SERIES', message: miss ? `${miss.label}: Missing. ${miss.reason}.` : `No series ${req.params.id}.`, reason: miss?.reason ?? null });
     }
     const set = await seriesFor(iso3);
     const hit = set.series.find((s) => s.id === req.params.id);
-    if (hit) return res.json({ iso3, ...hit });
+    if (hit) return res.json({ iso2: iso2For(iso3), iso3, ...hit });
     const miss = set.missing.find((m) => m.id === req.params.id);
     res.status(404).json({ error: 'NO_SERIES', message: miss ? `${miss.label}: Missing. ${miss.reason}.` : `No series ${req.params.id}.`, reason: miss?.reason ?? null });
   });
@@ -3630,7 +4419,12 @@ async function startServer() {
   type TableCell = string | number | null | undefined;
   // Sharing mode (Menu > Sharing mode, src/utils/shareMode.ts): values whose source's terms do not let
   // them be passed on for free are held back from every table download.
-  const sendTable = (req: express.Request, res: express.Response, name: string, header: string[], allRows: TableCell[][]) => {
+  const sendTable = (req: express.Request, res: express.Response, name: string, headerIn: string[], rowsIn: TableCell[][]) => {
+    // Tables keyed by country carry its ISO alpha-2 code too, as the last column so scripts that
+    // read columns by position keep working (src/data/iso3166Alpha2.ts).
+    const withIso2 = headerIn[0] === 'iso3' && !headerIn.includes('iso2');
+    const header = withIso2 ? [...headerIn, 'iso2'] : headerIn;
+    const allRows = withIso2 ? rowsIn.map((r) => [...r, iso2For(String(r[0] ?? '')) ?? '']) : rowsIn;
     // Your subscription's figures never leave in a download, sharing mode or not (src/engine/paidData.ts).
     const safe = withholdPaidRows(header, allRows);
     const rows = shareModeFromValue(loadWorkspace(workspaceFor(res)).values[SHARE_MODE_KEY]) ? withholdForSharing(header, safe) : safe;
@@ -3641,7 +4435,10 @@ async function startServer() {
     }
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.attachment(name);
-    res.send(toCsv(header, rows));
+    // The byte order mark helps Excel; scripts read it as part of the first column name, so the data
+    // helpers (scripts/data-api/) ask for the file without it: ?bom=0, or their own User-Agent.
+    const forScript = req.query.bom === '0' || /^econquest-(python|r)-helper/.test(String(req.headers['user-agent'] ?? ''));
+    res.send(toCsv(header, rows, { bom: !forScript }));
   };
   app.get('/api/export/world/series.:fmt(csv|xlsx)', async (req, res) => {
     sendTable(req, res, exportFileName('WORLD', 'commodity-prices'), SERIES_HEADER, seriesRows('WORLD', await worldSeries()));
@@ -3687,8 +4484,34 @@ async function startServer() {
       const rows = panelHistoryRows(data, figures);
       return res.json({ mode: 'history', figures: PANEL_FIGURES.filter((f) => figures.includes(f.id)), rowCount: rows.length, preview: rows.slice(0, 50) });
     }
-    res.json({ mode: 'latest', figures: PANEL_FIGURES.filter((f) => figures.includes(f.id)), cells: panelLatest(data, figures) });
+    res.json({ mode: 'latest', figures: PANEL_FIGURES.filter((f) => figures.includes(f.id)), cells: panelLatest(data, figures).map((c) => ({ iso2: iso2For(c.iso3), ...c })) });
   });
+  // Country snapshot for outside systems (item 6): every saved figure for one country, no council run needed.
+  const countrySnapshotRoute = async (req: express.Request, res: express.Response) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z]/g, '');
+    if (!iso2For(iso3)) return res.status(404).json({ error: 'NO_COUNTRY', message: `${req.params.iso3} is not an ISO alpha-2 or alpha-3 country code.` });
+    const [data] = await panelData(iso3);
+    if (!data) return res.status(404).json({ error: 'NO_COUNTRY', message: `No country ${iso3}.` });
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || data.snapshot.countryName || iso3;
+    res.json(
+      buildCountrySnapshot({
+        iso3,
+        name,
+        cells: panelLatest([data], PANEL_FIGURES.map((f) => f.id)),
+        series: data.series,
+        signals: readSignalStates(),
+        badges: modelBadgesNow(),
+        sharingMode: shareModeFromValue(loadWorkspace(workspaceFor(res)).values[SHARE_MODE_KEY]),
+        councilRunId: latestRunsByIso3.get(iso3)?.runId ?? null,
+      })
+    );
+  };
+  app.get('/api/v1/countries', (_req, res) => {
+    const shown = SOVEREIGN_CATALOG.filter((c) => !HIDDEN.countryHidden(c.iso3));
+    res.json({ countries: shown.map((c) => ({ iso2: iso2For(c.iso3) ?? null, iso3: c.iso3, name: c.countryName })), hidden: SOVEREIGN_CATALOG.length - shown.length });
+  });
+  app.get('/api/v1/countries/:iso3', countrySnapshotRoute);
+  app.get('/api/v1/countries/:iso3/snapshot', countrySnapshotRoute);
   app.get('/api/export/panel.:fmt(csv|xlsx)', async (req, res) => {
     const figures = parseFigureIds(req.query.figures);
     const data = await panelData(req.query.countries);
@@ -3740,7 +4563,7 @@ async function startServer() {
     const spikes = spikeMonths(series);
     res.json({ series, reading: v1Reading(series), spikes: spikes.slice(-36), spikeSentence: series ? spikeSentence(SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3, spikes) : null, spikeMethod: SPIKE_METHOD, pull: loadDailyState(gdeltDailyDir(DATA_DIR)), from: v1FromMonth(process.env) });
   });
-  // Country risk scorecard (src/utils/countryRiskScorecard.ts): governance, conflict, unrest, economy; no overall score.
+  // Country risk scorecard (src/utils/countryRiskScorecard.ts): governance, conflict, unrest, geopolitical, capital account, economy; no overall score.
   app.get('/api/risk-scorecard/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
@@ -3753,6 +4576,8 @@ async function startServer() {
     const conflict = ucdpReading(ucdp, iso3);
     const series = gdeltDailySeries(DATA_DIR, iso3);
     const gpr = gprData(DATA_DIR);
+    const ci = chinnItoData(DATA_DIR);
+    const ciReading = ci.ok ? chinnItoReading(ci.table, iso3) : null;
     const sc = countryRiskScorecard({
       official,
       officialMissingReason: file ? undefined : 'Full official history not downloaded yet (Menu > Offline data, or open History & data while online)',
@@ -3762,6 +4587,8 @@ async function startServer() {
       spikesMissing: series ? undefined : 'GDELT 1.0 files not pulled yet (npm run gdelt:daily)',
       gpr: gpr.ok ? gprForCountry(gpr.table, iso3) : null,
       gprMissing: gpr.ok ? undefined : gpr.reason,
+      capital: ciReading && !('missing' in ciReading) ? ciReading : null,
+      capitalMissing: !ci.ok ? ci.reason : ciReading && 'missing' in ciReading ? ciReading.missing : undefined,
     });
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...sc, sentence: scorecardSentence(name, sc), method: SCORECARD_METHOD });
@@ -3882,8 +4709,8 @@ async function startServer() {
     setSavedSettings(next.settings);
     applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
     onKeyChanged(req.params.id);
-    // Saving an alert setting sends nothing: the Test button does that.
-    const check = apiKeyField(req.params.id)?.section === 'alerts' ? null : await runKeyCheck(req.params.id, process.env, keySources(ENV_FILE_KEYS, savedSettings)).catch(() => null);
+    // Saving an alert or research tools setting sends nothing: the Test button does that.
+    const check = ['alerts', 'research'].includes(apiKeyField(req.params.id)?.section || '') ? null : await runKeyCheck(req.params.id, process.env, keySources(ENV_FILE_KEYS, savedSettings)).catch(() => null);
     res.json({ ...keysReply(req, res), check });
   });
   app.delete('/api/settings/keys/:id', async (req, res) => {
@@ -3912,10 +4739,25 @@ async function startServer() {
     }
     // Server alerts: Test sends a real test message on that route (src/server/alerts.ts).
     if (field.section === 'alerts') return res.json({ check: await testAlertRoute(field, value, process.env) });
+    // Research tools: Test opens a session with the server and lists the tools the token can see.
+    if (field.section === 'research') return res.json({ check: await researchToolsCheck(field, value ? { ...process.env, [field.id]: value } : process.env) });
     const env = value ? { ...process.env, [field.id]: value } : process.env;
     const sources = value ? { ...keySources(ENV_FILE_KEYS, savedSettings), [field.id]: 'app' as const } : keySources(ENV_FILE_KEYS, savedSettings);
     const check = await runKeyCheck(field.id, env, sources).catch(() => null);
     res.json({ check });
+  });
+
+  // Outside research tools (src/server/researchTools.ts): Test connection lists the tools this
+  // token can see. Only from this computer (or a signed-in account), like the key tests.
+  app.post('/api/research-tools/test', async (req, res) => {
+    if (refuseRemote(req, res)) return;
+    const location = researchModelLocation(mayUseCloud(req.body?.runtimeConfig || serverGuiRuntimeConfig, process.env));
+    res.json(await testResearchTools(researchToolsConfig(process.env), location, researchDeps()));
+  });
+  // Whether the research tools are on (address and token set), for Council chat's planner. Never the address or token.
+  app.get('/api/research-tools/status', (_req, res) => {
+    const cfg = researchToolsConfig(process.env);
+    res.json({ enabled: Boolean(cfg), ...(cfg ? { maxCalls: cfg.maxCalls, timeoutS: Math.round(cfg.timeoutMs / 1000) } : {}) });
   });
 
   // 1b'. Data connection check: asks every outside source for one small real answer, through the
@@ -3935,6 +4777,11 @@ async function startServer() {
     });
   });
   // Scheduled jobs: what is switched on, and each job's last runs (Menu > Data health > Scheduled).
+  // The daily download as it goes (Menu > Data health > Daily download): data/local/daily-run.json,
+  // saved after each step, plus what the app cannot fetch by itself.
+  app.get('/api/daily-run', (_req, res) => {
+    res.json({ run: readDaily(dailyFilePath(DATA_DIR)).last ?? null, byHand: BY_HAND, file: 'data/local/daily-run.json' });
+  });
   app.get('/api/scheduled-jobs', (_req, res) => {
     const jobs = readJobs(SCHEDULED_JOBS_FILE);
     res.json({
@@ -3993,7 +4840,7 @@ async function startServer() {
   // Every country's monthly inflation with its source and age (src/utils/inflationHealth.ts): old OECD copies flagged.
   app.get('/api/data/health/inflation', async (_req, res) => {
     const quick = <T,>(p: Promise<T>) => Promise.race([p, new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000))]);
-    const [cpi, nationalCpi] = await Promise.all([quick(fetchCpiPull()), quick(fetchNationalCpi())]);
+    const [cpi, nationalCpi] = await Promise.all([quick(fetchCpiPull()), nationalCpiOrSaved()]);
     const merged = mergeNationalCpi(cpi?.series, (nationalCpi ?? nationalCpiMemory?.pull)?.series || {}, loadImfCpi()?.series || {});
     res.json(inflationHealth(SOVEREIGN_CATALOG.map((c) => c.iso3), (iso3) => cpiFor(iso3, merged)));
   });
@@ -5260,6 +6107,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       };
 
       latestRunsByIso3.set(updatedRun.iso3, updatedRun);
+      emitEvents(EVENT_FILES, [councilRunInput({ iso3: updatedRun.iso3, countryName: updatedRun.countryName })]);
       const intCfg = serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG;
       if (intCfg.autoBroadcastOnRun) {
         void dispatchTopLevelIntegrationEvent(
@@ -5368,44 +6216,185 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
   // Ask the council: the synthesis agent writes a brief from the desk agents' answers only.
   // The agents run in the browser on figures the app already holds; this step only summarises,
   // and checkBrief removes any sentence with a number that is not in the agents' figures.
+  // Data API: ask Council chat a new question (scope ask:council; src/server/councilAsk.ts,
+  // docs/DATA_API.md). The same steps as the browser's chat: the AI model picks the agents
+  // (chooseAgentsStep), the desk agents answer on the app's own figures (councilAnswers), and the
+  // synthesis agent writes the summary under the number and stance checks (answerAndRecord).
+  const internalGet: typeof fetch = (u) => {
+    const bind = (process.env.HOST || '').trim();
+    const host = !bind || bind === '0.0.0.0' || bind === '::' || bind === 'localhost' ? '127.0.0.1' : bind.includes(':') ? `[${bind}]` : bind;
+    return fetch(`http://${host}:${PORT}${String(u)}`, { headers: { [INTERNAL_READ_HEADER]: INTERNAL_READ_KEY }, signal: AbortSignal.timeout(120_000) });
+  };
+  app.post('/api/v1/council/ask', async (req, res) => {
+    const token = res.locals.apiToken as { id: string; name: string; createdById?: string } | undefined;
+    if (!token) return res.status(401).json({ error: 'TOKEN_REQUIRED', message: 'This address needs an API token with the ask:council scope.' });
+    const parsed = parseAskRequest(req.body);
+    if (isProblem(parsed)) return res.status(parsed.status).json({ error: parsed.code, message: parsed.message });
+    // The AI request limit: the same bucket as the account that made the token uses in the app.
+    const wait = limiter.take(`${token.createdById || `token:${token.id}`}:ai`, LIMITS.ai);
+    if (wait) {
+      res.setHeader('Retry-After', String(wait));
+      return res.status(429).json({ error: 'ai_limit', message: `Too many AI requests. Try again in ${wait} seconds.` });
+    }
+    if (loadExamMode().on) return res.status(503).json({ error: 'exam_mode', message: EXAM_REASON });
+    if (parsed.iso3 && HIDDEN.countryHidden(parsed.iso3)) return res.status(404).json({ error: 'HIDDEN', message: `Not shown: it is on the hidden-names list (${hiddenNote(1)}).`, hidden: 1 });
+    const runId = newRunId(() => crypto.randomBytes(10).toString('hex'));
+    const via = `Data API (token "${token.name}")`;
+    try {
+      // Hidden names never reach a step: replaced in the question and history, and out of the pool.
+      const patterns = hiddenCountryPatterns(HIDDEN);
+      let hiddenCount = 0;
+      const q = hideNames(parsed.question, HIDDEN, patterns);
+      hiddenCount += q.count;
+      const history = parsed.history.map((t) => {
+        const r = hideNames(t.content, HIDDEN, patterns);
+        hiddenCount += r.count;
+        return { ...t, content: r.text };
+      });
+      const earlier = historyTurns(history);
+      const ws = workspaceForToken(token);
+      const runtimeConfig = savedAiConfig(ws);
+      // The countries the chat would answer on: the first saved watchlist, the market benchmarks,
+      // and the country asked for or named in the question (pulled for this request, as "Add" does in the chat).
+      const list = savedWatchlists(ws)[0];
+      const listRows = await liveRowsFor([...new Set(list?.iso3 || [])]);
+      const peers = await fetchMarketEdgeAnchors().then((r) => r.peers || []).catch(() => []);
+      let pool = marketEdgePeers(listRows.map((r) => toLive(r)), peers);
+      const wanted = [...new Set([...(parsed.iso3 ? [parsed.iso3] : []), ...offWatchlistCodes(q.text, pool).map((o) => o.iso3)])].filter((c) => !pool.some((p) => p.iso3 === c));
+      if (wanted.length) pool = [...pool, ...(await liveRowsFor(wanted)).filter((r) => !pool.some((p) => p.iso3 === r.iso3)).map((r) => toLive(r))];
+      const before = pool.length;
+      pool = pool.filter((p) => !HIDDEN.countryHidden(p.iso3));
+      hiddenCount += before - pool.length;
+      if (parsed.iso3 && !pool.some((p) => p.iso3 === parsed.iso3)) return res.status(422).json({ error: 'unknown_iso3', message: `The app has no figures for ${parsed.iso3}.` });
+
+      // Cost: priced before each model call (src/utils/aiCost.ts); over max_cost_usd, refused first.
+      const prices = pricesFromEnv(process.env);
+      const cloud = mayUseCloud(runtimeConfig, process.env);
+      const openAiLocal = isLocalAddress(runtimeConfig?.openAiBaseUrl || process.env.OPENAI_COMPATIBLE_BASE_URL || 'http://localhost:8000/v1');
+      let spent: number | null = 0;
+      const over = (estimate: number | null) => parsed.maxCostUsd !== undefined && (estimate === null || spent === null || spent + estimate > parsed.maxCostUsd);
+      const refuse = (step: string, estimate: number | null) =>
+        res.status(402).json({
+          error: 'cost_limit',
+          message:
+            estimate === null
+              ? `The ${step} step could go to a cloud model and the app has no price for it, so it cannot keep to max_cost_usd. Set AI_PRICE_INPUT_PER_MTOK and AI_PRICE_OUTPUT_PER_MTOK in .env, or leave max_cost_usd out.`
+              : `The ${step} step could cost up to $${roundUsd(estimate)}, which with $${roundUsd(spent)} spent passes max_cost_usd ($${parsed.maxCostUsd}). Nothing more was run.`,
+          max_cost_usd: parsed.maxCostUsd,
+          estimate_usd: roundUsd(estimate),
+          spent_usd: roundUsd(spent),
+          run_id: runId,
+        });
+      const chooseQuestion = q.text.slice(0, 500);
+      const chooseChars = AGENT_CHOICE_INSTRUCTION.length + agentChoicePrompt(chooseQuestion, earlier.map((t) => ({ question: t.question }))).length;
+      const chooseEstimate = stepCost(chooseChars, OUTPUT_ALLOWANCE.choose, cloud, prices);
+      if (over(chooseEstimate)) return refuse('agent choice', chooseEstimate);
+
+      const { plan, answers: allAnswers } = await councilAnswers(
+        { question: q.text, items: pool, history: earlier, previous: earlier.length ? planCouncil(earlier[earlier.length - 1]!.question, pool) : undefined, scopeIso3: parsed.iso3 },
+        {
+          chooseAgents: async (question, h) => {
+            const r = await chooseAgentsStep(question.slice(0, 500), h.map((t) => ({ question: t.question })), runtimeConfig);
+            spent = addCost(spent, r.step ? spentOn(r.step, openAiLocal, chooseChars, OUTPUT_ALLOWANCE.choose * 4, prices) : 0);
+            return r.out;
+          },
+          get: internalGet,
+        }
+      );
+      // Only real figures whose sources allow passing them on; hidden names left out.
+      const filtered = answersForApi(allAnswers, HIDDEN, patterns);
+      hiddenCount += filtered.counts.hidden;
+      const answers = filtered.answers;
+      const askedAt = new Date().toISOString();
+      const auditExtra = () => ({
+        token: token.id,
+        tokenName: token.name,
+        runId,
+        costUsd: roundUsd(spent),
+        hiddenCount,
+        leftOut: { notShareable: filtered.counts.notShareable, notReal: filtered.counts.notReal },
+      });
+      const reply = (out: SynthesisResult) => {
+        const clean = briefWithoutHidden(out, HIDDEN, patterns);
+        hiddenCount += clean.count;
+        return {
+          answer: answerText(clean.out),
+          brief: clean.out.brief ? { headline: clean.out.brief.headline, points: clean.out.brief.points, disagreements: clean.out.brief.disagreements, gaps: clean.out.brief.gaps } : null,
+          ...(clean.out.reason ? { reason: clean.out.reason } : {}),
+          agents: agentsFrom(answers),
+          citations: citationsFrom(answers),
+          checks: checksFrom(clean.out),
+          hidden_count: hiddenCount,
+          hidden_note: hiddenText(hiddenCount),
+          left_out: { not_shareable: filtered.counts.notShareable, not_real: filtered.counts.notReal },
+          scope: plan.scopeNote,
+          ...(plan.chooserNote ? { chooser_note: plan.chooserNote } : {}),
+          model: clean.out.provider || null,
+          cost_usd: roundUsd(spent),
+          run_id: runId,
+          asked_at: askedAt,
+          disclaimer: ASK_DISCLAIMER,
+        };
+      };
+      if (!hasFindings(answers)) {
+        const out: SynthesisResult = { brief: null, removed: [], reason: NO_FIGURES_REASON };
+        auditCouncilAnswer(q.text, answers, out, plan.scopeNote, via, undefined, auditExtra());
+        return res.json(reply(out));
+      }
+      const forModel = answersForModel(answers);
+      const opts = { scope: plan.scopeNote, countries: plan.countries.length, askedAt };
+      const synthChars = SYNTHESIS_INSTRUCTION.length + (earlierAsText(earlier) + councilDocsText(q.text, forModel, opts)).slice(0, 22000).length + synthesisTask(q.text).length;
+      const synthEstimate = stepCost(synthChars, OUTPUT_ALLOWANCE.synthesis, cloud, prices);
+      if (over(synthEstimate)) return refuse('summary', synthEstimate);
+      const out = await answerAndRecord(
+        q.text,
+        forModel,
+        {
+          ...opts,
+          earlier,
+          runtimeConfig,
+          explain: explainFromBody(plan.explain ? { explain: { ...plan.explain, helpLevel: promptHelpLevel(DEFAULT_HELP_LEVEL) } } : {}),
+          auditExtra: (o, trace) => {
+            spent = addCost(spent, spentOn({ providerUsed: o.provider, usedFallback: !o.provider }, openAiLocal, SYNTHESIS_INSTRUCTION.length + (trace.prompt || '').length, OUTPUT_ALLOWANCE.synthesis * 4, prices));
+            return auditExtra();
+          },
+        },
+        via
+      );
+      if (!out.provider && /^No AI model answered/.test(out.reason || '')) return res.status(503).json({ error: 'no_model', message: out.reason, run_id: runId });
+      res.json(reply(out));
+    } catch (error: any) {
+      res.status(500).json({ error: 'ask_failed', message: `The question could not be answered (${error?.message || 'unknown error'}).`, run_id: runId });
+    }
+  });
+
   app.post('/api/council/choose-agents', async (req, res) => {
     const question = typeof req.body?.question === 'string' ? req.body.question.trim().slice(0, 500) : '';
     if (!question) return res.status(400).json({ error: 'A question is needed.' });
     if (loadExamMode().on) return res.json({ agents: null, reason: EXAM_CHOICE_REASON });
     const earlier = Array.isArray(req.body?.earlier) ? req.body.earlier.filter((t: any) => t && typeof t.question === 'string') : [];
-    try {
-      const step = await executeResilientLlmStep<{ agents: Array<{ id: string; why: string }> }>({
-        stepName: 'COUNCIL_CHOOSE_AGENTS',
-        providerMode: req.body?.runtimeConfig?.providerMode || 'gemini',
-        runtimeConfig: req.body?.runtimeConfig || {},
-        thinkingLevel: ThinkingLevel.LOW,
-        systemInstruction: AGENT_CHOICE_INSTRUCTION,
-        prompt: agentChoicePrompt(question, earlier),
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            agents: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: { id: { type: Type.STRING, description: 'Agent id from the list.' }, why: { type: Type.STRING, description: 'Short reason.' } },
-                required: ['id', 'why'],
-              },
-            },
-          },
-          required: ['agents'],
-        },
-        fallbackValue: { agents: [] },
-        maxRetries: 0,
-      });
-      const out: AgentChoiceResult = step.usedFallback
-        ? { agents: null, reason: `no AI model answered (${step.failure || 'no model is set up'})` }
-        : { agents: Array.isArray(step.data?.agents) ? step.data.agents.slice(0, 5) : [], provider: step.providerUsed };
-      res.json(out);
-    } catch (error: any) {
-      const out: AgentChoiceResult = { agents: null, reason: `the AI step failed (${error?.message || 'unknown error'})` };
-      res.json(out);
-    }
+    // The Quant desk is offered to the model only when Council chat asks for it and the research tools are set up.
+    const quant = req.body?.quant === true && Boolean(researchToolsConfig(process.env));
+    res.json((await chooseAgentsStep(question, earlier, req.body?.runtimeConfig || {}, quant ? { quant } : {})).out);
+  });
+
+  // The Quant desk (src/utils/quantDesk.ts): Council chat only. Lists the tools this token can see,
+  // calls the ones the question needs (at most RESEARCH_TOOLS_MAX_CALLS), and answers with each
+  // figure's link, data-through date and label. Off, it answers with no desk.
+  app.post('/api/council/quant', async (req, res) => {
+    const question = typeof req.body?.question === 'string' ? req.body.question.trim().slice(0, 2000) : '';
+    const why = typeof req.body?.why === 'string' ? req.body.why.slice(0, 300) : 'the question asks for outside research tools';
+    if (!question) return res.status(400).json({ error: 'A question is needed.' });
+    const cfg = researchToolsConfig(process.env);
+    if (!cfg) return res.json({ answer: quantUnavailable(why, 'the research tools are not set up (Menu > Settings > Research tools)') });
+    const countries = (Array.isArray(req.body?.countries) ? req.body.countries : [])
+      .filter((c: any) => c && /^[A-Z]{3}$/.test(String(c.iso3)) && typeof c.countryName === 'string')
+      .slice(0, 4)
+      .map((c: any) => ({ iso3: String(c.iso3), countryName: String(c.countryName).slice(0, 80), ...(typeof c.currencyCode === 'string' && /^[A-Z]{3}$/.test(c.currencyCode) ? { currencyCode: c.currencyCode } : {}) }));
+    const currencies = (Array.isArray(req.body?.currencies) ? req.body.currencies : []).filter((c: unknown) => typeof c === 'string' && /^[A-Z]{3}$/.test(c)).slice(0, 300);
+    const location = researchModelLocation(mayUseCloud(req.body?.runtimeConfig || serverGuiRuntimeConfig, process.env));
+    const questionId = typeof req.body?.questionId === 'string' ? req.body.questionId : null;
+    res.json({ answer: await runQuantDesk(question, why, countries, currencies, new ResearchToolsSession(cfg, location, questionId, researchDeps()), cfg.maxCalls) });
   });
 
   app.post('/api/council/debate', async (req, res) => {
@@ -5796,6 +6785,9 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
         acledFiles: () => acledFileData(DATA_DIR),
       aiddata: () => aiddataData(DATA_DIR),
       investorBase: () => investorBaseData(DATA_DIR),
+    fiscalRules: () => fiscalRulesData(DATA_DIR),
+    fxRegime: () => fxRegimeData(DATA_DIR),
+    dpi: () => dpiData(DATA_DIR),
         paidMappingsText: paidMappingsText,
         env: process.env,
         fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltFetch(u, i) : fetch(u, i)),
@@ -5849,7 +6841,8 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
     next: express.NextFunction
   ) => {
     const cfg = serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG;
-    if (!cfg.requireApiKey) return next();
+    // A scoped token with the right scope was already checked (src/utils/apiTokens.ts).
+    if (!cfg.requireApiKey || res.locals.apiToken) return next();
     const headerKey =
       req.headers['x-smcr-api-key'] ||
       String(req.headers.authorization || '').replace(/^Bearer\s+/i, '') ||
@@ -5864,139 +6857,14 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
     });
   };
 
-  // A. OpenAPI 3.1.0 Specification for External Applications & SDK Generators
+  // A. OpenAPI description of every outside address (docs/openapi.json, kept by hand with the docs;
+  // tests/openapi.test.ts checks it parses and covers the documented addresses).
   app.get('/api/v1/integration/openapi.json', (_req, res) => {
-    const spec = {
-      openapi: '3.1.0',
-      info: {
-        title: 'EconQuest Sovereign & Macro Council Top-Level Integration API',
-        version: '1.0.0',
-        description:
-          'Institutional SMCR-1.0 REST Pull API, Outbound HMAC-SHA256 Webhook Bus, and Real-Time SSE Event Stream for consuming Geopolitical, Sovereign Credit, and Macroeconomic Desk outputs, 9 sub-agent reports, quantitative suites, and Supreme Council verdicts.',
-      },
-      servers: [
-        {
-          url: 'http://localhost:3000',
-          description: 'Local Self-Hosted Docker / Node.js Instance',
-        },
-      ],
-      components: {
-        securitySchemes: {
-          SmcrApiKey: {
-            type: 'apiKey',
-            in: 'header',
-            name: 'X-SMCR-API-Key',
-            description: 'Optional API key configured in the Top-Level Integration GUI tab.',
-          },
-        },
-      },
-      paths: {
-        '/api/v1/integration/desks/{iso3}': {
-          get: {
-            summary: 'Pull Granular Desk Outputs, Sub-Agents & Quant Suites by ISO3',
-            parameters: [
-              {
-                name: 'iso3',
-                in: 'path',
-                required: true,
-                schema: { type: 'string', example: 'BRA' },
-              },
-              {
-                name: 'desk',
-                in: 'query',
-                required: false,
-                schema: {
-                  type: 'string',
-                  enum: ['all', 'geopolitical', 'sovereign', 'macro'],
-                  default: 'all',
-                },
-              },
-              {
-                name: 'includeSubAgents',
-                in: 'query',
-                required: false,
-                schema: { type: 'boolean', default: true },
-              },
-              {
-                name: 'includeQuant',
-                in: 'query',
-                required: false,
-                schema: { type: 'boolean', default: true },
-              },
-            ],
-            responses: {
-              '200': {
-                description: 'SMCR-1.0 Desk Output Envelope with HMAC-SHA256 signature.',
-              },
-            },
-          },
-        },
-        '/api/v1/integration/bundle/{iso3}': {
-          get: {
-            summary:
-              'Pull Complete SMCR-1.0 Bundle (All 3 Desks + 9 Sub-Agents + CRO Gate + Supreme Council + Quant Suites)',
-            parameters: [
-              {
-                name: 'iso3',
-                in: 'path',
-                required: true,
-                schema: { type: 'string', example: 'BRA' },
-              },
-            ],
-            responses: {
-              '200': {
-                description: 'Full SMCR-1.0 Sovereign Assessment Bundle.',
-              },
-            },
-          },
-        },
-        '/api/v1/integration/publish': {
-          post: {
-            summary:
-              'Broadcast Desk or Bundle Outputs to Outbound Webhooks and Real-Time SSE Subscribers',
-            requestBody: {
-              required: true,
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                    properties: {
-                      iso3: { type: 'string', example: 'BRA' },
-                      scope: {
-                        type: 'string',
-                        enum: [
-                          'all_desks_bundle',
-                          'geopolitical_desk',
-                          'sovereign_desk',
-                          'macro_desk',
-                          'supreme_council',
-                        ],
-                      },
-                    },
-                  },
-                },
-              },
-            },
-            responses: {
-              '200': {
-                description: 'Dispatched with HMAC-SHA256 delivery receipts.',
-              },
-            },
-          },
-        },
-        '/api/v1/integration/stream': {
-          get: {
-            summary: 'Subscribe to Real-Time Server-Sent Events (SSE) Stream of Desk Outputs',
-            responses: {
-              '200': {
-                description: 'text/event-stream emitting SMCR-1.0 JSON events.',
-              },
-            },
-          },
-        },
-      },
-    };
-    res.json(spec);
+    try {
+      res.type('application/json').send(fs.readFileSync(path.join(__dirname, 'docs', 'openapi.json'), 'utf-8'));
+    } catch {
+      res.status(500).json({ error: 'NO_OPENAPI', message: 'docs/openapi.json is missing from this copy of the app.' });
+    }
   });
 
   // B. Pull Granular Desk Outputs (GET /api/v1/integration/desks/:iso3)
@@ -6230,6 +7098,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       }
     });
     sseClients.clear();
+    consoleStream.close();
     httpServer.close(() => {
       console.log('[shutdown] stopped cleanly');
       process.exit(0);

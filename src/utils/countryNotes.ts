@@ -1,4 +1,5 @@
 import { netInterestPct } from './imfFiscal';
+import { latestInflation } from './latestInflation';
 import { ucdpFigures, ucdpMissing } from './ucdpConflict';
 import { HC_SPREAD_LABEL, hcSpreadMissing, hcSpreadWhen } from './hardCurrencySpread';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
@@ -155,6 +156,21 @@ export function netInterestRow(status: SnapshotDataStatus, open?: CouncilAssessm
     : { ...row, value: `${pct(v)} of GDP` };
 }
 
+/**
+ * Why a survey figure (Gini, poverty) is Missing: "no survey" only when its own World Bank request
+ * answered and held none in the look-back window; when that request failed, say so instead.
+ */
+export function surveyMissing(status: SnapshotDataStatus, open: CouncilAssessmentRun['openData'], field: string, help: string): MissingReason {
+  const base = pathMissing(status, `wb.${field}`);
+  if (!status.isFeedLive('worldbank')) return base;
+  if (open?.worldBankIndicators?.answeredFields?.includes(field)) return { ...base, short: `No survey in the last ${GINI_LOOKBACK_YEARS} years`, help };
+  return {
+    kind: 'unreachable',
+    short: 'World Bank did not answer for this figure',
+    help: 'Other World Bank figures came in, but the request for this one failed or timed out, so the app cannot tell whether a survey exists. Press Refresh now under Research > One country to try again.',
+  };
+}
+
 /** Help for a missing Gini: surveys are rare, and the app looks back only GINI_LOOKBACK_YEARS. */
 export const GINI_MISSING_HELP = `The Gini index comes from household surveys, which many countries run only every few years and some have never published. The app looks back ${GINI_LOOKBACK_YEARS} years and leaves it Missing rather than show an older survey or an estimate.`;
 
@@ -167,7 +183,7 @@ export function distTaxRows(status: SnapshotDataStatus, open: CouncilAssessmentR
   const g = distTaxFromSnapshot(open)?.gini;
   const gini: BriefRow = g
     ? { label: giniLabel, value: giniValue(g, now), source: pathSource(status, 'wb.giniIndex', open), verified: true }
-    : missingRow(giniLabel, { ...pathMissing(status, 'wb.giniIndex'), ...(status.isFeedLive('worldbank') ? { short: `No survey in the last ${GINI_LOOKBACK_YEARS} years`, help: GINI_MISSING_HELP } : {}) });
+    : missingRow(giniLabel, surveyMissing(status, open, 'giniIndex', GINI_MISSING_HELP));
   const share = (v: number) => `${pct(v)} of revenue`;
   return [
     gini,
@@ -195,7 +211,7 @@ export function peopleRows(status: SnapshotDataStatus, open: CouncilAssessmentRu
     const label = POVERTY_LABEL[f];
     return p
       ? { label, value: povertyValue(p, now), source: pathSource(status, `wb.${f}`, open), verified: true }
-      : missingRow(label, { ...pathMissing(status, `wb.${f}`), ...(status.isFeedLive('worldbank') ? { short: `No survey in the last ${GINI_LOOKBACK_YEARS} years`, help: POVERTY_MISSING_HELP } : {}) });
+      : missingRow(label, surveyMissing(status, open, f, POVERTY_MISSING_HELP));
   });
   return [
     ...poverty,
@@ -470,7 +486,7 @@ export function missingNote(groups: BriefGroup[], countryName: string): string |
  * ------------------------------------------------------------------------------------------ */
 
 /** Any watchlist row: only the country code and its surveys are read. */
-export type SurveyPeer = Pick<WatchlistItem, 'iso3' | 'euSurveys'>;
+export type SurveyPeer = Pick<WatchlistItem, 'iso3' | 'euSurveys'> & Partial<Pick<WatchlistItem, 'oecdCpi'>>;
 
 /**
  * EU members only: the latest EU business and consumer surveys, carried on the country's
@@ -489,7 +505,7 @@ export function euSurveyRows(iso3: string, peers: SurveyPeer[]): BriefRow[] {
     ];
   return s.latest.map((a) => {
     const reading = euSurveyReading(a);
-    return { label: `${a.label} (${NOT_A_PMI}), ${a.period}`, value: `${euSurveyValue(a)}${reading ? `; ${reading}` : ''}`, source: EU_SURVEY_SOURCE, verified: true };
+    return { label: `${a.label} (${a.id === 'prices' ? 'EU consumer survey' : NOT_A_PMI}), ${a.period}`, value: `${euSurveyValue(a)}${reading ? `; ${reading}` : ''}`, source: EU_SURVEY_SOURCE, verified: true };
   });
 }
 
@@ -498,7 +514,10 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
   const status = getSnapshotDataStatus(open);
   const L = status.live;
   const g = L('imf.realGdpGrowthPct');
-  const cpi = L('imf.cpiInflationPct');
+  // One inflation figure for the whole page (src/utils/latestInflation.ts): the latest monthly reading,
+  // else the IMF yearly average; Markets & signals uses the same one, and each sentence names it.
+  const infl = latestInflation(open, L('imf.cpiInflationPct'), peers.find((p) => p.iso3 === run.iso3));
+  const cpi = infl?.pct;
   const policy = L('market.policyRatePct');
   const debt = L('imf.debtToGdpPct');
   const debt27 = L('imf.debtToGdpForecast2027Pct');
@@ -528,15 +547,15 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
           : g >= 0
             ? 'Slow growth adds few jobs and little tax revenue, so living standards and the budget improve slowly.'
             : 'The economy is shrinking, which usually means job losses and falling tax revenue.';
-    j.push(`Growth is ${g >= 4 ? 'strong' : g >= 2 ? 'moderate' : g >= 0 ? 'weak' : 'negative'} at ${pct(g)} a year${cpi !== undefined ? `, with inflation at ${pct(cpi)}` : ''}.${MEANS}${meaning}`);
-  } else if (cpi !== undefined) j.push(`Inflation is ${pct(cpi)}: prices are ${cpi < 0 ? 'falling' : 'rising'} by that much a year.`);
+    j.push(`Growth is ${g >= 4 ? 'strong' : g >= 2 ? 'moderate' : g >= 0 ? 'weak' : 'negative'} at ${pct(g)} a year${cpi !== undefined ? `, with inflation at ${pct(cpi)} (${infl!.source})` : ''}.${MEANS}${meaning}`);
+  } else if (cpi !== undefined) j.push(`Inflation is ${pct(cpi)} (${infl!.source}): prices are ${cpi < 0 ? 'falling' : 'rising'} by that much a year.`);
   if (realRate !== undefined)
     j.push(
       realRate > 2
-        ? `Monetary policy is tight: the policy rate is ${pct(realRate)} above inflation.${MEANS}Borrowing is expensive once rising prices are allowed for, which slows lending and spending, usually brings inflation down and tends to support the currency.`
+        ? `Monetary policy is tight: the policy rate is ${pct(realRate)} above inflation (${infl!.source}).${MEANS}Borrowing is expensive once rising prices are allowed for, which slows lending and spending, usually brings inflation down and tends to support the currency.`
         : realRate >= 0
-          ? `Monetary policy is mildly restrictive: the policy rate is ${pct(realRate)} above inflation.${MEANS}Borrowing costs a little more than prices rise, a gentle brake on spending.`
-          : `Real interest rates are negative (${pct(realRate)}): policy is loose relative to inflation.${MEANS}Borrowing costs less than prices rise, which supports spending but leaves savers losing ground and can let inflation persist.`
+          ? `Monetary policy is mildly restrictive: the policy rate is ${pct(realRate)} above inflation (${infl!.source}).${MEANS}Borrowing costs a little more than prices rise, a gentle brake on spending.`
+          : `Real interest rates are negative (${pct(realRate)}): policy is loose relative to inflation (${infl!.source}).${MEANS}Borrowing costs less than prices rise, which supports spending but leaves savers losing ground and can let inflation persist.`
     );
   if (debt !== undefined)
     j.push(
@@ -593,7 +612,9 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
       title: 'Monetary policy',
       rows: [
         liveRow(status, 'Policy rate', 'market.policyRatePct', (v) => pct(v, 2), open),
-        modelRow(status, 'Real policy rate', ['market.policyRatePct', 'imf.cpiInflationPct'], () => pct(realRate as number)),
+        realRate !== undefined
+          ? { label: 'Real policy rate', value: pct(realRate), source: infl!.monthly ? 'model: policy rate less the latest monthly inflation' : 'model: policy rate less IMF yearly average inflation', verified: false }
+          : modelRow(status, 'Real policy rate', ['market.policyRatePct', 'imf.cpiInflationPct'], () => ''),
         {
           label: 'Next rate decision',
           value: nextMeeting ? when(nextMeeting) : 'not on file',

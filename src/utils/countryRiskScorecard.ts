@@ -6,6 +6,7 @@
  *   Conflict    UCDP/PRIO armed conflict located in the country and UCDP deaths, latest coded year
  *   Unrest      GDELT 1.0 protest and violence spikes (utils/unrestSpikes.ts)
  *   Geopolitical Caldara-Iacoviello Geopolitical Risk index, country and world (utils/gprIndex.ts)
+ *   Capital    Chinn-Ito capital account openness index (utils/chinnIto.ts)
  *   Economy     IMF WEO and World Bank: debt, growth, inflation, current account, reserves, external debt
  *
  * There is no overall score. Any weighting of these pillars would be a guess, and a single number
@@ -18,8 +19,9 @@ import type { Series, SeriesMissing, SeriesPoint } from './seriesHistory';
 import type { UcdpReading } from './ucdpConflict';
 import type { SpikeMonth } from './unrestSpikes';
 import { GPR_SOURCE, type GprCountry, type GprReading } from './gprIndex';
+import { CHINN_ITO_SOURCE, type ChinnItoReading } from './chinnIto';
 
-export type PillarId = 'governance' | 'conflict' | 'unrest' | 'geopolitical' | 'economy';
+export type PillarId = 'governance' | 'conflict' | 'unrest' | 'geopolitical' | 'capital' | 'economy';
 
 export interface ScoreRow {
   label: string;
@@ -52,13 +54,16 @@ export interface ScorecardInputs {
   spikesMissing?: string;
   gpr?: GprCountry | null;
   gprMissing?: string;
+  /** Chinn-Ito reading for the country's latest year on file. */
+  capital?: ChinnItoReading | null;
+  capitalMissing?: string;
 }
 
 export const WGI_IDS = ['wgi_voice', 'wgi_stability', 'wgi_effectiveness', 'wgi_regulatory', 'wgi_rule_of_law', 'wgi_corruption'] as const;
 export const ECONOMY_IDS = ['debt_gdp', 'gdp_growth', 'cpi_imf', 'current_account', 'reserves_months', 'external_debt'] as const;
 
 export const SCORECARD_METHOD =
-  'Each figure as published, with its year. Governance: World Bank WGI estimates, where 0 is the world average and 1 is one standard deviation; the change is against five years earlier. Conflict: UCDP/PRIO armed conflicts located in the country and UCDP best estimates of deaths for the latest year UCDP has coded, with the three years before. Unrest: the latest complete GDELT month against the country\'s previous 24 months (a spike is z of 3 or more). Geopolitical risk: the Caldara-Iacoviello news index for the country and the world, against all months on file. Economy: latest outturn year (IMF projections left out), against five years earlier. No overall score: any weights would be a guess.';
+  'Each figure as published, with its year. Governance: World Bank WGI estimates, where 0 is the world average and 1 is one standard deviation; the change is against five years earlier. Conflict: UCDP/PRIO armed conflicts located in the country and UCDP best estimates of deaths for the latest year UCDP has coded, with the three years before. Unrest: the latest complete GDELT month against the country\'s previous 24 months (a spike is z of 3 or more). Geopolitical risk: the Caldara-Iacoviello news index for the country and the world, against all months on file. Capital account: the Chinn-Ito index (Chinn and Ito 2006), openness in law from the IMF AREAER, scaled 0 to 1, against all countries that year and five years earlier. Economy: latest outturn year (IMF projections left out), against five years earlier. No overall score: any weights would be a guess.';
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
 const isSeries = (s: Series | SeriesMissing | undefined): s is Series => !!s && 'points' in s && Array.isArray(s.points) && s.points.length > 0;
@@ -166,6 +171,26 @@ function gprPillar(inp: ScorecardInputs): Pillar {
   return p;
 }
 
+function capitalPillar(inp: ScorecardInputs): Pillar {
+  const p: Pillar = { id: 'capital', label: 'Capital account openness', source: CHINN_ITO_SOURCE, rows: [], missing: [] };
+  const c = inp.capital;
+  if (!c) {
+    p.missing.push(`Chinn-Ito index: ${inp.capitalMissing || 'no Chinn-Ito file read'}`);
+    return p;
+  }
+  if (c.kaOpen !== null)
+    p.rows.push({
+      label: 'Chinn-Ito index, 0 (closed) to 1 (open)',
+      value: c.kaOpen,
+      unit: 'index',
+      when: String(c.year),
+      ...(c.change5y !== undefined ? { change5y: c.change5y } : {}),
+      ...(c.lessOpenPct !== null ? { context: `more open than ${c.lessOpenPct}% of ${c.countriesThatYear} countries that year` } : {}),
+    });
+  if (c.kaopen !== null) p.rows.push({ label: 'Chinn-Ito index as published (KAOPEN)', value: c.kaopen, unit: 'index', when: String(c.year) });
+  return p;
+}
+
 export interface Scorecard {
   pillars: Pillar[];
   /** Pillars with at least one figure. */
@@ -178,6 +203,7 @@ export function countryRiskScorecard(inp: ScorecardInputs): Scorecard {
     conflictPillar(inp),
     unrestPillar(inp),
     gprPillar(inp),
+    capitalPillar(inp),
     officialPillar('economy', 'Economy', ECONOMY_IDS, inp),
   ];
   return { pillars, filled: pillars.filter((p) => p.rows.length).length };

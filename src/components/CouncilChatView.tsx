@@ -16,7 +16,10 @@ import { MAX_DOCS } from '../utils/policyDocs';
 import { changeLines } from '../utils/whatChanged';
 import { AgentNetwork, useCouncilProgress } from './AgentNetwork';
 import { ExplainAnswer } from './ExplainAnswer';
+import { WhatIfAnswer } from './WhatIfAnswer';
+import { ScenarioReadNote } from './ScenarioReadNote';
 import { parseWhatIf } from '../utils/fiscalWhatIf';
+import { noModelDigest } from '../utils/noModelDigest';
 import { DocumentCards, DocumentViewer, SaveToReportsButton } from './CouncilDocuments';
 import { toAgentDocuments, toSynthesisDocument, type CouncilDocument } from '../utils/agentDocument';
 import { askCouncilColumns, fullCouncilColumns } from '../utils/councilNetwork';
@@ -34,6 +37,7 @@ import { EXAMPLES, VERDICT, fullCouncilPhase, time, toMarkdown, toSaved, useCoun
 // The chart card (recharts) loads only when an answer has a chart.
 const CouncilChartCard = lazyNamed(() => import('./CouncilChart'), 'CouncilChartCard');
 const WhatIfCard = lazyNamed(() => import('./WhatIfCard'), 'WhatIfCard');
+const QuantDeskCard = lazyNamed(() => import('./QuantDeskCard'), 'QuantDeskCard');
 
 export const AskCouncilPanel: React.FC<{
   onOpenCountry: (item: LiveWatchlistItem) => void;
@@ -154,6 +158,16 @@ export const AskCouncilPanel: React.FC<{
           <span className="font-medium text-slate-700 dark:text-slate-200">{tr('councilLabel')}</span> · {tr('about', { scope: tx(t.asked.plan.scopeNote) })} · {time(t.asked.askedAt)}
         </p>
 
+        {t.asked.plan.scenario && (
+          <ScenarioReadNote
+            scenario={t.asked.plan.scenario}
+            countries={t.asked.plan.countries.slice(0, 4).map((c) => c.countryName)}
+            keep={t.asked.answers.find((a) => a.id === 'scenario')?.keep}
+            onAsk={(q) => void ask(q, 'followup')}
+            busy={busy}
+          />
+        )}
+
         {t.changes && (
           <div className="border border-slate-200 dark:border-slate-700 p-3 space-y-1" data-council-changes={t.changes.changes.length + t.changes.stanceChanges.length}>
             <div className="ui-label">
@@ -172,6 +186,11 @@ export const AskCouncilPanel: React.FC<{
         <div className="space-y-2" data-council-summary="true">
           {writingNow ? (
             <p className="text-sm text-slate-500 dark:text-slate-400">{tr('writing')}</p>
+          ) : b?.whatIf ? (
+            <>
+              <WhatIfAnswer headline={b.headline} whatIf={b.whatIf} disagreements={b.disagreements} answers={t.asked.answers} />
+              {removedNotes(t)}
+            </>
           ) : b?.explain ? (
             <>
               <ExplainAnswer headline={b.headline} explain={b.explain} answers={t.asked.answers} />
@@ -200,9 +219,54 @@ export const AskCouncilPanel: React.FC<{
               {removedNotes(t)}
             </>
           ) : (
-            <p className="text-sm text-slate-600 dark:text-slate-300" data-council-no-summary="true">
-              {tr('noSummary')} <SettingsText text={t.synthesis?.reason || ''} /> {tr('noSummaryTail')}
-            </p>
+            <>
+              <p className="text-sm text-slate-600 dark:text-slate-300" data-council-no-summary="true">
+                {tr('noSummary')} <SettingsText text={t.synthesis?.reason || ''} /> {tr('noSummaryTail')}
+              </p>
+              {/* No model: the agents' own readings and key figures here, and what nothing answered (src/utils/noModelDigest.ts). */}
+              {(() => {
+                const d = noModelDigest(t.asked.question, t.asked.answers, !!parseWhatIf(t.asked.question));
+                return (
+                  <div className="space-y-2" data-council-digest="true">
+                    {d.lines.length > 0 && (
+                      <div>
+                        <div className="ui-label mt-1">{tr('digestFound')}</div>
+                        <ul className="list-disc pl-5 text-sm text-slate-800 dark:text-slate-200 space-y-1">
+                          {d.lines.map((l) => (
+                            <li key={`${l.agent}-${l.country}-${l.reading}`} data-digest-line={l.agent}>
+                              <span className="font-medium">{tx(l.agent)}</span> · {l.country}: {tx(l.reading)}
+                              {l.figures.length > 0 && <span className="block text-xs text-slate-500 dark:text-slate-400">{l.figures.join(' · ')}</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {d.unanswered.length > 0 && (
+                      <div data-digest-unanswered="true">
+                        <div className="ui-label mt-1">{tr('digestNotAnswered')}</div>
+                        <ul className="list-disc pl-5 text-sm text-slate-800 dark:text-slate-200 space-y-1">
+                          {d.unanswered.map((u) => (
+                            <li key={u.said}>
+                              “{u.said}”: {tx(u.where)}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {d.gaps.length > 0 && (
+                      <div data-digest-gaps="true">
+                        <div className="ui-label mt-1">{tr('digestGaps')}</div>
+                        <ul className="list-disc pl-5 text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                          {d.gaps.map((g) => (
+                            <li key={g}>{tx(g)}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </>
           )}
         </div>
 
@@ -217,6 +281,15 @@ export const AskCouncilPanel: React.FC<{
               ))
             : null;
         })()}
+
+        {/* The Quant desk's figures from the outside research tools, each with its link, date and label. */}
+        {t.asked.answers
+          .filter((a) => a.id === 'quant')
+          .map((a) => (
+            <React.Suspense key={`quant-${t.asked.askedAt}`} fallback={null}>
+              <QuantDeskCard answer={a} />
+            </React.Suspense>
+          ))}
 
         {/* The Chart Agent's chart and test results, when the question asked for one. */}
         {t.asked.answers
@@ -329,7 +402,7 @@ export const AskCouncilPanel: React.FC<{
           </summary>
           <div className="mt-2 space-y-3">
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {tr(t.synthesis?.brief?.explain ? 'aiExplanationBy' : 'aiSummaryBy', { model: t.synthesis?.provider || tr('configuredModel') })}
+              {tr(t.synthesis?.brief?.explain || t.synthesis?.brief?.whatIf ? 'aiExplanationBy' : 'aiSummaryBy', { model: t.synthesis?.provider || tr('configuredModel') })}
               {t.synthesis && t.synthesis.removed.length > 0 && tr('removedNumbers', { n: t.synthesis.removed.length })}
               {t.synthesis && (t.synthesis.contradicted?.length ?? 0) > 0 && tr('removedContradicted', { n: t.synthesis.contradicted!.length })}
             </p>

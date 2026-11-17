@@ -7,7 +7,8 @@ import { MENU } from '../i18n/messages/menu';
 /**
  * The page shown instead of the app while sign-in applies and nobody is signed in: a sign-in form,
  * or, before any account exists, the form that creates the first admin account (with the one-time
- * setup code from the server log when the app is open to a network). See src/utils/auth.ts.
+ * setup code from the server log when the app is open to a network). With OIDC set up on the server, a
+ * "Sign in with <provider>" button comes first (src/utils/oidc.ts). See src/utils/auth.ts.
  */
 
 export const FIELD_CLASS =
@@ -107,10 +108,21 @@ function SignInForm({ onDone }: { onDone: () => void }) {
   );
 }
 
+const OIDC_ERROR_KEYS = { not_allowed: 'su_err_not_allowed', no_email: 'su_err_no_email', disabled: 'su_err_disabled', expired: 'su_err_expired', failed: 'su_err_failed' } as const;
+
+/** The reason an OIDC sign-in came back refused (?signin_error=<code>), as a message key. */
+function oidcErrorKey(): (typeof OIDC_ERROR_KEYS)[keyof typeof OIDC_ERROR_KEYS] | null {
+  if (typeof window === 'undefined') return null;
+  const code = new URLSearchParams(window.location.search).get('signin_error');
+  if (!code) return null;
+  return OIDC_ERROR_KEYS[code as keyof typeof OIDC_ERROR_KEYS] ?? 'su_err_failed';
+}
+
 export function SignInPage({ status }: { status: AuthStatus }) {
   const t = useT(MENU);
   const reload = () => window.location.reload();
   const setup = status.mode === 'setup';
+  const oidcError = oidcErrorKey();
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
       <div className="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 space-y-4">
@@ -120,6 +132,15 @@ export function SignInPage({ status }: { status: AuthStatus }) {
         </h1>
         {setup && (
           <p className="ui-body">{t('su_setupNote')}</p>
+        )}
+        {status.oidc && (
+          <div className="space-y-2">
+            <a href="/api/auth/oidc/start" className="ui-btn ui-btn-primary w-full justify-center" data-oidc-sign-in="true">
+              {t('su_oidc', { name: status.oidc.name })}
+            </a>
+            {oidcError && <p role="alert" className="text-sm text-rose-700 dark:text-rose-400">{t(oidcError)}</p>}
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('su_or')}</p>
+          </div>
         )}
         {setup ? <FirstAccountForm needsCode={status.setupNeedsCode} onDone={reload} /> : <SignInForm onDone={reload} />}
         {!setup && <p className="text-xs text-slate-500 dark:text-slate-400">{t('su_idle', { n: status.sessionIdleHours })}</p>}

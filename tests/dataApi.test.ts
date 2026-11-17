@@ -54,12 +54,13 @@ const python = (() => {
 
 test('the Python helper reads a saved table and sends the key in a header', { skip: python ? false : 'python3 is not installed here' }, async () => {
   const csv = 'iso3,series_id,series,unit,frequency,date,value,source,source_that_day,pulled_at\nBRA,policy_rate,Policy rate,%,monthly,2026-09,15,BIS,,2026-10-01\nBRA,policy_rate,Policy rate,%,monthly,2026-10,14.75,BIS,,2026-11-01\n';
-  const seen: Array<{ url?: string; key?: string }> = [];
+  const seen: Array<{ url?: string; key?: string; agent?: string }> = [];
   const server = createServer((req, res) => {
-    seen.push({ url: req.url, key: req.headers['x-smcr-api-key'] as string | undefined });
+    seen.push({ url: req.url, key: req.headers['x-smcr-api-key'] as string | undefined, agent: req.headers['user-agent'] });
     if (req.url === '/api/export/BRA/series/policy_rate.csv') {
       res.writeHead(200, { 'Content-Type': 'text/csv' });
-      return res.end(csv);
+      // A byte order mark, as Excel downloads carry, must not reach the first column name.
+      return res.end('\ufeff' + csv);
     }
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'NO_SERIES', message: 'Policy rate: Missing. Not in BIS.' }));
@@ -89,13 +90,25 @@ test('the Python helper reads a saved table and sends the key in a header', { sk
       child.on('close', (status) => resolve({ status, stdout, stderr }));
     });
     assert.equal(run.status, 0, run.stderr);
-    const out = JSON.parse(run.stdout) as { rows: Array<Record<string, string>>; err: string };
+    const out = JSON.parse(run.stdout) as { rows: Array<Record<string, string | number | null>>; err: string };
     assert.equal(out.rows.length, 2);
-    assert.deepEqual(out.rows[1], { iso3: 'BRA', series_id: 'policy_rate', series: 'Policy rate', unit: '%', frequency: 'monthly', date: '2026-10', value: '14.75', source: 'BIS', source_that_day: '', pulled_at: '2026-11-01' });
+    assert.deepEqual(out.rows[1], { iso3: 'BRA', series_id: 'policy_rate', series: 'Policy rate', unit: '%', frequency: 'monthly', date: '2026-10', value: 14.75, source: 'BIS', source_that_day: '', pulled_at: '2026-11-01' });
     assert.match(out.err, /404.*Missing\. Not in BIS/);
     assert.ok(seen.every((r) => r.key === 'smcr_test'), 'the key travels in the header');
+    assert.ok(seen.every((r) => String(r.agent).startsWith('econquest-python-helper')), 'the helper names itself, so the server leaves the byte order mark off');
     assert.ok(seen.every((r) => !String(r.url).includes('smcr_test')), 'never in the address');
   } finally {
     server.close();
   }
+});
+
+test('table downloads keep the byte order mark for Excel and leave it off for the data helpers', async () => {
+  const { toCsv, CSV_BOM } = await import('../src/utils/csvExport.ts');
+  assert.ok(toCsv(['iso3', 'value'], [['BRA', 1]]).startsWith(CSV_BOM));
+  assert.ok(toCsv(['iso3', 'value'], [['BRA', 1]], { bom: false }).startsWith('iso3,value'));
+  const server = readFileSync(path.join(root, 'server.ts'), 'utf8');
+  assert.match(server, /req\.query\.bom === '0'/);
+  assert.match(server, /econquest-\(python\|r\)-helper/);
+  assert.match(readFileSync(path.join(root, 'scripts/data-api/econquest.R'), 'utf8'), /"User-Agent" = "econquest-r-helper"/);
+  assert.match(readFileSync(path.join(root, 'scripts/data-api/econquest.do'), 'utf8'), /bom=0/);
 });

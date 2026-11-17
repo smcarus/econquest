@@ -28,7 +28,8 @@
  *
  * Co-movement in the sample, linear in the shock: not a causal model, and shocks larger than any
  * month in the sample are extrapolation (the panel shows the largest monthly move of each factor).
- * Oil has only five years of saved monthly prices (Pink Sheet), too short for this fit, so it is not
+ * Oil has only five years of saved monthly prices (Pink Sheet; only rice, wheat, maize and soybeans
+ * keep their full history), too short for this fit, so it is not
  * a factor yet.
  *
  * Browser-safe.

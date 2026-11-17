@@ -8,6 +8,7 @@ import {
   ChartLine,
   Database,
   FileText,
+  FlaskConical,
   Gavel,
   Globe,
   HandCoins,
@@ -21,6 +22,7 @@ import {
   ShieldAlert,
   TrendingUp,
   UserCheck,
+  Users,
   Vote,
   Waypoints,
   type LucideIcon,
@@ -51,6 +53,8 @@ const ICONS: Record<AgentIconKey, LucideIcon> = {
   cascade: Waypoints,
   user: UserCheck,
   gavel: Gavel,
+  crowd: Users,
+  flask: FlaskConical,
   agent: Bot,
 };
 

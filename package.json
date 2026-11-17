@@ -25,7 +25,9 @@
     "weo:pull": "tsx scripts/weo-pull.ts",
     "sanctions:pull": "tsx scripts/sanctions-pull.ts",
     "gpr:pull": "tsx scripts/gpr-pull.ts",
+    "chinn-ito:pull": "tsx scripts/chinn-ito-pull.ts",
     "ucdp:pull": "tsx scripts/ucdp-pull.ts",
+    "replays:pull": "tsx scripts/replays-pull.ts",
     "signals:evaluate": "tsx scripts/signals-evaluate.ts",
     "preload": "tsx server.ts --preload",
     "daily": "tsx server.ts --daily",
@@ -38,6 +40,7 @@
     "feedback:export": "tsx scripts/feedback-export.ts",
     "council:regress": "tsx scripts/council-regress.ts",
     "council:record": "tsx scripts/council-record.ts",
+    "notebook:check": "tsx scripts/notebook-check.ts",
     "docs:licences": "tsx scripts/docs-licences.ts",
     "quests:check": "tsx scripts/quests-check.ts",
     "quests:resolve": "tsx scripts/quests-resolve.ts",
@@ -55,12 +58,14 @@
     "docs:track-record": "tsx scripts/docs-track-record.ts",
     "docs:glossary": "tsx scripts/docs-glossary.ts",
     "users": "tsx scripts/users.ts",
+    "tokens": "tsx scripts/tokens.ts",
     "backup:drill": "tsx scripts/backup-drill.ts",
     "forecast:evaluate": "tsx scripts/forecast-evaluate.ts",
     "forecast:worst": "tsx scripts/forecast-worst.ts",
     "mac:validate": "tsx scripts/mac-validate.ts",
     "public:export": "bash scripts/public-export.sh",
-    "aiddata:summary": "tsx scripts/aiddata-summary.ts"
+    "aiddata:summary": "tsx scripts/aiddata-summary.ts",
+    "reviews:summary": "tsx scripts/expert-reviews-summary.ts"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",

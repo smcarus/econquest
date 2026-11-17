@@ -13,6 +13,7 @@ import { useHelpLevel } from './HelpLevel';
 import { showFigureHelp, showGuides, showMissingHelp } from '../utils/helpLevel';
 import { useT, useTx } from '../i18n/useLang';
 import { BRIEF } from '../i18n/messages/brief';
+import { RESEARCH } from '../i18n/messages/research';
 
 export type BriefView = 'economist' | 'banker' | 'official';
 
@@ -59,7 +60,7 @@ export const CountryBriefPanel: React.FC<{
         </header>
         <BriefSummary brief={brief} />
       </section>
-      <BriefGroups brief={brief} country={run} />
+      <BriefGroups brief={brief} country={run} picker />
     </div>
   );
 };
@@ -118,6 +119,9 @@ function explainPanel(g: BriefGroup, c: { iso3: string; countryName: string }) {
   });
 }
 
+/** The picker value that shows every group. */
+const ALL = '__all';
+
 const EXPLAIN_LINK = 'text-xs text-blue-700 dark:text-blue-300 hover:underline sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100';
 const EXPLAIN_ROW_LINK = 'text-xs text-blue-700 dark:text-blue-300 hover:underline sm:opacity-0 sm:group-hover/row:opacity-100 focus:opacity-100';
 
@@ -164,18 +168,71 @@ export const FigureHelp: React.FC<{ entry: GlossaryEntry }> = ({ entry }) => {
  * The figure tables of a brief, each row with its source under the label. With a country, each
  * figure and each panel gets an Explain link (shown on hover on a wide screen) into Council chat.
  */
-export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: string; countryName: string } }> = ({ brief, country }) => {
+export const BriefGroups: React.FC<{
+  brief: CountryBrief;
+  country?: { iso3: string; countryName: string };
+  /** One group at a time, picked from a row of buttons (with "Show all"), so a long page stays short. */
+  picker?: boolean;
+}> = ({ brief, country, picker }) => {
   const level = useHelpLevel();
   const t = useT(BRIEF);
+  const tr = useT(RESEARCH);
   const tx = useTx();
+  const [picked, setPicked] = useState<string | null>(null);
   const help = (label: string) => {
     const e = figureHelp(label);
     return e && showFigureHelp(e, level) ? <FigureHelp entry={e} /> : null;
   };
-  return (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-    {brief.groups.map((g) => (
-      <section key={g.title} className="ui-panel group">
+  const renderRows = (rows: BriefRow[]) => (
+    <>
+    {rows.map((r) =>
+      r.value.length > 60 ? (
+        // A sentence, not a figure: label, then the text under it, left-aligned.
+        <tr key={`${r.label}-${r.value}`} className="border-b border-slate-100 dark:border-slate-800 last:border-0" title={r.help ? tx(r.help) : undefined} data-missing={r.missing ? 'true' : undefined}>
+          <td colSpan={2} className="px-4 py-1.5 text-left">
+            <span className="text-slate-600 dark:text-slate-400">{tx(r.label)}</span>
+            <span className="block text-xs text-slate-500 dark:text-slate-400">{tx(r.source)}</span>
+            <span className={`block mt-0.5 ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}`}>{tx(r.value)}</span>
+            {r.missing && showMissingHelp(level) && <MissingHelp help={r.help} />}
+            {help(r.label)}
+          </td>
+        </tr>
+      ) : (
+      <tr key={`${r.label}-${r.value}`} className="group/row border-b border-slate-100 dark:border-slate-800 last:border-0" title={r.help ? tx(r.help) : undefined} data-missing={r.missing ? 'true' : undefined}>
+        <th scope="row" className="px-4 py-1.5 text-left font-normal text-slate-600 dark:text-slate-400">
+          {tx(r.label)}
+          <span
+            className={`block text-xs ${
+              r.verified ? 'text-emerald-700 dark:text-emerald-400' : r.missing ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'
+            }`}
+          >
+            {tx(r.source)}
+          </span>
+          {help(r.label)}
+        </th>
+        <td className={`px-4 py-1.5 text-right align-top [font-variant-numeric:tabular-nums] ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'font-medium text-slate-900 dark:text-white'}`}>
+          {tx(r.value)}
+          {r.missing && showMissingHelp(level) && <MissingHelp help={r.help} />}
+          {country && !r.missing && (
+            <button type="button" className={`block ml-auto font-normal ${EXPLAIN_ROW_LINK}`} onClick={() => explainRow(r, country)} title={t('explainRowTitle')} data-explain-row={r.label}>
+              {t('explain')}
+            </button>
+          )}
+        </td>
+      </tr>
+      ),
+    )}
+    </>
+  );
+  const usePicker = !!picker && brief.groups.length > 2;
+  const one = usePicker && picked !== ALL ? brief.groups.find((g) => g.title === picked) ?? brief.groups[0] : undefined;
+  const shown = one ? [one] : brief.groups;
+  const card = (g: BriefGroup, wide: boolean) => {
+    // A single group picked: its rows in two columns from a laptop up.
+    const half = wide ? Math.ceil(g.rows.length / 2) : g.rows.length;
+    const parts = wide && g.rows.length > 6 ? [g.rows.slice(0, half), g.rows.slice(half)] : [g.rows];
+    return (
+      <section key={g.title} className={`ui-panel group ${wide ? 'md:col-span-2' : ''}`}>
         <header className="ui-panel-header flex items-start justify-between gap-2">
           <h3 className="ui-section-title flex flex-wrap items-center gap-2">
             {tx(g.title)}
@@ -188,50 +245,43 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
           )}
         </header>
         {showGuides(level) && panelIntro(g.title) && <p className="px-4 pt-2 ui-label" data-panel-intro="true">{tx(panelIntro(g.title) ?? '')}</p>}
-        <table className="w-full text-sm">
-          <caption className="sr-only">{tx(g.title)}</caption>
-          <tbody>
-            {g.rows.map((r) =>
-              r.value.length > 60 ? (
-                // A sentence, not a figure: label, then the text under it, left-aligned.
-                <tr key={`${r.label}-${r.value}`} className="border-b border-slate-100 dark:border-slate-800 last:border-0" title={r.help ? tx(r.help) : undefined} data-missing={r.missing ? 'true' : undefined}>
-                  <td colSpan={2} className="px-4 py-1.5 text-left">
-                    <span className="text-slate-600 dark:text-slate-400">{tx(r.label)}</span>
-                    <span className="block text-xs text-slate-500 dark:text-slate-400">{tx(r.source)}</span>
-                    <span className={`block mt-0.5 ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}`}>{tx(r.value)}</span>
-                    {r.missing && showMissingHelp(level) && <MissingHelp help={r.help} />}
-                    {help(r.label)}
-                  </td>
-                </tr>
-              ) : (
-              <tr key={`${r.label}-${r.value}`} className="group/row border-b border-slate-100 dark:border-slate-800 last:border-0" title={r.help ? tx(r.help) : undefined} data-missing={r.missing ? 'true' : undefined}>
-                <th scope="row" className="px-4 py-1.5 text-left font-normal text-slate-600 dark:text-slate-400">
-                  {tx(r.label)}
-                  <span
-                    className={`block text-xs ${
-                      r.verified ? 'text-emerald-700 dark:text-emerald-400' : r.missing ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'
-                    }`}
-                  >
-                    {tx(r.source)}
-                  </span>
-                  {help(r.label)}
-                </th>
-                <td className={`px-4 py-1.5 text-right align-top [font-variant-numeric:tabular-nums] ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'font-medium text-slate-900 dark:text-white'}`}>
-                  {tx(r.value)}
-                  {r.missing && showMissingHelp(level) && <MissingHelp help={r.help} />}
-                  {country && !r.missing && (
-                    <button type="button" className={`block ml-auto font-normal ${EXPLAIN_ROW_LINK}`} onClick={() => explainRow(r, country)} title={t('explainRowTitle')} data-explain-row={r.label}>
-                      {t('explain')}
-                    </button>
-                  )}
-                </td>
-              </tr>
-              ),
-            )}
-          </tbody>
-        </table>
+        <div className={parts.length > 1 ? 'grid grid-cols-1 md:grid-cols-2 md:divide-x divide-slate-100 dark:divide-slate-800' : ''}>
+          {parts.map((rows, i) => (
+            <table key={i} className="w-full text-sm self-start">
+              <caption className="sr-only">{tx(g.title)}</caption>
+              <tbody>{renderRows(rows)}</tbody>
+            </table>
+          ))}
+        </div>
       </section>
-    ))}
-  </div>
-);
+    );
+  };
+  return (
+    <div className="space-y-3">
+      {usePicker && (
+        <div className="flex flex-wrap gap-1.5" role="tablist" aria-label={tr('gp_aria')} data-group-picker="true">
+          {brief.groups.map((g) => {
+            const live = g.rows.filter((r) => !r.missing).length;
+            return (
+              <button
+                key={g.title}
+                type="button"
+                role="tab"
+                aria-selected={one?.title === g.title}
+                className="ui-pill"
+                onClick={() => setPicked(g.title)}
+                data-group-pick={g.title}
+              >
+                {tx(g.title)} <span className="opacity-70 [font-variant-numeric:tabular-nums]">{tr('gp_count', { live, total: g.rows.length })}</span>
+              </button>
+            );
+          })}
+          <button type="button" role="tab" aria-selected={!one} className="ui-pill" onClick={() => setPicked(ALL)} data-group-pick="__all">
+            {tr('gp_all')}
+          </button>
+        </div>
+      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{shown.map((g) => card(g, !!one))}</div>
+    </div>
+  );
 };

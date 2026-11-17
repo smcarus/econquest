@@ -1,5 +1,5 @@
 import type { Express } from 'express';
-import { DATA_DIR } from '../config';
+import { DATA_DIR, VALIDATION_FILE } from '../config';
 import { loadWeoVintages } from '../../utils/weoVintagesStore';
 import { ALFRED_SERIES, ALFRED_SOURCE, alfredReply } from '../../utils/alfredVintages';
 import { ECB_RTD_SERIES, ECB_RTD_SOURCE } from '../../utils/ecbRealTime';
@@ -13,9 +13,53 @@ import { multiplierView } from '../../utils/fiscalMultipliers';
 import { localProjections, lpSentence } from '../../utils/localProjections';
 import { ruleFamily, ruleFamilySentence, RULE_FAMILY_METHOD, type RuleFamilyInputs } from '../../utils/ruleFamily';
 import { reserveAdequacy, reserveAdequacySentence } from '../../utils/reserveAdequacy';
+import { crisisSentence, crisisWarning, CRISIS_NOT_RUN } from '../../utils/crisisWarning';
+import { esSentence, externalSustainability } from '../../utils/externalSustainability';
+import { driversSentence, inflationDrivers, NO_DRIVER_SOURCE } from '../../utils/inflationDrivers';
+import { fetchInflationDrivers } from '../feeds/inflationDrivers';
+import { fetchPwt } from '../feeds/pwt';
+import { bankSovereign, bsSentence, type YearValue } from '../../utils/bankSovereign';
+import { incidenceContext } from '../../utils/policyIncidence';
+import { fiscalRulesCheck, frSentence } from '../../utils/fiscalRules';
+import { fiscalRulesInput } from '../../utils/fiscalRulesStore';
+import { cbwSentence, CBW_METHOD, CBW_REFERENCE } from '../../utils/cbWords';
+import { readCbStatements } from '../feeds/cbStatements';
+import { investorBaseData } from '../../utils/investorBaseStore';
+import { investorBaseReading } from '../../utils/investorBase';
+import { gaSentence, growthAccounting } from '../../utils/growthAccounting';
+import { EUROSTAT_GEO } from '../../utils/nationalCpi';
+import { curveSentence, yieldCurve, CURVE_NOT_RUN, CURVE_TEST_ID } from '../../utils/yieldCurve';
+import { FRED_10Y_SERIES, US_10Y_SERIES } from '../../utils/officialYields';
+import { loadValidation } from '../../utils/backtestRun';
+import { BIS_ISO2 } from '../../utils/bisDebtSecurities';
 import { vintageLabel, weoVintageReply, WEO_VINTAGE_CODES } from '../../utils/weoVintages';
 import { fetchWithTimeout } from '../http';
 import { OFFICIAL_FIGURES, officialSeries, type OfficialHistoryFile } from '../../utils/officialHistory';
+import { remittanceProfile, remitSentence, REMIT_IDS } from '../../utils/remittances';
+import { financialInclusion, fiSentence, FI_IDS } from '../../utils/financialInclusion';
+import { commodityTerms, ctSentence, CT_IDS } from '../../utils/commodityTerms';
+import { aidProfile, aidSentence, AID_IDS } from '../../utils/aidReceived';
+import { budgetCredibility, bcSentence, BC_IDS } from '../../utils/budgetCredibility';
+import { wbProjectsProfile, wbProjectsSentence } from '../../utils/wbProjects';
+import { loadWbProjects } from '../feeds/wbProjects';
+import { regionalProfile, regionalSentence } from '../../utils/regional';
+import { loadDose, loadEuroRegions, loadGdl } from '../feeds/regional';
+import { loadCurves } from '../feeds/fullCurves';
+import { loadSurpriseInputs } from '../feeds/dataSurprises';
+import { fetchInflationSurveys } from '../feeds/rates';
+import { loadForward } from '../../utils/forwardRecordStore';
+import { INDEX_TEST_ID, nowcastMatches, surpriseIndex, surpriseSeriesFor } from '../../utils/dataSurprises';
+import { fullCurveReading, fullCurveSentence } from '../../utils/fullCurves';
+import { iso2For } from '../../data/iso3166Alpha2';
+import { foodView, foodSentence, FOOD_IDS } from '../../utils/foodPrices';
+import { faoCpiInput } from '../../utils/faoCpiStore';
+import { disasterView, disasterSentence } from '../../utils/disasters';
+import { lossModels } from '../../utils/lossModel';
+import { stormsNear, stormSentence, STORM_RADII, STORM_DEFAULT_RADIUS, STORM_SOURCES, STORM_NO_DATA, type StormView } from '../../utils/stormTracks';
+import { stormTracks, stormStatus, startStormDownload, IBTRACS_REFRESH_DAYS } from '../feeds/ibtracs';
+import { countryOutline } from '../countryOutlines';
+import { emdatInput } from '../../utils/disasterStore';
+import { fetchCommodities } from '../feeds/commodities';
 import { type OutputGapResult } from '../../utils/outputGap';
 import { dsaSentence, type DsaOutcome } from '../../utils/debtSustainability';
 import { parseAsOfDate } from '../../utils/asOf';
@@ -26,18 +70,24 @@ import { loadModelHistory, MODEL_HISTORY_MAX_AGE_MS, pullModelHistory, saveModel
 import { cpiNowcast, gdpNowcast, nowcastSentence } from '../../utils/nowcast';
 import { forecastSentence, forecastSeries, withImf, type ForecastOutcome } from '../../utils/forecasts';
 import { loadForecastValidation } from '../../utils/forecastEvalRun';
+import { appMissSteps, FORECAST_EVAL_ID, weoMissBands } from '../../utils/missBands';
 import { areaSeries } from '../../utils/oecdSdmx';
 import { CBPOL_AREA, CBPOL_NOT_COVERED } from '../../utils/bisPolicyRates';
 import { countrySeries } from '../../utils/seriesHistory';
 import path from 'path';
 import { SOVEREIGN_CATALOG } from '../../data/presetsAndBaselines.ts';
-import { oecdFetch, fetchQnaPull, fetchNationalCpi, fetchMonthlyActivity } from '../feeds/oecd';
+import { oecdFetch, fetchQnaPull, fetchNationalCpi, nationalCpiOrSaved, fetchMonthlyActivity } from '../feeds/oecd';
 import { GSCPI_SOURCE, STRESS_INDICES, stressIndex } from '../../utils/stressIndices';
-import { fetchDebtSchedule, fetchFxHistory, fetchPolicyDaily, fetchReerLong, fetchStressPulls, fetchAlfred, loadFxHistory } from '../feeds/rates';
+import { fetchBisCreditCycle, fetchDebtSchedule, fetchFxHistory, fetchPolicyDaily, fetchReerLong, fetchStressPulls, fetchAlfred, loadFxHistory, fetchFredHistory } from '../feeds/rates';
 import { beer, beerSentence } from '../../utils/beer';
 import { EVENT_METHOD, eventSentence, eventStudy } from '../../utils/eventStudy';
 import { fxDailySeries } from '../../utils/fxHistory';
-import { fitScenarioModel, monthEnd, monthlyChanges, PRESETS, SCENARIO_METHOD, FACTORS, RESPONSES, type ScenarioModel } from '../../utils/scenarioEngine';
+import { fitScenarioModel, monthEnd, monthlyChanges, PRESETS, SCENARIO_METHOD, FACTORS, RESPONSES, type FactorId, type ScenarioModel } from '../../utils/scenarioEngine';
+import { dsaRuns, engineRuns, largestMove, lpRun, scenarioFromQuery, type LargestMove, type ScenarioCountryData } from '../../utils/scenarioAgent';
+import type { ShockKind } from '../../utils/scenarioQuestion';
+import { episodeReads, episodesFor, levelContext, shockPrecedents, SHOCK_YEARLY, type LevelContext } from '../../utils/scenarioHistory';
+import type { ReplayInputs } from '../../utils/scenarioReplay';
+import type { HistoryInput } from '../../utils/precedentFinder';
 import { grVar, grVarSentence, GRVAR_METHOD, type GrVarOutcome } from '../../utils/grVar';
 import { gprData } from '../../utils/gprStore';
 import { storyLeads, STORY_LEADS_METHOD, type LeadSeries } from '../../utils/storyLeads';
@@ -60,6 +110,9 @@ export interface AnalysisDeps {
   dsaFrom: (file: OfficialHistoryFile | null | undefined) => DsaOutcome;
   /** Exam mode (src/utils/examMode.ts): answer keys are held back while it is on. */
   examOn?: () => boolean;
+  /** Scenario Agent history (WI3): the replay series for past episodes, and every country's yearly history. */
+  replayInputs?: () => ReplayInputs;
+  allHistories?: () => { histories: HistoryInput[] };
 }
 
 // Nowcasts (src/utils/nowcast.ts) and forecasts: long histories for the fits come from
@@ -277,6 +330,304 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: reserveAdequacySentence(r, name) } : {}) });
   });
+  // External sustainability (G24, src/utils/externalSustainability.ts): external debt, debt service and the debt-stabilising current account.
+  app.get('/api/external-sustainability/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    if (!file) return res.json({ iso3, ok: false, reason: 'Full official history not downloaded yet (Menu > Offline data, or open History & data while online)' });
+    const pick = (id: string) => {
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s : undefined;
+    };
+    const r = externalSustainability({
+      currentAccountPct: pick('current_account_imf'),
+      gdpUsd: pick('gdp_usd'),
+      externalDebtUsd: pick('external_debt_usd'),
+      debtServiceUsd: pick('ext_debt_service_usd'),
+      interestUsd: pick('ext_interest_usd'),
+      reservesUsd: pick('reserves_usd'),
+      exportsUsd: pick('exports_usd'),
+    });
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: esSentence(r, name) } : {}) });
+  });
+  // Crisis early-warning (G23, src/utils/crisisWarning.ts): the BIS credit cycle against the Basel III lines.
+  app.get('/api/crisis-warning/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const covered = Boolean(BIS_ISO2[iso3]);
+    const cycle = covered ? await quick(fetchBisCreditCycle(iso3)) : null;
+    const r = crisisWarning(cycle, covered);
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: crisisSentence(r, name), notValidated: CRISIS_NOT_RUN } : {}) });
+  });
+  // Yield curve and financial conditions (G25, src/utils/yieldCurve.ts): 10-year yield minus policy rate, and an equal-weight conditions index.
+  app.get('/api/yield-curve/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const fred = FRED_10Y_SERIES[iso3];
+    const area = CBPOL_AREA[iso3];
+    const month = (o: { date: string; value: number }) => ({ period: o.date.slice(0, 7), value: o.value });
+    const [yields, usYields, reer, hist] = await Promise.all([
+      fred ? quick(fetchFredHistory(fred, '1990-01-01')) : Promise.resolve(null),
+      fred && iso3 !== 'USA' ? quick(fetchFredHistory(US_10Y_SERIES, '1990-01-01')) : Promise.resolve(null),
+      fred && area ? quick(fetchReerLong(iso3)) : Promise.resolve(null),
+      fred && area ? quick(modelHistory()) : Promise.resolve(null),
+    ]);
+    const saved = loadValidation(VALIDATION_FILE).results[CURVE_TEST_ID];
+    const r = yieldCurve({
+      hasFred: Boolean(fred),
+      hasPolicy: Boolean(area),
+      isUs: iso3 === 'USA',
+      yields: yields?.map(month),
+      usYields: usYields?.map(month),
+      reer,
+      policy: area ? hist?.policyMonthly?.[area]?.points.map((p) => ({ period: p.period, value: p.pct })) : null,
+      test: saved || null,
+    });
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: curveSentence(r, name), ...(r.hitRate ? {} : { notValidated: CURVE_NOT_RUN }) } : {}) });
+  });
+  // Inflation drivers (G26, src/utils/inflationDrivers.ts): headline against core, food and energy, from official sub-indices.
+  app.get('/api/inflation-drivers/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    // Other OECD members: the countries the OECD headline CPI pull covers.
+    const hist = await quick(modelHistory());
+    const oecdCovered = Boolean(hist?.cpi && areaSeries(iso3, hist.cpi)?.points?.length);
+    if (!EUROSTAT_GEO[iso3] && iso3 !== 'USA' && !oecdCovered) return res.json({ iso3, ok: false, reason: NO_DRIVER_SOURCE });
+    const inputs = await quick(fetchInflationDrivers(iso3, oecdCovered));
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    if (!inputs) return res.json({ iso3, ok: false, reason: 'The consumer price sources have not answered yet' });
+    const r = inflationDrivers(inputs);
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: driversSentence(r, name) } : {}) });
+  });
+  // Growth accounting (G27, src/utils/growthAccounting.ts): capital, hours, human capital and TFP from the Penn World Table.
+  app.get('/api/growth-accounting/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchPwt());
+    const r = growthAccounting(file, iso3);
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: gaSentence(r, name) } : {}) });
+  });
+  // Bank and government links (G28, src/utils/bankSovereign.ts): bank size, claims on government, banks' share of government debt, soundness.
+  app.get('/api/bank-sovereign/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    if (!file) return res.json({ iso3, ok: false, reason: 'No bank figures are saved for this country yet (Menu > Offline data, or open History & data while online)' });
+    const pick = (id: string): YearValue[] | undefined => {
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
+    };
+    let ib = null;
+    try {
+      ib = investorBaseReading(iso3, investorBaseData(DATA_DIR));
+    } catch {
+      ib = null;
+    }
+    const r = bankSovereign({
+      bankAssetsGdp: pick('bank_assets_gdp'),
+      claimsGovGdp: pick('bank_claims_gov_gdp'),
+      capitalAssets: pick('bank_capital_assets'),
+      npl: pick('bank_npl'),
+      govDebtGdp: pick('debt_gdp'),
+      investorBase: ib,
+      firstProjectionYear: new Date().getUTCFullYear(),
+    });
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: bsSentence(r, name) } : {}) });
+  });
+  // Fiscal rules check (G35, src/utils/fiscalRules.ts): treaty limits against the saved IMF history, national rules from the IMF workbook the user saved.
+  app.get('/api/fiscal-rules/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    const pick = (id: string): YearValue[] | undefined => {
+      if (!file) return undefined;
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
+    };
+    let imf: ReturnType<typeof fiscalRulesInput> = { table: null };
+    try {
+      imf = fiscalRulesInput(DATA_DIR);
+    } catch (err: any) {
+      imf = { table: null, reason: `The folder data/local/imf-fiscal-rules/ could not be read (${err?.message || err})` };
+    }
+    const r = fiscalRulesCheck(iso3, new Date().getUTCFullYear(), { debt_gdp: pick('debt_gdp'), overall_balance: pick('overall_balance') }, imf);
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ ...r, sentence: frSentence(r, name), historySaved: Boolean(file) });
+  });
+  // Remittances (PA1, src/utils/remittances.ts): saved World Bank history only.
+  app.get('/api/remittances/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    const pick = (id: string): YearValue[] | undefined => {
+      if (!file) return undefined;
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
+    };
+    const p = remittanceProfile(Object.fromEntries(REMIT_IDS.map((id) => [id, pick(id)])), new Date().getUTCFullYear(), Boolean(file));
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...p, sentence: remitSentence(p, name) });
+  });
+  // Financial inclusion (PA5, src/utils/financialInclusion.ts): saved World Bank history only.
+  app.get('/api/financial-inclusion/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    const pick = (id: string): YearValue[] | undefined => {
+      if (!file) return undefined;
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
+    };
+    const f = financialInclusion(Object.fromEntries(FI_IDS.map((id) => [id, pick(id)])), new Date().getUTCFullYear(), Boolean(file));
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...f, sentence: fiSentence(f, name) });
+  });
+  // Commodity prices and terms of trade (PA3, src/utils/commodityTerms.ts): saved World Bank history and the Pink Sheet moves.
+  app.get('/api/commodity-terms/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const [file, prices] = await Promise.all([quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)), quick(fetchCommodities())]);
+    const pick = (id: string): YearValue[] | undefined => {
+      if (!file) return undefined;
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
+    };
+    const c = commodityTerms(Object.fromEntries(CT_IDS.map((id) => [id, pick(id)])), prices?.moves ?? null, new Date().getUTCFullYear(), Boolean(file));
+    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...c, sentence: ctSentence(c, name) });
+  });
+  // Aid received (PA4, src/utils/aidReceived.ts): saved World Bank history only (OECD DAC figures as the World Bank republishes them).
+  app.get('/api/aid/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    const pick = (id: string): YearValue[] | undefined => {
+      if (!file) return undefined;
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
+    };
+    const a = aidProfile(Object.fromEntries(AID_IDS.map((id) => [id, pick(id)])), new Date().getUTCFullYear(), Boolean(file));
+    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...a, sentence: aidSentence(a, name) });
+  });
+  // Budget credibility (R3, src/utils/budgetCredibility.ts): saved World Bank history only (GF.XPD.BUDG.ZS, from PEFA assessments).
+  app.get('/api/budget-credibility/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    const pick = (id: string): YearValue[] | undefined => {
+      if (!file) return undefined;
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
+    };
+    const b = budgetCredibility(Object.fromEntries(BC_IDS.map((id) => [id, pick(id)])), new Date().getUTCFullYear(), Boolean(file));
+    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...b, sentence: bcSentence(b, name) });
+  });
+  // World Bank development projects (R5, src/utils/wbProjects.ts): the saved list from the daily download only, never fetched on page open.
+  app.get('/api/wb-projects/:iso3', (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const p = wbProjectsProfile(loadWbProjects(), iso2For(iso3), new Date().toISOString().slice(0, 10));
+    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...p, sentence: wbProjectsSentence(p, name) });
+  });
+
+  // Regional figures (R6, src/utils/regional.ts): the saved DOSE and Eurostat copies from the daily download and your Global Data Lab file; never fetched on page open.
+  app.get('/api/regional/:iso3', (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const g = loadGdl();
+    const p = regionalProfile({ iso3, iso2: iso2For(iso3), dose: loadDose(), euro: loadEuroRegions(), gdl: g.rows, gdlFile: g.file });
+    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...p, sentence: regionalSentence(p, name) });
+  });
+  // Food prices and food security (PA2, src/utils/foodPrices.ts): saved World Bank history, the Pink Sheet moves, and the FAOSTAT file in data/local/fao-cpi/.
+  app.get('/api/food-prices/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const [file, prices] = await Promise.all([quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)), quick(fetchCommodities())]);
+    const pick = (id: string): YearValue[] | undefined => {
+      if (!file) return undefined;
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
+    };
+    const f = foodView({
+      iso3,
+      series: Object.fromEntries(FOOD_IDS.map((id) => [id, pick(id)])),
+      beforeYear: new Date().getUTCFullYear(),
+      historySaved: Boolean(file),
+      cpi: faoCpiInput(DATA_DIR),
+      moves: prices?.moves ?? null,
+    });
+    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...f, sentence: foodSentence(f, name) });
+  });
+  // Natural disasters (src/utils/disasters.ts): EM-DAT events from the file the user saved in data/local/emdat/, with GDP and population from the saved history.
+  app.get('/api/disasters/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    const pick = (id: string): YearValue[] | undefined => {
+      if (!file) return undefined;
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
+    };
+    const emdat = emdatInput(DATA_DIR);
+    const gdp = pick('gdp_usd');
+    const v = disasterView({ iso3, emdat, series: { gdp_usd: gdp, population: pick('population') } });
+    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    // Loss history and frequency-severity model (src/utils/lossModel.ts).
+    const evs = !v.missing && emdat.table ? emdat.table.countries.get(iso3) : undefined;
+    const losses = evs ? lossModels(evs, emdat.table!.latestYear, new Map((gdp ?? []).map((p) => [p.year, p.value]))) : [];
+    res.json({ iso3, ...v, losses, sentence: disasterSentence(v, name) });
+  });
+  // Tropical cyclone tracks near the country (src/utils/stormTracks.ts): IBTrACS from data/local/ibtracs/ or the download the user asks for.
+  const stormCache = new Map<string, StormView>();
+  app.get('/api/storms/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const r = Number(req.query.radius);
+    const radiusKm = (STORM_RADII as readonly number[]).includes(r) ? r : STORM_DEFAULT_RADIUS;
+    const got = await stormTracks();
+    const base = { iso3, radiusKm, status: stormStatus(), refreshDays: IBTRACS_REFRESH_DAYS, sources: STORM_SOURCES };
+    if (!got.tracks) return res.json({ ...base, missing: got.reason || STORM_NO_DATA });
+    const outline = countryOutline(iso3);
+    if (!outline) return res.json({ ...base, file: got.tracks.file, missing: 'The app has no outline for this country, so distances cannot be measured' });
+    const t = got.tracks;
+    const to = new Date(t.pulledAt).getUTCFullYear() > t.lastSeason ? t.lastSeason : t.lastSeason - 1;
+    const key = `${iso3}:${radiusKm}:${t.pulledAt}:${t.file}`;
+    let v = stormCache.get(key);
+    if (!v) {
+      v = stormsNear(t.storms, outline, radiusKm, to);
+      stormCache.set(key, v);
+    }
+    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    res.json({ ...base, file: t.file, pulledAt: t.pulledAt, source: got.source, stale: got.stale ?? false, wmoWindPoints: t.wmoWindPoints, ...v, list: v.list.slice(0, 200), sentence: stormSentence(v, name) });
+  });
+  app.post('/api/storms/download', (_req, res) => {
+    res.json({ status: startStormDownload() });
+  });
+  // Who pays for a policy (src/utils/policyIncidence.ts): the saved context; the incidence itself is worked out in the browser on shares the user types.
+  app.get('/api/policy-incidence/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    const pick = (id: string): YearValue[] | undefined => {
+      if (!file) return undefined;
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
+    };
+    const ids = ['gini', 'tax_revenue', 'tax_income', 'tax_goods', 'tax_trade', 'poverty_lowest', 'poverty_lower_middle', 'poverty_upper_middle', 'income_share_q1', 'income_share_q2', 'income_share_q3', 'income_share_q4', 'income_share_q5'] as const;
+    const ctx = incidenceContext(Object.fromEntries(ids.map((id) => [id, pick(id)])));
+    res.json({ iso3, ...ctx });
+  });
+  // Central bank word count (src/utils/cbWords.ts): statements the user saved in data/local/cb-statements/<ISO3>/.
+  app.get('/api/cb-words/:iso3', (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const got = readCbStatements(iso3);
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...got, method: CBW_METHOD, reference: CBW_REFERENCE, ...(got.statements.length ? { sentence: cbwSentence(got.statements, name) } : {}) });
+  });
   // Local projections (src/utils/localProjections.ts): inflation after a policy rate change, reduced form.
   app.get('/api/local-projections/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -395,10 +746,11 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const study = eventStudy(bank, policy, fx.points);
     res.json({ iso3, name, ok: true, ...study, sentence: eventSentence(name, study), method: EVENT_METHOD, sources: ['BIS central bank policy rates, daily', fx.source || 'ECB euro reference rates (via Frankfurter)'] });
   });
-  app.get('/api/scenario/:iso3', async (req, res) => {
-    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  // The scenario engine's factors and fitted models for one country, shared by /api/scenario and the
+  // Scenario Agent (/api/council/scenario).
+  const scenarioFits = async (iso3: string, stressKey: unknown) => {
     const [set, hist, fxFile, pulls] = await Promise.all([seriesFor(iso3), modelHistory(), quick(fetchFxHistory()).then((h) => h ?? loadFxHistory()), quick(fetchStressPulls())]);
-    const pick = stressIndex(req.query.stress);
+    const pick = stressIndex(stressKey);
     const stress = pulls?.fred[pick.fred];
     const gscpi = pulls?.gscpi && 'obs' in pulls.gscpi ? pulls.gscpi.obs : null;
     const eur = fxDailySeries(fxFile, 'EUR');
@@ -430,6 +782,11 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
           ? fitScenarioModel('policy', monthlyChanges(monthEnd(ownPolicy.map((p) => ({ date: p.period, value: p.pct }))), 'diff'), factors)
           : { response: 'policy' as const, ok: false as const, reason: area ? 'BIS policy rate history not downloaded yet' : 'Not in BIS policy rates' },
     ];
+    return { set, pick, factors, missingFactors, fx, area, ownPolicy, models };
+  };
+  app.get('/api/scenario/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const { pick, factors, missingFactors, fx, models } = await scenarioFits(iso3, req.query.stress);
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     // Geopolitical risk VaR (src/utils/grVar.ts): currency moves in high-GPR months, and the fx model's implied move.
     const gpr = gprData(DATA_DIR);
@@ -456,12 +813,84 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       sources: ['ECB euro reference rates (via Frankfurter)', 'BIS central bank policy rates, monthly', `${pick.label} (${pick.fred}), retrieved from FRED, Federal Reserve Bank of St. Louis`, GSCPI_SOURCE],
     });
   });
+  // Scenario Agent (WI2, src/utils/scenarioAgent.ts): the question's shocks (read in the browser by
+  // src/utils/scenarioQuestion.ts) applied with the scenario engine, local projections and the debt identity.
+  app.get('/api/council/scenario/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const sq = scenarioFromQuery(req.query.shocks);
+    if (!sq) return res.status(400).json({ error: 'shocks must be a JSON list of stated shocks' });
+    const kinds = new Set(sq.shocks.map((x) => x.kind));
+    const out: ScenarioCountryData = { iso3, countryName: name };
+    const needEngine = (['us_rate', 'dollar', 'fin_stress', 'supply_chain', 'policy_rate'] as ShockKind[]).some((k) => kinds.has(k));
+    if (needEngine) {
+      const fit = await scenarioFits(iso3, req.query.stress);
+      out.engine = engineRuns(fit.models, sq);
+      if (out.engine.length) out.missingFactors = fit.missingFactors;
+      const largest: LargestMove[] = [];
+      const FACTOR_SOURCE: Record<FactorId, string> = { us_rate: 'BIS, US policy rate, monthly', dollar: 'ECB euro per dollar, monthly', fin_stress: `${fit.pick.label}, FRED`, supply_chain: GSCPI_SOURCE };
+      for (const sh of sq.needsSize) {
+        if (sh.kind === 'policy_rate' && fit.ownPolicy.length) {
+          const l = largestMove('policy_rate', monthlyChanges(monthEnd(fit.ownPolicy.map((p) => ({ date: p.period, value: p.pct }))), 'diff'), 'BIS central bank policy rates, monthly');
+          if (l) largest.push(l);
+        } else if (sh.kind in FACTOR_SOURCE) {
+          const l = largestMove(sh.kind, fit.factors[sh.kind as FactorId], FACTOR_SOURCE[sh.kind as FactorId]);
+          if (l) largest.push(l);
+        }
+      }
+      if (largest.length) out.largest = largest;
+    }
+    if (kinds.has('policy_rate')) {
+      const set = await seriesFor(iso3);
+      const cpi = set.series.find((x) => x.id === 'cpi_monthly');
+      const rate = set.series.find((x) => x.id === 'policy_rate');
+      const why = (id: string) => set.missing.find((m) => m.id === id)?.reason;
+      out.lp = !cpi ? { ok: false, reason: `monthly inflation: ${why('cpi_monthly') || 'not saved'}` } : !rate ? { ok: false, reason: `policy rate: ${why('policy_rate') || 'not saved'}` } : lpRun(localProjections(cpi.points, rate.points), 1);
+    }
+    if (kinds.has('interest_cost') || kinds.has('growth') || kinds.has('inflation')) {
+      const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+      const r = dsaFrom(file);
+      out.dsa = r.ok ? dsaRuns(r, sq, iso3) : { ok: false, reason: r.reason };
+    }
+    // What history says (WI3, src/utils/scenarioHistory.ts).
+    const history: NonNullable<ScenarioCountryData['history']> = {};
+    const epIds = episodesFor(sq.shocks);
+    if (epIds.length) {
+      if (deps.replayInputs) history.episodes = episodeReads(iso3, epIds, deps.replayInputs());
+      else history.missing = [...(history.missing || []), 'past episodes (the replay series are not set up on this server)'];
+    }
+    const yearly = sq.shocks.filter((x) => SHOCK_YEARLY[x.kind] && x.change !== null);
+    if (yearly.length) {
+      const all = deps.allHistories?.().histories || [];
+      const year = new Date().getUTCFullYear();
+      history.precedents = yearly.map((x) => shockPrecedents(iso3, year, x.kind, x.change as number, all));
+    }
+    const LEVELS: Array<{ kind: ShockKind; series: LevelContext['series']; label: string }> = [
+      { kind: 'policy_rate', series: 'policy_rate', label: 'policy rate' },
+      { kind: 'inflation', series: 'cpi_monthly', label: 'inflation rate' },
+      { kind: 'interest_cost', series: 'yield_10y', label: '10-year yield' },
+    ];
+    const levelShocks = LEVELS.filter((l) => sq.shocks.some((x) => x.kind === l.kind && x.change !== null));
+    if (levelShocks.length) {
+      const set = await seriesFor(iso3);
+      const levels: LevelContext[] = [];
+      for (const l of levelShocks) {
+        const ser = set.series.find((x) => x.id === l.series);
+        const change = sq.shocks.find((x) => x.kind === l.kind)!.change as number;
+        const c = ser ? levelContext(l.series, l.label, ser.points, change, ser.source || l.series) : null;
+        if (c) levels.push(c);
+      }
+      if (levels.length) history.levels = levels;
+    }
+    if (Object.keys(history).length) out.history = history;
+    res.json(out);
+  });
   app.get('/api/nowcast/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const today = new Date().toISOString().slice(0, 10);
     const asOf = parseAsOfDate(req.query.asOf) ?? today;
     if (asOf > today) return res.status(400).json({ error: 'BAD_DATE', message: 'The As-of date cannot be in the future.' });
-    const [qna, activity, hist, nationalCpi] = await Promise.all([quick(fetchQnaPull()), quick(fetchMonthlyActivity()), modelHistory(), quick(fetchNationalCpi())]);
+    const [qna, activity, hist, nationalCpi] = await Promise.all([quick(fetchQnaPull()), quick(fetchMonthlyActivity()), modelHistory(), nationalCpiOrSaved()]);
     const gdpPts = qnaFor(iso3, qna?.series)?.qoq ?? [];
     const act = activity?.series?.[iso3];
     const cliPts = areaSeries(iso3, hist?.cli ?? undefined);
@@ -493,7 +922,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const [qna, hist, nationalCpi, official] = await Promise.all([
       quick(fetchQnaPull()),
       modelHistory(),
-      quick(fetchNationalCpi()),
+      nationalCpiOrSaved(),
       quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
     ]);
     const imfSeries = (id: string) => {
@@ -519,10 +948,18 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     }
     const v = loadForecastValidation(path.join(DATA_DIR, 'local', 'validation', 'forecasts.json'));
     const validation = Object.fromEntries(Object.values(v.results).map((r) => [r.id, { status: r.status, verdict: r.verdict, ranAt: r.ranAt }]));
+    // R8: ranges on each path from the evaluation's recorded misses for this country (src/utils/missBands.ts).
+    const missRanges = Object.fromEntries(
+      out.filter((r): r is Extract<ForecastOutcome, { ok: true }> => r.ok).map((r) => {
+        const ev = v.results[FORECAST_EVAL_ID[r.id]];
+        return [r.id, appMissSteps(r.path, iso3, ev ? ev.horizons : null, ev?.ranAt)];
+      }),
+    );
     res.json({
       iso3,
       forecasts: out,
       validation,
+      missRanges,
       sentences: out.filter((r): r is Extract<ForecastOutcome, { ok: true }> => r.ok).map((r) => forecastSentence(r)),
       history: hist ? { pulledAt: hist.pulledAt, problems: hist.problems } : { pulledAt: null, problems: ['Long histories not downloaded yet; the first download runs in the background.'] },
     });
@@ -563,6 +1000,47 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       editions: store.editions.map((e) => ({ vintage: e.vintage, label: vintageLabel(e.vintage), file: e.file, countries: Object.keys(e.rows).length })),
       skipped: store.skipped,
     });
+  });
+  // R9: data surprises (src/utils/dataSurprises.ts): releases against expectations published before them.
+  // R10: the inflation surprise index from them (rule registered in docs/validation/pending/surprise_index.json).
+  const surprisesFor = async (iso3: string) => {
+    const [surveys, qna] = await Promise.all([quick(fetchInflationSurveys()), quick(fetchQnaPull())]);
+    const spf = surveys?.spf?.['Q.U2.HICP.POINT.P12M.Q.AVG'] ?? null;
+    const calls = loadForward(path.join(DATA_DIR, 'local', 'validation', 'forward.jsonl')).lines.filter((l): l is Extract<typeof l, { kind: 'call' }> => l.kind === 'call');
+    const qoq = qnaFor(iso3, qna?.series)?.qoq ?? [];
+    const nowcast = nowcastMatches(calls, iso3, qoq.map((p) => ({ period: p.period, value: p.value })));
+    return surpriseSeriesFor(iso3, loadSurpriseInputs(), spf, nowcast);
+  };
+  app.get('/api/surprises/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z]/g, '');
+    const series = await surprisesFor(iso3);
+    const inp = loadSurpriseInputs();
+    res.json({ iso3, series, index: surpriseIndex(series, new Date().toISOString().slice(0, 10)), pulledAt: inp?.pulledAt ?? null, problems: inp?.problems ?? [] });
+  });
+  // R10 Today card: the latest inflation surprise index for each place that has one.
+  app.get('/api/surprise-index', async (_req, res) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const places = [
+      { iso3: 'BRA', place: 'Brazil' },
+      { iso3: 'DEU', place: 'Euro area' },
+      { iso3: 'USA', place: 'United States' },
+    ];
+    const rows = await Promise.all(places.map(async (p) => ({ ...p, last: surpriseIndex(await surprisesFor(p.iso3), today).pop() ?? null })));
+    res.json({ rows, test: INDEX_TEST_ID });
+  });
+  // R11: full yield curves (US Treasury par curve, ECB euro area curve) from the daily step world:curves.
+  app.get('/api/yield-curves', (req, res) => {
+    const area = req.query.area === 'ea' ? 'ea' : 'us';
+    const file = loadCurves();
+    const r = fullCurveReading(file?.[area] ?? { area, days: [] }, file?.pulledAt);
+    res.json(r.ok ? { ...r, sentence: fullCurveSentence(r) } : r);
+  });
+  // R8: ranges around the latest saved edition's projections from past IMF misses.
+  app.get('/api/weo-vintages/:iso3/bands', (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z]/g, '');
+    const code = String(req.query.code || 'NGDP_RPCH');
+    if (!(WEO_VINTAGE_CODES as readonly string[]).includes(code)) return res.status(400).json({ error: 'UNKNOWN_CODE', message: `Indicator ${code} is not kept from WEO editions.` });
+    res.json(weoMissBands(loadWeoVintages(DATA_DIR), iso3, code));
   });
   app.get('/api/weo-vintages/:iso3', (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z]/g, '');

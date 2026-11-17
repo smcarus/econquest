@@ -27,19 +27,55 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Growth and inflation quadrant | Research | Backtest failed | v1, 2026-11-06, method 2 |
 | Cycle clock | Research | Backtest passed | v1, 2026-11-06, method 2 |
 | Timing Agent | Research | Backtest passed | v1, 2026-11-06, method 2 |
+| Behavioural Finance Agent | Research | Not validated | None |
+| Household price expectations before inflation | Research | Not validated | None |
 | Council summary (AI synthesis) | Decision input | Model-assisted, not validated | None |
 | GDP nowcast (bridge equation) | Research | Forecast evaluation passed | v1, 2026-11-07 |
 | Forecasts with fan charts (AR models) | Research | Forecast evaluation failed | debt_forecast v2, 2026-11-07 |
 | Fiscal reaction (Bohn test) | Research | Description, not a tested signal | None |
 | Gross financing need | Research | Description, not a tested signal | None |
-| Country risk scorecard | Research | Description, not a tested signal | None |
+| Country risk scorecard | Research | Not validated | None |
 | Sanctions lists | Research | Description, not a tested signal | None |
 | Geopolitical risk VaR | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
+| External sustainability | Research | Description, not a tested signal | None |
+| Central bank word count | Research | Description, not a tested signal | None |
+| Behavioural policy check | Research | Description, not a tested signal | None |
+| Fiscal rules check | Research | Description, not a tested signal | None |
+| World Bank projects | Research | Description, not a tested signal | None |
+| Regional figures | Research | Description, not a tested signal | None |
+| Budget execution (your file) | Research | Description, not a tested signal | None |
+| Budget credibility | Research | Description, not a tested signal | None |
+| Who pays for a policy | Research | Description, not a tested signal | None |
+| Debt restructuring calculator | Research | Description, not a tested signal | None |
+| Banks and the government | Research | Description, not a tested signal | None |
+| Growth accounting | Research | Description, not a tested signal | None |
+| Inflation drivers | Research | Description, not a tested signal | None |
+| Yield curve and financial conditions | Research | Not validated | None |
+| Crisis early-warning (credit gap) | Research | Not validated | None |
 | Inflation after rate changes (local projections) | Research | Description, not a tested signal | None |
 | Policy rule family | Research | Backtest too few cases | v1, 2026-11-07, method 2 |
 | Debt fan chart (bootstrap of past shocks) | Research | Forecast evaluation too few cases | debt_fan_coverage v1, 2026-11-07 |
+| Data surprises (R9) | Research | Description, not a tested signal | None |
+| Inflation surprise index (R10) | Research | Not validated | None |
+| Ranges from past forecast misses (R8) | Research | Description, not a tested signal | None |
 | Costed fiscal options | Research | Description, not a tested signal | None |
+| Scenario Agent (what-if questions) | Research | Description, not a tested signal | None |
+| Quant desk (outside research tools, Council chat only) | Research | Description, not a tested signal | None |
+| Remittances | Research | Description, not a tested signal | None |
+| Financial inclusion | Research | Description, not a tested signal | None |
+| Commodity prices and terms of trade | Research | Description, not a tested signal | None |
+| Aid received | Research | Description, not a tested signal | None |
+| Food prices and food security | Research | Description, not a tested signal | None |
+| Natural disasters | Research | Description, not a tested signal | None |
+| Disaster loss model | Research | Description, not a tested signal | None |
+| Tropical cyclones near the country | Research | Description, not a tested signal | None |
+| Parametric insurance trigger designer | Research | Description, not a tested signal | None |
+| Policy review watch | Research | Description, not a tested signal | None |
+| Peer comparison for a policy review | Research | Description, not a tested signal | None |
+| Review-to-review comparison | Research | Description, not a tested signal | None |
+| Trade-off chart | Research | Description, not a tested signal | None |
+| Policy council (one measure) | Research | Description, not a tested signal | None |
 | Global shock scenarios | Research | Description, not a tested signal | None |
 | Currency carry | Research | Signal test passed | v1, 2026-11-07 |
 | Currency value (five-year real depreciation) | Research | Signal test failed | v1, 2026-11-07 |
@@ -303,6 +339,46 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - v1: A position already 3 points off its extreme is partly mean reversion in progress; the base rate after any week does not remove that.
 - v1: Six USD crosses move together; method 2 groups cases by year, not by the common dollar factor within a year.
 
+### Behavioural Finance Agent
+
+- **Says:** Describes herding and sentiment: crowded futures positioning, how sure the prediction-market crowd is, and EU consumer confidence, sentiment and households' expected prices against their own history.
+- **Rule:** Percentiles of each series against its own saved history (window stated), the Timing Agent's reading; gives no probability and makes no forecast.
+- **Reads:** CFTC Traders in Financial Futures, Polymarket, European Commission consumer and business surveys via Eurostat
+- **Shows in:** Council chat
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Its readings are descriptions, not tested signals. The one forward claim it could make, that rising household price expectations come before higher inflation, is the pre-registered test inflation_expectations_lead; crowding has its own test (cftc_crowding).
+- **Limits:** EU members only for the surveys; breakevens are saved for the United States only, so the survey-against-market comparison reads Missing; Kalshi odds are not saved per country.
+- **Code:** `src/utils/behaviourAgent.ts`
+
+### Household price expectations before inflation
+
+- **Says:** When households' expected price trends rose over the past year, inflation is higher a year later, and when they fell it is lower, more often than half the time (EU members).
+- **Rule:** Each December: the 12-month change in the EC consumer survey balance on price trends over the next 12 months, against the change in HICP annual inflation over the following 12 months; whole calendar years resampled.
+- **Reads:** European Commission consumer survey (ei_bsco_m, BS-PT-NY) and Eurostat HICP annual rate, via Eurostat
+- **Shows in:** Behavioural Finance Agent (only once the test passes)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered on 11 November 2026 before the runner existed (docs/validation/preregistered/inflation_expectations_lead.json): at least 100 cases in 15 years, hit rate 55% or more, p at or below 0.05 with whole years resampled.
+- **Limits:** Direction only, not size; EU members only; common energy and food shocks move countries together.
+- **Code:** `src/utils/backtest.ts (expectationsDirectionCases), src/utils/backtestRun.ts`
+
+**Pre-registered tests**
+
+- Version 1 (`docs/validation/preregistered/inflation_expectations_lead.json`, registered 2026-11-11, method 2, whole years resampled, sample from 2000). In EU countries, when households' expected price trends over the next 12 months (European Commission consumer survey, balance of answers) rose over the past 12 months, headline HICP inflation is higher 12 months later than it is now, and when they fell it is lower, more often than half the time. Pass mark: at least 100 cases, p at or below 0.05, at least 15 years. SHA-256 b2b4b504765c4e2b…
+
+**Recorded verdicts**
+
+- None recorded yet. Run `npm run backtest` (or Menu > Models & validation > Run backtests).
+
+**Known limits, stated before the run**
+
+- v1: The test checks direction only, not size: it says whether households' expectations point the right way, not how far inflation moves.
+- v1: EU members only, because the survey is the European Commission's; other countries' household surveys differ in question and licence.
+- v1: Countries move together (common energy and food shocks), so resampling whole years is used; the effective number of independent cases is closer to the number of years than to country-years.
+- v1: Survey answers are not revised; HICP rates are final figures, which differ little from first releases.
+- v1: The existing cftc_crowding test already covers extreme currency positioning; this test adds the household-expectations claim the G32 agent would make.
+
 ### Council summary (AI synthesis)
 
 - **Says:** The answer to your question, written by your AI model from the agents’ documents.
@@ -377,13 +453,13 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### Country risk scorecard
 
-- **Says:** Governance, armed conflict, unrest and the economy side by side, each figure with its source and year.
+- **Says:** Governance, armed conflict, unrest, geopolitical risk, capital account openness and the economy side by side, each figure with its source and year.
 - **Rule:** Six World Bank WGI estimates against the world average; UCDP/PRIO conflicts and UCDP deaths for the latest coded year; GDELT 1.0 unrest spikes; the Caldara-Iacoviello Geopolitical Risk index; IMF and World Bank debt, growth, inflation, current account, reserves and external debt. No overall score.
-- **Reads:** World Bank WGI, UCDP/PRIO and UCDP, GDELT 1.0 event files, Caldara-Iacoviello GPR file, IMF WEO, World Bank Open Data
+- **Reads:** World Bank WGI, UCDP/PRIO and UCDP, GDELT 1.0 event files, Caldara-Iacoviello GPR file, Chinn-Ito capital account openness file, IMF WEO, World Bank Open Data
 - **Shows in:** Country Research > History & data (Country risk scorecard)
 - **Use:** Research
-- **Status:** Description, not a tested signal
-- **How it is tested:** Description, not a tested signal: published figures side by side, no forward call and no weights.
+- **Status:** Not validated
+- **How it is tested:** Pre-registered on 13 November 2026 before any run (docs/validation/pending/scorecard_default.json): a governance reading in the bottom quarter of countries that year (plain average of the six WGI estimates, used a year after) followed by the start of a sovereign default (BoC-BoE) within 3 years more often than usual; at least 30 cases over 15 years, lift 3 points, p at or below 0.05 with whole years resampled. Not validated until the runner is built and the test passes. The average is fixed for the test only; the scorecard still shows no overall score.
 - **Limits:** WGI and UCDP are yearly and lag a year or more; WGI estimates have wide margins of error; GDELT counts news reports, not events on the ground.
 - **Code:** `src/utils/countryRiskScorecard.ts`
 
@@ -422,6 +498,202 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: a ratio against a published metric, no forward call.
 - **Limits:** Upper bound; FX regime not chosen, both weightings shown; annual data.
 - **Code:** `src/utils/reserveAdequacy.ts`
+
+### External sustainability
+
+- **Says:** Whether the country can keep paying what it owes abroad: how big its foreign debt is, how much of its reserves and export earnings a year of debt payments takes, and the current account that would hold its foreign debt steady.
+- **Rule:** External debt over GDP in dollars; debt service over reserves and exports; debt-stabilising non-interest current account d × (i − g) ÷ (1 + g) on 5-year averages of the effective interest rate and growth of GDP in dollars.
+- **Reads:** World Bank International Debt Statistics (external debt, debt service, interest paid), World Bank reserves and exports, IMF WEO current account and GDP in dollars
+- **Shows in:** Country Research > History & data (External sustainability)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: ratios and an accounting identity, no forward call. The current account norm (IMF EBA) and the net international investment position read Missing until a usable source is confirmed.
+- **Limits:** IDS covers low- and middle-income countries only; yearly; averages of past interest and growth stand in for the future; no current account norm.
+- **Code:** `src/utils/externalSustainability.ts`
+
+### Central bank word count
+
+- **Says:** How hawkish or dovish a central bank statement reads, counted with a fixed, published dictionary.
+- **Rule:** Two-word phrases: a hawkish adjective (increasing, increased, faster, stronger, higher, fast, strong, high) or a dovish one (decreasing, decreased, slower, weaker, lower, slow, weak, low) directly followed by inflation, cyclical position, growth, price, wage, oil price or development, any ending. Net index = (hawkish − dovish) ÷ (hawkish + dovish) + 1. Apel and Blix Grimaldi (2012).
+- **Reads:** Central bank statements the user saves in data/local/cb-statements/<ISO3>/, or pastes
+- **Shows in:** Country Research > History & data (Central bank word count)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal. Whether the net index moves before policy rate changes would need its own pre-registered test before any badge.
+- **Limits:** The dictionary was built for Riksbank minutes translated from Swedish; English only; counts wording, not meaning (negation and context are not read); the app downloads no statements.
+- **Code:** `src/utils/cbWords.ts, src/server/feeds/cbStatements.ts`
+
+### Behavioural policy check
+
+- **Says:** Where a policy option depends on how people behave (take-up, response to a tax, trust in a target, defaults, losses, acting now for a gain later), with published studies from a fixed list.
+- **Rule:** Fixed word rules over each option saved in a policy review (title, how it works, effect, trade-offs, who bears the cost, what must be true, risks). Each flag cites studies from src/data/behaviouralEvidence.ts with full citations. Effect sizes only as entered by the user with a source.
+- **Reads:** The saved Options step of a policy review; effect sizes and sources typed by the user
+- **Shows in:** Reports > Policy reviews (Behavioural check, between Evidence and the memo)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: it points to published work and makes no forward call.
+- **Limits:** Word rules can miss a behaviour described in other words, or flag a word used in another sense; the studies come from particular countries and schemes and may not carry over; no AI writes evidence and no size is built in.
+- **Code:** `src/utils/behaviouralCheck.ts, src/data/behaviouralEvidence.ts`
+
+### Fiscal rules check
+
+- **Says:** Which fiscal rules bind the country and whether the latest figures meet the treaty limits (EU, WAEMU, CEMAC).
+- **Rule:** Treaty limits typed from the legal texts, checked against the latest year before the current year in the saved IMF history: room = limit - debt for a debt ceiling, balance - limit for a deficit floor. National rules (expenditure, revenue, budget balance, debt) and the year each started are read from the IMF Fiscal Rules Dataset workbook the user saves.
+- **Reads:** IMF WEO GGXWDG_NGDP, IMF Fiscal Monitor GGXCNL_G01_GDP_PT; TFEU Protocol 12, WAEMU Additional Act 01/2015, CEMAC convergence criteria; IMF Fiscal Rules Dataset 1985-2024 from data/local/imf-fiscal-rules/
+- **Shows in:** Country Research > History & data (Fiscal rules)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: a comparison of published figures with published limits, no forward call.
+- **Limits:** The treaty tests use the bodies' own figures (Eurostat, WAEMU, CEMAC), which can differ from the IMF ones; the EU debt rule also allows debt above 60% that falls at a satisfactory pace, which is not judged; the CEMAC reference balance has no series; national numeric limits are not checked.
+- **Code:** `src/utils/fiscalRules.ts`
+
+### World Bank projects
+
+- **Says:** Which World Bank projects are under way in the country, how much was committed, how much of each project's planned time has gone and, for IDA credits and grants, how much has been paid out.
+- **Rule:** Time gone = (today - board approval) ÷ (planned closing - board approval), capped at 0-100%. Paid out = IDA disbursed ÷ (original principal - cancelled), summed over the project's credits and grants. Paying out slowly = time gone at least 25% and paid out more than 25 points below time gone; development policy (budget support) loans never flagged.
+- **Reads:** World Bank Projects API (search.worldbank.org/api/v2/projects, active projects); Finances One IDA Statement of Credits, Grants and Guarantees, latest snapshot (DS00001)
+- **Shows in:** Country Research > History & data (World Bank projects)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published project amounts and dates, no forward call.
+- **Limits:** IBRD loans have no paid-out figure yet; projects often pay out slowly at first (an S-shaped curve), so the 25-point rule is a prompt to look, not a finding; other donors are not included (IATI parked); the list is downloaded weekly.
+- **Code:** `src/utils/wbProjects.ts, src/server/feeds/wbProjects.ts, src/components/WbProjectsPanel.tsx`
+
+### Regional figures
+
+- **Says:** How far apart the regions of a country are: output per person by region against the national figure, the gap between the richest and poorest regions and whether it has narrowed; for EU and EFTA countries GDP per person and unemployment by NUTS 2 region; and, from your file, the Human Development Index by region.
+- **Rule:** Gap = region ÷ national figure - 1. DOSE national figure = regions weighted by population where every region has one, else the simple mean (labelled). Spread = highest ÷ lowest region and the coefficient of variation (standard deviation ÷ mean, population-weighted where possible), compared with ten years before. DOSE year = latest year with at least two thirds of the regions. Eurostat national figure = the country row of the same table; unemployment gap in points.
+- **Reads:** DOSE (Zenodo, CC BY 4.0, constant 2015 US$ per person where present); Eurostat nama_10r_2gdp (PPS per person) and lfst_r_lfu3rt (unemployment 15-74); Global Data Lab subnational HDI from data/local/gdl/
+- **Shows in:** Country Research > History & data (Regional figures)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published regional figures, no forward call.
+- **Limits:** DOSE gathers figures from national statistics offices that measure regions in different ways and ends a few years back; GDP by region is counted where people work, so commuter regions look richer; regions with no figure are left out, not filled in; the Global Data Lab file is non-commercial and is never shipped.
+- **Code:** `src/utils/regional.ts, src/server/feeds/regional.ts, src/components/RegionalPanel.tsx`
+
+### Budget execution (your file)
+
+- **Says:** For a budget file you load: how much of each line's approved budget has been spent against the share of the fiscal year gone, which lines are behind or ahead, and where spending at the same pace would end the year.
+- **Rule:** Months gone = months from the first month of the fiscal year (set by you) to the latest month in the file. Spent % = sum of monthly spending ÷ approved × 100; gap = spent % - months gone ÷ 12 × 100; behind below -10 points, ahead above +10. Same pace = spent ÷ months gone × 12, only when every month gone has a figure.
+- **Reads:** Your own CSV file (line, approved, month, spent), kept in data/local/budget-execution/
+- **Shows in:** Country Research > History & data (Budget execution)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: arithmetic on your own figures, no forward call.
+- **Limits:** Spending is uneven through the year, so straight-line pace and the 10-point band are rough; the figures are only as good as your file; supplementary budgets need a new file with the revised amounts.
+- **Code:** `src/engine/budgetExecution.ts, src/server/routes/budgetExecution.ts, src/components/BudgetExecutionPanel.tsx`
+
+### Budget credibility
+
+- **Says:** How much of the budget first approved for each year the government actually spent, the PEFA PI-1 band of each year, and a grade on the PEFA rule.
+- **Rule:** Outturn = primary spending ÷ original approved budget × 100, as published. Band per year: A within 5% of 100, B within 10%, C within 15%, else D. Grade (PEFA PI-1 rule): the best band reached in at least two of the latest three years, only when all three years are published. Average distance from the budget and the count of years below it over the last 15 published years.
+- **Reads:** World Bank WDI GF.XPD.BUDG.ZS (UN goal 16.6.1, from PEFA assessments)
+- **Shows in:** Country Research > History & data (Budget credibility)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published outturn figures put in published PEFA bands, no forward call.
+- **Limits:** Only years covered by a PEFA assessment, so many countries have three years or none; the grade is the app's, not the official PEFA score; interest and outside-financed project spending are left out; the figure says nothing about what the money was spent on (PEFA PI-2).
+- **Code:** `src/utils/budgetCredibility.ts, src/components/BudgetCredibilityPanel.tsx`
+
+### Who pays for a policy
+
+- **Says:** How a tax or spending change is shared across the five income groups, against the share of income each group holds.
+- **Rule:** Amount for each fifth = size × its share of the change; share ratio = share of the change ÷ share of income (World Bank household surveys, one survey year). Higher ratio for the poorest fifth than the richest on a payment = regressive; lower = progressive; within 0.1 = about proportional; the reading flips for a gain.
+- **Reads:** Incidence shares and their source typed by the user; World Bank SI.DST.FRST.20 to SI.DST.05TH.20, Gini, tax revenue and split, poverty rates
+- **Shows in:** Country Research > History & data (Who pays for a policy)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: arithmetic on shares you type, no forward call.
+- **Limits:** The result is only as good as the incidence study typed in; survey income shares can be several years old and some measure consumption; first-round effects only, no behaviour change.
+- **Code:** `src/utils/policyIncidence.ts`
+
+### Debt restructuring calculator
+
+- **Says:** What an old bond and the new bond offered for it are worth today at the discount rates you pick, and how much investors lose.
+- **Rule:** Yearly payments: coupon on the face outstanding, principal in equal parts after the grace years. NPV haircut = 1 − PV(new) ÷ PV(old) at the same rate (Sturzenegger and Zettelmeyer 2008); market haircut = 1 − PV(new) ÷ old face (Cruces and Trebesch 2013).
+- **Reads:** Bond terms and one to three discount rates, all typed by the user; no data
+- **Shows in:** Country Research > History & data (Debt restructuring calculator)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: arithmetic on the terms you type, no forward call.
+- **Limits:** Yearly payments only; equal principal parts after grace; no past-due interest, fees, value recovery instruments or call options; the result depends wholly on the discount rate chosen.
+- **Code:** `src/utils/restructuringCalc.ts, src/utils/restructuring.ts`
+
+### Banks and the government
+
+- **Says:** How tied the banks and the government are: how big banks are, how much they lend to the government, how much of the government's debt they hold, and how much loss they can take.
+- **Rule:** Latest published year of each figure. Claims on government as a share of bank assets = claims ÷ assets, both % of GDP in the same year (approximate). Banks' holdings as % of GDP = domestic banks' share of government debt × government debt to GDP in the same year.
+- **Reads:** World Bank GFDD.DI.02, FS.AST.CGOV.GD.ZS, FB.BNK.CAPA.ZS, FB.AST.NPER.ZS; IMF Sovereign Debt Investor Base (your file); IMF WEO government debt
+- **Shows in:** Country Research > History & data (Banks and the government)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published figures and two ratios, no score and no forward call.
+- **Limits:** Yearly and often a year or two behind; the investor base covers emerging and developing economies only; no free cross-country figure for state-owned banks or contingent liabilities, so both read Missing.
+- **Code:** `src/utils/bankSovereign.ts`
+
+### Growth accounting
+
+- **Says:** Where growth came from in each ten-year period: more capital, more hours worked, a better-educated workforce, and the rest (productivity).
+- **Rule:** Average annual log changes: GDP growth = α × capital + (1 − α) × (hours + human capital) + TFP, with α = 1 − the labour share averaged over the period; TFP is the residual.
+- **Reads:** Penn World Table (rgdpna, rnna, emp, avh, hc, labsh), read once per edition
+- **Shows in:** Country Research > History & data (Growth accounting)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: an accounting split of past growth, no forward call.
+- **Limits:** TFP holds measurement error as well as productivity; the labour share and capital stock are PWT estimates; yearly, ending at the edition's last year.
+- **Code:** `src/utils/growthAccounting.ts, src/server/feeds/pwt.ts`
+
+### Inflation drivers
+
+- **Says:** How much of inflation is food and energy, which swing with harvests and world oil prices, and how much is the slower-moving rest (core inflation), which central banks watch for the underlying trend.
+- **Rule:** Annual rates of headline, core (excluding food and energy), food and energy prices from official sub-indices; core trend over 3 months (±0.5 points); for EU members, contribution = Eurostat item weight ÷ 1000 × annual rate, an approximation with its residual shown.
+- **Reads:** Eurostat HICP and item weights (EU members), BLS CPI-U via FRED (United States), OECD consumer prices via DBnomics (other OECD members)
+- **Shows in:** Country Research > History & data (Inflation drivers)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published price changes split into parts, no forward call.
+- **Limits:** Core definitions differ by source (Eurostat also leaves out alcohol and tobacco); contributions only for EU members and approximate; countries outside the EU and the OECD read Missing.
+- **Code:** `src/utils/inflationDrivers.ts, src/server/feeds/inflationDrivers.ts`
+
+### Yield curve and financial conditions
+
+- **Says:** Whether long-term government bond yields sit below the central bank's policy rate (an inverted curve), which has often come before recessions, and how tight financial conditions are against the country's own past.
+- **Rule:** Term spread = 10-year yield minus policy rate, monthly and as calendar-year averages; inverted spells; financial conditions index = equal-weight z-scores of the policy rate, the 10-year yield, the spread over US Treasuries and the real effective exchange rate. The test: a year with the average spread below 0 against a fall in real GDP the next year, whole calendar years resampled.
+- **Reads:** FRED / OECD 10-year government bond yields (IRLTLT01), BIS policy rates and real effective exchange rates, IMF WEO real GDP growth (outturns only, for the test)
+- **Shows in:** Country Research > History & data (Yield curve and financial conditions)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered on 11 November 2026 before the tool existed (docs/validation/preregistered/yield_curve_recession.json): at least 30 cases over 15 years, lift 10 points, p at or below 0.05 with whole years resampled. Until it passes no recession figure is shown; after, only its historical hit rate. The conditions index is description only (fixed weights, no forward call).
+- **Limits:** The policy rate stands in for a 3-month bill rate; annual GDP misses short recessions; growth is today's WEO vintage; FRED covers OECD members and India only.
+- **Code:** `src/utils/yieldCurve.ts, src/utils/backtest.ts (yieldCurveCases), src/utils/backtestRun.ts`
+
+**Pre-registered tests**
+
+- Version 1 (`docs/validation/preregistered/yield_curve_recession.json`, registered 2026-11-11, method 2, whole years resampled, sample from 1990). A calendar year in which a country's average 10-year government bond yield is below its average central bank policy rate (an inverted curve; Estrella and Mishkin 1998) is followed by a fall in real GDP the next calendar year more often than years in general. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05, at least 15 years. SHA-256 de6ccb7b4827e485…
+
+**Recorded verdicts**
+
+- None recorded yet. Run `npm run backtest` (or Menu > Models & validation > Run backtests).
+
+**Known limits, stated before the run**
+
+- v1: Annual data: an inversion late in year t and a recession early in t+1 count, but one that leads by more than two years does not. A quarterly test would need quarterly GDP for every country and is not planned.
+- v1: A fall in annual real GDP is a stricter test than a dated recession (NBER or CEPR style); short recessions inside a growing year are missed.
+- v1: Growth figures are today's WEO vintage, not what was known at the time; the yield and the policy rate are not revised.
+- v1: The policy rate stands in for a 3-month bill rate, which the app does not hold for most countries. Where policy rates were capped at zero, the spread reads steeper than market rates would show.
+- v1: Only a pass lets the app show a recession probability; that probability is then the historical hit rate of this rule, not a fitted probit.
+
+### Crisis early-warning (credit gap)
+
+- **Says:** Where the country stands on the measures that have often come before banking crises: lending running far ahead of the economy, the share of income going on debt payments, and house prices.
+- **Rule:** BIS credit-to-GDP gap against the Basel III lines of 2 and 10 points, past spells above 10, private credit to GDP over 3 years, private debt service ratio and real house price growth against their own average.
+- **Reads:** BIS credit-to-GDP gaps, debt service ratios and residential property prices
+- **Shows in:** Country Research > History & data (Crisis early-warning)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered on 11 November 2026 before the tool existed (docs/validation/pending/crisis_warning.json): a gap above 10 points followed by the start of a systemic banking crisis within 12 quarters more often than usual; at least 30 cases over 15 years, lift 5 points, p at or below 0.05 with whole years resampled. The runner waits for the licence of the Laeven-Valencia crisis dates.
+- **Limits:** BIS reporting countries only; today's vintage of the gap, not real-time; no probability is given; debt service and house prices have no set threshold.
+- **Code:** `src/utils/crisisWarning.ts`
 
 ### Inflation after rate changes (local projections)
 
@@ -480,6 +752,42 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 - debt_fan_coverage, version 1, 2026-11-07T00:24Z: **Too few cases** (forecast evaluation). Too few cases at 4 and 5 years ahead (needs 100 cases over 8 target years; 8 October editions saved). Outturns inside the 10-90 band (80% if calibrated): 1y 66%, 2y 64%, 3y 60%, 4y 55%, 5y 48%; misses mostly above the band. 179 series, 2009 to 2018.
 
+### Data surprises (R9)
+
+- **Says:** How far each release came in from what forecasters or a market expected before it, and whether that was large for that series.
+- **Rule:** Surprise = outturn minus an expectation published before the release: BCB Focus median (last survey on or before the 7th of the next month) for Brazil IPCA; ECB SPF one-year-ahead mean against the euro area HICP at its target month; the mean implied by the Kalshi CPI ladder in the last snapshot saved before the BLS figure first appeared; the app GDP nowcast on the forward record. Scaled by the standard deviation of the earlier surprises in the same series once there are 8.
+- **Reads:** BCB Focus and SGS 433; ECB SPF and Eurostat HICP; Kalshi KXCPI and BLS CPI-U; the forward record
+- **Shows in:** Country Research > History & data (Data surprises)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: it reports past surprises and makes no forward claim. The surprise index built from it (R10) gets its own pre-registered test before any backtest.
+- **Limits:** Kalshi snapshots start with the first daily run, so US surprises build up only from then; the Focus cut-off day is a fixed rule, not each release date.
+- **Code:** `src/utils/dataSurprises.ts`
+
+### Inflation surprise index (R10)
+
+- **Says:** Whether inflation has lately come in above or below what forecasters and markets expected, as one number per place.
+- **Rule:** Weighted average of the scaled inflation surprises (R9: Focus, ECB SPF, Kalshi) released up to each month end, each weighted by 0.5 to the power of its age over a 90-day half-life, none older than 365 days, at least 3 needed. Fixed weights, nothing fitted.
+- **Reads:** Data surprises (R9)
+- **Shows in:** Country Research > History & data (Data surprises); Today (Inflation surprise index)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered on 17 November 2026 before any run (docs/validation/pending/surprise_index.json): an index above +0.5 at a month end is followed by a policy rate rise within 3 months more often than at month ends in general for the same central banks; at least 30 cases, a 10-point lift, p below 0.05 from whole years resampled, 5 years. Runs only once 60 month ends qualify.
+- **Limits:** Three places to start with; Kalshi enters late; the SPF surprise is about a forecast made a year earlier.
+- **Code:** `src/utils/dataSurprises.ts`
+
+### Ranges from past forecast misses (R8)
+
+- **Says:** How far past IMF projections and the app's own forecasts missed for this country, put around today's forecast as a 70% and a 90% range.
+- **Rule:** IMF: each saved past WEO edition's projection for the same year, one or two years ahead, against the figure the newest saved edition gives as data; grouped by years ahead and edition season (April-type, October-type). App: the out-of-sample misses the pre-registered forecast evaluation recorded for the country at each tested step. Ranges are the 15th-85th and 5th-95th percentiles of the misses added to the forecast. Fewer than 8 misses reads Missing.
+- **Reads:** Past IMF WEO editions in data/local/weo-vintages/; the forecast evaluation result (data/local/validation/forecasts.json)
+- **Shows in:** Country Research > History & data (IMF forecasts by edition; Nowcast and forecasts)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: it reports how past forecasts missed and makes no claim about coverage; percentiles of a few dozen misses are rough.
+- **Limits:** Past misses only; a new kind of shock can miss by more. Later revisions to the actual figures change the misses.
+- **Code:** `src/utils/missBands.ts`
+
 ### Costed fiscal options
 
 - **Says:** What a stated tightening or loosening of the primary balance would do to debt and output on the baseline.
@@ -491,6 +799,198 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: a stated what-if on stated assumptions, not a forecast or a recommendation.
 - **Limits:** Multiplier range is a guide, not estimated for the country; no confidence or interest-rate feedback.
 - **Code:** `src/utils/costedOptions.ts`
+
+### Scenario Agent (what-if questions)
+
+- **Says:** For a what-if question, today's figures beside what they would be after the stated shock: the currency and policy rate, inflation after a rate change, the debt path, debt from dollar bonds and the first-round trade effect of price changes; and what history shows: past episodes of the same shock, cases since 1980 where the figure moved as far, and where the level would sit in the country's own record.
+- **Rule:** Scenario engine co-movement (US rate, dollar, stress, supply chains); local projections of inflation on the policy rate, scaled; the debt identity on the IMF projected inputs with the shock; dollar bonds over GDP x currency move; net trade in the group x price change. History: episode moves from the saved monthly series (fixed list per shock: src/utils/scenarioHistory.ts SHOCK_EPISODES); every country-year from 1980 with a one-year move at least the stated size, medians of the next three years, closest starts on debt, inflation, reserves and current account. Research: findings from a fixed list of checked studies (src/data/shockResearch.ts) for the country's IMF group. Sizes only from the question.
+- **Reads:** BIS policy rates, ECB rates, FRED stress index, NY Fed GSCPI, monthly CPI, IMF WEO and Fiscal Monitor, BIS international debt securities, World Bank trade shares, World Bank Pink Sheet
+- **Shows in:** Council chat (Scenario Agent, on what-if questions)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: a stated what-if on stated assumptions, not a forecast or a recommendation.
+- **Limits:** Co-movement, not cause; linear in the shock; first round only for trade (volumes held); dollar bonds only, a lower bound for currency debt; a shock larger than any month in the sample is flagged as extrapolation.
+- **Code:** `src/utils/scenarioAgent.ts, src/utils/scenarioQuestion.ts`
+
+### Quant desk (outside research tools, Council chat only)
+
+- **Says:** Figures from a research-tools server you run yourself, for a Council chat question that asks for them: a volatility or price forecast, return statistics (drawdown, Sharpe), a backtest, a nowcast or an option chain, each with the link to the result, its data-through date and the server's label ("Hypothetical, past performance; not a recommendation").
+- **Rule:** Not the app's own model: the server runs it. The app picks the tool calls by stated rules on the question's words, from the tools the server lists for the token only, at most RESEARCH_TOOLS_MAX_CALLS (4) per question; horizon and period only from the question. FX pairs are named as units per US dollar (BRL means USDBRL), as the contract quotes them. Each number is taken from the reply, rounded to 4 decimals at most; a yearly volatility fraction is also shown as a percentage. A result without a labelled cite block is not used. Off until a server address and token are set.
+- **Reads:** Your research-tools server over MCP (docs/contracts/research-tools.json): forecast_series, describe_series, run_backtest, get_run, list_runs, correlations, list_nowcasts, get_nowcast, option_chain
+- **Shows in:** Council chat (Quant desk), only when research tools are set up
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: results from an outside server, labelled hypothetical. Never used by scheduled council runs, the daily download, briefs, the pre-registered backtests, or any score, badge or signal.
+- **Limits:** The server's models and data are its own and are not checked by the app; the app checks only that each figure comes from the reply with its cite block. A refusal or no answer within the time limit reads "Research tools unavailable"; a server that lets only local models read results leaves the desk out when the chat's model may be in the cloud.
+- **Code:** `src/utils/quantDesk.ts, src/utils/quantDeskInfo.ts, src/server/researchTools.ts`
+
+### Remittances
+
+- **Says:** How much money people working abroad send home, beside exports, foreign direct investment and aid in the same year, how it moved in years exports fell, and what sending it costs.
+- **Rule:** Latest World Bank year, same-year comparison in current US dollars; years exports fell listed with the change in remittances; cost of sending US$200 against the UN goal of below 3% (SDG 10.c).
+- **Reads:** World Bank WDI: BX.TRF.PWKR.CD.DT, BX.TRF.PWKR.DT.GD.ZS, BM.TRF.PWKR.CD.DT, NE.EXP.GNFS.CD, BX.KLT.DINV.CD.WD, DT.ODA.ODAT.CD, SI.RMT.COST.IB.ZS
+- **Shows in:** Country Research > History & data (Remittances)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published figures side by side, not a forecast.
+- **Limits:** Money sent outside banks is often not counted; yearly figures only; what moved together in years exports fell is not what caused it.
+- **Code:** `src/utils/remittances.ts, src/components/RemittancesPanel.tsx`
+
+### Financial inclusion
+
+- **Says:** Who has a bank or mobile money account, the gaps by sex and household income, bank branches and cash machines, and credit to households and firms.
+- **Rule:** Latest Global Findex survey year; gaps in points within that survey; change since the previous survey; latest published year for branches, cash machines and private credit.
+- **Reads:** World Bank: FX.OWN.TOTL.ZS, FX.OWN.TOTL.FE.ZS, FX.OWN.TOTL.MA.ZS, FX.OWN.TOTL.40.ZS, FX.OWN.TOTL.60.ZS, FB.CBK.BRCH.P5, FB.ATM.TOTL.P5, FS.AST.PRVT.GD.ZS
+- **Shows in:** Country Research > History & data (Financial inclusion)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published survey and access figures, not a forecast.
+- **Limits:** Findex is a survey about every three years; an account is not proof it is used; credit counts domestic lenders only.
+- **Code:** `src/utils/financialInclusion.ts, src/components/FinancialInclusionPanel.tsx`
+
+### Commodity prices and terms of trade
+
+- **Says:** How the latest world prices of oil, metals and food bear on a country, given its shares of fuel, ores and metals and food in goods exports and imports; and its terms of trade.
+- **Rule:** Share of goods exports x goods exports / GDP x 12-month Pink Sheet price move, minus the same for imports, trade figures from one year; each group a simple average of its Pink Sheet prices; commodity share against the UNCTAD 60% line; World Bank terms of trade index with 1- and 5-year change.
+- **Reads:** World Bank Pink Sheet monthly prices; World Bank: TX.VAL.FUEL.ZS.UN, TX.VAL.MMTL.ZS.UN, TX.VAL.FOOD.ZS.UN, TM.VAL.FUEL.ZS.UN, TM.VAL.MMTL.ZS.UN, TM.VAL.FOOD.ZS.UN, TX.VAL.MRCH.CD.WT, TM.VAL.MRCH.CD.WT, TT.PRI.MRCH.XD.WD; IMF WEO NGDPD
+- **Shows in:** Country Research > History & data (Commodity prices and terms of trade)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: arithmetic on published shares and prices, not a forecast.
+- **Limits:** Quantities held fixed; each group uses a few world prices, not the country's own basket; farm raw materials and gold left out; trade shares are a year or more old.
+- **Code:** `src/utils/commodityTerms.ts, src/components/CommodityTermsPanel.tsx`
+
+### Aid received
+
+- **Says:** How much net development aid a country receives, against GNI, government spending, imports and investment, per person, from six large donors, and over the last ten years.
+- **Rule:** Latest year of net aid in US dollars, ratios for that same year; change on the year; distance below the highest of the last ten years; six donors and their share of all aid in the latest donor year.
+- **Reads:** World Bank (from OECD DAC): DT.ODA.ODAT.CD, DT.ODA.ODAT.GN.ZS, DT.ODA.ODAT.PC.ZS, DT.ODA.ODAT.XP.ZS, DT.ODA.ODAT.MP.ZS, DT.ODA.ODAT.GI.ZS, DC.DAC.USAL.CD, DC.DAC.DEUL.CD, DC.DAC.GBRL.CD, DC.DAC.FRAL.CD, DC.DAC.JPNL.CD, DC.DAC.CECL.CD
+- **Shows in:** Country Research > History & data (Aid received)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published aid figures, not a forecast.
+- **Limits:** Net figures can be negative; published with a lag of a year or more, so recent cuts by donors may not show yet; only six donors listed one by one.
+- **Code:** `src/utils/aidReceived.ts, src/components/AidPanel.tsx`
+
+### Food prices and food security
+
+- **Says:** How fast food prices rise against all prices, how many people are undernourished or food insecure, net food imports as % of GDP, and world prices of staple foods.
+- **Rule:** FAOSTAT food and general consumer price indices, each month over the same month a year earlier, values flagged estimated or imputed left out; latest World Bank year for food security; food share of goods imports times goods imports minus the same for exports, over GDP, one year; Pink Sheet 1- and 12-month moves for rice, wheat, maize, soybeans, palm oil and sugar.
+- **Reads:** FAOSTAT Consumer Price Indices (your file in data/local/fao-cpi/); World Bank: SN.ITK.DEFC.ZS, SN.ITK.MSFI.ZS, SN.ITK.SVFI.ZS, TX.VAL.FOOD.ZS.UN, TM.VAL.FOOD.ZS.UN, TX.VAL.MRCH.CD.WT, TM.VAL.MRCH.CD.WT; IMF WEO NGDPD; World Bank Pink Sheet
+- **Shows in:** Country Research > History & data (Food prices and food security)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published indices and shares, not a forecast.
+- **Limits:** FAOSTAT terms for this table not confirmed, so nothing shipped; small island states without an ISO numeric match read Missing; food security figures are three-year averages; world prices are in US dollars, local prices also move with the exchange rate.
+- **Code:** `src/utils/foodPrices.ts, src/utils/faoCpiStore.ts, src/components/FoodPricesPanel.tsx`
+
+### Natural disasters
+
+- **Says:** How often natural disasters have hit the country since 2000, deaths and people affected by type, damage as % of GDP in the last ten years, and the largest events.
+- **Rule:** EM-DAT public table, Disaster Group Natural, from 2000 to the latest year in the file; counts by type; deaths, total affected and damage summed over the events that report them; damage in US dollars of the year over IMF GDP in US dollars that year; yearly average of people affected over the latest World Bank population.
+- **Reads:** EM-DAT public table (your file in data/local/emdat/); IMF WEO NGDPD; World Bank SP.POP.TOTL
+- **Shows in:** Country Research > History & data (Natural disasters)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: event counts and sums from the file, not a forecast.
+- **Limits:** EM-DAT terms forbid passing the data on, so nothing shipped or fetched; free accounts are for universities, non-profit research, public bodies and media; only events meeting EM-DAT's entry criteria are listed; many events have no damage figure, so damage is understated; years before 2000 left out.
+- **Code:** `src/utils/disasters.ts, src/utils/disasterStore.ts, src/components/DisastersPanel.tsx`
+
+### Disaster loss model
+
+- **Says:** Every year of disaster damage since 2000 and a frequency-severity model: how many damaging events a year, how large each one is, and the simulated yearly loss passed 1 year in 10, 50 and 100, by type of disaster.
+- **Rule:** EM-DAT events with a damage figure at todays prices; frequency Poisson, or negative binomial by the method of moments when the yearly variance is above 1.5 times the mean; severity lognormal by maximum likelihood on the logs; 20,000 simulated years with a fixed seed; % of GDP over the latest IMF GDP in US dollars.
+- **Reads:** EM-DAT public table (your file in data/local/emdat/); IMF WEO NGDPD
+- **Shows in:** Country Research > History & data (Natural disasters, Loss model)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: a fit to past events, checked against the record 1 in 10 event, not a forecast or a price.
+- **Limits:** Many EM-DAT events have no damage figure, so losses are understated; reporting has improved over time; a lognormal can understate the largest events; 1 year in 100 is far beyond a record of about 25 years; no trend in climate or exposure is modelled.
+- **Code:** `src/utils/lossModel.ts, src/components/DisastersPanel.tsx`
+
+### Tropical cyclones near the country
+
+- **Says:** How many tropical storms, hurricanes and major hurricanes passed within 50, 100 or 200 km of the country since 1980, each season, the share of seasons with each, and the strongest storms.
+- **Rule:** IBTrACS v04r01 main tracks from 1980, 3-hourly positions filled in every 25 km; a storm counts when its centre comes within the distance of the Natural Earth 1:50m country outline with 34 knots or more there; strength is the highest US 1-minute wind within the distance (WMO agency wind where it is missing), Saffir-Simpson categories.
+- **Reads:** NOAA IBTrACS v04r01 (downloaded on request, or your file in data/local/ibtracs/); Natural Earth outlines (world-atlas)
+- **Shows in:** Country Research > History & data (Tropical cyclones)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: counts from the tracks, not a forecast.
+- **Limits:** The distance of the centre is not the reach of the winds; wind is not damage; WMO agency winds (often 10-minute) read lower than 1-minute winds; about 45 seasons is short for the rarest storms; no change in climate is modelled.
+- **Code:** `src/utils/stormTracks.ts, src/server/feeds/ibtracs.ts, src/server/countryOutlines.ts, src/components/StormTracksPanel.tsx`
+
+### Parametric insurance trigger designer
+
+- **Says:** What a parametric cover on season rainfall, temperature or a world food price would have paid in each past season, how often it pays, the average yearly payout (burn cost), a fair price with a loading you pick, how rare the trigger and exit are, from the record and from an extreme value fit, and basis risk against a second measure of the same weather.
+- **Rule:** Season index from complete monthly records (rainfall summed, temperature and prices averaged; a season across the new year counts in the year it ends); payout rises in a straight line from 0 at the trigger to the full cover at the exit; burn cost = mean yearly payout as % of the cover, with its sample standard deviation, the share of years paying, the largest year, and the same figures since 1991. Default season: the wettest 4 or hottest 3 calendar months; default trigger and exit passed 1 year in 5 and 1 in 20 (empirical quantiles). Fair price (I6) on the whole record or since 1991: burn cost x (1 + loading %) or burn cost + k x SD of the yearly payout, as the user picks (defaults 30% and k = 0.5), capped at 100% of the cover; 90% range applies the same loading to burn cost +/- 1.645 x SD / sqrt(seasons). Return periods (I3): record rank (n + 1) / r; empirical quantiles inside the record. Extreme values (I4): GEV fitted by L-moments (Hosking 1990), lower tail via negated values for low-index covers; levels for 1 in 2 to 100 years with a 90% bootstrap range (400 resamples, fixed seed); trigger and exit return periods; burn cost from the fitted curve; check of seasons beyond the fitted 1-in-10 level; needs 20 seasons. Basis risk (I7): against the series for the other location (capital vs country), same season; bad years = the worst 1 in 5 seasons of that series; hits, missed bad years, payouts in other years, Spearman rank correlation, average payout gap against the design moved to the same place in the spread of the second series; needs 10 shared seasons.
+- **Reads:** World Bank CCKP country rainfall and temperature (CRU TS); NASA POWER at the capital; World Bank Pink Sheet rice, wheat, maize and soybeans
+- **Shows in:** Country Research > History & data (Parametric insurance: trigger designer)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: a replay of a stated design over past seasons, not a forecast or a price.
+- **Limits:** The fair price is a teaching figure from the record alone, not a market quote (reinsurance, taxes, brokerage and insurer models are left out); burn cost is the expected loss before loading; past seasons stand for the future, so a climate or price trend biases it; the index is not the insured loss (basis risk); a capital grid cell is not the farm; the World Bank country series is published once a year; fitted levels beyond the record length are extrapolation and assume no trend; basis risk uses a second weather series, not real losses, so it is a lower bound.
+- **Code:** `src/utils/parametricTrigger.ts, src/utils/extremeValues.ts, src/utils/basisRisk.ts, src/components/ParametricTriggerPanel.tsx`
+
+### Policy review watch
+
+- **Says:** Which figures a policy review memo said to watch have crossed their trigger, using the latest saved figures for the country.
+- **Rule:** Reads each trigger in a fixed set of wordings (above X, below X, target X, rises, falls, also in Spanish, French and Portuguese); above and below compare the latest figure with X; target counts as met when the figure reaches X in the goal's direction; rises and falls compare with the figure the review started from. Other wording is not checked.
+- **Reads:** Your policy reviews (data/local/reviews.json); the latest saved pull for each review country
+- **Shows in:** Today (Policy review watch)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: a comparison of saved figures with the triggers you wrote.
+- **Limits:** Only the standard diagnosis indicators can be checked; annual figures change once a year and may be revised; a crossed trigger says look again, not that the recommendation failed or worked.
+- **Code:** `src/utils/reviewWatch.ts, src/components/ReviewWatchPanel.tsx`
+
+### Peer comparison for a policy review
+
+- **Says:** The review country's diagnosis figures beside the same figures for up to six peer countries, as each stood on the review's As of day.
+- **Rule:** Each peer's diagnosis is built from its saved pull on or before the As of day, the same way as the review's own; the peer median uses peers with the figure (two or more); rank counts how many countries with the figure have a higher value, plus one.
+- **Reads:** Your policy review; saved pulls of the peer countries you pick
+- **Shows in:** Reports > Policy reviews > Peers (after Diagnose)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: saved figures side by side.
+- **Limits:** Only countries the app has saved figures for on or before the As of day can be compared; figures may be from different periods across countries (each cell shows its period on hover); being above or below peers is not good or bad by itself.
+- **Code:** `src/utils/reviewPeers.ts, src/components/ReviewPeers.tsx`
+
+### Review-to-review comparison
+
+- **Says:** What changed between a policy review and the review started from it with Review again: frame, recommended option, each diagnosis figure, and whether the goal indicator moved the way the goal wants.
+- **Rule:** Both saved reviews read side by side; change = later figure minus earlier figure, on the same standard indicator; the goal as the later review states it, judged on the same figure in both diagnoses, the same way as Track outcomes.
+- **Reads:** Your two saved policy reviews (data/local/reviews.json)
+- **Shows in:** Reports > Policy reviews (a review started with Review again)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: two saved reviews side by side.
+- **Limits:** What moved is not what the earlier recommendation caused; whether it was followed is not known; annual figures may have been revised between the two pulls.
+- **Code:** `src/utils/reviewCompare.ts, src/components/ReviewCompare.tsx`
+
+### Trade-off chart
+
+- **Says:** The costed options and the what-if results you kept, side by side on two axes you pick (for example debt at the horizon against output lost).
+- **Rule:** Each item drawn from its low-multiplier end to its high-multiplier end; figures as computed by the costed options and the what-if calculator, nothing re-estimated.
+- **Reads:** Costed fiscal options; what-if results kept from Council chat
+- **Shows in:** Country Research > History & data (Debt sustainability, trade-off chart)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: the app's own calculations on stated assumptions, not a forecast or a recommendation.
+- **Limits:** Only as good as the multiplier ranges behind each item; items ending in different years are flagged; kept what-ifs live in page memory only.
+- **Code:** `src/utils/tradeOff.ts, src/components/TradeOffChart.tsx`
+
+### Policy council (one measure)
+
+- **Says:** For one measure in a policy review: present values of the costs and benefits you enter, at official discount rates you tick or your own, with the year it pays back and how far figures would have to move to flip the answer; who gains and who loses, with sizes only as entered with a source and the by-fifth reading of Who pays for a policy; a chain of what follows, each link resting on a Diagnose figure, a named source or marked as an assumption; and cases scaled from the cost-benefit table with the odds you give. The Options step hands these entries to the AI-written council, which weighs the measure as option 1 against alternatives, using only numbers from the diagnosis and the entries. For a market (PK7): the app's market readings at the As of day, each with date and source or Missing, and cases as a change in value for a holder with the odds you give.
+- **Rule:** Discounted sums: the first year is not discounted, each later year divided by one plus that year's rate (schedules as published, e.g. the UK Green Book). The flat rate where the net is zero is found by bisection between -50% and 100%. Official rates from src/data/discountRates.ts, each with document, passage and the day checked.
+- **Reads:** Costs and benefits you enter by year, each with its source; official discount rates (HM Treasury Green Book, US OMB Circular A-4, European Commission, Asian Development Bank)
+- **Shows in:** Reports > Policy reviews (Policy council, beside the frame)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: arithmetic on the figures you enter, not a forecast or a recommendation.
+- **Limits:** Only as good as the figures entered. Sums of % of GDP across years treat each year's GDP as the same size. No figure is filled in for you.
+- **Code:** `src/utils/policyCouncil.ts, src/data/discountRates.ts, src/components/PolicyCouncil.tsx`
 
 ### Global shock scenarios
 
@@ -653,8 +1153,10 @@ These show where things stand on a stated method and make no call a backtest cou
 - Armed conflict: UCDP/PRIO conflicts located in the country (and how many at war level), and UCDP best estimates of state-based, non-state and one-sided deaths, for the latest year UCDP has coded, with the three years before.
 - Unrest: protests and violence as a share of the country's GDELT 1.0 events in the latest complete month, as z-scores against the previous 24 months, and the spike episodes of the last 24 months (see Unrest spikes).
 - Geopolitical risk: the Caldara and Iacoviello Geopolitical Risk index (AER 2022), the share of articles in ten leading newspapers about adverse geopolitical events and threats, for the country (44 countries covered) and the world, read from the authors' monthly file in data/local/gpr/ (fetched as published by the daily start-up run or npm run gpr:pull, or saved there by you as .xls, .xlsx or .csv). Latest month, where it sits among all months on file, and the 12-month and all-time means.
+- Capital account: the Chinn-Ito index (Chinn and Ito 2006, Journal of Development Economics 81(1)), openness in law from the IMF AREAER, read from the authors' file in data/local/chinn-ito/ (fetched by the daily start-up run or npm run chinn-ito:pull). The latest year on file, scaled 0 (least open) to 1 (most open), where it sits among all countries that year, the change over five years, and the index as published.
 - Economy: government debt, real growth, inflation (IMF WEO, latest outturn year, projections left out), current account, reserves in months of imports and external debt (World Bank), against five years earlier.
 - No overall score: any weighting of the pillars would be a guess, and one number would look more certain than the figures are.
+- Pre-registered test (scorecard_default v1, registered 13 November 2026, runner not built yet): a country-year whose plain average of the six WGI estimates is in the bottom quarter of countries that year, used from the end of the next year (WGI is published a year late), is a call that a sovereign default starts (BoC-BoE: debt in default goes from zero to above zero) in the following three years. Base rate: all country-years not already in default, pooled. Method 2: whole years resampled, p at most 0.05, a lift of at least 3 points, 30 cases over 15 years. The average is fixed for the test only and is not shown as a score.
 - **Limits:** WGI and UCDP are yearly and lag a year or more. WGI estimates are built from surveys and expert ratings and carry wide margins of error; small changes are within them. GDELT counts news reports, which rise with media attention. Figures not on file are listed as missing with the reason.
 - **Code:** `src/utils/countryRiskScorecard.ts`
 
@@ -755,7 +1257,7 @@ These show where things stand on a stated method and make no call a backtest cou
 
 - **Shows in:** Council chat > a Chart Agent chart > Replication pack
 - data.csv holds the lines the chart drew, one row per date (or country, x, y for a chart across countries); trend lines the HP test adds are left out and recomputed.
-- replicate.py, replicate.R and replicate.do run the tests the chart ran on the first two columns, on the rows where both have a value: correlation, OLS regression, lead/lag (up to 1.5 years of rows either way), Granger F test, rolling correlation (3 years of rows, at least 8), ADF with a constant and its lag chosen by AIC on one sample (MacKinnon 2010 critical values), the HP filter as a linear solve with the app's lambda, and where the first line stands.
+- replicate.py, replicate.R and replicate.do run the tests the chart ran on the first two columns, on the rows where both have a value: correlation, OLS regression, lead/lag (up to 1.5 years of rows either way), Granger F test, rolling correlation (3 years of rows, at least 8), ADF with a constant, its lag chosen by AIC on one common sample and the test refitted at that lag on every usable row, as statsmodels adfuller does (MacKinnon 2010 critical values), the HP filter as a linear solve with the app's lambda, and where the first line stands.
 - The README lists each column with its label, unit, source and credit, the settings, and the app's readings and figures to check against.
 - **Limits:** A saved chart keeps its latest 600 points per line; the app ran its tests on every point, so a longer sample can give slightly different figures (the README says so when it applies). The Python and R scripts were checked against the app's figures; the Stata script follows the same steps.
 - **Code:** `src/utils/replicationPack.ts`

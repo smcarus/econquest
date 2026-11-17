@@ -5,6 +5,612 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Documentation brought up to date with Ask Council chat (`ask:council`), the Research and Reports
+  layout, the deep what-if work, the five user roles, the feed check fixes, the outside research
+  tools and the Quant desk: README and walk-through guide in English, Spanish, French and Portuguese
+  (what-if questions in Council chat, the History & data tools menu, the new tools for public
+  administrators, politicians, researchers, economists and traders, Reports tabs, notebooks and the
+  working-paper bundle, Settings > Research tools); four screenshots retaken or added
+  (`06-history.png`, `11-reports.png`, `21-history-tools.png`, `22-what-if.png`); methodology version
+  1.4 (new sources, the Scenario Agent and what-if answers in 4.1 and 5.4, the five-roles tools in
+  5.5, outside research tools in 3.8, limits, references); the plain-language guide version 1.4 (new
+  sections on what-if questions and on the tools for people who run and judge policy); the install
+  guide (data/local/gdl/ and data/local/budget-execution/, the new data/live/ files, the newest
+  check:data rows, `npm run notebook:check`); the data API (what-if questions through
+  `ask:council`, and which new figures are panel calculations rather than series); the roadmap;
+  built app sizes measured again on 17 November.
+
+- Feed check fixes (#594 to #596): requests to Zenodo (the DOSE regional file) now name the app and
+  where its code lives, after Zenodo answered the check with HTTP 403. The ECB yield curve check asks
+  for the 10-year only with a 30 s limit, and the daily download asks for each maturity in turn. The
+  ECB SPF check asks for the newest 8 quarters with a 30 s limit and tries once more after 5 s; the
+  daily download keeps the full history with a 45 s limit and asks for the three SPF series one at a
+  time.
+
+- Research layout (#576): One country > History & data shows the history chart, then a menu of the
+  tools in eight groups (Debt and budget, Rates and prices, External and currency, Growth and
+  forecasts, People and development, Risks and shocks, Look back, Learn and convert); one tool opens
+  at a time, and *All tools* goes back to the menu (before, every tool was stacked, about 10 screens).
+  Links from Tools still open the tool. Summary, Sources and My holdings show one figure group at a
+  time from a row of buttons, with *Show all*. Markets & signals is in three parts (Economy and
+  policy, Markets and positioning, Risks and links). Compare has MarketEdge, scenario exposure and the
+  Fed balance sheet as parts; where data and price disagree shows four countries until *Show all*.
+  Figures with no history fold into one line. Nothing was removed, and every Missing figure keeps its
+  reason.
+
+- Reports layout (#575): Reports opens with tabs (Write a note, Policy reviews, Council documents,
+  Notebooks and Teaching), each on its own, so the page fits about one laptop screen (was 5.6).
+  Links from Tools, worked examples and Council chat open the right tab. The note's text and preview
+  scroll inside a fixed height; on a phone they take turns.
+
+- Size limits raised (Sam): start-up 520 KB compressed (was 465), whole app 9 MB (was 7.5).
+
+- Quant desk in Council chat (research tools item 2): with research tools set up, a desk agent
+  "Quant desk" joins a chat question that asks for a backtest, forecast, volatility, nowcast, option
+  price, drawdown or Sharpe, or when the AI model picks it. It calls only tools the server lists for
+  the token (at most the per-question limit), and each figure from the reply goes to the synthesis
+  as a desk finding with its link, data-through date and label; the answer card, agent documents and
+  network view (badge "reads: outside research tools") show them. A refusal or time-out shows
+  "Research tools unavailable" and the other desks still answer; a local-only refusal shows the
+  reason and leaves the desk out. Off by default: with no server set, the chat and its prompts are
+  unchanged. Route `POST /api/council/quant`; model register `quant_desk`. Four languages.
+
+- Outside research tools, client (research tools item 1): Menu > Settings > Research tools holds a
+  research-tools server address, its token (stored like the other keys, never logged), a time limit
+  (20 s) and tool calls per question (4). A small MCP client (JSON-RPC 2.0 over HTTP POST:
+  `initialize`, `tools/list`, `tools/call`) sends the bearer token, `X-Correlation-Id` and
+  `X-Model-Location` on every request; each request goes in the audit log (new kind "Outside
+  research tools") with the tool, correlation id, outcome and the arguments cut to one line. Test
+  connection lists the tools the token can see. Off until the address and token are set. Routes
+  `POST /api/research-tools/test`, `GET /api/research-tools/status`. Contract in
+  `docs/contracts/research-tools.json`; guide in `docs/RESEARCH_TOOLS.md`. Four languages.
+
+- Inflation surprise index (R10): one number per place from the R9 inflation surprises (90-day
+  half-life, a year at most, 3 needed), with a chart under Data surprises and a card on Today for
+  Brazil, the euro area and the United States. Its test was registered before any run
+  (`docs/validation/pending/surprise_index.json`, hash in the pending manifest). Routes
+  `GET /api/surprise-index`, `index` in `/api/surprises/:iso3`. Four languages.
+
+- Data surprises (R9): History & data > Data surprises sets each release against an expectation
+  published before it: BCB Focus for Brazil's IPCA, the ECB SPF for euro area HICP, the Kalshi CPI
+  market (snapshots saved before each release) for US CPI, and the app's own GDP nowcast on the
+  forward record. Each surprise is scaled by the spread of the earlier ones once there are 8. Daily
+  step `world:surprises`; route `GET /api/surprises/:iso3`; connection checks `focus_monthly`,
+  `bls_cpi`; licence row for BLS; BCB and Kalshi rows extended; model register `data_surprises`.
+  Four languages.
+
+- Full yield curves (R11): History & data > Full yield curves shows every maturity of the US Treasury
+  par yield curve and the ECB euro area government curve each day, a fitted Nelson-Siegel-Svensson
+  curve, level (10y), slope (10y minus 2y) and curvature with their one-day and one-month moves, and
+  three-month carry and roll-down for each maturity. Daily step `world:curves` (at most every 6 hours,
+  `data/live/yield-curves.json`); route `GET /api/yield-curves?area=us|ea`; connection checks
+  `ust_curve` and `ecb_curve`; licence row for the Treasury curve (US government work), ECB row
+  extended. Four languages.
+
+- Ranges from past misses (R8): History & data > IMF forecasts by edition gets *Range from past IMF
+  misses*, a 70% and 90% range around the latest saved WEO edition's projections from how far past
+  editions (same season, same years ahead) missed the country's outturn. Nowcast and forecasts gets
+  *Ranges from past misses* on each tested step of the app's forecasts, from the out-of-sample
+  misses the evaluation recorded for the country (the evaluation now keeps per-country miss
+  percentiles). Fewer than 8 past cases reads Missing. Route `GET /api/weo-vintages/:iso3/bands`;
+  `missRanges` in `/api/forecast/:iso3`. Four languages.
+
+- Replication check (R2): *Check it still holds* on each pinned figure in a research notebook reads
+  the series again and says Same, Revised (old and new value, up to 10) or Source no longer answers,
+  and counts newer figures since the As of day. `npm run notebook:check` checks every pinned figure
+  through the running app (`--url`, `--token`, `--json`; exit 1 on Revised or gone, 2 when the app
+  does not answer). Four languages.
+
+- Working-paper bundle (R1): *Pin to notebook* on a Chart Agent chart keeps it in a research
+  notebook with its As of day (last date of its figures) and a SHA-256 fingerprint of the figures
+  (up to 20 per notebook). *Working-paper bundle (.zip)* exports the notebook: `draft.md` with the
+  pinned figures listed, one replication pack per figure under `figures/` (data and Python, R and
+  Stata scripts), `CITATION.cff`, `README.md` and `MANIFEST.txt` with every file's SHA-256. The
+  Markdown export lists the pinned figures too. Routes `POST /api/research/notebooks/:id/pins`,
+  `DELETE .../pins/:pinId`, `GET /api/export/notebook/:id.zip`. Four languages.
+
+- What this means for people (R7): a *For people* button on a Policy review memo gives a plain
+  summary for constituents: what changes, the cost per person (council cost table ÷ population, and
+  GDP for % of GDP, before the As of year), who gains and who pays, the three regions furthest
+  behind (R6) and what three countries in a similar position saw next (G34). Fixed sentences in four
+  languages with Missing and the reason, no AI wording, so no new council recording. Also added to
+  the one-page brief. New read-only route `/api/reviews/:id/people`.
+
+- Regional figures (R6): Research > History & data shows how far apart a country's regions are.
+  Output per person for each first-level region from DOSE (Wenz et al. 2023, Zenodo, CC BY 4.0; 83
+  countries, constant 2015 US$), the gap to the national figure, the richest-to-poorest ratio and
+  the spread compared with ten years before; for EU and EFTA countries GDP per person in PPS and the
+  unemployment rate by NUTS 2 region from Eurostat; and the subnational Human Development Index
+  from a Global Data Lab CSV you save in data/local/gdl/ (non-commercial terms, never shipped or
+  downloaded). DOSE and Eurostat come with the daily download once a week (step `world:regional`;
+  DOSE is downloaded again only when Zenodo lists a new version). New Data health rows `dose` and
+  `eurostat_regions`, licence rows `dose` and `gdl`, four languages.
+
+- Budget execution tracker (R4): Research > History & data takes your approved budget and monthly
+  spending by ministry or programme from a CSV file (columns line, approved, month, spent; a
+  template is offered) and shows each line's share spent against the share of the fiscal year gone,
+  lines running behind or ahead by more than 10 points, the gap in points, months missing, and a
+  same-pace year-end figure only where no month is missing. The fiscal year start month, unit and
+  source are required. The file is kept on this computer only (data/local/budget-execution/); the
+  audit log records the file's SHA-256, never its contents. Four languages.
+
+- World Bank projects (R5): Research > History & data lists the active World Bank projects in the
+  country with the amount committed, approval and closing dates and the share of each project's
+  planned time gone, largest first. For IDA credits and grants it adds the share paid out, from the
+  IDA statement of credits, and flags projects paying out slowly for the time gone (budget support
+  never flagged). Both lists are CC BY 4.0, need no key and come with the daily download once a
+  week (step `world:wb_projects`, saved in data/live/wb-projects.json); the panel never fetches on
+  open. New Data health rows `wb_projects` and `wb_ida_credits`, a licence row, glossary entry in
+  four languages. IBRD loans have no paid-out figure yet.
+
+- Budget credibility (R3): Research > History & data shows how much of the budget first approved for
+  each year the government actually spent (World Bank GF.XPD.BUDG.ZS, from PEFA assessments, UN goal
+  16.6.1), the PEFA PI-1 band of each year (A within 5%, B within 10%, C within 15%, D further) and a
+  grade on the PEFA rule over the latest three years, worked out by the app and labelled as not the
+  official PEFA score. Countries without a PEFA year read Missing with the reason. New Data health row
+  `wb_budget_credibility`; glossary entry in four languages.
+
+- Editable scenario card (WI6): the scenario read from a what-if question can be changed in Council
+  chat (sizes, levels, changes taken out) and asked again as a follow-up, written in plain words the
+  scenario reader reads back the same way (`scenarioText`). The Scenario Agent's debt paths can be
+  kept for the trade-off chart under Debt sustainability (`itemFromScenarioDebt`); they are kept in
+  the browser tab only and never sent to the AI model.
+
+- What-if answer layout (WI5): when the Scenario Agent answers, the council's answer comes in eight
+  sections, from where things stand now through the change, first effects, how it spreads, history,
+  research and trends to what would change the answer (`src/utils/whatIfAnswer.ts`). Each section
+  is written only from the figures that belong to it and shows the kind of evidence (data, app
+  calculation, past, published study, interpretation); a section with no figures reads Missing with
+  the reason. Every sentence is checked like any summary sentence. Studies are cited with their DOI.
+  New synthesis instruction for what-if questions; the existing regression cases are unchanged.
+
+- Scenario Agent research (WI4): a short list of peer-reviewed studies by kind of shock
+  (`src/data/shockResearch.ts`: Iacoviello and Navarro 2019; Ha, Stocker and Yilmazkuday 2020;
+  Kilian 2009; Reinhart and Rogoff 2009; Cerra and Saxena 2008), each checked against the paper with
+  the page and the paper's own words for every number. The answer gives the finding for the
+  country's group (IMF advanced or emerging), labelled as a published average, not an estimate for
+  the country.
+- Scenario Agent history (WI3): past episodes of the same kind of shock (the country's currency,
+  10-year yield and USD bond spread between the episode's months, from the saved replay series);
+  cases since 1980 where growth, inflation or the currency moved as far in one year, with the medians
+  of what followed over three years and the eight closest starting points; and where the level after
+  the shock would sit in the country's own record. Replays and the Scenario Agent share one reading of
+  episode moves (`episodeMove`).
+- Scenario Agent in Council chat (WI2): for a what-if question, today's figures beside what they
+  would be after the stated change, for up to four countries. Uses the app's own tools: the
+  scenario engine (Fed, dollar, financial stress, supply chains), local projections (inflation
+  after a rate change), the debt identity on the IMF's inputs (borrowing costs, growth, inflation),
+  dollar bonds (currency fall) and net trade (oil, food, commodity prices). Missing parts say why;
+  with no size given, the largest monthly move on record is offered with its month. New
+  `GET /api/council/scenario/:iso3`; model register row `scenario_agent`.
+- Council chat reads what-if questions (WI1): the changes a question states (a central bank or
+  Fed rate, borrowing costs, the dollar, the currency, oil, food or commodity prices, financial
+  stress, supply chain pressure, growth, inflation), each with the size in your words, shown above
+  the answer as *Scenario read from your question*. A change with no size asks you for one; the app
+  never picks a size. The agents holding the figures each change moves are always asked.
+- Ask Council chat from another program (scope `ask:council`): `POST /api/v1/council/ask` asks a
+  new question and gets the answer the chat gives in the app, from the same code: the AI model picks
+  the agents, the agents answer on the app's own figures, and the summary goes through the number
+  and stance checks. Every figure is cited with source, period, badge and terms page; only real
+  figures whose sources allow passing them on are used (the rest left out and counted); hidden names
+  never appear, only a count; up to 10 earlier turns; `max_cost_usd` refuses a model call before it
+  would pass the limit (prices for cloud models from `AI_PRICE_INPUT_PER_MTOK` and
+  `AI_PRICE_OUTPUT_PER_MTOK` in `.env`; a model on this computer costs nothing). Counts against the
+  AI request limit; each question is in the audit log with the token's name, correlation ID, model,
+  figures and cost. Settings > API tokens, docs/DATA_API.md, docs/openapi.json (1.4.0) and the guide
+  in English, Spanish, French and Portuguese.
+- Documentation brought up to date with the feed fixes, the usability fixes, markets and financing
+  data (Group B), the policy council and weather and insurance: README and walk-through guide in
+  English, Spanish, French and Portuguese (History & data: exchange rate regime, central bank assets,
+  dollar funding, weather, parametric insurance, tropical cyclones, the disaster loss model; Data
+  health > Daily download); methodology version 1.3 (new sources, the policy council in 5.2, weather,
+  disasters and parametric insurance in 5.3, short-record limits, references); the plain-language
+  guide version 1.3 (new sections on the policy council and on weather, disasters and insurance);
+  the install guide (data/local/ibtracs/, the data/live/ weather and storm folders, the newest
+  check:data rows); the data API (series ids added on 14 November); data sources (IBTrACS); the
+  roadmap.
+- Tropical cyclones (I8): History & data shows hurricanes, typhoons and cyclones since 1980 whose
+  centre passed within 50, 100 or 200 km of the country, from NOAA's IBTrACS tracks: storms by
+  strength (tropical storm, hurricane, major), each season, the share of seasons with each (about
+  1 season in how many), and the strongest storms with their closest distance. The tracks are
+  downloaded from NOAA only when you press the button (kept in data/live/ibtracs/), or read from
+  an IBTrACS CSV you save in data/local/ibtracs/. Licence row and Data health row ibtracs; glossary
+  entries for tropical cyclones and the Saffir-Simpson scale; Spanish, French and Portuguese.
+- Disaster loss model (I1 + I2): the Natural disasters panel adds every year's damage since 2000
+  (at today's prices and as % of GDP) and a frequency-severity model by type of disaster: damaging
+  events per year (Poisson, or negative binomial when bad years cluster), damage per event
+  (lognormal, with a check against the record), and 20,000 simulated years giving the average
+  yearly loss and the loss passed 1 year in 10, 50 and 100, also as % of GDP. From the EM-DAT file
+  in data/local/emdat/ only. Glossary entries for the frequency-severity model and average annual
+  loss; Spanish, French and Portuguese.
+- Basis risk (I7): the trigger designer compares the cover with the other weather series (capital
+  against whole country, same season): of the second series' worst 1 in 5 seasons, how many the
+  cover paid in and how many it missed, payouts in years that were not bad, rank correlation, the
+  average payout gap, and the missed years. Glossary entry for basis risk; Spanish, French and
+  Portuguese.
+- Return periods and extreme values (I3 + I4): the trigger designer says how often the trigger and
+  exit are passed, from the record and from a GEV curve fitted by L-moments (low tail for low-index
+  covers), with the season passed 1 year in 2, 5, 10, 20, 50 and 100, a 90% bootstrap range,
+  extrapolation marked, the burn cost from the fitted curve and a fit check. Glossary entries for
+  return period and extreme value fit; Spanish, French and Portuguese.
+- Fair price for the parametric cover (I6): under the burn analysis, pick the loading as a % of the
+  expected payout or as k standard deviations of the yearly payout, and price on the whole record or
+  since 1991. Shows the price as % of the cover a year and in money, the multiple of the burn cost,
+  and a 90% range from the length of the record; capped at 100% with a note. Glossary entry for the
+  insurance loading; Spanish, French and Portuguese.
+- Parametric insurance trigger designer (I5): History & data lets you design an index cover on
+  country or capital rainfall or temperature, or the world price of rice, wheat, maize or soybeans:
+  season, low or high trigger, trigger, exit and cover, with defaults from the record (wettest or
+  hottest months, trigger 1 year in 5, exit 1 in 20). Burn analysis over every complete past season:
+  years that paid, average yearly payout (burn cost) with its standard deviation, largest payout,
+  the same since 1991, and a table by year. Reads series the app already holds; nothing new is
+  fetched. Glossary entries for parametric insurance and burn cost; Spanish, French and Portuguese.
+- Long food price history (W3): rice (Thai 5%), wheat (US HRW), maize and soybeans now keep the
+  whole World Bank Pink Sheet monthly history from 1960 instead of the last 60 months, so History &
+  data can chart them over decades next to the weather series. Other Pink Sheet prices still keep
+  60 months.
+- Weather across the country (W2): History & data shows monthly temperature and rainfall averaged
+  over each country since 1901 from the World Bank Climate Change Knowledge Portal (CRU TS, CC BY
+  4.0), newest CRU version first, with each month against its 1991-2020 average. Licence row and
+  Data health row wb_cckp, Spanish, French and Portuguese text.
+- Weather at the capital (W1): History & data shows monthly temperature and rainfall at each
+  country's capital from NASA POWER since 1981, with each month against the same month's 1991-2020
+  average (°C warmer or colder, rainfall as % of normal). One grid cell at the capital, not a
+  country average; Missing with the reason when NASA has not answered or the 1991-2020 years are too
+  few. Licence row nasa_power, Data health row nasa_power, Spanish, French and Portuguese text.
+- Policy council check-back and docs (PK9): automatic outcome checks (rules version
+  outcome-check-v3) set a currency market council's cases against the change in value for a holder
+  in US dollars and name the closest case; for bonds they record how the yield or spread moved. The
+  user manual and the guide (English, Spanish, French, Portuguese) explain the policy and market
+  council, and the glossary adds present value, discount rate, incidence and second-order effect.
+- Policy council in the one-page brief (PK8): the brief PDF ends with the council parts that are up
+  to date with the frame (present values, who gains and who loses, the chain count by basis, cases
+  with the odds-weighted result; for a market, the readings and cases). English, Spanish, French
+  and Portuguese.
+- Market council (PK7): a policy review can weigh what an event means for one market of the country
+  (the currency, local-currency or US-dollar government bonds). The app copies in its market
+  readings as they stood on the As of day (policy rate, carry against the US, exchange rate,
+  10-year yield, dollar bond spread, CFTC positioning, Fed swap lines, BIS dollar credit, central
+  bank assets, US Treasury holdings), each with date and source or Missing; the user sets cases as a
+  change in value for a holder, with odds. The council ranks responses against keeping the current
+  stance. Spanish, French and Portuguese text. A new council regression case; the council recording
+  needs one new run.
+- Policy council weighs the measure (PK6): with a measure in the policy review frame, the Options
+  step hands the council the measure and the up-to-date costs and benefits, groups, chain of effects
+  and scenarios. Option 1 is the measure itself, alternatives are ranked against it, and only
+  numbers from the diagnosis and the user's entries are allowed. The step says when a part changed
+  after it ran. A new council regression case; the council recording needs one new run.
+- Policy council scenarios (PK5): for the measure in a policy review, two to five cases, each a
+  short story with the costs and benefits table scaled by the user's percentages and benefits
+  arriving later if they say so, with optional odds; net present value of each case, and with odds
+  the odds-weighted net and the chance of a negative net. Spanish, French and Portuguese text.
+- Policy council second-order effects (PK4): for the measure in a policy review, a chain of links
+  (this raises or lowers that, and how long it takes), each resting on a figure from the review's
+  Diagnose step with its source and period, a source the user names, or marked as an assumption,
+  with a count of each. Spanish, French and Portuguese text.
+- Policy council winners and losers (PK3): for the measure in a policy review, one row per group
+  that gains or loses and why, with a size only when it has a unit and a source (otherwise
+  Missing), and optionally the share each fifth of people carries set against its share of income
+  (World Bank household surveys), read as regressive, progressive or about proportional. Spanish,
+  French and Portuguese text.
+- Policy council costs and benefits (PK2): for the measure in a policy review frame, enter costs
+  and benefits by year, each with its source; the app shows present values at the official
+  discount rates you tick (UK Green Book, US OMB Circular A-4 3% and 7%, European Commission 3%,
+  Asian Development Bank 9% and 6%, each cited) and your own, the net, benefits per unit of cost,
+  the pay-back year, how far figures would have to move to flip the answer and the flat rate where
+  it flips. Saved beside the steps, tied to the frame, hashed and audited. Spanish, French and
+  Portuguese text.
+- Policy council question (PK1): a policy review can weigh one measure (a tax change, a subsidy
+  reform, a spending programme). Tick "Weigh one measure" in the frame, describe the measure and
+  optionally its size, start month and years ahead. It is part of the frame and its hash. Spanish,
+  French and Portuguese text.
+- `npm run council:record` no longer stops with "fetch failed" when the set takes more than five
+  minutes on a 32B model: the long request has no time limit, and an error names its cause.
+- Dollar funding stress (Group B, PB4): History & data shows US dollar loans and bonds owed by
+  the country's non-banks (BIS global liquidity indicators, US$ bn and y/y) and the Federal
+  Reserve's dollar swap lines (New York Fed), amount outstanding each Wednesday for all central
+  banks and for the country's own central bank when it has drawn. The cross-currency basis is left
+  out because it needs paid data. Data health rows bis_usd_credit and nyfed_swaps, glossary entry,
+  Spanish, French and Portuguese text.
+- Central bank assets (Group B, PB3): History & data shows each central bank's total assets from
+  the BIS, as % of GDP and in US$ bn, quarterly, so asset purchases and emergency lending show as
+  a fast rise. Free BIS series with citation. Data health row bis_cb_assets, glossary entry,
+  Spanish, French and Portuguese text.
+- Exchange rate regime (Group B, PB1): History & data shows the Ilzetzki, Reinhart and Rogoff
+  classification of how a country's currency is run in fact, by month: the coarse code (1 peg,
+  2 crawling peg, 3 managed floating, 4 freely floating, 5 freely falling, 6 dual market) and the
+  fine code (1 to 15). Read from the monthly workbook you download from www.ilzetzki.com/irr-data
+  into data/local/irr/; the authors ask for a citation and state no licence, so nothing is shipped.
+  Data health row irr_file, licence row, glossary entry, Spanish, French and Portuguese text.
+
+- Fixes from the usability review for economists and researchers:
+  - Data health > Daily download shows the daily download as it goes: each of its five parts, what
+    failed and why, sources that need a key or a file, and what to download by hand. While it runs,
+    a line at the top of the screen says which part it is on. Route `GET /api/daily-run`.
+  - Citations, the About box and feedback carry the code commit beside the version (`APP_COMMIT`,
+    set by the start scripts and the image build); docs/MAINTENANCE.md lists the release steps.
+  - Data API: the Python, R and Stata helpers get CSV without a byte-order mark (`bom=0`) and read
+    `value` as a number.
+  - Council chat without an AI model lists the figures found, the parts of the question no reading
+    answered (such as a 200bp rate rise, pointing to Debt sustainability) and the gaps.
+  - One inflation figure per country on Summary and Markets: the latest monthly series when there is
+    one, else the IMF yearly average, with the source named; the real policy rate says which.
+  - A missing Gini or poverty figure says the World Bank did not answer when that request failed,
+    instead of "No survey in the last 15 years". The feed replay no longer lends one country's
+    recording to another.
+  - A new install shows the project's published verdicts (docs/validation/recorded-verdicts.json)
+    on each badge until the tests run on that computer.
+  - Help level Expert: figures, sources and forecast ranges without plain-language explanations.
+  - Policy rate, leading indicator and OECD inflation charts and downloads start where the source
+    starts once the weekly long-history file is on disk, instead of in late 2024.
+  - The track record, glossary, methodology and README say that every test so far was written down
+    the day it ran or the day before, on public data: specified and hashed before the run.
+- ILOSTAT earnings: the 14 November check showed ILOSTAT's list has no EAR_4M.. ids any more, only
+  other earnings ids (EAR_EHRA.. is hourly). The search now finds the yearly indicator by its name
+  ("monthly earnings", by economic activity and local currency first, hourly left out) in the CSV
+  or JSON list, and when nothing fits the check lists the yearly earnings indicators with their
+  names.
+
+- IMF GFS by level of government (DBnomics): the 14 November Mac run showed the real GFSMAB codes
+  (A.BR.S1311.XDC.G1__Z, domestic currency). The app now asks for items G1__Z and G2M__Z, and when
+  nothing comes back it reads DBnomics' description of the dataset, picks the unit labelled as a
+  percent of GDP and asks again. Domestic-currency series are never read as shares. If no % of GDP
+  unit exists, the figures stay Missing and `npm run check:data` row imf_gov_levels lists every unit
+  code with its label; IMF_GFS_UNIT in .env sets the unit by hand.
+- ILOSTAT earnings: no replacement id was found on the 14 November run. The search now also reads
+  ILOSTAT's JSON list and accepts the newer EAR_4MMN ids, and when nothing is found the connection
+  check reports what each list address returned (status, size, first characters, any EAR_ ids).
+
+- IMF GFS by level of government (DBnomics): the connection check said OK while no series came back
+  ("0 of 30 countries"). It now says the GFSMAB series the app asks for did not come back and lists
+  the codes DBnomics holds for Brazil's central government, so the right codes can be set from the
+  next Mac run; the daily run logs the same.
+- IMF monthly consumer prices: on the 13 November run no IMF code name matched for any of the 19
+  countries. The structure reader now also finds a dimension's codelist through its concept, or by
+  the name CL_ plus the dimension; when still nothing matches, the app asks for every monthly
+  series of the country and picks the all-items, year-over-year one by the names in the data. The
+  reason line says how many codes each dimension carried. Not confirmed from the cloud:
+  `npm run check:imf` on the Mac shows what matched.
+- ILOSTAT earnings: ILOSTAT now refuses the indicator id the app used (EAR_4MTH_SEX_ECO_CUR_NB_A,
+  "deprecated or invalid"). When it does, the daily run and `npm run check:data` read ILOSTAT's own
+  list of indicators and use the yearly average monthly earnings id it offers (local currency
+  first); the check names the ids found. `ILO_EARNINGS_ID` in .env chooses one by hand.
+- Offline download: a country's full World Bank and IMF history now downloads four figures at a
+  time instead of one after another, and that step may take 6 minutes before the run moves on
+  (3 for other steps). On the 13 November run 15 of 22 countries timed out at 3 minutes.
+- Penn World Table: the workbook now downloads from DataverseNL, where the GGDC page links it;
+  the old www.rug.nl address answered 404.
+- UCDP: Gleditsch-Ward codes 54 (Dominica) and 80 (Belize) now map to their countries; the
+  connection check no longer lists them as codes without a country.
+- Documentation brought up to date with the console integration (#512 to #526) and the planned
+  state. The plain-language guide docs/HOW_IT_WORKS.md joins the repository (it was only on the
+  project website), brought up to 13 November with a section on crisis replays; the methodology moves
+  to version 1.2 with the sections from the website's version 1.1 (why EconQuest exists, where it
+  runs, help levels, geopolitical risk VaR, which countries the results rest on, Quests) and a
+  version history, and its short version now says that the council's chat agents are fixed code and
+  only the summary writer is an AI model. The README in English, Spanish, French and Portuguese gains a "Connect a portfolio system"
+  task, the Chinn-Ito index and the FRED history behind the crisis replays in its source list, and a
+  roadmap in three parts (done, next, waiting); the English README's integration notes are now a
+  "Connecting an outside system" list, and its command table adds `replays:pull`, `chinn-ito:pull`,
+  `tokens` and `check:success`. The walk-through guide in all four languages explains API tokens,
+  hidden names and single sign-on, and the country risk scorecard with capital account openness. The
+  install guide lists the files the daily download saves in data/local/ (replays, Chinn-Ito, WEO
+  editions, GPR, sanctions, UCDP) and the files that hold connections, the code-copy commands, and
+  links to the deployment guide and OpenID Connect sign-in. The user manual describes Settings > API
+  tokens, Settings > Hidden names, Account with single sign-on and positions sent in by another
+  program; backup and restore says what the backup file leaves out; the methodology adds §3.8
+  (figures served to outside systems, hypothetical first-order scenario estimates), the audit seal in
+  §4.5, and lists the country risk scorecard as Not validated with its registered test rather than as
+  a description; the risk and compliance note and the home server guide follow. The roadmap adds a
+  "Connecting other systems" row, the parked idea groups B and D (with capital controls partly
+  answered by Chinn-Ito), the three checks left before the public release, a table of built parts
+  waiting on a check or licence, Arabic and Swahili paused, classroom Quests waiting for a go, and
+  checkpoint 2 folded into checkpoint 1.
+- Documentation brought up to date with the panels and tools added since the README rewrite: the
+  README and walk-through guide in English, Spanish, French and Portuguese describe the panels for
+  lower-income countries, peer comparison, Policy review watch and review-to-review comparison; the
+  methodology gains statistics conventions (section 7.4) and the US Treasury auctions source; the
+  install guide lists every file you save yourself in data/local/ and how to copy one into the
+  ready-made app; data sources, data API, user manual, methods notes and roadmap updated; licence
+  register rows for EM-DAT and FAOSTAT Consumer Price Indices, matched from the panels' source lines, so
+  Sharing mode now withholds figures from those two files; sizes re-measured. A Python package
+  file committed by mistake was removed from the repository root.
+- Review-to-review comparison (PC3): a review started with Review again shows what changed since
+  the earlier one: frame changes, the option each memo recommended, each diagnosis figure then and
+  now with the change, and whether the goal indicator moved the way the goal wants. Read in the
+  browser from both saved reviews; nothing is saved.
+- Peer comparison for a policy review (PC2): after Diagnose, pick up to six watchlist countries (or
+  the same region) to see each diagnosis figure beside the same figure for each peer, each from its
+  saved pull on or before the review's As of day, with the peer median and the review country's rank.
+  Not saved in the review. Route `GET /api/reviews/:id/peers?iso3=` (read only).
+- Policy review watch (PC1): the start page checks the triggers in each policy review memo's "what
+  to watch" list ("above 8", "below 3", "target 4", "rises", "falls", also in Spanish, French and
+  Portuguese) against the latest saved figures for the country, lists each as Crossed or Not crossed,
+  and opens the review. Other wording is kept but not checked. The memo form says which wordings are
+  read. Route `GET /api/reviews/watch` (read only).
+- Natural disasters (PA6): Research > History & data shows floods, storms, droughts, earthquakes and
+  other natural disasters since 2000 from the EM-DAT public table you download with your own EM-DAT
+  account and save in data/local/emdat/ (EM-DAT's terms do not allow passing it on, so nothing is
+  shipped or fetched): events, deaths and people affected by type, yearly averages against
+  population, the last ten years with damage as % of GDP, the five largest events, and EM-DAT's
+  citation line. Route `GET /api/disasters/:iso3`.
+- Food prices and food security (PA2): Research > History & data shows food price inflation against
+  all prices from the FAOSTAT Consumer Price Indices file you save in data/local/fao-cpi/ (terms not
+  confirmed, nothing shipped; values FAO estimated or imputed left out), undernourishment and food
+  insecurity (World Bank, from FAO), net food imports as % of GDP, and Pink Sheet moves for rice,
+  wheat, maize, soybeans, palm oil and sugar. Rice (Thai 5%) added to the Pink Sheet prices the app
+  reads. Three new saved World Bank series; route `GET /api/food-prices/:iso3`.
+- Aid received (PA4): Research > History & data shows net development aid the country receives (World
+  Bank, from OECD DAC figures) in US dollars, as % of GNI, central government spending, imports and
+  investment, per person, from six large donors with their share, and the last ten years with the
+  distance below the highest. Eleven new saved World Bank series; route `GET /api/aid/:iso3`.
+- Commodity prices and terms of trade (PA3): Research > History & data shows the country's shares of
+  fuel, ores and metals and food in goods exports and imports, how World Bank Pink Sheet prices for
+  each group moved over 1 and 12 months, the rough effect on income as % of GDP if prices hold for a
+  year (the app's calculation, quantities fixed), commodity dependence against UNCTAD's 60% line, and
+  the World Bank terms of trade index. Two new saved World Bank series (goods exports and imports in
+  US dollars); route `GET /api/commodity-terms/:iso3`.
+- Financial inclusion (PA5): Research > History & data shows who has an account (World Bank Global
+  Findex: adults, women, men, poorest 40% and richest 60% of households, gaps within the same survey),
+  bank branches and cash machines per 100,000 adults, and private credit as % of GDP. Eight new saved
+  World Bank series; route `GET /api/financial-inclusion/:iso3`.
+- Remittances (PA1): Research > History & data shows money sent home by people working abroad,
+  beside exports, foreign direct investment and aid in the same year, how it moved in years exports
+  fell, the cost of sending US$200 against the UN goal of below 3%, and money sent abroad. Five new
+  saved World Bank series (BX.TRF.PWKR.CD.DT, BM.TRF.PWKR.CD.DT, BX.KLT.DINV.CD.WD, DT.ODA.ODAT.CD,
+  SI.RMT.COST.IB.ZS); route `GET /api/remittances/:iso3`.
+- Documentation: README rewritten to a developer and researcher standard, with recommended AI models
+  by computer size, the referee rules, the model settings the app uses (temperature, seed, context
+  window, time limits), measured download and disk sizes (source 59 MB, Docker image about 170 MB to
+  download and 795 MB unpacked, packages 465 MB, build 6.5 MB, each language about 0.65 MB) beside
+  the existing data estimates, the four languages, and how Quests work. New walk-through guide
+  `docs/GUIDE.md` with 20 screenshots in `docs/images/`, taken from a build replaying the public
+  recorded feed replies. README and guide translated into Spanish, French and Portuguese
+  (`README.es.md`, `README.fr.md`, `README.pt.md`, `docs/GUIDE.*.md`). INSTALL.md image size now
+  measured; ROADMAP and the user manual list Portuguese. The page description in `index.html` no
+  longer names an outside project.
+
+- One-page policy brief (G39): Policy review's memo step has a One-page brief (PDF) button: the
+  question, the chosen option, the figures it rests on with sources and ranges, and what to watch,
+  on one page for readers who are not economists, with fixed wording in English, Spanish, French or
+  Portuguese. Built from the saved steps with no AI.
+- Trade-off chart (G37): under Debt sustainability, the costed options and any what-if results
+  kept from Council chat (new button Keep for the trade-off chart) on two axes you pick, such as
+  debt at the horizon against output lost. Each item is a line from the low to the high published
+  multiplier; items with no figure for an axis are left off with the reason. Kept results live in
+  the page's memory only.
+- Political feasibility (G36): Policy review shows, beside the options, the next and last election
+  on file in the official calendar, checks and balances, fractionalisation, polarisation and years
+  left in the term from the Database of Political Institutions file you save in `data/local/dpi/`,
+  and protests and violence in the saved GDELT months, each cut at the As of day. The DPI's reuse
+  terms are not confirmed, so nothing from it is shipped. New Data health row `dpi`; route
+  `GET /api/reviews/:id/political`; glossary entry Checks and balances.
+- Fiscal rules check (G35): Research > History & data shows the EU, WAEMU and CEMAC treaty limits
+  that bind a country, checked against the latest saved IMF debt and overall balance before the
+  current year, with the room left, and the national rules (expenditure, revenue, budget balance,
+  debt) and since when, from the IMF Fiscal Rules Dataset you save in `data/local/imf-fiscal-rules/`.
+  The IMF has not confirmed reuse terms, so nothing from it is shipped; without the file the national
+  part reads Missing. New Data health row `imf_fiscal_rules`; route `GET /api/fiscal-rules/:iso3`.
+- Precedent finder (G34): Policy review shows, after Diagnose, the eight countries whose yearly
+  figures were closest to the review country's on the figures you pick, and what followed over the
+  next three years (growth, inflation, debt, primary balance, current account, reserves, currency),
+  read from the saved histories with the median of each. Only years before the As of year are read.
+  IMF programme and crisis dates read Missing until the IMF confirms their terms. New route
+  `GET /api/reviews/:id/precedents`; glossary entry Precedent finder.
+- Portuguese, part 4 (U2): the Menu dialogs and Settings (keys, accounts, sign-in, add a country,
+  idea journal, data connections, offline data, user manual and glossary), the help at Key help and
+  Full help with the whole glossary and chart guides, the definition tags, Worked examples, and the
+  Reports pages (teaching episodes, saved research, policy reviews, behavioural check, expert review
+  and the memo builder). Portuguese now covers the whole app, like Spanish and French. The Settings,
+  help, Reports, definition and worked-example coverage tests now check Portuguese as well. Not yet
+  checked by a native speaker.
+- Portuguese, part 3 (U2): the watchlist (also popped out), Your data, the small gap model, Your
+  tests, My holdings and the book briefs, the Tools page and its tool panels, and Compare countries.
+  The tool, compare and chat-card coverage tests now check Portuguese as well, and a new check keeps
+  the spaces at the start and end of each Portuguese message, which put back three spaces part 2
+  had dropped in the panels. Not yet checked by a native speaker.
+- Portuguese, part 2 (U2): the Research scope bar, section names and Sources, one country's three
+  briefs with their figure names, reasons and meanings, and every panel on one country's other tabs,
+  including the sentences the app writes from the data. The brief and panel coverage tests now check
+  Portuguese as well. Not yet checked by a native speaker.
+- Portuguese, part 1 (U2): Brazilian Portuguese with the polite "você" joins the language button
+  (EN / ES / FR / PT), downloaded only when picked. This part covers the app frame, Workspace,
+  Council chat and the reasons a figure is Missing; other screens show in English until their parts
+  arrive. Settings links in Portuguese help text open their Settings page. Not yet checked by a native
+  speaker.
+- Expert review round (P4, Policy review > Expert review): a short form a pilot economist or
+  professor fills for a memo: clarity and use of evidence (1 to 5), whether the sources are correct,
+  whether they would act on it, and a comment. Saved with the policy review on this computer, tied to
+  the memo's hash, hash chained and audited; CSV download. Each reviewer chooses whether the review may
+  be published (no, without their name, or with it) and can change that later; `npm run
+  reviews:summary` writes docs/validation/expert-reviews.md from consenting reviews only.
+  `npm run check:success` now counts them. English, Spanish and French.
+- Behavioural check in Policy review (G33, under Evidence): for each saved option, where it depends
+  on how people behave (take-up of a benefit, the response to a tax change, trust in an inflation
+  target, defaults, removing something people have, acting now for a gain later), found by fixed word
+  rules, each with published studies and official reviews from a fixed list with full citations
+  (World Bank WDR 2015, OECD 2017 and twelve papers). No AI-written evidence and no built-in effect
+  sizes: sizes appear only when you enter them with a source; they are hashed, audited and read Out
+  of date when the options change. Description, not a tested signal. New glossary group Behavioural
+  economics (present bias, defaults, framing, anchoring, loss aversion). English, Spanish and French.
+- Central bank word count (G31, Research > History & data, also in Tools): hawkish and dovish
+  phrases ("higher inflation", "weaker growth") counted with the fixed, published dictionary of
+  Apel and Blix Grimaldi (2012, Sveriges Riksbank Working Paper 261), in central bank statements
+  you save in data/local/cb-statements/<ISO3>/ (text, Markdown or saved web pages named by date),
+  with a net index by statement and a box to count any pasted text. The same text always gives the
+  same count; no AI scoring; the app downloads no statements. Description, not a tested signal.
+  English, Spanish and French.
+- Who pays for a policy (G30, Research > History & data, also in Tools): you type a tax or spending
+  change (households pay or gain), its size in % of GDP, the share each fifth of people carries and
+  the study those shares come from; the panel shows each fifth's amount, its share of income, the
+  ratio of the two and whether the change is regressive, progressive or about proportional, beside
+  the Gini index, the tax split (G16) and poverty rates (G17). Five new saved World Bank figures:
+  the income share of each fifth (SI.DST.FRST.20 to SI.DST.05TH.20). Starts empty; no built-in
+  incidence shares. English, Spanish and French.
+- Debt restructuring calculator (G29, Research > History & data, also in Tools): type an old bond
+  and the new bond offered for it (face value, coupon, years, grace years) and one to three discount
+  rates; the panel shows what each bond is worth, the NPV haircut (Sturzenegger and Zettelmeyer
+  2008), the market haircut, the payments year by year and a CSV. Every field starts blank. The
+  smaller calculator in Model sandboxes now points here. The hidden desks "Haircut and exit yield"
+  and "Investor base and banks" now link to this calculator and to Banks and the government.
+  English, Spanish and French.
+- Banks and the government (G28, Research > History & data, also in Tools): how tied a country's
+  banks and government are, each figure with its source and year: bank assets, bank claims on the
+  central government (also as a share of bank assets), domestic banks' share of government debt
+  (IMF investor base, your file) and that share in % of GDP, bank capital to assets and
+  non-performing loans. Four new saved World Bank figures (GFDD.DI.02, FS.AST.CGOV.GD.ZS,
+  FB.BNK.CAPA.ZS, FB.AST.NPER.ZS), also under History & data. State-owned banks and contingent
+  liabilities read Missing with the reason. Description only, no score. English, Spanish and French.
+- Growth accounting (G27, Research > History & data, also in Tools): growth in each ten-year period
+  split into capital, hours worked, human capital and productivity (TFP) from the Penn World Table
+  (CC BY 4.0), as a stacked chart, a table and a CSV download. The edition's workbook is read once
+  into data/local/pwt/ (downloaded, or your own copy put there); only the columns used are kept.
+  Connection check row pwt. The licence row moves from planned to in use. English, Spanish and
+  French.
+- Inflation drivers (G26, Research > History & data, also in Tools): headline against core inflation
+  (excluding food and energy), food and energy price changes, the core trend over 3 months, and for
+  EU members the approximate points food, energy and the rest add to headline (Eurostat item
+  weights for the same year only, residual shown). Sources: Eurostat HICP for EU members, BLS CPI-U
+  via FRED for the United States, OECD consumer prices for other OECD members; elsewhere Missing
+  with the reason. New glossary entry on core inflation and connection check row
+  eurostat_hicp_parts. English, Spanish and French.
+- Yield curve and financial conditions (G25, Research > History & data, also in Tools): the 10-year
+  government bond yield minus the policy rate each month, past spells with the curve inverted,
+  calendar-year averages, and a financial conditions index (policy rate, 10-year yield, spread over
+  US Treasuries, real effective exchange rate; z-scores against the country's own history since
+  1990, fixed equal weights; description only). The pre-registered `yield_curve_recession` test
+  moved unchanged to docs/validation/preregistered and now runs with the other backtests (FRED
+  10-year yields, BIS policy rates, IMF real GDP growth outturns). No recession figure is shown
+  until it passes; after that only its historical hit rate. English, Spanish and French.
+- External sustainability (G24, Research > History & data, also in Tools): external debt as % of
+  GDP, a year of external debt service against reserves and exports, and the debt-stabilising
+  non-interest current account d × (i − g) ÷ (1 + g) on five-year averages, beside the actual one.
+  New saved World Bank IDS figures: external debt, debt service and interest paid, in US dollars.
+  The current account norm (IMF EBA, terms not confirmed) and the net international investment
+  position read Missing with the reason. English, Spanish and French.
+- Crisis early-warning (G23, Research > History & data, also in Tools): the BIS credit-to-GDP gap
+  against the Basel III lines of 2 and 10 points, past spells above 10 points, three-year change in
+  private credit to GDP, and the private debt service ratio and real house price growth against
+  their own average. No probability; marked Not validated. The pre-registered `crisis_warning` test
+  stays in docs/validation/pending until the licence for the Laeven-Valencia crisis dates is
+  confirmed, then its runner is built. English, Spanish and French.
+- Behavioural Finance Agent (G32) in Council chat: describes herding and sentiment, never forecasts.
+  Crowded CFTC positioning (pointing to the crowding rule's own badge), Polymarket crowd odds as
+  market prices, and for EU members the European Commission's consumer confidence, economic
+  sentiment and households' expected price trends (new: Eurostat ei_bsco_m, balance), each placed
+  against its own history with a percentile, plus the 12-month change in expectations and the Timing
+  Agent's reading. Survey against market inflation expectations and Kalshi read Missing with the
+  reason. The pre-registered `inflation_expectations_lead` test (written 11 November, hash
+  unchanged) is now runnable: December survey changes against Eurostat HICP inflation 12 months
+  later, judged with its own seed and bootstrap. New connection check row `eu_price_expectations`;
+  glossary entries for herding and households' expected prices (EN/ES/FR).
+- Worked examples (W1, Menu > Worked examples): four guided case studies for the open country, from
+  a question to a memo draft using the app's own screens: debt sustainability, inflation and
+  interest rates, the currency, and a policy review. Figures are the ones saved on the computer,
+  with source and year, or Missing; the short working (debt-stabilising primary balance, real policy
+  rate, reserves against three months of imports, the budget with a spending plan) is done only when
+  every input is live. Each step opens its screen; the memo can be copied or downloaded as Markdown.
+  English, Spanish and French.
 - Light mode for a modest laptop (U3, `LIGHT_MODE=on`, docs/INSTALL.md "On a modest laptop"): no
   AI model on the computer (the council uses your own Gemini key, or stays off and says so; the
   referee rule is unchanged), no GDELT 15-minute news files unless `GDELT_RAW_WEEKS` is set (about

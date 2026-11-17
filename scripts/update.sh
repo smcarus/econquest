@@ -40,6 +40,7 @@ echo "[3/3] Checking the Docker app..."
 if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
   if [ -n "$(docker compose ps -a -q econquest 2>/dev/null)" ]; then
     echo "Rebuilding and restarting the Docker app (port 3737)..."
+    APP_COMMIT="$(git rev-parse --short=12 HEAD 2>/dev/null || true)"; export APP_COMMIT
     docker compose up -d --build econquest
   else
     echo "No Docker app found for this folder; nothing to rebuild (start it with start-mac.command)."

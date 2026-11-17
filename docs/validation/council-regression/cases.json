@@ -376,6 +376,306 @@
         "forbid": "\\bdebt[^.]{0,60}?\\d+(\\.\\d+)?\\s?%|\\b(?<!\\b(whether|if|cannot|can't|unclear|uncertain)\\b[^.]{0,40})(debt )?(is|looks|appears) (clearly )?sustainable\\b",
         "maxRemoved": 1
       }
+    },
+    {
+      "id": "options-council-egypt-subsidy",
+      "kind": "options",
+      "question": "Policy council: weigh phasing out Egypt's diesel subsidy, with the principal's own entries, one of them an assumption",
+      "options": {
+        "frame": {
+          "iso3": "EGY",
+          "problem": "Fuel subsidies take a large share of the budget while the primary balance needs to improve.",
+          "goal": {
+            "indicator": "Primary balance",
+            "direction": "higher"
+          },
+          "constraints": [
+            "Protect the poorest households."
+          ],
+          "asOf": "2026-10-31",
+          "council": {
+            "kind": "policy",
+            "measure": "Phase out the diesel subsidy over three years",
+            "size": {
+              "value": 1.2,
+              "unit": "pct_gdp"
+            },
+            "start": "2027-01",
+            "years": 4
+          }
+        },
+        "figures": [
+          {
+            "field": "imf.cpiInflationPct",
+            "figure": "Inflation",
+            "value": 12.5,
+            "unit": "%",
+            "period": "Sep 2026",
+            "source": "CAPMAS CPI (frozen test input)"
+          },
+          {
+            "field": "imf.primaryFiscalBalancePct",
+            "figure": "Primary balance",
+            "value": 3.5,
+            "unit": "% of GDP",
+            "period": "2026",
+            "source": "IMF WEO (frozen test input)"
+          }
+        ],
+        "council": {
+          "costBenefit": {
+            "unit": "pct_gdp",
+            "firstYear": 2027,
+            "lines": [
+              {
+                "kind": "cost",
+                "label": "Cash transfers to poorer households",
+                "values": [
+                  0.4,
+                  0.4,
+                  0.4,
+                  0.3
+                ],
+                "source": "Budget proposal (frozen test input)"
+              },
+              {
+                "kind": "benefit",
+                "label": "Subsidy no longer paid",
+                "values": [
+                  0.3,
+                  0.6,
+                  0.9,
+                  0.9
+                ],
+                "source": "Subsidy outturn (frozen test input)"
+              }
+            ],
+            "rateIds": [
+              "adb_9"
+            ]
+          },
+          "groups": {
+            "rows": [
+              {
+                "group": "Poorer households",
+                "effect": "loses",
+                "why": "Bus and food transport costs rise.",
+                "size": 2,
+                "sizeUnit": "% of spending",
+                "source": "Incidence study (frozen test input)"
+              },
+              {
+                "group": "Government budget",
+                "effect": "gains",
+                "why": "The subsidy bill falls."
+              }
+            ]
+          },
+          "chain": {
+            "links": [
+              {
+                "from": "Diesel price",
+                "to": "Inflation",
+                "direction": "raises",
+                "lag": "1 to 3 months",
+                "basis": "figure",
+                "figure": {
+                  "ref": 1,
+                  "label": "Inflation",
+                  "value": 12.5,
+                  "unit": "%",
+                  "period": "Sep 2026",
+                  "source": "CAPMAS CPI (frozen test input)"
+                }
+              },
+              {
+                "from": "Inflation",
+                "to": "Wage demands",
+                "direction": "raises",
+                "basis": "assumption"
+              }
+            ]
+          },
+          "scenarios": {
+            "rateId": "adb_9",
+            "scenarios": [
+              {
+                "name": "Base",
+                "story": "Prices rise as planned and transfers reach the poorest.",
+                "costScale": 100,
+                "benefitScale": 100,
+                "delayYears": 0,
+                "odds": 60
+              },
+              {
+                "name": "Bad",
+                "story": "Smuggling continues and the saving comes a year late.",
+                "costScale": 120,
+                "benefitScale": 60,
+                "delayYears": 1,
+                "odds": 40
+              }
+            ]
+          }
+        }
+      },
+      "answers": [],
+      "expect": {
+        "minOptions": 2,
+        "headline": "(diesel|subsid)",
+        "gapsMention": "(assum|source|missing|not (given|available)|not in|wage)",
+        "maxRemoved": 2
+      }
+    },
+    {
+      "id": "options-council-turkey-lira-fed",
+      "kind": "options",
+      "question": "Market council: weigh what the Fed holding rates through 2027 means for the Turkish lira, with frozen market readings (one Missing) and the principal's cases",
+      "options": {
+        "frame": {
+          "iso3": "TUR",
+          "problem": "Foreign investors hold lira assets for the high carry; a Fed that keeps rates high could pull them out.",
+          "goal": {
+            "indicator": "Lira against the US dollar",
+            "direction": "stable"
+          },
+          "constraints": [
+            "Keep the inflation programme on track."
+          ],
+          "asOf": "2026-10-31",
+          "council": {
+            "kind": "market",
+            "market": "currency",
+            "measure": "The Fed keeps rates where they are through 2027",
+            "years": 1
+          }
+        },
+        "figures": [
+          {
+            "field": "imf.cpiInflationPct",
+            "figure": "Inflation",
+            "value": 32.5,
+            "unit": "%",
+            "period": "Sep 2026",
+            "source": "TurkStat CPI (frozen test input)"
+          },
+          {
+            "field": "market.policyRatePct",
+            "figure": "Policy rate",
+            "value": 38,
+            "unit": "%",
+            "period": "Oct 2026",
+            "source": "BIS policy rates (frozen test input)"
+          }
+        ],
+        "council": {
+          "market": {
+            "asOf": "2026-10-31",
+            "readings": [
+              {
+                "id": "policy_rate",
+                "label": "Policy rate",
+                "value": 38,
+                "unit": "%",
+                "date": "2026-10-23",
+                "source": "BIS policy rates (frozen test input)"
+              },
+              {
+                "id": "carry_vs_us",
+                "label": "Carry against the US (policy rate minus US policy rate)",
+                "value": 34.12,
+                "unit": "percentage points",
+                "date": "2026-10-23",
+                "source": "BIS policy rates (frozen test input)",
+                "method": "Policy rate 38% (2026-10-23) minus US policy rate 3.88% (2026-10-29)."
+              },
+              {
+                "id": "fx_per_usd",
+                "label": "Lira per US dollar",
+                "value": 44.6,
+                "unit": "TRY per USD",
+                "date": "2026-10-30",
+                "source": "ECB reference rates (frozen test input)"
+              },
+              {
+                "id": "cftc_lev_net",
+                "label": "CFTC leveraged funds net position",
+                "value": null,
+                "unit": "",
+                "date": "",
+                "source": "",
+                "reason": "No CME future for the Turkish lira"
+              },
+              {
+                "id": "usd_credit",
+                "label": "US dollar credit to non-banks",
+                "value": 148.2,
+                "unit": "US$ bn",
+                "date": "2026-Q2",
+                "source": "BIS global liquidity indicators (frozen test input)"
+              }
+            ]
+          },
+          "groups": {
+            "rows": [
+              {
+                "group": "Foreign investors",
+                "effect": "loses",
+                "why": "The carry falls if the lira weakens faster than the rate gap pays."
+              },
+              {
+                "group": "Importers",
+                "effect": "loses",
+                "why": "Dollar costs rise if the lira falls.",
+                "size": 3,
+                "sizeUnit": "% of import costs",
+                "source": "Importers' association survey (frozen test input)"
+              }
+            ]
+          },
+          "chain": {
+            "links": [
+              {
+                "from": "Fed holds rates",
+                "to": "Carry against the US",
+                "direction": "lowers",
+                "basis": "source",
+                "source": "Policy rate spread (frozen test input)"
+              },
+              {
+                "from": "Lower carry",
+                "to": "Foreign holdings of lira assets",
+                "direction": "lowers",
+                "basis": "assumption"
+              }
+            ]
+          },
+          "marketScenarios": {
+            "scenarios": [
+              {
+                "name": "Base",
+                "story": "Carry holds and the lira weakens slowly.",
+                "move": 4,
+                "odds": 55
+              },
+              {
+                "name": "Bad",
+                "story": "Foreign holders leave and the lira falls fast.",
+                "move": -15,
+                "odds": 45,
+                "source": "2018 lira episode (frozen test input)"
+              }
+            ]
+          }
+        }
+      },
+      "answers": [],
+      "expect": {
+        "minOptions": 2,
+        "headline": "(lira|carry|fed|stance|currency)",
+        "gapsMention": "(assum|source|missing|cftc|position|not (given|available)|not in)",
+        "maxRemoved": 2
+      }
     }
   ]
 }

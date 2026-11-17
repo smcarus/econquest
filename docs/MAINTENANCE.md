@@ -28,6 +28,21 @@ has ended or moved."
    GitHub stars, issues, flags and downloads, and of the outcome checks and answer ratings on this
    computer. The list and its review date are in docs/ROADMAP.md, "How we will know it works".
 
+## Each release (maintainer)
+
+Citations name the app's version and the git commit it was built from (`src/utils/buildInfo.ts`), so
+a reader can find the exact code. The version only changes when someone changes it:
+
+1. Raise `version` in `package.json`, `CITATION.cff` (with `date-released`) and `APP_CITATION` in
+   `src/utils/citation.ts`; a test checks the three agree.
+2. Add the release to `CHANGELOG.md`, tag it (`git tag v<version>`) and push the tag; the image
+   workflow publishes `ghcr.io/...:<version>`.
+3. Once the repository is public, archive the tag on Zenodo so the release gets a DOI, and add the
+   DOI to `CITATION.cff`.
+
+Docker builds pass the commit in (`APP_COMMIT`; `npm run go`, `start-mac.sh` and `update.sh` set it
+from git, the image workflow from the pushed commit). A copy built without it cites the version alone.
+
 ## Once a year (maintainer)
 
 Every row in the licence register (`src/data/dataLicences.ts`, shown in **Menu > About & data

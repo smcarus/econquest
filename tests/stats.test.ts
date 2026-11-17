@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { adf, alignPair, crossCorrelation, fPValue, granger, hpFilter, ols, pearson, periodKey, rollingCorrelation, shiftPeriod, toFreq, transform, tPValue } from '../src/utils/stats.ts';
+import { adf, alignPair, crossCorrelation, fPValue, granger, hpFilter, hpLambda, ols, pearson, periodKey, rollingCorrelation, shiftPeriod, toFreq, transform, tPValue } from '../src/utils/stats.ts';
 
 // Deterministic noise (mulberry32 + Box-Muller), so the tests never flicker.
 function rng(seed: number) {
@@ -95,6 +95,25 @@ test('ADF: white noise is stationary, a random walk is not', () => {
   assert.match((adf([1, 2, 3]) as { error: string }).error, /at least 20/);
 });
 
+// Reference values from statsmodels 0.15 adfuller(regression='c', autolag='AIC', maxlag=12*(n/100)^0.25):
+// the lag is chosen on one sample and the test refitted at that lag on every usable row.
+const ADF_WALK = [0.001, 0.3, 0.026, -0.865, -1.319, -2.311, -2.251, -0.911, -1.403, -2.023, -1.534, -1.177, -1.071, -2.002, -2.031, -1.336, -2.68, -3.137, -5.039, -6.328, -8.17, -8.405, -9.673, -9.401, -9.245, -9.431, -11.948, -12.487, -12.535, -12.422, -13.952, -14.43, -15.408, -16.217, -15.156, -15.964, -15.996, -15.112, -15.696, -15.807, -15.697, -15.633, -16.858, -16.782, -15.423, -16.97, -16.111, -15.992, -16.633, -14.633, -13.87, -15.07, -14.995, -14.419, -14.607, -13.924, -13.991, -13.324, -11.885, -12.561, -12.358, -12.821, -12.694, -13.881, -14.46, -14.656, -13.758, -12.612, -13.936, -14.731, -14.084, -16.076, -16.539, -16.637, -15.38, -14.69, -15.017, -15.386, -15.636, -14.113, -14.541, -14.844, -14.492, -14.612, -14.81, -15.924, -15.935, -16.379, -15.213, -14.56, -14.584, -13.915, -14.255, -13.203, -13.209, -12.625, -13.916, -13.569, -15.258, -17.293];
+const ADF_AR2 = [0.0, 0.0, 0.034, 1.411, 3.334, 4.199, 4.91, 4.998, 5.825, 6.208, 7.395, 6.256, 7.609, 7.848, 9.054, 9.591, 9.843, 10.593, 11.868, 12.528, 13.088, 14.251, 14.131, 12.905, 12.651, 11.486, 8.907, 6.453, 3.985, 0.822, -2.992, -5.812, -7.468, -9.376, -11.57, -12.855, -13.438, -14.415, -14.534, -13.843, -13.741, -14.296, -14.195, -14.063, -12.869, -13.516, -14.143, -15.489, -18.085, -19.66, -20.698, -22.428, -22.219, -21.812, -20.918, -19.947, -18.238, -18.424, -17.391, -16.327, -17.253, -17.049, -17.476, -16.847, -17.099, -17.055, -16.765, -17.484, -17.158, -17.315, -16.803, -17.116, -16.033, -14.981, -14.307, -13.023, -10.919, -7.69, -7.018, -4.831, -3.07, -1.628, -1.385, 0.426, 0.143, 1.112, 2.813, 2.355, 2.333, 0.876, 0.385, 1.217, 3.509, 3.126, 3.047, 3.597, 5.427, 6.929, 7.482, 8.507];
+test('ADF matches statsmodels: lag by AIC on one sample, statistic on the full sample', () => {
+  const a = adf(ADF_WALK);
+  const b = adf(ADF_AR2);
+  assert.ok(!('error' in a) && !('error' in b));
+  if ('error' in a || 'error' in b) return;
+  assert.equal(a.lags, 0);
+  assert.equal(a.n, 99);
+  close(a.stat, -2.022621638468061, 1e-6);
+  assert.equal(a.stationary, false);
+  assert.equal(b.lags, 2);
+  assert.equal(b.n, 97);
+  close(b.stat, -1.4872678905903447, 1e-6);
+  close(b.critical['5%'], -2.8918, 0.002);
+});
+
 test('Granger: past x predicts y when it should, and not the other way round', () => {
   const n = rng(4);
   const x = Array.from({ length: 150 }, () => n());
@@ -114,4 +133,40 @@ test('HP filter: a straight line is its own trend; cycle sums near zero', () => 
   const wavy = Array.from({ length: 80 }, (_, i) => i * 0.1 + Math.sin(i / 3) + 0.1 * n());
   const h2 = hpFilter(wavy, 1600);
   if (!('error' in h2)) close(h2.cycle.reduce((s, v) => s + v, 0), 0, 1e-6);
+});
+
+test('daily year-on-year compares with the same date a year earlier, skipping weekends', () => {
+  // Business days only, growing 10% a year in continuous time on calendar days.
+  const pts: Array<{ date: string; value: number }> = [];
+  const start = Date.UTC(2023, 0, 2);
+  for (let d = 0; d < 800; d++) {
+    const t = new Date(start + d * 86400000);
+    const wd = t.getUTCDay();
+    if (wd === 0 || wd === 6) continue;
+    pts.push({ date: t.toISOString().slice(0, 10), value: 100 * Math.exp((Math.log(1.1) * d) / 365) });
+  }
+  const yy = transform(pts, 'yoy', 'daily');
+  assert.ok(yy.length > 250);
+  // Monday 2024-03-04: a year earlier is Saturday 2023-03-04, so Friday 2023-03-03 is used (366 days back).
+  const mon = yy.find((p) => p.date === '2024-03-04')!;
+  assert.ok(Math.abs(mon.value - (Math.exp((Math.log(1.1) * 367) / 365) - 1) * 100) < 1e-9);
+  // An ordinary weekday sits near 10% (the 2024 leap day adds one day for part of the year).
+  for (const p of yy) assert.ok(p.value > 9.9 && p.value < 10.2, `${p.date}: ${p.value}`);
+  // 29 February looks back to 28 February.
+  assert.ok(yy.some((p) => p.date === '2024-02-29'));
+  // No point a year back within a week: dropped.
+  assert.equal(transform([{ date: '2024-06-03', value: 1 }, { date: '2023-05-20', value: 1 }], 'yoy', 'daily').length, 0);
+});
+
+test('HP smoothing scales with the fourth power of the frequency (Ravn and Uhlig)', () => {
+  assert.equal(hpLambda('annual'), 6.25);
+  assert.equal(hpLambda('quarterly'), 1600);
+  assert.equal(hpLambda('monthly'), 129600);
+  assert.equal(hpLambda('weekly'), 45697600);
+  assert.equal(hpLambda('daily'), 6.25 * 252 ** 4);
+  // The solver stays accurate at the daily λ: a straight line is still its own trend.
+  const line = Array.from({ length: 600 }, (_, i) => 3 + 0.01 * i);
+  const h = hpFilter(line, hpLambda('daily'));
+  assert.ok(!('error' in h));
+  if (!('error' in h)) assert.ok(Math.max(...h.cycle.map(Math.abs)) < 1e-4);
 });

@@ -2,7 +2,7 @@
  * Council chat's conversation, kept above the pages (CouncilChatProvider). The screens that draw it
  * (CouncilChatView.tsx) load only when the chat is first shown, so they stay out of the start-up code.
  */
-import { readHelpLevel } from '../utils/helpLevel';
+import { promptHelpLevel, readHelpLevel } from '../utils/helpLevel';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { councilBriefMarkdown } from '../utils/briefExport';
 import type { CouncilAssessmentRun, CROOverrideState, LiveWatchlistItem, WatchlistItem } from '../types/council';
@@ -13,27 +13,38 @@ import { pickPrevious, whatChanged, type ChangeReport } from '../utils/whatChang
 import type { PolicyDoc } from '../utils/policyDocs';
 import { findChallenges, type DebateResult } from '../utils/agentDebate';
 import { type FullCouncilPhase } from '../utils/councilNetwork';
-import { planCouncil, planFollowUp, applyAgentChoice, type AgentChoiceResult, type EarlierTurn, runCouncil, chartAnswer, answersForModel, type AgentAnswer, type CouncilPlan, type SavedCouncilBrief, type SynthesisResult } from '../utils/askCouncil';
+import { type AgentChoiceResult, type EarlierTurn, answersForModel, type AgentAnswer, type CouncilPlan, type SavedCouncilBrief, type SynthesisResult } from '../utils/askCouncil';
 import type { CouncilTiming } from '../utils/councilTiming';
-import { focusQuestion, withExplainAgents, type ExplainFocus } from '../utils/explain';
+import { focusQuestion, type ExplainFocus } from '../utils/explain';
 import { EXPLAIN_EVENT } from '../utils/explainHandoff';
-import { computeChart, fetchChartSeries } from '../utils/councilChart';
-import { asksForecast, forecastAnswer, type CountryModels } from '../utils/forecastAgent';
+import { councilAnswers, hasFindings, NO_FIGURES_REASON } from '../utils/councilQuestion';
 
 const AI_RUNTIME_STORAGE_KEY = 'econquest_ai_runtime_config_v1';
+/** A new id for one Council chat question, sent as X-Correlation-Id so the audit log and the research tools server can join their entries. */
+export function newQuestionId(): string {
+  return `q-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/** Whether the outside research tools are set up, asked once a minute at most (GET /api/research-tools/status). */
+let researchStatus: { at: number; on: boolean } | null = null;
+async function researchToolsOn(): Promise<boolean> {
+  if (researchStatus && Date.now() - researchStatus.at < 60_000) return researchStatus.on;
+  try {
+    const r = await fetch('/api/research-tools/status');
+    const on = r.ok ? Boolean((await r.json())?.enabled) : false;
+    researchStatus = { at: Date.now(), on };
+    return on;
+  } catch {
+    return false;
+  }
+}
+
 export function runtimeConfig(): Record<string, unknown> {
   try {
     return JSON.parse(localStorage.getItem(AI_RUNTIME_STORAGE_KEY) || '{}') || {};
   } catch {
     return {};
   }
-}
-
-/** The full nine-agent council on the country open now, run from the conversation. */
-/** The app's nowcast and forecast for each country (src/utils/forecastAgent.ts); a failed call reads Missing. */
-async function fetchCountryModels(countries: Array<{ iso3: string; countryName: string }>): Promise<CountryModels[]> {
-  const get = (u: string) => fetch(u).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-  return Promise.all(countries.map(async (c) => ({ iso3: c.iso3, countryName: c.countryName, nowcast: await get(`/api/nowcast/${encodeURIComponent(c.iso3)}`), forecast: await get(`/api/forecast/${encodeURIComponent(c.iso3)}`) })));
 }
 
 export interface FullCouncilStep {
@@ -143,14 +154,14 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
   };
 
   /** Ask the AI model which agents should answer; null when it cannot be reached in time. */
-  const chooseAgents = async (question: string, history: EarlierTurn[]): Promise<AgentChoiceResult | null> => {
+  const chooseAgents = async (question: string, history: EarlierTurn[], opts?: { quant?: boolean }): Promise<AgentChoiceResult | null> => {
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), 15000);
     try {
       const r = await fetch('/api/council/choose-agents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, earlier: history.map((t) => ({ question: t.question })), runtimeConfig: runtimeConfig() }),
+        body: JSON.stringify({ question, earlier: history.map((t) => ({ question: t.question })), ...(opts?.quant ? { quant: true } : {}), runtimeConfig: runtimeConfig() }),
         signal: ctl.signal,
       });
       return r.ok ? ((await r.json()) as AgentChoiceResult) : { agents: null, reason: `the AI step did not answer (HTTP ${r.status})` };
@@ -175,31 +186,45 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
     else if (mode === 'new') setPast([]);
     setEarlier(history);
     setQuestion('');
-    const wordPlan = asFollowUp && asked ? planFollowUp(text, asked.plan, items) : planCouncil(text, items, scope || undefined);
-    setChoosing(true);
-    // Explain questions ("why…", "what does it mean for…") also bring the agents for each lens.
-    const plan = withExplainAgents(applyAgentChoice(wordPlan, await chooseAgents(text, history)), text, focus);
-    setChoosing(false);
-    const desk = runCouncil(text, plan, items, new Date(), docs);
-    // The Chart Agent: fetch the series the question names from the app's own history, draw, test.
-    const charted = plan.chart ? [chartAnswer(plan.chart, computeChart(plan.chart, await fetchChartSeries(plan.chart))), ...desk] : desk;
-    // Nowcast & Forecast: the app's own estimates join when the question asks about the path ahead.
-    const answers = asksForecast(text) && plan.countries.length ? [...charted, forecastAnswer(await fetchCountryModels(plan.countries.slice(0, 4)))] : charted;
+    const questionId = newQuestionId();
+    // The same steps as the data API's ask:council (src/utils/councilQuestion.ts), plus the Quant desk, which only the chat may ask.
+    const { plan, answers } = await councilAnswers(
+      { question: text, items, history, previous: asFollowUp && asked ? asked.plan : undefined, scopeIso3: asFollowUp ? undefined : scope || undefined, focus, docs, questionId },
+      {
+        chooseAgents: async (q, h, o) => {
+          setChoosing(true);
+          try {
+            return await chooseAgents(q, h, o);
+          } finally {
+            setChoosing(false);
+          }
+        },
+        get: (u) => fetch(u),
+        quant: {
+          enabled: researchToolsOn,
+          run: async (req) => {
+            const r = await fetch('/api/council/quant', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Correlation-Id': questionId }, body: JSON.stringify({ ...req, runtimeConfig: runtimeConfig() }) });
+            return r.ok ? (((await r.json()) as { answer: AgentAnswer | null }).answer ?? null) : null;
+          },
+        },
+      }
+    );
     const askedAt = new Date().toISOString();
     setAsked({ question: text, plan, answers, askedAt, startedAt: (asFollowUp || mode === 'replace') && asked ? asked.startedAt : askedAt });
     setSynthesis(null);
     setDebate(null);
     setCopied(null);
-    if (!answers.some((a) => a.findings.length)) {
-      setSynthesis({ brief: null, removed: [], reason: 'The agents found no figures to answer with, so there is nothing to summarise.' });
+    if (!hasFindings(answers)) {
+      setSynthesis({ brief: null, removed: [], reason: NO_FIGURES_REASON });
       return;
     }
     setWriting(true);
     try {
       const r = await fetch('/api/council/synthesise', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: text, askedAt, ...(pinned ? { dataPinnedAt: pinned.at } : {}), answers: answersForModel(answers), scope: plan.scopeNote, countries: plan.countries.length, earlier: history.map((t) => ({ question: t.question, headline: t.headline })), ...(plan.explain ? { explain: { ...plan.explain, helpLevel: readHelpLevel() } } : {}), runtimeConfig: runtimeConfig() }),
+        // The question's id joins this answer's audit entry with its research tools calls.
+        headers: { 'Content-Type': 'application/json', ...(plan.quant ? { 'X-Correlation-Id': questionId } : {}) },
+        body: JSON.stringify({ question: text, askedAt, ...(pinned ? { dataPinnedAt: pinned.at } : {}), answers: answersForModel(answers), scope: plan.scopeNote, countries: plan.countries.length, earlier: history.map((t) => ({ question: t.question, headline: t.headline })), ...(plan.explain ? { explain: { ...plan.explain, helpLevel: promptHelpLevel(readHelpLevel()) } } : {}), runtimeConfig: runtimeConfig() }),
       });
       setSynthesis(r.ok ? ((await r.json()) as SynthesisResult) : { brief: null, removed: [], reason: `The summary step did not answer (HTTP ${r.status}).` });
     } catch {

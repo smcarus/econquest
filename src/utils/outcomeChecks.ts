@@ -14,6 +14,14 @@
  * the recommended option (roadmap G38): Warning shown (the figure moved the way that signals failure),
  * No warning, Too early or Missing.
  *
+ * From v3, a market council review (PK7, PK9) whose market is the currency also checks its cases: the
+ * change in value of the currency for a holder in US dollars, from the exchange rate in the Diagnose
+ * step to the one in the saved pull, set against the cases the principal entered (which case came
+ * closest, and whether the odds given for a loss matched what happened). For government bonds the
+ * yield or spread move is recorded but not turned into a change in value: that needs the bonds'
+ * duration, which the app does not have. A policy council's cases are present values and cannot be
+ * read from data, so only the goal is checked.
+ *
  * Only whether the stated goal was met is recorded. The app does not know whether the advice was
  * followed, and what happened afterwards is not what the advice caused; the track record says so.
  *
@@ -21,13 +29,14 @@
  * (policyReviewStore.ts adds the hash). A check uses the saved pull on or before its due day, so
  * a check made late gives the same result as one made on the day. Browser-safe, pure.
  */
-import type { GoalDirection, PolicyReview, ReviewFrame } from './policyReview';
+import type { GoalDirection, MarketKind, PolicyReview, ReviewFrame } from './policyReview';
+import type { MarketScenarios } from './policyCouncil';
 import type { Diagnosis, DiagnosisFigure } from './reviewDiagnosis';
 import { goalFigure } from './reviewOutcomes';
 import type { EarlyWarning } from './reviewOptions';
 
 /** Bumped when the rules below change, so each saved check says which rules made it. */
-export const OUTCOME_CHECK_VERSION = 'outcome-check-v2';
+export const OUTCOME_CHECK_VERSION = 'outcome-check-v3';
 export const CHECK_MONTHS = [12, 24] as const;
 export type CheckMonths = (typeof CHECK_MONTHS)[number];
 /** The saved pull a check reads must be from this many days before the due day, or later. */
@@ -68,6 +77,15 @@ export interface WarningCheck {
   reason: string;
 }
 
+export interface CaseCheck {
+  result: 'checked' | 'not_checkable' | 'too_early' | 'missing';
+  /** Change in value for a holder, % (currency only). */
+  measured?: number;
+  /** The case whose change in value was nearest what happened. */
+  closest?: string;
+  reason: string;
+}
+
 export interface OutcomeCheck {
   version: string;
   months: CheckMonths;
@@ -88,6 +106,8 @@ export interface OutcomeCheck {
   targetRange?: [number, number];
   /** The recommended option's early-warning figures (pre-mortem), each judged the same way (v2 on). */
   warnings?: WarningCheck[];
+  /** Market council cases (v3 on): what happened set against the principal's cases. */
+  cases?: CaseCheck;
   /** Hash of the check before this one in the same review. */
   prevHash?: string;
   hash: string;
@@ -152,10 +172,34 @@ export function nextCheck(review: Pick<PolicyReview, 'steps'> & { outcomeChecks?
  * of date); `now` is the diagnosis built from the saved pull on or before the due day (null when
  * there is none).
  */
-export function judgeCheck(input: { frame: ReviewFrame; frameHash: string; months: CheckMonths; then: Diagnosis | null; now: Diagnosis | null; checkedOn: string; warnings?: EarlyWarning[] }): UnsavedCheck {
+export function judgeCheck(input: { frame: ReviewFrame; frameHash: string; months: CheckMonths; then: Diagnosis | null; now: Diagnosis | null; checkedOn: string; warnings?: EarlyWarning[]; cases?: MarketScenarios }): UnsavedCheck {
   const core = judgeGoal(input);
-  if (!input.warnings?.length) return core;
-  return { ...core, warnings: judgeWarnings(input.warnings, input.then, input.now, core.due, input.frame.iso3) };
+  const out: UnsavedCheck = input.warnings?.length ? { ...core, warnings: judgeWarnings(input.warnings, input.then, input.now, core.due, input.frame.iso3) } : core;
+  const market = input.frame.council?.kind === 'market' ? input.frame.council.market : undefined;
+  if (market && input.cases?.scenarios.length) return { ...out, cases: judgeCases(input.cases, market, input.then, input.now, core.due, input.frame.iso3) };
+  return out;
+}
+
+const MARKET_FIELD: Record<MarketKind, string> = { currency: 'market.exchangeRatePerUsd', local_bonds: 'market.sovereign10YBondYieldPct', dollar_bonds: 'market.hcBondSpreadBps' };
+
+/** PK9: what happened to the market, set against the principal's cases. */
+export function judgeCases(cases: MarketScenarios, market: MarketKind, then: Diagnosis | null, now: Diagnosis | null, due: string, iso3: string): CaseCheck {
+  const field = MARKET_FIELD[market];
+  const start = then?.figures.find((f) => f.field === field);
+  if (!start || start.value === null) return { result: 'missing', reason: `No starting figure for the market${start?.reason ? `: ${start.reason}` : ''}.` };
+  if (!now || now.pullDate < daysBefore(due, PULL_WINDOW_DAYS)) return { result: 'missing', reason: `No saved pull for ${iso3} in the ${PULL_WINDOW_DAYS} days before ${due}.` };
+  const end = now.figures.find((f) => f.field === field);
+  if (!end || end.value === null) return { result: 'missing', reason: `No market figure on ${now.pullDate}${end?.reason ? `: ${end.reason}` : ''}.` };
+  if (start.period && end.period === start.period) return { result: 'too_early', reason: `Still the ${start.period} figure.` };
+  const moved = `${start.label.replace(/ \(.*\)$/, '')} from ${fmt(start.value, start.unit)} (${start.period || then!.pullDate}) to ${fmt(end.value, end.unit)} (${end.period || now.pullDate})`;
+  if (market !== 'currency') return { result: 'not_checkable', reason: `${moved}. Not turned into a change in value: that needs the bonds' duration, which the app does not have.` };
+  if (end.value <= 0) return { result: 'missing', reason: `${moved}: not a usable exchange rate.` };
+  // Local currency per US dollar: a holder of the currency gains when fewer units buy a dollar.
+  const measured = Math.round((start.value / end.value - 1) * 10000) / 100;
+  const closest = [...cases.scenarios].sort((a, b) => Math.abs(a.move - measured) - Math.abs(b.move - measured))[0];
+  const loss = cases.scenarios.every((x) => x.odds !== undefined) ? cases.scenarios.filter((x) => x.move < 0).reduce((a, x) => a + x.odds!, 0) : null;
+  const lossText = loss === null ? '' : ` The cases put the chance of a loss at ${Math.round(loss * 100) / 100}%; ${measured < 0 ? 'there was a loss' : 'there was no loss'}.`;
+  return { result: 'checked', measured, closest: closest.name, reason: `${moved}: a change in value of ${measured > 0 ? '+' : ''}${measured}% for a holder in US dollars. Closest case: ${closest.name} (${closest.move > 0 ? '+' : ''}${closest.move}%).${lossText}` };
 }
 
 /** Each early-warning figure: did it move the way that signals failure, from the start to the pull read? */

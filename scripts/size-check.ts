@@ -34,7 +34,10 @@ export const TARGETS: Target[] = [
   // (html2canvas, DOMPurify, canvg; src/vendor/pdfExtrasStub.ts) and storing the share-preview logo
   // with 256 colours. Each language adds about 0.45 MB (140 KB compressed). Total raised to 7.5 MB the
   // same day (Sam) to make room for Portuguese, Arabic and Swahili and the planned screens.
-  { name: 'web', dir: 'dist', limits: { startKB: 1500, startGzipKB: 465, largestJsKB: 1280, totalMB: 7.5 } },
+  // Raised 17 Nov 2026 (Sam) after the Quant desk took the build to 460/465 KB compressed at start and
+  // 7.49/7.5 MB in all: start 1 700 KB (520 KB compressed), total 9 MB, which still holds Arabic and
+  // Swahili (about 0.9 MB) if they are started.
+  { name: 'web', dir: 'dist', limits: { startKB: 1700, startGzipKB: 520, largestJsKB: 1280, totalMB: 9 } },
   { name: 'phone', dir: 'mobile/dist', limits: { startKB: 1000, startGzipKB: 300, largestJsKB: 400, totalMB: 20 } },
 ];
 

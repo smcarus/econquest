@@ -7,6 +7,7 @@ import { councilBriefMarkdown } from './briefExport';
 import type { PolicyDoc } from './policyDocs';
 import type { Notebook, SavedBriefEntry } from './researchLibrary';
 import { withNotice } from './disclaimer';
+import { pinsMarkdown } from './notebookPins';
 
 /** Characters of each document quoted in the export; the full text stays in the app. */
 export const NOTEBOOK_DOC_EXCERPT = 1500;
@@ -41,6 +42,7 @@ export function notebookMarkdown(nb: Notebook, briefs: SavedBriefEntry[], docs: 
     lines.push(`## Document: ${d.title}`, '', `Added ${d.addedAt.slice(0, 10)}${d.pages ? `, ${d.pages} pages` : ''}. ${cut ? `Opening ${NOTEBOOK_DOC_EXCERPT.toLocaleString('en-US')} of ${text.length.toLocaleString('en-US')} characters; the full text is kept in the app.` : 'Full text.'}`, '');
     lines.push(...(cut ? text.slice(0, NOTEBOOK_DOC_EXCERPT) + ' …' : text).split(/\r?\n/).map((l) => (l.trim() ? `> ${l}` : '>')), '');
   }
+  if (nb.pins?.length) lines.push(pinsMarkdown(nb.pins), '');
   return withNotice(lines.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n');
 }
 

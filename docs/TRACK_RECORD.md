@@ -8,6 +8,12 @@ re-tuned after a fail; a changed test is a new version and counts as a new test.
 from the owner's real runs and never edited. Backtest and evaluation results are hypothetical: they
 show how a rule would have done on past data, not money made.
 
+**When each test was written down.** 20 of the 20 tests were written down on the day they ran or the day before (6 on the same day). For a test written down shortly before it ran,
+on data already public, the hash shows the rule did not change after the run; it does not show that
+the rule was fixed before anyone looked at the data. Read those as *specified and hashed before the
+run*. Only a test written down before its data exist rules out both. The *Registered* and *Run*
+columns below give both dates for every test.
+
 **In plain words.** Each test asks one question: would this rule have done better than the simplest
 possible guess, using only the figures that had actually been published at the time and after
 trading costs? *Passed* means it did, by more than luck would usually explain. *Failed* means it did
@@ -56,7 +62,8 @@ forward record (below) confirms it or the test is run again with a new pre-regis
 
 Holm p is across all 20 tests above; a test whose record gives no p is counted with p = 1, which can only
 make the other adjusted p-values larger. The app's own reading (Menu > Models & validation) uses every
-version run on that computer, so it can count more tests than this page.
+version run on that computer, so it can count more tests than this page. A computer that has not run a
+test yet shows the verdict on this page instead, marked "from the project's published track record".
 
 ## What each run found
 

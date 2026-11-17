@@ -97,11 +97,13 @@ test('units: real or nominal, base year, and market rate or purchasing power par
   assert.deepEqual(everyId().filter((id) => seriesTags({ id }).measure === COVERAGE.notStated), []);
 });
 
-test('every definition and coverage has Spanish and French', async () => {
+test('every definition and coverage has Spanish, French and Portuguese', async () => {
   const { attachLanguage, translateText } = await import('../src/i18n/lang');
   const { ES, ES_TEXT } = await import('../src/i18n/es');
   const { FR, FR_TEXT } = await import('../src/i18n/fr');
   attachLanguage('es', ES, ES_TEXT);
+  const { PT, PT_TEXT } = await import('../src/i18n/pt');
   attachLanguage('fr', FR, FR_TEXT);
-  for (const lang of ['es', 'fr'] as const) assert.deepEqual(allTagTexts().filter((x) => translateText(x, lang) === x), [], lang);
+  attachLanguage('pt', PT, PT_TEXT);
+  for (const lang of ['es', 'fr', 'pt'] as const) assert.deepEqual(allTagTexts().filter((x) => translateText(x, lang) === x), [], lang);
 });

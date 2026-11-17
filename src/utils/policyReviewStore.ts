@@ -8,7 +8,10 @@ import { createHash } from 'crypto';
 import { canonicalJson } from './auditLog';
 import { writeFileAtomic } from './atomicWrite';
 import type { OutcomeCheck, UnsavedCheck } from './outcomeChecks';
-import { MAX_REVIEWS, MAX_RUNS, REVIEW_STEPS, REVIEW_TEMPLATE_VERSION, canSaveStep, frameTitle, prevStep, type PolicyReview, type ReviewFile, type ReviewFrame, type ReviewRun, type ReviewStep, type ReviewStepRecord } from './policyReview';
+import { EXPERT_TEMPLATE_VERSION, MAX_EXPERT_REVIEWS, type Consent, type ExpertAnswers, type ExpertReview, type UnsavedExpertReview } from './expertReview';
+import { COUNCIL_TEMPLATE_VERSION, COUNCIL_PARTS, type CouncilPart, type CouncilPartRecord } from './policyCouncil';
+import { BEHAVIOUR_TEMPLATE_VERSION, type BehaviourEffect, type BehaviourRecord } from './behaviouralCheck';
+import { MAX_REVIEWS, MAX_RUNS, REVIEW_STEPS, REVIEW_TEMPLATE_VERSION, canSaveStep, frameTitle, prevStep, stepStates, type PolicyReview, type ReviewFile, type ReviewFrame, type ReviewRun, type ReviewStep, type ReviewStepRecord } from './policyReview';
 
 export function stepHash(step: ReviewStep, content: unknown, basedOn: string | undefined): string {
   return createHash('sha256').update(canonicalJson({ step, content, basedOn: basedOn ?? null })).digest('hex');
@@ -72,6 +75,89 @@ export function verifyOutcomeChecks(review: PolicyReview): number[] {
 function isReview(v: unknown): v is PolicyReview {
   const r = v as PolicyReview;
   return Boolean(r && typeof r.id === 'string' && r.id && typeof r.title === 'string' && r.steps && typeof r.steps === 'object' && Array.isArray(r.runs));
+}
+
+/** Behavioural check (G33): hash of the entries and the Options step they were made against. */
+export function behaviourHash(rec: Pick<BehaviourRecord, 'templateVersion' | 'optionsHash' | 'effects'>): string {
+  return createHash('sha256').update(canonicalJson({ templateVersion: rec.templateVersion, optionsHash: rec.optionsHash, effects: rec.effects })).digest('hex');
+}
+
+/** Saves the user's effect sizes beside the steps, tied to the Options step saved now. Needs a saved Options step. */
+export function saveBehaviour(review: PolicyReview, effects: BehaviourEffect[], now: Date = new Date()): { review: PolicyReview } | { error: string } {
+  const options = review.steps.options;
+  if (!options) return { error: 'Options must be done first.' };
+  const at = now.toISOString();
+  const base = { templateVersion: BEHAVIOUR_TEMPLATE_VERSION, optionsHash: options.hash, effects };
+  const behaviour: BehaviourRecord = { ...base, savedAt: at, hash: behaviourHash(base) };
+  return { review: { ...review, updatedAt: at, behaviour } };
+}
+
+/** True when the saved entries no longer match their hash (edited outside the app). */
+export function behaviourChanged(review: PolicyReview): boolean {
+  return Boolean(review.behaviour && behaviourHash(review.behaviour) !== review.behaviour.hash);
+}
+
+/** Policy council part (PK2 to PK5): hash of the content and the frame it was entered against. */
+export function councilPartHash(rec: Pick<CouncilPartRecord, 'templateVersion' | 'frameHash' | 'content'>): string {
+  return createHash('sha256').update(canonicalJson({ templateVersion: rec.templateVersion, frameHash: rec.frameHash, content: rec.content })).digest('hex');
+}
+
+/** Saves one policy council part beside the steps, tied to the frame saved now. Needs a frame with a measure to weigh. */
+export function saveCouncilPart(review: PolicyReview, part: CouncilPart, content: unknown, now: Date = new Date()): { review: PolicyReview } | { error: string } {
+  const frame = review.steps.frame;
+  if (!frame || !(frame.content as ReviewFrame).council) return { error: 'Tick "Weigh one measure" in the frame first.' };
+  const at = now.toISOString();
+  const base = { templateVersion: COUNCIL_TEMPLATE_VERSION, frameHash: frame.hash, content };
+  const rec: CouncilPartRecord = { ...base, savedAt: at, hash: councilPartHash(base) };
+  return { review: { ...review, updatedAt: at, councilParts: { ...review.councilParts, [part]: rec } } };
+}
+
+/** The council parts whose saved content no longer matches its hash (edited outside the app). */
+export function councilPartsChanged(review: PolicyReview): CouncilPart[] {
+  return COUNCIL_PARTS.filter((p) => {
+    const rec = review.councilParts?.[p];
+    return rec ? councilPartHash(rec) !== rec.hash : false;
+  });
+}
+
+/** Expert review (P4): hash of the answers, the memo read and the review before (consent is not hashed). */
+export function expertHash(r: UnsavedExpertReview, prevHash: string | undefined): string {
+  return createHash('sha256').update(canonicalJson({ review: r, prevHash: prevHash ?? null })).digest('hex');
+}
+
+/** Adds one expert review of the memo saved now, chained to the last one. Needs a memo that is done. */
+export function appendExpertReview(review: PolicyReview, answers: ExpertAnswers, consent: Consent, now: Date = new Date(), account?: string): { review: PolicyReview; saved: ExpertReview } | { error: string } {
+  if (stepStates(review).memo !== 'done') return { error: 'Write the memo first (and run it again if it is out of date).' };
+  const list = review.expertReviews ?? [];
+  if (list.length >= MAX_EXPERT_REVIEWS) return { error: `This review already has ${MAX_EXPERT_REVIEWS} expert reviews.` };
+  const unsaved: UnsavedExpertReview = { ...answers, version: EXPERT_TEMPLATE_VERSION, memoHash: review.steps.memo!.hash, savedAt: now.toISOString(), ...(account ? { account } : {}) };
+  const prevHash = list.length ? list[list.length - 1].hash : undefined;
+  let id = `x${list.length + 1}`;
+  while (list.some((x) => x.id === id)) id += 'x';
+  const saved: ExpertReview = { ...unsaved, id, consent, ...(prevHash ? { prevHash } : {}), hash: expertHash(unsaved, prevHash) };
+  return { review: { ...review, expertReviews: [...list, saved] }, saved };
+}
+
+/** Changes whether one expert review may be published. The answers and their hash stay as they were. */
+export function setExpertConsent(review: PolicyReview, id: string, consent: Consent, now: Date = new Date()): { review: PolicyReview; saved: ExpertReview } | { error: string } {
+  const list = review.expertReviews ?? [];
+  const i = list.findIndex((x) => x.id === id);
+  if (i < 0) return { error: 'No expert review with that id.' };
+  const saved: ExpertReview = { ...list[i], consent, consentChangedAt: now.toISOString() };
+  return { review: { ...review, expertReviews: list.map((x, j) => (j === i ? saved : x)) }, saved };
+}
+
+/** Ids of expert reviews whose hash or link to the one before no longer matches. */
+export function verifyExpertReviews(review: PolicyReview): string[] {
+  const bad: string[] = [];
+  (review.expertReviews ?? []).forEach((x, i, all) => {
+    const { id, consent, consentChangedAt, prevHash, hash, ...rest } = x;
+    void consent;
+    void consentChangedAt;
+    const expectedPrev = i ? all[i - 1].hash : undefined;
+    if (prevHash !== expectedPrev || expertHash(rest, prevHash) !== hash) bad.push(id);
+  });
+  return bad;
 }
 
 export function reviewFilePath(dataDir: string): string {

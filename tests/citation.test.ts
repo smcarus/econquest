@@ -51,3 +51,24 @@ test('dates read in words, and the pack citation file names the app', () => {
   assert.match(cff, /title: "Turkey \\"rates\\" \(replication pack from EconQuest Terminal\)"/);
   assert.match(cff, /date-released: "2026-11-11"/);
 });
+
+test('a citation names the code commit when the build recorded one, and the version alone when not', async () => {
+  const { versionWithCommit, appCommit } = await import('../src/utils/buildInfo.ts');
+  assert.equal(versionWithCommit('0.1.0', ''), '0.1.0');
+  assert.equal(versionWithCommit('0.1.0', '1a2b3c4d5e6f'), '0.1.0 (commit 1a2b3c4d5e6f)');
+  const withCommit = citation({ kind: 'chart', title: 'Policy rate, Brazil', sources: [], accessed: '2026-11-14', commit: '1a2b3c4d5e6f' });
+  assert.match(withCommit.text, /version 0\.1\.0 \(commit 1a2b3c4d5e6f\)\./);
+  assert.match(withCommit.bibtex, /howpublished = \{Chart in EconQuest Terminal, version 0\.1\.0 \(commit 1a2b3c4d5e6f\)\}/);
+  assert.match(withCommit.ris, /N1  - .*Code commit 1a2b3c4d5e6f\./);
+  const without = citation({ kind: 'chart', title: 'Policy rate, Brazil', sources: [], accessed: '2026-11-14', commit: '' });
+  assert.match(without.text, /version 0\.1\.0\. Accessed/);
+  assert.match(packCitationCff('Pack', '2026-11-14', 'abcdef123456'), /^ {4}commit: "abcdef123456"$/m);
+  assert.doesNotMatch(packCitationCff('Pack', '2026-11-14', ''), /commit:/);
+  const saved = process.env.APP_COMMIT;
+  process.env.APP_COMMIT = 'ABCDEF1234567890';
+  assert.equal(appCommit(), 'abcdef123456');
+  process.env.APP_COMMIT = 'not a commit';
+  assert.equal(appCommit(), '');
+  if (saved === undefined) delete process.env.APP_COMMIT;
+  else process.env.APP_COMMIT = saved;
+});

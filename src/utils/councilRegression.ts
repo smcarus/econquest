@@ -13,6 +13,7 @@
  *
  * Browser-safe: types and the check. The server runs the cases.
  */
+import { councilPromptLines, type CouncilInputs } from './policyCouncil';
 import type { AgentAnswer, SynthesisResult } from './askCouncil';
 import type { ReviewFrame } from './policyReview';
 
@@ -51,6 +52,8 @@ export interface OptionsCaseInput {
   frame: ReviewFrame;
   /** Diagnosis figures that are live; every other diagnosis figure is Missing ("not in this test case"). */
   figures: Array<{ field: string; figure: string; value: number; unit: string; period: string; source: string }>;
+  /** A frame that names one measure (policy council, PK6): the principal's frozen council entries. */
+  council?: CouncilInputs;
 }
 
 export interface RegressionCase {
@@ -144,6 +147,8 @@ export function caseInputText(c: RegressionCase): string[] {
     const rate = v('market.policyRatePct');
     const cpi = v('imf.cpiInflationPct');
     if (rate !== undefined && cpi !== undefined) out.push(String(Math.round((rate - cpi) * 100) / 100));
+    // A policy council case: the present values, nets and shares the app works out from the entries (PK6).
+    if (c.options.frame.council) out.push(...councilPromptLines(c.options.frame, c.options.council));
   }
   return out;
 }

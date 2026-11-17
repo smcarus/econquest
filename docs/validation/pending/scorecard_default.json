@@ -1,0 +1,37 @@
+{
+  "id": "scorecard_default",
+  "version": 1,
+  "registeredOn": "2026-11-13",
+  "registeredBy": "Sam (owner) asked for the country risk scorecard to carry a pre-registered test (console integration item 12, 2026-11-13); registered before any run and before the runner exists",
+  "plannedStep": "Console integration item 12: Country risk scorecard",
+  "hypothesis": "A country-year whose governance reading on the scorecard is in the bottom quarter of all countries that year (the plain average of the six World Bank WGI estimates) is followed by the start of a sovereign default in that country within the next three calendar years more often than country-years in general.",
+  "method": "scorecard_default",
+  "framework": 2,
+  "params": {
+    "governanceReading": "plain average of the six WGI estimates (voice and accountability, political stability, government effectiveness, regulatory quality, rule of law, control of corruption); a country-year needs all six",
+    "bottomShare": 0.25,
+    "releaseLagYears": 1,
+    "horizonYears": 3,
+    "defaultStart": "government obligations in default go from zero in one year to above zero the next, in the BoC-BoE total across all creditors",
+    "excludeYearsInDefault": true,
+    "resampleBlock": "calendar year",
+    "resamples": 4000,
+    "seed": 20261113
+  },
+  "data": {
+    "signal": "World Bank Worldwide Governance Indicators, estimates (VA.EST, PV.EST, GE.EST, RQ.EST, RL.EST, CC.EST), as the scorecard already reads them",
+    "outcome": "Bank of Canada and Bank of England Sovereign Default Database, 2026 edition (1960 to 2025), total stock in default by country and year, as the app already reads it",
+    "universe": "Every country with all six WGI estimates and a BoC-BoE row for the years tested"
+  },
+  "timing": "WGI estimates for year t are published in the autumn of year t+1, so the reading for year t is first usable at the end of t+1. A default start counts when it falls in t+2, t+3 or t+4. Country-years already in default at the end of t+1 are left out.",
+  "sample": { "from": "WGI year 1996", "to": "the last WGI year whose three-year window ends inside the BoC-BoE edition (2021 with the 2026 edition)" },
+  "passMark": { "minCases": 30, "minLiftPts": 3, "maxPValue": 0.05, "minYears": 15 },
+  "knownLimits": [
+    "The scorecard itself shows no overall score. The plain average of the six WGI estimates is a rule fixed here only to have something testable; it is not shown as a score in the app, and passing would not make it one.",
+    "WGI was published every two years until 2002 (1996, 1998, 2000, 2002), so the early years are thinner; whole years are resampled, so this counts as fewer blocks rather than more cases.",
+    "WGI estimates are revised when the method or sources change; the series on file is today's vintage, not the figures available at the time. The one-year release lag is applied on top.",
+    "Defaults cluster in time (the early 2000s, the 2020s) and in countries; resampling whole years treats each cluster as one block. The base rate is pooled over every country-year, so a pass can partly reflect which countries are poorer, not governance alone.",
+    "BoC-BoE counts any arrears, including small ones to official creditors; a default start can be a small arrear rather than a bond default. A country that leaves default and falls back in counts again.",
+    "Licence: WGI is CC BY 4.0. BoC-BoE is under the Bank of Canada terms (free use with attribution); the database draws on third-party published sources, which the licence row records as an open question. The result is shown in the app only; the outcome file is not re-published."
+  ]
+}

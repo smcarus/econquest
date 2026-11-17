@@ -26,12 +26,13 @@ developer, "From the code" below is the short route.
 | Part | Size | How the figure was found |
 | --- | --- | --- |
 | Docker Desktop | A few GB | Docker's own requirement; check docker.com for the current figure. |
-| The ready-made app (Docker image) | About 0.6 GB once unpacked; the download is a few hundred MB | Estimate from its parts: runtime packages 410 MB and the built app 6 MB (both measured on 9 November 2026), plus the Node.js base image. |
-| From the code instead | About 0.5 GB | Measured on 9 November 2026: installed packages (`node_modules`) 465 MB, built app (`dist`) 6 MB, source code a few MB. |
+| The ready-made app (Docker image) | About 0.8 GB once unpacked; the download is about 170 MB | Measured on 13 November 2026: the image built from the repository's Dockerfile is 798 MB unpacked and 170 MB compressed. |
+| From the code instead | About 0.5 GB | Measured on 13 November 2026: installed packages (`node_modules`) 465 MB, built app (`dist`) 7 MB, source code and its history 70 MB. |
 | Saved data (the `data/` folder) | About 150 MB after the first few days, growing by about 40 MB a year, plus the options below | Measured on the developer's Mac on 9 November 2026 (details in the next table). |
 | Past IMF World Economic Outlook editions | 2 to 9 MB per edition; about 100 MB for the 14 editions on that Mac | Measured. Every edition since 2007 would be roughly 300 MB (estimate: about 38 editions at an average of 7 MB). |
 | GDELT long history (optional, `npm run gdelt:daily`) | About 5 MB kept on disk from 2016; the download is much larger (below) | Measured: 41 KB per month of history. |
 | Small AI model (qwen2.5:7b, optional) | About 5 GB | Model size published by Ollama. |
+| Mid-size referee (qwen2.5:14b, optional, only with "Allow a 14B referee") | About 9 GB | Model size published by Ollama. |
 | Large AI model (qwen2.5:32b, optional) | About 20 GB | Model size published by Ollama. |
 
 What sits in `data/` (developer's Mac, 9 November 2026, 22 countries):
@@ -61,13 +62,15 @@ network use before and after a run.
 
 | When | What runs | About how much it downloads | How the figure was found |
 | --- | --- | --- | --- |
-| Once, the first time | The ready-made app (Docker image) | A few hundred MB | Estimate from the image's parts (above) |
+| Once, the first time | The ready-made app (Docker image) | About 170 MB | Measured: the compressed image, 13 November 2026 (above) |
 | Once, the first time | First full data download: every free source for every country, 8 weeks of GDELT files, past IMF forecast editions, sanctions, conflict and risk files | About 3.6 to 3.8 GB, most of it GDELT | GDELT: about 3.4 GB for 8 weeks (from GDELT's own file sizes, `npm run gdelt:pull -- --estimate`); IMF editions about 100 MB (measured); the rest as in the daily row |
 | Once, if you choose | AI models through Ollama | About 5 GB (small) and 20 GB (large) | Model sizes published by Ollama |
 | Once, if you choose | GDELT long history (`npm run gdelt:daily`) | About 25 GB from 2016; about 35 GB from 1979 | From GDELT's published file sizes; `npm run gdelt:daily -- --estimate` gives the exact figure |
 | Every day | The daily run (`npm run go -- daily`, started by `npm run go`) | Roughly 150 to 200 MB | Estimate, broken down below |
 | Every week | IMF past editions (only editions not yet saved), the Geopolitical Risk index, the weekly tests | Usually nothing to a few MB; up to about 10 MB when a new IMF edition appears | Measured file sizes; the tests use saved data only |
 | Every month | New UCDP conflict file | About 1.3 MB | Measured |
+| When you open a country's History & data | Weather at the capital and across the country for that country (two requests, kept 7 and 30 days) | Small; not measured yet | The build machine cannot reach NASA or the World Bank climate portal |
+| Once, if you press the button | NOAA IBTrACS storm tracks since 1980 | A large file, deleted once read; not measured yet | Same reason; the panel shows the megabytes as they arrive |
 | While the app is open | Background refresh of the figures on screen | A few MB at a time | Estimate: the same feeds as the daily run, only for the countries you look at |
 
 The daily run, part by part (estimate):
@@ -142,7 +145,7 @@ curl -fsSLO https://raw.githubusercontent.com/e-conquest/econquest/main/deploy/q
    docker compose up -d
    ```
 
-   The first time, Docker downloads the app (a few hundred megabytes), which takes a few minutes.
+   The first time, Docker downloads the app (about 170 megabytes), which takes a few minutes.
    After that it starts in seconds. The `-d` means it keeps running in the background after you
    close the terminal.
 
@@ -200,11 +203,13 @@ Pick one in Menu > Settings > AI model. You can change your mind at any time.
 
 EconQuest uses two Ollama models. A small one (qwen2.5:7b) answers for each desk; a large one
 (qwen2.5:32b) acts as the referee that weighs the desks' answers, writes the summary and runs the
-debate. The referee is always the large model, because a small one makes too many mistakes.
+debate. The referee is the large model by default, because a small one makes too many mistakes; an
+8B or smaller model is never used as referee. The settings the app uses (temperature, context window,
+time limits) are listed in the [README](../README.md#ai-models-which-to-use-sizes-and-settings).
 
 | Your computer's memory | What works with Ollama |
 | --- | --- |
-| 16 GB | The desk answers; use Gemini for the referee, or run Ollama on a bigger computer |
+| 16 GB | The desk answers; use Gemini for the referee ("Ollama, then Gemini"), or turn on **Allow a 14B referee** and use qwen2.5:14b (about 9 GB), which needs about half the memory of the 32B model; every answer it judges then says "Small referee" |
 | 32 GB or more (or a graphics card with 24 GB) | Everything, including the referee |
 
 To use Ollama on a Mac or Windows PC:
@@ -241,7 +246,8 @@ docker compose exec ollama ollama pull qwen2.5:32b
 4. **Save the data for offline use** (optional): Menu > Offline data > Download all country data.
 5. **Set the help level** with the help button next to the dark-mode switch: Key help (the
    default) explains charts and what policies mean for everyday life; Full help explains
-   everything; Help off hides the explanations.
+   everything; Help off hides the explanations; Expert keeps figures, sources and forecast ranges
+   without explanations.
 
 The full guide to every screen is in Menu > User manual.
 
@@ -254,6 +260,7 @@ The full guide to every screen is in Menu > User manual.
 | Update to the newest release | `docker compose pull` then `docker compose up -d` |
 | See what it is doing | `docker compose logs -f econquest` (Ctrl+C to stop watching) |
 | Remove it and everything it saved | `docker compose down -v` (this deletes your saved data and keys; make a backup first) |
+| List, make or revoke API tokens | `docker compose exec econquest npm run tokens -- list` (or `create "<name>" <scopes>`, `revoke <id>`); the same tokens as Menu > Settings > API tokens |
 
 **Your data.** Everything EconQuest saves (settings, keys, downloaded figures, saved research) is
 kept in a Docker storage area that survives restarts and updates. Menu > Settings > Backup downloads
@@ -263,6 +270,106 @@ never put in backups or logs; you type them in again after a restore.
 **A specific version.** To stay on one release instead of always taking the newest, add a line such
 as `ECONQUEST_IMAGE=ghcr.io/e-conquest/econquest:0.1.0` to the `.env` file in your folder.
 [env.example](../deploy/quick-start/env.example) lists every optional setting.
+
+## Files you save yourself
+
+Some sources cannot be downloaded by the app, because they need your own account or because their
+terms are not confirmed or do not allow the app to pass them on. You download these yourself and put
+them in a folder under `data/local/`. Nothing else is needed: the app reads a file the next time the
+page asks for it, and **Menu > Data health** shows whether it was read. Until then the parts that need
+the file read Missing and say where to get it.
+
+| Folder | What to put there | Where to get it | Used for |
+| --- | --- | --- | --- |
+| `data/local/fao-cpi/` | FAOSTAT Consumer Price Indices, bulk download "All Data" or "All Data Normalized" (.zip or .csv) | https://www.fao.org/faostat/en/#data/CP, Bulk downloads | Food price inflation (History & data) |
+| `data/local/emdat/` | EM-DAT public table (.xlsx, or a .csv or .zip of it) | https://public.emdat.be, with your own account (free for non-commercial use by universities, non-profit research bodies, public bodies and the media) | Natural disasters (History & data) |
+| `data/local/irr/` | Ilzetzki, Reinhart and Rogoff exchange rate regime classification, monthly (`ERA_Classification_Monthly_1940-2025.xlsx` or an earlier edition) | https://www.ilzetzki.com/irr-data | Exchange rate regime (History & data) |
+| `data/local/imf-fiscal-rules/` | IMF Fiscal Rules Dataset (XLSX) | IMF Fiscal Rules Dataset page | National fiscal rules (Fiscal rules check) |
+| `data/local/dpi/` | Database of Political Institutions 2020 (.csv or .xlsx) | Inter-American Development Bank | Checks and balances (Political feasibility in Policy review) |
+| `data/local/imf-investor-base/` | `wp1439.zip`, the IMF Sovereign Debt Investor Base | imf.org (Arslanalp and Tsuda) | Who holds government debt (History & data) |
+| `data/local/ons-triangles/` | `abmi.zip`, the ONS GDP revision triangle | ons.gov.uk, only if the app's own download is refused | UK GDP as first published |
+| `data/local/weo-vintages/` | Past IMF World Economic Outlook editions | IMF WEO database page | IMF forecasts by edition |
+| `data/local/acled/` | ACLED aggregated files (.xlsx or .csv, zipped or not) | acleddata.com, with your own account | Conflict events |
+| `data/local/aiddata/` | A newer AidData Chinese development finance file (optional) | aiddata.org | China lending; a shipped summary is used otherwise |
+| `data/local/ibtracs/` | An IBTrACS v04 CSV (optional: the since-1980 file or a basin file) | https://www.ncei.noaa.gov/products/international-best-track-archive | Tropical cyclones (History & data), instead of the download button in the panel |
+| `data/local/gdl/` | Global Data Lab subnational Human Development Index, the CSV download (optional) | https://globaldatalab.org, Subnational HDI (free for non-commercial use; the app never downloads or ships it) | Regional figures (History & data) |
+| `data/local/budget-execution/` | Your own approved budget and monthly spending, one row per line and month (columns line, approved, month, spent). Load it from the panel with *Download the template* and the file picker rather than copying it in | Your ministry or treasury | Budget execution (History & data). It stays on this computer; the audit log keeps only its fingerprint |
+| `data/local/cb-statements/<ISO3>/` | Central bank statements, one text, Markdown or web page file each, named from its date (for example `2026-10-29.txt`) | The central bank's own site | Central bank word count |
+
+[USER_MANUAL.md](./USER_MANUAL.md) explains each panel, and [DATA_LICENCES.md](./DATA_LICENCES.md)
+what each source's terms allow.
+
+**With the ready-made app**, `data/` lives in Docker's storage area, so copy the file in from the
+folder where you saved it, for example for EM-DAT:
+
+```bash
+docker compose exec econquest mkdir -p /app/data/local/emdat
+docker compose cp emdat_public.xlsx econquest:/app/data/local/emdat/
+```
+
+**From the code**, save the file straight into the `data/local/...` folder inside your `econquest`
+folder.
+
+## Files the app downloads for you
+
+The daily download also saves a few whole files under `data/local/`, because the sources publish them
+as files rather than answering one question at a time. You do not need to do anything; this table is
+here so you know what the folders are. Each one can also be fetched by hand from the code copy.
+
+| Folder | What it holds | How often | By hand |
+| --- | --- | --- | --- |
+| `data/local/replays/` | Monthly history for the past-crisis replays: OECD 10-year government bond yields and Federal Reserve H.10 exchange rates from FRED since 1990, and J.P. Morgan EMBI Global spreads from Peru's central bank since 2016 | Once a week at most | `npm run replays:pull` |
+| `data/local/chinn-ito/` | The Chinn-Ito capital account openness file (`kaopen_<year>.xls`), shown in the country risk scorecard with its citation and never passed on | Once every 30 days at most | `npm run chinn-ito:pull` |
+| `data/local/weo-vintages/` | Past IMF World Economic Outlook editions | Once a week at most | `npm run weo:pull` |
+| `data/local/gpr/` | The Geopolitical Risk index (Caldara and Iacoviello) | Once a week at most | `npm run gpr:pull` |
+| `data/local/sanctions/`, `data/local/ucdp/` | OFAC and UN sanctions lists; newer UCDP conflict files | With each daily download | `npm run sanctions:pull`, `npm run ucdp:pull` |
+
+A few sources are fetched for one country at a time, the first time you open its History & data
+page, and kept under `data/live/`:
+
+| Folder | What it holds | How often |
+| --- | --- | --- |
+| `data/live/nasa-power/` | Monthly temperature and rainfall at each capital since 1981, one file per country (NASA POWER) | Downloaded again after 7 days |
+| `data/live/wb-cckp/` | Monthly temperature and rainfall averaged over each country since 1901, one file per country (World Bank climate portal, CRU TS) | Downloaded again after 30 days |
+| `data/live/ibtracs/` | Tropical cyclone tracks since 1980 (NOAA IBTrACS), cut down to the tracks the app needs | Only when you press *Download storm tracks from NOAA*; offered again after 30 days. The download is a large file, streamed and then deleted once the tracks are read |
+
+The daily download keeps a few more files in `data/live/` for the tools added on 17 November:
+
+| File | What it holds | How often |
+| --- | --- | --- |
+| `data/live/wb-projects.json` | Active World Bank projects and the IDA statement of credits | Once a week |
+| `data/live/dose-regions.json` | DOSE output per person by region (83 countries) | Once a week; downloaded again only when Zenodo lists a new version |
+| `data/live/eurostat-regions.json` | Eurostat GDP per person and unemployment by EU region | Once a week |
+| `data/live/yield-curves.json` | Every maturity of the US Treasury and ECB euro area curves, about 320 business days | At most every 6 hours |
+| `data/live/surprise-inputs.json` | Releases and the expectations saved before them (BCB Focus, ECB SPF, Kalshi CPI snapshots, BLS CPI) | At most every 6 hours |
+
+Research notebooks, with their pinned figures and fingerprints, are kept in `data/local/research.json`.
+
+If a download fails, the copy saved before is kept and nothing is filled in. `npm run check:data`
+then shows which source did not answer. The newest rows (17 November) are `wb_budget_credibility`
+(budget credibility), `wb_projects` and `wb_ida_credits` (World Bank projects), `dose` and
+`eurostat_regions` (regional figures), `ust_curve` and `ecb_curve` (full yield curves) and
+`focus_monthly` and `bls_cpi` (data surprises). Before them came `fed_h10` and `chinn_ito` (crisis
+replays and capital account openness), `bis_cb_assets`, `bis_usd_credit` and `nyfed_swaps` (central
+bank assets and dollar funding), `nasa_power` and `wb_cckp` (weather), `ibtracs` (storm tracks) and
+`irr_file` (the exchange rate regime workbook you save).
+
+## Files that hold your connections
+
+If you connect another program (Menu > Settings > API tokens), the app keeps what it needs in
+`data/local/` as well:
+
+| File or folder | What it holds |
+| --- | --- |
+| `data/local/api-tokens.json` | Each token's name, scopes, owner and dates, and a fingerprint of its secret (never the secret) |
+| `data/local/hidden-names.json` | The hidden-names list, as fingerprints only |
+| `data/local/watch-rules.json` | Watch alerts, including indicator watches set by another program |
+| `data/local/events/` | The event log, webhook addresses and their signing secrets, and the delivery log |
+| `data/local/audit/` | The audit log and, if you use a locked bucket, which entries have been copied there |
+
+The backup file from Menu > Settings > Backup holds the watch alerts but not the tokens, hidden names
+or webhooks. After moving to another computer with a backup file, make new tokens and add the hidden
+names again; a full copy of the `data/` folder keeps them ([BACKUP_AND_RESTORE.md](./BACKUP_AND_RESTORE.md)).
 
 ## If something goes wrong
 
@@ -286,7 +393,20 @@ npm run dev          # http://localhost:3000
 ```
 
 Or build the image yourself: `docker compose up -d --build` in the repository folder (port 3737).
-The [README](../README.md) covers development, tests and the integration API.
+The [README](../README.md) covers development, tests and connecting an outside system.
+
+Useful commands in the code copy, on a computer that reaches the data sources:
+
+| Command | What it does |
+| --- | --- |
+| `npm run go` | Pull the newest code, install, start Ollama and the app |
+| `npm run go -- daily` | Run the daily data download now (log: `data/local/logs/daily.log`) |
+| `npm run go -- status` | What is running and what the last daily download did, with its size |
+| `npm run check:data` | Ask every source now and print one row each: connected, needs setup, or why it failed |
+| `npm run replays:pull` | Save the monthly history for the past-crisis replays (`-- --force` saves it again) |
+| `npm run chinn-ito:pull` | Save the Chinn-Ito file (`-- --force` downloads it again) |
+| `npm run tokens -- list` | List, make or revoke API tokens |
+| `npm run notebook:check` | Check every pinned figure in your research notebooks against the figures today, while the app runs (`--url`, `--token`, `--json`) |
 
 ## Your own cloud server
 
@@ -295,7 +415,11 @@ roughly $5-12 a month; a server that runs the large model itself costs much more
 month without a graphics card, and slow; several hundred with one). Prices are approximate.
 
 Follow [HOME_SERVER.md](HOME_SERVER.md) on the server, and before letting anyone reach it from the
-internet, turn on its **HTTPS and sign-in** section, so only people with an account can open it. Do
+internet, turn on its **HTTPS and sign-in** section, so only people with an account can open it.
+People can sign in with a local password or, if you set it up, with an account they already have at
+an OpenID Connect provider such as Google, Microsoft, Okta or Keycloak ([SECURITY.md](SECURITY.md)).
+If the server is there to feed another system, [DEPLOYMENT.md](DEPLOYMENT.md) covers the reverse
+proxy, service tokens, health checks and an alert when the daily download is late. Do
 not open a copy to the general public: the keys saved in Settings belong to the whole server, so
 every visitor would be using yours, and several free data sources allow personal use but not
 passing their figures on to the public.

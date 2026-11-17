@@ -84,6 +84,40 @@ export interface UstAuctionPull {
   pulledAt: string;
   /** Oldest first, held auctions only. */
   auctions: UstAuction[];
+  /** Auctions announced but not yet held (no bid-to-cover yet), soonest first. */
+  announced?: UstAnnouncedAuction[];
+}
+
+export interface UstAnnouncedAuction {
+  /** YYYY-MM-DD */
+  date: string;
+  tenor: string;
+  reopening: boolean;
+  offeringUsdBn?: number;
+}
+
+/**
+ * Auctions in a Fiscal Data reply that are announced but not held yet: a followed regular term,
+ * dated today or later, with no bid-to-cover published. Soonest first; [] for another shape.
+ */
+export function parseAnnouncedUstAuctions(json: unknown, today: string = new Date().toISOString().slice(0, 10)): UstAnnouncedAuction[] {
+  const rows = (json as { data?: unknown })?.data;
+  if (!Array.isArray(rows)) return [];
+  const byTerm = new Map(UST_TENORS.map((t) => [t.term.toLowerCase(), t]));
+  const out: UstAnnouncedAuction[] = [];
+  for (const raw of rows) {
+    const r = raw as Record<string, unknown>;
+    const date = String(r.auction_date ?? '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < today) continue;
+    if (yes(r.inflation_index_security) || yes(r.floating_rate) || yes(r.cash_management_bill_cmb)) continue;
+    const kind = String(r.security_type ?? '').trim().toLowerCase();
+    const tenor = byTerm.get(String(r.original_security_term || r.security_term || '').trim().toLowerCase());
+    if (!tenor || tenor.kind !== kind) continue;
+    if (fdNumber(r.bid_to_cover_ratio) !== undefined) continue;
+    const offering = fdNumber(r.offering_amt);
+    out.push({ date, tenor: tenor.id, reopening: yes(r.reopening), ...(offering !== undefined ? { offeringUsdBn: r2(offering / 1e9) } : {}) });
+  }
+  return out.sort((a, b) => a.date.localeCompare(b.date) || a.tenor.localeCompare(b.tenor));
 }
 
 /** A Fiscal Data text value as a number; "null", empty and non-numbers give undefined. */

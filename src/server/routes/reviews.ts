@@ -1,3 +1,6 @@
+import { politicalFeasibility, type DpiTable } from '../../utils/politicalFeasibility';
+import type { V1Series } from '../../utils/gdeltDaily';
+import { OFFICIAL_CALENDAR } from '../../data/officialCalendar';
 import type { UserOption, OptionsStep as OptionsStepT } from '../../utils/reviewOptions';
 import type { ReviewFrame } from '../../utils/policyReview';
 import type { AIRuntimeConfig } from '../../types/council';
@@ -16,13 +19,24 @@ import { loadSignOffs, recordFor, reportHash, saveSignOff, signOffView, takeStep
 import { buildDiagnosis, type Diagnosis } from '../../utils/reviewDiagnosis';
 import { buildMemo, parseMemoInputs, type MemoStep } from '../../utils/reviewMemo';
 import { buildOutcomes } from '../../utils/reviewOutcomes';
+import { reviewWatch } from '../../utils/reviewWatch';
+import { parsePeerList, peerTable } from '../../utils/reviewPeers';
 import { cutAt, EPISODE_METHOD, EVIDENCE_TEMPLATE_VERSION, isResearchOnly, packRequests, pastEpisodes, perOption, runAnalysis, signalsFor, type EvidenceStep } from '../../utils/reviewEvidence';
 import { OPTIONS_INSTRUCTION, OPTIONS_TEMPLATE_VERSION, optionsPrompt, parseUserOptions, unassessedOptions, type OptionsStep } from '../../utils/reviewOptions';
 import { frameOf, parseFrame, summarise as summariseReview, stepStates, REVIEW_TEMPLATE_VERSION } from '../../utils/policyReview';
-import { appendOutcomeCheck, deleteReview, loadReviews, newReview, putReview, saveStep, verifyOutcomeChecks, verifyReview } from '../../utils/policyReviewStore';
+import { appendOutcomeCheck, appendExpertReview, setExpertConsent, verifyExpertReviews, behaviourChanged, saveBehaviour, councilPartsChanged, saveCouncilPart, deleteReview, loadReviews, newReview, putReview, saveStep, verifyOutcomeChecks, verifyReview } from '../../utils/policyReviewStore';
 import { dueChecks, judgeCheck, nextCheck, tallyChecks, tallySentence, OUTCOME_CHECK_CAVEAT, VERDICT_LABEL } from '../../utils/outcomeChecks';
 import { figureRows } from '../../utils/csvExport';
 import { listArchivedDays } from '../../utils/pullArchive';
+import { parseEffects } from '../../utils/behaviouralCheck';
+import { buildMarketReadings, COUNCIL_PARTS, councilPartsFor, currentCouncilInputs, parseCouncilPart, type CouncilInputs, type CouncilPart } from '../../utils/policyCouncil';
+import type { DiagnosisFigure } from '../../utils/reviewDiagnosis';
+import { CONSENTS, expertCsv, expertSummaryMarkdown, parseExpertForm } from '../../utils/expertReview';
+import { findPrecedents, parseFeatures, type HistoryInput } from '../../utils/precedentFinder';
+import { buildPeopleExtras } from '../../utils/peopleSummary';
+import { regionalProfile } from '../../utils/regional';
+import { loadDose, loadEuroRegions } from '../feeds/regional';
+import { iso2For } from '../../data/iso3166Alpha2';
 import express from 'express';
 
 type FetchedSeriesLike = { id: string; label: string; unit: string; freq: string; source: string; points: Array<{ date: string; value: number }> };
@@ -42,13 +56,18 @@ export interface ReviewDeps {
     frame: ReviewFrame,
     diagnosis: Diagnosis,
     userOptions: UserOption[],
-    runtimeConfig: Partial<AIRuntimeConfig>
+    runtimeConfig: Partial<AIRuntimeConfig>,
+    council?: CouncilInputs
   ) => Promise<{ status: 502 | 503; error: string; model?: string } | { content: Pick<OptionsStepT, 'model' | 'options' | 'ranking' | 'gaps' | 'removed'>; step: { model?: string; temperature?: number; seed?: number } }>;
   withModelFigures: (d: Diagnosis) => Diagnosis;
+  /** Every country's saved yearly history (data/history/), for the precedent finder. */
+  allHistories: () => { histories: HistoryInput[]; pulledAt?: string };
+  /** Saved inputs for Political feasibility: the DPI file and the GDELT monthly series. */
+  politicalInputs: (iso3: string) => { dpi: { table: DpiTable | null; reason?: string }; gdelt: V1Series | null };
 }
 
 export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): void {
-  const { refuseRemoteChange, signedIn, archivedSnapshot, seriesFor, fetchLiveOpenDataSnapshot, reviewOptionsStep, withModelFigures } = deps;
+  const { refuseRemoteChange, signedIn, archivedSnapshot, seriesFor, fetchLiveOpenDataSnapshot, reviewOptionsStep, withModelFigures, allHistories, politicalInputs } = deps;
   // Report sign-off: where each saved council conversation stands, and one step at a time.
   app.get('/api/signoffs', (_req, res) => {
     const all = loadSignOffs(SIGNOFF_FILE);
@@ -101,12 +120,14 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
         const past = archivedSnapshot(frame.iso3, d.due);
         const pulledAt = past ? new Date(past.pulledAt).toISOString() : '';
         const nowDiag = past ? withModelFigures(buildDiagnosis(figureRows({ ...past.snapshot, fetchedAt: pulledAt }), { iso3: frame.iso3, asOf: d.due, pullDate: past.date, pulledAt, incomplete: past.incomplete })) : null;
-        const check = judgeCheck({ frame, frameHash: r.steps.frame!.hash, months: d.months, then, now: nowDiag, checkedOn: today, warnings });
+        // Market council cases (PK9), when they are up to date with the frame.
+        const cases = frame.council?.kind === 'market' ? currentCouncilInputs(r).inputs.marketScenarios : undefined;
+        const check = judgeCheck({ frame, frameHash: r.steps.frame!.hash, months: d.months, then, now: nowDiag, checkedOn: today, warnings, cases });
         next = appendOutcomeCheck(next, check);
         appendAudit(AUDIT_FILES, {
           kind: 'research',
           summary: `${d.months}-month outcome check of policy review "${r.title}": ${VERDICT_LABEL[check.verdict]}`,
-          detail: { id: r.id, months: d.months, due: d.due, verdict: check.verdict, reason: check.reason, ...(check.warnings ? { warnings: check.warnings.map((w) => `${w.label} [${w.ref}]: ${w.result}`) } : {}), hash: next.outcomeChecks![next.outcomeChecks!.length - 1].hash, version: check.version },
+          detail: { id: r.id, months: d.months, due: d.due, verdict: check.verdict, reason: check.reason, ...(check.warnings ? { warnings: check.warnings.map((w) => `${w.label} [${w.ref}]: ${w.result}`) } : {}), ...(check.cases ? { cases: check.cases.reason } : {}), hash: next.outcomeChecks![next.outcomeChecks!.length - 1].hash, version: check.version },
         });
         made += 1;
       }
@@ -149,6 +170,29 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
     const tally = tallyChecks(all);
     res.json({ rows, tally, sentence: tallySentence(tally), caveat: OUTCOME_CHECK_CAVEAT, file: 'data/local/reviews.json' });
   });
+  // Watch alerts from policy reviews (PC1, src/utils/reviewWatch.ts): each memo's figures to watch and their
+  // triggers, checked against the latest saved pull for the review's country. Read only; nothing is saved.
+  app.get('/api/reviews/watch', (_req, res) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const latest = new Map<string, Diagnosis | null>();
+    const now = (iso3: string): Diagnosis | null => {
+      if (!latest.has(iso3)) {
+        const past = archivedSnapshot(iso3, today);
+        const pulledAt = past ? new Date(past.pulledAt).toISOString() : '';
+        latest.set(iso3, past ? withModelFigures(buildDiagnosis(figureRows({ ...past.snapshot, fetchedAt: pulledAt }), { iso3, asOf: today, pullDate: past.date, pulledAt, incomplete: past.incomplete })) : null);
+      }
+      return latest.get(iso3)!;
+    };
+    const reviews = loadReviews(REVIEW_FILE).reviews.flatMap((r) => {
+      const frame = frameOf(r);
+      if (!frame || stepStates(r).memo !== 'done') return [];
+      const memo = r.steps.memo!.content as MemoStep;
+      if (!memo.inputs.watch.some((w) => w.trigger)) return [];
+      const w = reviewWatch(frame, r.steps.diagnose!.content as Diagnosis, memo, now(frame.iso3));
+      return w.items.length ? [{ id: r.id, title: r.title, iso3: frame.iso3, ...w }] : [];
+    });
+    res.json({ checkedOn: today, reviews });
+  });
   // Policy reviews: a guided case file per country and problem (src/utils/policyReview.ts).
   app.get('/api/reviews', (_req, res) => {
     res.json({ reviews: loadReviews(REVIEW_FILE).reviews.map(summariseReview), templateVersion: REVIEW_TEMPLATE_VERSION, file: 'data/local/reviews.json' });
@@ -156,7 +200,7 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
   app.get('/api/reviews/:id', (req, res) => {
     const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
     if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
-    res.json({ review: r, states: stepStates(r), changed: verifyReview(r), changedChecks: verifyOutcomeChecks(r), nextCheck: nextCheck(r, new Date().toISOString().slice(0, 10)) });
+    res.json({ review: r, states: stepStates(r), changed: verifyReview(r), changedChecks: verifyOutcomeChecks(r), changedBehaviour: behaviourChanged(r), changedCouncil: councilPartsChanged(r), changedExpert: verifyExpertReviews(r), nextCheck: nextCheck(r, new Date().toISOString().slice(0, 10)) });
   });
   const writeReview = (res: express.Response, review: Parameters<typeof putReview>[1]): boolean => {
     try {
@@ -228,15 +272,17 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
     const diagnosis = r.steps.diagnose!.content as Diagnosis;
     const userOptions = parseUserOptions(req.body?.userOptions);
     const ownOnly = req.body?.ownOnly === true;
-    const prompt = optionsPrompt(frame, diagnosis, userOptions);
+    // Policy council (PK6): a frame that names one measure hands the council the up-to-date council parts.
+    const council = frame.council ? currentCouncilInputs(r) : null;
+    const prompt = optionsPrompt(frame, diagnosis, userOptions, council?.inputs);
     const promptHash = crypto.createHash('sha256').update(OPTIONS_INSTRUCTION + '\n' + prompt).digest('hex');
-    const base = { templateVersion: OPTIONS_TEMPLATE_VERSION, temperature: 0, promptHash, userOptions };
+    const base = { templateVersion: OPTIONS_TEMPLATE_VERSION, temperature: 0, promptHash, userOptions, ...(council ? { councilHashes: council.hashes } : {}) };
     let content: OptionsStep;
     if (ownOnly) {
       if (!userOptions.length) return res.status(400).json({ error: 'Add at least one option of your own, or ask the council.' });
       content = { ...base, model: null, options: unassessedOptions(userOptions), ranking: '', gaps: [], removed: [], reason: 'saved with your own options only; the council was not asked' };
     } else {
-      const step = await reviewOptionsStep(frame, diagnosis, userOptions, req.body?.runtimeConfig || {});
+      const step = await reviewOptionsStep(frame, diagnosis, userOptions, req.body?.runtimeConfig || {}, council?.inputs);
       if (!('content' in step)) return res.status(step.status).json({ error: step.error });
       content = { ...base, ...step.content };
     }
@@ -305,6 +351,100 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
     });
     res.json({ review: out.review, states: stepStates(out.review) });
   });
+  // Peer comparison (PC2, src/utils/reviewPeers.ts): the diagnosis figures of peer countries the user picks, each
+  // from its saved pull on or before the review's As of day. Read only; nothing is saved and the steps do not change.
+  app.get('/api/reviews/:id/peers', (req, res) => {
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    const frame = r && frameOf(r);
+    if (!r || !frame) return res.status(404).json({ error: 'No policy review with that id.' });
+    if (stepStates(r).diagnose !== 'done') return res.status(400).json({ error: 'Run Diagnose first.' });
+    const peers = parsePeerList(req.query.iso3, frame.iso3).map((iso3) => {
+      const past = archivedSnapshot(iso3, frame.asOf);
+      if (!past) return { iso3, diagnosis: null, reason: `no saved pull on or before ${frame.asOf}` };
+      const pulledAt = new Date(past.pulledAt).toISOString();
+      return { iso3, diagnosis: withModelFigures(buildDiagnosis(figureRows({ ...past.snapshot, fetchedAt: pulledAt }), { iso3, asOf: frame.asOf, pullDate: past.date, pulledAt, incomplete: past.incomplete })) };
+    });
+    res.json(peerTable(r.steps.diagnose!.content as Diagnosis, peers));
+  });
+  // Precedent finder (G34): other countries that matched on the chosen figures, and what followed.
+  // Worked out on request from the saved yearly histories; nothing is saved and the steps do not change.
+  // Political feasibility (G36, src/utils/politicalFeasibility.ts): elections on file, DPI checks and balances, GDELT unrest, cut at the As of day. Read-only, not saved.
+  app.get('/api/reviews/:id/political', (req, res) => {
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const frame = frameOf(r);
+    if (!frame) return res.status(400).json({ error: 'Save the frame first.' });
+    const { dpi, gdelt } = politicalInputs(frame.iso3);
+    res.json(politicalFeasibility(frame.iso3, frame.asOf, { calendar: OFFICIAL_CALENDAR, dpi, gdelt }));
+  });
+  // What this means for people (R7, src/utils/peopleSummary.ts): population and GDP before the As of year, the regions furthest behind (R6) and the three closest precedents (G34). Read-only, not saved.
+  app.get('/api/reviews/:id/people', (req, res) => {
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const frame = frameOf(r);
+    if (!frame) return res.status(400).json({ error: 'Save the frame first.' });
+    const regional = regionalProfile({ iso3: frame.iso3, iso2: iso2For(frame.iso3), dose: loadDose(), euro: loadEuroRegions(), gdl: null });
+    res.json(buildPeopleExtras(frame.iso3, frame.asOf, allHistories().histories, regional));
+  });
+  app.get('/api/reviews/:id/precedents', (req, res) => {
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const frame = frameOf(r);
+    if (!frame) return res.status(400).json({ error: 'Save the frame first.' });
+    const { histories, pulledAt } = allHistories();
+    res.json({ ...findPrecedents(frame.iso3, frame.asOf, parseFeatures(req.query.features), histories), historyPulledAt: pulledAt, folder: 'data/history/' });
+  });
+  // Behavioural check (G33): the flags are worked out in the browser from the saved options; only the
+  // effect sizes the user enters, each with its source, are saved here, beside the steps.
+  app.post('/api/reviews/:id/behaviour', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    if (stepStates(r).options !== 'done') return res.status(400).json({ error: 'Options must be done first (and run again if out of date).' });
+    const parsed = parseEffects(req.body?.effects, (r.steps.options!.content as OptionsStep).options);
+    if ('errors' in parsed) return res.status(400).json({ error: parsed.errors.join(' ') });
+    const out = saveBehaviour(r, parsed.effects);
+    if ('error' in out) return res.status(400).json({ error: out.error });
+    if (!writeReview(res, out.review)) return;
+    appendAudit(AUDIT_FILES, {
+      kind: 'research',
+      summary: `Behavioural check sizes for policy review "${out.review.title}" (${parsed.effects.length} entered)`,
+      detail: { id: r.id, step: 'behaviour', hash: out.review.behaviour!.hash, optionsHash: out.review.behaviour!.optionsHash, effects: parsed.effects.map((e) => `option ${e.rank}, ${e.channel}: ${e.effect} (${e.source})`) },
+    });
+    res.json({ review: out.review, states: stepStates(out.review) });
+  });
+  // Policy council parts (PK2 to PK5): entered by the user with a source for every figure, saved
+  // beside the steps and tied to the frame hash; no AI and no built-in figures.
+  // PK7: for a market, the "market" part is copied in by the app from its saved history at As of.
+  app.post('/api/reviews/:id/council/:part', async (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const part = req.params.part as CouncilPart;
+    if (!COUNCIL_PARTS.includes(part)) return res.status(404).json({ error: 'No such policy council part.' });
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const frame = frameOf(r);
+    if (!frame?.council) return res.status(400).json({ error: 'Tick "Weigh one measure" in the frame first.' });
+    if (!councilPartsFor(frame).includes(part)) return res.status(404).json({ error: 'No such policy council part for this review.' });
+    const firstYear = Number((frame.council.start ?? frame.asOf).slice(0, 4));
+    const figures = (r.steps.diagnose?.content as { figures?: DiagnosisFigure[] } | undefined)?.figures;
+    let body: unknown = req.body?.content;
+    if (part === 'market') {
+      const [set, us] = await Promise.all([seriesFor(frame.iso3), frame.iso3 === 'USA' ? Promise.resolve(null) : seriesFor('USA').catch(() => null)]);
+      body = buildMarketReadings(frame.council.market ?? 'currency', frame.asOf, set, frame.iso3 === 'USA' ? set : us);
+    }
+    const parsed = parseCouncilPart(part, body, { unit: frame.council.size?.unit, firstYear, figures });
+    if ('errors' in parsed) return res.status(400).json({ error: parsed.errors.join(' ') });
+    const out = saveCouncilPart(r, part, parsed.content);
+    if ('error' in out) return res.status(400).json({ error: out.error });
+    if (!writeReview(res, out.review)) return;
+    const rec = out.review.councilParts![part]!;
+    appendAudit(AUDIT_FILES, {
+      kind: 'research',
+      summary: `Policy council ${part} for policy review "${out.review.title}"`,
+      detail: { id: r.id, step: `council:${part}`, hash: rec.hash, frameHash: rec.frameHash },
+    });
+    res.json({ review: out.review, states: stepStates(out.review) });
+  });
   // Step 5: the memo, assembled from the saved steps and the principal's choices (no AI).
   app.post('/api/reviews/:id/memo', (req, res) => {
     if (refuseRemoteChange(req, res)) return;
@@ -345,6 +485,48 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
       kind: 'research',
       summary: `Checked outcomes of policy review "${out.review.title}" (${content.goal.move.replace(/_/g, ' ')})`,
       detail: { id: r.id, step: 'outcomes', hash: out.review.steps.outcomes?.hash, pullDate: past.date, early: content.early, goal: content.goal },
+    });
+    res.json({ review: out.review, states: stepStates(out.review) });
+  });
+  // Expert review round (P4): a pilot economist or professor fills a short form for the memo.
+  const expertRows = () => loadReviews(REVIEW_FILE).reviews.flatMap((r) => (r.expertReviews ?? []).map((x) => ({ reviewId: r.id, title: r.title, r: x })));
+  app.get('/api/expert-reviews.csv', (_req, res) => {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="expert-reviews.csv"');
+    res.send(expertCsv(expertRows()));
+  });
+  app.get('/api/expert-reviews/summary', (_req, res) => {
+    res.json({ markdown: expertSummaryMarkdown(expertRows(), new Date().toISOString().slice(0, 10)), file: 'docs/validation/expert-reviews.md' });
+  });
+  app.post('/api/reviews/:id/expert-reviews', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const parsed = parseExpertForm(req.body);
+    if ('errors' in parsed) return res.status(400).json({ error: parsed.errors.join(' ') });
+    const out = appendExpertReview(r, parsed.answers, parsed.consent, new Date(), signedIn(res)?.displayName);
+    if ('error' in out) return res.status(400).json({ error: out.error });
+    if (!writeReview(res, out.review)) return;
+    appendAudit(AUDIT_FILES, {
+      kind: 'research',
+      summary: `Expert review of policy review "${out.review.title}" by ${out.saved.reviewer}`,
+      detail: { id: r.id, expertReview: out.saved.id, memoHash: out.saved.memoHash, clarity: out.saved.clarity, evidence: out.saved.evidence, sources: out.saved.sources, wouldAct: out.saved.wouldAct, consent: out.saved.consent, hash: out.saved.hash },
+    });
+    res.json({ review: out.review, states: stepStates(out.review) });
+  });
+  app.put('/api/reviews/:id/expert-reviews/:xid/consent', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const consent = CONSENTS.find((c) => c === req.body?.consent);
+    if (!consent) return res.status(400).json({ error: 'Choose none, anonymous or named.' });
+    const out = setExpertConsent(r, req.params.xid, consent);
+    if ('error' in out) return res.status(404).json({ error: out.error });
+    if (!writeReview(res, out.review)) return;
+    appendAudit(AUDIT_FILES, {
+      kind: 'research',
+      summary: `Publication consent for an expert review of "${out.review.title}" set to ${consent}`,
+      detail: { id: r.id, expertReview: out.saved.id, consent, hash: out.saved.hash },
     });
     res.json({ review: out.review, states: stepStates(out.review) });
   });

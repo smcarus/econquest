@@ -210,7 +210,7 @@ function python(result: ChartResult, tests: ChartTest[], s: PackSettings | null,
     out.push(
       '',
       'def adf(v, top):',
-      '    """ADF with a constant; lags 0..top on one sample, chosen by AIC; MacKinnon (2010) 5% critical value."""',
+      '    """ADF with a constant; lag 0..top chosen by AIC on one sample, then refitted on the full sample; MacKinnon (2010) 5% critical value."""',
       '    dy = np.diff(v)',
       '    best = None',
       '    for p in range(top + 1):',
@@ -221,6 +221,8 @@ function python(result: ChartResult, tests: ChartTest[], s: PackSettings | null,
       '        if best is None or aic < best[0]:',
       '            best = (aic, m, p)',
       '    _, m, p = best',
+      '    rows = range(p, len(dy))  # refit at the chosen lag on every usable row',
+      '    m = ols([dy[t] for t in rows], [[v[t]] + [dy[t - j] for j in range(1, p + 1)] for t in rows])',
       "    T = m['n']",
       '    crit5 = -2.86154 - 2.8903 / T - 4.234 / T ** 2',
       "    return m['t'][1], crit5, p, T",
@@ -298,8 +300,10 @@ function rScript(result: ChartResult, tests: ChartTest[], s: PackSettings | null
       '    n <- length(rows); aic <- n * log(sum(resid(m)^2) / n) + 2 * (ncol(X) + 1)',
       '    if (is.null(best) || aic < best$aic) best <- list(aic = aic, m = m, p = p, n = n)',
       '  }',
-      '  T <- best$n',
-      '  c(stat = summary(best$m)$coefficients[2, 3], crit5 = -2.86154 - 2.8903 / T - 4.234 / T^2, lags = best$p, n = T)',
+      '  p <- best$p; rows <- (p + 1):length(dy)  # refit at the chosen lag on every usable row',
+      '  X <- cbind(v[rows], if (p > 0) sapply(1:p, function(j) dy[rows - j]) else NULL)',
+      '  m <- lm(dy[rows] ~ X); T <- length(rows)',
+      '  c(stat = summary(m)$coefficients[2, 3], crit5 = -2.86154 - 2.8903 / T - 4.234 / T^2, lags = p, n = T)',
       '}',
       ...cols.slice(0, 2).map((c) => `print(adf(na.omit(df[[${q(c)}]]), ${s.adfTop[c] ?? 0}))`)
     );
@@ -332,7 +336,7 @@ function stata(result: ChartResult, tests: ChartTest[], s: PackSettings | null, 
     for (const c of cols.slice(0, 2)) {
       const top = s.adfTop[c] ?? 0;
       out.push(
-        `* ADF on ${c}: constant, lags 0-${top} on one sample, chosen by AIC (dfuller uses a longer sample for short lags, so the regression is written out)`,
+        `* ADF on ${c}: constant, lag 0-${top} chosen by AIC on one sample, then refitted at that lag on every usable row`,
         'preserve',
         `keep if !missing(${c})`,
         'gen t = _n',
@@ -350,6 +354,12 @@ function stata(result: ChartResult, tests: ChartTest[], s: PackSettings | null, 
         '    scalar T = e(N)',
         '  }',
         '}',
+        '* Refit at the chosen lag on every usable row',
+        'local L ""',
+        `if scalar(lags) > 0 local L "L(1/\`=scalar(lags)')D.${c}"`,
+        `quietly regress D.${c} L.${c} \`L'`,
+        `scalar stat = _b[L.${c}] / _se[L.${c}]`,
+        'scalar T = e(N)',
         `display "ADF, ${c}: statistic " scalar(stat) ", 5% critical value " (-2.86154 - 2.8903 / scalar(T) - 4.234 / scalar(T)^2) ", " scalar(lags) " lag(s), " scalar(T) " points"`,
         'restore',
         ''
@@ -409,6 +419,16 @@ function readme(result: ChartResult, tests: ChartTest[], s: PackSettings | null,
     '- `data-manifest.csv`: one row per column: label, unit, first and last date, source, the licence register row behind it and the date the pack was made.',
     '- `CITATION.cff`: how to cite this pack and the app; cite each data source in `data-manifest.csv` too.',
     '',
+    '## How to run',
+    '',
+    `Unzipping gives one folder, \`${packFolder(result)}\`, holding every file. Open a terminal in that folder (for example \`cd ~/Downloads/${packFolder(result)}\`; if your unzip tool made an extra folder around it, go one level further in), then:`,
+    '',
+    '- R (base R, any 4.x): `Rscript replicate.R`',
+    '- Python 3 with numpy, pandas and scipy: `python3 replicate.py`',
+    '- Stata 13 or later: `do replicate.do` in Stata, or `stata -b do replicate.do` from a terminal (writes `replicate.log`; the command may be `stata-se` or `stata-mp`)',
+    '',
+    'Each prints the same figures as the section below, which come from the app.',
+    '',
     '## Columns',
     '',
   ];
@@ -418,7 +438,7 @@ function readme(result: ChartResult, tests: ChartTest[], s: PackSettings | null,
   if (s) {
     md.push(
       `- Tests on two series use the first two columns (\`${lines[0]?.key ?? '-'}\` then \`${lines[1]?.key ?? '-'}\`) on the ${s.pairs} rows where both have a value, in order (lags count rows, not dates).`,
-      `- Lead/lag up to ${s.leadLagMax} rows either way; Granger with ${s.grangerLags} lag(s); rolling correlation over ${s.rollingWindow} rows; HP lambda ${s.hpLambda}; ADF with a constant, lags 0 to ${Object.entries(s.adfTop).map(([k, v]) => `${v} (${k})`).join(', ')}, chosen by AIC on one sample, MacKinnon (2010) critical values.`,
+      `- Lead/lag up to ${s.leadLagMax} rows either way; Granger with ${s.grangerLags} lag(s); rolling correlation over ${s.rollingWindow} rows; HP lambda ${s.hpLambda}; ADF with a constant, lags 0 to ${Object.entries(s.adfTop).map(([k, v]) => `${v} (${k})`).join(', ')}, chosen by AIC on one sample and refitted at that lag on the full sample, MacKinnon (2010) critical values.`,
       '- Regression is plain OLS, as in the app: with trending series its t-statistic overstates confidence.'
     );
   } else md.push('- Correlation and OLS regression of y on x across countries.');
@@ -461,9 +481,14 @@ export function replicationPack(result: ChartResult, now: Date = new Date()): Re
   };
 }
 
+/** The folder every file sits in inside the zip, so unzipping never scatters files. */
+export function packFolder(result: Pick<ChartResult, 'title'>): string {
+  return result.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 50).replace(/^-|-$/g, '') || 'chart';
+}
+
 export function replicationZip(result: ChartResult, now: Date = new Date()): Uint8Array {
   const { files } = replicationPack(result, now);
-  const stem = result.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 50).replace(/^-|-$/g, '') || 'chart';
+  const stem = packFolder(result);
   return zipSync(Object.fromEntries(Object.entries(files).map(([name, text]) => [`${stem}/${name}`, strToU8(text)])));
 }
 

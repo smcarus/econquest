@@ -71,7 +71,7 @@ test('the latest month of each indicator, read against 100 or three months earli
 
 test('chartable series for EU members, labelled not a PMI; one Missing line elsewhere', () => {
   const s = euSurveySeries('DEU', pull);
-  assert.equal(s.length, 5);
+  assert.equal(s.length, 6);
   const esi = s.find((x) => x.id === 'eu_survey_esi')!;
   assert.ok('points' in esi && esi.freq === 'monthly' && /not a PMI/.test(esi.label) && /Eurostat/.test(esi.source));
   const eei = s.find((x) => x.id === 'eu_survey_employment')!;

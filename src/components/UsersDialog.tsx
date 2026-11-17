@@ -110,7 +110,7 @@ export function UsersDialog({ me, onClose }: { me: PublicAccount; onClose: () =>
                 {rows.map((r) => (
                   <tr key={r.id} className={`border-t border-slate-100 dark:border-slate-800 ${r.disabled ? 'opacity-60' : ''}`}>
                     <td className="py-1.5 pr-2">{r.displayName}{r.id === me.id ? ' (you)' : ''}</td>
-                    <td className="py-1.5 pr-2">{r.username}</td>
+                    <td className="py-1.5 pr-2">{r.username}{r.provider === 'oidc' ? ` (${r.email || 'single sign-on'})` : ''}</td>
                     <td className="py-1.5 pr-2">
                       <select aria-label={`Role of ${r.username}`} value={r.role} onChange={(e) => change(r, { role: e.target.value as Role })} className={FIELD_CLASS + ' w-auto'}>
                         {ROLES.map((x) => (
@@ -122,9 +122,11 @@ export function UsersDialog({ me, onClose }: { me: PublicAccount; onClose: () =>
                     </td>
                     <td className="py-1.5 pr-2">{r.disabled ? 'Disabled' : r.sessions ? `${r.sessions} browser${r.sessions === 1 ? '' : 's'}` : 'No'}</td>
                     <td className="py-1.5 text-right whitespace-nowrap">
-                      <button type="button" className="ui-btn ui-btn-ghost" onClick={() => reset(r)}>
-                        Reset password
-                      </button>
+                      {r.provider !== 'oidc' && (
+                        <button type="button" className="ui-btn ui-btn-ghost" onClick={() => reset(r)}>
+                          Reset password
+                        </button>
+                      )}
                       {r.id !== me.id && (
                         <button type="button" className="ui-btn ui-btn-ghost" onClick={() => change(r, { disabled: !r.disabled })}>
                           {r.disabled ? 'Enable' : 'Disable'}

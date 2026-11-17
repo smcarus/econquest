@@ -27,6 +27,11 @@ import { bisCreditSeries, type BisCreditCycle } from './bisCreditCycle';
 import { privateDebtSeries, sectorBalanceSeries } from './sectorBalances';
 import { idsCreditorSeries, type IdsCreditors } from './idsCreditors';
 import { sovereignDefaultSeries, type SovereignDefaults } from './sovereignDefaults';
+import { chinnItoSeries, type ChinnItoTable } from './chinnIto';
+import { fxRegimeSeries, type FxRegimeTable } from './fxRegime';
+import { fedSwapSeries, type FedSwapsPull } from './fedSwapLines';
+import { weatherSeries, type WeatherPull } from './weatherPower';
+import { countryWeatherSeries, type CountryWeatherPull } from './weatherCountry';
 import { inflationExpectationSeries, type InflationExpectations } from './inflationExpectations';
 import { focusSeries, type InflationSurveys } from './inflationSurveys';
 import { portActivitySeries, type PortWatchPorts } from './portWatch';
@@ -113,6 +118,18 @@ export interface SeriesInputs {
   idsCreditors?: IdsCreditors | null;
   /** Sovereign default history, BoC-BoE database (src/utils/sovereignDefaults.ts), when pulled. */
   sovereignDefaults?: SovereignDefaults | null;
+  /** Capital account openness, Chinn-Ito file (src/utils/chinnIto.ts), when saved; with the reason when not. */
+  chinnIto?: ChinnItoTable | null;
+  chinnItoMissing?: string;
+  /** Exchange rate regime, IRR file the user saved (src/utils/fxRegime.ts); with the reason when not. */
+  fxRegime?: FxRegimeTable | null;
+  fxRegimeMissing?: string;
+  /** PB4: Federal Reserve dollar swap line operations (src/utils/fedSwapLines.ts). */
+  fedSwaps?: FedSwapsPull | null;
+  /** W1: NASA POWER monthly weather at the capital (src/utils/weatherPower.ts). */
+  weather?: WeatherPull | null;
+  /** W2: World Bank climate portal country-average weather (src/utils/weatherCountry.ts). */
+  countryWeather?: CountryWeatherPull | null;
   /** US inflation expectations from FRED (src/utils/inflationExpectations.ts), US only. */
   inflationExpectations?: InflationExpectations | null;
   /** Survey expectations (src/utils/inflationSurveys.ts): the Focus series on Brazil's page. */
@@ -378,6 +395,11 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
     ...privateDebtSeries(inputs.bisCredit, Boolean(BIS_ISO2[code])),
     ...idsCreditorSeries(inputs.idsCreditors),
     ...sovereignDefaultSeries(code, inputs.sovereignDefaults),
+    ...chinnItoSeries(code, inputs.chinnIto, inputs.chinnItoMissing),
+    ...fxRegimeSeries(code, inputs.fxRegime, inputs.fxRegimeMissing),
+    ...fedSwapSeries(code, inputs.fedSwaps, inputs.currency),
+    ...weatherSeries(code, inputs.weather),
+    ...countryWeatherSeries(inputs.countryWeather),
     ...inflationExpectationSeries(code, inputs.inflationExpectations),
     ...focusSeries(code, inputs.inflationSurveys),
     ...portActivitySeries(code, inputs.portWatch),

@@ -113,3 +113,8 @@ test('the release shipped in datasets/ucdp/ reads all five files and matches the
   assert.equal(ucdpReading(both, 'UKR')!.latest.stateBased?.best, 94741);
   assert.equal(both.skipped.length, 5);
 });
+
+test('Gleditsch-Ward 54 Dominica and 80 Belize have a country', () => {
+  assert.deepEqual(gwCell('54, 80').iso3, ['DMA', 'BLZ']);
+  assert.deepEqual(gwCell('54, 80').unknown, []);
+});

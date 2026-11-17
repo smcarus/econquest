@@ -52,6 +52,33 @@ export function sharedParams(a, b) {
   }
 }
 
+/** A query value that only moves a date range or a row count (2026-11, 20261105, 2026-Q3, 13). */
+function rangeValue(v) {
+  return /^\d+$/.test(v) || /^\d{4}[-/]?(\d{2}([-/]?\d{2})?)?$/.test(v) || /^\d{4}-?[QM]\d{1,2}$/i.test(v);
+}
+
+/**
+ * Whether a recorded reply may stand in for a request at the same address: every query value that
+ * differs (or is on one side only) must be a date or a count. A different series id, country or
+ * indicator never matches, so a missing recording fails instead of borrowing another country's reply.
+ */
+export function rangeOnlyDiffers(recorded, requested) {
+  try {
+    const a = new URL(recorded).searchParams;
+    const b = new URL(requested).searchParams;
+    for (const k of new Set([...a.keys(), ...b.keys()])) {
+      const va = a.get(k);
+      const vb = b.get(k);
+      if (va === vb) continue;
+      if (va !== null && !rangeValue(va)) return false;
+      if (vb !== null && !rangeValue(vb)) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Hosts never recorded: the local model and the app itself. */
 export function skipHost(raw) {
   try {

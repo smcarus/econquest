@@ -200,7 +200,37 @@ The day the statistics office publishes its first estimate of how much the econo
 
 **Why it matters.** The first estimate is the one markets and the central bank react to, even though it is often revised later.
 
+### Weather anomaly (against the 1991-2020 normal)
+
+How far a month's temperature or rainfall is from its normal: the average of the same calendar month over the 30 years 1991-2020 at the same place. The World Meteorological Organization uses 30-year averages like this as the standard reference.
+
+**Why it matters.** A drought, a very wet season or a heatwave shows up first in harvests, food prices, power use and the budget. The anomaly shows how unusual a month was, so a 30 mm month in a desert and in a rain forest are not read the same way.
+
+**How to read it.** Temperature: degrees above (warmer) or below (colder) normal. Rainfall: % of normal, where 100 is a normal month, 50 half the usual rain and 200 twice. A run of dry months matters more than one.
+
+**Limits.** In the app the capital series is one grid cell at the capital (NASA POWER) and the country series is an average over the country (World Bank, CRU TS); each normal comes from its own series.
+
 ## Prices and inflation
+
+### Households' expected prices (EU consumer survey)
+
+In the same monthly European Commission survey, households are asked whether they expect prices to rise faster, at the same pace, more slowly, stay the same or fall over the next 12 months. The answer is a balance: the share expecting faster rises minus the share expecting slower rises or falls.
+
+**Why it matters.** If people expect prices to keep rising, they may ask for higher pay and spend sooner, which can keep inflation up. Central banks watch these expectations closely.
+
+**How to read it.** A higher balance means more households expect prices to rise faster. The app places the latest reading against the country's own history (a percentile) and shows the change over 12 months.
+
+**Limits.** It is a balance of answers, not an inflation rate in percent, so it cannot be compared directly with market-implied inflation. Whether a rise comes before higher inflation is tested by the pre-registered inflation_expectations_lead test; until that test passes the app only describes the figure. Only EU members are covered.
+
+### Core inflation
+
+Inflation without the prices that jump around the most: food and energy. Statistics offices publish it beside the headline rate, which covers everything people buy.
+
+**Why it matters.** Food and energy prices swing with harvests, weather and world oil prices, which a central bank cannot steer. Core inflation shows the slower trend underneath, which is what interest rates can affect.
+
+**How to read it.** If core is close to headline, price rises are broad. If headline is well above core, food or energy are pushing it up and may fall back; if core is above headline, cheaper food or energy are hiding a firmer trend. The app shows both, how core moved over 3 months, and for EU members how many points food and energy add.
+
+**Limits.** Definitions differ: Eurostat also leaves out alcohol and tobacco, BLS and the OECD do not. Food and energy still matter to households, so core is not a measure of the cost of living.
 
 ### CPI inflation
 
@@ -278,6 +308,26 @@ Everything the US Federal Reserve owns (mainly government bonds) and owes (mainl
 
 **Limits.** Net liquidity is a popular market shorthand, not an official Fed measure. The app shows it only when all its parts are for the same Wednesday.
 
+### Central bank assets
+
+Everything a central bank owns: foreign reserves, government bonds and other securities, and loans to banks. The total is the size of its balance sheet.
+
+**Why it matters.** When a central bank buys bonds (quantitative easing) or lends to banks in a crisis, its assets grow and it creates money to pay for them. A large or fast-growing balance sheet tells you how much the bank is supporting markets and the government.
+
+**How to read it.** History & data shows the BIS series as % of a year of GDP, which makes countries comparable, and in US dollars. Compare the change over a few years more than the level: some banks hold large reserves for long-standing reasons.
+
+**Limits.** The dollar figure moves with the exchange rate. Accounting rules differ between central banks, and the BIS does not cover every country.
+
+### Checks and balances
+
+The people and bodies that can block or delay a government decision: for example a legislature controlled by another party, a second chamber, or coalition partners. The Database of Political Institutions counts them as veto players.
+
+**Why it matters.** The more veto players, the harder a reform is to pass, but also the harder it is to reverse once passed. Fractionalisation and polarisation work the same way: a split, polarised legislature makes deals harder.
+
+**How to read it.** In Policy review, Political feasibility (beside the options) shows the count for the latest year before the As of year, with fractionalisation, polarisation and years left in the term, from the DPI file you save. 1 means no veto player beyond the executive; higher means more.
+
+**Limits.** The count is a rough guide from one coding team and is published with a delay (the 2020 edition ends in 2020). It leaves out courts, central banks, street protest and informal power.
+
 ## Government budget and debt
 
 ### Revenue and spending by level of government
@@ -289,6 +339,26 @@ How much of the money the state raises and spends goes through each level: centr
 **How to read it.** Central 18%, state 10%, local 5% of GDP with "state and local 30% of the levels' total" means nearly a third of spending is done below central government. A country with no state or local figures is usually run from the centre, or only reports central government.
 
 **Limits.** From Eurostat (EU members) and the IMF Government Finance Statistics, yearly and usually two or three years behind. Each level is counted before money passed between levels (grants to states, for example) is netted out, so the levels add up to more than general government; the share below central government is worked out from that sum and labelled so. Many countries report only central government to the IMF.
+
+### World Bank projects and money paid out
+
+The projects the World Bank is paying for in a country, such as roads, schools, clinics, power lines or budget support, with the amount committed and, for IDA credits and grants, the amount actually paid out so far.
+
+**Why it matters.** A loan or grant signed is a promise; the money reaches people only as it is paid out. Projects that pay out slowly often face problems on the ground, such as buying land, awarding contracts or hiring staff, and the services they were meant to bring arrive late.
+
+**How to read it.** Compare time gone with paid out: a project 60% through its planned life that has paid out 20% is well behind. Budget support loans pay out in one or two parts, so they are not compared this way.
+
+**Limits.** From the World Bank's own project list and IDA statement of credits (CC BY 4.0). Paid-out figures cover IDA credits and grants only, not IBRD loans. Projects usually pay out slowly in their first years, and other donors' projects are not included.
+
+### Budget credibility
+
+How much of the budget parliament approved the government actually spent in the year, as % of that budget. Interest and spending paid for by outside project loans and grants are left out.
+
+**Why it matters.** A budget is a promise about schools, clinics, roads and wages. When spending ends far below the budget, projects and services were usually cut during the year; far above, the budget was not a real limit. Ministries cannot plan, lenders trust the numbers less, and citizens cannot hold the government to what it said.
+
+**How to read it.** 100% means the government spent exactly what was approved. PEFA, the international public finance review, grades the gap: A within 5%, B within 10%, C within 15%, D further. 82% means 18% less was spent than approved.
+
+**Limits.** From PEFA assessments published by the World Bank (UN goal 16.6.1), so most countries have only the three years an assessment covered, or none. The grade shown is worked out by the app on the PEFA rule, not the official PEFA score. It says nothing about whether money moved between ministries during the year.
 
 ### Risk of debt distress (IMF/World Bank rating)
 
@@ -339,6 +409,16 @@ Everything the government owes, divided by the size of the economy in a year.
 **How to read it.** Higher is a heavier burden. The IMF looks more closely at emerging economies above about 70% of GDP, but many rich countries carry more than 100% without trouble, because who lends, in which currency and at what rate matters as much as the level.
 
 **Limits.** The IMF figure is general government gross debt: it does not subtract the government's own savings, and it may not include debts of state companies.
+
+### Fiscal rule
+
+A lasting limit on the government's budget, written in law or a treaty: for example a ceiling on debt, a floor under the deficit, or a cap on spending growth.
+
+**Why it matters.** Rules are meant to stop debt from creeping up year after year and to make plans believable. Whether a country is near or past its limit shapes what it can do next.
+
+**How to read it.** The Fiscal rules panel under History & data shows the EU, WAEMU and CEMAC treaty limits with the latest IMF figure and the room left (negative means the limit is missed), and the national rules from the IMF Fiscal Rules Dataset you save, with the year each started.
+
+**Limits.** The treaty bodies test their own figures, which can differ a little from the IMF ones. Many rules have escape clauses for recessions or disasters. National numeric limits are not checked, because the IMF describes them only in text.
 
 ### Primary balance
 
@@ -504,6 +584,16 @@ The US government sells its bills, notes and bonds at regular auctions. Bid-to-c
 
 **Limits.** One auction can be weak for passing reasons (a holiday week, a big supply of other bonds). Only the United States has a free auction feed the app can read; other countries' auctions are not shown.
 
+### Incidence (who really pays)
+
+Who ends up bearing a tax, subsidy or price change, which is often not who pays it on paper. A tax on companies can fall on workers through lower pay or on buyers through higher prices.
+
+**Why it matters.** Two measures that raise the same money can hit very different groups. The policy council's groups step asks who gains and who loses.
+
+**How to read it.** Look at the share of the cost or gain falling on each group, and at poorer households in particular.
+
+**Limits.** Incidence depends on how buyers and sellers respond, so estimates differ between studies.
+
 ## Trade, the currency and money from abroad
 
 ### Goods exports and imports by group
@@ -608,6 +698,16 @@ Money moving into or out of the country to buy or sell shares, bonds, companies 
 
 ## Financial markets
 
+### Herding and market sentiment
+
+Herding is when many investors or households act the same way at the same time, often because others are doing it. Sentiment is the general mood: how confident or worried people are.
+
+**Why it matters.** When nearly everyone has made the same bet, there are few buyers or sellers left on the other side, so a surprise can make prices move sharply as people rush to change course.
+
+**How to read it.** The Behavioural Finance Agent describes herding with a few figures: how stretched speculators' currency futures bets are against the last three years, how sure prediction-market traders are about an event, and how far survey confidence is from its own normal range.
+
+**Limits.** These are descriptions, not forecasts. Only the crowding-unwind rule for currency futures has its own pre-registered test; the other readings are labelled "Description, not a tested signal".
+
 ### Bond yield (10-year government yield)
 
 The yearly return an investor gets from lending to the government for ten years at today's market price. It is the market interest rate on government debt.
@@ -698,6 +798,16 @@ World prices of raw materials such as oil, gas, copper, wheat and gold, from the
 
 **Why it matters.** For a country that exports a commodity, a higher price means more export income and tax revenue; for one that imports it, a higher price raises inflation and the import bill.
 
+### Dollar funding stress
+
+Trouble for banks and companies outside the United States in borrowing the US dollars they need to repay dollar debts or pay for trade.
+
+**Why it matters.** Much of world trade and lending is in dollars. When dollars become scarce, borrowers sell other assets and currencies to get them, which pushes the dollar up and can turn a local problem into a crisis.
+
+**How to read it.** History & data shows two signs: US dollar loans and bonds owed by the country's non-banks (BIS global liquidity indicators), and dollars the Federal Reserve has lent to foreign central banks through swap lines (New York Fed). Heavy swap line use marks acute stress, as in late 2008 and March 2020.
+
+**Limits.** Only a few central banks have a swap line with the Fed, so for most countries only the world total is shown. Market measures such as the cross-currency basis are not included because they need paid data.
+
 ## Politics, conflict and news
 
 ### Physical climate risk (ND-GAIN)
@@ -746,6 +856,24 @@ An index by economists Dario Caldara and Matteo Iacoviello that counts how often
 
 **How to read it.** Higher means more press coverage of geopolitical threats than usual.
 
+### Capital account openness (Chinn-Ito index)
+
+An index by economists Menzie Chinn and Hiro Ito of how freely money can move in and out of a country under its laws, from 0 (closed) to 1 (open), built from the IMF's yearly report on exchange rules.
+
+**Why it matters.** Capital controls decide whether foreign investors can take their money out and whether people and firms can borrow or invest abroad, which matters in a crisis.
+
+**How to read it.** Higher means fewer legal limits. It measures the rules on paper, not how much money actually moves.
+
+### Exchange rate regime
+
+How a country runs its currency: tied to another currency (a peg), moved in small planned steps (a crawl), steered by the central bank (managed floating), left to the market (free float), or collapsing in high inflation (freely falling).
+
+**Why it matters.** The regime decides what policy can do. With a peg, interest rates must follow the anchor country and reserves defend the rate; with a float, the currency absorbs shocks and the central bank can set rates for the home economy.
+
+**How to read it.** Ilzetzki, Reinhart and Rogoff classify what the currency did in fact, month by month, using market and parallel rates. History & data shows their coarse code (1 peg to 6) and fine code (1 to 15) from the workbook you save in data/local/irr/.
+
+**Limits.** The classification is published with a lag and revised. It describes behaviour, not the law, so it can differ from what the central bank announces.
+
 ### Sanctions
 
 Restrictions a government (such as the US, EU or UK) or the UN places on dealing with named countries, companies or people.
@@ -753,6 +881,158 @@ Restrictions a government (such as the US, EU or UK) or the UN places on dealing
 **Why it matters.** Sanctions can cut a country off from markets, trade and payments, and dealing with a listed party can be illegal.
 
 **Limits.** The app reads the official lists you download; it does not decide whether a particular deal is allowed.
+
+### Parametric insurance (trigger and exit)
+
+Insurance that pays when a measured index crosses a set level, such as season rainfall below 300 mm or a world rice price above $600 a tonne, instead of after a loss adjuster assesses the damage. Payment starts at the trigger and rises to the full cover at the exit.
+
+**Why it matters.** Money arrives in weeks, not months, because nobody has to visit farms or count damage. African Risk Capacity, the Caribbean CCRIF and many farm schemes use it so governments and families can act before a drought or storm turns into a crisis.
+
+**How to read it.** A trigger closer to normal pays more often but costs more. The gap between trigger and exit sets how fast the payout grows. Check how often the design would have paid in the past and whether the years it paid were the bad years people remember.
+
+**Limits.** The index is not the loss: a farm can suffer while the index stays above the trigger, or be fine while it pays (basis risk). A rain gauge or grid cell far from the farm makes this worse.
+
+### Burn cost (burn analysis)
+
+The average yearly payout a cover would have made if it had existed in every past year, as a % of the amount insured. Burn analysis replays the cover's terms over the historical record to find it.
+
+**Why it matters.** It is the starting point for the price of an index cover: the money the cover is expected to pay out each year, before the insurer adds a loading for its costs, its capital and the uncertainty.
+
+**How to read it.** A burn cost of 4% means the cover paid out on average 4 of every 100 insured each year. Look at the spread too: a cover that pays 40% once in ten years has the same burn cost as one that pays 4% every year, but it is far riskier to carry.
+
+**Limits.** It assumes the future looks like the past. A warming climate or a shift in prices makes old years a poor guide, so compare the recent years with the whole record. Short records give unstable figures.
+
+### Insurance loading (rate on line)
+
+The amount an insurer adds to the expected payout (the burn cost) to set a price. It pays for running costs, the capital held against a bad year and the uncertainty in the estimate. The price as a % of the cover is called the rate on line.
+
+**Why it matters.** Two covers with the same expected payout can need very different prices. One that pays a little most years is cheap to carry; one that pays everything once in twenty years needs much more capital, so it carries a larger loading.
+
+**How to read it.** A loading of 30% of the expected payout turns a burn cost of 4% into a price of 5.2% of the cover. With the standard-deviation rule, k = 0.5 adds half the spread of the yearly payouts. The multiple, price over burn cost, shows how much of the price is loading.
+
+**Limits.** The app's fair price comes from the record alone. Real quotes also depend on reinsurance prices, taxes, brokerage and the insurer's own models, and can be well above it for rare, large losses.
+
+### Return period (1 year in N)
+
+How often, on average, a level is reached or passed: a 1-in-20-year drought is one that dry or drier happens in about 5% of years. It is a probability, not a schedule.
+
+**Why it matters.** Insurers, engineers and disaster planners size covers, dams and reserves by return period. A trigger passed 1 year in 5 pays often and costs more; one passed 1 year in 50 is cheap but rarely helps.
+
+**How to read it.** A 1-in-20 level can come two years running, or not for 60 years. Over 30 years, a 1-in-20 event has about a 79% chance of happening at least once.
+
+**Limits.** From a record of n years, return periods much longer than n are guesses from a fitted curve. A changing climate shortens or lengthens them over time.
+
+### Extreme value fit (GEV, L-moments)
+
+A curve fitted to the yearly or seasonal values that describes how often very high or very low values happen, including ones rarer than any in the record. The generalised extreme value (GEV) distribution is the standard family; L-moments are a fitting method that is not thrown much by one wild year.
+
+**Why it matters.** A short record holds few bad years, so the record alone cannot say how bad a 1-in-100 season is. The fitted curve gives an estimate, which insurers and hydrologists use for rare events.
+
+**How to read it.** Read the fitted level with its range: a wide range means the record cannot pin it down. Check that about the expected number of past seasons pass the fitted 1-in-10 level; a large gap means a poor fit.
+
+**Limits.** Beyond the length of the record it is extrapolation. It assumes every past season comes from the same curve, which a trend in the climate or a market breaks.
+
+### Basis risk
+
+The gap between what an index cover pays and the loss it is meant to cover. A farm can lose its crop while the index stays above the trigger (a missed bad year), or the cover can pay in a year when the farm did fine.
+
+**Why it matters.** A missed bad year is the worst outcome for the insured: they paid for cover and got nothing when they needed it. It is the main reason people distrust index insurance, so schemes check it before they sell.
+
+**How to read it.** Look at how many bad years the cover paid in and how many it missed. A rank correlation near 1 between the index and the loss measure means the cover tracks the loss well; near 0, it barely does.
+
+**Limits.** In the app the loss is stood in for by a second measure of the same weather (capital against whole country), so it shows only part of basis risk. Real losses also depend on crops, timing, prices and local conditions.
+
+### Frequency-severity model
+
+A way to model yearly losses by splitting them into two parts: how many damaging events happen in a year (frequency) and how large each one is (severity). Insurers use it for storms, floods and other events that come one at a time.
+
+**Why it matters.** Splitting the loss lets each part be fitted on its own data, and then many years can be simulated to show how bad a rare year can get, which a short record of real years cannot show.
+
+**How to read it.** Frequency says how often; severity says how much per event. A negative binomial count means bad years cluster. The simulated loss passed 1 year in 100 is the figure a disaster fund or insurance layer would be sized against.
+
+**Limits.** Only as good as the record behind it: EM-DAT has no damage figure for many events, and a curve fitted on about 25 years says little about a 1 in 100 year. It assumes the past is like the future, with no change in climate or in what is exposed.
+
+### Average annual loss
+
+The average yearly cost of disasters over many years, counting the quiet years as zero. Often shortened to AAL.
+
+**Why it matters.** It is the cost a country carries every year on average, whether or not a disaster strikes, and the starting point for budgeting a disaster fund or pricing insurance.
+
+**How to read it.** Compare it with GDP or with the budget for disasters. A loss passed 1 year in 100 many times larger than the average means most of the risk sits in rare, very bad years.
+
+**Limits.** A long-run average: a given year is usually much lower or much higher. In the app it counts only damage EM-DAT reports, so it is understated.
+
+### Tropical cyclone
+
+A rotating storm that forms over warm tropical seas, with its strongest winds around a calm centre (the eye). It is called a hurricane in the Atlantic and East Pacific, a typhoon in the West Pacific and a cyclone in the Indian Ocean and South Pacific.
+
+**Why it matters.** Tropical cyclones bring wind, storm surge and floods at once, and can destroy a year of crops, homes and roads in a day. Small islands in their path can lose a large share of GDP to one storm, which is why disaster insurance pools such as those in the Caribbean and the Pacific pay out on storm tracks.
+
+**How to read it.** Count how many storms pass near the country and how strong they are there. The share of seasons with a hurricane-strength storm says how often a bad year comes; the strongest storms show how bad it can get.
+
+**Limits.** A track is the path of the centre: large storms spread damaging wind and rain hundreds of kilometres wider, small ones less. How much damage a storm does depends on what is in its path and how well it is built.
+
+### Saffir-Simpson scale
+
+A scale of hurricane strength by the highest sustained wind averaged over 1 minute: category 1 from 64 knots (119 km/h), 2 from 83, 3 from 96, 4 from 113 and 5 from 137 knots (252 km/h). Below 64 knots a storm is a tropical storm (from 34 knots).
+
+**Why it matters.** Damage rises much faster than wind speed, so each step up the scale means far more destruction. Category 3 and above are called major hurricanes; they cause most hurricane losses.
+
+**How to read it.** Category 1 and 2 damage roofs, trees and power lines; category 3 and above destroy weaker buildings and can leave areas without power and water for weeks.
+
+**Limits.** The scale uses wind only: storm surge and rainfall flooding, often the deadliest part, are not in it. Some regional centres measure wind over 10 minutes, which reads lower than the 1-minute figure.
+
+## Behavioural economics
+
+### Present bias
+
+The habit of giving much more weight to what happens now than to what happens later, even when the later payoff is larger. People plan to save, diet or apply for something "next month", then put it off again when next month comes.
+
+**Why it matters.** Policies that ask people to act now for a gain later (saving for retirement, signing up for a benefit, paying a tax early) reach fewer people than a simple cost-and-benefit sum would suggest.
+
+**How to read it.** In a policy review, an option is flagged for present bias when it relies on people paying a cost now for a gain later. The flag names published studies, such as Laibson (1997) and Thaler and Benartzi (2004), that describe the habit and ways around it.
+
+**Limits.** How strong the habit is differs between people, places and choices. The app holds no built-in size for it; a size appears only if you enter one with its source.
+
+### Defaults
+
+What happens when a person does nothing: the pension plan they are put in, the box already ticked, the tariff they stay on. Many people stay with the default, even when switching is easy.
+
+**Why it matters.** Changing the default can change what most people end up with, at little cost. Automatic enrolment in workplace pensions is the best-known case.
+
+**How to read it.** In a policy review, an option is flagged for defaults when it depends on people opting in or opting out. The flag points to studies such as Madrian and Shea (2001) on automatic enrolment.
+
+**Limits.** People who stay with a default have not chosen it, and a default that suits most people can suit some badly. Results from one country or scheme may not carry over to another.
+
+### Framing
+
+The way the same choice is described changes what people pick. "Saves 200 jobs out of 600" and "400 of 600 jobs are lost" describe one outcome, yet people react to them differently.
+
+**Why it matters.** How a reform is announced (a cut or a reform, a subsidy removed or a cash transfer added) can change how much support it gets and how people respond to it.
+
+**How to read it.** In a policy review, an option is flagged for framing when its success depends on how the public hears it, such as a subsidy reform or a new tax. The flag points to Tversky and Kahneman (1981).
+
+**Limits.** Framing changes how people react to a choice, not the facts of it. A different description does not make a costly policy cheaper.
+
+### Anchoring
+
+When people guess a number, they lean towards the first number they saw, even when it has nothing to do with the question. Past prices, an announced target or last year's pay rise can all act as anchors.
+
+**Why it matters.** Inflation targets, wage guidelines and announced prices can work partly as anchors for what households and firms expect. If people trust the anchor, they set prices and wages near it.
+
+**How to read it.** In a policy review, an option is flagged for anchoring and expectations when it depends on people believing an announced target or path. The flag points to Tversky and Kahneman (1974) and to studies of how firms form inflation expectations, such as Coibion, Gorodnichenko and Kumar (2018).
+
+**Limits.** An anchor works only while it is believed. After a long run of missed targets, people may anchor on recent inflation instead.
+
+### Loss aversion
+
+A loss feels worse than a gain of the same size feels good. Losing something people already have hurts more than not getting the same thing in the first place.
+
+**Why it matters.** Removing a benefit, a subsidy or a tax break tends to meet much stronger resistance than never having given it. This shapes which reforms survive and how they should be phased in.
+
+**How to read it.** In a policy review, an option is flagged for loss aversion when it takes away something people already receive. The flag points to Kahneman and Tversky (1979).
+
+**Limits.** Loss aversion explains resistance; it does not say a reform is wrong. How strong it is varies, and the app shows no built-in size for it.
 
 ## How the app tests and labels things
 
@@ -814,6 +1094,16 @@ Writing down a test's rules, data, and pass mark before running it, and recordin
 
 **Why it matters.** It stops the rules being adjusted after seeing the results until something "works".
 
+### Precedent finder
+
+A list of other countries whose figures in some past year looked like this country's figures now, on the ones you pick (such as government debt, inflation, reserves and the current account), with what happened to their figures in the three years after.
+
+**Why it matters.** Seeing how similar situations played out elsewhere gives a sense of the range of outcomes: some countries grew out of high debt, others slid into a crisis. It helps frame what an option might face.
+
+**How to read it.** The closest countries come first; a distance near 0 means the figures were almost the same, about 1 means one standard deviation apart on average. The last row gives the median of what followed. In Policy review, it sits after Diagnose and is worked out on request from the saved yearly figures.
+
+**Limits.** It describes what happened, not what will happen here, and it has not been tested as a signal. Countries differ in many ways the chosen figures leave out. IMF programme data and crisis dates read Missing until their terms are confirmed.
+
 ### Naive benchmark
 
 The simplest possible forecast to beat, such as "next year will be the same as this year".
@@ -833,6 +1123,14 @@ The chance of seeing a result at least this good by pure luck if the signal actu
 A standard way to raise the bar when many tests are run at once, so that lucky passes are weeded out. The smallest p-value must clear a stricter mark, the next a slightly less strict one, and so on.
 
 **Why it matters.** Without it, running many tests guarantees some false passes. The track record shows which passes survive it across every test on record.
+
+### Pre-registered test
+
+A test whose rule, data, pass mark and costs were written down and hashed (given a SHA-256 fingerprint) before it was run. The hash shows the rule was not changed after the result was seen.
+
+**Why it matters.** It stops a rule being re-tuned until it passes. A changed rule is a new version and counts as a new test.
+
+**Limits.** Most of the app's tests were written down on the same day they ran, on data that was already public. For those, the hash shows the rule did not change after the run, not that it was fixed before anyone looked at the data, so the track record calls them specified and hashed before the run. Only a test written down before its data exist rules out both. The track record shows the registration and run dates side by side.
 
 ### Bootstrap
 
@@ -877,3 +1175,29 @@ A set of specialist AI agents, each covering one area (for example the central b
 **Why it matters.** Splitting the work keeps each answer tied to named figures and sources, and makes it clear which agent said what.
 
 **Limits.** Answers are written by an AI model and are labelled so. They are interpretation of the figures shown, not advice, and the app checks that every number they quote appears in the source figures.
+
+### Present value
+
+What a stream of future gains or costs is worth today, after each year is shrunk by the discount rate. Net present value is the present value of the gains minus the present value of the costs.
+
+**Why it matters.** A measure that costs money now and pays back over many years can only be compared with one that pays back quickly once both are put in today's money. The policy council's cost-benefit step uses it.
+
+**How to read it.** Above zero: the measure gains more than it costs at that discount rate. The flip rate shown beside it is the discount rate at which the answer changes sign.
+
+**Limits.** It is only as good as the yearly figures typed in, and it leaves out effects nobody wrote down.
+
+### Discount rate
+
+The yearly rate used to shrink future amounts to today's money. At 5%, 105 next year is worth 100 today.
+
+**Why it matters.** A higher rate counts the future for less, which favours measures that pay back quickly. Many governments publish an official rate for public projects.
+
+**How to read it.** Try more than one rate. If the answer changes between plausible rates, the case depends on how much weight you give the future.
+
+### Second-order effect
+
+A knock-on result of a measure: not what it does directly, but what happens when people and markets respond. A fuel subsidy lowers prices (first order), then raises fuel use and the budget cost (second order).
+
+**Why it matters.** Many policies fail through effects nobody planned for. The policy council's chain step writes them out in order.
+
+**How to read it.** Read each link and ask how sure it is. A long chain of uncertain links is weak support.

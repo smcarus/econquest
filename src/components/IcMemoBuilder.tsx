@@ -454,6 +454,8 @@ export const IcMemoBuilder: React.FC<IcMemoBuilderProps> = (props) => {
   const [include, setInclude] = useState<Record<string, boolean>>({});
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
+  // Phone only: the preview or the text, one at a time.
+  const [phonePane, setPhonePane] = useState<'preview' | 'text'>('preview');
   const [edited, setEdited] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const t = useT(REPORTS);
@@ -582,8 +584,17 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
             </button>
           </div>
         </header>
+        {/* On a phone the text and the preview take turns; side by side from a laptop up. Both scroll inside a fixed height. */}
+        <div className="lg:hidden px-4 pt-3 flex gap-1.5" role="tablist" aria-label={t('im_text')}>
+          <button type="button" role="tab" aria-selected={phonePane === 'preview'} className="ui-pill" onClick={() => setPhonePane('preview')} data-memo-pane="preview">
+            {t('im_preview')}
+          </button>
+          <button type="button" role="tab" aria-selected={phonePane === 'text'} className="ui-pill" onClick={() => setPhonePane('text')} data-memo-pane="text">
+            {t('im_showText')}
+          </button>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x divide-slate-100 dark:divide-slate-800">
-          <div className="p-4">
+          <div className={`p-4 ${phonePane === 'text' ? '' : 'hidden lg:block'}`}>
             <label htmlFor="memo-text" className="ui-label block mb-1">
               {t('im_text')}
             </label>
@@ -591,14 +602,13 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
               id="memo-text"
               value={memo}
               onChange={(e) => setEdited(e.target.value)}
-              rows={28}
-              className="w-full px-2 py-1.5 text-xs font-code border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100"
+              className="w-full h-[60vh] lg:h-[68vh] px-2 py-1.5 text-xs font-code border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100"
             />
           </div>
-          <div className="p-4">
+          <div className={`p-4 ${phonePane === 'preview' ? '' : 'hidden lg:block'}`}>
             <div className="ui-label mb-1">{t('im_preview')}</div>
             <article
-              className="ic-memo-preview text-sm text-slate-800 dark:text-slate-200 space-y-2 [&_h1]:text-xl [&_h1]:font-semibold [&_h1]:text-slate-900 dark:[&_h1]:text-white [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:mt-4 [&_h2]:pb-1 [&_h2]:border-b [&_h2]:border-slate-200 dark:[&_h2]:border-slate-700 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5"
+              className="ic-memo-preview max-h-[60vh] lg:max-h-[68vh] overflow-y-auto pr-1 text-sm text-slate-800 dark:text-slate-200 space-y-2 [&_h1]:text-xl [&_h1]:font-semibold [&_h1]:text-slate-900 dark:[&_h1]:text-white [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:mt-4 [&_h2]:pb-1 [&_h2]:border-b [&_h2]:border-slate-200 dark:[&_h2]:border-slate-700 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5"
               dangerouslySetInnerHTML={{ __html: html }}
             />
           </div>

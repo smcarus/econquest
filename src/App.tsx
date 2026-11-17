@@ -54,14 +54,13 @@ import {
   WorkspacePage,
 
   PORTFOLIO_TABS,
-  REPORTS_TABS,
-  findTabForDesk,
 } from './components/WorkspacePage';
 import { PortfolioSummary } from './components/PortfolioSummary';
 import { BookBriefPanel } from './components/BookBriefPanel';
 import { HoldingsPanel } from './components/HoldingsPanel';
 import { PortfolioOverlayPanel } from './components/PortfolioOverlayPanel';
 import { START_REVIEW_EVENT } from './utils/reviewHandoff';
+import { COUNTRY_TOOL_EVENT, isCountryTool } from './utils/countryTools';
 import { OPEN_IDEAS_EVENT } from './utils/ideaHandoff';
 import { EXPLAIN_EVENT } from './utils/explainHandoff';
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './utils/refereeModel';
@@ -78,6 +77,8 @@ import type { ToolTarget } from './data/toolsCatalog';
 import type { WorkspaceTab } from './components/WorkspacePage';
 
 import { loadHoldings, saveHoldings,   type Holding } from './utils/holdings';
+import { HIDDEN_CHANGED_EVENT, fetchHiddenView, hiddenSets } from './utils/hiddenNamesClient';
+import type { HiddenView } from './utils/exclusions';
 
 type AppArea = 'today' | 'country' | 'compare' | 'portfolio' | 'reports' | 'desks';
 import { EconQuestLogo } from './components/EconQuestLogo';
@@ -92,6 +93,7 @@ import {
   CheckCircle2,
   ShieldCheck,
   GraduationCap,
+  ListChecks,
   ScrollText,
   Activity,
   ShieldQuestion,
@@ -123,6 +125,8 @@ import { PanelBoundary } from './components/PanelBoundary';
 import { reviveMissing, reviveWatchlistGroups } from './utils/reviveMissing';
 import { loadCouncilBrief } from './utils/askCouncil';
 import { loadShareMode, saveShareMode } from './utils/shareMode';
+import { dailyLine, dailyProgress } from './utils/dailyProgress';
+import type { DataHealthTab } from './components/DataHealthDialog';
 
 // Desks load on first use, so the first screen does not download all 41 of them.
 // The menu dialogs load when first opened, keeping them out of the first download.
@@ -135,6 +139,7 @@ const DataHealthDialog = lazyNamed(() => import('./components/DataHealthDialog')
 const IdeaJournalDialog = lazyNamed(() => import('./components/IdeaJournalDialog'), 'IdeaJournalDialog');
 const OwnSeriesDialog = lazyNamed(() => import('./components/OwnSeriesDialog'), 'OwnSeriesDialog');
 const AboutDialog = lazyNamed(() => import('./components/AboutDialog'), 'AboutDialog');
+const WorkedExamplesDialog = lazyNamed(() => import('./components/WorkedExamplesDialog'), 'WorkedExamplesDialog');
 const AddCountryDialog = lazyNamed(() => import('./components/AddCountryDialog'), 'AddCountryDialog');
 const QuestsDialog = lazyNamed(() => import('./components/QuestsDialog'), 'QuestsDialog');
 const ModelRegisterDialog = lazyNamed(() => import('./components/ModelRegisterDialog'), 'ModelRegisterDialog');
@@ -196,7 +201,16 @@ type NavSectionId =
 
 
 /** Reports in the core view: the note builder alone. */
-const CORE_REPORTS_TABS: WorkspaceTab[] = [{ id: 'ic', label: 'Notes', hint: '', desks: ['ic_memo_builder'] }];
+/** Reports: one tab per job, so each opens on its own instead of five panels stacked down one page. */
+type ReportsView = 'ic' | 'reviews' | 'docs' | 'notebooks' | 'teaching';
+const REPORTS_VIEWS: ReportsView[] = ['ic', 'reviews', 'docs', 'notebooks', 'teaching'];
+/** Which Reports tab holds each anchor that Tools, worked examples and the chat link to. */
+const REPORTS_VIEW_BY_ANCHOR: Record<string, ReportsView> = {
+  'tool-policy-reviews': 'reviews',
+  'tool-council-docs': 'docs',
+  'tool-notebooks': 'notebooks',
+  'tool-episodes': 'teaching',
+};
 
 export default function App() {
   // Countries the user added (names only) go into SOVEREIGN_CATALOG on boot.
@@ -260,6 +274,30 @@ export default function App() {
       clearInterval(t);
     };
   }, [isDataHealthOpen]);
+  // The daily download while it runs (src/utils/dailyProgress.ts): one line at the top, read every
+  // minute until the run ends, with a link to Menu > Data health > Daily download.
+  const [dailyNote, setDailyNote] = useState<string | null>(null);
+  const [dailyNoteHidden, setDailyNoteHidden] = useState(false);
+  const [dataHealthTab, setDataHealthTab] = useState<DataHealthTab | undefined>(undefined);
+  useEffect(() => {
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const load = () =>
+      fetch('/api/daily-run')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => {
+          if (!alive || !j) return;
+          const line = dailyLine(dailyProgress(j.run));
+          setDailyNote(line);
+          if (line) timer = setTimeout(load, 60_000);
+        })
+        .catch(() => undefined);
+    load();
+    return () => {
+      alive = false;
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
   // Menu > Models & validation; a status badge anywhere opens it on its row (undefined = closed).
   const [registerFocus, setRegisterFocus] = useState<string | null | undefined>(undefined);
   // Menu > Idea journal, or "Log idea" on a Council chat answer.
@@ -336,7 +374,7 @@ export default function App() {
   const [countryTab, setCountryTab] = useState<CountryTabId>(DEFAULT_COUNTRY_TAB_ID as CountryTabId);
   const [countryBriefView, setCountryBriefView] = useState<BriefView>('economist');
   const [portfolioTab, setPortfolioTab] = useState<string>(PORTFOLIO_TABS[0].id);
-  const [reportsTab, setReportsTab] = useState<string>(REPORTS_TABS[0].id);
+  const [reportsTab, setReportsTab] = useState<ReportsView>('ic');
   // Report template asked for from a brief or Workspace; otherwise the council brief.
   const [requestedReport, setRequestedReport] = useState<ReportTemplate | null>(null);
   // Bumped when Today sends a new council brief, so Reports rebuilds from it.
@@ -347,19 +385,30 @@ export default function App() {
   const [councilProgressId, setCouncilProgressId] = useState<string | null>(null);
   // Tools is always shown: without the old desks it is the page of tools that run on live data.
   const navAreas = NAV;
-  const [holdings, setHoldingsState] = useState<Holding[]>(() => loadHoldings());
+  const [allHoldings, setHoldingsState] = useState<Holding[]>(() => loadHoldings());
+  // Hidden names (Menu > Settings > Hidden names): positions and countries on the list are left
+  // out of every screen; only their count shows. The browser gets fingerprints, never names.
+  const [hiddenView, setHiddenView] = useState<HiddenView | null>(null);
+  const [hidden, setHidden] = useState<{ holdingIds: Set<string>; iso3: Set<string> }>(() => ({ holdingIds: new Set(), iso3: new Set() }));
+  useEffect(() => {
+    const load = () => void fetchHiddenView().then(setHiddenView);
+    load();
+    window.addEventListener(HIDDEN_CHANGED_EVENT, load);
+    return () => window.removeEventListener(HIDDEN_CHANGED_EVENT, load);
+  }, []);
+  const holdings = useMemo(() => (hidden.holdingIds.size ? allHoldings.filter((h) => !hidden.holdingIds.has(h.id)) : allHoldings), [allHoldings, hidden]);
+  const hiddenHoldingCount = allHoldings.length - holdings.length;
   const setHoldings = (next: Holding[]) => {
-    setHoldingsState(next);
-    saveHoldings(next);
+    // Screens edit the visible positions; hidden ones are kept as they were.
+    const full = [...next, ...allHoldings.filter((h) => hidden.holdingIds.has(h.id))];
+    setHoldingsState(full);
+    saveHoldings(full);
   };
-  const openWorkspace = (area: 'portfolio' | 'reports', deskId?: string) => {
-    const tabs = area === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS;
-    const current = area === 'portfolio' ? portfolioTab : reportsTab;
-    const tab = (deskId && findTabForDesk(tabs, deskId)) || tabs.find((t) => t.id === current) || tabs[0];
-    (area === 'portfolio' ? setPortfolioTab : setReportsTab)(tab.id);
-    const desk = deskId && tab.desks.includes(deskId) ? deskId : tab.desks.includes(activeNavSection) ? activeNavSection : tab.desks[0];
-    setActiveNavSection(desk as NavSectionId);
-    setAppArea(area);
+  /** Opens Reports on a tab (the one last open when none is named). */
+  const openWorkspace = (_area: 'reports', view?: ReportsView) => {
+    if (view) setReportsTab(view);
+    setActiveNavSection('ic_memo_builder' as NavSectionId);
+    setAppArea('reports');
     window.scrollTo({ top: 0 });
   };
   const openCountryPage = (tabId?: string) => {
@@ -429,6 +478,7 @@ export default function App() {
   const [isCustomSovereignModalOpen, setIsCustomSovereignModalOpen] =
     useState<boolean>(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState<boolean>(false);
+  const [isWorkedOpen, setIsWorkedOpen] = useState<boolean>(false);
   const [isRuntimeModalOpen, setIsRuntimeModalOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [settingsTab, setSettingsTab] = useState<SettingsTab>('ai');
@@ -994,8 +1044,19 @@ export default function App() {
     }
   };
 
-  const activeWatchlistItems =
-    watchlists.find((w) => w.id === activeWatchlistId)?.items || SOVEREIGN_CATALOG;
+  const rawWatchlistItems = watchlists.find((w) => w.id === activeWatchlistId)?.items || SOVEREIGN_CATALOG;
+  const activeWatchlistItems = useMemo(() => (hidden.iso3.size ? rawWatchlistItems.filter((i) => !hidden.iso3.has(i.iso3)) : rawWatchlistItems), [rawWatchlistItems, hidden]);
+  const visibleWatchlists = useMemo(() => (hidden.iso3.size ? watchlists.map((w) => ({ ...w, items: w.items.filter((i) => !hidden.iso3.has(i.iso3)) })) : watchlists), [watchlists, hidden]);
+  useEffect(() => {
+    let live = true;
+    const iso3s = [...watchlists.flatMap((w) => w.items.map((i) => i.iso3)), ...SOVEREIGN_CATALOG.map((c) => c.iso3), ...allHoldings.map((h) => h.iso3)];
+    void hiddenSets(hiddenView, allHoldings, iso3s).then((next) => {
+      if (live) setHidden(next);
+    });
+    return () => {
+      live = false;
+    };
+  }, [hiddenView, allHoldings, watchlists]);
   // The core view never shows a built-in figure: only what a real source filled (utils/liveFigures.ts).
   const liveWatchlistItems = useMemo(() => activeWatchlistItems.map(toLive), [activeWatchlistItems]);
   // Council chat: one conversation for the whole app, on Workspace and in the side panel elsewhere.
@@ -1020,7 +1081,7 @@ export default function App() {
   // Risk scores for held countries: the active watchlist first (it may carry live figures), then the catalogue.
   const holdingsRiskLookup = [
     ...activeWatchlistItems,
-    ...SOVEREIGN_CATALOG.filter((c) => !activeWatchlistItems.some((w) => w.iso3 === c.iso3)),
+    ...SOVEREIGN_CATALOG.filter((c) => !activeWatchlistItems.some((w) => w.iso3 === c.iso3) && !hidden.iso3.has(c.iso3)),
   ];
   // Portfolio and Reports see only real figures: the catalogue's built-in values are stripped too.
   const liveRiskLookup = useMemo(() => holdingsRiskLookup.map(toLive), [activeWatchlistItems]);
@@ -1069,8 +1130,18 @@ export default function App() {
 
 
   /** Opens a ready tool from the Tools page where it lives. */
-  const scrollToAnchor = (anchor: string) =>
-    window.setTimeout(() => document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+  // The screen may still be loading (a lazy panel), so look for the anchor for up to about five seconds.
+  const scrollToAnchor = (anchor: string) => {
+    let tries = 0;
+    const go = () => {
+      const el = document.getElementById(anchor);
+      // A History & data tool draws only once picked: ask the country page to open it.
+      if (!el && isCountryTool(anchor)) window.dispatchEvent(new CustomEvent(COUNTRY_TOOL_EVENT, { detail: anchor }));
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      else if (tries++ < 25) window.setTimeout(go, 200);
+    };
+    window.setTimeout(go, 120);
+  };
   const openTool = (t: ToolTarget) => {
     if (t.area === 'today' || t.area === 'compare') {
       if (t.area === 'compare') setResearchSection(sectionForAnchor(t.anchor));
@@ -1090,7 +1161,10 @@ export default function App() {
       setAppArea('portfolio');
       window.scrollTo({ top: 0 });
       if (t.anchor) scrollToAnchor(t.anchor);
-    } else openWorkspace('reports');
+    } else {
+      openWorkspace('reports', t.anchor ? REPORTS_VIEW_BY_ANCHOR[t.anchor] ?? 'ic' : undefined);
+      if (t.anchor) scrollToAnchor(t.anchor);
+    }
   };
 
 
@@ -1117,11 +1191,11 @@ export default function App() {
   const sendCouncilToReports = () => {
     setRequestedReport('council');
     setReportNonce((n) => n + 1);
-    openWorkspace('reports', 'ic_memo_builder');
+    openWorkspace('reports', 'ic');
   };
   // "Start a policy review" from a Council chat answer: open Reports, where the panel picks up the prefill.
   useEffect(() => {
-    const go = () => openWorkspace('reports', 'ic_memo_builder');
+    const go = () => openWorkspace('reports', 'reviews');
     window.addEventListener(START_REVIEW_EVENT, go);
     return () => window.removeEventListener(START_REVIEW_EVENT, go);
   });
@@ -1449,6 +1523,14 @@ export default function App() {
                         onClick: () => setIsManualModalOpen(true),
                         className: '',
                       },
+                      {
+                        key: 'worked',
+                        icon: <ListChecks className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: t('worked'),
+                        hint: '',
+                        onClick: () => setIsWorkedOpen(true),
+                        className: '',
+                      },
                     ]
                   )
                     // The audit log is for admins once accounts exist (src/utils/permissions.ts).
@@ -1531,6 +1613,20 @@ export default function App() {
         </div>
       </section>
 
+      {dailyNote && !dailyNoteHidden && (
+        <div data-testid="daily-download-line" role="status" className="px-6 py-2 border-b text-xs flex items-center justify-between gap-4 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60 text-blue-800 dark:text-blue-200">
+          <span>{dailyNote}</span>
+          <span className="flex gap-3 shrink-0">
+            <button type="button" onClick={() => (setDataHealthTab('download'), setIsDataHealthOpen(true))} className="underline">
+              See progress
+            </button>
+            <button type="button" onClick={() => setDailyNoteHidden(true)} className="underline opacity-75 hover:opacity-100">
+              Dismiss
+            </button>
+          </span>
+        </div>
+      )}
+
       {/* STATUS BANNER */}
       {statusBanner && (
         <div
@@ -1568,7 +1664,7 @@ export default function App() {
         {!isWatchlistCollapsed && (
           <aside className="lg:col-span-3">
             <WatchlistSidebar
-              watchlists={watchlists}
+              watchlists={visibleWatchlists}
               activeWatchlistId={activeWatchlistId}
               selectedIso3={run.iso3}
               onSelectWatchlist={setActiveWatchlistId}
@@ -1679,7 +1775,7 @@ export default function App() {
               briefView={countryBriefView}
               onWriteNote={(view) => {
                 setRequestedReport(view);
-                openWorkspace('reports', 'ic_memo_builder');
+                openWorkspace('reports', 'ic');
               }}
             />
             </PanelBoundary>
@@ -1713,7 +1809,7 @@ export default function App() {
                       view="pm"
                       onWriteReport={(view) => {
                         setRequestedReport(view === 'client' ? 'client_review' : 'book');
-                        openWorkspace('reports', 'ic_memo_builder');
+                        openWorkspace('reports', 'ic');
                       }}
                     />
                   </PanelBoundary>
@@ -1745,6 +1841,7 @@ export default function App() {
                 <PanelBoundary name="Your holdings">
                   <HoldingsPanel
                     holdings={holdings}
+                    hiddenCount={hiddenHoldingCount}
                     countries={holdingsRiskLookup}
                     onChange={setHoldings}
                     onClose={() => setResearchSection('summary')}
@@ -1778,24 +1875,27 @@ export default function App() {
               ariaLabel={trp('rp_aria')}
               title={trp('rp_title')}
               subtitle={trp('rp_subtitle', { country: run.countryName })}
-              tabs={CORE_REPORTS_TABS}
+              tabs={REPORTS_VIEWS.map((id) => ({
+                id,
+                label: trp(id === 'ic' ? 'rp_tab_note' : id === 'reviews' ? 'rp_tab_reviews' : id === 'docs' ? 'rp_tab_docs' : id === 'notebooks' ? 'rp_tab_notebooks' : 'rp_tab_teaching'),
+                hint: trp(id === 'ic' ? 'rp_tab_note_hint' : id === 'reviews' ? 'rp_tab_reviews_hint' : id === 'docs' ? 'rp_tab_docs_hint' : id === 'notebooks' ? 'rp_tab_notebooks_hint' : 'rp_tab_teaching_hint'),
+                desks: ['ic_memo_builder'],
+              }))}
               activeTabId={reportsTab}
-              activeDesk={activeNavSection}
-              onChangeTab={(tabId) => {
-                setReportsTab(tabId);
-                const cfg = REPORTS_TABS.find((t) => t.id === tabId) || REPORTS_TABS[0];
-                setActiveNavSection(cfg.desks[0] as NavSectionId);
-              }}
-              onChangeDesk={(d) => setActiveNavSection(d as NavSectionId)}
-              renderDesk={(d) =>
-                d === 'ic_memo_builder' ? (
-                  <Suspense fallback={<DeskLoading />}>
-                  <div id="tool-policy-reviews" className="mb-3 scroll-mt-4">
+              activeDesk="ic_memo_builder"
+              onChangeTab={(tabId) => setReportsTab(tabId as ReportsView)}
+              onChangeDesk={() => undefined}
+              renderDesk={() => (
+                <Suspense fallback={<DeskLoading />}>
+                  {reportsTab === 'reviews' && (
+                  <div id="tool-policy-reviews" className="scroll-mt-4">
                     <PanelBoundary name="Policy reviews">
                       <PolicyReviews countries={liveWatchlistItems} defaultIso3={run.iso3} />
                     </PanelBoundary>
                   </div>
-                  <div id="tool-council-docs" className="mb-3 scroll-mt-4">
+                  )}
+                  {reportsTab === 'docs' && (
+                  <div id="tool-council-docs" className="scroll-mt-4">
                     <PanelBoundary name="Council documents">
                       <SavedCouncilDocuments
                         items={liveWatchlistItems}
@@ -1807,8 +1907,10 @@ export default function App() {
                       />
                     </PanelBoundary>
                   </div>
+                  )}
+                  {reportsTab === 'ic' && (
                   <IcMemoBuilder
-                    key={`${d}-${requestedReport || openingReport}-${reportNonce}`}
+                    key={`ic_memo_builder-${requestedReport || openingReport}-${reportNonce}`}
                     run={run}
                     holdings={holdings}
                     riskLookup={liveRiskLookup}
@@ -1816,19 +1918,23 @@ export default function App() {
                     defaultAudience={visibleReport(requestedReport || openingReport)}
                     audiences={CORE_REPORTS}
                   />
-                  <div id="tool-notebooks" className="mt-3 scroll-mt-4">
+                  )}
+                  {reportsTab === 'notebooks' && (
+                  <div id="tool-notebooks" className="scroll-mt-4">
                     <PanelBoundary name="Research notebooks">
                       <ResearchNotebooks countries={liveWatchlistItems} />
                     </PanelBoundary>
                   </div>
-                  <div id="tool-episodes" className="mt-3 scroll-mt-4">
+                  )}
+                  {reportsTab === 'teaching' && (
+                  <div id="tool-episodes" className="scroll-mt-4">
                     <PanelBoundary name="Teaching episodes">
                       <TeachingEpisodes countries={liveWatchlistItems} />
                     </PanelBoundary>
                   </div>
-                  </Suspense>
-                ) : null
-              }
+                  )}
+                </Suspense>
+              )}
             />
             </PanelBoundary>
           )}
@@ -1851,8 +1957,21 @@ export default function App() {
 
       {isOfflineDataOpen && <OfflineDataDialog onClose={() => setIsOfflineDataOpen(false)} />}
       <Suspense fallback={null}>{isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}</Suspense>
-      <Suspense fallback={null}>{isDataHealthOpen && <DataHealthDialog onClose={() => setIsDataHealthOpen(false)} />}</Suspense>
+      <Suspense fallback={null}>{isDataHealthOpen && <DataHealthDialog initialTab={dataHealthTab} onClose={() => (setIsDataHealthOpen(false), setDataHealthTab(undefined))} />}</Suspense>
       <Suspense fallback={null}>{isIdeasOpen && <IdeaJournalDialog onClose={() => setIsIdeasOpen(false)} />}</Suspense>
+      <Suspense fallback={null}>
+        {isWorkedOpen && (
+          <WorkedExamplesDialog
+            countryName={run.countryName}
+            snapshot={run.openData}
+            onOpenScreen={(target) => {
+              setIsWorkedOpen(false);
+              openTool(target);
+            }}
+            onClose={() => setIsWorkedOpen(false)}
+          />
+        )}
+      </Suspense>
       <Suspense fallback={null}>{isOwnDataOpen && <OwnSeriesDialog onClose={() => setIsOwnDataOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isQuestsOpen && questsOn && <QuestsDialog items={liveWatchlistItems} onClose={() => setIsQuestsOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}</Suspense>

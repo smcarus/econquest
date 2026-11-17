@@ -29,9 +29,12 @@ export interface Account {
   username: string;
   displayName: string;
   role: Role;
-  /** 'local' = password kept here. Room for 'oidc' accounts later. */
-  provider: 'local';
+  /** 'local' = password kept here; 'oidc' = signs in through the OIDC provider (src/utils/oidc.ts), no password. */
+  provider: 'local' | 'oidc';
+  /** Empty for an OIDC account, so no password ever matches it. */
   passwordHash: string;
+  /** OIDC accounts: the provider and the person's id there (the link), and the verified email it was made from. */
+  oidc?: { issuer: string; subject: string; email: string };
   createdAt: string;
   passwordChangedAt: string;
   disabled?: boolean;
@@ -43,7 +46,9 @@ export interface PublicAccount {
   username: string;
   displayName: string;
   role: Role;
-  provider: 'local';
+  provider: 'local' | 'oidc';
+  /** OIDC accounts: the email the account was made from. */
+  email?: string;
   createdAt: string;
   disabled: boolean;
 }
@@ -122,7 +127,7 @@ export function displayNameProblem(name: string): string | null {
 }
 
 export function publicAccount(a: Account): PublicAccount {
-  return { id: a.id, username: a.username, displayName: a.displayName, role: a.role, provider: a.provider, createdAt: a.createdAt, disabled: Boolean(a.disabled) };
+  return { id: a.id, username: a.username, displayName: a.displayName, role: a.role, provider: a.provider, ...(a.oidc ? { email: a.oidc.email } : {}), createdAt: a.createdAt, disabled: Boolean(a.disabled) };
 }
 
 export function newAccount(input: { username: string; displayName: string; role: Role; password: string }, now: Date = new Date()): Account {
@@ -134,6 +139,22 @@ export function newAccount(input: { username: string; displayName: string; role:
     role: input.role,
     provider: 'local',
     passwordHash: hashPassword(input.password),
+    createdAt: at,
+    passwordChangedAt: at,
+  };
+}
+
+/** An account for someone who signs in through the OIDC provider: no password. */
+export function newOidcAccount(input: { username: string; displayName: string; role: Role; issuer: string; subject: string; email: string }, now: Date = new Date()): Account {
+  const at = now.toISOString();
+  return {
+    id: randomBytes(9).toString('base64url'),
+    username: input.username,
+    displayName: input.displayName.trim().slice(0, 80) || input.username,
+    role: input.role,
+    provider: 'oidc',
+    passwordHash: '',
+    oidc: { issuer: input.issuer, subject: input.subject, email: input.email },
     createdAt: at,
     passwordChangedAt: at,
   };

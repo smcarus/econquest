@@ -4,13 +4,14 @@
  * anything not recorded, as if offline. The clock is set back to when the recording was made, so
  * date ranges the server asks for match and "how old is this" rules judge as they did then.
  *
- * Match: the exact URL (keys taken out) first; otherwise the same address and path with the most
- * query values in common (ranges that moved by a day still match).
+ * Match: the exact URL (keys taken out) first; otherwise the same address and path whose query differs
+ * only in dates or counts, the one with most values in common (ranges that moved by a day still match;
+ * a different series id or country does not).
  */
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { gunzipSync } from 'node:zlib';
-import { maskUrl, sharedParams, skipHost, urlStem } from './feedRecording.mjs';
+import { maskUrl, rangeOnlyDiffers, sharedParams, skipHost, urlStem } from './feedRecording.mjs';
 
 const dir = process.env.REPLAY_DIR;
 if (!dir) throw new Error('REPLAY_DIR is not set');
@@ -57,7 +58,8 @@ globalThis.fetch = async (input, init = {}) => {
   }
   let hit = byUrl.get(`${method} ${masked}`);
   if (!hit) {
-    const near = byStem.get(`${method} ${urlStem(masked)}`) || [];
+    // Only replies whose query differs in dates or counts: another series id or country never stands in.
+    const near = (byStem.get(`${method} ${urlStem(masked)}`) || []).filter((r) => rangeOnlyDiffers(r.url, masked));
     hit = near.slice().sort((a, b) => sharedParams(b.url, masked) - sharedParams(a.url, masked))[0];
   }
   const file = hit ? path.join(dir, 'bodies', hit.body) : '';

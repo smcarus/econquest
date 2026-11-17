@@ -6,6 +6,7 @@ import path from 'node:path';
 import { feedbackLine, issueText, issueUrl, parseFeedback, ratedQuestions, scrub, summariseFeedback, type FeedbackEntry } from '../src/utils/feedback';
 import { appendFeedback, loadFeedback } from '../src/utils/feedbackStore';
 import { APP_CITATION } from '../src/utils/citation';
+import { versionWithCommit } from '../src/utils/buildInfo';
 
 const at = (s: string) => new Date(`2026-11-11T${s}Z`);
 const ok = (v: unknown, when = at('10:00:00')) => {
@@ -18,7 +19,7 @@ test('a flag on a figure keeps the note, figure, source and app version', () => 
   const e = ok({ kind: 'flag', target: 'figure', note: ' Looks a year old ', figure: { iso3: 'bra', label: 'Inflation', value: '4.4%', source: 'IMF WEO, Oct 2026' } });
   assert.equal(e.note, 'Looks a year old');
   assert.deepEqual(e.figure, { iso3: 'BRA', label: 'Inflation', value: '4.4%', source: 'IMF WEO, Oct 2026' });
-  assert.equal(e.appVersion, APP_CITATION.version);
+  assert.equal(e.appVersion, versionWithCommit(APP_CITATION.version));
   assert.equal(e.id, 'fb-20261111100000000');
 });
 

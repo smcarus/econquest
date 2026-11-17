@@ -4,7 +4,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { imfCpiKey, parseImfCpiStructure, pickImfCpiSeries, imfCpiSeries, pullImfCpi } from '../src/utils/imfCpi.ts';
+import { imfCpiCodeCounts, imfCpiKey, parseImfCpiStructure, pickImfCpiSeries, imfCpiSeries, pullImfCpi } from '../src/utils/imfCpi.ts';
 import { parseImfData } from '../src/utils/imfReserves.ts';
 import { mergeNationalCpi } from '../src/utils/nationalCpi.ts';
 import { cpiFor, cpiSource } from '../src/utils/oecdInflation.ts';
@@ -111,6 +111,56 @@ test('IMF CPI pull: one structure read, then the data; the .env key skips the st
   assert.match(urls[0], /\/USA\.CPI\._T\.YOY_PCH_PA_PT\.M\?/);
   const down = await pullImfCpi({ fetchFn: async () => new Response('x', { status: 503 }) }, 'USA');
   assert.ok(!down.step.ok && /HTTP 503/.test(down.step.note));
+});
+
+test('IMF CPI: codelists named on the concept, or by CL_ plus the dimension, are found', () => {
+  const conceptUrn = (c: string) => `urn:sdmx:org.sdmx.infomodel.conceptscheme.Concept=IMF.STA:CS_CPI(1.0+.0).${c}`;
+  const lists = structure.data.codelists.map((l) => (l.id === 'CL_TRANSFORMATION' ? { ...l, id: 'CL_TYPE_OF_TRANSFORMATION' } : l));
+  const viaConcept = {
+    data: {
+      dataStructures: [
+        {
+          dataStructureComponents: {
+            dimensionList: {
+              dimensions: [
+                { id: 'COUNTRY', position: 0, conceptIdentity: conceptUrn('COUNTRY') },
+                { id: 'INDEX_TYPE', position: 1, conceptIdentity: conceptUrn('INDEX_TYPE') },
+                { id: 'COICOP_1999', position: 2, conceptIdentity: conceptUrn('COICOP_1999') },
+                { id: 'TYPE_OF_TRANSFORMATION', position: 3, conceptIdentity: conceptUrn('TYPE_OF_TRANSFORMATION') },
+                { id: 'FREQUENCY', position: 4, conceptIdentity: conceptUrn('FREQUENCY') },
+              ],
+            },
+          },
+        },
+      ],
+      conceptSchemes: [
+        {
+          concepts: [
+            { id: 'INDEX_TYPE', coreRepresentation: { enumeration: urn('CL_INDEX_TYPE') } },
+            { id: 'COICOP_1999', coreRepresentation: { enumeration: urn('CL_COICOP') } },
+          ],
+        },
+      ],
+      codelists: lists,
+    },
+  };
+  const s = parseImfCpiStructure(viaConcept)!;
+  assert.equal(imfCpiKey(s, 'USA').key, 'USA.CPI._T.YOY_PCH_PA_PT.M');
+  assert.match(imfCpiCodeCounts(s), /INDEX_TYPE 2, COICOP_1999 2, TYPE_OF_TRANSFORMATION 3/);
+});
+
+test('IMF CPI pull: with no code names in the structure, every monthly series of the country is asked for and picked by name', async () => {
+  const bare = { data: { dataStructures: structure.data.dataStructures, codelists: [] } };
+  const urls: string[] = [];
+  const fetchFn = async (u: string) => {
+    urls.push(u);
+    return new Response(JSON.stringify(u.includes('/structure/') ? bare : usReply), { status: 200 });
+  };
+  const r = await pullImfCpi({ fetchFn }, 'USA');
+  assert.ok(r.step.ok, r.step.note);
+  assert.match(urls[1], /\/USA\.\*\.\*\.\*\.M\?/);
+  assert.match(r.step.note, /every monthly series of the country/);
+  assert.equal(r.series!.points.length, 3);
 });
 
 const pts = (...ms: string[]) => ms.map((period, i) => ({ period, value: 2 + i / 10 }));

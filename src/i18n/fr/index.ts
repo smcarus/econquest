@@ -30,6 +30,7 @@ import { GLOSSARY_FR } from './glossaryText';
 import { REPORTS_FR } from './reports';
 import { REPORTS_TEXT_FR } from './reportsText';
 import { DEFINITIONS_TEXT_FR } from './definitionsText';
+import { WORKED_TEXT_FR } from './workedText';
 
 export const FR: Record<string, Record<string, string>> = {
   shell: SHELL_FR,
@@ -50,4 +51,4 @@ export const FR: Record<string, Record<string, string>> = {
 };
 
 /** Sentences built in English elsewhere and swapped at display time (translateText in ../lang.ts). */
-export const FR_TEXT: Record<string, string> = { ...DEFINITIONS_TEXT_FR, ...COMPARE_TEXT_FR, ...MISSING_FR, ...BRIEF_TEXT_FR, ...PANEL_TEXT_FR, ...TOOL_TEXT_FR, ...TOOLS_CATALOG_FR, ...KEY_FIELDS_FR, ...GLOSSARY_FR, ...CHAT_TEXT_FR, ...REPORTS_TEXT_FR };
+export const FR_TEXT: Record<string, string> = { ...WORKED_TEXT_FR, ...DEFINITIONS_TEXT_FR, ...COMPARE_TEXT_FR, ...MISSING_FR, ...BRIEF_TEXT_FR, ...PANEL_TEXT_FR, ...TOOL_TEXT_FR, ...TOOLS_CATALOG_FR, ...KEY_FIELDS_FR, ...GLOSSARY_FR, ...CHAT_TEXT_FR, ...REPORTS_TEXT_FR };

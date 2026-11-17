@@ -116,9 +116,9 @@ export interface OwnSeriesView {
   licence: string | null;
 }
 
-const BLANK = new Set(['', 'na', 'n/a', 'n.a.', '..', '...', '-', '–', 'missing', 'null', 'nan', '#n/a']);
+export const BLANK = new Set(['', 'na', 'n/a', 'n.a.', '..', '...', '-', '–', 'missing', 'null', 'nan', '#n/a']);
 
-function splitLine(line: string, sep: string): string[] {
+export function splitLine(line: string, sep: string): string[] {
   const out: string[] = [];
   let cur = '';
   let quoted = false;
@@ -141,7 +141,7 @@ function splitLine(line: string, sep: string): string[] {
   return out.map((c) => c.trim());
 }
 
-function findSeparator(header: string): string {
+export function findSeparator(header: string): string {
   const count = (s: string) => header.split(s).length - 1;
   const tabs = count('\t');
   const semis = count(';');

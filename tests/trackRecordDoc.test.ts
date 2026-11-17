@@ -40,3 +40,14 @@ test('the carry pass does not survive the correction across the record, and the 
   assert.match(md, /Passes that do not hold after it: [^\n]*fx_carry v1/);
   assert.match(md, /\| fx_carry v1 \| Signal test \|[^\n]*\| No \(0\.05\) \|/);
 });
+
+test('the page says how long before each run its test was written down', async () => {
+  const { trackRecordMarkdown, daysBeforeRun } = await import('../src/utils/trackRecordDoc');
+  const v = { id: 'a', version: 1, ranAt: '2026-11-06T10:00:00Z', verdict: 'failed' as const, summary: 'p 0.4', method: 2 };
+  const files = [{ kind: 'backtest' as const, id: 'a', version: 1, file: 'a.json', registeredOn: '2026-11-06' }];
+  const md = trackRecordMarkdown([v], files, []);
+  assert.match(md, /1 of the 1 tests were written down on the day they ran or the day before \(1 on the same day\)/);
+  assert.match(md, /specified and hashed before the\nrun/);
+  assert.equal(daysBeforeRun({ key: 'k', verdict: v, kind: 'backtest', alpha: 0.05, file: { ...files[0], registeredOn: '2026-10-01' } }), 36);
+  assert.equal(daysBeforeRun({ key: 'k', verdict: v, kind: 'backtest', alpha: 0.05 }), undefined);
+});

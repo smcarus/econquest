@@ -22,6 +22,9 @@ import { ucdpData } from '../src/utils/ucdpStore.ts';
 import { acledFileData } from '../src/utils/acledFileStore.ts';
 import { aiddataData } from '../src/utils/aiddataStore.ts';
 import { investorBaseData } from '../src/utils/investorBaseStore.ts';
+import { fiscalRulesData } from '../src/utils/fiscalRulesStore.ts';
+import { fxRegimeData } from '../src/utils/fxRegimeStore.ts';
+import { dpiData } from '../src/utils/dpiStore.ts';
 import { applyKeysToEnv, envKeySnapshot, keySources, loadSettings, settingsFilePath } from '../src/utils/userSettings.ts';
 
 dotenv.config();
@@ -38,6 +41,9 @@ const report = await checkConnections({
   acledFiles: () => acledFileData(dataDir),
   aiddata: () => aiddataData(dataDir),
   investorBase: () => investorBaseData(dataDir),
+  fiscalRules: () => fiscalRulesData(dataDir),
+  fxRegime: () => fxRegimeData(dataDir),
+  dpi: () => dpiData(dataDir),
   readFile: (p) => {
     try {
       return { text: fs.readFileSync(p, 'utf8'), modified: fs.statSync(p).mtime };

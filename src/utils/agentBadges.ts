@@ -32,6 +32,8 @@ export type AgentIconKey =
   | 'cascade'
   | 'user'
   | 'gavel'
+  | 'crowd'
+  | 'flask'
   | 'agent';
 
 export interface AgentBadgeInfo {
@@ -85,6 +87,11 @@ export const AGENT_BADGES: Record<string, AgentBadgeInfo> = {
     plain: 'Estimates when a trend or shock might actually play out, from dated events, turns in the economic cycle and crowded bets starting to unwind.',
     reads: 'Dated catalysts, cycle turns, CFTC positioning, news tone shifts, Treasury flows and 3-month yield moves.',
   },
+  behaviour: {
+    icon: 'crowd',
+    plain: 'Looks for herding and mood swings: whether many traders bet the same way, how sure the crowd is, and how far confidence is from normal.',
+    reads: 'CFTC futures positioning, Polymarket crowd odds, EU consumer confidence, sentiment and households’ expected prices, the Timing Agent’s reading.',
+  },
   doc: {
     icon: 'file',
     plain: 'Reads the policy documents you attached and pulls out the passages that bear on your question.',
@@ -104,6 +111,11 @@ export const AGENT_BADGES: Record<string, AgentBadgeInfo> = {
     icon: 'check',
     plain: 'Checks a number or ranking stated in your question against the app’s own figures and says whether it holds up.',
     reads: 'The same live and official figures the other agents use.',
+  },
+  quant: {
+    icon: 'flask',
+    plain: 'Asks a research-tools server you run for backtests, volatility and price forecasts, nowcasts and option prices. Results are hypothetical, on past data, not a recommendation.',
+    reads: 'Outside research tools, with each result\'s link and data-through date.',
   },
   planner: {
     icon: 'route',
@@ -134,7 +146,7 @@ export function agentBadge(id: string): AgentBadgeInfo {
 /** Hover and screen-reader text for a badge at the reader's help level. */
 export function agentBadgeTip(id: string, name: string, level: HelpLevel, tx: (s: string) => string = (s) => s): string {
   const b = agentBadge(id);
-  if (level === 0) return tx(name);
+  if (level === 0 || level === 3) return tx(name);
   if (level === 1 || !b.reads) return `${tx(name)}: ${tx(b.plain)}`;
   return `${tx(name)}: ${tx(b.plain)} ${tx('Reads:')} ${tx(b.reads)}`;
 }

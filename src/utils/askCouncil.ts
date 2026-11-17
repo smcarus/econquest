@@ -17,6 +17,7 @@ import { CDS_HIDDEN } from './cdsHidden';
 import { isCitable, References } from './citations';
 import { taylorCheck, taylorMethod, taylorSentence } from './taylorRule';
 import { TIMING_AGENT_NAME, timingAgent } from './timingAgent';
+import { BEHAVIOUR_AGENT_NAME, behaviourAgent } from './behaviourAgent';
 import { oddsMoveText } from './oddsMoves';
 import type { LiveWatchlistItem } from '../types/council';
 import { upcomingOfficialEvents, dateKindLabel } from '../data/officialCalendar';
@@ -54,16 +55,18 @@ import { GINI_SOURCE, TARIFF_LAG_NOTE, TARIFF_SOURCE, TAX_CENTRAL_NOTE, TAX_SOUR
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
 import { IMF_ADVANCED, TNM_CITATION, multiplierView } from './fiscalMultipliers';
 import { parseWhatIf, runWhatIf, whatIfSentence, whatIfSetup } from './fiscalWhatIf';
+import { parseScenario, SHOCK_KINDS, type ScenarioQuestion, type ShockKind } from './scenarioQuestion';
 import { sectorLine, sectorsInQuestion } from './govSpending';
+import { QUANT_AGENT_NAME, QUANT_DESK_COVERS } from './quantDeskInfo';
 import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
 import type { DebateResult } from './agentDebate';
 import { changeLines } from './whatChanged';
 import { carryChart, chartFinding, chartFollowUps, chartRequest, seriesInQuestion, testsInQuestion, type ChartRequest, type ChartResult } from './councilChart';
 
 /** Desk agents the planner (or the AI model) can pick. */
-export type CoreAgentId = 'cb' | 'fiscal' | 'politics' | 'rv' | 'fx' | 'spill' | 'calendar' | 'timing';
-/** 'doc' = the Policy Document Agent, asked whenever you have added documents; 'chart' = the Chart Agent, when a chart or test is asked for; 'forecast' = the app's nowcasts and forecasts (src/utils/forecastAgent.ts). */
-export type AgentId = CoreAgentId | 'doc' | 'chart' | 'forecast' | 'claim';
+export type CoreAgentId = 'cb' | 'fiscal' | 'politics' | 'rv' | 'fx' | 'spill' | 'calendar' | 'timing' | 'behaviour';
+/** 'doc' = the Policy Document Agent, asked whenever you have added documents; 'chart' = the Chart Agent, when a chart or test is asked for; 'forecast' = the app's nowcasts and forecasts (src/utils/forecastAgent.ts); 'scenario' = the Scenario Agent for what-if questions (src/utils/scenarioAgent.ts); 'quant' = the Quant desk, from an outside research-tools server, Council chat only and only when one is set up (src/utils/quantDesk.ts). */
+export type AgentId = CoreAgentId | 'doc' | 'chart' | 'forecast' | 'claim' | 'scenario' | 'quant';
 export type FigureTag = Quality | 'official' | 'model' | 'document';
 
 export interface AgentFigure {
@@ -71,6 +74,8 @@ export interface AgentFigure {
   value: string;
   source: string;
   tag: FigureTag;
+  /** A link to the figure's own page (the Quant desk's result on the research tools server). */
+  url?: string;
 }
 
 export interface AgentFinding {
@@ -95,6 +100,8 @@ export interface AgentAnswer {
   missing: string[];
   /** The Chart Agent's chart and test results (src/utils/councilChart.ts). */
   chart?: ChartResult;
+  /** The Scenario Agent's debt paths the user can keep for the trade-off chart (WI6); screen only, not sent to the model. */
+  keep?: Array<{ iso3: string; countryName: string; item: import('./tradeOff').TradeOffItem }>;
 }
 
 export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string; topic: RegExp }> = {
@@ -138,9 +145,14 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
     covers: 'when a trend or shock could play out: dated catalysts, policy and business cycle turns, crowded positioning starting to unwind (CFTC), news tone shifts (GDELT), Treasury flows (TIC), 3-month yield moves',
     topic: /timing|how soon|\bwhen (?:could|will|would|might|does|do|is)\b|turning point|\bturn(?:s|ed|ing)?\b|shocks?\b|trigger|unwind|crowded|momentum|\btrend|\bcycle|what could (?:change|move)|catalyst/i,
   },
+  behaviour: {
+    name: BEHAVIOUR_AGENT_NAME,
+    covers: "herding and sentiment, described against each series' own history and not forecast: crowded futures positioning (CFTC, with its tested badge), prediction-market crowd odds (Polymarket), EU consumer confidence, economic sentiment and households' expected prices (European Commission surveys), and the Timing Agent's reading",
+    topic: /behaviou?r|herd|sentiment|crowd|euphori|panic|\bfear\b|greed|bubble|mania|confidence|animal spirits|overreact|households?'? (?:price |inflation )?expectations|inflation expectations|expected prices/i,
+  },
 };
 
-export const AGENT_ORDER: CoreAgentId[] = ['cb', 'fiscal', 'politics', 'rv', 'fx', 'spill', 'calendar', 'timing'];
+export const AGENT_ORDER: CoreAgentId[] = ['cb', 'fiscal', 'politics', 'rv', 'fx', 'spill', 'calendar', 'timing', 'behaviour'];
 export const TAG_LABEL: Record<Exclude<FigureTag, 'model'>, string> = {
   live: 'Live data',
   official: 'Official',
@@ -180,6 +192,19 @@ function namesCountry(question: string, iso3: string, name: string, byCode = tru
 }
 
 const baseName = (n: string) => n.replace(/\s*\(.*\)\s*$/, '').trim();
+
+/**
+ * Every way a text can name a country, as global patterns for finding each mention: the name and
+ * its other names (also as the start of a longer word, so "Brazilian" counts), the capitals-only
+ * short forms and the ISO code. Group 1 is what comes before the mention. Used to keep hidden
+ * names out of answers (src/server/councilAsk.ts).
+ */
+export function countryMentionPatterns(iso3: string, name: string): RegExp[] {
+  return [
+    ...[baseName(name), ...(ALIASES[iso3] || [])].map((n) => new RegExp(`(^|[^\\p{L}])${escapeRe(n)}\\p{L}*`, 'giu')),
+    ...[...(CAPS_ALIASES[iso3] || []), iso3].map((n) => new RegExp(`(^|[^\\p{L}])${escapeRe(n)}(?=$|[^\\p{L}])`, 'gu')),
+  ];
+}
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export interface CouncilPlan {
@@ -199,6 +224,10 @@ export interface CouncilPlan {
   chart?: ChartRequest;
   /** Explain mode (src/utils/explain.ts): the lenses to explain through, and the figure pointed at. */
   explain?: import('./explain').ExplainPlan;
+  /** A what-if question's shocks as read from the words (src/utils/scenarioQuestion.ts, WI1). */
+  scenario?: ScenarioQuestion;
+  /** The Quant desk (outside research tools), when it is set up and the question or the AI model calls for it. */
+  quant?: { why: string };
 }
 
 /** Countries named in the question (by name, ISO code or a common alias). */
@@ -245,6 +274,32 @@ export function wholeListNote(items: Array<{ isBenchmark?: boolean }>): string {
   return bench ? `${base} and ${bench} benchmark ${bench === 1 ? 'market' : 'markets'}` : base;
 }
 
+/** The agents that hold the figures each kind of shock moves, in the order they matter. */
+export const SCENARIO_AGENTS: Record<ShockKind, CoreAgentId[]> = {
+  policy_rate: ['cb', 'fx', 'fiscal', 'rv'],
+  us_rate: ['cb', 'fx', 'spill', 'rv'],
+  interest_cost: ['fiscal', 'rv'],
+  dollar: ['fx', 'spill', 'fiscal'],
+  currency: ['fx', 'cb', 'fiscal'],
+  oil: ['spill', 'cb', 'fiscal'],
+  food: ['spill', 'cb', 'fiscal'],
+  commodity: ['spill', 'fx', 'fiscal'],
+  fin_stress: ['rv', 'fx', 'spill'],
+  supply_chain: ['spill', 'cb'],
+  growth: ['fiscal', 'spill', 'cb'],
+  inflation: ['cb', 'fx'],
+};
+
+/** Adds the agents a what-if's shocks need, each with the reason, keeping the ones already picked. */
+export function addScenarioAgents(agents: CouncilPlan['agents'], sc: ScenarioQuestion): void {
+  const add = (id: CoreAgentId, why: string) => {
+    if (!agents.some((a) => a.id === id)) agents.push({ id, why });
+  };
+  for (const s of sc.shocks) for (const id of SCENARIO_AGENTS[s.kind]) add(id, `the what-if changes the ${SHOCK_KINDS[s.kind].label.toLowerCase()}`);
+  if (sc.routes.length) add('spill', 'the what-if names a trade route shock');
+  agents.sort((x, y) => AGENT_ORDER.indexOf(x.id) - AGENT_ORDER.indexOf(y.id));
+}
+
 /** Which agents answer and for which countries. `scopeIso3` = a country picked in the box, overriding the question. */
 export function planCouncil(question: string, items: LiveWatchlistItem[], scopeIso3?: string): CouncilPlan {
   const picked = scopeIso3 ? items.filter((i) => i.iso3 === scopeIso3) : [];
@@ -267,12 +322,14 @@ export function planCouncil(question: string, items: LiveWatchlistItem[], scopeI
     const m = question.match(COUNCIL_AGENTS[id].topic);
     if (m) agents.push({ id, why: `the question mentions "${m[0].trim()}"` });
   }
+  const scenario = parseScenario(question) ?? undefined;
+  if (scenario) addScenarioAgents(agents, scenario);
   const chart = chartRequest(question, countries, picked.length > 0 || named.length > 0) ?? undefined;
   // A chart question with no desk topic is answered by the Chart Agent alone, not by every agent.
   if (!agents.length && !chart) {
     for (const id of AGENT_ORDER) agents.push({ id, why: 'no specific topic in the question, so every agent answers' });
   }
-  return { countries, scopeNote, agents, ...(chart ? { chart } : {}), ...(off.length ? { offWatchlist: off, offWatchlistIso3: offCodes.map((o) => o.iso3) } : {}) };
+  return { countries, scopeNote, agents, ...(chart ? { chart } : {}), ...(scenario ? { scenario } : {}), ...(off.length ? { offWatchlist: off, offWatchlistIso3: offCodes.map((o) => o.iso3) } : {}) };
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -298,8 +355,9 @@ export function planFollowUp(question: string, prev: CouncilPlan, items: LiveWat
   return {
     countries: named ? plan.countries : prev.countries,
     scopeNote: named ? plan.scopeNote : `${prev.scopeNote}, ${CARRIED}`,
-    agents: namesTopic ? plan.agents : chartOnly && !prev.agents.length ? [] : prev.agents.map((a) => ({ id: a.id, why: `${CARRIED} (${a.why})` })),
+    agents: namesTopic || plan.scenario?.shocks.length ? plan.agents : chartOnly && !prev.agents.length ? [] : prev.agents.map((a) => ({ id: a.id, why: `${CARRIED} (${a.why})` })),
     ...(chart ? { chart } : {}),
+    ...(plan.scenario ? { scenario: plan.scenario } : {}),
     ...(named && plan.offWatchlist ? { offWatchlist: plan.offWatchlist, ...(plan.offWatchlistIso3 ? { offWatchlistIso3: plan.offWatchlistIso3 } : {}) } : {}),
   };
 }
@@ -314,6 +372,7 @@ const FOLLOW_UP: Record<CoreAgentId, string> = {
   spill: 'How exposed are they to a Hormuz closure?',
   calendar: 'What dates are coming up?',
   timing: 'What could change soon, and when?',
+  behaviour: 'Are traders and households herding, and how far is sentiment from normal?',
 };
 
 export function suggestFollowUps(plan: CouncilPlan, answers: AgentAnswer[]): string[] {
@@ -356,10 +415,12 @@ export const AGENT_CHOICE_INSTRUCTION = [
   'Do not answer the question and do not write any numbers.',
 ].join(' ');
 
-export function agentChoicePrompt(question: string, earlier: EarlierTurn[] = []): string {
+export function agentChoicePrompt(question: string, earlier: EarlierTurn[] = [], opts: { quant?: boolean } = {}): string {
   return [
     'Agents:',
     ...AGENT_ORDER.map((id) => `- ${id}: ${COUNCIL_AGENTS[id].name} Agent, covers ${COUNCIL_AGENTS[id].covers}`),
+    // Listed only when outside research tools are set up, so the prompt is unchanged otherwise.
+    ...(opts.quant ? [`- quant: ${QUANT_AGENT_NAME} Agent, covers ${QUANT_DESK_COVERS}`] : []),
     '',
     ...(earlier.length ? ['Earlier questions in this conversation:', ...earlier.slice(-4).map((t) => `- ${t.question.slice(0, 300)}`), ''] : []),
     `Question: ${question.slice(0, 500)}`,
@@ -373,8 +434,12 @@ export interface AgentChoiceResult {
   reason?: string;
 }
 
-/** Use the model's picks when at least one names a real agent; otherwise keep the word-matched plan. */
-export function applyAgentChoice(plan: CouncilPlan, choice: AgentChoiceResult | null): CouncilPlan {
+/**
+ * Use the model's picks when at least one names a real agent; otherwise keep the word-matched plan.
+ * `extraIds` are agents outside the desk list the model may also pick (the Quant desk, when set up):
+ * they count as a valid pick but are added by the caller.
+ */
+export function applyAgentChoice(plan: CouncilPlan, choice: AgentChoiceResult | null, extraIds: string[] = []): CouncilPlan {
   const seen = new Set<CoreAgentId>();
   const picked: CouncilPlan['agents'] = [];
   for (const a of choice?.agents || []) {
@@ -384,7 +449,10 @@ export function applyAgentChoice(plan: CouncilPlan, choice: AgentChoiceResult | 
     const why = String(a?.why || '').replace(/\s+/g, ' ').replace(/[.\s]+$/, '').trim().slice(0, 200);
     picked.push({ id, why: why ? `the AI model judged: ${why}` : 'the AI model picked it' });
   }
-  if (picked.length) {
+  const extra = (choice?.agents || []).some((a) => extraIds.includes(String(a?.id || '').trim().toLowerCase()));
+  if (picked.length || extra) {
+    // A what-if keeps the agents that hold the figures its shocks move.
+    if (plan.scenario) addScenarioAgents(picked, plan.scenario);
     picked.sort((x, y) => AGENT_ORDER.indexOf(x.id) - AGENT_ORDER.indexOf(y.id));
     return { ...plan, agents: picked, chosenBy: 'ai', chooserNote: `Agents picked by the AI model${choice?.provider ? ` (${choice.provider})` : ''}.` };
   }
@@ -1208,7 +1276,9 @@ export function runCouncil(question: string, plan: CouncilPlan, all: LiveWatchli
               ? spillAgent(plan.countries, question)
               : id === 'timing'
                 ? timingAgent(plan.countries, now)
-                : calendarAgent(plan.countries, now);
+                : id === 'behaviour'
+                  ? behaviourAgent(plan.countries, now)
+                  : calendarAgent(plan.countries, now);
     const sourced = keepSourcedFindings(a.findings);
     const sorted = [...sourced.findings].sort((x, y) => y.weight - x.weight);
     const kept = sorted.slice(0, MAX_FINDINGS);
@@ -1241,7 +1311,7 @@ export function chartAnswer(req: ChartRequest, result: ChartResult): AgentAnswer
 
 /** Answers as sent to the AI steps: the chart's points stay on this computer, its test results go. */
 export function answersForModel(answers: AgentAnswer[]): AgentAnswer[] {
-  return answers.map(({ chart: _chart, ...a }) => a);
+  return answers.map(({ chart: _chart, keep: _keep, ...a }) => a);
 }
 
 /** Which dated figures each agent leans on (src/utils/freshness.ts ids). */
@@ -1251,6 +1321,7 @@ const AGENT_DATED: Partial<Record<AgentId, string[]>> = {
   rv: ['yield'],
   fx: ['reer', 'cpi'],
   timing: ['policy', 'cli', 'cftc', 'tic', 'yield'],
+  behaviour: ['cftc'],
 };
 
 /** For each country an agent answered on, the figures it used that are older than their source usually runs. */
@@ -1296,6 +1367,8 @@ export interface CouncilBrief {
   gaps: string[];
   /** An explanation (src/utils/explain.ts): facts apart from interpretation, by lens. `points` holds the same sentences, flat. */
   explain?: import('./explain').ExplainBrief;
+  /** A what-if answer (src/utils/whatIfAnswer.ts): eight sections from now to what would change it. `points` holds the same sentences, flat. */
+  whatIf?: import('./whatIfAnswer').WhatIfBrief;
 }
 
 export interface SynthesisResult {

@@ -21,7 +21,9 @@
  */
 import type { ChartResult } from './councilChart';
 import { FORECAST_AGENT_COVERS } from './forecastAgent';
+import { SCENARIO_AGENT_COVERS } from './scenarioAgentInfo';
 import { CLAIM_AGENT_COVERS } from './claimCheck';
+import { QUANT_DESK_COVERS } from './quantDeskInfo';
 import { isCitable, References, type Reference } from './citations';
 import { COUNCIL_AGENTS, isDocFinding, tagLabel, type AgentAnswer, type AgentId, type FigureTag, type SynthesisResult } from './askCouncil';
 import { DIM_LABEL } from './stanceCheck';
@@ -41,6 +43,8 @@ export interface DocFigure {
   source: string;
   /** Reference number in Sources; absent for a rule reading (its method is the source text). */
   ref?: number;
+  /** The figure's own page (Quant desk results on the research tools server). */
+  url?: string;
 }
 
 export interface DocFinding {
@@ -128,7 +132,9 @@ const CHART_AGENT_COVERS = 'charts the series the question names from the app’
 export function agentCovers(id: AgentId): string {
   if (id === 'chart') return CHART_AGENT_COVERS;
   if (id === 'forecast') return FORECAST_AGENT_COVERS;
+  if (id === 'scenario') return SCENARIO_AGENT_COVERS;
   if (id === 'claim') return CLAIM_AGENT_COVERS;
+  if (id === 'quant') return QUANT_DESK_COVERS;
   return id === 'doc' ? DOC_AGENT_COVERS : COUNCIL_AGENTS[id]?.covers || '';
 }
 
@@ -180,6 +186,7 @@ export function toAgentDocument(a: AgentAnswer, ctx: DocContext): AgentDocument 
       tagText: tagLabel(g.tag, a.name),
       source: g.source,
       ...(isCitable(g.source, g.tag) ? { ref: refs.cite(g.source) } : {}),
+      ...(g.url ? { url: g.url } : {}),
     })),
   }));
   return {

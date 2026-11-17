@@ -4,7 +4,6 @@ import { useT, useTx } from '../i18n/useLang';
 import { TOOLS } from '../i18n/messages/tools';
 import type { SeriesPoint } from '../utils/seriesHistory';
 import { debtSandbox, filterSandbox, taylorSandbox, SANDBOX_METHOD } from '../utils/modelSandboxes';
-import { restructuring, RESTRUCTURING_METHOD } from '../utils/restructuring';
 
 /**
  * Country Research > History & data > Model sandboxes (src/utils/modelSandboxes.ts): debt
@@ -55,8 +54,6 @@ export const ModelSandboxPanel: React.FC<{ iso3: string; countryName: string }> 
   const tx = useTx();
   const M = tt('c_missing');
   const [h, setH] = useState(2);
-  // Restructuring calculator: every term is the user's; these are blank until typed (no example deal is assumed).
-  const [rs, setRs] = useState<Record<'oldCoupon' | 'oldYears' | 'newFace' | 'newCoupon' | 'newYears' | 'newGrace' | 'exitYield', Num>>({ oldCoupon: null, oldYears: null, newFace: null, newCoupon: null, newYears: null, newGrace: null, exitYield: null });
 
   useEffect(() => {
     let live = true;
@@ -80,17 +77,6 @@ export const ModelSandboxPanel: React.FC<{ iso3: string; countryName: string }> 
   const taylorOut = useMemo(() => (Object.values(t).every((v) => v !== null) ? taylorSandbox({ rStar: t.rStar!, pi: t.pi!, target: t.target!, gap: t.gap!, aPi: t.aPi!, aGap: t.aGap! }) : null), [t]);
   const filterOut = useMemo(() => (reply ? filterSandbox(reply.growth, lambda, h) : null), [reply, lambda, h]);
   const y = reply?.debt?.year;
-  const rsOut = useMemo(
-    () =>
-      Object.values(rs).every((v) => v !== null)
-        ? restructuring({
-            oldBond: { face: 100, couponPct: rs.oldCoupon!, years: rs.oldYears!, graceYears: rs.oldYears! - 1 },
-            newBond: { face: rs.newFace!, couponPct: rs.newCoupon!, years: rs.newYears!, graceYears: rs.newGrace! },
-            exitYieldPct: rs.exitYield!,
-          })
-        : null,
-    [rs]
-  );
 
   return (
     <section className="ui-panel" data-model-sandbox="true">
@@ -159,24 +145,9 @@ export const ModelSandboxPanel: React.FC<{ iso3: string; countryName: string }> 
                 </p>
               ) : null}
             </div>
-            <div data-sandbox="restructuring" className="space-y-1">
-              <h3 className="text-sm font-medium text-slate-900 dark:text-white">{tt('sb_rsTitle')}</h3>
-              <Slider label={tt('sb_oldCoupon')} value={rs.oldCoupon} set={(v) => setRs({ ...rs, oldCoupon: v })} min={0} max={15} step={0.125} start={tt('sb_oldCouponStart')} />
-              <Slider label={tt('sb_oldYears')} value={rs.oldYears} set={(v) => setRs({ ...rs, oldYears: v === null ? null : Math.max(1, Math.round(v)) })} min={1} max={40} step={1} />
-              <Slider label={tt('sb_newFace')} value={rs.newFace} set={(v) => setRs({ ...rs, newFace: v })} min={1} max={100} step={0.5} />
-              <Slider label={tt('sb_newCoupon')} value={rs.newCoupon} set={(v) => setRs({ ...rs, newCoupon: v })} min={0} max={15} step={0.125} />
-              <Slider label={tt('sb_newYears')} value={rs.newYears} set={(v) => setRs({ ...rs, newYears: v === null ? null : Math.max(1, Math.round(v)) })} min={1} max={40} step={1} />
-              <Slider label={tt('sb_newGrace')} value={rs.newGrace} set={(v) => setRs({ ...rs, newGrace: v === null ? null : Math.max(0, Math.round(v)) })} min={0} max={39} step={1} start={tt('sb_newGraceStart')} />
-              <Slider label={tt('sb_exitYield')} value={rs.exitYield} set={(v) => setRs({ ...rs, exitYield: v })} min={0} max={30} step={0.25} />
-              {rsOut ? (
-                <p className="text-slate-900 dark:text-white" data-sandbox-result="restructuring">
-                  {tt('sb_rsOut', { y: rs.exitYield ?? '', old: rsOut.pvOld, new: rsOut.pvNew, npv: rsOut.npvHaircutPct, mkt: rsOut.marketHaircutPct, face: rsOut.faceHaircutPct })}
-                </p>
-              ) : (
-                <p className="text-amber-700 dark:text-amber-400">{tt('sb_rsMissing')}</p>
-              )}
-              <p className="text-slate-500 dark:text-slate-400">{tt('c_method', { method: RESTRUCTURING_METHOD })}</p>
-            </div>
+            <p className="text-slate-500 dark:text-slate-400" data-sandbox="restructuring">
+              {tt('sb_rsMoved')}
+            </p>
             {reply.missing.length > 0 && <p className="text-amber-700 dark:text-amber-400" data-missing="true">{tt('sb_missingList', { list: reply.missing.map(tx).join('; ') })}</p>}
             <p className="text-slate-500 dark:text-slate-400">{tt('c_method', { method: SANDBOX_METHOD })}</p>
           </>

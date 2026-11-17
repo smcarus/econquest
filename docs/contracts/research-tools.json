@@ -1,0 +1,616 @@
+{
+  "contract": "outside-research-tools",
+  "contract_version": 1,
+  "summary": "A research-tools server reached over MCP (JSON-RPC 2.0 over HTTP POST) or a plain JSON API. A council app calls it from its Ask Council chat only, never from grades, rating runs or scheduled council runs, and shows each quoted number with its cite url and data_through date, keeping the label.",
+  "instructions": "Research tools of a small fund's console. Prices are daily closes and never later than today; FX rates are units per US dollar. Backtests decide on one close and trade at the next, after costs. Paper portfolios are simulated and never reach a broker. Every call is logged, and names on the firm's restricted list are refused or flagged. Each result has a cite block: quote its url and data_through beside any number you use, and keep its label.",
+  "endpoints": {
+    "mcp": {
+      "method": "POST",
+      "path": "/mcp",
+      "protocol_versions": [
+        "2025-06-18",
+        "2025-03-26",
+        "2024-11-05"
+      ],
+      "methods": [
+        "initialize",
+        "ping",
+        "tools/list",
+        "tools/call"
+      ]
+    },
+    "list_tools": {
+      "method": "GET",
+      "path": "/api/v1/research/tools"
+    },
+    "call_tool": {
+      "method": "POST",
+      "path": "/api/v1/research/tools/{name}",
+      "body": "the tool's arguments as a JSON object"
+    }
+  },
+  "headers": {
+    "Authorization": "Bearer <key>; one key per app, made by an admin, revocable",
+    "X-Correlation-Id": "optional, 8 to 64 of A-Z a-z 0-9 - _ . ; send the id of the person's question so the app's audit entry and the server's tool-call entries can be joined",
+    "X-Model-Location": "local or cloud: where the model that will read the result runs. Recorded on every call. When compliance limits council research to local models, calls without 'local' are refused"
+  },
+  "council_key": {
+    "scope": "council",
+    "may": "every look-up, and run backtests, forecasts and nowcasts",
+    "may_not": [
+      "create_paper_portfolio"
+    ],
+    "limits": "per key: 60 calls a minute, 30 runs an hour, and a daily run cap set by the firm (100 until set). The app should also cap tool calls per question (4 suggested)",
+    "book_data": "none: no tool reads positions, NAV or the book. VaR, sizing and Monte Carlo stay inside the server"
+  },
+  "tools": [
+    {
+      "name": "list_instruments",
+      "kind": "look-up",
+      "description": "Instruments with research price history, and the days each one covers.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "asset_class": {
+            "type": "string",
+            "enum": [
+              "equity",
+              "index",
+              "fx",
+              "bond",
+              "cds"
+            ]
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_prices",
+      "kind": "look-up",
+      "description": "Daily closes for one instrument, never past today. Default: the last year. Adjusted for splits and dividends unless adjusted is false.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "adjusted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "symbol"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "run_backtest",
+      "kind": "run (counts against the daily cap)",
+      "description": "Run a strategy backtest and save it. A spec is an object: name (text; runs with one name are one family for the deflated Sharpe), universe (list of symbols set up in the console), start and end (YYYY-MM-DD), signal {kind: buy_and_hold | momentum (lookback, skip) | trend (fast, slow) | mean_reversion (lookback) | low_vol (lookback) | carry (FX only: RATE.<currency> less RATE.USD) | macro (series {symbol: CODE}, direction 1 or -1, change in days)}, and optionally select {top, long_short}, sizing {kind: equal | inverse_vol | signal, lookback}, rebalance (never | daily | weekly | monthly | quarterly), limits {max_weight, gross} as fractions, vol_target, costs_bp, benchmark (a symbol), train_fraction, and walk_forward {param, values, train_days, test_days}. Signals see only data known at each decision day's close; trades fill at the next close, after costs.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "spec": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "spec"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_run",
+      "kind": "look-up",
+      "description": "One saved backtest: spec, measures, equity curve and flags.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "run_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_runs",
+      "kind": "look-up",
+      "description": "The most recent backtests, newest first.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "compare_runs",
+      "kind": "look-up",
+      "description": "Measures of 2 to 6 backtests side by side.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "run_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 2,
+            "maxItems": 6
+          }
+        },
+        "required": [
+          "run_ids"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_macro_series",
+      "kind": "look-up",
+      "description": "Macro and factor series on file, with the periods covered.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_macro_series",
+      "kind": "look-up",
+      "description": "One macro series' values as known at the close of as_of (default today), so later revisions don't leak into the past.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "describe_series",
+      "kind": "look-up",
+      "description": "Summary statistics of one return series: mean, volatility, Sharpe, skew, kurtosis, autocorrelation, drawdown, VaR and expected shortfall. ref is a symbol, a backtest id (BTR-...), a paper id (PPF-...) or macro:CODE.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "ref"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "correlations",
+      "kind": "look-up",
+      "description": "Correlation matrix of 2 to 12 return series on the days they share. Each ref is a symbol, a backtest id (BTR-...), a paper id (PPF-...) or macro:CODE.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 2,
+            "maxItems": 12
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "refs"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "regress",
+      "kind": "look-up",
+      "description": "Regress one return series on 1 to 8 factor series (OLS with alpha): betas, t-statistics, R squared. Each is a symbol, a backtest id (BTR-...), a paper id (PPF-...) or macro:CODE.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "string"
+          },
+          "factors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "maxItems": 8
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "target",
+          "factors"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "forecast_series",
+      "kind": "run (counts against the daily cap)",
+      "description": "Forecast a series and save the forecast. model arima: the level of a symbol's closes (FX as quoted) or of macro:CODE, order chosen by AIC, with 80% and 95% bands and a check against a naive forecast on held-out data. model garch: the volatility of returns (symbol, BTR-..., PPF-... or macro:CODE), daily and annualised. Reads only what was known at the close of as_of (default today).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string",
+            "enum": [
+              "arima",
+              "garch"
+            ]
+          },
+          "horizon": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 60
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date"
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "ref"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_forecast",
+      "kind": "look-up",
+      "description": "One saved forecast by forecast_id, or the most recent ones without it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "forecast_id": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_nowcasts",
+      "kind": "look-up",
+      "description": "Nowcast models (a quarterly target such as a country's GDP growth, monthly indicators) with each one's latest nowcast.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_nowcast",
+      "kind": "look-up",
+      "description": "A nowcast model's latest estimate for the quarter with its 80% band, the backcast of last quarter if not yet published, what moved it since the run before (each release's surprise times its weight, revisions, re-estimation), and the history of nowcasts.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "model_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "model_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "run_nowcast",
+      "kind": "run (counts against the daily cap)",
+      "description": "Run a nowcast model on the macro data known at the close of as_of (default today) and save it. A day already run on the same data returns that run.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "model_id": {
+            "type": "string"
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "model_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "option_price",
+      "kind": "look-up",
+      "description": "Price and Greeks of one equity option (right call or put, style american or european). vol is a yearly fraction (0.25) and defaults to GARCH's forecast to expiry; with price, also the implied volatility and whether it is rich or cheap against GARCH. Needs the Options module.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string"
+          },
+          "strike": {
+            "type": "number"
+          },
+          "expiry": {
+            "type": "string",
+            "format": "date"
+          },
+          "right": {
+            "type": "string",
+            "enum": [
+              "call",
+              "put"
+            ]
+          },
+          "style": {
+            "type": "string",
+            "enum": [
+              "american",
+              "european"
+            ]
+          },
+          "vol": {
+            "type": "number"
+          },
+          "price": {
+            "type": "number"
+          },
+          "dividend_yield": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "symbol",
+          "strike",
+          "expiry"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "option_chain",
+      "kind": "look-up",
+      "description": "The latest stored option chain for a symbol: each expiry's at-the-money implied volatility against GARCH (rich, fair or cheap) and one expiry's smile near the money (default: the first at least three weeks out). Needs the Options module.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string"
+          },
+          "expiry": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "symbol"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "paper_status",
+      "kind": "look-up",
+      "description": "One paper portfolio with its last 60 days, or all of them without portfolio_id.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "portfolio_id": {
+            "type": "string"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "cite": {
+    "where": "every successful result has a top-level 'cite' object",
+    "fields": {
+      "source": "always 'Fund console research tools'",
+      "tool": "the tool called",
+      "id": "the saved run's id, or null for a plain look-up",
+      "url": "link to the run's page on the server, or null",
+      "data_through": "YYYY-MM-DD: the last day of data the result uses, or null",
+      "retrieved_at": "when the server answered (UTC)",
+      "label": "Hypothetical, past performance; not a recommendation"
+    },
+    "rules": [
+      "Quote numbers only from the result; an app's number or citation check should treat the result as the source.",
+      "Show the label and the url beside the figures.",
+      "Never turn a result into a buy or sell call."
+    ]
+  },
+  "restricted_names": "The server applies the firm's restricted-list rule: calls on restricted or watch-list names are logged and shown to compliance, or refused if compliance set research to block. 'flagged' lists flagged instrument ids; the app should not print them",
+  "refusals": {
+    "mcp": {
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "<reason>"
+          }
+        ],
+        "isError": true
+      }
+    },
+    "json_api": {
+      "400": {
+        "error": "<reason>"
+      },
+      "401": {
+        "error": "Unknown or revoked key"
+      },
+      "429": {
+        "error": "Too many calls; try again in N seconds"
+      },
+      "503": {
+        "error": "Agent tools are switched off"
+      }
+    },
+    "app_behaviour": "On any refusal or no answer within the app's timeout, say 'Research tools unavailable' with the reason and answer the rest of the question without them"
+  },
+  "examples": [
+    {
+      "what": "GARCH volatility forecast over MCP",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 7,
+        "method": "tools/call",
+        "params": {
+          "name": "forecast_series",
+          "arguments": {
+            "ref": "USDBRL",
+            "model": "garch",
+            "horizon": 20
+          }
+        }
+      },
+      "reply": {
+        "jsonrpc": "2.0",
+        "id": 7,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "<the JSON below>"
+            }
+          ],
+          "structuredContent": {
+            "id": "FC0000000001",
+            "series": "USDBRL",
+            "model": "garch",
+            "horizon": 20,
+            "as_of": "2026-11-16",
+            "last_day": "2026-11-16",
+            "points": 1004,
+            "data_hash": "3f1c9a",
+            "vol_annual_now": 0.142,
+            "vol_annual_path": [
+              0.142,
+              0.141,
+              0.14
+            ],
+            "link": "/research/forecasts/FC0000000001",
+            "flagged": [],
+            "cite": {
+              "source": "Fund console research tools",
+              "tool": "forecast_series",
+              "id": "FC0000000001",
+              "url": "https://console.example.ts.net:8443/research/forecasts/FC0000000001",
+              "data_through": "2026-11-16",
+              "retrieved_at": "2026-11-17T12:00:00+00:00",
+              "label": "Hypothetical, past performance; not a recommendation"
+            }
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "what": "A council key asking for a paper portfolio",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 8,
+        "method": "tools/call",
+        "params": {
+          "name": "create_paper_portfolio",
+          "arguments": {}
+        }
+      },
+      "reply": {
+        "jsonrpc": "2.0",
+        "id": 8,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "Council keys can't start paper portfolios; a person starts one on Research > Paper"
+            }
+          ],
+          "isError": true
+        }
+      }
+    }
+  ]
+}

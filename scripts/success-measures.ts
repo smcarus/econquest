@@ -14,6 +14,7 @@ import { DATA_DIR } from '../src/server/config.ts';
 import { formatSuccessReport, githubSearches, PUBLIC_REPO, readGithubCounts, successRecord, type SuccessRecord } from '../src/utils/successMeasures.ts';
 import { loadReviews, reviewFilePath } from '../src/utils/policyReviewStore.ts';
 import { tallyChecks } from '../src/utils/outcomeChecks.ts';
+import { tallyExpert } from '../src/utils/expertReview.ts';
 import { feedbackFilePath, loadFeedback } from '../src/utils/feedbackStore.ts';
 import { summariseFeedback } from '../src/utils/feedback.ts';
 
@@ -42,9 +43,10 @@ if (repo.status === 200) {
 else if (repo.status === 403 || repo.status === 429) reason = `GitHub refused for now (HTTP ${repo.status}, usually its hourly limit for requests without a sign-in); try again in an hour`;
 else reason = repo.status ? `GitHub answered HTTP ${repo.status}` : `GitHub could not be reached (${String(repo.body)})`;
 
-const checks = loadReviews(reviewFilePath(DATA_DIR)).reviews.flatMap((r) => r.outcomeChecks ?? []);
+const allReviews = loadReviews(reviewFilePath(DATA_DIR)).reviews;
+const checks = allReviews.flatMap((r) => r.outcomeChecks ?? []);
 const feedback = summariseFeedback(loadFeedback(feedbackFilePath(DATA_DIR)));
-const rec = successRecord(new Date().toISOString(), github, reason, tallyChecks(checks), feedback);
+const rec = successRecord(new Date().toISOString(), github, reason, tallyChecks(checks), feedback, tallyExpert(allReviews.flatMap((r) => r.expertReviews ?? [])));
 
 const file = path.join(DATA_DIR, 'local', 'success-measures.jsonl');
 let prev: SuccessRecord | null = null;

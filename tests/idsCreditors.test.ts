@@ -43,7 +43,7 @@ test('IDS creditor mix: shares of the PPG total, China, terms; zero private matu
   const c = parseIdsCreditors(WORLD, CHINA, '2026-11-07T15:00:00Z')!;
   const out = Object.fromEntries(idsCreditorSeries(c).map((s) => [s.id, s]));
   const v = (id: string, year: string) => ('points' in out[id] ? out[id].points.find((p) => p.date === year)?.value : undefined);
-  assert.equal(v('ppg_external_usd', '2024'), 15.52);
+  assert.equal(v('ppg_external_usd', '2024'), 15.524168);
   assert.equal(v('ppg_multilateral_share', '2024'), 29.6);
   assert.equal(v('ppg_bilateral_share', '2024'), 31.1);
   assert.equal(v('ppg_bonds_share', '2024'), 17.6);

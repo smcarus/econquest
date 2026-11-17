@@ -19,18 +19,87 @@
 import { BIS_API, BIS_ISO2, parseBisCsv } from './bisDebtSecurities';
 import { quarterKey } from './debtSchedule';
 
+/**
+ * The indicator id the app asks for first. ILOSTAT refused it as "deprecated or invalid" on
+ * 13 November 2026; the replacement is read from ILOSTAT's own list of indicators (see
+ * pickIloEarningsId), or set by hand in .env as ILO_EARNINGS_ID.
+ */
 export const ILO_EARNINGS_ID = 'EAR_4MTH_SEX_ECO_CUR_NB_A';
+export const ILO_EARNINGS_ENV = 'ILO_EARNINGS_ID';
 export const ILO_API = 'https://rplumber.ilo.org/data/indicator';
+/** ILOSTAT's lists of indicators (id, title, frequency), tried in this order. */
+export const ILO_TOC_URLS = [
+  'https://rplumber.ilo.org/metadata/toc/indicator/?lang=en&format=.csv',
+  'https://rplumber.ilo.org/metadata/toc/indicator/?lang=en&format=.json',
+  'https://rplumber.ilo.org/files/website/bulk/indicator/table_of_contents_en.csv',
+];
 export const WB_INFLATION_CODE = 'FP.CPI.TOTL.ZG';
 
 /** Earnings of every country from `fromYear`, both sexes, as CSV with codes. */
-export function iloEarningsUrl(fromYear: number): string {
-  return `${ILO_API}?id=${ILO_EARNINGS_ID}&sex=SEX_T&timefrom=${fromYear}&type=code&format=.csv`;
+export function iloEarningsUrl(fromYear: number, id = ILO_EARNINGS_ID): string {
+  return `${ILO_API}?id=${id}&sex=SEX_T&timefrom=${fromYear}&type=code&format=.csv`;
 }
 /** One country only, for the connection check. */
-export function iloEarningsSampleUrl(iso3: string, fromYear: number): string {
-  return `${ILO_API}?id=${ILO_EARNINGS_ID}&ref_area=${iso3}&sex=SEX_T&timefrom=${fromYear}&type=code&format=.csv`;
+export function iloEarningsSampleUrl(iso3: string, fromYear: number, id = ILO_EARNINGS_ID): string {
+  return `${ILO_API}?id=${id}&ref_area=${iso3}&sex=SEX_T&timefrom=${fromYear}&type=code&format=.csv`;
 }
+/** True when ILOSTAT says the indicator id is no longer served. */
+export const iloIdRefused = (status: number | undefined, body: string | undefined) => status === 400 && /deprecated|invalid dataset id/i.test(body || '');
+
+/** Yearly rows of ILOSTAT's list of indicators whose name mentions earnings: id and name. */
+export function iloEarningsRows(toc: string): Array<{ id: string; label: string }> {
+  const lines = toc.split('\n').filter((l) => l.trim());
+  if (!lines.length) return [];
+  const head = splitLine(lines[0].replace(/\r$/, '')).map((h) => h.trim().toLowerCase().replace(/^"|"$/g, ''));
+  const idCol = head.indexOf('id');
+  const labelCol = head.indexOf('indicator.label');
+  if (idCol < 0 || labelCol < 0) {
+    // JSON list: objects with "id" and "indicator.label".
+    try {
+      const j = JSON.parse(toc) as Array<Record<string, unknown>>;
+      if (Array.isArray(j))
+        return j
+          .map((r) => ({ id: String(r?.id || ''), label: String(r?.['indicator.label'] || '') }))
+          .filter((r) => /_A$/.test(r.id) && /earnings/i.test(r.label));
+    } catch {
+      // not JSON either
+    }
+    return [];
+  }
+  const out: Array<{ id: string; label: string }> = [];
+  for (const raw of lines.slice(1)) {
+    const c = splitLine(raw.replace(/\r$/, ''));
+    const id = String(c[idCol] || '').trim().replace(/^"|"$/g, '');
+    const label = String(c[labelCol] || '').trim().replace(/^"|"$/g, '');
+    if (/_A$/.test(id) && /earnings/i.test(label)) out.push({ id, label });
+  }
+  return out;
+}
+
+/**
+ * From ILOSTAT's list of indicators (CSV or JSON with id and indicator.label; or any other reply,
+ * read for ids alone), the yearly ids for average monthly earnings of employees, other than the id
+ * it refused. Found by name ("monthly earnings", not hourly) as well as by the EAR_4M.. id form.
+ * By economic activity and in local currency first; empty when none fits.
+ */
+const ILO_EARNINGS_ID_RE = /^EAR_4M[A-Z]{2}_SEX_[A-Z0-9_]*_A$/;
+export function iloEarningsCandidates(toc: string, refused: string = ILO_EARNINGS_ID): string[] {
+  const rows = iloEarningsRows(toc);
+  const label: Record<string, string> = {};
+  const ids = new Set<string>();
+  for (const r of rows) {
+    if (r.id === refused || /hour/i.test(r.label)) continue;
+    if (ILO_EARNINGS_ID_RE.test(r.id) || /monthly earnings/i.test(r.label)) {
+      ids.add(r.id);
+      label[r.id] = r.label;
+    }
+  }
+  // Neither a CSV nor a JSON list with names: take EAR_4M.. ids wherever they appear.
+  if (!rows.length) for (const m of toc.matchAll(/\bEAR_4M[A-Z]{2}_SEX_[A-Z0-9_]*?_A\b/g)) if (m[0] !== refused) ids.add(m[0]);
+  const rank = (id: string) => (/_ECO_/.test(id) || /economic activity/i.test(label[id] || '') ? 0 : 2) + (/_(CUR|LCU)_/.test(id) || /local currency/i.test(label[id] || '') ? 0 : 1);
+  return [...ids].sort((a, b) => rank(a) - rank(b) || a.length - b.length || a.localeCompare(b));
+}
+export const pickIloEarningsId = (tocCsv: string, refused?: string): string | null => iloEarningsCandidates(tocCsv, refused)[0] ?? null;
 /** Consumer price inflation of every country from `fromYear` (World Bank, one request). */
 export function wbInflationUrl(fromYear: number, toYear: number): string {
   return `https://api.worldbank.org/v2/country/all/indicator/${WB_INFLATION_CODE}?format=json&per_page=20000&date=${fromYear}:${toYear}`;

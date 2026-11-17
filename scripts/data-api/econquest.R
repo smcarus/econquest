@@ -22,9 +22,13 @@ eq_get_csv <- function(path, query = list(), base = NULL, key = NULL) {
   k <- if (!is.null(key)) key else Sys.getenv("ECONQUEST_KEY", "")
   headers <- c("User-Agent" = "econquest-r-helper")
   if (nzchar(k)) headers <- c(headers, "X-SMCR-API-Key" = k)
-  con <- url(u, headers = headers)
+  con <- url(u, headers = headers, encoding = "UTF-8-BOM")
   on.exit(close(con))
-  utils::read.csv(con, stringsAsFactors = FALSE, check.names = FALSE)
+  df <- utils::read.csv(con, stringsAsFactors = FALSE, check.names = FALSE, encoding = "UTF-8")
+  # A byte order mark must never end up in the first column name ("iso3", not "\ufeffiso3").
+  names(df) <- sub("^(\ufeff|\u00ef\u00bb\u00bf)", "", names(df))
+  if ("value" %in% names(df) && !is.numeric(df$value)) df$value <- suppressWarnings(as.numeric(df$value))
+  df
 }
 
 eq_code <- function(iso3) utils::URLencode(toupper(iso3), reserved = TRUE)

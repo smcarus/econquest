@@ -348,7 +348,7 @@ test('council regression set: each case is checked and reported as it is (stand-
   });
   assert.equal(res.status, 200);
   const report = await res.json();
-  assert.equal(report.total, 8);
+  assert.equal(report.total, 10);
   assert.match(report.setHash, /^[0-9a-f]{64}$/);
   const by = Object.fromEntries(report.results.map((r: { id: string }) => [r.id, r]));
   // The stand-in always writes about Turkey: right for the Turkey case, wrong for the others.
@@ -360,6 +360,9 @@ test('council regression set: each case is checked and reported as it is (stand-
   assert.equal(by['options-egypt-missing'].pass, true, JSON.stringify(by['options-egypt-missing'].failures));
   assert.ok(by['options-brazil-inflation'].failures.some((f: string) => /at least 2 expected/.test(f)));
   assert.equal(by['options-brazil-inflation'].model, 'qwen2.5:32b');
+  // The policy council case runs through the same Options step, with the measure and the entries.
+  assert.ok(by['options-council-egypt-subsidy'].failures.some((f: string) => /at least 2 expected/.test(f)), JSON.stringify(by['options-council-egypt-subsidy'].failures));
+  assert.ok(by['options-council-turkey-lira-fed'].failures.some((f: string) => /at least 2 expected/.test(f)), JSON.stringify(by['options-council-turkey-lira-fed'].failures));
   assert.equal(by['supreme-brazil-tight'].pass, false);
   // The stand-in wrote none of the Supreme Council's fields: each reads Missing, never the built-in report.
   assert.ok(by['supreme-brazil-tight'].answer.every((l: string) => /Missing: model gave no answer for this field\./.test(l)), JSON.stringify(by['supreme-brazil-tight'].answer));
@@ -478,7 +481,7 @@ test('data connections: every source gets a row; keys are never in the reply', a
   assert.equal(res.status, 200);
   const rep = (await res.json()) as import('../src/utils/connectionCheck.ts').ConnectionReport;
   const row = (id: string) => rep.results.find((r) => r.id === id)!;
-  assert.equal(rep.results.length, 66); // + ECB real-time database and ONS GDP revision triangle (G12, G13), + IMF GFS by level of government (G42), + Eurostat, ONS and BCB monthly activity (G41), + BIS total credit (G40), + ILOSTAT earnings, BIS residential property prices (G22), World Bank emissions and renewables, Our World in Data energy file (G20), World Bank trade and energy (G18), IMF investor base file (G19), World Bank debt structure (G19), World Bank people and living standards (G17), AidData file (U1), World Bank inequality, taxes and tariffs (G16), ECB SPF, BCB Focus and NY Fed GSCPI layout probes, IMF PortWatch, US Treasury auctions, EU business surveys, IMF monthly CPI, your data subscription
+  assert.equal(rep.results.length, 89); // + BCB Focus monthly and BLS CPI (R9), + US Treasury and ECB yield curves (R11), + DOSE and Eurostat regional figures (R6), + World Bank projects and IDA statement of credits (R5), + World Bank budget credibility (R3), + NOAA IBTrACS storm tracks (I8), + World Bank climate portal (W2), + NASA POWER weather (W1), + BIS global liquidity and NY Fed swap lines (PB4), + BIS central bank total assets (PB3), + IRR exchange rate regime file (PB1), + Chinn-Ito page (item 13), + Fed H.10 exchange rates (scenario replays), + DPI file (G36), + IMF Fiscal Rules Dataset file (G35), + Penn World Table (G27), + Eurostat HICP core inflation (G26), + EU households' price expectations (G32), + ECB real-time database and ONS GDP revision triangle (G12, G13), + IMF GFS by level of government (G42), + Eurostat, ONS and BCB monthly activity (G41), + BIS total credit (G40), + ILOSTAT earnings, BIS residential property prices (G22), World Bank emissions and renewables, Our World in Data energy file (G20), World Bank trade and energy (G18), IMF investor base file (G19), World Bank debt structure (G19), World Bank people and living standards (G17), AidData file (U1), World Bank inequality, taxes and tariffs (G16), ECB SPF, BCB Focus and NY Fed GSCPI layout probes, IMF PortWatch, US Treasury auctions, EU business surveys, IMF monthly CPI, your data subscription
   assert.equal(row('ucdp').state, 'connected', 'the UCDP release shipped in datasets/ucdp/');
   assert.equal(row('bcb_ipca').state, 'connected');
   assert.match(row('bcb_ipca').sample || '', /Brazil IPCA 4\.58% over 12 months \(Sep 2026\)/);
@@ -790,6 +793,13 @@ test('series: every figure lists its history or why it has none; unknown series 
   assert.match(((await egypt.json()) as { message: string }).message, /Missing\. Not in BIS policy rates/);
   const world = (await (await fetch(`${base}/api/series/world`)).json()) as { series: unknown[]; missing: unknown[] };
   assert.ok(Array.isArray(world.series) && Array.isArray(world.missing));
+  // Countries by alpha-2 or alpha-3; every answer carries both codes.
+  const byIso2 = (await (await fetch(`${base}/api/series/MX`)).json()) as { iso2: string; iso3: string; series: unknown[] };
+  assert.equal(byIso2.iso2, 'MX');
+  assert.equal(byIso2.iso3, 'MEX');
+  assert.equal(byIso2.series.length, list.series.length);
+  const one = (await (await fetch(`${base}/api/series/mx/reserves_months`)).json()) as { iso2: string; iso3: string };
+  assert.deepEqual([one.iso2, one.iso3], ['MX', 'MEX']);
 });
 
 test('downloads: figures and series come as CSV files; a series with no history says why', async () => {
@@ -798,6 +808,10 @@ test('downloads: figures and series come as CSV files; a series with no history 
   assert.match(figs.headers.get('content-type') || '', /text\/csv/);
   assert.match(figs.headers.get('content-disposition') || '', /MEX-figures-\d{4}-\d{2}-\d{2}\.csv/);
   const text = await figs.text();
+  // The alpha-2 code is the last column, so scripts reading columns by position keep working.
+  assert.match(text.split('\n').find((l) => l.startsWith('iso3,')) || '', /,licence,iso2\r?$/);
+  assert.match(text, /\nMEX,.*,MX\r?\n/);
+  assert.equal((await fetch(`${base}/api/export/MX/figures.csv`)).status, 200);
   assert.ok(text.includes('iso3,country,field,figure,value,unit,status'));
   assert.ok(text.includes('Missing'));
   const all = await fetch(`${base}/api/export/MEX/series.csv`);
@@ -850,8 +864,11 @@ test('downloads: the same tables come as Excel workbooks', async () => {
 test('panel builder: countries x figures as JSON and CSV; missing cells say why', async () => {
   const r = await fetch(`${base}/api/panel?countries=MEX,EGY&figures=policy_rate,yield_10y`);
   assert.equal(r.status, 200);
-  const body = (await r.json()) as { cells: Array<{ iso3: string; figureId: string; status: string; value: number | null; reason: string }> };
+  const body = (await r.json()) as { cells: Array<{ iso2: string; iso3: string; figureId: string; status: string; value: number | null; reason: string }> };
   assert.equal(body.cells.length, 4);
+  assert.deepEqual([...new Set(body.cells.map((c) => `${c.iso2}/${c.iso3}`))].sort(), ['EG/EGY', 'MX/MEX']);
+  const byIso2 = (await (await fetch(`${base}/api/panel?countries=MX,EG&figures=policy_rate,yield_10y`)).json()) as { cells: unknown[] };
+  assert.equal(byIso2.cells.length, 4);
   for (const c of body.cells) if (c.status === 'Missing') assert.ok(c.value === null && c.reason.length > 0);
   const hist = (await (await fetch(`${base}/api/panel?countries=MEX&figures=policy_rate&mode=history`)).json()) as { rowCount: number };
   assert.equal(typeof hist.rowCount, 'number');
@@ -952,6 +969,34 @@ test('policy reviews: a frame starts a review, a bad one is refused, and both ar
   assert.deepEqual(one.changed, []);
   const audit = await (await fetch(`${base}/api/audit`)).json();
   assert.ok(JSON.stringify(audit).includes('Started policy review'));
+  // Policy council (PK2): refused without a measure in the frame; saved with sources once there is one.
+  const cb = (id: string, part: string, content: unknown) => fetch(`${base}/api/reviews/${id}/council/${part}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content }) });
+  assert.equal((await cb(review.id, 'costBenefit', {})).status, 400);
+  assert.equal((await cb(review.id, 'nothing', {})).status, 404);
+  const pc = await (await post({ frame: { iso3: 'BRA', problem: 'Fuel subsidies cost a large share of the budget.', goal: { indicator: 'Primary balance', direction: 'higher' }, constraints: [], asOf, council: { measure: 'Phase out the diesel subsidy', start: '2027-01' } } })).json();
+  const line = { kind: 'cost', label: 'Cash transfer to poor households', values: '1, 1, 1', source: 'Budget proposal 2027, table 4' };
+  const noSource = await cb(pc.review.id, 'costBenefit', { lines: [{ ...line, source: '' }], rateIds: ['adb_9'] });
+  assert.equal(noSource.status, 400);
+  assert.match((await noSource.json()).error, /where the figures come from/);
+  const saved = await cb(pc.review.id, 'costBenefit', { lines: [line, { kind: 'benefit', label: 'Subsidy no longer paid', values: '2, 2, 2', source: 'Ministry of Finance subsidy outturn 2026' }], rateIds: ['adb_9'] });
+  assert.equal(saved.status, 200);
+  const sv = await saved.json();
+  assert.equal(sv.review.councilParts.costBenefit.frameHash, pc.review.steps.frame.hash);
+  assert.equal(sv.review.councilParts.costBenefit.content.firstYear, 2027);
+  assert.deepEqual((await (await fetch(`${base}/api/reviews/${pc.review.id}`)).json()).changedCouncil, []);
+  // Market council (PK7): a measure's parts are refused; the app copies in its market readings at As of.
+  assert.equal((await cb(pc.review.id, 'market', {})).status, 404);
+  const mc = await (await post({ frame: { iso3: 'BRA', problem: 'Foreign holders may sell local bonds if the Fed holds.', goal: { indicator: 'Local 10-year yield', direction: 'lower' }, constraints: [], asOf, council: { kind: 'market', market: 'local_bonds', measure: 'The Fed keeps rates where they are through 2027' } } })).json();
+  assert.match(mc.review.title, /market council: Government bonds in local currency/);
+  assert.equal((await cb(mc.review.id, 'costBenefit', { lines: [line], rateIds: ['adb_9'] })).status, 404);
+  const mk = await cb(mc.review.id, 'market', { readings: [{ id: 'policy_rate', value: 99 }] });
+  assert.equal(mk.status, 200);
+  const readings = (await mk.json()).review.councilParts.market.content;
+  assert.equal(readings.asOf, asOf);
+  assert.ok(readings.readings.some((x: { id: string }) => x.id === 'carry_vs_us'));
+  // What the client sent is ignored; every reading has a value with date and source, or a reason.
+  assert.ok(readings.readings.every((x: { value: number | null; date: string; source: string; reason?: string }) => (x.value !== null ? x.date && x.source && x.value !== 99 : x.reason)));
+  assert.equal((await cb(mc.review.id, 'marketScenarios', { scenarios: [{ name: 'Base', story: 'Rates stay put.', move: '1' }, { name: 'Bad', story: 'Foreign holders sell.', move: '-8' }] })).status, 200);
   const diag = await fetch(`${base}/api/reviews/${review.id}/diagnose`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
   if (diag.status === 200) {
     const d = await diag.json();
@@ -970,6 +1015,17 @@ test('policy reviews: a frame starts a review, a bad one is refused, and both ar
     assert.equal(o.states.options, 'done');
     assert.equal(o.review.steps.options.content.model, null);
     assert.equal(o.review.steps.options.content.temperature, 0);
+    // Behavioural check (G33): sizes only with a source, saved beside the steps without touching the chain.
+    const bc = (effects: unknown) => fetch(`${base}/api/reviews/${review.id}/behaviour`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ effects }) });
+    const noSource = await bc([{ rank: 1, channel: 'expectations', effect: 'a size', source: '' }]);
+    assert.equal(noSource.status, 400);
+    assert.match((await noSource.json()).error, /source/);
+    const sized = await bc([{ rank: 1, channel: 'expectations', effect: 'expectations moved towards the target', source: 'Coibion et al. (2018), AER 108(9), Table 5' }]);
+    assert.equal(sized.status, 200);
+    const sj = await sized.json();
+    assert.equal(sj.review.behaviour.optionsHash, o.review.steps.options.hash);
+    assert.match(sj.review.behaviour.hash, /^[0-9a-f]{64}$/);
+    assert.equal(sj.states.options, 'done');
     const ev = await fetch(`${base}/api/reviews/${review.id}/evidence`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     assert.equal(ev.status, 200);
     const e = await ev.json();
@@ -986,6 +1042,20 @@ test('policy reviews: a frame starts a review, a bad one is refused, and both ar
     const approved = await (await sign('approved')).json();
     assert.equal(approved.status, 'approved');
     assert.equal(approved.selfApproved, true);
+    // Expert review (P4): the form is checked, saved with the memo's hash, and listed in the CSV.
+    const xr = (body: unknown) => fetch(`${base}/api/reviews/${review.id}/expert-reviews`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const badXr = await xr({ reviewer: 'A' });
+    assert.equal(badXr.status, 400);
+    assert.match((await badXr.json()).error, /1 to 5/);
+    const goodXr = await xr({ reviewer: 'Ana Ruiz', role: 'Professor of economics', clarity: 4, evidence: 3, sources: 'all_correct', wouldAct: 'with_changes', comment: 'Clear.', consent: 'anonymous' });
+    assert.equal(goodXr.status, 200);
+    const xj = await goodXr.json();
+    assert.equal(xj.review.expertReviews[0].memoHash, m.review.steps.memo.hash);
+    const consentRes = await fetch(`${base}/api/reviews/${review.id}/expert-reviews/x1/consent`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ consent: 'none' }) });
+    assert.equal(consentRes.status, 200);
+    const csv = await (await fetch(`${base}/api/expert-reviews.csv`)).text();
+    assert.match(csv, /Ana Ruiz,Professor of economics,4,3,all_correct,with_changes,Clear\.,none/);
+    assert.match((await (await fetch(`${base}/api/expert-reviews/summary`)).json()).markdown, /No reviews with consent to publish yet/);
     const oc = await fetch(`${base}/api/reviews/${review.id}/outcomes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     assert.equal(oc.status, 200);
     const ocj = await oc.json();
@@ -1030,4 +1100,26 @@ test('exam mode: switched from this computer, AI steps answer with figures only,
     assert.equal((await (await put(false)).json()).on, false);
   }
   assert.equal((await (await fetch(`${base}/api/exam-mode/opened`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ what: 'country', label: 'x' }) })).json()).recorded, false);
+});
+
+test('correlation IDs: sent back on every reply and written into the audit entries a call makes', async () => {
+  const none = await fetch(`${base}/healthz`);
+  assert.match(none.headers.get('x-correlation-id') || '', /^[0-9a-f-]{36}$/, 'one is made when none is sent');
+  const id = 'console-trace-7f3a.1';
+  const put = await fetch(`${base}/api/watch-rules`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Correlation-Id': id }, body: JSON.stringify({ rules: [] }) });
+  assert.equal(put.status, 200);
+  assert.equal(put.headers.get('x-correlation-id'), id);
+  const bad = await fetch(`${base}/api/series/MEX`, { headers: { 'X-Correlation-Id': 'not ok!' } });
+  assert.equal(bad.status, 400);
+  assert.equal((await bad.json()).error, 'BAD_CORRELATION_ID');
+  await new Promise((r) => setTimeout(r, 200));
+  const lines = readFileSync(path.join(dataDir, 'local', 'audit', 'audit-log.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+  const hit = lines.filter((e) => e.correlationId === id);
+  assert.ok(hit.length >= 1, 'the audit entry carries the ID');
+  assert.equal(hit[0].summary, 'Changed the watch alerts');
+  const audit = await (await fetch(`${base}/api/audit?q=${id}`)).json();
+  assert.equal(audit.check.ok, true);
+  assert.ok(audit.entries.length >= 1, 'searchable in Menu > Audit log');
+  const csv = await (await fetch(`${base}/api/audit/export.csv`)).text();
+  assert.ok(csv.split('\n')[0].includes('Correlation ID'));
 });

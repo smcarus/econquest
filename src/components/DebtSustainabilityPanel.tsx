@@ -1,3 +1,4 @@
+import { TradeOffChart } from './TradeOffChart';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChartGuide, RangeNote, useShowRanges } from './HelpLevel';
 import { ValidationBadge } from './ValidationBadge';
@@ -236,6 +237,7 @@ export const DebtSustainabilityPanel: React.FC<{ iso3: string; countryName: stri
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       {t('dsa_multiplier', { low: reply.options.multiplier.low, high: reply.options.multiplier.high, source: reply.options.multiplier.source })} {t('c_method', { method: reply.options.method })} {t('dsa_optionsNote')}
                     </p>
+                    <TradeOffChart iso3={reply.iso3} costed={reply.options} />
                   </>
                 )}
               </div>

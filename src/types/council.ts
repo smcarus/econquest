@@ -389,6 +389,12 @@ export interface OpenDataSnapshot {
     politicalStabilityPercentile: number;
     /** Military expenditure, % of GDP (World Bank MS.MIL.XPND.GD.ZS, from SIPRI); only when the feed answered. */
     militaryExpenditurePctGdp?: number;
+    /**
+     * Survey and tax figures whose own World Bank request answered this pull, found or not (G16, G17).
+     * Lets a Missing Gini or poverty rate say "no survey" only when the World Bank was asked and had
+     * none, not when that one request failed.
+     */
+    answeredFields?: string[];
     /** G16 (src/utils/distributionTaxes.ts), each only when the feed answered: Gini index (SI.POV.GINI, survey year in the source tag). */
     giniIndex?: number;
     /** Whether the Gini survey measured income or consumption, when the World Bank footnote says. */

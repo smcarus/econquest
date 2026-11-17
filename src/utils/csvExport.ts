@@ -26,8 +26,9 @@ export function csvCell(v: Cell): string {
   return /[",\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 }
 
-export function toCsv(header: string[], rows: Cell[][]): string {
-  return CSV_BOM + [header, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
+/** `bom: false` leaves the byte order mark off, for scripts (the R, Python and Stata helpers) that would read it as part of the first column name. */
+export function toCsv(header: string[], rows: Cell[][], opts: { bom?: boolean } = {}): string {
+  return (opts.bom === false ? '' : CSV_BOM) + [header, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
 }
 
 /** Long format: one row per observation, every row self-describing. */

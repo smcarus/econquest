@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { canSaveStep, frameTitle, parseFrame, stepStates, summarise, type PolicyReview, type ReviewFrame } from '../src/utils/policyReview';
+import { canSaveStep, frameTitle, parseCouncil, parseFrame, stepStates, summarise, type PolicyReview, type ReviewFrame } from '../src/utils/policyReview';
 import { deleteReview, loadReviews, newReview, putReview, saveStep, verifyReview } from '../src/utils/policyReviewStore';
 
 const today = new Date('2026-11-05T12:00:00Z');
@@ -27,6 +27,29 @@ test('parseFrame tidies a good frame and lists every reason a bad one cannot be 
   assert.ok('errors' in bad);
   const errs = (bad as { errors: string[] }).errors.join(' ');
   for (const m of [/country/, /problem/, /indicator/, /lower, higher/, /"By"/, /future/]) assert.match(errs, m);
+});
+
+test('a frame can carry a policy council question; a bad one lists its reasons', () => {
+  const p = parseFrame({ ...input, council: { measure: ' Raise the VAT rate from 17% to 20% ', size: { value: '1.2', unit: 'pct_gdp' }, start: '2027-01', years: '10' } }, today);
+  assert.ok('frame' in p);
+  const f = (p as { frame: ReviewFrame }).frame;
+  assert.deepEqual(f.council, { kind: 'policy', measure: 'Raise the VAT rate from 17% to 20%', size: { value: 1.2, unit: 'pct_gdp' }, start: '2027-01', years: 10 });
+  assert.equal(frameTitle(f), 'BRA policy council: Raise the VAT rate from 17% to 20% (as of 2026-11-01)');
+  // No council asked for: the frame is as before.
+  assert.equal(frame().council, undefined);
+  assert.equal(parseCouncil(false, []), undefined);
+  // Only the measure is needed.
+  assert.deepEqual(parseCouncil({ measure: 'Fuel subsidy reform' }, []), { kind: 'policy', measure: 'Fuel subsidy reform' });
+  const errors: string[] = [];
+  parseCouncil({ measure: 'Cut', size: { value: 1 } }, errors);
+  assert.match(errors.join(' '), /measure/);
+  const e2: string[] = [];
+  parseCouncil({ measure: 'Fuel subsidy reform', size: { value: 'lots', unit: 'pct_gdp' }, start: '2027', years: 31 }, e2);
+  for (const m of [/number/, /YYYY-MM/, /1 to 30/]) assert.match(e2.join(' '), m);
+  const e3: string[] = [];
+  parseCouncil({ measure: 'Fuel subsidy reform', size: { value: 2, unit: 'eur' } }, e3);
+  assert.match(e3.join(' '), /unit/);
+  assert.ok('errors' in parseFrame({ ...input, council: { measure: 'x' } }, today));
 });
 
 test('steps save only in order, each chained to the step before', () => {
@@ -78,4 +101,12 @@ test('reviews are kept in a file, newest first, and can be deleted', () => {
   assert.equal(deleteReview(file, a.id), true);
   assert.equal(deleteReview(file, a.id), false);
   assert.equal(loadReviews(file).reviews.length, 1);
+});
+
+test('PK7: a market council keeps its market and event, and takes no size', async () => {
+  const { parseCouncil } = await import('../src/utils/policyReview');
+  assert.deepEqual(parseCouncil({ kind: 'market', market: 'dollar_bonds', measure: 'A ratings downgrade', years: '2' }, []), { kind: 'market', market: 'dollar_bonds', measure: 'A ratings downgrade', years: 2 });
+  const e: string[] = [];
+  parseCouncil({ kind: 'market', market: 'gold', measure: 'x' }, e);
+  assert.match(e[0], /Describe the event/);
 });

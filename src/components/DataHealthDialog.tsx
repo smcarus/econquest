@@ -5,6 +5,7 @@
  * - Sources: every source's state at the last check, failing since, and its last checks as dots.
  * - Figure alerts: watchlist figures that went missing, got old, jumped, left their range or were revised.
  * - Revisions: IMF and World Bank yearly values changed since the app first downloaded them.
+ * - Daily download: the daily run as it goes (src/utils/dailyProgress.ts): what came in, what failed, what to fetch by hand.
  * - Scheduled: jobs the server runs by itself (Download all, the pre-registered tests) and how each run ended.
  * - Calendar: the hand-typed official calendar against today (old checks, schedules running out).
  * - Inflation: every country's monthly inflation figure with its source and age; old OECD copies flagged.
@@ -20,6 +21,8 @@ import type { FigureEvent, FigureEventKind, OpenIssue } from '../utils/figureWat
 import type { HistoryRevision } from '../utils/officialHistory';
 import { CALENDAR_FLAG_TEXT, type CalendarHealth } from '../utils/calendarHealth';
 import { BASIS_TEXT, INFLATION_FLAG_TEXT, type InflationHealth } from '../utils/inflationHealth';
+import type { DailyRun } from '../utils/dailyRun';
+import { DAILY_PARTS, dailyProgress } from '../utils/dailyProgress';
 
 type SourcesReply = {
   sources: SourceHealth[];
@@ -40,7 +43,7 @@ type ScheduledReply = {
   file: string;
 };
 
-export type DataHealthTab = 'sources' | 'figures' | 'revisions' | 'scheduled' | 'calendar' | 'inflation';
+export type DataHealthTab = 'sources' | 'download' | 'figures' | 'revisions' | 'scheduled' | 'calendar' | 'inflation';
 
 const when = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
@@ -289,6 +292,101 @@ function RevisionsView() {
   );
 }
 
+type DailyReply = { run: DailyRun | null; byHand: Array<{ label: string; why: string; how: string }>; file: string };
+
+const mb = (b?: number) => (b === undefined ? '' : b >= 1e9 ? `${(b / 1e9).toFixed(1)} GB` : b >= 1e6 ? `${(b / 1e6).toFixed(0)} MB` : `${Math.max(1, Math.round(b / 1e3))} KB`);
+const OUTCOME_TEXT = { done: 'Done', failed: 'Failed', skipped: 'Skipped' } as const;
+const OUTCOME_CLASS = { done: 'text-emerald-700 dark:text-emerald-300', failed: 'text-rose-700 dark:text-rose-300', skipped: 'text-slate-500 dark:text-slate-400' } as const;
+
+function DailyView() {
+  const { data, error, reload } = useJson<DailyReply>('/api/daily-run');
+  const p = dailyProgress(data?.run);
+  // While the run is going, read the file again every 15 seconds: it is saved after each step.
+  useEffect(() => {
+    if (p.state !== 'running') return;
+    const t = setInterval(reload, 15_000);
+    return () => clearInterval(t);
+  }, [p.state, reload]);
+  const run = data?.run;
+  return (
+    <div className="space-y-3" data-testid="daily-download">
+      {error && <p className="text-rose-600 dark:text-rose-400">{error}</p>}
+      <p className="text-sm text-slate-600 dark:text-slate-300">
+        Once a day the app downloads everything it can fetch by itself, in five parts. Each part is saved as it ends, so figures fill in while it runs. A part that fails keeps the last good figures and says why; nothing is filled in.
+      </p>
+      {data && !run && <p className="text-sm">No daily download yet. It starts with the app (npm run go, or the start file); npm run daily starts it by hand.</p>}
+      {run && (
+        <p className={`text-sm ${p.state === 'finished' && !p.failed ? 'text-emerald-700 dark:text-emerald-300' : p.failed || p.state === 'stopped' ? 'text-amber-700 dark:text-amber-300' : ''}`} data-testid="daily-download-summary">
+          {p.state === 'running' && `Running since ${when(run.startedAt)}: part ${p.current ?? DAILY_PARTS.length} of ${DAILY_PARTS.length}, ${p.currentLabel ?? 'finishing'}.`}
+          {p.state === 'stopped' && `Started ${when(run.startedAt)} and did not finish (the computer slept or the app stopped). The next start carries on.`}
+          {p.state === 'finished' && `Finished ${when(run.finishedAt)}${run.where ? ` (${run.where})` : ''}.`}
+          {` ${p.done} step${p.done === 1 ? '' : 's'} done, ${p.failed} failed, ${p.skipped} skipped`}
+          {run.downloadedBytes ? `; ${mb(run.downloadedBytes)} downloaded${p.state === 'finished' ? '' : ' so far'}` : ''}.
+        </p>
+      )}
+      {run && (
+        <ol className="space-y-2">
+          {DAILY_PARTS.map((part, i) => {
+            const steps = run.steps.filter((s) => part.ids.includes(s.id));
+            const now = p.current === i + 1;
+            return (
+              <li key={part.label} className="text-sm">
+                <div className="font-medium text-slate-800 dark:text-slate-100">
+                  {i + 1}. {part.label}
+                  {now && <span className="ml-2 text-xs font-normal text-blue-700 dark:text-blue-300">running now</span>}
+                  {!steps.length && !now && <span className="ml-2 text-xs font-normal text-slate-500 dark:text-slate-400">{p.state === 'running' ? 'waiting' : 'not reached'}</span>}
+                </div>
+                {steps.map((s) => (
+                  <div key={`${s.id}-${s.label}`} className="pl-4">
+                    <span className={OUTCOME_CLASS[s.outcome]}>{OUTCOME_TEXT[s.outcome]}</span>
+                    {part.ids.length > 1 ? `: ${s.label}` : ''}
+                    {s.note ? <span className="text-slate-600 dark:text-slate-300"> · {s.note}</span> : null}
+                    {s.bytes ? <span className="text-xs text-slate-500 dark:text-slate-400"> · {mb(s.bytes)}</span> : null}
+                    {(s.details || []).length > 0 && (
+                      <details className="text-xs text-slate-600 dark:text-slate-300">
+                        <summary className="cursor-pointer">{(s.details || []).length} line{(s.details || []).length === 1 ? '' : 's'} to read</summary>
+                        <ul className="list-disc pl-5">
+                          {(s.details || []).map((d) => (
+                            <li key={d}>{d}</li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
+                  </div>
+                ))}
+              </li>
+            );
+          })}
+        </ol>
+      )}
+      {p.needsYou.length > 0 && (
+        <div className="text-sm">
+          <p className="font-medium text-slate-800 dark:text-slate-100">Needs a key or a file from you ({p.needsYou.length})</p>
+          <ul className="list-disc pl-5 text-xs text-slate-600 dark:text-slate-300">
+            {p.needsYou.map((n) => (
+              <li key={n}>{n}</li>
+            ))}
+          </ul>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Keys go in Menu &gt; Settings; files go in the data/local folder named in each line.</p>
+        </div>
+      )}
+      {data && data.byHand.length > 0 && (
+        <div className="text-sm">
+          <p className="font-medium text-slate-800 dark:text-slate-100">Download by hand (the app cannot fetch these)</p>
+          <ul className="list-disc pl-5 text-xs text-slate-600 dark:text-slate-300">
+            {data.byHand.map((b) => (
+              <li key={b.label}>
+                <span className="font-medium">{b.label}.</span> {b.why} {b.how}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {data && <p className="text-xs text-slate-500 dark:text-slate-400">Kept in {data.file}; npm run go -- status prints the same in a terminal.</p>}
+    </div>
+  );
+}
+
 function ScheduledView() {
   const { data, error } = useJson<ScheduledReply>('/api/scheduled-jobs');
   return (
@@ -453,6 +551,7 @@ export function DataHealthDialog({ onClose, initialTab = 'sources' }: { onClose:
   }, [onClose]);
   const tabs: Array<[DataHealthTab, string]> = [
     ['sources', 'Sources'],
+    ['download', 'Daily download'],
     ['figures', 'Figure alerts'],
     ['revisions', 'Revisions'],
     ['scheduled', 'Scheduled'],
@@ -486,6 +585,7 @@ export function DataHealthDialog({ onClose, initialTab = 'sources' }: { onClose:
         </div>
         <div className="p-4 overflow-y-auto ui-body">
           {tab === 'sources' && <SourcesView />}
+          {tab === 'download' && <DailyView />}
           {tab === 'figures' && <FiguresView />}
           {tab === 'revisions' && <RevisionsView />}
           {tab === 'scheduled' && <ScheduledView />}
