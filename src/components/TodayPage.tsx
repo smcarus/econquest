@@ -14,6 +14,8 @@ import { lazyNamed } from './LazyDesk';
 
 // Policy review watch (PC1) loads on its own so it adds nothing to start-up.
 const ReviewWatchPanel = lazyNamed(() => import('./ReviewWatchPanel'), 'ReviewWatchPanel');
+// Inflation surprise index (R10), also on its own.
+const SurpriseIndexCard = lazyNamed(() => import('./SurpriseIndexCard'), 'SurpriseIndexCard');
 import { AskCouncilPanel, CouncilAgentsPanel, useCouncilHasQuestion, type FullCouncilStep } from './AskCouncilPanel';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 import { MissingSources, WatchlistTable } from './WatchlistTable';
@@ -513,6 +515,13 @@ export const TodayPage: React.FC<{
           <PanelBoundary name="Policy review watch">
             <React.Suspense fallback={null}>
               <ReviewWatchPanel countryName={(iso3) => byIso.get(iso3)?.countryName || iso3} />
+            </React.Suspense>
+          </PanelBoundary>
+        </div>
+        <div id="tool-surprise-index" className="scroll-mt-4">
+          <PanelBoundary name="Inflation surprise index">
+            <React.Suspense fallback={null}>
+              <SurpriseIndexCard />
             </React.Suspense>
           </PanelBoundary>
         </div>

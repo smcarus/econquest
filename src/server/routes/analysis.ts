@@ -48,7 +48,7 @@ import { loadCurves } from '../feeds/fullCurves';
 import { loadSurpriseInputs } from '../feeds/dataSurprises';
 import { fetchInflationSurveys } from '../feeds/rates';
 import { loadForward } from '../../utils/forwardRecordStore';
-import { nowcastMatches, surpriseSeriesFor } from '../../utils/dataSurprises';
+import { INDEX_TEST_ID, nowcastMatches, surpriseIndex, surpriseSeriesFor } from '../../utils/dataSurprises';
 import { fullCurveReading, fullCurveSentence } from '../../utils/fullCurves';
 import { iso2For } from '../../data/iso3166Alpha2';
 import { foodView, foodSentence, FOOD_IDS } from '../../utils/foodPrices';
@@ -1002,15 +1002,31 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     });
   });
   // R9: data surprises (src/utils/dataSurprises.ts): releases against expectations published before them.
-  app.get('/api/surprises/:iso3', async (req, res) => {
-    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z]/g, '');
+  // R10: the inflation surprise index from them (rule registered in docs/validation/pending/surprise_index.json).
+  const surprisesFor = async (iso3: string) => {
     const [surveys, qna] = await Promise.all([quick(fetchInflationSurveys()), quick(fetchQnaPull())]);
     const spf = surveys?.spf?.['Q.U2.HICP.POINT.P12M.Q.AVG'] ?? null;
     const calls = loadForward(path.join(DATA_DIR, 'local', 'validation', 'forward.jsonl')).lines.filter((l): l is Extract<typeof l, { kind: 'call' }> => l.kind === 'call');
     const qoq = qnaFor(iso3, qna?.series)?.qoq ?? [];
     const nowcast = nowcastMatches(calls, iso3, qoq.map((p) => ({ period: p.period, value: p.value })));
+    return surpriseSeriesFor(iso3, loadSurpriseInputs(), spf, nowcast);
+  };
+  app.get('/api/surprises/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z]/g, '');
+    const series = await surprisesFor(iso3);
     const inp = loadSurpriseInputs();
-    res.json({ iso3, series: surpriseSeriesFor(iso3, inp, spf, nowcast), pulledAt: inp?.pulledAt ?? null, problems: inp?.problems ?? [] });
+    res.json({ iso3, series, index: surpriseIndex(series, new Date().toISOString().slice(0, 10)), pulledAt: inp?.pulledAt ?? null, problems: inp?.problems ?? [] });
+  });
+  // R10 Today card: the latest inflation surprise index for each place that has one.
+  app.get('/api/surprise-index', async (_req, res) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const places = [
+      { iso3: 'BRA', place: 'Brazil' },
+      { iso3: 'DEU', place: 'Euro area' },
+      { iso3: 'USA', place: 'United States' },
+    ];
+    const rows = await Promise.all(places.map(async (p) => ({ ...p, last: surpriseIndex(await surprisesFor(p.iso3), today).pop() ?? null })));
+    res.json({ rows, test: INDEX_TEST_ID });
   });
   // R11: full yield curves (US Treasury par curve, ECB euro area curve) from the daily step world:curves.
   app.get('/api/yield-curves', (req, res) => {

@@ -314,3 +314,59 @@ export function nowcastMatches(
   return res;
 }
 
+
+/* ---------------------------------------------------------------- surprise index (R10) */
+
+export const INDEX_HALF_LIFE_DAYS = 90;
+export const INDEX_MAX_AGE_DAYS = 365;
+export const INDEX_MIN_SURPRISES = 3;
+export const INDEX_TEST_ID = 'surprise_index';
+const INFLATION_SOURCES: SurpriseSource[] = ['focus', 'spf', 'kalshi'];
+/** Usual day of the month after the period on which each outturn comes out. */
+const RELEASE_DAY: Partial<Record<SurpriseSource, string>> = { focus: '10', spf: '17', kalshi: '12' };
+
+export interface IndexPoint {
+  /** Month end, YYYY-MM-DD. */
+  date: string;
+  value: number;
+  /** Scaled surprises behind it. */
+  n: number;
+}
+
+const dayNum = (d: string) => Date.parse(`${d}T00:00:00Z`) / 86400000;
+const monthEnd = (ym: string) => {
+  const [y, m] = ym.split('-').map(Number);
+  return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+};
+
+/**
+ * Inflation surprise index at each month end: the scaled inflation surprises (Focus, SPF, Kalshi)
+ * released by then, weighted by 0.5^(age / 90 days), none older than 365 days; a month end needs 3.
+ * The rule is the one registered in docs/validation/pending/surprise_index.json. A description: no
+ * reading is presented as a signal unless that test passes.
+ */
+export function surpriseIndex(series: SurpriseSeries[], today: string): IndexPoint[] {
+  const pts = series
+    .filter((s) => INFLATION_SOURCES.includes(s.source))
+    .flatMap((s) => s.surprises.filter((x) => x.scaled !== undefined && /^\d{4}-\d{2}$/.test(x.period)).map((x) => ({ at: `${nextMonth(x.period)}-${RELEASE_DAY[s.source]}`, z: x.scaled! })))
+    .sort((a, b) => a.at.localeCompare(b.at));
+  if (!pts.length) return [];
+  const out: IndexPoint[] = [];
+  for (let ym = pts[0].at.slice(0, 7); ; ym = nextMonth(ym)) {
+    const end = monthEnd(ym);
+    const cut = end > today ? today : end;
+    const live = pts.filter((p) => p.at <= cut && dayNum(cut) - dayNum(p.at) <= INDEX_MAX_AGE_DAYS);
+    if (live.length >= INDEX_MIN_SURPRISES) {
+      let w = 0;
+      let s = 0;
+      for (const p of live) {
+        const k = Math.pow(0.5, (dayNum(cut) - dayNum(p.at)) / INDEX_HALF_LIFE_DAYS);
+        w += k;
+        s += k * p.z;
+      }
+      out.push({ date: cut, value: Math.round((s / w) * 100) / 100, n: live.length });
+    }
+    if (end >= today) break;
+  }
+  return out;
+}

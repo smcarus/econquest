@@ -57,6 +57,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Policy rule family | Research | Backtest too few cases | v1, 2026-11-07, method 2 |
 | Debt fan chart (bootstrap of past shocks) | Research | Forecast evaluation too few cases | debt_fan_coverage v1, 2026-11-07 |
 | Data surprises (R9) | Research | Description, not a tested signal | None |
+| Inflation surprise index (R10) | Research | Not validated | None |
 | Ranges from past forecast misses (R8) | Research | Description, not a tested signal | None |
 | Costed fiscal options | Research | Description, not a tested signal | None |
 | Scenario Agent (what-if questions) | Research | Description, not a tested signal | None |
@@ -760,6 +761,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Status:** Description, not a tested signal
 - **How it is tested:** Description, not a tested signal: it reports past surprises and makes no forward claim. The surprise index built from it (R10) gets its own pre-registered test before any backtest.
 - **Limits:** Kalshi snapshots start with the first daily run, so US surprises build up only from then; the Focus cut-off day is a fixed rule, not each release date.
+- **Code:** `src/utils/dataSurprises.ts`
+
+### Inflation surprise index (R10)
+
+- **Says:** Whether inflation has lately come in above or below what forecasters and markets expected, as one number per place.
+- **Rule:** Weighted average of the scaled inflation surprises (R9: Focus, ECB SPF, Kalshi) released up to each month end, each weighted by 0.5 to the power of its age over a 90-day half-life, none older than 365 days, at least 3 needed. Fixed weights, nothing fitted.
+- **Reads:** Data surprises (R9)
+- **Shows in:** Country Research > History & data (Data surprises); Today (Inflation surprise index)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered on 17 November 2026 before any run (docs/validation/pending/surprise_index.json): an index above +0.5 at a month end is followed by a policy rate rise within 3 months more often than at month ends in general for the same central banks; at least 30 cases, a 10-point lift, p below 0.05 from whole years resampled, 5 years. Runs only once 60 month ends qualify.
+- **Limits:** Three places to start with; Kalshi enters late; the SPF surprise is about a forecast made a year earlier.
 - **Code:** `src/utils/dataSurprises.ts`
 
 ### Ranges from past forecast misses (R8)

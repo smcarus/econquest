@@ -1,0 +1,34 @@
+{
+  "id": "surprise_index",
+  "version": 1,
+  "registeredOn": "2026-11-17",
+  "registeredBy": "Sam (owner) asked for a surprise index with its test written and locked before any backtest (five user roles plan, step R10, 2026-11-17); registered before the index was shown and before any run",
+  "plannedStep": "R10 Surprise index",
+  "hypothesis": "When a country's inflation surprise index (R10) is above +0.5 at a month end, its central bank raises the policy rate within the next three calendar months more often than at month ends in general for the same central banks.",
+  "method": "surprise_index",
+  "framework": 2,
+  "params": {
+    "index": "inflation surprise index as the app computes it: the weighted average of the scaled inflation surprises (R9: Focus, ECB SPF, Kalshi) released up to the month end, each weighted by 0.5 to the power of its age in days over a 90-day half-life; releases older than 365 days left out; a month end needs at least 3 scaled surprises in the last 365 days",
+    "threshold": 0.5,
+    "horizonMonths": 3,
+    "rateRise": "the BIS end-of-month policy rate (WS_CBPOL) for the country's central bank (the ECB for euro members, counted once) is higher at any of the next three month ends than at this month end by at least 0.10 percentage points",
+    "resampleBlock": "calendar year",
+    "resamples": 4000,
+    "seed": 20261117
+  },
+  "data": {
+    "signal": "The R9 scaled surprises, from expectations published before each release (BCB Focus and SGS 433; ECB SPF and Eurostat HICP; Kalshi snapshots and BLS CPI-U), as the app saves them",
+    "outcome": "BIS central bank policy rates, monthly (WS_CBPOL), as the app already reads them",
+    "universe": "Brazil, the euro area (one entry) and the United States, and any other central bank whose country later gets an inflation surprise series"
+  },
+  "timing": "Every surprise in the index for a month end was released on or before that month end, and every expectation behind it was published before its release (R9 rules). The rate move is read only from the three month ends after it.",
+  "sample": { "from": "the first month end with 3 scaled surprises in the last 365 days", "to": "open; the test is run only once there are at least 60 month ends that pass the sample rule" },
+  "passMark": { "minCases": 30, "minLiftPts": 10, "maxPValue": 0.05, "minYears": 5 },
+  "knownLimits": [
+    "Three central banks to start with, so the sample is small and the test may stay too small to run for years. It stays pending until then; no reading of the index is presented as a signal before it passes.",
+    "Kalshi surprises exist only from the first saved snapshot, so the US enters late.",
+    "The SPF targets a month a year ahead, so a euro area surprise is about a forecast made a year earlier, not the latest release consensus.",
+    "Rate rises cluster in hiking cycles; resampling whole years treats a cycle as one block, and the base rate is pooled over the same central banks.",
+    "A pass would say the index runs ahead of rate rises in this sample, not why; the index is a description of what data did against expectations."
+  ]
+}
