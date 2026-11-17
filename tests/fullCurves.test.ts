@@ -94,6 +94,7 @@ test('ECB curve asked one maturity at a time; Zenodo and the ECB told who is ask
   const cc = fs.readFileSync('src/utils/connectionCheck.ts', 'utf8');
   assert.match(cc, /ecbCurveUrl\(5, \['SR_10Y'\]\),\s*Math\.max\(T, 30_000\)/);
   assert.match(cc, /\.\.\.ZENODO_HEADERS/);
+  assert.match(cc, /ecbSpfUrl\(key, 8\),\s*Math\.max\(T, 30_000\)/);
   assert.match(fs.readFileSync('src/server/feeds/regional.ts', 'utf8'), /doseLatestUrl\(\), 'DOSE', \{ \.\.\.ZENODO_HEADERS/);
 });
 

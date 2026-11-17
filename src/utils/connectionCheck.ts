@@ -1640,15 +1640,15 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     const res = await httpCheck(
       { id: 'ecb_spf', name: 'ECB Survey of Professional Forecasters', group: 'free', feeds: 'Euro-area HICP inflation expected one year, two years and longer term ahead (quarterly)' },
       fetchFn,
-      ecbSpfUrl(key),
-      Math.max(T, 15000),
+      ecbSpfUrl(key, 8),
+      Math.max(T, 30_000),
       (r) => {
         lastText = r.text;
         const obs = parseEcbCsv(r.text || '');
         const last = obs[obs.length - 1];
-        return last ? `SPF longer-term HICP ${fmt(last.value, 2)}% (${last.date}), ${obs.length} quarters` : null;
+        return last ? `SPF longer-term HICP ${fmt(last.value, 2)}% (${last.date}), newest ${obs.length} quarters read` : null;
       },
-      {},
+      { headers: { Accept: 'text/csv' } },
       `The ECB answered, but not with TIME_PERIOD and OBS_VALUE columns for SPF.${key}.`
     );
     return res.state === 'bad_reply' || res.state === 'refused' ? { ...res, detail: `${res.detail}${replyStart(lastText)}` } : res;
