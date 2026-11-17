@@ -5,6 +5,17 @@
  * {detail} and {source} may. Each filled-in part is translated again when it is known text.
  */
 export const PANEL_TEXT_ES: Record<string, string> = {
+  "the surprise inputs have not been downloaded yet (daily step world:surprises)": "los datos de las sorpresas aún no se han descargado (paso diario world:surprises)",
+  "the BCB Focus monthly survey has not been read": "la encuesta mensual Focus del BCB no se ha leído",
+  "the IPCA series (BCB SGS 433) has not been read": "la serie del IPCA (SGS 433 del BCB) no se ha leído",
+  "no month has both a Focus median and an outturn": "ningún mes tiene a la vez una mediana Focus y un resultado",
+  "the ECB Survey of Professional Forecasters has not been read": "la Encuesta a Expertos en Previsión Económica del BCE no se ha leído",
+  "the euro area HICP (Eurostat) has not been read": "el IAPC de la zona del euro (Eurostat) no se ha leído",
+  "no survey round has reached its target month yet": "ninguna ronda de la encuesta ha llegado aún a su mes objetivo",
+  "no Kalshi CPI market snapshot saved yet; snapshots start with the first daily run and count only for releases after them": "aún no se ha guardado ninguna instantánea del mercado de IPC de Kalshi; las instantáneas empiezan con la primera ejecución diaria y solo cuentan para publicaciones posteriores",
+  "the BLS CPI series has not been read": "la serie del IPC del BLS no se ha leído",
+  "no release has come out since the first saved snapshot": "no ha salido ninguna publicación desde la primera instantánea guardada",
+  "no recorded nowcast for this country has been published yet": "ninguna estimación inmediata registrada para este país se ha publicado aún",
   // History & data: series names, units and the reasons a series is missing
   '5Y CDS (your data)': 'CDS a 5 años (sus datos)',
   'latest daily figure': 'última cifra diaria',

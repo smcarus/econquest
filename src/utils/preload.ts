@@ -74,6 +74,7 @@ export const WORLD_STEPS: PreloadStep[] = [
   { id: 'world:bis_private_debt', kind: 'world', label: 'Household and company debt (BIS total credit)' },
   { id: 'world:fed_swaps', kind: 'world', label: 'Federal Reserve dollar swap lines (New York Fed)' },
   { id: 'world:wb_projects', kind: 'world', label: 'World Bank active projects and IDA amounts paid out (weekly)' },
+  { id: 'world:surprises', kind: 'world', label: 'Data surprises: Focus and Kalshi expectations, IPCA, euro area HICP and US CPI outturns' },
   { id: 'world:curves', kind: 'world', label: 'Full yield curves: US Treasury par curve and ECB euro area curve, every maturity' },
   { id: 'world:regional', kind: 'world', label: 'Regional output (DOSE) and EU regional GDP and unemployment (Eurostat), weekly' },
   { id: 'world:monthly_activity', kind: 'world', label: 'Industrial production, retail sales and monthly unemployment' },

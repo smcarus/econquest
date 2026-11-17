@@ -110,6 +110,7 @@ import { loadFedSwaps, fetchFedSwaps } from './src/server/feeds/fedSwaps';
 import { fetchWbProjects } from './src/server/feeds/wbProjects';
 import { fetchRegional } from './src/server/feeds/regional';
 import { fetchCurves } from './src/server/feeds/fullCurves';
+import { fetchSurpriseInputs } from './src/server/feeds/dataSurprises';
 import { loadWeather, fetchWeather } from './src/server/feeds/nasaPower';
 import { loadCountryWeather, fetchCountryWeather } from './src/server/feeds/wbClimate';
 import { loadWages, fetchWagesPull, loadHousePrices, fetchHousePricesPull, loadPrivateDebt, fetchPrivateDebtPull } from './src/server/feeds/wagesHousing';
@@ -711,6 +712,12 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
       const note = `${got.projects.length} active projects, ${got.ida ? `IDA amounts for ${Object.keys(got.ida).length} projects` : 'no IDA amounts (statement not read)'}`;
       return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}, downloaded again after a week` };
+    }
+    case 'world:surprises': {
+      const got = await fetchSurpriseInputs();
+      if (!got) return { outcome: 'failed', note: 'None of BCB, Eurostat, BLS or Kalshi answered for the data surprises' };
+      const n = (x?: unknown[]) => x?.length ?? 0;
+      return { outcome: 'done', note: `Focus ${n(got.focus)} medians, IPCA ${n(got.ipca)} months, euro area HICP ${n(got.eaHicp)} months, US CPI ${n(got.usCpi)} months, Kalshi ${n(got.kalshi)} snapshots${got.problems.length ? `; ${got.problems.length} problems` : ''}` };
     }
     case 'world:curves': {
       const got = await fetchCurves();

@@ -63,6 +63,7 @@ const CbWordsPanel = lazyNamed(() => import('./CbWordsPanel'), 'CbWordsPanel');
 const InflationDriversPanel = lazyNamed(() => import('./InflationDriversPanel'), 'InflationDriversPanel');
 const YieldCurvePanel = lazyNamed(() => import('./YieldCurvePanel'), 'YieldCurvePanel');
 const FullCurvesPanel = lazyNamed(() => import('./FullCurvesPanel'), 'FullCurvesPanel');
+const SurprisesPanel = lazyNamed(() => import('./SurprisesPanel'), 'SurprisesPanel');
 const ExternalSustainabilityPanel = lazyNamed(() => import('./ExternalSustainabilityPanel'), 'ExternalSustainabilityPanel');
 const RiskScorecardPanel = lazyNamed(() => import('./RiskScorecardPanel'), 'RiskScorecardPanel');
 const UnitConverterPanel = lazyNamed(() => import('./UnitConverterPanel'), 'UnitConverterPanel');
@@ -501,6 +502,13 @@ export const CountryPage: React.FC<{
             <PanelBoundary name="Full yield curves">
               <React.Suspense fallback={<DeskLoading />}>
                 <FullCurvesPanel key={`fyc-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+              </React.Suspense>
+            </PanelBoundary>
+          </ToolSlot>
+          <ToolSlot id="tool-surprises" pick={toolPick}>
+            <PanelBoundary name="Data surprises">
+              <React.Suspense fallback={<DeskLoading />}>
+                <SurprisesPanel key={`sp-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
               </React.Suspense>
             </PanelBoundary>
           </ToolSlot>

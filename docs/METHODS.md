@@ -56,6 +56,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Inflation after rate changes (local projections) | Research | Description, not a tested signal | None |
 | Policy rule family | Research | Backtest too few cases | v1, 2026-11-07, method 2 |
 | Debt fan chart (bootstrap of past shocks) | Research | Forecast evaluation too few cases | debt_fan_coverage v1, 2026-11-07 |
+| Data surprises (R9) | Research | Description, not a tested signal | None |
 | Ranges from past forecast misses (R8) | Research | Description, not a tested signal | None |
 | Costed fiscal options | Research | Description, not a tested signal | None |
 | Scenario Agent (what-if questions) | Research | Description, not a tested signal | None |
@@ -748,6 +749,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 **Recorded verdicts**
 
 - debt_fan_coverage, version 1, 2026-11-07T00:24Z: **Too few cases** (forecast evaluation). Too few cases at 4 and 5 years ahead (needs 100 cases over 8 target years; 8 October editions saved). Outturns inside the 10-90 band (80% if calibrated): 1y 66%, 2y 64%, 3y 60%, 4y 55%, 5y 48%; misses mostly above the band. 179 series, 2009 to 2018.
+
+### Data surprises (R9)
+
+- **Says:** How far each release came in from what forecasters or a market expected before it, and whether that was large for that series.
+- **Rule:** Surprise = outturn minus an expectation published before the release: BCB Focus median (last survey on or before the 7th of the next month) for Brazil IPCA; ECB SPF one-year-ahead mean against the euro area HICP at its target month; the mean implied by the Kalshi CPI ladder in the last snapshot saved before the BLS figure first appeared; the app GDP nowcast on the forward record. Scaled by the standard deviation of the earlier surprises in the same series once there are 8.
+- **Reads:** BCB Focus and SGS 433; ECB SPF and Eurostat HICP; Kalshi KXCPI and BLS CPI-U; the forward record
+- **Shows in:** Country Research > History & data (Data surprises)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: it reports past surprises and makes no forward claim. The surprise index built from it (R10) gets its own pre-registered test before any backtest.
+- **Limits:** Kalshi snapshots start with the first daily run, so US surprises build up only from then; the Focus cut-off day is a fixed rule, not each release date.
+- **Code:** `src/utils/dataSurprises.ts`
 
 ### Ranges from past forecast misses (R8)
 

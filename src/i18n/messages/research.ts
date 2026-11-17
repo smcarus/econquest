@@ -114,6 +114,7 @@ export const RESEARCH = defineMessages('research', {
   tl_policy_incidence: "Who pays for a policy",
   tl_yield_curve: "Yield curve",
   tl_full_curves: "Full yield curves (US, euro area)",
+  tl_surprises: "Data surprises",
   tl_inflation_drivers: "Inflation drivers",
   tl_rule_family: "Policy rules",
   tl_local_projections: "Inflation after rate changes",

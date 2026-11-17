@@ -25,6 +25,7 @@ import { NYFED_SWAPS_SAMPLE_URL, parseNyfedSwaps } from './fedSwapLines';
 import { idaByProject, idaCreditsPageUrl, parseIdaPage, parseProjectsPage, projectsCountryUrl } from './wbProjects';
 import { doseCsvLink, doseLatestUrl, eurostatRegionUnempUrl, latestByGeo } from './regional';
 import { ecbCurveUrl, parseEcbCurveCsv, parseUstCsv, ustCurveUrl } from './fullCurves';
+import { BLS_CPI_URL, FOCUS_MONTHLY_URL, parseBlsCpi, parseFocusMonthly } from './dataSurprises';
 import { NASA_POWER_SAMPLE_URL, parseNasaPower } from './weatherPower';
 import { CCKP_SAMPLE_URL, parseCckp } from './weatherCountry';
 import { IBTRACS_SAMPLE_URL, ibtracsParser } from './stormTracks';
@@ -309,6 +310,8 @@ export const SOURCE_IDS = [
   'eurostat_regions',
   'ust_curve',
   'ecb_curve',
+  'focus_monthly',
+  'bls_cpi',
   'worldbank_trade',
   'worldbank_climate',
   'owid_energy',
@@ -882,6 +885,33 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
         if ('reason' in got) return null;
         const d = got[got.length - 1];
         return `${got.length} days read; ${d.date}: 10-year ${d.yields['10'] ?? '?'}%, ${Object.keys(d.yields).length} maturities`;
+      }
+    )
+  );
+
+  add('focus_monthly', () =>
+    httpCheck(
+      { id: 'focus_monthly', name: 'BCB Focus survey, monthly IPCA medians', group: 'free', feeds: 'Expected IPCA for each month, before the release (Data surprises)' },
+      fetchFn,
+      FOCUS_MONTHLY_URL.replace('$top=20000', '$top=20'),
+      T,
+      (r) => {
+        const got = parseFocusMonthly(parseJson(r.text));
+        const last = got[got.length - 1];
+        return last ? `${got.length} medians read; survey of ${last.at}: ${last.value}% for ${last.period}` : null;
+      }
+    )
+  );
+  add('bls_cpi', () =>
+    httpCheck(
+      { id: 'bls_cpi', name: 'BLS consumer price index (CPI-U, seasonally adjusted)', group: 'free', feeds: 'US CPI on the month (Data surprises)' },
+      fetchFn,
+      BLS_CPI_URL,
+      T,
+      (r) => {
+        const got = parseBlsCpi(parseJson(r.text));
+        const last = got[got.length - 1];
+        return last ? `${got.length} months read; ${last.period}: ${last.value}% on the month` : null;
       }
     )
   );

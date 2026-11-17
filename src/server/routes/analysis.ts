@@ -45,6 +45,10 @@ import { loadWbProjects } from '../feeds/wbProjects';
 import { regionalProfile, regionalSentence } from '../../utils/regional';
 import { loadDose, loadEuroRegions, loadGdl } from '../feeds/regional';
 import { loadCurves } from '../feeds/fullCurves';
+import { loadSurpriseInputs } from '../feeds/dataSurprises';
+import { fetchInflationSurveys } from '../feeds/rates';
+import { loadForward } from '../../utils/forwardRecordStore';
+import { nowcastMatches, surpriseSeriesFor } from '../../utils/dataSurprises';
 import { fullCurveReading, fullCurveSentence } from '../../utils/fullCurves';
 import { iso2For } from '../../data/iso3166Alpha2';
 import { foodView, foodSentence, FOOD_IDS } from '../../utils/foodPrices';
@@ -996,6 +1000,17 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       editions: store.editions.map((e) => ({ vintage: e.vintage, label: vintageLabel(e.vintage), file: e.file, countries: Object.keys(e.rows).length })),
       skipped: store.skipped,
     });
+  });
+  // R9: data surprises (src/utils/dataSurprises.ts): releases against expectations published before them.
+  app.get('/api/surprises/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z]/g, '');
+    const [surveys, qna] = await Promise.all([quick(fetchInflationSurveys()), quick(fetchQnaPull())]);
+    const spf = surveys?.spf?.['Q.U2.HICP.POINT.P12M.Q.AVG'] ?? null;
+    const calls = loadForward(path.join(DATA_DIR, 'local', 'validation', 'forward.jsonl')).lines.filter((l): l is Extract<typeof l, { kind: 'call' }> => l.kind === 'call');
+    const qoq = qnaFor(iso3, qna?.series)?.qoq ?? [];
+    const nowcast = nowcastMatches(calls, iso3, qoq.map((p) => ({ period: p.period, value: p.value })));
+    const inp = loadSurpriseInputs();
+    res.json({ iso3, series: surpriseSeriesFor(iso3, inp, spf, nowcast), pulledAt: inp?.pulledAt ?? null, problems: inp?.problems ?? [] });
   });
   // R11: full yield curves (US Treasury par curve, ECB euro area curve) from the daily step world:curves.
   app.get('/api/yield-curves', (req, res) => {

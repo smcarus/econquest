@@ -237,6 +237,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-full-curves' },
   },
   {
+    id: 'surprises',
+    category: 'history',
+    title: "Data surprises",
+    what: "Each release against an expectation published before it came out: the BCB Focus survey for Brazil's IPCA, the ECB Survey of Professional Forecasters for euro area HICP, the Kalshi CPI market (snapshots saved before each release) for the US CPI, and the app's own recorded GDP nowcast; each surprise scaled by the spread of earlier ones.",
+    sources: "BCB Focus and SGS; ECB SPF; Eurostat HICP; BLS CPI; Kalshi; the app's forward record",
+    target: { area: 'country', tab: 'history', anchor: 'tool-surprises' },
+  },
+  {
     id: 'inflation_drivers',
     category: 'history',
     title: 'Inflation drivers',
@@ -492,7 +500,7 @@ export const HIDDEN_GROUPS: HiddenGroup[] = [
       { id: 'decision_quadrant_stress', label: 'Regime quadrant', needs: 'Its stress grid ran on built-in inputs; the live growth and inflation quadrant is under Research > Compare countries.', coveredBy: 'regime_quadrant' },
       { id: 'fx_beer_feer_equilibrium', label: 'FX equilibrium models', needs: 'Productivity and terms-of-trade series.', coveredBy: 'country_marketedge' },
       { id: 'quant_matrix_econometrics', label: 'Econometrics', needs: 'Historical series for the regressions.' },
-      { id: 'quant_macro_surprise', label: 'Data surprises', needs: 'Consensus forecasts (licensed).' },
+      { id: 'quant_macro_surprise', label: 'Data surprises', needs: 'Consensus forecasts (licensed); free survey and market expectations are under Research > History & data.', coveredBy: 'surprises' },
     ],
   },
   {
