@@ -269,6 +269,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-fiscal-rules' },
   },
   {
+    id: 'budget_credibility',
+    category: 'history',
+    title: "Budget credibility",
+    what: "How much of the approved budget the government actually spent each year (World Bank, from PEFA assessments, UN goal 16.6.1), how far it was from the budget, the PEFA band of each year, and a grade on the PEFA rule worked out by the app.",
+    sources: "World Bank WDI (PEFA assessments)",
+    target: { area: 'country', tab: 'history', anchor: 'tool-budget-credibility' },
+  },
+  {
     id: 'remittances',
     category: 'history',
     title: 'Remittances',

@@ -159,6 +159,16 @@ export const GLOSSARY: GlossaryEntry[] = [
     match: [/^Spending by level of government/, /^Revenue by level of government/],
   },
   {
+    id: 'budget_credibility',
+    term: "Budget credibility",
+    group: 'budget',
+    what: "How much of the budget parliament approved the government actually spent in the year, as % of that budget. Interest and spending paid for by outside project loans and grants are left out.",
+    why: "A budget is a promise about schools, clinics, roads and wages. When spending ends far below the budget, projects and services were usually cut during the year; far above, the budget was not a real limit. Ministries cannot plan, lenders trust the numbers less, and citizens cannot hold the government to what it said.",
+    read: "100% means the government spent exactly what was approved. PEFA, the international public finance review, grades the gap: A within 5%, B within 10%, C within 15%, D further. 82% means 18% less was spent than approved.",
+    limits: "From PEFA assessments published by the World Bank (UN goal 16.6.1), so most countries have only the three years an assessment covered, or none. The grade shown is worked out by the app on the PEFA rule, not the official PEFA score. It says nothing about whether money moved between ministries during the year.",
+    match: [/^Spending against the approved budget/],
+  },
+  {
     id: 'monthly_activity',
     key: true,
     term: 'Industrial production, retail sales and the monthly unemployment rate',

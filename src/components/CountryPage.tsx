@@ -51,6 +51,7 @@ const RemittancesPanel = lazyNamed(() => import('./RemittancesPanel'), 'Remittan
 const FinancialInclusionPanel = lazyNamed(() => import('./FinancialInclusionPanel'), 'FinancialInclusionPanel');
 const CommodityTermsPanel = lazyNamed(() => import('./CommodityTermsPanel'), 'CommodityTermsPanel');
 const AidPanel = lazyNamed(() => import('./AidPanel'), 'AidPanel');
+const BudgetCredibilityPanel = lazyNamed(() => import('./BudgetCredibilityPanel'), 'BudgetCredibilityPanel');
 const FoodPricesPanel = lazyNamed(() => import('./FoodPricesPanel'), 'FoodPricesPanel');
 const DisastersPanel = lazyNamed(() => import('./DisastersPanel'), 'DisastersPanel');
 const ParametricTriggerPanel = lazyNamed(() => import('./ParametricTriggerPanel'), 'ParametricTriggerPanel');
@@ -531,6 +532,13 @@ export const CountryPage: React.FC<{
             <PanelBoundary name="Fiscal rules">
               <React.Suspense fallback={<DeskLoading />}>
                 <FiscalRulesPanel key={`fr-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+              </React.Suspense>
+            </PanelBoundary>
+          </ToolSlot>
+          <ToolSlot id="tool-budget-credibility" pick={toolPick}>
+            <PanelBoundary name="Budget credibility">
+              <React.Suspense fallback={<DeskLoading />}>
+                <BudgetCredibilityPanel key={`bc-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
               </React.Suspense>
             </PanelBoundary>
           </ToolSlot>

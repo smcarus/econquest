@@ -31,6 +31,7 @@ export const COUNTRY_TOOL_GROUPS: CountryToolGroup[] = [
       { id: 'tool-gross-financing-need', label: 'tl_gross_financing_need' },
       { id: 'tool-fiscal-reaction', label: 'tl_fiscal_reaction' },
       { id: 'tool-fiscal-rules', label: 'tl_fiscal_rules' },
+      { id: 'tool-budget-credibility', label: 'tl_budget_credibility' },
       { id: 'tool-fiscal-multipliers', label: 'tl_fiscal_multipliers' },
       { id: 'tool-restructuring', label: 'tl_restructuring' },
       { id: 'tool-bank-sovereign', label: 'tl_bank_sovereign' },

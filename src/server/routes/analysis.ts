@@ -39,6 +39,7 @@ import { remittanceProfile, remitSentence, REMIT_IDS } from '../../utils/remitta
 import { financialInclusion, fiSentence, FI_IDS } from '../../utils/financialInclusion';
 import { commodityTerms, ctSentence, CT_IDS } from '../../utils/commodityTerms';
 import { aidProfile, aidSentence, AID_IDS } from '../../utils/aidReceived';
+import { budgetCredibility, bcSentence, BC_IDS } from '../../utils/budgetCredibility';
 import { foodView, foodSentence, FOOD_IDS } from '../../utils/foodPrices';
 import { faoCpiInput } from '../../utils/faoCpiStore';
 import { disasterView, disasterSentence } from '../../utils/disasters';
@@ -498,6 +499,20 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const a = aidProfile(Object.fromEntries(AID_IDS.map((id) => [id, pick(id)])), new Date().getUTCFullYear(), Boolean(file));
     const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...a, sentence: aidSentence(a, name) });
+  });
+  // Budget credibility (R3, src/utils/budgetCredibility.ts): saved World Bank history only (GF.XPD.BUDG.ZS, from PEFA assessments).
+  app.get('/api/budget-credibility/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    const pick = (id: string): YearValue[] | undefined => {
+      if (!file) return undefined;
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
+    };
+    const b = budgetCredibility(Object.fromEntries(BC_IDS.map((id) => [id, pick(id)])), new Date().getUTCFullYear(), Boolean(file));
+    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...b, sentence: bcSentence(b, name) });
   });
   // Food prices and food security (PA2, src/utils/foodPrices.ts): saved World Bank history, the Pink Sheet moves, and the FAOSTAT file in data/local/fao-cpi/.
   app.get('/api/food-prices/:iso3', async (req, res) => {

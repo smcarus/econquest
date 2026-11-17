@@ -42,6 +42,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Central bank word count | Research | Description, not a tested signal | None |
 | Behavioural policy check | Research | Description, not a tested signal | None |
 | Fiscal rules check | Research | Description, not a tested signal | None |
+| Budget credibility | Research | Description, not a tested signal | None |
 | Who pays for a policy | Research | Description, not a tested signal | None |
 | Debt restructuring calculator | Research | Description, not a tested signal | None |
 | Banks and the government | Research | Description, not a tested signal | None |
@@ -538,6 +539,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: a comparison of published figures with published limits, no forward call.
 - **Limits:** The treaty tests use the bodies' own figures (Eurostat, WAEMU, CEMAC), which can differ from the IMF ones; the EU debt rule also allows debt above 60% that falls at a satisfactory pace, which is not judged; the CEMAC reference balance has no series; national numeric limits are not checked.
 - **Code:** `src/utils/fiscalRules.ts`
+
+### Budget credibility
+
+- **Says:** How much of the budget first approved for each year the government actually spent, the PEFA PI-1 band of each year, and a grade on the PEFA rule.
+- **Rule:** Outturn = primary spending ÷ original approved budget × 100, as published. Band per year: A within 5% of 100, B within 10%, C within 15%, else D. Grade (PEFA PI-1 rule): the best band reached in at least two of the latest three years, only when all three years are published. Average distance from the budget and the count of years below it over the last 15 published years.
+- **Reads:** World Bank WDI GF.XPD.BUDG.ZS (UN goal 16.6.1, from PEFA assessments)
+- **Shows in:** Country Research > History & data (Budget credibility)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published outturn figures put in published PEFA bands, no forward call.
+- **Limits:** Only years covered by a PEFA assessment, so many countries have three years or none; the grade is the app's, not the official PEFA score; interest and outside-financed project spending are left out; the figure says nothing about what the money was spent on (PEFA PI-2).
+- **Code:** `src/utils/budgetCredibility.ts, src/components/BudgetCredibilityPanel.tsx`
 
 ### Who pays for a policy
 

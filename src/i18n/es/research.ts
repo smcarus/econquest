@@ -93,6 +93,7 @@ export const RESEARCH_ES: Messages<typeof RESEARCH> = {
   tl_gross_financing_need: "Necesidad bruta de financiamiento",
   tl_fiscal_reaction: "Reacción fiscal",
   tl_fiscal_rules: "Reglas fiscales",
+  tl_budget_credibility: "Credibilidad del presupuesto",
   tl_fiscal_multipliers: "Multiplicadores fiscales",
   tl_restructuring: "Calculadora de reestructuración de deuda",
   tl_bank_sovereign: "Bancos y gobierno",
