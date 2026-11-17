@@ -100,6 +100,7 @@ export const RESEARCH_FR: Messages<typeof RESEARCH> = {
   tl_bank_sovereign: "Banques et État",
   tl_policy_incidence: "Qui paie une politique",
   tl_yield_curve: "Courbe des taux",
+  tl_full_curves: "Courbes de taux complètes (États-Unis, zone euro)",
   tl_inflation_drivers: "Moteurs de l'inflation",
   tl_rule_family: "Règles de politique",
   tl_local_projections: "Inflation après les changements de taux",

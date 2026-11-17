@@ -229,6 +229,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-yield-curve' },
   },
   {
+    id: 'full_curves',
+    category: 'history',
+    title: "Full yield curves",
+    what: "Every maturity of the US Treasury par yield curve and the ECB euro area government curve each day, a fitted Nelson-Siegel-Svensson curve, moves in level, slope and curvature over a day and a month, and carry and roll-down over three months for each maturity.",
+    sources: "US Treasury Daily Par Yield Curve Rates; ECB euro area yield curves",
+    target: { area: 'country', tab: 'history', anchor: 'tool-full-curves' },
+  },
+  {
     id: 'inflation_drivers',
     category: 'history',
     title: 'Inflation drivers',
