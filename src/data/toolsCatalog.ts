@@ -325,6 +325,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-wb-projects' },
   },
   {
+    id: 'regional',
+    category: 'history',
+    title: "Regional figures",
+    what: "How far apart the regions of the country are: output per person in each region against the national figure, the gap between the richest and poorest regions and whether it has narrowed; GDP per person and unemployment for EU regions; and the Human Development Index by region from your own Global Data Lab file.",
+    sources: "DOSE (Zenodo); Eurostat regional accounts; Global Data Lab (your file)",
+    target: { area: 'country', tab: 'history', anchor: 'tool-regional' },
+  },
+  {
     id: 'food_prices',
     category: 'history',
     title: "Food prices and food security",

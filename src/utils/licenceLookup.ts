@@ -66,6 +66,8 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['ilostat', /ILOSTAT/i],
   ['pinksheet', /Pink Sheet|pink_sheet/i],
   ['wb_projects', /World Bank Projects|Projects & Operations|IDA Statement of Credits/i],
+  ['dose', /\bDOSE\b|subnational economic output/i],
+  ['gdl', /Global Data Lab/i],
   ['worldbank', /World Bank|\bWGI\b|\bWDI\b|\bIDS\b|\bQEDS\b/],
 ];
 

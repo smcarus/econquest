@@ -42,6 +42,8 @@ import { aidProfile, aidSentence, AID_IDS } from '../../utils/aidReceived';
 import { budgetCredibility, bcSentence, BC_IDS } from '../../utils/budgetCredibility';
 import { wbProjectsProfile, wbProjectsSentence } from '../../utils/wbProjects';
 import { loadWbProjects } from '../feeds/wbProjects';
+import { regionalProfile, regionalSentence } from '../../utils/regional';
+import { loadDose, loadEuroRegions, loadGdl } from '../feeds/regional';
 import { iso2For } from '../../data/iso3166Alpha2';
 import { foodView, foodSentence, FOOD_IDS } from '../../utils/foodPrices';
 import { faoCpiInput } from '../../utils/faoCpiStore';
@@ -523,6 +525,15 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const p = wbProjectsProfile(loadWbProjects(), iso2For(iso3), new Date().toISOString().slice(0, 10));
     const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...p, sentence: wbProjectsSentence(p, name) });
+  });
+
+  // Regional figures (R6, src/utils/regional.ts): the saved DOSE and Eurostat copies from the daily download and your Global Data Lab file; never fetched on page open.
+  app.get('/api/regional/:iso3', (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const g = loadGdl();
+    const p = regionalProfile({ iso3, iso2: iso2For(iso3), dose: loadDose(), euro: loadEuroRegions(), gdl: g.rows, gdlFile: g.file });
+    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...p, sentence: regionalSentence(p, name) });
   });
   // Food prices and food security (PA2, src/utils/foodPrices.ts): saved World Bank history, the Pink Sheet moves, and the FAOSTAT file in data/local/fao-cpi/.
   app.get('/api/food-prices/:iso3', async (req, res) => {

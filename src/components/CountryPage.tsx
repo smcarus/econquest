@@ -52,6 +52,7 @@ const FinancialInclusionPanel = lazyNamed(() => import('./FinancialInclusionPane
 const CommodityTermsPanel = lazyNamed(() => import('./CommodityTermsPanel'), 'CommodityTermsPanel');
 const AidPanel = lazyNamed(() => import('./AidPanel'), 'AidPanel');
 const WbProjectsPanel = lazyNamed(() => import('./WbProjectsPanel'), 'WbProjectsPanel');
+const RegionalPanel = lazyNamed(() => import('./RegionalPanel'), 'RegionalPanel');
 const BudgetExecutionPanel = lazyNamed(() => import('./BudgetExecutionPanel'), 'BudgetExecutionPanel');
 const BudgetCredibilityPanel = lazyNamed(() => import('./BudgetCredibilityPanel'), 'BudgetCredibilityPanel');
 const FoodPricesPanel = lazyNamed(() => import('./FoodPricesPanel'), 'FoodPricesPanel');
@@ -583,6 +584,13 @@ export const CountryPage: React.FC<{
             <PanelBoundary name="World Bank projects">
               <React.Suspense fallback={<DeskLoading />}>
                 <WbProjectsPanel key={`wp-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+              </React.Suspense>
+            </PanelBoundary>
+          </ToolSlot>
+          <ToolSlot id="tool-regional" pick={toolPick}>
+            <PanelBoundary name="Regional figures">
+              <React.Suspense fallback={<DeskLoading />}>
+                <RegionalPanel key={`rg-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
               </React.Suspense>
             </PanelBoundary>
           </ToolSlot>

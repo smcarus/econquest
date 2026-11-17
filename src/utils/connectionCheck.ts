@@ -23,6 +23,7 @@ import { BIS_PRIVATE_DEBT_SAMPLE_URL, parseBisPrivateDebtAll } from './sectorBal
 import { BIS_CB_ASSETS_SAMPLE_URL, BIS_USD_CREDIT_SAMPLE_URL, parseBisCbAssets, parseBisUsdCredit } from './bisCreditCycle';
 import { NYFED_SWAPS_SAMPLE_URL, parseNyfedSwaps } from './fedSwapLines';
 import { idaByProject, idaCreditsPageUrl, parseIdaPage, parseProjectsPage, projectsCountryUrl } from './wbProjects';
+import { doseCsvLink, doseLatestUrl, eurostatRegionUnempUrl, latestByGeo } from './regional';
 import { NASA_POWER_SAMPLE_URL, parseNasaPower } from './weatherPower';
 import { CCKP_SAMPLE_URL, parseCckp } from './weatherCountry';
 import { IBTRACS_SAMPLE_URL, ibtracsParser } from './stormTracks';
@@ -303,6 +304,8 @@ export const SOURCE_IDS = [
   'wb_budget_credibility',
   'wb_projects',
   'wb_ida_credits',
+  'dose',
+  'eurostat_regions',
   'worldbank_trade',
   'worldbank_climate',
   'owid_energy',
@@ -838,6 +841,34 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       }
     )
   );
+  add('dose', () =>
+    httpCheck(
+      { id: 'dose', name: 'DOSE regional output (Zenodo)', group: 'free', feeds: 'Output per person by region, 83 countries (Regional figures)' },
+      fetchFn,
+      doseLatestUrl(),
+      T,
+      (r) => {
+        const link = doseCsvLink(parseJson(r.text));
+        return link ? `Latest version ${link.version ?? '?'} (record ${link.record}): ${link.file}` : null;
+      }
+    )
+  );
+
+  add('eurostat_regions', () =>
+    httpCheck(
+      { id: 'eurostat_regions', name: 'Eurostat regional figures (NUTS 2)', group: 'free', feeds: 'GDP per person and unemployment by EU region (Regional figures)' },
+      fetchFn,
+      eurostatRegionUnempUrl(new Date().getUTCFullYear() - 2),
+      T,
+      (r) => {
+        const got = latestByGeo(parseJson(r.text));
+        if (!got) return null;
+        const de = got.values.DE30 ?? Object.entries(got.values).find(([k]) => k.length === 4)?.[1];
+        return `${Object.keys(got.values).length} areas read${de ? `; e.g. unemployment ${de.value}% (${de.year})` : ''}`;
+      }
+    )
+  );
+
 
   add('worldbank_debt_structure', () =>
     httpCheck(
