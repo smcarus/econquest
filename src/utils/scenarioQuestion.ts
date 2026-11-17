@@ -292,3 +292,8 @@ export function sizeQuestion(s: Shock): string {
   const unit = k.unit === 'pts' ? 'percentage points' : k.unit === '%' ? 'per cent' : k.unit;
   return `How large is the change in ${k.label.toLowerCase()}? Give a size in ${unit}, for example "by 2 ${unit}".`;
 }
+
+/** The shocks as a query value for GET /api/council/scenario/:iso3. */
+export function scenarioQuery(sq: ScenarioQuestion): string {
+  return encodeURIComponent(JSON.stringify(sq.shocks.map((s) => ({ kind: s.kind, direction: s.direction, change: s.change, target: s.target }))));
+}

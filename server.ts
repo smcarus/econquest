@@ -1707,7 +1707,7 @@ const MAX_EXTRA_COUNTRIES = 5;
 /** The ask:council route's own reads of this server (see the internal-read step in startServer). */
 const INTERNAL_READ_HEADER = 'x-econquest-internal-read';
 const INTERNAL_READ_KEY = crypto.randomBytes(32).toString('hex');
-const INTERNAL_READ_PATHS = /^\/api\/(series|nowcast|forecast)\//;
+const INTERNAL_READ_PATHS = /^\/api\/(series|nowcast|forecast|council\/scenario)\//;
 
 /** Live rows for the countries asked for: catalog rows from the cache, others pulled for this request. */
 async function liveRowsFor(codes: string[]): Promise<WatchlistItem[]> {

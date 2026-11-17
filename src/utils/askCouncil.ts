@@ -64,8 +64,8 @@ import { carryChart, chartFinding, chartFollowUps, chartRequest, seriesInQuestio
 
 /** Desk agents the planner (or the AI model) can pick. */
 export type CoreAgentId = 'cb' | 'fiscal' | 'politics' | 'rv' | 'fx' | 'spill' | 'calendar' | 'timing' | 'behaviour';
-/** 'doc' = the Policy Document Agent, asked whenever you have added documents; 'chart' = the Chart Agent, when a chart or test is asked for; 'forecast' = the app's nowcasts and forecasts (src/utils/forecastAgent.ts). */
-export type AgentId = CoreAgentId | 'doc' | 'chart' | 'forecast' | 'claim';
+/** 'doc' = the Policy Document Agent, asked whenever you have added documents; 'chart' = the Chart Agent, when a chart or test is asked for; 'forecast' = the app's nowcasts and forecasts (src/utils/forecastAgent.ts); 'scenario' = the Scenario Agent for what-if questions (src/utils/scenarioAgent.ts). */
+export type AgentId = CoreAgentId | 'doc' | 'chart' | 'forecast' | 'claim' | 'scenario';
 export type FigureTag = Quality | 'official' | 'model' | 'document';
 
 export interface AgentFigure {

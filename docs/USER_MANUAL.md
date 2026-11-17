@@ -180,6 +180,17 @@ full council and saved research.
   than picking one. The agents that hold the figures each change moves are always asked (for a Fed
   move: Central Bank, FX, Global Spillover and Relative Value), even when the AI model picks the
   agents. A change to a spending line ("halve defence") gets the scenario card further down.
+  The **Scenario Agent** then puts today's figures beside what they would be after the change, for
+  up to four countries: for a Fed, dollar, financial stress or supply chain change, the currency
+  and policy rate on 15 years of monthly co-movement (scenario engine, with a 90% band, flagged when
+  the shock is larger than any month on record); for a rate change, inflation 6, 12 and 24 months
+  on from local projections (co-movement, not the effect of the rate alone) and the real rate on
+  impact; for borrowing costs, growth or inflation, government debt at the end of the IMF's
+  five-year inputs against the baseline; for a currency fall, the rise in debt from government bonds
+  owed abroad (a lower bound); for oil, food or commodity prices, the first-round change in the trade
+  balance from the country's net trade in that group. A level ("oil at $150", "rates to 45%") is
+  measured against today's figure. A part with no inputs on file reads *Missing* with the reason;
+  when you gave no size, the answer offers the largest monthly move on record, with its month.
 - *Explain on a figure, chart or panel*: an *Explain* link sits beside every figure in an agent
   document and on the Research pages (point at a row on a wide screen to see it), at the top of
   each Research panel, and on every chat chart. It sends that exact figure, with its source and

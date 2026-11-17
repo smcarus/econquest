@@ -53,6 +53,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Policy rule family | Research | Backtest too few cases | v1, 2026-11-07, method 2 |
 | Debt fan chart (bootstrap of past shocks) | Research | Forecast evaluation too few cases | debt_fan_coverage v1, 2026-11-07 |
 | Costed fiscal options | Research | Description, not a tested signal | None |
+| Scenario Agent (what-if questions) | Research | Description, not a tested signal | None |
 | Remittances | Research | Description, not a tested signal | None |
 | Financial inclusion | Research | Description, not a tested signal | None |
 | Commodity prices and terms of trade | Research | Description, not a tested signal | None |
@@ -706,6 +707,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: a stated what-if on stated assumptions, not a forecast or a recommendation.
 - **Limits:** Multiplier range is a guide, not estimated for the country; no confidence or interest-rate feedback.
 - **Code:** `src/utils/costedOptions.ts`
+
+### Scenario Agent (what-if questions)
+
+- **Says:** For a what-if question, today's figures beside what they would be after the stated shock: the currency and policy rate, inflation after a rate change, the debt path, debt from dollar bonds and the first-round trade effect of price changes.
+- **Rule:** Scenario engine co-movement (US rate, dollar, stress, supply chains); local projections of inflation on the policy rate, scaled; the debt identity on the IMF projected inputs with the shock; dollar bonds over GDP x currency move; net trade in the group x price change. Sizes only from the question.
+- **Reads:** BIS policy rates, ECB rates, FRED stress index, NY Fed GSCPI, monthly CPI, IMF WEO and Fiscal Monitor, BIS international debt securities, World Bank trade shares, World Bank Pink Sheet
+- **Shows in:** Council chat (Scenario Agent, on what-if questions)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: a stated what-if on stated assumptions, not a forecast or a recommendation.
+- **Limits:** Co-movement, not cause; linear in the shock; first round only for trade (volumes held); dollar bonds only, a lower bound for currency debt; a shock larger than any month in the sample is flagged as extrapolation.
+- **Code:** `src/utils/scenarioAgent.ts, src/utils/scenarioQuestion.ts`
 
 ### Remittances
 
