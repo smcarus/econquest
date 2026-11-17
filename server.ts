@@ -157,6 +157,7 @@ import { toLive } from './src/utils/liveFigures';
 import { EVENT_LABEL, openIssues, watchFigures, type FigureEventKind } from './src/utils/figureWatch';
 import { readEvents, readLedger, saveWatch } from './src/utils/figureWatchStore';
 import { DEFAULT_WATCHLISTS } from './src/data/presetsAndBaselines';
+import { ADDED_COUNTRIES_KEY, ADDED_COUNTRIES_MAX, pickAddedCountries } from './src/utils/addedCountries';
 import { defaultProvider, isLightMode, LIGHT_GDELT_NOTE, lightModeCountries, skipGdeltRaw } from './src/utils/lightMode';
 import { isModelPlaceholder, MODEL_FIELD_MISSING } from './src/utils/councilResult';
 import { FIGURE_LIST, FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
@@ -206,6 +207,7 @@ import { createServer as createViteServer } from 'vite';
 import { ThinkingLevel, Type } from '@google/genai';
 import {
   SOVEREIGN_CATALOG,
+  registerCustomSovereignInCatalog,
   buildBaselineOpenData,
   buildDefaultAssessmentRun,
   buildOfficialCatalystCalendar,
@@ -590,10 +592,30 @@ function savePreloadState(): void {
  * the watchlist (src/utils/lightMode.ts).
  */
 function preloadCountries(): Array<{ iso3: string; countryName: string }> {
+  syncAddedCountries();
   const arg = process.argv.find((a) => a.startsWith('--countries='))?.slice('--countries='.length) || process.env.PRELOAD_COUNTRIES || '';
   const only = new Set(arg.split(',').map((x) => x.trim().toUpperCase()).filter(Boolean));
   if (!only.size && isLightMode(process.env)) for (const iso3 of lightModeCountries(workspaceValuesOnDisk(), DEFAULT_WATCHLISTS, new Set(SOVEREIGN_CATALOG.map((c) => c.iso3)))) only.add(iso3);
   return SOVEREIGN_CATALOG.filter((c) => !only.size || only.has(c.iso3)).map((c) => ({ iso3: c.iso3, countryName: c.countryName }));
+}
+/** The built-in countries, before any added country joins the list. */
+const BUILT_IN_ISO3 = new Set(SOVEREIGN_CATALOG.map((c) => c.iso3));
+/** Added countries left out of the daily download because the limit was reached (LI1). */
+let addedOverLimit: string[] = [];
+/**
+ * Countries you added (Menu > Add a country) join the server's country list, so the start-up
+ * download, the daily run and the data API cover them like the built-in ones; a country you
+ * removed leaves it again (src/utils/addedCountries.ts).
+ */
+function syncAddedCountries(): void {
+  const pick = pickAddedCountries(workspaceValuesOnDisk(), BUILT_IN_ISO3);
+  const want = new Set(pick.countries.map((c) => c.iso3));
+  for (let i = SOVEREIGN_CATALOG.length - 1; i >= 0; i--) {
+    const iso3 = SOVEREIGN_CATALOG[i].iso3;
+    if (!BUILT_IN_ISO3.has(iso3) && !want.has(iso3)) SOVEREIGN_CATALOG.splice(i, 1);
+  }
+  for (const c of pick.countries) registerCustomSovereignInCatalog(c);
+  addedOverLimit = pick.overLimit;
 }
 /** The shared workspace and every account's own, for the light-mode country list. */
 function workspaceValuesOnDisk(): Array<Record<string, string | undefined>> {
@@ -917,7 +939,7 @@ function preloadDisk() {
 }
 function preloadReply() {
   const plan = preloadPlan();
-  return { state: preloadState, summary: summarisePreload(plan, preloadState), disk: preloadDisk(), file: 'data/local/preload.json' };
+  return { state: preloadState, summary: summarisePreload(plan, preloadState), disk: preloadDisk(), file: 'data/local/preload.json', added: { overLimit: addedOverLimit, max: ADDED_COUNTRIES_MAX } };
 }
 
 /** Starts a run (or returns the one going). log gets one line per step. */
@@ -3109,6 +3131,11 @@ async function supremeRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
 
 async function startServer() {
   const app = express();
+  try {
+    syncAddedCountries();
+  } catch (err: any) {
+    console.warn(`[countries] could not read the countries you added: ${err?.message || err}`);
+  }
   const PORT = Number(process.env.PORT) || 3000;
   app.disable('x-powered-by');
   // Behind a reverse proxy (the Caddy "https" profile): trust its X-Forwarded-* headers, so the
@@ -4014,6 +4041,7 @@ async function startServer() {
       const file = workspaceFor(res);
       const before = loadWorkspace(file).values[req.params.key] ?? null;
       const w = setWorkspaceValue(file, req.params.key, value);
+      if (req.params.key === ADDED_COUNTRIES_KEY) syncAddedCountries();
       // The page re-sends these on every load; only a real change goes in the audit log.
       if (before !== value) appendAudit(AUDIT_FILES, { kind: req.params.key === 'econquest_ai_runtime_config_v1' ? 'model' : 'workspace', summary: `Changed ${WORKSPACE_KEYS[req.params.key] || req.params.key}` });
       res.json({ ok: true, updatedAt: w.updatedAt[req.params.key] || null });

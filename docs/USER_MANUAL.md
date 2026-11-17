@@ -1421,6 +1421,11 @@ World Bank and IMF history, and last the GDELT raw files (see *GDELT events and 
 charts and the History tab then load from disk and keep working without a connection. Screens still
 show only the newest value; the full runs are behind History & data and the downloads.
 
+Countries you added (Menu > Add a country) are part of this pass and of the daily run, like the
+built-in ones, so they also get saved history, the As-of day and alerts. At most 25 added countries
+are taken, in the order you added them; any beyond that are named on the Offline data page and are
+still fetched live when you open them.
+
 In the app: Menu > Offline data > *Download all country data*. The window shows the step running,
 countries ready, the size on disk and an estimate for what is left (the average of the countries
 already saved; "known after the first country" until then). You can close it; the download carries
