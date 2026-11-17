@@ -356,6 +356,19 @@ on markets for the whole watchlist. Click a country in Compare or My holdings to
 *Back to Compare countries* (or *My holdings*) returns you. Research opens on the scope you used last.
 On a phone the scopes read *<country> · Compare · Holdings*.
 
+To keep each section to a screen or two, long sections are split up. **Summary**, **Sources** and **My
+holdings** show one figure group at a time from a row of buttons; *Show all* shows every group.
+**Markets & signals** for one country is in three parts: *Economy and policy*, *Markets and
+positioning*, and *Risks and links*. **Compare countries** shows MarketEdge, scenario exposure and the
+Fed balance sheet as parts, and *Where data and price disagree* lists four countries until you press
+*Show all*. In **History & data** for one country, the history chart comes first, figures with no
+history fold into one line (*No history yet*), and the tools sit in a menu, *Tools for <country>*, in
+eight groups: Debt and budget, Rates and prices, External and currency, Growth and forecasts, People
+and development, Risks and shocks, Look back, and Learn and convert. Pick one tool and it opens below
+the chart; the menu becomes a *Tool* list to switch tools, and *All tools* brings the menu back. Links
+from Menu > Tools open the tool straight away. Nothing was taken out: every panel described below is
+one of these tools.
+
 ### Compare countries
 
 Your watchlist side by side. Opening it does not count as a visit for *Since your last visit*.
@@ -912,7 +925,15 @@ count. A signal against a position is a reason to look, not a call to trade.
 
 ## 3. Reports
 
-**Policy reviews.** At the top of Reports. A step-by-step case file for a principal, economist or
+Reports opens with five tabs, each shown on its own: **Write a note** (the report builder: country
+note, issuer note, sustainability, portfolio and client reviews, and the council brief), **Policy
+reviews**, **Council documents** (agent and synthesis documents saved from Council chat), **Notebooks**
+(saved research grouped by topic, pinned figures and the working-paper bundle) and **Teaching** (a past
+rate decision as a student handout and a teacher copy). Links from Tools, worked examples and Council
+chat open the right tab. In Write a note, the text and the preview scroll inside a fixed height; on a
+phone they take turns.
+
+**Policy reviews.** In the Policy reviews tab. A step-by-step case file for a principal, economist or
 politician looking for ways to improve policy in one country, with the council's help. Start one with
 *New policy review*, or with *Start a policy review* under any Council chat answer (the question
 becomes the problem). Six steps, in order:

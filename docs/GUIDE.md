@@ -7,7 +7,8 @@ app is installed and open in your browser (see [INSTALL.md](./INSTALL.md)). For 
 in detail, see the [user manual](./USER_MANUAL.md); for any term you do not know, the
 [glossary](./GLOSSARY.md).
 
-About the screenshots: they were taken on 13 November 2026 from a local build of the main branch,
+About the screenshots: they were taken on 13 November 2026 (four retaken or added on 17 November)
+from a local build of the main branch,
 replaying feed replies recorded on 5 November 2026 from the sources whose terms allow passing data
 on, with no AI model set up. That is why many figures read **Missing** and the council shows no
 written summary in them. On your computer, with the feeds reachable and an AI model chosen, more
@@ -77,6 +78,33 @@ A new install shows dashes until the first data download finishes, which can tak
    or **Run the full council**: nine agents on three desks debate one country, and the app asks for
    your approval before the final report.
 
+**Ask what a change would do.** Council chat also answers what-if questions.
+
+![Council chat after a what-if question: the Scenario read from your question box with the Fed rate and the dollar and their sizes, the agents' findings, and the Agents panel with the Scenario Agent first](images/22-what-if.png)
+
+1. Ask the change in your own words, with its size: "What would happen to Brazil if the Fed raised
+   rates by 1 point and the dollar strengthened 5%?" You can name a central bank or Fed rate,
+   government borrowing costs, the dollar, the currency, oil, food or commodity prices, financial
+   stress, supply chain pressure, growth or inflation.
+2. **Scenario read from your question** shows each change the app understood, with its size. If you
+   gave no size, it asks you for one; it never picks one for you.
+3. The **Scenario Agent** sets today's figures beside the figures after the change, for up to four
+   countries, and adds what happened in past episodes of the same kind and what published studies
+   found (each study with its page and DOI; a study's number is an average over many countries).
+   Parts with no figures read Missing with the reason.
+4. With an AI model set up, the answer comes in eight parts, from *Where things stand now* to *What
+   would change the answer*, each marked with the kind of evidence it rests on: *Data*, *App
+   calculation*, *Past*, *Published study* or *Interpretation*.
+5. Press **Change the sizes**, change a size or take a change out, and press **Ask again with these
+   changes**. The new answer comes as a follow-up, so you can compare the two. A debt path has **Keep
+   for the trade-off chart**, which puts it on the chart under Debt sustainability.
+
+If you run a research-tools server of your own and set it up (Menu > Settings > Research tools), a
+**Quant desk** also answers questions about backtests, forecasts, volatility, nowcasts, option prices,
+drawdowns or Sharpe ratios, with each figure's link, data-through date and the server's label
+("Hypothetical, past performance; not a recommendation"). It is off until you set it up
+([RESEARCH_TOOLS.md](./RESEARCH_TOOLS.md)).
+
 ## 4. Study one country
 
 Open **Research**. The country picker is at the top left; the strip beside it shows debt, bond spread,
@@ -93,7 +121,9 @@ now** pulls that country's figures again.
    for the reason and what would fill it.
 3. **What is this?** under a figure explains it. **Explain** asks the council what it means for this
    country.
-4. **Write the country note** turns the page into a report draft.
+4. The figures come one group at a time: pick a group from the row of buttons, or **Show all**.
+   **Sources** and **My holdings** work the same way.
+5. **Write the country note** turns the page into a report draft.
 
 ### Markets & signals
 
@@ -106,6 +136,8 @@ now** pulls that country's figures again.
    passed a test yet, and the badge says so.
 3. Prediction-market odds (Kalshi, Polymarket), bond spreads and currency figures appear here when
    their sources answer.
+4. The page is in three parts: **Economy and policy**, **Markets and positioning**, and **Risks and
+   links**.
 
 ### History & data
 
@@ -117,11 +149,20 @@ now** pulls that country's figures again.
 3. Under the chart: **Download this series** (CSV or Excel), **Download every series for the
    country**, **Cite** (plain text, BibTeX or RIS), **Flag** (report a problem) and **Publish chart**
    (PNG or SVG).
-4. Scroll down for the analysis panels: nowcasts and forecasts with 50, 70 and 90% bands, the output
-   gap, debt sustainability, gross financing need, reserve adequacy, external sustainability, crisis
+4. Below the chart, **Tools for <country>** lists every analysis tool in eight groups: Debt and budget,
+   Rates and prices, External and currency, Growth and forecasts, People and development, Risks and
+   shocks, Look back, and Learn and convert. Press one and it opens below the chart. To switch, pick
+   another from the **Tool** list, or press **All tools** to see the menu again. Figures with no
+   history yet fold into one line in the list on the right.
+
+   ![Tools for Brazil: the History & data tools menu in eight groups, from Debt and budget to Learn and convert](images/21-history-tools.png)
+
+   The tools include nowcasts and forecasts with 50, 70 and 90% bands, the output gap, debt
+   sustainability, gross financing need, reserve adequacy, external sustainability, crisis
    early-warning, the yield curve, inflation drivers, growth accounting, policy rules, fiscal
    what-ifs and a small gap model you fill in yourself.
-5. Panels for lower-income countries follow: **Remittances** (beside exports, investment and aid, and
+5. Tools for lower-income countries, under People and development and Risks and shocks:
+   **Remittances** (beside exports, investment and aid, and
    the cost of sending US$200 against the UN 3% goal), **Financial inclusion** (who has an account,
    by sex and income), **Commodity prices and terms of trade** (what the latest world price moves mean
    for the country, as % of GDP), **Aid received**, **Food prices and food security** and **Natural
@@ -158,7 +199,35 @@ now** pulls that country's figures again.
    200 km of the country since 1980, from NOAA's IBTrACS tracks. Nothing is downloaded until you
    press **Download storm tracks from NOAA**; you can also save an IBTrACS file in
    `data/local/ibtracs/`.
-10. The **Country risk scorecard** sets governance, armed conflict, unrest, geopolitical risk,
+10. Tools for people who run or judge a budget, under **Debt and budget** and **People and development**:
+    - **Budget credibility**: how much of the budget first approved each year the government actually
+      spent, with the PEFA band of each year (A within 5% of the budget, B within 10%, C within 15%,
+      D further) and a grade worked out by the app (not the official PEFA score).
+    - **Budget execution (your file)**: press **Download the template**, fill in your approved budget
+      and monthly spending by ministry or programme, say which month the fiscal year starts, the unit
+      and the source, and load the file. Each line shows its spending against the share of the year
+      gone; lines more than 10 points behind or ahead are marked, and months with no figure are
+      listed, never filled in. The file stays on your computer.
+    - **World Bank projects**: projects under way in the country, largest first, with the amount
+      committed, the share of planned time gone and, for IDA credits and grants, the share paid out.
+      A project paying out slowly for its age is marked as a reason to look closer.
+    - **Regional figures**: output per person in each region, the gap to the national figure and
+      whether regions drew closer in ten years; for EU and EFTA countries, GDP per person and
+      unemployment by region; and the Human Development Index by region if you save the Global Data
+      Lab file in `data/local/gdl/`.
+11. Tools for economists and traders, under **Rates and prices** and **Growth and forecasts**:
+    - **Full yield curves (US, euro area)**: every maturity of the US Treasury and euro area curves
+      each day, a fitted curve, the level, slope and curvature with their moves over a day and a
+      month, and carry and roll-down over three months for each maturity.
+    - **Data surprises**: each release against what was expected just before it (Brazil's Focus
+      survey, the ECB's survey of forecasters, the Kalshi CPI market for the United States, or the
+      app's own GDP nowcast), and the **Inflation surprise index**, which sums up recent inflation
+      surprises (also a card on Today for Brazil, the euro area and the United States). A
+      description, not a signal.
+    - **Nowcast and forecasts** adds **Ranges from past misses**: a 70% and 90% range on each tested
+      step, from how far the forecast missed for this country in its test. Fewer than 8 past cases
+      reads Missing.
+12. The **Country risk scorecard** sets governance, armed conflict, unrest, geopolitical risk,
     capital account openness (the Chinn-Ito index, credited to Chinn and Ito 2006) and the economy
     side by side, each with its source and year. It gives no overall score. A test of whether weak
     governance comes before a default was fixed in advance on 13 November 2026; until it is run the
@@ -185,11 +254,13 @@ projections. The sentence above the chart states the latest reading and where it
 
 ![As of a past day: pick a date to see the figures the app held then beside today's](images/08-as-of-past-day.png)
 
-1. In **History & data**, scroll to **As of a past day**.
+1. In **History & data**, open **As of a past day** from the tools menu (under Look back).
 2. Pick a date. The table shows each figure as the app held it that day beside today's figure and the
    change. Every daily pull is archived, so nothing is lost.
-3. **IMF forecasts by edition** (just above) shows how the IMF's view of the country changed from one
-   World Economic Outlook to the next, once past editions are saved (see the panel's own note).
+3. **IMF forecasts by edition** (another tool under Look back) shows how the IMF's view of the country
+   changed from one World Economic Outlook to the next, once past editions are saved (see the panel's
+   own note). Under its table, **Range from past IMF misses** puts a 70% and 90% range around the
+   latest edition's projections, from how far past editions missed for this country.
 
 ## 6. Compare countries
 
@@ -200,7 +271,9 @@ projections. The sentence above the chart states the latest reading and where it
 2. **Story leads** points to records, big moves and revisions in the official figures.
 3. **Where data and price disagree** ranks countries where markets and the data point different
    ways, each with the figures behind it.
-4. Press a country's name to open it on its own.
+4. MarketEdge, scenario exposure and the Fed balance sheet are separate parts; **Where data and price
+   disagree** shows four countries until you press **Show all**.
+5. Press a country's name to open it on its own.
 
 **My holdings**, the third view, does the same for a list of bonds or positions you load from a CSV
 file (Menu > Your data, or the template in the holdings screen).
@@ -209,11 +282,12 @@ file (Menu > Your data, or the template in the holdings screen).
 
 ![Reports page: Policy reviews, Council documents and the report builder with a country note preview](images/11-reports.png)
 
-**Reports** holds policy reviews, documents you saved from Council chat, and the report builder.
+**Reports** has five tabs, each on its own: **Write a note** (the report builder), **Policy reviews**,
+**Council documents** (documents you saved from Council chat), **Notebooks** and **Teaching**.
 
 To write a report:
 
-1. Under **Build the report**, pick a type: Country note, Issuer note, Sustainability assessment,
+1. In **Write a note**, under **Build the report**, pick a type: Country note, Issuer note, Sustainability assessment,
    Portfolio review, Client portfolio review or Council brief.
 2. Tick the sections you want. The draft on the left updates and the preview shows how it will look.
 3. Edit the text, then **Copy**, download as **Markdown**, or **Print or save PDF**. Sources and dates
@@ -223,7 +297,7 @@ To review a policy:
 
 ![New policy review form: country, as-of date, the problem, the goal indicator, direction, target, constraints and who it is for](images/12-policy-review.png)
 
-1. Press **New policy review**.
+1. Open the **Policy reviews** tab and press **New policy review**.
 2. Choose the country and the **As of** date (every later step reads the data as it stood on that day).
 3. Describe the problem in a sentence or two, for example "Inflation is well above target while
    growth is slowing and debt is rising".
@@ -258,6 +332,23 @@ To review a policy:
    and your cases are the change in value for a holder. The one-page brief ends with these parts, and
    at 12 and 24 months a currency review's cases are checked against what the exchange rate did.
 
+10. In the memo, **For people** gives a plain summary for constituents: what changes, the cost per
+    person, who gains and who pays, the regions furthest behind and what three countries in a similar
+    position saw next. It is written from fixed sentences filled with the figures, not by AI, and is
+    added to the one-page brief.
+
+To write a working paper you can check later:
+
+1. In Council chat, ask for a chart ("chart Brazil's policy rate since 2015"). Under the Chart Agent's
+   chart, press **Pin to notebook** and pick a notebook. The app keeps the date the figures run to and
+   a fingerprint of the figures (a short code that changes if any figure changes).
+2. Open **Reports > Notebooks**. **Working-paper bundle (.zip)** downloads one zip: a draft in
+   Markdown with your notes, a folder for each pinned figure with its data and Python, R and Stata
+   scripts, a citation file and a list of every file's fingerprint.
+3. Later, press **Check it still holds** on a pinned figure. It answers *Same*, *Revised* (with the old
+   and new values) or *Source no longer answers*. `npm run notebook:check` checks every pinned figure
+   at once.
+
 ## 8. Choose an AI model
 
 ![Settings > AI model with Ollama selected: where Ollama runs, the fast model qwen2.5:7b, the referee model qwen2.5:32b and the Allow a 14B referee switch](images/13-settings-ai.png)
@@ -289,6 +380,9 @@ Which model fits which computer, and the settings the app uses, are in the READM
   country, look back, your portfolio, write and share), and **Data connections**.
 - **Offline data**: download all country data for use without internet, and see how much space it
   takes.
+- **Settings > Research tools**: the address and token of a research-tools server you run yourself,
+  for the Quant desk in Council chat. Off until both are set; **Test connection** lists the tools the
+  token can see, and every call goes in the audit log, never the token.
 - **Data health**: which sources arrive, which fail, and which figures were revised. Its **Daily
   download** tab follows the daily download as it runs: each part, what failed and why, sources that
   need a key or a file, and what to download by hand.

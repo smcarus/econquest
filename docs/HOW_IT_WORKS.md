@@ -1,6 +1,6 @@
 # How EconQuest works, in plain words
 
-**Version 1.3, 14 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
+**Version 1.4, 17 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
 validated advice.
 
 This guide explains, without jargon, where EconQuest's figures come from, what its AI does and does
@@ -28,9 +28,11 @@ Any term you don't know is explained in the [Glossary](./GLOSSARY.md).
 11. [What if a past crisis happened again?](#11-what-if-a-past-crisis-happened-again)
 12. [Weighing one measure: the policy council](#12-weighing-one-measure-the-policy-council)
 13. [Weather, disasters and insurance, explained](#13-weather-disasters-and-insurance-explained)
-14. [Quests: coming later](#14-quests-coming-later)
-15. [How much the app explains](#15-how-much-the-app-explains)
-16. [What it cannot do](#16-what-it-cannot-do)
+14. [Asking "what if?"](#14-asking-what-if)
+15. [Tools for the people who run and judge policy](#15-tools-for-the-people-who-run-and-judge-policy)
+16. [Quests: coming later](#16-quests-coming-later)
+17. [How much the app explains](#17-how-much-the-app-explains)
+18. [What it cannot do](#18-what-it-cannot-do)
 
 ---
 
@@ -136,6 +138,15 @@ appear on any screen or in anything sent out; the app then shows only how many a
   the app to download or pass on their files; for those, you download the file yourself and put it in
   a folder the [install guide](./INSTALL.md#files-you-save-yourself) names, and until then the parts
   that need it read Missing.
+- **Figures for the people who run a budget or judge one.** How much of the approved budget each
+  government really spent (from PEFA assessments, published by the World Bank), the World Bank
+  projects under way in the country and how fast they pay out, and how far apart a country's regions
+  are (output per person by region from DOSE, a dataset built from national statistics offices'
+  figures, and Eurostat for European regions). Your own monthly spending file can be loaded too; it
+  never leaves your computer.
+- **Figures for markets.** Every maturity of the US and euro area government bond curves each day, and
+  each inflation release set against what forecasters or a prediction market expected just before it
+  came out.
 - **Credit where it is due.** Some figures come from researchers' own files, such as the Chinn-Ito
   index of how open a country is to money moving in and out. Those are shown with the authors' names
   and never passed on to others.
@@ -156,6 +167,13 @@ Two automatic checks run on every AI answer before you see it:
   the answer.
 - **The stance check.** If an agent says, for example, that a central bank's policy is "tight", and
   the AI's sentence calls it "loose", that sentence is removed too.
+
+Two more agents are also fixed code. The **Scenario Agent** answers "what if?" questions with the
+app's own arithmetic ([section 14](#14-asking-what-if)). The **Quant desk** is off unless you run a
+research-tools server of your own and give the app its address: it then passes on figures that server
+works out (backtests, volatility, option prices), each with a link to where it came from and the
+server's label "hypothetical, past performance; not a recommendation". The app's own figures, tests
+and badges never use them.
 
 The AI never supplies figures, and every AI-written answer is labelled as written by an AI model,
 with the name of the model. The checks catch made-up numbers and contradicted calls; they cannot catch
@@ -365,7 +383,78 @@ countries least able to absorb them. The app has a set of tools for this:
 All of these describe the past; none is a tested forecast, and the records are short for the rarest
 events.
 
-## 14. Quests: coming later
+## 14. Asking "what if?"
+
+You can ask Council chat what a change would do, in your own words: "What would happen to Turkey if
+the Fed raised rates by 1 point and the dollar strengthened 5%?"
+
+- **The app reads the change back to you first.** Above the answer, *Scenario read from your question*
+  lists each change it understood, with the size you gave. If you gave no size, it asks you for one;
+  it never picks a size for you. You can press *Change the sizes*, edit them and ask again, and then
+  compare the two answers.
+- **Today beside after.** The Scenario Agent puts today's figures (the policy rate, inflation, the
+  currency, government debt, the trade balance) beside what they would be after the change, for up to
+  four countries. It uses the app's own tools: how the currency and rates have moved together over 15
+  years, how inflation has followed rate changes in the past, the arithmetic of government debt on the
+  IMF's inputs, and how much of the country's trade is oil, food or other commodities. Moving
+  together in the past is not proof that one thing caused the other, and the answer says so.
+- **What happened before.** It lists past episodes of the same kind (the 2013 "taper tantrum", 2022,
+  the 2008 crisis and others, each named), what the country's currency and bond yields did then, and
+  how unusual the new level would be in the country's own record ("the highest since June 2024").
+- **What research finds.** It sets the app's numbers beside a short list of peer-reviewed studies kept
+  in the app, each with the page the number comes from. A study's number is an average over many
+  countries, not an estimate for yours.
+- **An answer in eight parts.** With an AI model set up, the answer comes in eight parts: where things
+  stand now, the change, first effects, how it spreads, what history shows, what research finds,
+  trends now, and what would change the answer. Each part says what kind of evidence it rests on
+  (today's data, the app's own sum, the past, a published study, or the AI model's reading), and a
+  part with no figures reads Missing instead of being filled in. Every sentence goes through the same
+  number check as any answer.
+
+None of this is a forecast. It shows what the figures and the past say about a change you describe, so
+you can judge it yourself.
+
+## 15. Tools for the people who run and judge policy
+
+The app was checked against what five kinds of users need: a policy researcher, a public
+administrator, a politician, an economist and a market trader. The gaps were filled with these tools,
+all under Research > One country > History & data unless noted:
+
+- **Budget credibility.** How much of the budget first approved each year the government actually
+  spent, with the grade bands of PEFA (the international standard for judging public finances): A
+  within 5% of the budget, B within 10%, C within 15%, D further. The app works out the grade from
+  the published figures, so it is not the official PEFA score.
+- **Budget execution.** For ministry and treasury staff: load your approved budget and monthly
+  spending by ministry or programme from a simple file, and see each line's spending against the share
+  of the year gone. Months with no figure are listed, never filled in. The file stays on your computer.
+- **World Bank projects.** Roads, schools, clinics and power projects under way in the country, how
+  much was committed, how much of the planned time has gone, and (for the poorest countries) how much
+  has been paid out. A project paying out slowly for its age is marked as a reason to look closer.
+- **Regional figures.** A country can grow while some regions fall behind. Output per person in each
+  region, the gap to the national figure, and whether regions have drawn closer in ten years.
+- **What this means for people.** In a policy review, *For people* gives a plain summary for
+  constituents: what changes, the cost per person, who gains and who pays, the regions furthest
+  behind, and what three countries in a similar position saw next. It is written from fixed sentences
+  filled with the figures, not by AI.
+- **A working paper you can check later.** Pin a chart from Council chat to a research notebook. The
+  app keeps the date its figures run to and a fingerprint of the figures (a short code that changes if
+  any figure changes). The notebook downloads as one zip with your draft, the data, a citation file and
+  scripts that redo each test. *Check it still holds* reads the figures again later and says whether
+  they are the same, revised or no longer available, because official figures are often revised.
+- **Ranges from past misses.** Instead of one number, a range built from how far past
+  forecasts missed for this country: the IMF's past editions against what really happened, and the
+  app's own forecasts against their tested misses. Fewer than 8 past cases reads Missing.
+- **Full yield curves.** Every maturity of the US and euro area government curves each day, a smooth
+  fitted curve, and how its level, slope and bend moved over a day and a month.
+- **Data surprises.** Each inflation release set against what was expected just before it (Brazil's
+  central bank survey of forecasters, the ECB's survey, a prediction market for the United States),
+  and one inflation surprise index that sums up recent surprises. A test of whether the index tells
+  anything about rate rises was written down and locked before the index was first shown; it can run
+  only after several years of releases.
+
+All of these describe; none is a tested forecast, and each says where its figures come from.
+
+## 16. Quests: coming later
 
 Quests are built but **switched off**: you can't use them yet. When they go live, a Quest will be an
 open question that anyone can answer, for example "Will Brazil's policy rate be above 14% on 31
@@ -379,7 +468,7 @@ reserves?"). These are **Debate Quests**: people argue a position, the app check
 quote against its own, and nobody is ever scored or declared right. An AI model writes a short opening
 brief on each side; it is labelled as AI-written and is not allowed to state any figure of its own.
 
-## 15. How much the app explains
+## 17. How much the app explains
 
 The help button at the top of the page sets how much the app explains:
 
@@ -394,7 +483,7 @@ contain no figures of their own. The one exception is the **Explain** button on 
 the council: that answer is written by the AI model, labelled as such, and number-checked like any
 other.
 
-## 16. What it cannot do
+## 18. What it cannot do
 
 - **The past is not the future.** A rule that worked on past data may stop working. That is why
   passing rules keep writing down their calls in advance and are scored as the results come in.
@@ -421,5 +510,5 @@ other.
 
 ---
 
-*How EconQuest works, version 1.3 (14 November 2026). Text licensed under CC BY 4.0: you may share and
+*How EconQuest works, version 1.4 (17 November 2026). Text licensed under CC BY 4.0: you may share and
 adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*
