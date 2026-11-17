@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Countries you add in the daily download (LI1): the server now reads the countries you added
+  (Menu > Add a country) from the shared workspace and each account's own, and puts them in its
+  country list. The start-up download and the daily run save them like the built-in countries, so
+  they get saved history, the As-of day and alerts; a country you remove leaves the list again.
+  Before, the server dropped them as unknown, in light mode too, although the install guide said
+  light mode fetched them. At most 25 added countries are taken; any beyond that are named on the
+  Offline data page (English, Spanish, French, Portuguese).
+
 - Documentation brought up to date with Ask Council chat (`ask:council`), the Research and Reports
   layout, the deep what-if work, the five user roles, the feed check fixes, the outside research
   tools and the Quant desk: README and walk-through guide in English, Spanish, French and Portuguese

@@ -17,6 +17,8 @@ type PreloadReply = {
   summary: PreloadSummary;
   disk: { bytes: number; remainingEstimateBytes: number | null; countriesOnDisk: number };
   file: string;
+  /** Added countries left out of the daily download (LI1). */
+  added?: { overLimit: string[]; max: number };
 };
 type OnlineReply = {
   online: boolean;
@@ -253,6 +255,12 @@ export function OfflineDataDialog({ onClose }: { onClose: () => void }) {
               </>
             )}
           </div>
+
+          {reply?.added && reply.added.overLimit.length > 0 && (
+            <p className="text-amber-700 dark:text-amber-300">
+              {t('od_addedOverLimit', { n: reply.added.overLimit.length, codes: reply.added.overLimit.join(', '), max: reply.added.max })}
+            </p>
+          )}
 
           {s && s.problems.length > 0 && (
             <div>
