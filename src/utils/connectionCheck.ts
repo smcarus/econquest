@@ -136,6 +136,8 @@ export interface CheckOptions {
   now?: Date;
   /** Per request, ms. The Brazil Treasury file gets at least 90 s because it is about 15 MB from a slow server. */
   timeoutMs?: number;
+  /** Pause before the one retry of an ECB Data Portal check that got no answer (default 5 s, none when a test supplies its own fetch). */
+  ecbRetryMs?: number;
   /** AI settings as the app uses them (the in-app settings win over .env). */
   ai?: { provider?: string; ollamaBaseUrl?: string; ollamaQuickModel?: string; ollamaDeepModel?: string; openAiBaseUrl?: string; geminiModel?: string };
   /** File reader for the own CDS file (injected in tests). */
@@ -1637,7 +1639,10 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
   add('ecb_spf', async () => {
     let lastText: string | undefined;
     const key = ECB_SPF_SERIES[2].key;
-    const res = await httpCheck(
+    // The ECB Data Portal cut this request on the Mac (17 November 2026) while the yield curve and
+    // real-time database checks went to the same server at the same moment, and the same address
+    // opened in a browser. So it is asked a second time, after the others, before it counts as failed.
+    const once = () => httpCheck(
       { id: 'ecb_spf', name: 'ECB Survey of Professional Forecasters', group: 'free', feeds: 'Euro-area HICP inflation expected one year, two years and longer term ahead (quarterly)' },
       fetchFn,
       ecbSpfUrl(key, 8),
@@ -1651,6 +1656,12 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       { headers: { Accept: 'text/csv' } },
       `The ECB answered, but not with TIME_PERIOD and OBS_VALUE columns for SPF.${key}.`
     );
+    let res = await once();
+    if (res.state === 'no_answer') {
+      await new Promise((r) => setTimeout(r, opts.ecbRetryMs ?? (opts.fetchFn ? 0 : 5000)));
+      const again = await once();
+      res = again.state === 'no_answer' ? { ...again, detail: `${again.detail} (asked twice, 5 s apart)` } : again;
+    }
     return res.state === 'bad_reply' || res.state === 'refused' ? { ...res, detail: `${res.detail}${replyStart(lastText)}` } : res;
   });
 

@@ -277,14 +277,13 @@ let surveysCache: { at: number; value: InflationSurveys } | null = null;
 export async function fetchInflationSurveys(): Promise<InflationSurveys> {
   if (surveysCache && Date.now() - surveysCache.at < (surveysCache.value.focus.length && Object.keys(surveysCache.value.spf).length ? 12 : 1) * 60 * 60 * 1000) return surveysCache.value;
   const spf: InflationSurveys['spf'] = {};
-  // 45 s limit: the ECB Data Portal did not answer the connection check within 15 s on 17 November 2026.
-  await Promise.all(
-    ECB_SPF_SERIES.map(async (d) => {
-      const csv = await fetchTextWithTimeout(ecbSpfUrl(d.key), 45_000);
-      const obs = csv ? parseEcbCsv(csv) : [];
-      if (obs.length) spf[d.key] = obs;
-    }),
-  );
+  // One series at a time, 30 s each: on 17 November 2026 the ECB Data Portal cut requests sent to
+  // it at the same moment as others, while one at a time it answered.
+  for (const d of ECB_SPF_SERIES) {
+    const csv = await fetchTextWithTimeout(ecbSpfUrl(d.key), 30_000);
+    const obs = csv ? parseEcbCsv(csv) : [];
+    if (obs.length) spf[d.key] = obs;
+  }
   let focus: InflationSurveys['focus'] = [];
   let focusReason: string | undefined;
   try {
