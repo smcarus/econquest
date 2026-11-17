@@ -114,3 +114,14 @@ test('the answer: Missing with reasons, the largest past move offered when no si
   const sample = scenarioFinding(parseScenario('What if the lira fell 20% against the dollar?')!, { ...TUR, cpiSource: 'sample', policyRateSource: 'sample' } as LiveWatchlistItem, undefined).finding!;
   assert.ok(!sample.figures.some((f) => f.label === 'Now: inflation' || f.label === 'Now: policy rate'));
 });
+
+test('debt paths come back as items to keep for the trade-off chart (WI6)', () => {
+  const sq = parseScenario('What if bond yields rose 200 bps?')!;
+  const dsa = { ok: true as const, runs: [{ kind: 'interest_cost' as const, startYear: '2025', debtNow: 30, endYear: '2031', baselineEnd: 31, shockedEnd: 33.5, about: 'yields +2 pts' }], source: 'IMF WEO' };
+  const a = scenarioAnswer(sq, [TUR], [{ iso3: 'TUR', countryName: 'Turkey', dsa } as ScenarioCountryData]);
+  assert.equal(a.keep?.length, 1);
+  assert.equal(a.keep![0].iso3, 'TUR');
+  assert.match(a.keep![0].item.label, /^Scenario: Government borrowing costs/);
+  assert.deepEqual(a.keep![0].item.values.debt_vs_baseline, { low: 2.5, high: 2.5 });
+  assert.equal(scenarioAnswer(sq, [TUR], []).keep, undefined);
+});

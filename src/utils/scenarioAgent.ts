@@ -36,6 +36,7 @@ import { IMF_ADVANCED } from './scenarioReplay';
 import type { EpisodeRead, LevelContext, ShockPrecedentOutcome } from './scenarioHistory';
 import type { PrecedentOutcome } from './precedentFinder';
 import type { LiveWatchlistItem } from '../types/council';
+import { itemFromScenarioDebt, type TradeOffItem } from './tradeOff';
 
 export { SCENARIO_AGENT_NAME, SCENARIO_AGENT_COVERS } from './scenarioAgentInfo';
 import { SCENARIO_AGENT_NAME } from './scenarioAgentInfo';
@@ -243,7 +244,8 @@ function startingFigures(sq: ScenarioQuestion, it: LiveWatchlistItem, data?: Sce
 const DSA_LABEL: Record<DsaRun['kind'], string> = { interest_cost: 'higher borrowing costs', growth: 'the growth change', inflation: 'the inflation change' };
 
 /** One finding per country: the starting point, then each channel's result, or why it could not run. */
-export function scenarioFinding(sq: ScenarioQuestion, it: LiveWatchlistItem, data: ScenarioCountryData | undefined): { finding: AgentFinding | null; missing: string[] } {
+export function scenarioFinding(sq: ScenarioQuestion, it: LiveWatchlistItem, data: ScenarioCountryData | undefined): { finding: AgentFinding | null; missing: string[]; keep: TradeOffItem[] } {
+  const keep: TradeOffItem[] = [];
   const name = it.countryName;
   const figures: AgentFigure[] = startingFigures(sq, it, data);
   const parts: string[] = [];
@@ -342,6 +344,8 @@ export function scenarioFinding(sq: ScenarioQuestion, it: LiveWatchlistItem, dat
         figures.push({ label: `After the shock: government debt in ${r.endYear}`, value: `${r.shockedEnd.toFixed(1)}% of GDP against ${r.baselineEnd.toFixed(1)}% on the baseline (${sgn(diff, 1)} pts)`, source: `debt identity on the IMF's projected inputs with ${r.about}; ${data.dsa.source}; ${SCENARIO_NOTE}`, tag: 'model' });
         parts.push(`With ${DSA_LABEL[r.kind]}, government debt would reach ${r.shockedEnd.toFixed(1)}% of GDP by ${r.endYear}, against ${r.baselineEnd.toFixed(1)}% on the IMF's inputs.`);
         weight = Math.max(weight, Math.min(1, Math.abs(diff) / 10));
+        const s = sq.shocks.find((x) => x.kind === r.kind);
+        if (s) keep.push(itemFromScenarioDebt(`scenario-${it.iso3}-${r.kind}-${s.change}`, `Scenario: ${shockLabel(s)}`, r));
       }
     } else if (sq.shocks.some((s) => ['interest_cost', 'growth', 'inflation'].includes(s.kind) && s.change !== null)) missing.push(`${name}: debt path (${data.dsa.reason})`);
   } else if (sq.shocks.some((s) => ['interest_cost', 'growth', 'inflation'].includes(s.kind) && s.change !== null)) missing.push(`${name}: debt path (the app's debt tool did not answer)`);
@@ -354,8 +358,8 @@ export function scenarioFinding(sq: ScenarioQuestion, it: LiveWatchlistItem, dat
   researchFigures(sq, it.iso3, figures);
 
   const shockFigures = figures.filter((f) => /^(After the shock|Past episode|When it happened before|Record|Research)/.test(f.label));
-  if (!shockFigures.length) return { finding: null, missing };
-  return { finding: { iso3: it.iso3, countryName: name, reading: parts.join(' '), figures, weight }, missing };
+  if (!shockFigures.length) return { finding: null, missing, keep: [] };
+  return { finding: { iso3: it.iso3, countryName: name, reading: parts.join(' '), figures, weight }, missing, keep };
 }
 
 const FACTOR_WORDS: Record<string, string> = { fx: 'currency against the US dollar (+ = weaker)', local_yield: '10-year local yield', spread: 'USD bond spread', us_rates: 'US 10-year yield' };
@@ -431,13 +435,15 @@ export function researchFigures(sq: ScenarioQuestion, iso3: string, figures: Age
 export function scenarioAnswer(sq: ScenarioQuestion, countries: LiveWatchlistItem[], data: ScenarioCountryData[]): AgentAnswer {
   const findings: AgentFinding[] = [];
   const missing: string[] = [];
+  const keep: NonNullable<AgentAnswer['keep']> = [];
   for (const it of countries) {
     const r = scenarioFinding(sq, it, data.find((d) => d.iso3 === it.iso3));
     if (r.finding) findings.push(r.finding);
     missing.push(...r.missing);
+    for (const item of r.keep) keep.push({ iso3: it.iso3, countryName: it.countryName, item });
   }
   const what = sq.shocks.map(shockLabel).join('; ');
-  return { id: 'scenario', name: SCENARIO_AGENT_NAME, why: `the question asks what would happen if: ${what}`, findings, missing: [...new Set(missing)] };
+  return { id: 'scenario', name: SCENARIO_AGENT_NAME, why: `the question asks what would happen if: ${what}`, findings, missing: [...new Set(missing)], ...(keep.length ? { keep } : {}) };
 }
 
 /** Wire form of the question's shocks for POST /api/council/scenario. */

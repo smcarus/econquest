@@ -77,6 +77,21 @@ export function itemFromWhatIf(id: string, label: string, r: WhatIfRun): TradeOf
   };
 }
 
+/**
+ * A debt path from the Scenario Agent (src/utils/scenarioAgent.ts, WI6): one shocked debt figure at
+ * the horizon against the baseline. No multiplier range, so both ends are the same; axes the debt
+ * identity does not give are null.
+ */
+export function itemFromScenarioDebt(id: string, label: string, r: { endYear: string; baselineEnd: number; shockedEnd: number }): TradeOffItem {
+  return {
+    id,
+    label,
+    kind: 'whatif',
+    horizonYear: r.endYear,
+    values: { debt_end: pt(r.shockedEnd), debt_vs_baseline: pt(r.shockedEnd - r.baselineEnd), output_cost: null, growth_first: null, pb_change: null },
+  };
+}
+
 export interface ChartItem {
   item: TradeOffItem;
   /** Low-multiplier end and high-multiplier end. */

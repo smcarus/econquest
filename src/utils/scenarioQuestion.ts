@@ -297,3 +297,46 @@ export function sizeQuestion(s: Shock): string {
 export function scenarioQuery(sq: ScenarioQuestion): string {
   return encodeURIComponent(JSON.stringify(sq.shocks.map((s) => ({ kind: s.kind, direction: s.direction, change: s.change, target: s.target }))));
 }
+
+/** Plain words for one shock that this reader reads back to the same kind, direction and size (WI6). */
+const PHRASE: Record<ShockKind, { subject: string; up: string; down: string; unit: 'pts' | '%' | 'sd' }> = {
+  policy_rate: { subject: 'the central bank', up: 'raised rates', down: 'cut rates', unit: 'pts' },
+  us_rate: { subject: 'the Fed', up: 'raised rates', down: 'cut rates', unit: 'pts' },
+  interest_cost: { subject: 'bond yields', up: 'rose', down: 'fell', unit: 'pts' },
+  dollar: { subject: 'the US dollar', up: 'strengthened', down: 'weakened', unit: '%' },
+  currency: { subject: 'the currency', up: 'weakened', down: 'strengthened', unit: '%' },
+  oil: { subject: 'oil prices', up: 'rose', down: 'fell', unit: '%' },
+  food: { subject: 'food prices', up: 'rose', down: 'fell', unit: '%' },
+  commodity: { subject: 'export commodity prices', up: 'rose', down: 'fell', unit: '%' },
+  fin_stress: { subject: 'financial stress', up: 'rose', down: 'fell', unit: 'pts' },
+  supply_chain: { subject: 'supply chain pressure', up: 'rose', down: 'fell', unit: 'sd' },
+  growth: { subject: 'growth', up: 'rose', down: 'slowed', unit: 'pts' },
+  inflation: { subject: 'inflation', up: 'rose', down: 'fell', unit: 'pts' },
+};
+
+/** One shock in words; null when it has neither a size nor a level. */
+export function shockWords(s: Pick<Shock, 'kind' | 'change' | 'target'>): string | null {
+  const p = PHRASE[s.kind];
+  if (s.target) {
+    if (s.target.unit === 'usd') return s.kind === 'oil' ? `oil hits $${s.target.value}` : null;
+    if (!['policy_rate', 'us_rate', 'interest_cost'].includes(s.kind)) return null;
+    return `${p.subject} ${s.kind === 'interest_cost' ? 'rose' : 'raised rates'} to ${s.target.value}%`;
+  }
+  if (s.change === null || s.change === 0) return null;
+  const v = Math.abs(s.change);
+  const size = p.unit === '%' ? `${v}%` : p.unit === 'sd' ? `${v} standard deviation${v === 1 ? '' : 's'}` : `${v} point${v === 1 ? '' : 's'}`;
+  const verb = s.change > 0 ? p.up : p.down;
+  return s.kind === 'currency' ? `${p.subject} ${verb} by ${size} against the dollar` : `${p.subject} ${verb} by ${size}`;
+}
+
+/**
+ * The what-if question for a set of shocks, as the editable scenario card (WI6) sends it: "What would
+ * happen to Turkey if the Fed raised rates by 1 point and oil prices rose by 50%?". Shocks with no
+ * size are left out; null when none is left.
+ */
+export function scenarioText(shocks: Array<Pick<Shock, 'kind' | 'change' | 'target'>>, countries: string[]): string | null {
+  const parts = shocks.map(shockWords).filter((x): x is string => Boolean(x));
+  if (!parts.length) return null;
+  const who = countries.length ? ` to ${countries.length > 1 ? `${countries.slice(0, -1).join(', ')} and ${countries[countries.length - 1]}` : countries[0]}` : '';
+  return `What would happen${who} if ${parts.join(' and ')}?`;
+}
