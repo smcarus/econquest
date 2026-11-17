@@ -4,6 +4,6 @@ description: EconQuest sovereign and macro council terminal (open-source researc
 type: application
 version: 0.1.0
 appVersion: "main"
-home: https://github.com/smcarus/econquest
+home: https://github.com/e-conquest/econquest
 sources:
-  - https://github.com/smcarus/econquest
+  - https://github.com/e-conquest/econquest

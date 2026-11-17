@@ -37,7 +37,7 @@ The server needs outbound internet for the free data feeds. Nothing has to be op
    `data`:
 
    ```sh
-   git clone https://github.com/smcarus/econquest.git
+   git clone https://github.com/e-conquest/econquest.git
    cd econquest/deploy/home-server
    cp env.example .env
    mkdir -p data ollama

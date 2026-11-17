@@ -3,7 +3,7 @@
  */
 
 /** Names the app and where its code lives, for sources that refuse a client that does not say who it is. */
-export const RESEARCH_USER_AGENT = 'EconQuest/1.0 (open-source research terminal; +https://github.com/smcarus/econquest)';
+export const RESEARCH_USER_AGENT = 'EconQuest/1.0 (open-source research terminal; +https://github.com/e-conquest/econquest)';
 
 export async function fetchWithTimeout(url: string, timeoutMs = 4200, headers: Record<string, string> = { Accept: 'application/json' }): Promise<Response> {
   const controller = new AbortController();
