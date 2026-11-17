@@ -90,6 +90,7 @@ import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './src/utils/refereeModel';
 import { formatDuration, isCouncilTiming, stepTiming, timingTable, totalMs, type CouncilTiming, type StepTiming } from './src/utils/councilTiming';
 import { glossaryMarkdown } from './src/data/glossary';
+import { checkWhatIf, isWhatIfAnswer, whatIfCoverage, whatIfTask, WHATIF_INSTRUCTION, WHATIF_ORDER, type RawWhatIf } from './src/utils/whatIfAnswer';
 import { EXPLAIN_INSTRUCTION, explainInstruction, checkExplain, cleanFocus, explainTask, focusAsText, lensCoverage, LENS_ORDER, type ExplainPlan, type LensId, type RawExplain } from './src/utils/explain';
 import { documentsAsText, isCouncilDocument, toAgentDocuments, type AgentDocument, type CouncilDocument } from './src/utils/agentDocument';
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, answersForModel, offWatchlistCodes, sentenceCheck, checkBrief, earlierAsText, synthesisTask, isDocFinding, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult, planCouncil, runCouncil, type SavedCouncilBrief } from './src/utils/askCouncil';
@@ -1824,6 +1825,7 @@ function auditCouncilAnswer(question: string, answers: AgentAnswer[], out: Synth
       figures: figuresFromAnswers(answers),
       missing: answers.flatMap((a) => (a.missing || []).map((m) => `${a.name}: ${String(m).slice(0, 200)}`)).slice(0, 60),
       removedSentences: (out.removed?.length ?? 0) + (out.contradicted?.length ?? 0),
+      ...(out.brief?.whatIf ? { mode: 'whatif', sections: out.brief.whatIf.sections.filter((x) => x.sentences.length).map((x) => x.id) } : {}),
       ...(out.brief?.explain
         ? { mode: 'explain', lenses: out.brief.explain.lenses.map((l) => l.lens), ...(out.brief.explain.focus ? { explained: out.brief.explain.focus } : {}) }
         : {}),
@@ -1886,7 +1888,7 @@ async function answerAndRecord(question: string, answers: AgentAnswer[], opts: S
         },
         settings: {
           step: 'COUNCIL_SYNTHESIS',
-          mode: opts.explain ? 'explain' : 'summary',
+          mode: !opts.explain?.focus && isWhatIfAnswer(answers) ? 'whatif' : opts.explain ? 'explain' : 'summary',
           providerMode: String(opts.runtimeConfig?.providerMode || 'gemini'),
           model: trace.model ?? modelFromProvider(out.provider),
           temperature: trace.temperature ?? COUNCIL_TEMPERATURE,
@@ -1955,6 +1957,8 @@ async function synthesiseAnswers(
   opts: SynthesisOpts = {}
 ): Promise<SynthesisResult> {
   const empty: CouncilBrief = { headline: '', points: [], disagreements: [], gaps: [] };
+  // A what-if the Scenario Agent answered gets the what-if layout; a figure pressed Explain on stays an explanation.
+  if (!opts.explain?.focus && isWhatIfAnswer(answers)) return whatIfAnswers(question, answers, opts);
   if (opts.explain) return explainAnswers(question, answers, opts as SynthesisOpts & { explain: ExplainPlan });
   try {
     // The synthesis reads the agents' standard documents (utils/agentDocument.ts), all in one template.
@@ -2091,6 +2095,59 @@ async function explainAnswers(
     return { brief: checked.brief, removed: checked.removed, contradicted: checked.contradicted, provider: step.providerUsed };
   } catch (error: any) {
     return { brief: null, removed: [], reason: `The explanation step failed (${error?.message || 'unknown error'}).` };
+  }
+}
+
+/** What-if mode (src/utils/whatIfAnswer.ts): eight sections from now to what would change it, every sentence checked. */
+async function whatIfAnswers(question: string, answers: AgentAnswer[], opts: SynthesisOpts): Promise<SynthesisResult> {
+  const coverage = whatIfCoverage(answers);
+  try {
+    const prompt = (earlierAsText(opts.earlier || []) + councilDocsText(question, answers, opts)).slice(0, 22000) + whatIfTask(question, coverage);
+    if (opts.trace) Object.assign(opts.trace, { system: WHATIF_INSTRUCTION, prompt, template: WHATIF_INSTRUCTION + '\n' + whatIfTask('{question}', []) });
+    const list = (description: string) => ({ type: Type.ARRAY, items: { type: Type.STRING }, description });
+    const step = await executeResilientLlmStep<RawWhatIf>({
+      stepName: 'COUNCIL_SYNTHESIS',
+      providerMode: opts.runtimeConfig?.providerMode || 'gemini',
+      runtimeConfig: opts.runtimeConfig || {},
+      thinkingLevel: ThinkingLevel.LOW,
+      systemInstruction: WHATIF_INSTRUCTION,
+      prompt,
+      temperature: COUNCIL_TEMPERATURE,
+      seed: COUNCIL_SEED,
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          headline: { type: Type.STRING, description: 'One sentence that answers the what-if question.' },
+          ...Object.fromEntries(WHATIF_ORDER.map((id) => [id, list(`Sentences for the ${id} section; empty when Missing.`)])),
+          disagreements: list('Where the evidence points different ways.'),
+          gaps: list('What the agents could not answer.'),
+        },
+        required: ['headline', ...WHATIF_ORDER, 'disagreements', 'gaps'],
+      },
+      fallbackValue: {},
+      maxRetries: 1,
+    });
+    if (opts.trace) Object.assign(opts.trace, { model: step.model, temperature: step.temperature, seed: step.seed });
+    if (step.usedFallback) {
+      return { brief: null, removed: [], reason: `No AI model answered: ${step.failure || 'no model is set up'}. Set it up or test it under Menu > Settings > AI model.` };
+    }
+    const raw = step.data || {};
+    if (!Object.keys(raw).length) {
+      return { brief: null, removed: [], provider: step.providerUsed, reason: `${step.providerUsed} answered, but not in the shape asked for (no what-if sections), so nothing was shown.` };
+    }
+    const checked = checkWhatIf(raw, question, answers);
+    if (!checked.brief.headline && !checked.brief.points.length) {
+      return {
+        brief: null,
+        removed: checked.removed,
+        contradicted: checked.contradicted,
+        provider: step.providerUsed,
+        reason: `${step.providerUsed} answered, but every sentence it wrote had a number not in the agents' figures or contradicted an agent, so nothing was kept.`,
+      };
+    }
+    return { brief: checked.brief, removed: checked.removed, contradicted: checked.contradicted, provider: step.providerUsed };
+  } catch (error: any) {
+    return { brief: null, removed: [], reason: `The what-if step failed (${error?.message || 'unknown error'}).` };
   }
 }
 

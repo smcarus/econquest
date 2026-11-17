@@ -392,4 +392,18 @@ test('Scenario Agent (WI2): the server applies the stated shocks; a what-if ques
   assert.ok(sc, answers.map((a) => a.id).join(','));
   assert.match(sc!.why, /US Federal Reserve rate raised \(\+1 pts\)/);
   for (const f of sc!.findings.flatMap((x) => x.figures)) assert.ok(f.source.length > 0 && f.value.length > 0);
+
+  // The what-if answer (WI5): with a Scenario Agent finding, the summary comes back in the eight sections.
+  const q = 'What would happen to Turkey if the Fed raised rates by 1 point?';
+  const syn = (await (await post('/api/council/synthesise', { question: q, askedAt: new Date().toISOString(), answers: answersForModel(answers), earlier: [], explain: plan.explain, runtimeConfig: RUNTIME })).json()) as SynthesisResult;
+  if (!sc!.findings.length) {
+    assert.equal(syn.brief?.whatIf, undefined);
+    return;
+  }
+  const w = syn.brief?.whatIf;
+  assert.ok(w, JSON.stringify(syn).slice(0, 800));
+  assert.deepEqual(w!.sections.map((x) => x.id), ['start', 'shock', 'effects', 'spread', 'history', 'research', 'trends', 'watch']);
+  for (const x of w!.sections) assert.ok(x.sentences.length ? !x.missing : typeof x.missing === 'string', JSON.stringify(x));
+  assert.ok(!w!.sections.some((x) => x.sentences.includes('Written although Missing.')));
+  assert.deepEqual(syn.brief!.points, w!.sections.flatMap((x) => x.sentences.map((t) => `${x.label}: ${t}`)));
 });

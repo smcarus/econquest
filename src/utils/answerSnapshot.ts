@@ -65,7 +65,7 @@ export interface SnapshotInputs {
 
 export interface SnapshotSettings {
   step: 'COUNCIL_SYNTHESIS';
-  mode: 'summary' | 'explain';
+  mode: 'summary' | 'explain' | 'whatif';
   /** Provider asked for in Settings (ollama, gemini, hybrid...). */
   providerMode: string;
   /** The model that answered, e.g. "qwen2.5:32b"; null when none answered. */
