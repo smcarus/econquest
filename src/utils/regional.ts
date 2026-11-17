@@ -19,6 +19,11 @@ import { BLANK, findSeparator, splitLine } from '../engine/ownSeries';
 export const DOSE_RECORD = '20035157';
 export const doseLatestUrl = (record = DOSE_RECORD) => `https://zenodo.org/api/records/${record}/versions/latest`;
 export const DOSE_FROM_YEAR = 2000;
+/**
+ * Zenodo refused the check from a Mac with HTTP 403 when the request carried only Node's default
+ * client name. These headers say which program is asking and where its code lives; nothing else.
+ */
+export const ZENODO_HEADERS: Record<string, string> = { 'User-Agent': 'EconQuest/1.0 (open-source research terminal; +https://github.com/smcarus/econquest)' };
 
 /** Per-person output columns in order of preference: constant 2015 US$ first, so years compare. */
 const DOSE_VALUE_COLUMNS: { col: string; basis: DoseBasis }[] = [

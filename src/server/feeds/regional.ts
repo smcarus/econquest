@@ -13,6 +13,7 @@ import path from 'path';
 import { DATA_DIR } from '../config';
 import { describeNetworkError } from '../../utils/connectionCheck';
 import { fetchWithTimeout } from '../http';
+import { ZENODO_HEADERS } from '../../utils/regional';
 import { writeFileAtomic } from '../../utils/atomicWrite';
 import {
   doseCsvLink,
@@ -98,9 +99,9 @@ export function loadGdl(dataDir = DATA_DIR): { file: string | null; rows: GdlRow
   return gdl;
 }
 
-async function get(url: string, what: string): Promise<Response | null> {
+async function get(url: string, what: string, headers?: Record<string, string>): Promise<Response | null> {
   try {
-    const res = await fetchWithTimeout(url, TIMEOUT_MS);
+    const res = await fetchWithTimeout(url, TIMEOUT_MS, headers);
     if (!res.ok) {
       console.warn(`[${what}] refused (HTTP ${res.status}): ${url}`);
       return null;
@@ -113,7 +114,7 @@ async function get(url: string, what: string): Promise<Response | null> {
 }
 
 async function pullDose(saved: (DoseFile & { checkedAt?: string }) | null): Promise<(DoseFile & { checkedAt?: string }) | null> {
-  const meta = await get(doseLatestUrl(), 'DOSE');
+  const meta = await get(doseLatestUrl(), 'DOSE', { ...ZENODO_HEADERS, Accept: 'application/json' });
   const link = meta ? doseCsvLink(await meta.json().catch(() => null)) : null;
   if (!link) {
     if (meta) console.warn(`[DOSE] the Zenodo record lists no DOSE .csv file: ${doseLatestUrl()}`);
@@ -121,7 +122,7 @@ async function pullDose(saved: (DoseFile & { checkedAt?: string }) | null): Prom
   }
   const now = new Date().toISOString();
   if (saved && saved.record === link.record && saved.file === link.file) return { ...saved, checkedAt: now };
-  const res = await get(link.url, 'DOSE');
+  const res = await get(link.url, 'DOSE', { ...ZENODO_HEADERS, Accept: 'text/csv, */*' });
   if (!res) return null;
   const got = parseDoseCsv(await res.text(), { record: link.record, version: link.version, file: link.file, pulledAt: now });
   if ('reason' in got) {

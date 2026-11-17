@@ -23,8 +23,8 @@ import { BIS_PRIVATE_DEBT_SAMPLE_URL, parseBisPrivateDebtAll } from './sectorBal
 import { BIS_CB_ASSETS_SAMPLE_URL, BIS_USD_CREDIT_SAMPLE_URL, parseBisCbAssets, parseBisUsdCredit } from './bisCreditCycle';
 import { NYFED_SWAPS_SAMPLE_URL, parseNyfedSwaps } from './fedSwapLines';
 import { idaByProject, idaCreditsPageUrl, parseIdaPage, parseProjectsPage, projectsCountryUrl } from './wbProjects';
-import { doseCsvLink, doseLatestUrl, eurostatRegionUnempUrl, latestByGeo } from './regional';
-import { ecbCurveUrl, parseEcbCurveCsv, parseUstCsv, ustCurveUrl } from './fullCurves';
+import { ZENODO_HEADERS, doseCsvLink, doseLatestUrl, eurostatRegionUnempUrl, latestByGeo } from './regional';
+import { ECB_CURVE_TENORS, ecbCurveUrl, parseEcbCurveCsv, parseUstCsv, ustCurveUrl } from './fullCurves';
 import { BLS_CPI_URL, FOCUS_MONTHLY_URL, parseBlsCpi, parseFocusMonthly } from './dataSurprises';
 import { NASA_POWER_SAMPLE_URL, parseNasaPower } from './weatherPower';
 import { CCKP_SAMPLE_URL, parseCckp } from './weatherCountry';
@@ -856,7 +856,8 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       (r) => {
         const link = doseCsvLink(parseJson(r.text));
         return link ? `Latest version ${link.version ?? '?'} (record ${link.record}): ${link.file}` : null;
-      }
+      },
+      { headers: { ...ZENODO_HEADERS, Accept: 'application/json' } }
     )
   );
 
@@ -878,14 +879,15 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     httpCheck(
       { id: 'ecb_curve', name: 'ECB euro area yield curve', group: 'free', feeds: 'Every maturity of the euro area government curve each day (Full yield curves)' },
       fetchFn,
-      ecbCurveUrl(5),
-      T,
+      ecbCurveUrl(5, ['SR_10Y']),
+      Math.max(T, 30_000),
       (r) => {
         const got = parseEcbCurveCsv(r.text || '');
         if ('reason' in got) return null;
         const d = got[got.length - 1];
-        return `${got.length} days read; ${d.date}: 10-year ${d.yields['10'] ?? '?'}%, ${Object.keys(d.yields).length} maturities`;
-      }
+        return `${got.length} days read; ${d.date}: 10-year ${d.yields['10'] ?? '?'}% (the daily run asks for each of the ${ECB_CURVE_TENORS.length} maturities in turn)`;
+      },
+      { headers: { Accept: 'text/csv' } }
     )
   );
 

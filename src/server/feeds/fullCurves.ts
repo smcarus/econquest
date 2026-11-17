@@ -8,9 +8,9 @@ import fs from 'fs';
 import path from 'path';
 import { DATA_DIR } from '../config';
 import { describeNetworkError } from '../../utils/connectionCheck';
-import { fetchWithTimeout } from '../http';
+import { fetchWithTimeout, RESEARCH_USER_AGENT } from '../http';
 import { writeFileAtomic } from '../../utils/atomicWrite';
-import { ecbCurveUrl, mergeDays, parseEcbCurveCsv, parseUstCsv, ustCurveUrl, type CurveDay, type CurvesFile } from '../../utils/fullCurves';
+import { CURVE_KEEP_DAYS, ECB_CURVE_TENORS, ecbCurveUrl, mergeDays, parseEcbCurveCsv, parseUstCsv, ustCurveUrl, type CurveDay, type CurvesFile } from '../../utils/fullCurves';
 
 const HOUR = 60 * 60 * 1000;
 const TIMEOUT_MS = 60_000;
@@ -35,9 +35,9 @@ export function loadCurves(): CurvesFile | null {
   return saved.value;
 }
 
-async function getText(url: string, what: string): Promise<string | null> {
+async function getText(url: string, what: string, headers?: Record<string, string>): Promise<string | null> {
   try {
-    const res = await fetchWithTimeout(url, TIMEOUT_MS);
+    const res = await fetchWithTimeout(url, TIMEOUT_MS, headers);
     if (!res.ok) {
       console.warn(`[${what}] refused (HTTP ${res.status}): ${url}`);
       return null;
@@ -63,15 +63,23 @@ async function pullUs(now: Date): Promise<CurveDay[] | null> {
   return days.length ? days : null;
 }
 
+/** One maturity at a time, each a small reply; the days are joined by date afterwards. */
 async function pullEa(): Promise<CurveDay[] | null> {
-  const text = await getText(ecbCurveUrl(), 'ECB yield curve');
-  if (!text) return null;
-  const got = parseEcbCurveCsv(text);
-  if ('reason' in got) {
-    console.warn(`[ECB yield curve] ${got.reason}`);
-    return null;
+  const byDate = new Map<string, CurveDay>();
+  for (const tenor of ECB_CURVE_TENORS) {
+    const text = await getText(ecbCurveUrl(CURVE_KEEP_DAYS, [tenor]), `ECB yield curve ${tenor}`, { Accept: 'text/csv', 'User-Agent': RESEARCH_USER_AGENT });
+    if (!text) continue;
+    const got = parseEcbCurveCsv(text);
+    if ('reason' in got) {
+      console.warn(`[ECB yield curve] ${tenor}: ${got.reason}`);
+      continue;
+    }
+    for (const d of got) {
+      const prev = byDate.get(d.date);
+      byDate.set(d.date, { date: d.date, yields: { ...(prev?.yields ?? {}), ...d.yields } });
+    }
   }
-  return got;
+  return byDate.size ? [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)) : null;
 }
 
 /** Both curves, downloaded when the saved copy is over 6 hours old (an hour after a miss). */
