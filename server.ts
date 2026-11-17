@@ -253,7 +253,8 @@ import { US_10Y_SERIES } from './src/utils/officialYields.ts';
 import { fetchCftcPull, fetchTicPull, fetchCbpolPull, fetchUstAuctionPull, loadUstAuctions } from './src/server/feeds/positioning';
 import { fetchGovSpendingPull } from './src/server/feeds/govSpending';
 import { gdeltPausedUntil, gdeltFetch, GDELT_REFRESH_MS } from './src/server/feeds/gdelt';
-import { fetchImfPull, fetchCoferPull, fetchImfCpiPull, loadImfCpi, fetchImfFxPull, loadImfFx } from './src/server/feeds/imf';
+import { fetchImfPull, fetchCoferPull, fetchImfCpiPull, loadImfCpi, fetchImfFxPull, loadImfFx, fetchImfPolicyPull, loadImfPolicy } from './src/server/feeds/imf';
+import { imfPolicyRateFor } from './src/utils/imfPolicyRate';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
 import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, nationalCpiOrSaved, forgetNationalCpi, fetchMonthlyActivity, fetchEuSurveyPull, loadEuSurveys } from './src/server/feeds/oecd';
 import { commodityMemory, fetchCommodities, forgetCommodityPulls } from './src/server/feeds/commodities';
@@ -684,6 +685,14 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       // Your data subscription (src/engine/paidData.ts): off, or no adapter yet, counts as done with nothing to fetch.
       const got = await fetchSubscription(enginePlatform, process.env);
       return { outcome: got.ok ? 'done' : 'failed', note: got.note };
+    }
+    case 'world:imf_policy': {
+      const got = await fetchImfPolicyPull({ force: true });
+      if (!got) return { outcome: 'failed', note: 'The IMF did not answer for monthly policy rates (npm run check:data, row imf_policy, shows why)' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const months = Object.values(got.series).map((s) => s.points[s.points.length - 1]?.period || '');
+      const note = `${Object.keys(got.series).length} countries to ${months.sort().pop() || '?'}`;
+      return fresh ? { outcome: 'done', note } : { outcome: 'failed', note: `The IMF did not answer; kept the copy from ${got.pulledAt.slice(0, 10)} (${note})` };
     }
     case 'world:imf_fx': {
       const got = await fetchImfFxPull(fxHistoryCurrencies(loadFxHistory()), { force: true });
@@ -1448,9 +1457,22 @@ async function withBisPolicyRateOnly(snapshot: OpenDataSnapshot): Promise<OpenDa
   const liveFields = { ...(snapshot.liveFields || {}) };
   // Only an own-data connector may also fill it; nothing else counts.
   if (!rate) {
-    if (liveFields['market.policyRatePct']?.startsWith('BIS')) delete liveFields['market.policyRatePct'];
+    if (liveFields['market.policyRatePct']?.startsWith('BIS') || liveFields['market.policyRatePct']?.startsWith('IMF')) delete liveFields['market.policyRatePct'];
     const { bisPolicyRate: _drop, ...rest } = snapshot;
-    return { ...rest, liveFields };
+    // Where the app does not take the BIS rate, the IMF monthly policy rate (LI4).
+    const imf = imfPolicyRateFor(loadImfPolicy(), snapshot.iso3);
+    if (!imf || liveFields['market.policyRatePct']) return { ...rest, liveFields };
+    liveFields['market.policyRatePct'] = `IMF, monthly, ${imf.date}${imf.stale ? ', may be out of date' : ''}`;
+    const cpiNow = snapshot.imfIndicators.cpiInflationPct;
+    return {
+      ...rest,
+      liveFields,
+      monetaryAndMarket: {
+        ...snapshot.monetaryAndMarket,
+        policyRatePct: imf.ratePct,
+        realPolicyRatePct: Number((imf.ratePct - cpiNow).toFixed(2)),
+      },
+    };
   }
   if (liveFields['market.policyRatePct'] && !liveFields['market.policyRatePct'].startsWith('BIS')) return snapshot;
   liveFields['market.policyRatePct'] = `BIS, ${rate.freq === 'monthly' ? 'end of ' : ''}${rate.date}${rate.bank ? ` (${rate.bank})` : ''}`;
@@ -1557,6 +1579,7 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
   ]);
   // IMF monthly CPI: the copy the daily run saved (no page waits on the IMF).
   const imfCpi = loadImfCpi();
+  const imfPolicy = loadImfPolicy();
   const cftcWeeks = new Map<string, CftcWeek[]>(Object.entries(cftc?.weeks || {}));
   const items = await Promise.all(
     [...(extra.length ? [] : SOVEREIGN_CATALOG), ...extra].map(async (catItem) => {
@@ -1583,6 +1606,7 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
         const pos = positioningFor(catItem.iso3, cftcWeeks);
         const ust = ticHoldingFor(catItem.iso3, tic?.table);
         const bisRate = policyRateFor(catItem.iso3, cbpol);
+        const imfRate = bisRate ? null : imfPolicyRateFor(imfPolicy, catItem.iso3);
         const lead = cliFor(catItem.iso3, cli?.series);
         // Monthly inflation: the freshest of national or Eurostat, IMF monthly CPI and the OECD copy.
         const prices = cpiFor(catItem.iso3, mergeNationalCpi(cpi?.series, nationalCpi?.series || {}, imfCpi?.series || {}));
@@ -1668,7 +1692,15 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
                 ...(bisRate.lastMove ? { policyRateLastMove: bisRate.lastMove } : {}),
                 ...(bisRate.moves ? { policyRateMoves: bisRate.moves, policyRateHistoryFrom: bisRate.historyFrom } : {}),
               }
-            : { policyRateSource: 'sample' }),
+            : imfRate
+              ? {
+                  policyRatePct: imfRate.ratePct,
+                  policyRateSource: 'imf',
+                  policyRateDate: imfRate.date,
+                  policyRateStale: imfRate.stale,
+                  ...(imfRate.change12mPts !== undefined ? { policyRateChange12mPts: imfRate.change12mPts } : {}),
+                }
+              : { policyRateSource: 'sample' }),
           debtSource: lf['imf.debtToGdpPct'] ? 'live' : 'sample',
           reservesSource: lf['wb.fxReservesMonthsImport'] ? 'live' : 'sample',
           ...(snap.debtSchedule?.bis?.intl
@@ -4314,6 +4346,7 @@ async function startServer() {
       fxHistory,
       fxExtra,
       imfFx: loadImfFx(),
+      imfPolicy: loadImfPolicy(),
       bisCredit,
       idsCreditors,
       sovereignDefaults,

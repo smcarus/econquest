@@ -53,6 +53,7 @@ export const EMPTY_PRELOAD_STATE: PreloadState = { running: false, steps: {} };
 /** World-wide pulls: one each, shared by every country. */
 export const WORLD_STEPS: PreloadStep[] = [
   { id: 'world:bis', kind: 'world', label: 'BIS central bank policy rates (daily and monthly history)' },
+  { id: 'world:imf_policy', kind: 'world', label: 'IMF monthly policy rates (countries the BIS rates do not cover)' },
   { id: 'world:oecd_cli', kind: 'world', label: 'OECD leading indicators (via DBnomics)' },
   { id: 'world:oecd_qna', kind: 'world', label: 'OECD quarterly GDP growth (via DBnomics)' },
   { id: 'world:oecd_cpi', kind: 'world', label: 'OECD monthly inflation (via DBnomics)' },

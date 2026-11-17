@@ -81,8 +81,8 @@ export function hasFigure(it: WatchlistItem | LiveWatchlistItem, key: FigureKey)
     case 'cpi':
       return it.cpiSource === 'live' || it.cpiSource === 'oecd';
     case 'policy':
-      // Only the BIS feed counts; an AI estimate or the sample does not.
-      return it.policyRateSource === 'bis';
+      // The BIS feed, or the IMF monthly rate where the app does not take the BIS one (LI4); an AI estimate or the sample does not.
+      return it.policyRateSource === 'bis' || it.policyRateSource === 'imf';
   }
 }
 

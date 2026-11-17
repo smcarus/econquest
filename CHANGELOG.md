@@ -5,6 +5,17 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- IMF monthly policy rates (LI4): countries the app does not take from the BIS policy-rate
+  collection (for example Egypt, Nigeria, Kenya, Ghana, Pakistan, Bangladesh, Australia and Canada)
+  now show the central bank policy rate from the IMF MFS_IR dataset on api.imf.org, monthly, with
+  its source and month, in the watchlist, the country page, the history chart and the council's
+  figures. It is found by the IMF's code names (`IMF_POLICY_KEY` in `.env` overrides). The BIS
+  figure wins wherever the app pulls it, and the pre-registered rate tests and the tools built on
+  BIS rate moves (cycle clock, Taylor gap, rate-move signals, alerts) still use BIS rates only. The
+  daily run saves it to `data/live/imf-policy.json` (new step after the BIS step). New
+  `npm run check:data` row imf_policy (Egypt as the sample); the dataset's codes could not be
+  checked from the build machine.
+
 - IMF monthly exchange rates (LI3): the exchange rate history of currencies with no ECB reference
   rate and no central bank daily feed in the app (for example the naira, Kenyan shilling, cedi,
   Egyptian pound and taka) now comes from the IMF ER dataset on api.imf.org, monthly average per US

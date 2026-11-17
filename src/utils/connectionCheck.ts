@@ -13,6 +13,7 @@
  */
 import { pullImfMonthly } from './imfMonthly';
 import { IMF_FX_SPEC } from './imfFx';
+import { IMF_POLICY_SPEC } from './imfPolicyRate';
 import { CHINN_ITO_PAGE, chinnItoLinks } from './chinnIto';
 import { FX_REGIME_SETUP_HELP, fxRegimeReading, fxRegimeValue } from './fxRegime';
 import { parseFredCsvSeries } from './fedBalanceSheet';
@@ -340,6 +341,7 @@ export const SOURCE_IDS = [
   'imf_cofer',
   'imf_cpi',
   'imf_fx',
+  'imf_policy',
   'gdelt',
   'gdelt_v1',
   'polymarket',
@@ -1088,6 +1090,24 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     const setup = `If the IMF codes are not matched by name, set ${IMF_FX_SPEC.env} in .env to the series key ({ISO3} for the country); the note says which dimensions the dataset has.`;
     const last = r.series?.points[r.series.points.length - 1];
     if (last) return { ...setRow(def, 'connected', `Answered in ${latencyMs} ms. ${r.step.note}.`, IMF_SDMX_HOST), latencyMs, sample: `Nigeria ${fmt(last.value, 1)} naira per US dollar, monthly average (${formatMonth(last.period)})`, setup };
+    const status = Number(/HTTP (\d{3})/.exec(r.step.note)?.[1] ?? 0) || undefined;
+    const state: ConnectionState = status ? 'refused' : /no answer within|fetch failed|request failed/i.test(r.step.note) ? 'no_answer' : 'bad_reply';
+    return { ...setRow(def, state, r.step.note, IMF_SDMX_HOST), latencyMs, ...(status ? { httpStatus: status } : {}), setup };
+  });
+
+  add('imf_policy', async () => {
+    const def: Def = { id: 'imf_policy', name: 'IMF monthly policy rates (api.imf.org)', group: 'free', feeds: 'Central bank policy rate, monthly, for countries the app does not take from the BIS (for example Egypt, Nigeria, Kenya, Pakistan)' };
+    const t0 = Date.now();
+    let r: Awaited<ReturnType<typeof pullImfMonthly>>;
+    try {
+      r = await pullImfMonthly(IMF_POLICY_SPEC, { fetchFn, env, timeoutMs: Math.max(T, 30000) }, 'EGY');
+    } catch (err) {
+      return { ...setRow(def, 'no_answer', describeNetworkError(err, Math.max(T, 30000)), IMF_SDMX_HOST), latencyMs: Date.now() - t0 };
+    }
+    const latencyMs = Date.now() - t0;
+    const setup = `If the IMF codes are not matched by name, set ${IMF_POLICY_SPEC.env} in .env to the series key ({ISO3} for the country); the note says which dimensions the dataset has.`;
+    const last = r.series?.points[r.series.points.length - 1];
+    if (last) return { ...setRow(def, 'connected', `Answered in ${latencyMs} ms. ${r.step.note}.`, IMF_SDMX_HOST), latencyMs, sample: `Egypt policy rate ${fmt(last.value, 2)}% (${formatMonth(last.period)})`, setup };
     const status = Number(/HTTP (\d{3})/.exec(r.step.note)?.[1] ?? 0) || undefined;
     const state: ConnectionState = status ? 'refused' : /no answer within|fetch failed|request failed/i.test(r.step.note) ? 'no_answer' : 'bad_reply';
     return { ...setRow(def, state, r.step.note, IMF_SDMX_HOST), latencyMs, ...(status ? { httpStatus: status } : {}), setup };
