@@ -4,6 +4,7 @@ import { TrendingUp } from 'lucide-react';
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { ForecastOutcome, ForecastId } from '../utils/forecasts';
 import type { NowcastOutcome } from '../utils/nowcast';
+import type { AppMissStep } from '../utils/missBands';
 import { explainInChat } from '../utils/explainHandoff';
 import { useT, useTx } from '../i18n/useLang';
 import { PANELS } from '../i18n/messages/panels';
@@ -31,6 +32,8 @@ interface NowcastReply {
 interface ForecastReply {
   forecasts: ForecastOutcome[];
   validation?: Record<string, Validation>;
+  /** R8: ranges from the evaluation's recorded misses for this country. */
+  missRanges?: Record<string, AppMissStep[]>;
   history: { pulledAt: string | null; problems: string[] };
 }
 
@@ -232,6 +235,42 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
                 </div>
                 {ranges && drawForecast && <p className="text-xs text-slate-500 dark:text-slate-400" data-range-note="true">{t('fc_rangeNote', { sigma: forecast.fit.sigma })}</p>}
                 <RangeNote />
+                {ranges && drawForecast && (fc.missRanges?.[measure]?.length ?? 0) > 0 && (
+                  <div className="overflow-x-auto" data-miss-ranges="true">
+                    <h3 className="ui-label font-medium">{t('fc_missTitle')}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{t('fc_missIntro')}</p>
+                    <table className="w-full text-sm tabular-nums mt-1">
+                      <thead>
+                        <tr className="text-left text-slate-500 dark:text-slate-400">
+                          <th className="py-1 pr-3">{t('fc_missStep')}</th>
+                          <th className="py-1 pr-3">{t('fc_missForecast')}</th>
+                          <th className="py-1 pr-3">{t('fc_miss70')}</th>
+                          <th className="py-1 pr-3">{t('fc_miss90')}</th>
+                          <th className="py-1 pr-3">{t('fc_missAvg')}</th>
+                          <th className="py-1 pr-3">{t('fc_missCases')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {fc.missRanges![measure].map((r) => (
+                          <tr key={r.period} className="border-t border-slate-100 dark:border-slate-800">
+                            <td className="py-1 pr-3">{r.period}</td>
+                            <td className="py-1 pr-3">{f1(r.mean)}</td>
+                            {r.range ? (
+                              <>
+                                <td className="py-1 pr-3">{t('c_range', { from: f1(r.range.lo70), to: f1(r.range.hi70) })}</td>
+                                <td className="py-1 pr-3">{t('c_range', { from: f1(r.range.lo90), to: f1(r.range.hi90) })}</td>
+                                <td className="py-1 pr-3">{r.range.meanMiss > 0 ? '+' : ''}{f1(r.range.meanMiss)}</td>
+                                <td className="py-1 pr-3">{r.range.cases}</td>
+                              </>
+                            ) : (
+                              <td colSpan={4} className="py-1 pr-3 text-amber-700 dark:text-amber-400" data-missing="true">{t(`fc_missWhy_${r.why ?? 'not_run'}`, { n: r.cases ?? 0 })}</td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
                 {forecast.imf && (
                   <div className="overflow-x-auto" data-imf-compare="true">
                     <table className="w-full text-sm tabular-nums">

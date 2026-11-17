@@ -64,6 +64,7 @@ import { loadModelHistory, MODEL_HISTORY_MAX_AGE_MS, pullModelHistory, saveModel
 import { cpiNowcast, gdpNowcast, nowcastSentence } from '../../utils/nowcast';
 import { forecastSentence, forecastSeries, withImf, type ForecastOutcome } from '../../utils/forecasts';
 import { loadForecastValidation } from '../../utils/forecastEvalRun';
+import { appMissSteps, FORECAST_EVAL_ID, weoMissBands } from '../../utils/missBands';
 import { areaSeries } from '../../utils/oecdSdmx';
 import { CBPOL_AREA, CBPOL_NOT_COVERED } from '../../utils/bisPolicyRates';
 import { countrySeries } from '../../utils/seriesHistory';
@@ -941,10 +942,18 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     }
     const v = loadForecastValidation(path.join(DATA_DIR, 'local', 'validation', 'forecasts.json'));
     const validation = Object.fromEntries(Object.values(v.results).map((r) => [r.id, { status: r.status, verdict: r.verdict, ranAt: r.ranAt }]));
+    // R8: ranges on each path from the evaluation's recorded misses for this country (src/utils/missBands.ts).
+    const missRanges = Object.fromEntries(
+      out.filter((r): r is Extract<ForecastOutcome, { ok: true }> => r.ok).map((r) => {
+        const ev = v.results[FORECAST_EVAL_ID[r.id]];
+        return [r.id, appMissSteps(r.path, iso3, ev ? ev.horizons : null, ev?.ranAt)];
+      }),
+    );
     res.json({
       iso3,
       forecasts: out,
       validation,
+      missRanges,
       sentences: out.filter((r): r is Extract<ForecastOutcome, { ok: true }> => r.ok).map((r) => forecastSentence(r)),
       history: hist ? { pulledAt: hist.pulledAt, problems: hist.problems } : { pulledAt: null, problems: ['Long histories not downloaded yet; the first download runs in the background.'] },
     });
@@ -985,6 +994,13 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       editions: store.editions.map((e) => ({ vintage: e.vintage, label: vintageLabel(e.vintage), file: e.file, countries: Object.keys(e.rows).length })),
       skipped: store.skipped,
     });
+  });
+  // R8: ranges around the latest saved edition's projections from past IMF misses.
+  app.get('/api/weo-vintages/:iso3/bands', (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z]/g, '');
+    const code = String(req.query.code || 'NGDP_RPCH');
+    if (!(WEO_VINTAGE_CODES as readonly string[]).includes(code)) return res.status(400).json({ error: 'UNKNOWN_CODE', message: `Indicator ${code} is not kept from WEO editions.` });
+    res.json(weoMissBands(loadWeoVintages(DATA_DIR), iso3, code));
   });
   app.get('/api/weo-vintages/:iso3', (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z]/g, '');

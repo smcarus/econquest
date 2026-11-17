@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Ranges from past misses (R8): History & data > IMF forecasts by edition gets *Range from past IMF
+  misses*, a 70% and 90% range around the latest saved WEO edition's projections from how far past
+  editions (same season, same years ahead) missed the country's outturn. Nowcast and forecasts gets
+  *Ranges from past misses* on each tested step of the app's forecasts, from the out-of-sample
+  misses the evaluation recorded for the country (the evaluation now keeps per-country miss
+  percentiles). Fewer than 8 past cases reads Missing. Route `GET /api/weo-vintages/:iso3/bands`;
+  `missRanges` in `/api/forecast/:iso3`. Four languages.
+
 - Replication check (R2): *Check it still holds* on each pinned figure in a research notebook reads
   the series again and says Same, Revised (old and new value, up to 10) or Source no longer answers,
   and counts newer figures since the As of day. `npm run notebook:check` checks every pinned figure
