@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Scenario Agent research (WI4): a short list of peer-reviewed studies by kind of shock
+  (`src/data/shockResearch.ts`: Iacoviello and Navarro 2019; Ha, Stocker and Yilmazkuday 2020;
+  Kilian 2009; Reinhart and Rogoff 2009; Cerra and Saxena 2008), each checked against the paper with
+  the page and the paper's own words for every number. The answer gives the finding for the
+  country's group (IMF advanced or emerging), labelled as a published average, not an estimate for
+  the country.
 - Scenario Agent history (WI3): past episodes of the same kind of shock (the country's currency,
   10-year yield and USD bond spread between the episode's months, from the saved replay series);
   cases since 1980 where growth, inflation or the currency moved as far in one year, with the medians

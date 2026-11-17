@@ -31,6 +31,8 @@ import { applyScenario, RESPONSES, type FactorId, type ScenarioModel, type Scena
 import type { LpOutcome } from './localProjections';
 import { engineShock, SHOCK_KINDS, shockLabel, type ScenarioQuestion, type Shock, type ShockKind, type ShockKindInfo } from './scenarioQuestion';
 import { semiElasticityFor } from '../data/spendingMultipliers';
+import { RESEARCH_NOTE, studiesFor } from '../data/shockResearch';
+import { IMF_ADVANCED } from './scenarioReplay';
 import type { EpisodeRead, LevelContext, ShockPrecedentOutcome } from './scenarioHistory';
 import type { PrecedentOutcome } from './precedentFinder';
 import type { LiveWatchlistItem } from '../types/council';
@@ -348,7 +350,10 @@ export function scenarioFinding(sq: ScenarioQuestion, it: LiveWatchlistItem, dat
   const hist = data?.history;
   if (hist) historyFigures(hist, name, figures, parts, missing);
 
-  const shockFigures = figures.filter((f) => /^(After the shock|Past episode|When it happened before|Record)/.test(f.label));
+  // What published research found (WI4, src/data/shockResearch.ts), for the country's group.
+  researchFigures(sq, it.iso3, figures);
+
+  const shockFigures = figures.filter((f) => /^(After the shock|Past episode|When it happened before|Record|Research)/.test(f.label));
   if (!shockFigures.length) return { finding: null, missing };
   return { finding: { iso3: it.iso3, countryName: name, reading: parts.join(' '), figures, weight }, missing };
 }
@@ -405,6 +410,21 @@ export function historyFigures(hist: ScenarioHistory, name: string, figures: Age
     const when = l.since ? `the ${l.direction} since ${monthName(l.since.slice(0, 7))}` : `the ${l.direction} on record (since ${monthName(l.first.slice(0, 7))})`;
     figures.push({ label: `Record context: ${l.label} after the shock`, value: `${l.after.toFixed(2)}%, ${when}`, source: `${l.source}; latest ${l.now.value.toFixed(2)}% (${l.now.date}) plus the stated change`, tag: 'model' });
     parts.push(`A ${l.label} of ${l.after.toFixed(2)}% would be ${when}.`);
+  }
+}
+
+/** The studies on file for the question's shocks, the finding for the country's group (IMF advanced or emerging) and the general ones. */
+export function researchFigures(sq: ScenarioQuestion, iso3: string, figures: AgentFigure[]): void {
+  const group = IMF_ADVANCED.has(iso3) ? 'advanced' : 'emerging';
+  const seen = new Set<string>();
+  for (const sh of sq.shocks) {
+    for (const st of studiesFor(sh.kind, sh.direction)) {
+      if (seen.has(st.id)) continue;
+      seen.add(st.id);
+      for (const f of st.findings.filter((x) => x.group === 'all' || x.group === group)) {
+        figures.push({ label: `Research: ${st.citation.split(' (')[0]} (${/\((\d{4})\)/.exec(st.citation)?.[1] ?? ''})`, value: f.text, source: `${st.citation}${st.doi ? `, doi ${st.doi}` : ''}; ${f.quote}; ${RESEARCH_NOTE}`, tag: 'model' });
+      }
+    }
   }
 }
 

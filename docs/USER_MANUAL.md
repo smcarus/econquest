@@ -200,6 +200,16 @@ full council and saved research.
   that started closest to where the country is now; and where the policy rate, inflation or the
   10-year yield would sit in the country's own record after the change ("the highest since June
   2024"). These describe the past; they are not a forecast.
+  Last, the agent sets the app's numbers beside **published research** for that kind of shock, from
+  a short list of peer-reviewed studies kept in the app (src/data/shockResearch.ts): for a Fed
+  rise, Iacoviello and Navarro (2019) on GDP abroad; for a currency move, Ha, Stocker and
+  Yilmazkuday (2020) on how much reaches consumer prices; for oil, Kilian (2009) on why the cause of
+  a price rise matters; for financial stress, Reinhart and Rogoff (2009) on what followed banking
+  crises and Cerra and Saxena (2008) on lost output that does not come back. Each figure names the
+  paper, its DOI and the page the number is from, and the finding shown is the one for advanced or
+  emerging economies as the country is classed by the IMF. A study's number is an average over the
+  countries it covers, not an estimate for the country you asked about. No study is cited that is
+  not on the list.
 - *Explain on a figure, chart or panel*: an *Explain* link sits beside every figure in an agent
   document and on the Research pages (point at a row on a wide screen to see it), at the top of
   each Research panel, and on every chat chart. It sends that exact figure, with its source and
