@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Data surprises (R9): History & data > Data surprises sets each release against an expectation
+  published before it: BCB Focus for Brazil's IPCA, the ECB SPF for euro area HICP, the Kalshi CPI
+  market (snapshots saved before each release) for US CPI, and the app's own GDP nowcast on the
+  forward record. Each surprise is scaled by the spread of the earlier ones once there are 8. Daily
+  step `world:surprises`; route `GET /api/surprises/:iso3`; connection checks `focus_monthly`,
+  `bls_cpi`; licence row for BLS; BCB and Kalshi rows extended; model register `data_surprises`.
+  Four languages.
+
 - Full yield curves (R11): History & data > Full yield curves shows every maturity of the US Treasury
   par yield curve and the ECB euro area government curve each day, a fitted Nelson-Siegel-Svensson
   curve, level (10y), slope (10y minus 2y) and curvature with their one-day and one-month moves, and

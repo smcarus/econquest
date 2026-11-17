@@ -48,6 +48,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | US Treasury TIC (major foreign holders) | Terms not confirmed | Sharing unclear | No terms, licence or copyright statement was found on the TIC or Treasury site-policy pages. | Not stated. | Source: US Treasury, Treasury International Capital (TIC) system. |
 | US Treasury Fiscal Data (Treasury Securities Auctions Data) | Open with attribution | Free sharing allowed | Allowed: Fiscal Data says its data are free, without restriction, to copy, adapt and redistribute. | Allowed ("for non-commercial or commercial purposes"). | Source: U.S. Department of the Treasury, Fiscal Data, Treasury Securities Auctions Data. |
 | US Treasury Daily Treasury Par Yield Curve Rates | Open with attribution | Free sharing allowed | Allowed: published by the US Treasury, a work of the US government, which has no copyright in the United States. | No restriction stated. | Source: U.S. Department of the Treasury, Daily Treasury Par Yield Curve Rates. |
+| US Bureau of Labor Statistics public data API | Open with attribution | Free sharing allowed | Allowed: BLS material is in the public domain and may be reproduced without permission; BLS asks to be credited. | No restriction stated. | Source: U.S. Bureau of Labor Statistics. |
 | US EIA open data | Open with attribution | Free sharing allowed | Public domain. | No restriction stated. | Source: U.S. Energy Information Administration (<publication date>). |
 | GDELT (DOC API, raw GDELT 2.0 files and GDELT 1.0 event files) | Open with attribution | Free sharing allowed | Allowed in any form, with a citation and link. | Allowed, without fee. | Source: The GDELT Project (https://www.gdeltproject.org/). |
 | UCDP (Uppsala Conflict Data Program) downloaded files | Open with attribution | Free sharing allowed | Allowed: free to use and redistribute under CC BY 4.0, citing the publications listed with each dataset. | Allowed (CC BY 4.0 sets no commercial limit). | UCDP, Uppsala University (ucdp.uu.se), CC BY 4.0; cite the dataset publications, e.g. Davies, Pettersson & Öberg (2026), Journal of Peace Research, and Gleditsch et al. (2002), Journal of Peace Research 39(5). |
@@ -455,6 +456,20 @@ From the terms:
 
 > Copyright protection under this title is not available for any work of the United States Government
 
+### US Bureau of Labor Statistics public data API
+
+- **Used for:** US consumer price index (CPI-U, seasonally adjusted, CUSR0000SA0) for Data surprises; the month-on-month change is the app's calculation
+- **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. Public domain, with a credit to BLS.
+- **Terms read:** [BLS linking and copyright information](https://www.bls.gov/bls/linksite.htm); [BLS public data API terms of service](https://www.bls.gov/developers/termsOfService.htm) (checked 2026-11-17)
+- **Show to others:** Allowed: BLS material is in the public domain and may be reproduced without permission; BLS asks to be credited.
+- **Commercial use:** No restriction stated.
+- **Credit:** Source: U.S. Bureau of Labor Statistics.
+
+From the terms:
+
+> All material appearing on the BLS website is in the public domain and may be reproduced or copied without permission.
+
 ### US EIA open data
 
 - **Used for:** Daily Brent and WTI spot prices (with your free key)
@@ -569,7 +584,7 @@ From the terms:
 
 ### Polymarket
 
-- **Used for:** Prediction-market odds
+- **Used for:** Prediction-market odds; for Data surprises, daily snapshots of the US CPI market (KXCPI) kept on this computer, from which the app works out the mean it implies before each release
 - **Status:** Permission needed for client or commercial use
 - **Free non-commercial sharing:** Sharing unclear. A personal licence; redistribution is barred only to capital-markets firms and data distributors, and sharing with others is not addressed.
 - **Terms read:** [Terms of Use (effective 11 Aug 2026)](https://polymarket.com/tos) (checked 2026-11-06)
@@ -644,7 +659,7 @@ From the terms:
 
 ### Banco Central do Brasil (SGS 13522, IPCA 12 months; Focus market expectations)
 
-- **Used for:** Brazil's IPCA inflation over 12 months; IBGE monthly industrial production, retail sales volume and unemployment rate as the BCB republishes them (SGS 21859, 1455, 24369); Focus survey median IPCA expected over the next 12 months (Olinda OData, Expectativas)
+- **Used for:** Brazil's IPCA inflation over 12 months; IBGE monthly industrial production, retail sales volume and unemployment rate as the BCB republishes them (SGS 21859, 1455, 24369); Focus survey median IPCA expected over the next 12 months (Olinda OData, Expectativas); for Data surprises, the Focus median IPCA expected for each month (ExpectativaMercadoMensais) and the monthly IPCA (SGS 433)
 - **Status:** Terms not confirmed
 - **Free non-commercial sharing:** Sharing unclear. No licence stated; the footer reads all rights reserved.
 - **Terms read:** [Open data portal: about](https://dadosabertos.bcb.gov.br/pages/sobre-o-portal); [Focus dataset page (licence: ODbL)](https://dadosabertos.bcb.gov.br/dataset/expectativas-mercado) (checked 2026-11-06)

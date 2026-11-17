@@ -45,6 +45,7 @@ export const COUNTRY_TOOL_GROUPS: CountryToolGroup[] = [
     tools: [
       { id: 'tool-yield-curve', label: 'tl_yield_curve' },
       { id: 'tool-full-curves', label: 'tl_full_curves' },
+      { id: 'tool-surprises', label: 'tl_surprises' },
       { id: 'tool-inflation-drivers', label: 'tl_inflation_drivers' },
       { id: 'tool-rule-family', label: 'tl_rule_family' },
       { id: 'tool-local-projections', label: 'tl_local_projections' },

@@ -3,6 +3,17 @@
  * like src/i18n/es/panelText.ts. Formal "vous" throughout. Not yet checked by a native speaker.
  */
 export const PANEL_TEXT_FR: Record<string, string> = {
+  "the surprise inputs have not been downloaded yet (daily step world:surprises)": "les données des surprises n'ont pas encore été téléchargées (étape quotidienne world:surprises)",
+  "the BCB Focus monthly survey has not been read": "l'enquête mensuelle Focus de la BCB n'a pas été lue",
+  "the IPCA series (BCB SGS 433) has not been read": "la série de l'IPCA (SGS 433 de la BCB) n'a pas été lue",
+  "no month has both a Focus median and an outturn": "aucun mois n'a à la fois une médiane Focus et un résultat",
+  "the ECB Survey of Professional Forecasters has not been read": "l'enquête de la BCE auprès des prévisionnistes professionnels n'a pas été lue",
+  "the euro area HICP (Eurostat) has not been read": "l'IPCH de la zone euro (Eurostat) n'a pas été lu",
+  "no survey round has reached its target month yet": "aucun tour de l'enquête n'a encore atteint son mois cible",
+  "no Kalshi CPI market snapshot saved yet; snapshots start with the first daily run and count only for releases after them": "aucun instantané du marché IPC de Kalshi n'est encore enregistré ; les instantanés commencent avec la première exécution quotidienne et ne comptent que pour les publications suivantes",
+  "the BLS CPI series has not been read": "la série de l'IPC du BLS n'a pas été lue",
+  "no release has come out since the first saved snapshot": "aucune publication n'est sortie depuis le premier instantané enregistré",
+  "no recorded nowcast for this country has been published yet": "aucune estimation immédiate enregistrée pour ce pays n'a encore été publiée",
   "5Y CDS (your data)": "CDS à 5 ans (vos données)",
   "latest daily figure": "dernier chiffre quotidien",
   "OECD leading indicator": "Indicateur avancé de l'OCDE",

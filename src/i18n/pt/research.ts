@@ -101,6 +101,7 @@ export const RESEARCH_PT: Messages<typeof RESEARCH> = {
   tl_policy_incidence: "Quem paga por uma política",
   tl_yield_curve: "Curva de juros",
   tl_full_curves: "Curvas de juros completas (EUA, zona do euro)",
+  tl_surprises: "Surpresas nos dados",
   tl_inflation_drivers: "Fatores da inflação",
   tl_rule_family: "Regras de política",
   tl_local_projections: "Inflação após mudanças de juros",

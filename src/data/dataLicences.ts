@@ -509,6 +509,23 @@ export const DATA_LICENCES: LicenceRow[] = [
     checked: '2026-11-17',
   },
   {
+    id: 'bls',
+    name: 'US Bureau of Labor Statistics public data API',
+    usedFor: 'US consumer price index (CPI-U, seasonally adjusted, CUSR0000SA0) for Data surprises; the month-on-month change is the app\'s calculation',
+    terms: [
+      { label: 'BLS linking and copyright information', url: 'https://www.bls.gov/bls/linksite.htm' },
+      { label: 'BLS public data API terms of service', url: 'https://www.bls.gov/developers/termsOfService.htm' },
+    ],
+    status: 'open',
+    display: 'Allowed: BLS material is in the public domain and may be reproduced without permission; BLS asks to be credited.',
+    commercial: 'No restriction stated.',
+    attribution: 'Source: U.S. Bureau of Labor Statistics.',
+    quotes: ['All material appearing on the BLS website is in the public domain and may be reproduced or copied without permission.'],
+    share: 'allowed',
+    shareNote: 'Public domain, with a credit to BLS.',
+    checked: '2026-11-17',
+  },
+  {
     id: 'eia',
     name: 'US EIA open data',
     usedFor: 'Daily Brent and WTI spot prices (with your free key)',
@@ -644,7 +661,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'polymarket',
     name: 'Polymarket',
-    usedFor: 'Prediction-market odds',
+    usedFor: 'Prediction-market odds; for Data surprises, daily snapshots of the US CPI market (KXCPI) kept on this computer, from which the app works out the mean it implies before each release',
     terms: [{ label: 'Terms of Use (effective 11 Aug 2026)', url: 'https://polymarket.com/tos' }],
     status: 'permission',
     display: 'Personal, limited licence only. Redistribution to capital-markets firms or data distributors needs written agreement.',
@@ -735,7 +752,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'bcb',
     name: 'Banco Central do Brasil (SGS 13522, IPCA 12 months; Focus market expectations)',
-    usedFor: 'Brazil\'s IPCA inflation over 12 months; IBGE monthly industrial production, retail sales volume and unemployment rate as the BCB republishes them (SGS 21859, 1455, 24369); Focus survey median IPCA expected over the next 12 months (Olinda OData, Expectativas)',
+    usedFor: 'Brazil\'s IPCA inflation over 12 months; IBGE monthly industrial production, retail sales volume and unemployment rate as the BCB republishes them (SGS 21859, 1455, 24369); Focus survey median IPCA expected over the next 12 months (Olinda OData, Expectativas); for Data surprises, the Focus median IPCA expected for each month (ExpectativaMercadoMensais) and the monthly IPCA (SGS 433)',
     terms: [
       { label: 'Open data portal: about', url: 'https://dadosabertos.bcb.gov.br/pages/sobre-o-portal' },
       { label: 'Focus dataset page (licence: ODbL)', url: 'https://dadosabertos.bcb.gov.br/dataset/expectativas-mercado' },
