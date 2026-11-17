@@ -1212,6 +1212,12 @@ hold no figures of their own; the handout reads them from the app's series when 
   worked at the last nightly check fails now, a scheduled job fails, or a backtest that passed fails
   on its next run. *Test* sends a real message. Nothing is sent until one is set. Details and the
   `.env` names are in [HOME_SERVER.md](./HOME_SERVER.md#server-alerts).
+- **Research tools** (Settings > Research tools): the address and token of a research-tools server
+  you run yourself (backtests, volatility and price forecasts, nowcasts, option prices), a time
+  limit (20 seconds) and the tool calls one chat question may make (4). Off until the address and
+  token are both set. *Test connection* lists the tools the token can see. Only Council chat uses
+  it; every call goes in the audit log, never the token. Details in
+  [RESEARCH_TOOLS.md](./RESEARCH_TOOLS.md).
 - **Morning brief** (Settings > Morning brief): at a time you set, the council answers your standing
   questions (up to four; three starting ones on policy stance, cheap or rich, and coming dates) about
   the watchlist you pick, your AI model writes each summary, and each is saved to Reports > Saved

@@ -513,6 +513,7 @@ Where things stand on 14 November 2026 (details and status in [docs/ROADMAP.md](
 | [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md) | Every source, what it fills, how to set it up |
 | [docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md) | What each source's terms allow |
 | [docs/DATA_API.md](./docs/DATA_API.md), [docs/openapi.json](./docs/openapi.json) | Reading the app's figures from R, Python and Stata, and connecting an outside system (tokens, events, webhooks, snapshots, holdings, hidden names, scenarios) |
+| [docs/RESEARCH_TOOLS.md](./docs/RESEARCH_TOOLS.md) | Council chat calling a research-tools server you run (MCP): settings, what is sent, the audit log |
 | [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) | Running it as a service for another system: reverse proxy and TLS, service tokens, health checks, the daily-download deadline |
 | [docs/POLICY_REVIEW.md](./docs/POLICY_REVIEW.md) | The policy review steps |
 | [docs/QUESTS.md](./docs/QUESTS.md) | Quests, their rules and the checklist before they are turned on |
@@ -617,6 +618,10 @@ The full reference, with examples, is "Connecting an outside portfolio system" i
 - **Council output.** `/api/v1/integration/*` (desks, bundle, publish, a live stream and
   deliveries) answers `404 NO_COUNCIL_RUN` until the full council has run on that country, and never
   sends built-in figures. `SMCR_WEBHOOK_HMAC_SECRET` fixes its signing secret.
+- **Outside research tools.** Council chat can call a research-tools server you run yourself
+  (backtests, volatility and price forecasts, nowcasts, option prices) over MCP. Set the address and
+  token in **Menu > Settings > Research tools**; it is off until both are set, works in chat only,
+  and every call goes in the audit log ([docs/RESEARCH_TOOLS.md](docs/RESEARCH_TOOLS.md)).
 - **Audit seal.** With `AUDIT_SEAL_KEY` set, every audit log entry also carries an HMAC; with
   `AUDIT_BUCKET_URL`, each entry is copied to an S3-compatible bucket with object lock, so a rewrite
   of the whole log on this computer can be caught ([docs/SECURITY.md](docs/SECURITY.md)).

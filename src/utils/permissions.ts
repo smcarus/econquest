@@ -34,6 +34,7 @@ const ADMIN_WRITE: RegExp[] = [
   /^\/api\/council\/webhook-dispatch$/,
   /^\/api\/morning-brief$/,
   /^\/api\/watch-rules$/,
+  /^\/api\/research-tools\/test$/,
 ];
 
 /** Changes a viewer may still make: their own sign-in, password and workspace (own lists and holdings). */
