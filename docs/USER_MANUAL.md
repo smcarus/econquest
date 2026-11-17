@@ -668,6 +668,14 @@ tuned and run again under the same name; a new method is a new test. The Nowcast
 in Council chat gives the same figures with the same verdicts. `npm run forecast:worst` lists the
 series where a model missed most.
 
+*Ranges from past misses* (R8). Below the chart, with ranges shown (Help level), a table puts a
+range on each tested step of the forecast built only from how far that forecast missed for this
+country in its out-of-sample test: the 70% range runs from the 15th to the 85th percentile of the
+past misses added to today's figure, the 90% range from the 5th to the 95th, with the average miss
+(above 0 means outcomes tended to come in higher) and the number of past cases. Fewer than 8 past
+cases, a forecast whose test has not run on this computer, or a test result saved before this
+feature (run `npm run go -- --validate` again) reads Missing with the reason.
+
 **Historical context.** Under each History chart a line puts the latest figure in its own
 history: a record or "highest since" (only when that date is far enough back to matter), where it
 sits among all the saved observations, and the change on a year earlier. IMF projections are left
@@ -805,6 +813,14 @@ debt fan coverage test (`docs/validation/forecasts/debt_fan_coverage.json`, run 
 forecast:evaluate`): at each past October edition the fan is rebuilt as the panel builds it today,
 on that edition's actual years and projections, and the test checks that later debt outturns fall
 inside the 10-90 band between 70% and 90% of the time at every horizon from 1 to 5 years.
+Under the table, *Range from past IMF misses* (R8) puts a range around the latest saved edition's
+projections for this year and the next two: each past edition's projection for the same year, one
+or two years ahead, is set against the figure the newest saved edition gives as data for that year,
+for this country only. April-type editions (January to June) and October-type ones are kept apart,
+because an April projection knows less. The 70% range is the projection plus the 15th to 85th
+percentile of the past misses, the 90% range the 5th to 95th; the table shows the average miss, the
+number of past editions and which editions were used. Fewer than 8 past editions with an outturn
+reads Missing.
 
 **Figures as first published.** Research > History & data shows, for the United States (with your
 FRED key), every release of real GDP growth, CPI inflation and unemployment from ALFRED. Euro

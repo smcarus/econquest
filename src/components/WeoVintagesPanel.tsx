@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { History } from 'lucide-react';
 import { useT, useTx } from '../i18n/useLang';
 import { PANELS } from '../i18n/messages/panels';
-import { WEO_VINTAGE_CODES, WEO_VINTAGE_LABELS, type WeoVintageReply } from '../utils/weoVintages';
+import { WEO_VINTAGE_CODES, WEO_VINTAGE_LABELS, vintageLabel, type WeoVintageReply } from '../utils/weoVintages';
+import type { WeoMissReply } from '../utils/missBands';
 
 /**
  * Country Research > History & data > IMF forecasts by edition: every saved WEO edition's figure for
@@ -16,6 +17,7 @@ export const WeoVintagesPanel: React.FC<{ iso3: string; countryName: string }> =
   const [code, setCode] = useState<string>('NGDP_RPCH');
   const [year, setYear] = useState<string>('');
   const [reply, setReply] = useState<WeoVintageReply | null>(null);
+  const [bands, setBands] = useState<WeoMissReply | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const t = useT(PANELS);
@@ -33,6 +35,21 @@ export const WeoVintagesPanel: React.FC<{ iso3: string; countryName: string }> =
       live = false;
     };
   }, [iso3, code, year, tick]);
+
+  // R8: range around the latest edition's projections from past IMF misses (src/utils/missBands.ts).
+  useEffect(() => {
+    let live = true;
+    setBands(null);
+    fetch(`/api/weo-vintages/${encodeURIComponent(iso3)}/bands?code=${encodeURIComponent(code)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((b: WeoMissReply | null) => live && setBands(b))
+      .catch(() => live && setBands(null));
+    return () => {
+      live = false;
+    };
+  }, [iso3, code, tick]);
+
+  const MISS_WHY = { none_saved: 'weo_missNoneSaved', no_series: 'weo_missNoSeries', no_years: 'weo_missNoYears' } as const;
 
   return (
     <section className="ui-panel" data-weo-vintages="true">
@@ -103,6 +120,52 @@ export const WeoVintagesPanel: React.FC<{ iso3: string; countryName: string }> =
                 </table>
                 <p className="text-xs text-slate-500 dark:text-slate-400">{t('weo_source')}</p>
               </>
+            )}
+            {bands && (
+              <div className="overflow-x-auto pt-2" data-weo-miss-bands="true">
+                <h3 className="ui-label font-medium">{t('weo_missTitle')}</h3>
+                {bands.why ? (
+                  <p className="text-sm text-amber-700 dark:text-amber-400" data-missing="true">{t(MISS_WHY[bands.why])}</p>
+                ) : (
+                  <>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {t('weo_missIntro', { season: t(bands.season === 'april' ? 'weo_missApril' : 'weo_missOctober'), country: countryName, edition: bands.editionLabel ?? '' })}
+                    </p>
+                    <table className="w-full text-sm tabular-nums mt-1">
+                      <thead>
+                        <tr className="text-left text-xs text-slate-500 dark:text-slate-400">
+                          <th className="py-1 pr-3 font-medium">{t('weo_missYear')}</th>
+                          <th className="py-1 pr-3 font-medium">{t('weo_missProj')}</th>
+                          <th className="py-1 pr-3 font-medium">{t('fc_miss70')}</th>
+                          <th className="py-1 pr-3 font-medium">{t('fc_miss90')}</th>
+                          <th className="py-1 pr-3 font-medium">{t('fc_missAvg')}</th>
+                          <th className="py-1 pr-3 font-medium">{t('fc_missCases')}</th>
+                          <th className="py-1 font-medium">{t('weo_missUsed')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bands.rows.map((r) => (
+                          <tr key={r.year} className="border-t border-slate-100 dark:border-slate-800">
+                            <td className="py-1 pr-3">{r.year}</td>
+                            <td className="py-1 pr-3">{r.projection}</td>
+                            {r.range && r.span ? (
+                              <>
+                                <td className="py-1 pr-3">{t('c_range', { from: r.range.lo70, to: r.range.hi70 })}</td>
+                                <td className="py-1 pr-3">{t('c_range', { from: r.range.lo90, to: r.range.hi90 })}</td>
+                                <td className="py-1 pr-3">{r.range.meanMiss > 0 ? '+' : ''}{r.range.meanMiss}</td>
+                                <td className="py-1 pr-3">{r.range.cases}</td>
+                                <td className="py-1">{t('weo_missEditions', { from: vintageLabel(r.span.from), to: vintageLabel(r.span.to) })}</td>
+                              </>
+                            ) : (
+                              <td colSpan={5} className="py-1 text-amber-700 dark:text-amber-400" data-missing="true">{t('weo_missFew', { n: r.cases ?? 0 })}</td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </>
+                )}
+              </div>
             )}
           </>
         )}

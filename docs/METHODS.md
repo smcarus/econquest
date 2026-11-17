@@ -56,6 +56,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Inflation after rate changes (local projections) | Research | Description, not a tested signal | None |
 | Policy rule family | Research | Backtest too few cases | v1, 2026-11-07, method 2 |
 | Debt fan chart (bootstrap of past shocks) | Research | Forecast evaluation too few cases | debt_fan_coverage v1, 2026-11-07 |
+| Ranges from past forecast misses (R8) | Research | Description, not a tested signal | None |
 | Costed fiscal options | Research | Description, not a tested signal | None |
 | Scenario Agent (what-if questions) | Research | Description, not a tested signal | None |
 | Remittances | Research | Description, not a tested signal | None |
@@ -747,6 +748,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 **Recorded verdicts**
 
 - debt_fan_coverage, version 1, 2026-11-07T00:24Z: **Too few cases** (forecast evaluation). Too few cases at 4 and 5 years ahead (needs 100 cases over 8 target years; 8 October editions saved). Outturns inside the 10-90 band (80% if calibrated): 1y 66%, 2y 64%, 3y 60%, 4y 55%, 5y 48%; misses mostly above the band. 179 series, 2009 to 2018.
+
+### Ranges from past forecast misses (R8)
+
+- **Says:** How far past IMF projections and the app's own forecasts missed for this country, put around today's forecast as a 70% and a 90% range.
+- **Rule:** IMF: each saved past WEO edition's projection for the same year, one or two years ahead, against the figure the newest saved edition gives as data; grouped by years ahead and edition season (April-type, October-type). App: the out-of-sample misses the pre-registered forecast evaluation recorded for the country at each tested step. Ranges are the 15th-85th and 5th-95th percentiles of the misses added to the forecast. Fewer than 8 misses reads Missing.
+- **Reads:** Past IMF WEO editions in data/local/weo-vintages/; the forecast evaluation result (data/local/validation/forecasts.json)
+- **Shows in:** Country Research > History & data (IMF forecasts by edition; Nowcast and forecasts)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: it reports how past forecasts missed and makes no claim about coverage; percentiles of a few dozen misses are rough.
+- **Limits:** Past misses only; a new kind of shock can miss by more. Later revisions to the actual figures change the misses.
+- **Code:** `src/utils/missBands.ts`
 
 ### Costed fiscal options
 

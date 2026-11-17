@@ -23,6 +23,7 @@
 import { seededRandom } from './backtest';
 import { tPValue } from './stats';
 import { BAND_Z, fitAr, forecastAr, type Prediction } from './forecastModels';
+import { missQuantiles } from './missBands';
 
 export type ForecastTarget = 'gdp_growth_q' | 'cpi_yoy_m' | 'policy_rate_m' | 'debt_gdp_a' | 'gdp_nowcast_q' | 'cpi_nowcast_m';
 export type BenchmarkKind = 'naive' | 'mean';
@@ -74,7 +75,8 @@ export interface HorizonScore {
   /** Share of outcomes inside the model's 70% and 90% bands. */
   coverage70: number | null;
   coverage90: number | null;
-  bySeries: Array<{ where: string; cases: number; relRmse: number; dm: number | null; dmPValue: number | null }>;
+  /** Per series; `miss` (5th, 15th, 85th, 95th percentile of outcome minus forecast) and `meanMiss` when it has minSeriesCases or more (R8). */
+  bySeries: Array<{ where: string; cases: number; relRmse: number; dm: number | null; dmPValue: number | null; miss?: [number, number, number, number]; meanMiss?: number }>;
 }
 
 export interface ForecastResult {
@@ -217,7 +219,9 @@ export function scoreHorizon(cases: ForecastCase[], h: number, minSeriesCases = 
   const bySeries = wheres.map((where) => {
     const sc = hc.filter((c) => c.where === where).sort((a, b) => (a.origin < b.origin ? -1 : 1));
     const dm = dieboldMariano(sc, h);
-    return { where, cases: sc.length, relRmse: r3(relRmse(sc).rel), dm: dm?.dm ?? null, dmPValue: dm?.pValue ?? null };
+    const misses = sc.map((c) => c.actual - c.model.mean);
+    const kept = misses.length >= minSeriesCases ? { miss: missQuantiles(misses), meanMiss: r3(misses.reduce((a, b) => a + b, 0) / misses.length) } : {};
+    return { where, cases: sc.length, relRmse: r3(relRmse(sc).rel), dm: dm?.dm ?? null, dmPValue: dm?.pValue ?? null, ...kept };
   });
   const tested = bySeries.filter((s) => s.cases >= minSeriesCases);
   const withSd = hc.filter((c) => c.model.sd !== undefined && Number.isFinite(c.model.sd));
