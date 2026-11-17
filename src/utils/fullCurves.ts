@@ -54,8 +54,12 @@ export const ustCurveUrl = (year: number) =>
   `https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/${year}/all?type=daily_treasury_yield_curve&field_tdr_date_value=${year}&page&_format=csv`;
 
 export const ECB_CURVE_TENORS = ['SR_3M', 'SR_6M', 'SR_1Y', 'SR_2Y', 'SR_3Y', 'SR_5Y', 'SR_7Y', 'SR_10Y', 'SR_15Y', 'SR_20Y', 'SR_30Y'] as const;
-export const ecbCurveUrl = (lastN = CURVE_KEEP_DAYS) =>
-  `https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_C.SV_C_YM.${ECB_CURVE_TENORS.join('+')}?format=csvdata&lastNObservations=${lastN}`;
+/**
+ * One request per maturity by default: the ECB did not answer within 10 s when asked for all eleven
+ * maturities in one query from a Mac, while its other datasets answered in about 3 s.
+ */
+export const ecbCurveUrl = (lastN = CURVE_KEEP_DAYS, tenors: readonly string[] = ECB_CURVE_TENORS) =>
+  `https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_C.SV_C_YM.${tenors.join('+')}?format=csvdata&lastNObservations=${lastN}`;
 
 const key = (m: number) => String(Number(m.toFixed(4)));
 

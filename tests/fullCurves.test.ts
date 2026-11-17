@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'fs';
 import {
+  ecbCurveUrl,
   ecbMaturity,
   fitNss,
   fullCurveReading,
@@ -82,6 +83,18 @@ test('reading: factors, moves, carry and roll-down; Missing when not downloaded'
   assert.ok(!none.ok && /ECB curve has not been downloaded/.test(none.reason));
   assert.equal(defaultCurveArea('DEU'), 'ea');
   assert.equal(defaultCurveArea('BRA'), 'us');
+});
+
+test('ECB curve asked one maturity at a time; Zenodo and the ECB told who is asking', () => {
+  assert.match(ecbCurveUrl(5, ['SR_10Y']), /SV_C_YM\.SR_10Y\?format=csvdata&lastNObservations=5$/);
+  assert.match(ecbCurveUrl(), /SR_3M\+SR_6M/);
+  const feed = fs.readFileSync('src/server/feeds/fullCurves.ts', 'utf8');
+  assert.match(feed, /for \(const tenor of ECB_CURVE_TENORS\)/);
+  assert.match(feed, /'User-Agent': RESEARCH_USER_AGENT/);
+  const cc = fs.readFileSync('src/utils/connectionCheck.ts', 'utf8');
+  assert.match(cc, /ecbCurveUrl\(5, \['SR_10Y'\]\),\s*Math\.max\(T, 30_000\)/);
+  assert.match(cc, /\.\.\.ZENODO_HEADERS/);
+  assert.match(fs.readFileSync('src/server/feeds/regional.ts', 'utf8'), /doseLatestUrl\(\), 'DOSE', \{ \.\.\.ZENODO_HEADERS/);
 });
 
 test('wiring: daily step, route, connection checks, licence, panel, translations', () => {
