@@ -5,6 +5,15 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- World Bank projects (R5): Research > History & data lists the active World Bank projects in the
+  country with the amount committed, approval and closing dates and the share of each project's
+  planned time gone, largest first. For IDA credits and grants it adds the share paid out, from the
+  IDA statement of credits, and flags projects paying out slowly for the time gone (budget support
+  never flagged). Both lists are CC BY 4.0, need no key and come with the daily download once a
+  week (step `world:wb_projects`, saved in data/live/wb-projects.json); the panel never fetches on
+  open. New Data health rows `wb_projects` and `wb_ida_credits`, a licence row, glossary entry in
+  four languages. IBRD loans have no paid-out figure yet.
+
 - Budget credibility (R3): Research > History & data shows how much of the budget first approved for
   each year the government actually spent (World Bank GF.XPD.BUDG.ZS, from PEFA assessments, UN goal
   16.6.1), the PEFA PI-1 band of each year (A within 5%, B within 10%, C within 15%, D further) and a

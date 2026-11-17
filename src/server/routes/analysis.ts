@@ -40,6 +40,9 @@ import { financialInclusion, fiSentence, FI_IDS } from '../../utils/financialInc
 import { commodityTerms, ctSentence, CT_IDS } from '../../utils/commodityTerms';
 import { aidProfile, aidSentence, AID_IDS } from '../../utils/aidReceived';
 import { budgetCredibility, bcSentence, BC_IDS } from '../../utils/budgetCredibility';
+import { wbProjectsProfile, wbProjectsSentence } from '../../utils/wbProjects';
+import { loadWbProjects } from '../feeds/wbProjects';
+import { iso2For } from '../../data/iso3166Alpha2';
 import { foodView, foodSentence, FOOD_IDS } from '../../utils/foodPrices';
 import { faoCpiInput } from '../../utils/faoCpiStore';
 import { disasterView, disasterSentence } from '../../utils/disasters';
@@ -513,6 +516,13 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const b = budgetCredibility(Object.fromEntries(BC_IDS.map((id) => [id, pick(id)])), new Date().getUTCFullYear(), Boolean(file));
     const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...b, sentence: bcSentence(b, name) });
+  });
+  // World Bank development projects (R5, src/utils/wbProjects.ts): the saved list from the daily download only, never fetched on page open.
+  app.get('/api/wb-projects/:iso3', (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const p = wbProjectsProfile(loadWbProjects(), iso2For(iso3), new Date().toISOString().slice(0, 10));
+    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...p, sentence: wbProjectsSentence(p, name) });
   });
   // Food prices and food security (PA2, src/utils/foodPrices.ts): saved World Bank history, the Pink Sheet moves, and the FAOSTAT file in data/local/fao-cpi/.
   app.get('/api/food-prices/:iso3', async (req, res) => {

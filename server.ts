@@ -106,6 +106,7 @@ import { tradeMixFromSnapshot } from './src/utils/tradeMix';
 import { climateFromSnapshot } from './src/utils/climateEnergy';
 import { loadOwidEnergy, fetchOwidEnergyPull } from './src/server/feeds/owidEnergy';
 import { loadFedSwaps, fetchFedSwaps } from './src/server/feeds/fedSwaps';
+import { fetchWbProjects } from './src/server/feeds/wbProjects';
 import { loadWeather, fetchWeather } from './src/server/feeds/nasaPower';
 import { loadCountryWeather, fetchCountryWeather } from './src/server/feeds/wbClimate';
 import { loadWages, fetchWagesPull, loadHousePrices, fetchHousePricesPull, loadPrivateDebt, fetchPrivateDebtPull } from './src/server/feeds/wagesHousing';
@@ -697,6 +698,13 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
       const note = `${got.operations.length} operations since December 2007`;
       return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
+    }
+    case 'world:wb_projects': {
+      const got = await fetchWbProjects();
+      if (!got) return { outcome: 'failed', note: 'The World Bank did not answer for its project list' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const note = `${got.projects.length} active projects, ${got.ida ? `IDA amounts for ${Object.keys(got.ida).length} projects` : 'no IDA amounts (statement not read)'}`;
+      return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}, downloaded again after a week` };
     }
     case 'world:bis_private_debt': {
       const got = await fetchPrivateDebtPull();

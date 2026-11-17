@@ -129,6 +129,7 @@ export const RESEARCH = defineMessages('research', {
   tl_sandboxes: "Model sandboxes",
   tl_remittances: "Remittances",
   tl_aid: "Aid received",
+  tl_wb_projects: "World Bank projects",
   tl_financial_inclusion: "Financial inclusion",
   tl_food_prices: "Food prices and food security",
   tl_risk_scorecard: "Country risk scorecard",

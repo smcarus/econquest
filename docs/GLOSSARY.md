@@ -340,6 +340,16 @@ How much of the money the state raises and spends goes through each level: centr
 
 **Limits.** From Eurostat (EU members) and the IMF Government Finance Statistics, yearly and usually two or three years behind. Each level is counted before money passed between levels (grants to states, for example) is netted out, so the levels add up to more than general government; the share below central government is worked out from that sum and labelled so. Many countries report only central government to the IMF.
 
+### World Bank projects and money paid out
+
+The projects the World Bank is paying for in a country, such as roads, schools, clinics, power lines or budget support, with the amount committed and, for IDA credits and grants, the amount actually paid out so far.
+
+**Why it matters.** A loan or grant signed is a promise; the money reaches people only as it is paid out. Projects that pay out slowly often face problems on the ground, such as buying land, awarding contracts or hiring staff, and the services they were meant to bring arrive late.
+
+**How to read it.** Compare time gone with paid out: a project 60% through its planned life that has paid out 20% is well behind. Budget support loans pay out in one or two parts, so they are not compared this way.
+
+**Limits.** From the World Bank's own project list and IDA statement of credits (CC BY 4.0). Paid-out figures cover IDA credits and grants only, not IBRD loans. Projects usually pay out slowly in their first years, and other donors' projects are not included.
+
 ### Budget credibility
 
 How much of the budget parliament approved the government actually spent in the year, as % of that budget. Interest and spending paid for by outside project loans and grants are left out.

@@ -42,6 +42,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Central bank word count | Research | Description, not a tested signal | None |
 | Behavioural policy check | Research | Description, not a tested signal | None |
 | Fiscal rules check | Research | Description, not a tested signal | None |
+| World Bank projects | Research | Description, not a tested signal | None |
 | Budget credibility | Research | Description, not a tested signal | None |
 | Who pays for a policy | Research | Description, not a tested signal | None |
 | Debt restructuring calculator | Research | Description, not a tested signal | None |
@@ -539,6 +540,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: a comparison of published figures with published limits, no forward call.
 - **Limits:** The treaty tests use the bodies' own figures (Eurostat, WAEMU, CEMAC), which can differ from the IMF ones; the EU debt rule also allows debt above 60% that falls at a satisfactory pace, which is not judged; the CEMAC reference balance has no series; national numeric limits are not checked.
 - **Code:** `src/utils/fiscalRules.ts`
+
+### World Bank projects
+
+- **Says:** Which World Bank projects are under way in the country, how much was committed, how much of each project's planned time has gone and, for IDA credits and grants, how much has been paid out.
+- **Rule:** Time gone = (today - board approval) ÷ (planned closing - board approval), capped at 0-100%. Paid out = IDA disbursed ÷ (original principal - cancelled), summed over the project's credits and grants. Paying out slowly = time gone at least 25% and paid out more than 25 points below time gone; development policy (budget support) loans never flagged.
+- **Reads:** World Bank Projects API (search.worldbank.org/api/v2/projects, active projects); Finances One IDA Statement of Credits, Grants and Guarantees, latest snapshot (DS00001)
+- **Shows in:** Country Research > History & data (World Bank projects)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published project amounts and dates, no forward call.
+- **Limits:** IBRD loans have no paid-out figure yet; projects often pay out slowly at first (an S-shaped curve), so the 25-point rule is a prompt to look, not a finding; other donors are not included (IATI parked); the list is downloaded weekly.
+- **Code:** `src/utils/wbProjects.ts, src/server/feeds/wbProjects.ts, src/components/WbProjectsPanel.tsx`
 
 ### Budget credibility
 

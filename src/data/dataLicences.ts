@@ -99,6 +99,23 @@ export const DATA_LICENCES: LicenceRow[] = [
     checked: D,
   },
   {
+    id: 'wb_projects',
+    name: 'World Bank projects and IDA statement of credits (Projects & Operations, Finances One DS00001)',
+    usedFor: 'Active World Bank projects with amounts committed, approval and closing dates (search.worldbank.org Projects API), and IDA amounts disbursed and undisbursed by project (IDA Statement of Credits, Grants and Guarantees, latest snapshot), for the World Bank projects panel',
+    terms: [
+      { label: 'Projects & Operations in the Data Catalog', url: 'https://datacatalog.worldbank.org/search/dataset/0037800' },
+      { label: 'IDA Statement of Credits, Grants and Guarantees', url: 'https://financesone.worldbank.org/d/DS00001' },
+    ],
+    status: 'open',
+    display: 'Allowed: both datasets are published under CC BY 4.0.',
+    commercial: 'Allowed (CC BY 4.0 sets no commercial limit).',
+    attribution: 'The World Bank: Projects & Operations; The World Bank: IDA Statement of Credits, Grants and Guarantees.',
+    quotes: ['This dataset is licensed under Creative Commons Attribution 4.0', 'Creative Commons Attribution 4.0 International'],
+    share: 'allowed',
+    shareNote: 'CC BY 4.0 allows sharing with credit.',
+    checked: '2026-11-17',
+  },
+  {
     id: 'pinksheet',
     name: 'World Bank Pink Sheet (commodity prices)',
     usedFor: 'Monthly commodity prices: oil, gas, metals, farm goods',
