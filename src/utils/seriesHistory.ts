@@ -10,7 +10,7 @@
  * Browser-safe (no fs): the server hands in what it has pulled.
  */
 import { CDS_HIDDEN } from './cdsHidden';
-import { CBPOL_AREA, type CbpolPull } from './bisPolicyRates';
+import { CBPOL_AREA, CBPOL_NOT_COVERED, type CbpolPull } from './bisPolicyRates';
 import { CFTC_CURRENCY_CODES, type CftcWeek } from './cftcPositioning';
 import { type PriceSeries } from './commodityPrices';
 import { areaSeries } from './oecdSdmx';
@@ -25,6 +25,7 @@ import { fxDailySeries, type FxHistoryFile } from './fxHistory';
 import type { FxExtraFile } from './fxExtra';
 import type { ImfMonthlyPull } from './imfMonthly';
 import { imfFxSeries } from './imfFx';
+import { imfPolicySeries } from './imfPolicyRate';
 import { bisCreditSeries, type BisCreditCycle } from './bisCreditCycle';
 import { privateDebtSeries, sectorBalanceSeries } from './sectorBalances';
 import { idsCreditorSeries, type IdsCreditors } from './idsCreditors';
@@ -116,6 +117,8 @@ export interface SeriesInputs {
   fxExtra?: FxExtraFile | null;
   /** IMF monthly exchange rates per US dollar (src/utils/imfFx.ts), when pulled. */
   imfFx?: ImfMonthlyPull | null;
+  /** IMF monthly policy rates (src/utils/imfPolicyRate.ts), for countries the app does not take from the BIS. */
+  imfPolicy?: ImfMonthlyPull | null;
   /** BIS credit-to-GDP gap, debt service ratio and real house prices (src/utils/bisCreditCycle.ts), when pulled. */
   bisCredit?: BisCreditCycle | null;
   /** Creditor mix and terms of public external debt (src/utils/idsCreditors.ts), when pulled. */
@@ -185,6 +188,12 @@ export function snapshotValue(snapshot: Record<string, unknown>, field: string):
 const sortByDate = (pts: SeriesPoint[]) => pts.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 
+/** The BIS policy rate; where the app does not take it from the BIS, the IMF monthly rate (LI4). */
+function policyRateOrImf(iso3: string, inputs: SeriesInputs): Series | SeriesMissing {
+  const bis = policyRate(iso3, inputs.cbpol);
+  if (!('reason' in bis) || (CBPOL_AREA[iso3] && !CBPOL_NOT_COVERED.has(iso3))) return bis;
+  return imfPolicySeries(inputs.imfPolicy, iso3) ?? bis;
+}
 function policyRate(iso3: string, pull: CbpolPull | null | undefined): Series | SeriesMissing {
   const label = 'Policy rate';
   const area = CBPOL_AREA[iso3];
@@ -389,7 +398,7 @@ function figureHistory(fig: (typeof ARCHIVE_FIGURES)[number], inputs: SeriesInpu
 export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
   const code = String(iso3 || '').toUpperCase();
   const all: Array<Series | SeriesMissing> = [
-    policyRate(code, inputs.cbpol),
+    policyRateOrImf(code, inputs),
     inflation(code, inputs.cpi, inputs.cpiOecdAnswered !== false),
     leadingIndicator(code, inputs.cli),
     ...quarterlyGdp(code, inputs.qna),

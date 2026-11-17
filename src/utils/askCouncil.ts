@@ -531,7 +531,7 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
     const figures: AgentFigure[] = [
       { label: 'CPI inflation', value: p1(it.cpiInflationPct), source: c.src, tag: c.q },
       ...(t ? [{ label: 'Inflation target', value: `${p1(t.pct)}${t.bandPts ? ` ± ${t.bandPts}` : ''}`, source: targetSource(t), tag: 'official' as const }] : []),
-      { label: 'Policy rate', value: p2(it.policyRatePct), source: pr.src, tag: it.policyRateSource === 'bis' ? 'official' : pr.q },
+      { label: 'Policy rate', value: p2(it.policyRatePct), source: pr.src, tag: it.policyRateSource === 'bis' || it.policyRateSource === 'imf' ? 'official' : pr.q },
       ...(it.policyRateSource === 'bis' && it.policyRateChange12mPts !== undefined
         ? [{ label: 'Policy rate change over 12 months', value: `${sgn(it.policyRateChange12mPts, 2)} pts`, source: 'BIS, month-end figures', tag: 'official' as const }]
         : []),

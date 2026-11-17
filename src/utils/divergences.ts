@@ -69,7 +69,9 @@ export const cpiTag = (it: LiveWatchlistItem): { q: Quality; src: string } =>
 export const policyTag = (it: LiveWatchlistItem): { q: Quality; src: string } =>
   it.policyRateSource === 'bis'
     ? { q: 'live', src: `BIS${it.policyRateBank ? ` (${it.policyRateBank})` : ''}${it.policyRateDate ? `, ${it.policyRateDate.length === 7 ? 'end of ' : ''}${it.policyRateDate}` : ''}${it.policyRateStale ? ', may be out of date' : ''}` }
-    : it.policyRateSource === 'ai_estimate'
+    : it.policyRateSource === 'imf'
+      ? { q: 'live', src: `IMF monthly${it.policyRateDate ? `, ${it.policyRateDate}` : ''}${it.policyRateStale ? ', may be out of date' : ''}` }
+      : it.policyRateSource === 'ai_estimate'
       ? { q: 'estimate', src: 'AI estimate' }
       : { q: 'sample', src: 'sample' };
 export const yieldTag = (it: LiveWatchlistItem): { q: Quality; src: string } =>
