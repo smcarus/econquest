@@ -55,6 +55,7 @@ import { GINI_SOURCE, TARIFF_LAG_NOTE, TARIFF_SOURCE, TAX_CENTRAL_NOTE, TAX_SOUR
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
 import { IMF_ADVANCED, TNM_CITATION, multiplierView } from './fiscalMultipliers';
 import { parseWhatIf, runWhatIf, whatIfSentence, whatIfSetup } from './fiscalWhatIf';
+import { parseScenario, SHOCK_KINDS, type ScenarioQuestion, type ShockKind } from './scenarioQuestion';
 import { sectorLine, sectorsInQuestion } from './govSpending';
 import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
 import type { DebateResult } from './agentDebate';
@@ -218,6 +219,8 @@ export interface CouncilPlan {
   chart?: ChartRequest;
   /** Explain mode (src/utils/explain.ts): the lenses to explain through, and the figure pointed at. */
   explain?: import('./explain').ExplainPlan;
+  /** A what-if question's shocks as read from the words (src/utils/scenarioQuestion.ts, WI1). */
+  scenario?: ScenarioQuestion;
 }
 
 /** Countries named in the question (by name, ISO code or a common alias). */
@@ -264,6 +267,32 @@ export function wholeListNote(items: Array<{ isBenchmark?: boolean }>): string {
   return bench ? `${base} and ${bench} benchmark ${bench === 1 ? 'market' : 'markets'}` : base;
 }
 
+/** The agents that hold the figures each kind of shock moves, in the order they matter. */
+export const SCENARIO_AGENTS: Record<ShockKind, CoreAgentId[]> = {
+  policy_rate: ['cb', 'fx', 'fiscal', 'rv'],
+  us_rate: ['cb', 'fx', 'spill', 'rv'],
+  interest_cost: ['fiscal', 'rv'],
+  dollar: ['fx', 'spill', 'fiscal'],
+  currency: ['fx', 'cb', 'fiscal'],
+  oil: ['spill', 'cb', 'fiscal'],
+  food: ['spill', 'cb', 'fiscal'],
+  commodity: ['spill', 'fx', 'fiscal'],
+  fin_stress: ['rv', 'fx', 'spill'],
+  supply_chain: ['spill', 'cb'],
+  growth: ['fiscal', 'spill', 'cb'],
+  inflation: ['cb', 'fx'],
+};
+
+/** Adds the agents a what-if's shocks need, each with the reason, keeping the ones already picked. */
+export function addScenarioAgents(agents: CouncilPlan['agents'], sc: ScenarioQuestion): void {
+  const add = (id: CoreAgentId, why: string) => {
+    if (!agents.some((a) => a.id === id)) agents.push({ id, why });
+  };
+  for (const s of sc.shocks) for (const id of SCENARIO_AGENTS[s.kind]) add(id, `the what-if changes the ${SHOCK_KINDS[s.kind].label.toLowerCase()}`);
+  if (sc.routes.length) add('spill', 'the what-if names a trade route shock');
+  agents.sort((x, y) => AGENT_ORDER.indexOf(x.id) - AGENT_ORDER.indexOf(y.id));
+}
+
 /** Which agents answer and for which countries. `scopeIso3` = a country picked in the box, overriding the question. */
 export function planCouncil(question: string, items: LiveWatchlistItem[], scopeIso3?: string): CouncilPlan {
   const picked = scopeIso3 ? items.filter((i) => i.iso3 === scopeIso3) : [];
@@ -286,12 +315,14 @@ export function planCouncil(question: string, items: LiveWatchlistItem[], scopeI
     const m = question.match(COUNCIL_AGENTS[id].topic);
     if (m) agents.push({ id, why: `the question mentions "${m[0].trim()}"` });
   }
+  const scenario = parseScenario(question) ?? undefined;
+  if (scenario) addScenarioAgents(agents, scenario);
   const chart = chartRequest(question, countries, picked.length > 0 || named.length > 0) ?? undefined;
   // A chart question with no desk topic is answered by the Chart Agent alone, not by every agent.
   if (!agents.length && !chart) {
     for (const id of AGENT_ORDER) agents.push({ id, why: 'no specific topic in the question, so every agent answers' });
   }
-  return { countries, scopeNote, agents, ...(chart ? { chart } : {}), ...(off.length ? { offWatchlist: off, offWatchlistIso3: offCodes.map((o) => o.iso3) } : {}) };
+  return { countries, scopeNote, agents, ...(chart ? { chart } : {}), ...(scenario ? { scenario } : {}), ...(off.length ? { offWatchlist: off, offWatchlistIso3: offCodes.map((o) => o.iso3) } : {}) };
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -317,8 +348,9 @@ export function planFollowUp(question: string, prev: CouncilPlan, items: LiveWat
   return {
     countries: named ? plan.countries : prev.countries,
     scopeNote: named ? plan.scopeNote : `${prev.scopeNote}, ${CARRIED}`,
-    agents: namesTopic ? plan.agents : chartOnly && !prev.agents.length ? [] : prev.agents.map((a) => ({ id: a.id, why: `${CARRIED} (${a.why})` })),
+    agents: namesTopic || plan.scenario?.shocks.length ? plan.agents : chartOnly && !prev.agents.length ? [] : prev.agents.map((a) => ({ id: a.id, why: `${CARRIED} (${a.why})` })),
     ...(chart ? { chart } : {}),
+    ...(plan.scenario ? { scenario: plan.scenario } : {}),
     ...(named && plan.offWatchlist ? { offWatchlist: plan.offWatchlist, ...(plan.offWatchlistIso3 ? { offWatchlistIso3: plan.offWatchlistIso3 } : {}) } : {}),
   };
 }
@@ -405,6 +437,8 @@ export function applyAgentChoice(plan: CouncilPlan, choice: AgentChoiceResult | 
     picked.push({ id, why: why ? `the AI model judged: ${why}` : 'the AI model picked it' });
   }
   if (picked.length) {
+    // A what-if keeps the agents that hold the figures its shocks move.
+    if (plan.scenario) addScenarioAgents(picked, plan.scenario);
     picked.sort((x, y) => AGENT_ORDER.indexOf(x.id) - AGENT_ORDER.indexOf(y.id));
     return { ...plan, agents: picked, chosenBy: 'ai', chooserNote: `Agents picked by the AI model${choice?.provider ? ` (${choice.provider})` : ''}.` };
   }

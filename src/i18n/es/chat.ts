@@ -123,6 +123,15 @@ export const CHAT_ES: Partial<Record<Keys, string>> = {
   wi_keep: "Guardar para el gráfico de disyuntivas",
   wi_kept: "Guardado: vea el gráfico de disyuntivas en Sostenibilidad de la deuda",
   wi_keptLabel: "Hipótesis: {line} recortado un {pct}%, {use}",
+  // Scenario read from a what-if question (WI1)
+  sc_read: "Escenario leído de su pregunta",
+  sc_noSize: "tamaño no indicado",
+  sc_atUsd: "a {value} $ por barril",
+  sc_toLevel: "hasta el {value}%",
+  sc_pctAsPts: "«{value}%» leído como {value} puntos porcentuales",
+  sc_double: "duplicar leído como +100%",
+  sc_halve: "reducir a la mitad leído como -50%",
+  sc_askSize: "Indique un tamaño para cada cambio marcado «tamaño no indicado» (por ejemplo «2 puntos» o «un 20%») y vuelva a preguntar. La app no elige un tamaño por usted.",
   // Sign-off
   so_draft: 'Borrador',
   so_reviewed: 'Revisado',

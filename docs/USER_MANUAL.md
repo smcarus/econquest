@@ -170,6 +170,16 @@ full council and saved research.
   *Missing* with the reason. Households and firms are read from inflation, rates and the currency;
   there are no surveys in the app. The same number check applies: a sentence with a number not in
   the agents' figures is removed.
+- *What if*: ask what a change would do ("what would happen to Turkey if the Fed raised rates by 1
+  point and the dollar strengthened 5%?"). Above the answer, *Scenario read from your question*
+  lists each change the app read, with its size: a central bank or Fed rate, government borrowing
+  costs, the dollar, the country's currency against the dollar, oil, food or export commodity
+  prices, financial stress, supply chain pressure, growth or inflation. Sizes are read only from
+  your words ("by 200 basis points", "by 20%", "oil at $150"); "2%" on a rate is read as 2 points
+  and says so. A change with no size reads *size not stated*, and the app asks you for one rather
+  than picking one. The agents that hold the figures each change moves are always asked (for a Fed
+  move: Central Bank, FX, Global Spillover and Relative Value), even when the AI model picks the
+  agents. A change to a spending line ("halve defence") gets the scenario card further down.
 - *Explain on a figure, chart or panel*: an *Explain* link sits beside every figure in an agent
   document and on the Research pages (point at a row on a wide screen to see it), at the top of
   each Research panel, and on every chat chart. It sends that exact figure, with its source and
