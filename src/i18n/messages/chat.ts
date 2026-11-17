@@ -125,6 +125,15 @@ export const CHAT = defineMessages('chat', {
   wi_keep: "Keep for the trade-off chart",
   wi_kept: "Kept: see the trade-off chart under Debt sustainability",
   wi_keptLabel: "What-if: {line} cut by {pct}%, {use}",
+  // Scenario read from a what-if question (WI1)
+  sc_read: "Scenario read from your question",
+  sc_noSize: "size not stated",
+  sc_atUsd: "at ${value} a barrel",
+  sc_toLevel: "to {value}%",
+  sc_pctAsPts: "\"{value}%\" read as {value} percentage points",
+  sc_double: "doubling read as +100%",
+  sc_halve: "halving read as -50%",
+  sc_askSize: "Give a size for each change marked \"size not stated\" (for example \"by 2 points\" or \"by 20%\") and ask again. The app does not pick a size for you.",
   // Sign-off
   so_draft: 'Draft',
   so_reviewed: 'Reviewed',

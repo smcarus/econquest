@@ -16,6 +16,7 @@ import { MAX_DOCS } from '../utils/policyDocs';
 import { changeLines } from '../utils/whatChanged';
 import { AgentNetwork, useCouncilProgress } from './AgentNetwork';
 import { ExplainAnswer } from './ExplainAnswer';
+import { ScenarioReadNote } from './ScenarioReadNote';
 import { parseWhatIf } from '../utils/fiscalWhatIf';
 import { noModelDigest } from '../utils/noModelDigest';
 import { DocumentCards, DocumentViewer, SaveToReportsButton } from './CouncilDocuments';
@@ -154,6 +155,8 @@ export const AskCouncilPanel: React.FC<{
         <p className="text-xs text-slate-500 dark:text-slate-400">
           <span className="font-medium text-slate-700 dark:text-slate-200">{tr('councilLabel')}</span> · {tr('about', { scope: tx(t.asked.plan.scopeNote) })} · {time(t.asked.askedAt)}
         </p>
+
+        {t.asked.plan.scenario && <ScenarioReadNote scenario={t.asked.plan.scenario} />}
 
         {t.changes && (
           <div className="border border-slate-200 dark:border-slate-700 p-3 space-y-1" data-council-changes={t.changes.changes.length + t.changes.stanceChanges.length}>

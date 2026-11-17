@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Council chat reads what-if questions (WI1): the changes a question states (a central bank or
+  Fed rate, borrowing costs, the dollar, the currency, oil, food or commodity prices, financial
+  stress, supply chain pressure, growth, inflation), each with the size in your words, shown above
+  the answer as *Scenario read from your question*. A change with no size asks you for one; the app
+  never picks a size. The agents holding the figures each change moves are always asked.
 - Ask Council chat from another program (scope `ask:council`): `POST /api/v1/council/ask` asks a
   new question and gets the answer the chat gives in the app, from the same code: the AI model picks
   the agents, the agents answer on the app's own figures, and the summary goes through the number

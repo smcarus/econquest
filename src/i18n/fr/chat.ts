@@ -123,6 +123,15 @@ export const CHAT_FR: Messages<typeof CHAT> = {
   wi_keep: "Garder pour le graphique des arbitrages",
   wi_kept: "Gardé : voir le graphique des arbitrages sous Soutenabilité de la dette",
   wi_keptLabel: "Simulation : {line} réduit de {pct} %, {use}",
+  // Scenario read from a what-if question (WI1)
+  sc_read: "Scénario lu dans votre question",
+  sc_noSize: "ampleur non précisée",
+  sc_atUsd: "à {value} $ le baril",
+  sc_toLevel: "à {value} %",
+  sc_pctAsPts: "« {value} % » lu comme {value} points de pourcentage",
+  sc_double: "doublement lu comme +100 %",
+  sc_halve: "division par deux lue comme -50 %",
+  sc_askSize: "Indiquez une ampleur pour chaque changement marqué « ampleur non précisée » (par exemple « de 2 points » ou « de 20 % ») et posez la question à nouveau. L’application ne choisit pas d’ampleur à votre place.",
   // Sign-off
   so_draft: 'Brouillon',
   so_reviewed: 'Relu',
