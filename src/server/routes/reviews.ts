@@ -33,6 +33,10 @@ import { buildMarketReadings, COUNCIL_PARTS, councilPartsFor, currentCouncilInpu
 import type { DiagnosisFigure } from '../../utils/reviewDiagnosis';
 import { CONSENTS, expertCsv, expertSummaryMarkdown, parseExpertForm } from '../../utils/expertReview';
 import { findPrecedents, parseFeatures, type HistoryInput } from '../../utils/precedentFinder';
+import { buildPeopleExtras } from '../../utils/peopleSummary';
+import { regionalProfile } from '../../utils/regional';
+import { loadDose, loadEuroRegions } from '../feeds/regional';
+import { iso2For } from '../../data/iso3166Alpha2';
 import express from 'express';
 
 type FetchedSeriesLike = { id: string; label: string; unit: string; freq: string; source: string; points: Array<{ date: string; value: number }> };
@@ -372,6 +376,15 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
     if (!frame) return res.status(400).json({ error: 'Save the frame first.' });
     const { dpi, gdelt } = politicalInputs(frame.iso3);
     res.json(politicalFeasibility(frame.iso3, frame.asOf, { calendar: OFFICIAL_CALENDAR, dpi, gdelt }));
+  });
+  // What this means for people (R7, src/utils/peopleSummary.ts): population and GDP before the As of year, the regions furthest behind (R6) and the three closest precedents (G34). Read-only, not saved.
+  app.get('/api/reviews/:id/people', (req, res) => {
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const frame = frameOf(r);
+    if (!frame) return res.status(400).json({ error: 'Save the frame first.' });
+    const regional = regionalProfile({ iso3: frame.iso3, iso2: iso2For(frame.iso3), dose: loadDose(), euro: loadEuroRegions(), gdl: null });
+    res.json(buildPeopleExtras(frame.iso3, frame.asOf, allHistories().histories, regional));
   });
   app.get('/api/reviews/:id/precedents', (req, res) => {
     const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);

@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- What this means for people (R7): a *For people* button on a Policy review memo gives a plain
+  summary for constituents: what changes, the cost per person (council cost table ÷ population, and
+  GDP for % of GDP, before the As of year), who gains and who pays, the three regions furthest
+  behind (R6) and what three countries in a similar position saw next (G34). Fixed sentences in four
+  languages with Missing and the reason, no AI wording, so no new council recording. Also added to
+  the one-page brief. New read-only route `/api/reviews/:id/people`.
+
 - Regional figures (R6): Research > History & data shows how far apart a country's regions are.
   Output per person for each first-level region from DOSE (Wenz et al. 2023, Zenodo, CC BY 4.0; 83
   countries, constant 2015 US$), the gap to the national figure, the richest-to-poorest ratio and

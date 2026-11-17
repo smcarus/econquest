@@ -970,6 +970,13 @@ becomes the problem). Six steps, in order:
    watch and when to look again. The fixed wording follows the language you are using (English,
    Spanish, French or Portuguese); text written in the review is shown as it was saved. The text gets
    smaller to fit one page; if it still does not fit, the end is cut and the page says so. No AI.
+   **For people** (R7) gives a plain summary for constituents and other readers: what changes, what
+   it costs per person (the council cost table divided by the population, and by GDP for a table in
+   % of GDP, as they stood before the As of year), who gains and who pays (as entered in the council),
+   the regions furthest behind (Regional figures) and what three countries in a similar position saw
+   next (the precedent finder). Fixed sentences in the language you are using, Missing with the reason
+   where a figure is not there, no AI. The same section is added to the one-page brief, after what to
+   watch and before the council parts.
    For a policy or market council review (PK8), the brief ends with the council parts that are up to
    date with the frame: present values at each rate you ticked and the rate at which the net turns,
    who gains and who loses, how many links in the chain rest on a figure, a source or an assumption,
