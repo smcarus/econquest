@@ -27,7 +27,8 @@ export const ECB_SPF_SERIES: Array<{ id: string; key: string; label: string; abo
   { id: 'spf_hicp_lt', key: 'Q.U2.HICP.POINT.LT.Q.AVG', label: 'Euro area SPF: HICP inflation, longer term', about: 'Mean point forecast of euro-area HICP inflation in the longer term (about five years ahead), ECB Survey of Professional Forecasters, quarterly. The ECB aims for 2% over the medium term.' },
 ];
 
-export const ecbSpfUrl = (key: string) => `https://data-api.ecb.europa.eu/service/data/SPF/${key}?format=csvdata`;
+/** lastN limits the reply to the newest quarters: the connection check asks for 8, the daily run for all. */
+export const ecbSpfUrl = (key: string, lastN?: number) => `https://data-api.ecb.europa.eu/service/data/SPF/${key}?format=csvdata${lastN ? `&lastNObservations=${lastN}` : ''}`;
 export const ECB_SPF_SOURCE = 'ECB Survey of Professional Forecasters (ECB Data Portal, dataset SPF)';
 
 export const FOCUS_URL =
