@@ -4,6 +4,7 @@ import { useT, useTx } from '../i18n/useLang';
 import { TOOLS } from '../i18n/messages/tools';
 import { suggestedTopics, type Notebook } from '../utils/researchLibrary';
 import { useResearchLibrary } from './SavedResearch';
+import type { PinCheck } from '../utils/pinCheck';
 
 /**
  * Reports > Research notebooks: saved council conversations and documents grouped by topic, with
@@ -22,6 +23,7 @@ export const ResearchNotebooks: React.FC<{ countries?: Country[] }> = ({ countri
   const [open, setOpen] = useState<Notebook | null>(null);
   const [notes, setNotes] = useState('');
   const [notesSaved, setNotesSaved] = useState(true);
+  const [checks, setChecks] = useState<Record<string, PinCheck | 'busy'>>({});
   const t = useT(TOOLS);
   const tx = useTx();
 
@@ -216,6 +218,21 @@ export const ResearchNotebooks: React.FC<{ countries?: Country[] }> = ({ countri
                                   <button
                                     type="button"
                                     className="ui-btn ui-btn-ghost text-xs"
+                                    disabled={checks[p.id] === 'busy'}
+                                    title={t('nb_checkTitle')}
+                                    data-notebook-pin-check="true"
+                                    onClick={async () => {
+                                      setChecks((c) => ({ ...c, [p.id]: 'busy' }));
+                                      const { checkPin } = await import('../utils/pinCheck');
+                                      const got = await checkPin(p, fetch);
+                                      setChecks((c) => ({ ...c, [p.id]: got }));
+                                    }}
+                                  >
+                                    {checks[p.id] === 'busy' ? t('nb_checking') : t('nb_check')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="ui-btn ui-btn-ghost text-xs"
                                     onClick={async () => {
                                       await fetch(`/api/research/notebooks/${encodeURIComponent(open.id)}/pins/${encodeURIComponent(p.id)}`, { method: 'DELETE' }).catch(() => null);
                                       const nb = await lib.loadNotebook(open.id);
@@ -224,6 +241,29 @@ export const ResearchNotebooks: React.FC<{ countries?: Country[] }> = ({ countri
                                   >
                                     {t('nb_unpin')}
                                   </button>
+                                  {(() => {
+                                    const c = checks[p.id];
+                                    if (!c || c === 'busy') return null;
+                                    const later = c.newer ? ` ${t('nb_checkNewer', { n: c.newer })}` : '';
+                                    const cls = c.state === 'same' ? 'text-slate-600 dark:text-slate-300' : 'text-amber-700 dark:text-amber-400';
+                                    return (
+                                      <div className={`basis-full text-xs ${cls}`} data-notebook-pin-result={c.state}>
+                                        {c.state === 'same' && t('nb_checkSame') + later}
+                                        {c.state === 'cannot' && t('nb_checkCannot', { reason: tx(c.reason || '') })}
+                                        {c.state === 'gone' && t('nb_checkGone', { list: c.gone.map((g) => `${g.line} (${tx(g.reason)})`).join('; ') })}
+                                        {c.state === 'revised' && (
+                                          <>
+                                            {t('nb_checkRevised', { n: c.changeCount }) + later}
+                                            <ul className="list-disc pl-4 tabular-nums">
+                                              {c.changes.map((x) => (
+                                                <li key={`${x.line}-${x.date}`}>{x.now === null ? t('nb_checkDropped', { line: x.line, date: x.date, old: String(x.old) }) : `${x.line} ${x.date}: ${x.old} → ${x.now}`}</li>
+                                              ))}
+                                            </ul>
+                                          </>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
                                 </li>
                               ))}
                             </ul>

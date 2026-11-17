@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Replication check (R2): *Check it still holds* on each pinned figure in a research notebook reads
+  the series again and says Same, Revised (old and new value, up to 10) or Source no longer answers,
+  and counts newer figures since the As of day. `npm run notebook:check` checks every pinned figure
+  through the running app (`--url`, `--token`, `--json`; exit 1 on Revised or gone, 2 when the app
+  does not answer). Four languages.
+
 - Working-paper bundle (R1): *Pin to notebook* on a Chart Agent chart keeps it in a research
   notebook with its As of day (last date of its figures) and a SHA-256 fingerprint of the figures
   (up to 20 per notebook). *Working-paper bundle (.zip)* exports the notebook: `draft.md` with the

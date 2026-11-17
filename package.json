@@ -40,6 +40,7 @@
     "feedback:export": "tsx scripts/feedback-export.ts",
     "council:regress": "tsx scripts/council-regress.ts",
     "council:record": "tsx scripts/council-record.ts",
+    "notebook:check": "tsx scripts/notebook-check.ts",
     "docs:licences": "tsx scripts/docs-licences.ts",
     "quests:check": "tsx scripts/quests-check.ts",
     "quests:resolve": "tsx scripts/quests-resolve.ts",
