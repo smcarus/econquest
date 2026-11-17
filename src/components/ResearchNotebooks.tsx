@@ -203,9 +203,39 @@ export const ResearchNotebooks: React.FC<{ countries?: Country[] }> = ({ countri
                           </fieldset>
                         )}
 
+                        <fieldset data-notebook-pins="true">
+                          <legend className="ui-label mb-1">{t('nb_pins')}</legend>
+                          {!open.pins?.length ? (
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{t('nb_noPins')}</p>
+                          ) : (
+                            <ul className="space-y-1">
+                              {open.pins.map((p) => (
+                                <li key={p.id} className="flex flex-wrap items-baseline gap-2 text-sm" data-notebook-pin={p.id}>
+                                  <span className="text-slate-800 dark:text-slate-200">{p.title}</span>
+                                  <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">{t('nb_pinMeta', { asOf: p.asOf, sha: p.fingerprint.slice(0, 12) })}</span>
+                                  <button
+                                    type="button"
+                                    className="ui-btn ui-btn-ghost text-xs"
+                                    onClick={async () => {
+                                      await fetch(`/api/research/notebooks/${encodeURIComponent(open.id)}/pins/${encodeURIComponent(p.id)}`, { method: 'DELETE' }).catch(() => null);
+                                      const nb = await lib.loadNotebook(open.id);
+                                      if (nb) setOpen(nb);
+                                    }}
+                                  >
+                                    {t('nb_unpin')}
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </fieldset>
+
                         <div className="flex flex-wrap gap-2">
                           <a className="ui-btn inline-flex" href={`/api/export/notebook/${encodeURIComponent(open.id)}.md`} download onClick={() => void saveNotes()}>
                             <Download className="w-3.5 h-3.5" /> {t('nb_download')}
+                          </a>
+                          <a className="ui-btn inline-flex" href={`/api/export/notebook/${encodeURIComponent(open.id)}.zip`} download onClick={() => void saveNotes()} title={t('nb_bundleTitle')} data-notebook-bundle="true">
+                            <Download className="w-3.5 h-3.5" /> {t('nb_bundle')}
                           </a>
                           <button
                             type="button"

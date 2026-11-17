@@ -208,6 +208,12 @@ export const CHAT_FR: Messages<typeof CHAT> = {
   ch_image: 'Image',
   ch_packTitle: "Télécharger les données avec des scripts Python, R et Stata qui refont ces tests, et les chiffres de l'application pour comparer",
   ch_pack: 'Dossier de réplication',
+  ch_pin: "Épingler au carnet",
+  ch_pinTitle: "Garder ce graphique dans un carnet de recherche avec la dernière date de ses chiffres et une empreinte des chiffres ; le carnet se télécharge comme un dossier de document de travail avec les données et les scripts",
+  ch_pinPick: "Carnet",
+  ch_pinSave: "Épingler",
+  ch_pinNone: "Aucun carnet pour l’instant : créez-en un dans Rapports > Carnets de recherche.",
+  ch_pinned: "Épinglé à {title}, au {asOf}, empreinte {sha}.",
   ch_close: 'Fermer le graphique',
   ch_tableNote: '{title}. Les chiffres figurent dans le tableau ci-dessous.',
   // Council documents

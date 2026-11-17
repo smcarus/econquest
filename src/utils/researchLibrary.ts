@@ -13,6 +13,7 @@ import type { SavedCouncilBrief } from './askCouncil';
 import type { PolicyDoc } from './policyDocs';
 import { isCouncilDocument, type CouncilDocument } from './agentDocument';
 import { MAX_DOC_CHARS } from './policyDocs';
+import { MAX_PINS, parsePins, type NotebookPin } from './notebookPins';
 
 export const MAX_SAVED_BRIEFS = 200;
 export const MAX_SAVED_DOCS = 30;
@@ -30,6 +31,8 @@ export interface Notebook {
   briefIds: string[];
   docIds: string[];
   notes: string;
+  /** R1: charts pinned with their As of day and fingerprint (src/utils/notebookPins.ts). */
+  pins?: NotebookPin[];
 }
 
 export const MAX_EPISODES = 50;
@@ -59,6 +62,7 @@ export interface NotebookSummary {
   briefIds: string[];
   docIds: string[];
   notesChars: number;
+  pins?: number;
 }
 
 export interface SavedBriefEntry extends SavedCouncilBrief {
@@ -200,6 +204,21 @@ export function updateNotebook(lib: ResearchLibrary, id: string, patch: Notebook
   return { ...lib, notebooks: [next, ...lib.notebooks.filter((n) => n.id !== id)] };
 }
 
+/** R1: add a pinned chart to a notebook (newest last); null when the notebook is missing or full. */
+export function addPin(lib: ResearchLibrary, id: string, pin: NotebookPin, now: Date = new Date()): ResearchLibrary | null {
+  const nb = lib.notebooks.find((n) => n.id === id);
+  if (!nb || (nb.pins?.length ?? 0) >= MAX_PINS) return null;
+  const next: Notebook = { ...nb, pins: [...(nb.pins ?? []), pin], updatedAt: now.toISOString() };
+  return { ...lib, notebooks: [next, ...lib.notebooks.filter((n) => n.id !== id)] };
+}
+
+export function removePin(lib: ResearchLibrary, id: string, pinId: string, now: Date = new Date()): ResearchLibrary | null {
+  const nb = lib.notebooks.find((n) => n.id === id);
+  if (!nb || !nb.pins?.some((p) => p.id === pinId)) return null;
+  const next: Notebook = { ...nb, pins: nb.pins.filter((p) => p.id !== pinId), updatedAt: now.toISOString() };
+  return { ...lib, notebooks: [next, ...lib.notebooks.filter((n) => n.id !== id)] };
+}
+
 export function removeNotebook(lib: ResearchLibrary, id: string): ResearchLibrary {
   return { ...lib, notebooks: lib.notebooks.filter((n) => n.id !== id) };
 }
@@ -283,7 +302,7 @@ export function summarise(lib: ResearchLibrary): { briefs: BriefSummary[]; docs:
       agents: [...new Set(b.answers.map((a) => a.id))],
     })),
     docs: lib.docs.map((d) => ({ id: d.id, title: d.title, addedAt: d.addedAt, ...(d.pages ? { pages: d.pages } : {}), chars: d.text.length })),
-    notebooks: lib.notebooks.map((n) => ({ id: n.id, title: n.title, updatedAt: n.updatedAt, briefIds: n.briefIds, docIds: n.docIds, notesChars: n.notes.length })),
+    notebooks: lib.notebooks.map((n) => ({ id: n.id, title: n.title, updatedAt: n.updatedAt, briefIds: n.briefIds, docIds: n.docIds, notesChars: n.notes.length, ...(n.pins?.length ? { pins: n.pins.length } : {}) })),
     episodes: lib.episodes,
     councilDocs: lib.councilDocs.map((d) => ({
       id: d.id,
@@ -322,6 +341,7 @@ function parseNotebook(v: unknown): Notebook[] {
       briefIds: ids(n.briefIds, MAX_SAVED_BRIEFS),
       docIds: ids(n.docIds, MAX_SAVED_DOCS),
       notes: str(n.notes, MAX_NOTEBOOK_NOTES),
+      ...(Array.isArray(n.pins) && n.pins.length ? { pins: parsePins(n.pins) } : {}),
     },
   ];
 }

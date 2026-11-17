@@ -3,7 +3,7 @@ import { ChartGuide } from './HelpLevel';
 import { ChartNumbers } from './ChartNumbers';
 import { Bar, BarChart, CartesianGrid, LabelList, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
 import { CiteButton } from './CiteButton';
-import { Download, FileArchive, Image as ImageIcon, Maximize2, MessageCircleQuestion, X } from 'lucide-react';
+import { Download, FileArchive, Image as ImageIcon, Maximize2, MessageCircleQuestion, Pin, X } from 'lucide-react';
 import { chartFocus, explainInChat } from '../utils/explainHandoff';
 import { computeChart, fetchChartSeries, PAIR_TESTS, TEST_ORDER, TEST_TITLE, type ChartResult, type ChartTest } from '../utils/councilChart';
 import { TRANSFORM_LABEL, type Transform } from '../utils/stats';
@@ -309,6 +309,59 @@ const Controls: React.FC<{ base: ChartResult; view: ChartResult; busy: boolean; 
   );
 };
 
+/** R1: pin the chart to a research notebook, with its As of day and a fingerprint of its figures (src/utils/notebookPins.ts). */
+const PinToNotebook: React.FC<{ result: ChartResult }> = ({ result }) => {
+  const t = useT(CHAT);
+  const [list, setList] = useState<Array<{ id: string; title: string }> | null>(null);
+  const [pick, setPick] = useState('');
+  const [note, setNote] = useState('');
+  const openList = async () => {
+    setNote('');
+    try {
+      const r = await fetch('/api/research');
+      const b = (await r.json()) as { notebooks?: Array<{ id: string; title: string }> };
+      const nbs = b.notebooks ?? [];
+      setList(nbs);
+      setPick(nbs[0]?.id ?? '');
+      if (!nbs.length) setNote(t('ch_pinNone'));
+    } catch (e) {
+      setNote((e as Error).message);
+    }
+  };
+  const pin = async () => {
+    const r = await fetch(`/api/research/notebooks/${encodeURIComponent(pick)}/pins`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chart: result }) }).catch(() => null);
+    const b = r ? ((await r.json().catch(() => ({}))) as { error?: string; pin?: { asOf: string; fingerprint: string } }) : { error: 'no answer' };
+    if (r?.ok && b.pin) {
+      setNote(t('ch_pinned', { title: list?.find((n) => n.id === pick)?.title ?? '', asOf: b.pin.asOf, sha: b.pin.fingerprint.slice(0, 12) }));
+      setList(null);
+    } else setNote(b.error || `HTTP ${r?.status}`);
+  };
+  const disabled = !result.lines.length && !result.scatter?.pairs.length;
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1" data-council-chart-pin="true">
+      {list && list.length > 0 ? (
+        <>
+          <select className="ui-input text-xs" value={pick} onChange={(e) => setPick(e.target.value)} aria-label={t('ch_pinPick')}>
+            {list.map((n) => (
+              <option key={n.id} value={n.id}>
+                {n.title}
+              </option>
+            ))}
+          </select>
+          <button type="button" className="ui-btn" onClick={() => void pin()} data-council-chart-pin-save="true">
+            {t('ch_pinSave')}
+          </button>
+        </>
+      ) : (
+        <button type="button" className="ui-btn ui-btn-ghost" onClick={() => void openList()} disabled={disabled} title={t('ch_pinTitle')}>
+          <Pin className="w-3.5 h-3.5" /> {t('ch_pin')}
+        </button>
+      )}
+      {note && <span className="text-xs text-slate-500 dark:text-slate-400" data-council-chart-pin-note="true">{note}</span>}
+    </span>
+  );
+};
+
 /** The chart card inside a council answer, with Open larger and Download CSV. */
 export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) => {
   const [open, setOpen] = useState(false);
@@ -374,6 +427,7 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
             <FileArchive className="w-3.5 h-3.5" /> {t('ch_pack')}
           </button>
           <CiteButton kind="chart" title={result.title} sources={[...result.lines.map((l) => l.source), ...(result.sources ?? [])]} disabled={!result.lines.length && !result.scatter?.pairs.length} />
+          <PinToNotebook result={result} />
         </div>
       </header>
       {blocked && <p className="text-xs text-amber-700 dark:text-amber-400" data-council-chart-blocked="true">{blocked}</p>}

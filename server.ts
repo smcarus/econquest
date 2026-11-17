@@ -127,7 +127,10 @@ import { investorBaseReading } from './src/utils/investorBase';
 import { politicsFromSnapshot } from './src/utils/politicsEvents';
 import { acledReadingFor, forgetAcled } from './src/server/feeds/acled';
 import { ACLED_SHORT, acledCountryName } from './src/utils/acled';
-import { addBrief, addCouncilDoc, addDoc, addEpisode, addNotebook, briefId, isBrief, isDoc, removeBrief, removeCouncilDoc, removeDoc, removeEpisode, removeNotebook, summarise, updateEpisode, updateNotebook } from './src/utils/researchLibrary';
+import { addBrief, addCouncilDoc, addDoc, addEpisode, addNotebook, briefId, isBrief, isDoc, removeBrief, removeCouncilDoc, removeDoc, removeEpisode, removeNotebook, summarise, updateEpisode, updateNotebook, addPin, removePin } from './src/utils/researchLibrary';
+import { isChart, makePin, pinFingerprintText, trimChart } from './src/utils/notebookPins';
+import { notebookBundleFiles, notebookBundleZip } from './src/utils/notebookBundle';
+import { sha256Hex as sha256Text } from './src/engine/ownSeries';
 import { episodeFileName, episodeMarkdown } from './src/utils/episodeHandout';
 import { notebookFileName, notebookMarkdown } from './src/utils/notebookExport';
 import { loadLibrary, saveLibrary } from './src/utils/researchStore';
@@ -4123,6 +4126,36 @@ async function startServer() {
     res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${notebookFileName(nb)}"`);
     res.send(notebookMarkdown(nb, lib.briefs, lib.docs));
+  });
+  // Working-paper bundle (R1, src/utils/notebookPins.ts): pin a chart to a notebook with its As of day and fingerprint; export the notebook as one zip.
+  app.post('/api/research/notebooks/:id/pins', async (req, res) => {
+    if (refuseRemoteResearch(req, res)) return;
+    const chart = req.body?.chart;
+    if (!isChart(chart)) return res.status(400).json({ error: 'A chart drawn by the app is needed.' });
+    const lib = loadLibrary(RESEARCH_FILE);
+    const nb = lib.notebooks.find((n) => n.id === req.params.id);
+    if (!nb) return res.status(404).json({ error: 'No notebook with that id.' });
+    const pin = makePin(chart, await sha256Text(pinFingerprintText(trimChart(chart))), new Date(), (nb.pins ?? []).map((p) => p.id));
+    const next = addPin(lib, nb.id, pin);
+    if (!next) return res.status(400).json({ error: 'At most 20 pinned figures in a notebook; remove one first.' });
+    writeResearch(res, () => next, { pin: { id: pin.id, asOf: pin.asOf, fingerprint: pin.fingerprint } });
+  });
+  app.delete('/api/research/notebooks/:id/pins/:pinId', (req, res) => {
+    if (refuseRemoteResearch(req, res)) return;
+    const next = removePin(loadLibrary(RESEARCH_FILE), req.params.id, req.params.pinId);
+    if (!next) return res.status(404).json({ error: 'No such pinned figure.' });
+    writeResearch(res, () => next);
+  });
+  app.get('/api/export/notebook/:id.zip', async (req, res) => {
+    const lib = loadLibrary(RESEARCH_FILE);
+    const nb = lib.notebooks.find((n) => n.id === req.params.id);
+    if (!nb) return res.status(404).json({ error: 'No notebook with that id.' });
+    const now = new Date();
+    const files = await notebookBundleFiles(nb, notebookMarkdown(nb, lib.briefs, lib.docs, now), sha256Text, now);
+    const stem = notebookFileName(nb, now).replace(/\.md$/, '');
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${stem}.zip"`);
+    res.send(Buffer.from(notebookBundleZip(files, stem)));
   });
   // Watch alerts: thresholds you set, kept in data/local/watch-rules.json. Evaluated in the page.
   // Series history (src/utils/seriesHistory.ts): every figure's run of real observations.

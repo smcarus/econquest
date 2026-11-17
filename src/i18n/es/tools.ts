@@ -110,6 +110,12 @@ export const TOOLS_ES: Partial<Record<Keys, string>> = {
   nb_noConversations: 'Todavía no hay conversaciones guardadas.',
   nb_documents: 'Documentos guardados en este cuaderno',
   nb_download: 'Descargar el cuaderno (Markdown)',
+  nb_pins: "Cifras fijadas",
+  nb_noPins: "Aún no hay cifras fijadas: use Fijar en un cuaderno en un gráfico del Agente de gráficos en el chat del consejo.",
+  nb_pinMeta: "al {asOf} · huella {sha}",
+  nb_unpin: "Quitar",
+  nb_bundle: "Paquete de documento de trabajo (.zip)",
+  nb_bundleTitle: "Su borrador en Markdown, los datos y los scripts de Python, R y Stata de cada cifra fijada, un archivo de cita y la lista con la huella de cada archivo",
   nb_delete: 'Borrar el cuaderno',
   nb_footer: 'La descarga contiene sus notas, cada conversación como su informe completo del consejo con fuentes y referencias, y el comienzo de cada documento. Borrar el cuaderno conserva las conversaciones y los documentos.',
   // Tools page

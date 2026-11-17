@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Working-paper bundle (R1): *Pin to notebook* on a Chart Agent chart keeps it in a research
+  notebook with its As of day (last date of its figures) and a SHA-256 fingerprint of the figures
+  (up to 20 per notebook). *Working-paper bundle (.zip)* exports the notebook: `draft.md` with the
+  pinned figures listed, one replication pack per figure under `figures/` (data and Python, R and
+  Stata scripts), `CITATION.cff`, `README.md` and `MANIFEST.txt` with every file's SHA-256. The
+  Markdown export lists the pinned figures too. Routes `POST /api/research/notebooks/:id/pins`,
+  `DELETE .../pins/:pinId`, `GET /api/export/notebook/:id.zip`. Four languages.
+
 - What this means for people (R7): a *For people* button on a Policy review memo gives a plain
   summary for constituents: what changes, the cost per person (council cost table ÷ population, and
   GDP for % of GDP, before the As of year), who gains and who pays, the three regions furthest
