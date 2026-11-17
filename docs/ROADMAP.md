@@ -1,6 +1,6 @@
 # Roadmap
 
-What is planned for EconQuest, in the order it will be built. Last updated 14 November 2026.
+What is planned for EconQuest, in the order it will be built. Last updated 17 November 2026.
 
 ## How the work is done
 
@@ -83,6 +83,41 @@ list until checkpoint 1;** new ideas are kept on a parked list and looked at the
 | 6 | G33 behavioural policy check (done 12 November: flags in Policy review where an option depends on take-up, a tax response, trust in a target, defaults, losses or acting now for a gain later, each citing published studies from a fixed list; effect sizes only as entered with a source; glossary group Behavioural economics); G34 precedent finder (done 12 November: closest country-years on the figures picked and what followed over three years, from the saved histories; IMF programme and crisis dates Missing until the IMF confirms terms); G35 fiscal rules check (done 12 November: EU, WAEMU and CEMAC treaty limits checked against the latest saved IMF debt and balance; national rules listed from the IMF Fiscal Rules Dataset you save locally, terms not confirmed, not shipped); G36 political feasibility (done 13 November: beside the Policy review options, elections on file, DPI checks and balances from the file you save locally, terms not confirmed, not shipped, and GDELT unrest, cut at the As of day); G37 trade-off chart (done 13 November: under Debt sustainability, the costed options and the what-if results you keep from Council chat on two axes you pick, each drawn from the low to the high published multiplier); G39 one-page policy brief (done 13 November: Policy review memo step, one PDF page for non-economists with the question, the chosen option, its figures with sources and ranges, and what to watch, in English, Spanish, French and Portuguese) | A fuller policy review |
 | 7 | U2 Portuguese, Arabic and Swahili (Arabic and Swahili paused by the maintainer on 12 November and left planned; they start only when the maintainer says so. Portuguese done 12 November in four parts: Brazilian, "você"; the whole app, from the app frame, Workspace and Council chat to Research, Tools, Compare, Menu, Settings, help and glossary, Worked examples and Reports); W1 worked examples (done early, 12 November: Menu > Worked examples, four case studies from a question to a memo, EN/ES/FR/PT); Phase 5 classroom and pilot, waiting for the maintainer's go, with P4 expert review (form done 12 November: Policy review > Expert review, five questions on the memo, saved with its hash, CSV, published summary only with consent; the review round itself runs with the pilot) | More languages once the screens have settled; teaching |
 | When documentation arrives | G14 Haver, G15 Moody's | Paid vendors that need a subscriber's API documentation |
+
+## Five user roles (group R, planned 17 November)
+
+The maintainer asked on 17 November what a policy researcher, a public administrator, a politician,
+an economist and a market trader each need, and to fill the gaps. The app was checked first. Two
+gaps were already filled and are left out: a small structural model (the gap model you fill in
+yourself, done 8 November) and fan charts in general (forecasts and the debt fan already show a
+range). Research notebooks and replication packs exist too, so R1 and R2 build on them. Each step
+below is one small change, built and tested on its own, in the order the maintainer picks.
+
+| # | For | Change | What it means for you | Source and terms |
+| --- | --- | --- | --- | --- |
+| R1 | Policy researcher | Working-paper bundle | Pin a chart or series to a research notebook with its As of day and a fingerprint of the figures, then export the notebook as one zip: your draft in Markdown, the data behind each pinned figure, a citation file and the replication scripts | The app's own figures; nothing new downloaded |
+| R2 | Policy researcher | Replication check | A "Check it still holds" button on each pinned figure, and `npm run notebook:check`: reads the figures again and says Same, Revised (old and new value) or Source no longer answers | The app's own figures |
+| R3 | Public administrator | Budget credibility (built 17 November) | How much of the approved budget each government actually spent, year by year, with the PEFA grade bands (A within 5%, B within 10%, C within 15%) | World Bank WDI GF.XPD.BUDG.ZS, built on PEFA indicator PI-1 (SDG 16.6.1); CC BY 4.0, no key |
+| R4 | Public administrator | Budget execution tracker | Load your approved budget and monthly spending by ministry or programme from a template file; see each line's spending against the share of the year gone, lines running behind or ahead, and a straight-line year-end figure labelled as such | Your own file; it stays on your computer |
+| R5 | Public administrator | Development projects | Active World Bank projects in each country: amount committed, amount paid out so far, approval and closing dates, and projects paying out slowly for the time gone | World Bank Projects and Operations API; CC BY 4.0, no key. IATI (all donors) parked: it needs a free key and each publisher sets its own licence |
+| R6 | Politician | Regional figures | Output per person for each region of a country, the gap to the national average and how wide regions are spread; GDP per person and unemployment for EU regions | DOSE regional output dataset (Zenodo, CC BY 4.0, file downloaded by the daily run); Eurostat NUTS 2 regions (Eurostat reuse policy, source named; non-EU figures for non-commercial use). Global Data Lab subnational HDI only from a file you save in data/local/gdl/ (free for non-commercial use, never shipped) |
+| R7 | Politician | What this means for people | A plain one-page summary of a policy review: what changes, cost per household, who gains and who pays, which regions are furthest behind and what peer countries did. Fixed sentences filled with the figures, Missing where a figure is absent; no AI wording, so no new council recording. In all four languages, and it can be added to the one-page brief | The app's own figures (policy review, PK3 winners and losers, R6) |
+| R8 | Economist | Ranges from past forecast misses | A band around the IMF projection sized by how far past IMF projections at the same horizon missed for that country, and an empirical band on the app's own forecasts from their tested out-of-sample misses; fewer than 8 past cases reads Missing | Past IMF WEO editions you save in data/local/weo-vintages/; the app's own forecast evaluation |
+| R9 | Market trader | Data surprises | Each release against an expectation saved before it came out: Brazil's Focus survey, the ECB survey of forecasters, a Kalshi market price where one exists, otherwise the app's own nowcast; each surprise scaled by its own past spread; labelled with where the expectation came from | BCB Focus and ECB SPF (already read); Kalshi (already read). Paid consensus forecasts only behind your own subscription switch |
+| R10 | Market trader | Surprise index | One index per country from recent surprises (older ones count less), a chart and a Today card; a description, not a signal, with its test written and locked before any backtest | Built from R9 |
+| R11 | Market trader | Full yield curves | Every maturity of the US Treasury and euro area government curves each day, a fitted curve (Nelson-Siegel-Svensson), daily moves in level, slope and curvature, and roll-down and carry | US Treasury daily par yield curve (public domain, no key); ECB euro area yield curve (ECB reuse with the source named, no key) |
+
+**What the maintainer runs on the Mac.** After each step, `npm run check:data` for its new row
+(R3 wb_budget_credibility, R5 wb_projects, R6 dose and eurostat_regions, R11 ust_curve and
+ecb_curve). R8 needs the past IMF editions already owed in data/local/weo-vintages/ and then
+`npm run forecast:evaluate`. R9 and R10 need some weeks of the daily download to build a log of
+expectations saved before each release. R6 can also read the Global Data Lab file, if you choose to
+save it.
+
+**Recommended order** (to be confirmed by the maintainer): the public administrator first (R3, R5,
+R4), because it serves the lower-income countries the project is for and uses open World Bank data;
+then the politician (R6, R7), the researcher (R1, R2), the economist (R8) and the trader (R11, R9,
+R10).
 
 ## Phase 5: Quests in the classroom (wave 7, waiting)
 
