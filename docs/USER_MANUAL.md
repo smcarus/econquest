@@ -1081,6 +1081,16 @@ its tests (the same as the chart's replication pack), `CITATION.cff`, and `MANIF
 fingerprint of every file. Nothing new is downloaded; a pinned figure keeps the latest 600 points of
 each line, like a saved chart.
 
+*Replication check* (R2). *Check it still holds* on a pinned figure reads the same series again from
+the feeds and compares every figure up to the As of day with the pinned one. It answers *Same*
+(every pinned figure has the same value today), *Revised* (up to 10 changed figures, each with the
+old and new value, or "no longer in the figures" when a date was dropped) or *Source no longer
+answers* (a line came back with no figures). It also counts newer figures added since the As of day.
+A chart across countries, or one pinned without its request, reads *Cannot check* with the reason.
+`npm run notebook:check` does the same for every pinned figure in every notebook while the app runs
+(`--url` for another address, `--token` when the app asks for one, `--json` for machine output); it
+exits with 1 when anything was revised or no longer answers, and 2 when the app does not answer.
+
 **Teaching episodes.** Below the notebooks. Give an episode a title, a country and a past decision
 date (the moves listed under *Replicate a rate decision* make good dates), and write the questions,
 one per line. *Student handout* is a Markdown file with the data as it stood the week before (policy
