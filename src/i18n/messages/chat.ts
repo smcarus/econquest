@@ -211,6 +211,12 @@ export const CHAT = defineMessages('chat', {
   ch_image: 'Image',
   ch_packTitle: 'Download the data with Python, R and Stata scripts that redo these tests, and the app\'s figures to check against',
   ch_pack: 'Replication pack',
+  ch_pin: "Pin to notebook",
+  ch_pinTitle: "Keep this chart in a research notebook with the last date its figures run to and a fingerprint of the figures; the notebook downloads as a working-paper bundle with the data and scripts",
+  ch_pinPick: "Notebook",
+  ch_pinSave: "Pin",
+  ch_pinNone: "No notebook yet: start one in Reports > Research notebooks.",
+  ch_pinned: "Pinned to {title}, as of {asOf}, fingerprint {sha}.",
   ch_close: 'Close chart',
   ch_tableNote: '{title}. The numbers are in the table below.',
   // Council documents

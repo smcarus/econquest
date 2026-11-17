@@ -1071,6 +1071,16 @@ Markdown file: your notes, each conversation as its full council brief with sour
 and the opening of each document. Deleting a notebook keeps the conversations and documents; deleting
 a conversation takes it out of every notebook. Kept in `data/local/research.json`.
 
+*Working-paper bundle* (R1). On any Chart Agent chart in Council chat, *Pin to notebook* keeps the
+chart in the notebook you pick, with the last date its figures run to (As of) and a fingerprint of
+the figures (SHA-256, a short code that changes if any figure changes). A notebook holds up to 20
+pinned figures. *Working-paper bundle (.zip)* downloads one zip: `draft.md` (your notes, the
+conversations and documents, and each pinned figure with its As of day and fingerprint), a folder
+under `figures/` for each pinned figure with its data and the Python, R and Stata scripts that redo
+its tests (the same as the chart's replication pack), `CITATION.cff`, and `MANIFEST.txt` with the
+fingerprint of every file. Nothing new is downloaded; a pinned figure keeps the latest 600 points of
+each line, like a saved chart.
+
 **Teaching episodes.** Below the notebooks. Give an episode a title, a country and a past decision
 date (the moves listed under *Replicate a rate decision* make good dates), and write the questions,
 one per line. *Student handout* is a Markdown file with the data as it stood the week before (policy

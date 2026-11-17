@@ -113,6 +113,12 @@ export const TOOLS = defineMessages('tools', {
   nb_noConversations: 'No saved conversations yet.',
   nb_documents: 'Saved documents in this notebook',
   nb_download: 'Download notebook (Markdown)',
+  nb_pins: "Pinned figures",
+  nb_noPins: "No figure pinned yet: use Pin to notebook on a Chart Agent chart in Council chat.",
+  nb_pinMeta: "as of {asOf} · fingerprint {sha}",
+  nb_unpin: "Remove",
+  nb_bundle: "Working-paper bundle (.zip)",
+  nb_bundleTitle: "Your draft in Markdown, the data and Python, R and Stata scripts for each pinned figure, a citation file and a list of every file's fingerprint",
   nb_delete: 'Delete notebook',
   nb_footer: 'The download holds your notes, each conversation as its full council brief with sources and references, and the opening of each document. Deleting the notebook keeps the conversations and documents.',
   // Tools page

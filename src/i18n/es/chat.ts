@@ -208,6 +208,12 @@ export const CHAT_ES: Partial<Record<Keys, string>> = {
   ch_image: 'Imagen',
   ch_packTitle: 'Descargar los datos con scripts de Python, R y Stata que repiten estas pruebas, y las cifras de la app para comprobarlas',
   ch_pack: 'Paquete de replicación',
+  ch_pin: "Fijar en un cuaderno",
+  ch_pinTitle: "Guardar este gráfico en un cuaderno de investigación con la última fecha de sus cifras y una huella de las cifras; el cuaderno se descarga como un paquete de documento de trabajo con los datos y los scripts",
+  ch_pinPick: "Cuaderno",
+  ch_pinSave: "Fijar",
+  ch_pinNone: "Aún no hay cuadernos: cree uno en Informes > Cuadernos de investigación.",
+  ch_pinned: "Fijado en {title}, al {asOf}, huella {sha}.",
   ch_close: 'Cerrar gráfico',
   ch_tableNote: '{title}. Las cifras están en la tabla de abajo.',
   // Council documents
