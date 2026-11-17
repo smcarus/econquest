@@ -101,3 +101,28 @@ test('wiring: step, route, checks, licences, panel, translations', () => {
     assert.match(fs.readFileSync(`src/i18n/${f}/panelText.ts`, 'utf8'), /no Kalshi CPI market snapshot saved yet/);
   }
 });
+
+test('R10 inflation surprise index: half-life weights, 3 needed, a year at most, inflation sources only', async () => {
+  const { surpriseIndex } = await import('../src/utils/dataSurprises');
+  const mk = (period: string, scaled: number) => ({ source: 'focus' as const, place: 'Brazil', indicator: 'IPCA', unit: 'pp', period, expected: 0, expectedAt: '', actual: 0, surprise: 0, scaled, priorCases: 8 });
+  const series = [
+    { source: 'focus' as const, sourceLabel: '', place: 'Brazil', indicator: '', unit: 'pp', surprises: [mk('2026-01', 1), mk('2026-02', 1), mk('2026-03', -2)] },
+    { source: 'nowcast' as const, sourceLabel: '', place: 'BRA', indicator: '', unit: 'pp', surprises: [mk('2026-03', 9)] },
+  ];
+  const idx = surpriseIndex(series, '2026-05-15');
+  // Releases on 10 Feb, 10 Mar, 10 Apr: the first month end with 3 is 30 April.
+  assert.equal(idx[0].date, '2026-04-30');
+  assert.equal(idx[0].n, 3);
+  const w = (d: number) => Math.pow(0.5, d / 90);
+  const expect = (w(79) * 1 + w(51) * 1 + w(20) * -2) / (w(79) + w(51) + w(20));
+  assert.ok(Math.abs(idx[0].value - Math.round(expect * 100) / 100) < 1e-9);
+  assert.equal(idx[idx.length - 1].date, '2026-05-15');
+  assert.equal(surpriseIndex(series, '2027-06-01').pop()!.date, '2027-01-31', 'the last month end before the 10 February release turns a year old');
+});
+
+test('R10 test registered before the index, Today card loads on its own', () => {
+  const m = JSON.parse(fs.readFileSync('docs/validation/pending/manifest.json', 'utf8'));
+  assert.ok(m.files['surprise_index.json']);
+  assert.match(fs.readFileSync('src/components/TodayPage.tsx', 'utf8'), /lazyNamed\(\(\) => import\('\.\/SurpriseIndexCard'\)/);
+  assert.match(fs.readFileSync('src/server/routes/analysis.ts', 'utf8'), /\/api\/surprise-index/);
+});

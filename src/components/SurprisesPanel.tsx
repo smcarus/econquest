@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Zap } from 'lucide-react';
-import type { SurpriseSeries } from '../utils/dataSurprises';
+import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import type { IndexPoint, SurpriseSeries } from '../utils/dataSurprises';
 import { useT, useTx } from '../i18n/useLang';
 import { PANELS } from '../i18n/messages/panels';
 
@@ -14,6 +15,7 @@ import { PANELS } from '../i18n/messages/panels';
 interface Reply {
   iso3: string;
   series: SurpriseSeries[];
+  index?: IndexPoint[];
   pulledAt: string | null;
   problems: string[];
 }
@@ -53,6 +55,33 @@ export const SurprisesPanel: React.FC<{ iso3: string; countryName: string }> = (
         {!reply && !error && <p className="ui-body">{t('c_loading')}</p>}
         {error && <p className="text-sm text-amber-700 dark:text-amber-400">{t('c_couldNotRead', { what: t('sp_what'), error })}</p>}
         {reply && !reply.series.length && <p className="text-sm text-slate-600 dark:text-slate-300" data-missing="true">{t('sp_none', { country: countryName })}</p>}
+        {reply && reply.series.some((s) => s.source !== 'nowcast') && (
+          <div className="space-y-1" data-surprise-index="true">
+            <h3 className="ui-label font-medium">{t('sp_indexTitle')}</h3>
+            {reply.index && reply.index.length > 0 ? (
+              <>
+                <p className="text-sm text-slate-900 dark:text-white">
+                  {t('sp_indexNow', { date: reply.index[reply.index.length - 1].date, value: signed(reply.index[reply.index.length - 1].value), n: reply.index[reply.index.length - 1].n })}
+                </p>
+                <div className="h-40">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={reply.index} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-slate-200 dark:text-slate-700" />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} minTickGap={40} />
+                      <YAxis tick={{ fontSize: 11 }} width={36} />
+                      <Tooltip />
+                      <ReferenceLine y={0} stroke="#94a3b8" />
+                      <Line dataKey="value" name={t('sp_indexTitle')} stroke="#2563eb" dot={false} isAnimationActive={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-amber-700 dark:text-amber-400" data-missing="true">{t('sp_indexMissing')}</p>
+            )}
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('sp_indexNote')}</p>
+          </div>
+        )}
         {reply?.series.map((s) => {
           const rows = s.surprises.slice(-SHOWN).reverse();
           const last = s.surprises[s.surprises.length - 1];

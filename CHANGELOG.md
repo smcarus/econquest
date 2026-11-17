@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Inflation surprise index (R10): one number per place from the R9 inflation surprises (90-day
+  half-life, a year at most, 3 needed), with a chart under Data surprises and a card on Today for
+  Brazil, the euro area and the United States. Its test was registered before any run
+  (`docs/validation/pending/surprise_index.json`, hash in the pending manifest). Routes
+  `GET /api/surprise-index`, `index` in `/api/surprises/:iso3`. Four languages.
+
 - Data surprises (R9): History & data > Data surprises sets each release against an expectation
   published before it: BCB Focus for Brazil's IPCA, the ECB SPF for euro area HICP, the Kalshi CPI
   market (snapshots saved before each release) for US CPI, and the app's own GDP nowcast on the

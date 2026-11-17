@@ -6,6 +6,7 @@ These tests were fixed and hashed before the tools that will run them exist
 | File | Step | Claim |
 | --- | --- | --- |
 | crisis_warning.json | G23 Crisis early-warning | A BIS credit-to-GDP gap above 10 points is followed by a systemic banking crisis within 3 years more often than usual |
+| surprise_index.json | R10 Surprise index (registered 17 November 2026) | An inflation surprise index above +0.5 at a month end is followed by a policy rate rise within 3 months more often than usual |
 | scorecard_default.json | Country risk scorecard (registered 13 November 2026) | A governance reading in the bottom quarter that year (average of the six WGI estimates) is followed by the start of a sovereign default within 3 years more often than usual |
 
 inflation_expectations_lead.json (G32) moved to `docs/validation/preregistered/` unchanged on 12 November 2026, when its runner was built; yield_curve_recession.json (G25) moved the same way on 12 November 2026.
