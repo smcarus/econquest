@@ -55,7 +55,7 @@ import { registerExclusionRoutes } from './src/server/routes/consoleExclusions';
 import { registerConsoleScenarioRoutes } from './src/server/routes/consoleScenarios';
 import { deadlineInputs, parseDeadline } from './src/utils/dailyDeadline';
 import { monthlyAverages, readReplayFile, type ReplayFile } from './src/utils/scenarioReplay';
-import { fxDailySeries, fxHistoryPulledAt } from './src/utils/fxHistory';
+import { fxDailySeries, fxHistoryCurrencies, fxHistoryPulledAt } from './src/utils/fxHistory';
 import { loadWatchRules as loadWatchRuleFile } from './src/utils/watchRulesStore';
 import { registerConsoleEventRoutes } from './src/server/routes/consoleEvents';
 import { LEGACY_SCOPES, TOKEN_PREFIX, publicToken, scopeFor, scopeRefusal, tokenOnly, type Scope } from './src/utils/apiTokens';
@@ -253,7 +253,7 @@ import { US_10Y_SERIES } from './src/utils/officialYields.ts';
 import { fetchCftcPull, fetchTicPull, fetchCbpolPull, fetchUstAuctionPull, loadUstAuctions } from './src/server/feeds/positioning';
 import { fetchGovSpendingPull } from './src/server/feeds/govSpending';
 import { gdeltPausedUntil, gdeltFetch, GDELT_REFRESH_MS } from './src/server/feeds/gdelt';
-import { fetchImfPull, fetchCoferPull, fetchImfCpiPull, loadImfCpi } from './src/server/feeds/imf';
+import { fetchImfPull, fetchCoferPull, fetchImfCpiPull, loadImfCpi, fetchImfFxPull, loadImfFx } from './src/server/feeds/imf';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
 import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, nationalCpiOrSaved, forgetNationalCpi, fetchMonthlyActivity, fetchEuSurveyPull, loadEuSurveys } from './src/server/feeds/oecd';
 import { commodityMemory, fetchCommodities, forgetCommodityPulls } from './src/server/feeds/commodities';
@@ -684,6 +684,14 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       // Your data subscription (src/engine/paidData.ts): off, or no adapter yet, counts as done with nothing to fetch.
       const got = await fetchSubscription(enginePlatform, process.env);
       return { outcome: got.ok ? 'done' : 'failed', note: got.note };
+    }
+    case 'world:imf_fx': {
+      const got = await fetchImfFxPull(fxHistoryCurrencies(loadFxHistory()), { force: true });
+      if (!got) return { outcome: 'failed', note: 'The IMF did not answer for monthly exchange rates (npm run check:data, row imf_fx, shows why)' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const months = Object.values(got.series).map((s) => s.points[s.points.length - 1]?.period || '');
+      const note = `${Object.keys(got.series).length} countries to ${months.sort().pop() || '?'}`;
+      return fresh ? { outcome: 'done', note } : { outcome: 'failed', note: `The IMF did not answer; kept the copy from ${got.pulledAt.slice(0, 10)} (${note})` };
     }
     case 'world:imf_cpi': {
       const got = await fetchImfCpiPull({ force: true });
@@ -4305,6 +4313,7 @@ async function startServer() {
       hcSpread: hcSpreadPull,
       fxHistory,
       fxExtra,
+      imfFx: loadImfFx(),
       bisCredit,
       idsCreditors,
       sovereignDefaults,

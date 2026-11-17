@@ -84,6 +84,7 @@ export const WORLD_STEPS: PreloadStep[] = [
   { id: 'world:gov_spending', kind: 'world', label: 'Government spending by sector (Eurostat and IMF COFOG via DBnomics)' },
   { id: 'world:hc_spread', kind: 'world', label: 'USD bond spreads over Treasuries (central bank of Peru, J.P. Morgan EMBI Global, monthly)' },
   { id: 'world:fx_history', kind: 'world', label: 'Daily exchange rates since 1999 (ECB reference rates via Frankfurter)' },
+  { id: 'world:imf_fx', kind: 'world', label: 'IMF monthly exchange rates (currencies without a daily official rate)' },
   { id: 'world:market_extras', kind: 'world', label: 'US 10Y, fed funds and FX valuation (FRED, NY Fed, BIS, ECB)' },
 ];
 

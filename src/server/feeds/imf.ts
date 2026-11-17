@@ -13,6 +13,10 @@ import { type ImfExternal, type ImfStructure, pullImfExternal } from '../../util
 import { writeFileAtomic } from '../../utils/atomicWrite';
 import { type ImfCpiPull, type ImfCpiStructure, pullImfCpi } from '../../utils/imfCpi';
 import { EUROSTAT_GEO } from '../../utils/nationalCpi';
+import { type ImfMonthlyPull, pullImfMonthly, readImfMonthlyPull } from '../../utils/imfMonthly';
+import type { ImfCpiStructure as ImfMonthlyStructure } from '../../utils/imfCpi';
+import { IMF_FX_SPEC } from '../../utils/imfFx';
+import { EXTRA_FX } from '../../utils/fxExtra';
 
 /**
  * IMF reserves and balance of payments (src/utils/imfReserves.ts): monthly official reserves (IL)
@@ -202,4 +206,80 @@ export async function fetchImfCpiPull(opts: { force?: boolean } = {}): Promise<I
     imfCpiInFlight = null;
   });
   return imfCpiInFlight;
+}
+
+/**
+ * IMF monthly exchange rates (LI3, src/utils/imfFx.ts) for the catalog countries whose currency
+ * has no ECB reference rate and no central bank daily feed in the app. `daily` lists the currencies
+ * the ECB file already has (an empty list before the ECB run is saved: then every currency other
+ * than the dollar and the euro is asked for). Saved to data/live/imf-fx.json and pulled again after
+ * a day; a country that fails keeps its last good series, and a pull where nothing answered keeps
+ * the whole copy and is retried after an hour.
+ */
+let imfFxMemory: { pull: ImfMonthlyPull | null; triedAt: number } | null = null;
+let imfFxInFlight: Promise<ImfMonthlyPull | null> | null = null;
+function imfFxFile(): string {
+  return path.join(DATA_DIR, 'live', 'imf-fx.json');
+}
+/** The saved copy only, without asking the IMF. */
+export function loadImfFx(): ImfMonthlyPull | null {
+  if (!imfFxMemory) {
+    try {
+      const saved = readImfMonthlyPull(JSON.parse(fs.readFileSync(imfFxFile(), 'utf8')));
+      if (saved) imfFxMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
+    } catch {
+      // never pulled
+    }
+  }
+  return imfFxMemory?.pull ?? null;
+}
+/** Catalog countries the IMF monthly rate is asked for. */
+export function imfFxCountries(daily: string[]): Array<{ iso3: string; ccy: string }> {
+  const have = new Set(daily.map((c) => c.toUpperCase()));
+  return SOVEREIGN_CATALOG.map((c) => ({ iso3: c.iso3, ccy: String(c.currencyCode || '').toUpperCase() })).filter(
+    (c) => /^[A-Z]{3}$/.test(c.ccy) && c.ccy !== 'USD' && c.ccy !== 'EUR' && !have.has(c.ccy) && !(c.ccy in EXTRA_FX)
+  );
+}
+export async function fetchImfFxPull(daily: string[], opts: { force?: boolean } = {}): Promise<ImfMonthlyPull | null> {
+  const saved = loadImfFx();
+  if (!opts.force) {
+    if (saved && Date.now() - Date.parse(saved.pulledAt) < 24 * 60 * 60 * 1000) return saved;
+    if (imfFxMemory && Date.now() - imfFxMemory.triedAt < 60 * 60 * 1000) return saved;
+  }
+  if (imfFxInFlight) return imfFxInFlight;
+  imfFxInFlight = (async () => {
+    const prev = imfFxMemory?.pull ?? null;
+    const series: ImfMonthlyPull['series'] = { ...(prev?.series || {}) };
+    let structure: ImfMonthlyStructure | null = null;
+    let answered = 0;
+    for (const c of imfFxCountries(daily)) {
+      try {
+        const r = await pullImfMonthly(IMF_FX_SPEC, { fetchFn: (u, i) => fetch(u, i), env: process.env, timeoutMs: 30000, structure }, c.iso3);
+        structure = r.structure;
+        if (r.series) {
+          series[c.iso3] = r.series;
+          answered++;
+        } else console.warn(`[IMF FX] ${c.iso3}: ${r.step.note}`);
+        if (!structure && !process.env[IMF_FX_SPEC.env]?.trim()) break;
+      } catch (e) {
+        console.warn(`[IMF FX] ${c.iso3}: ${describeNetworkError(e, 30000)}`);
+      }
+    }
+    if (!answered) {
+      imfFxMemory = { pull: prev, triedAt: Date.now() };
+      return prev;
+    }
+    const fresh: ImfMonthlyPull = { pulledAt: new Date().toISOString(), series };
+    imfFxMemory = { pull: fresh, triedAt: Date.now() };
+    try {
+      fs.mkdirSync(path.dirname(imfFxFile()), { recursive: true });
+      writeFileAtomic(imfFxFile(), JSON.stringify(fresh));
+    } catch {
+      // keep the memory copy
+    }
+    return fresh;
+  })().finally(() => {
+    imfFxInFlight = null;
+  });
+  return imfFxInFlight;
 }

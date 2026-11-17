@@ -23,6 +23,8 @@ import { OFFICIAL_FIGURES, officialSeries, type OfficialHistoryFile } from './of
 import { outputGapFromGrowth, outputGapSeries } from './outputGap';
 import { fxDailySeries, type FxHistoryFile } from './fxHistory';
 import type { FxExtraFile } from './fxExtra';
+import type { ImfMonthlyPull } from './imfMonthly';
+import { imfFxSeries } from './imfFx';
 import { bisCreditSeries, type BisCreditCycle } from './bisCreditCycle';
 import { privateDebtSeries, sectorBalanceSeries } from './sectorBalances';
 import { idsCreditorSeries, type IdsCreditors } from './idsCreditors';
@@ -112,6 +114,8 @@ export interface SeriesInputs {
   fxHistory?: FxHistoryFile | null;
   /** Daily central-bank rates for PEN, COP and ARS (src/utils/fxExtra.ts), when pulled. */
   fxExtra?: FxExtraFile | null;
+  /** IMF monthly exchange rates per US dollar (src/utils/imfFx.ts), when pulled. */
+  imfFx?: ImfMonthlyPull | null;
   /** BIS credit-to-GDP gap, debt service ratio and real house prices (src/utils/bisCreditCycle.ts), when pulled. */
   bisCredit?: BisCreditCycle | null;
   /** Creditor mix and terms of public external debt (src/utils/idsCreditors.ts), when pulled. */
@@ -361,11 +365,14 @@ const isSeries = (x: Series | SeriesMissing): x is Series => 'points' in x;
  * A figure's history: the full official run when it has been downloaded (every year the World Bank
  * or IMF publish), otherwise the saved pulls. With neither, Missing with both reasons.
  */
-function figureHistory(fig: (typeof ARCHIVE_FIGURES)[number], inputs: SeriesInputs): Series | SeriesMissing {
+function figureHistory(fig: (typeof ARCHIVE_FIGURES)[number], inputs: SeriesInputs, iso3: string): Series | SeriesMissing {
   if (fig.id === 'fx_per_usd') {
-    // The published daily run when the ECB has the currency; the saved pulls otherwise.
+    // The published daily run when the ECB or a central bank feed has the currency; then the IMF
+    // monthly average (LI3); the saved pulls otherwise.
     const daily = fxDailySeries(inputs.fxHistory, inputs.currency, inputs.fxExtra);
     if (isSeries(daily)) return daily;
+    const monthly = imfFxSeries(inputs.imfFx, iso3, inputs.currency || '');
+    if (monthly) return monthly;
     const archived = archiveSeries(inputs.archive, fig);
     if (isSeries(archived)) return { ...archived, about: `${archived.about} No daily history: ${daily.reason.charAt(0).toLowerCase()}${daily.reason.slice(1)}.` };
     return { id: fig.id, label: fig.label, reason: `${archived.reason}; no daily history: ${daily.reason.charAt(0).toLowerCase()}${daily.reason.slice(1)}` };
@@ -406,7 +413,7 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
     ...ustAuctionSeries(code, inputs.ustAuctions),
     ...euSurveySeries(code, inputs.euSurveys),
     ...monthlyIndicatorSeries(code, inputs.monthlyIndicators),
-    ...ARCHIVE_FIGURES.map((f) => figureHistory(f, inputs)),
+    ...ARCHIVE_FIGURES.map((f) => figureHistory(f, inputs, code)),
     ...OFFICIAL_FIGURES.filter((o) => !ARCHIVE_FIGURES.some((f) => f.id === o.id)).map((o) => officialSeries(inputs.official, o)),
   ];
   // The IMF publishes no output gap series: where it has none, the app's stated estimate stands in,

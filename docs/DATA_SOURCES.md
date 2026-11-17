@@ -82,6 +82,7 @@ own-data switch in Settings).
 | IMF reserves and balance of payments | Monthly official reserves (International Liquidity, IL); quarterly current account and imports of goods and services (BOP); import cover and current account % of GDP | api.imf.org | 1 day, on disk (structures 1 week) |
 | IMF COFER | World shares of official FX reserves by currency (US dollar, euro, renminbi, yen, sterling and others), quarterly | api.imf.org | 1 day, on disk |
 | IMF monthly consumer prices (CPI) | Monthly inflation, all items, year on year, for catalog countries outside the EU; used when its month is at least as new as the OECD copy's (national and Eurostat series win a tie) | api.imf.org | Daily run, on disk (data/live/imf-cpi.json); pages read the saved copy |
+| IMF monthly exchange rates (ER) | Units of the currency per US dollar, monthly average, for catalog countries whose currency has no ECB reference rate and no central bank daily feed in the app (for example the naira, Kenyan shilling, cedi, Egyptian pound and taka); the exchange rate history uses it only where no daily rate exists | api.imf.org | Daily run, on disk (data/live/imf-fx.json); pages read the saved copy |
 | GDELT | Headlines and news tone (a risk score input) | api.gdeltproject.org | 7 days, on disk (`GDELT_REFRESH_DAYS`) |
 | GDELT 2.0 raw files (events and Global Knowledge Graph) | Weekly event counts per country (protests, sanctions, violence, Goldstein and tone) and economic-theme shares of news (inflation, central bank, debt, currency, fiscal, lenders and more) with tone and the people and organisations named | data.gdeltproject.org/gdeltv2/ | Per day on disk (`data/live/gdelt-raw/`), look-back `GDELT_RAW_WEEKS` (default 8) |
 | GDELT 1.0 event files | Monthly event history per country (events, protests, sanctions, violence, Goldstein, tone; share of all events GDELT coded), back to 1979 if wanted. Alongside the 2.0 files, not instead | data.gdeltproject.org/events/ | Per month on disk (`data/live/gdelt-daily/`), from `GDELT_DAILY_FROM` (default 2016-01) |
@@ -261,6 +262,12 @@ Notes from the first check on Sam's Mac (2026-11-05):
   saves the IMF copy (`data/live/imf-cpi.json`). Menu > Data health > Inflation lists each
   country's source and age, flags any figure more than 90 days old, and says when an old OECD copy
   is in use.
+- **IMF monthly exchange rates** come from the ER dataset on api.imf.org, found by name in the
+  same way: the code named "Domestic currency per US Dollar" and "Period average", monthly, other
+  dimensions open (`IMF_FX_KEY` in `.env` overrides it; `npm run check:data`, row imf_fx, shows
+  what matched). They are asked for only for currencies the ECB file and the central bank daily
+  feeds (PEN, COP, ARS) do not have. The exchange rate history takes the ECB or central bank daily
+  run first, then this monthly average, then the app's own saved pulls; the chart says monthly.
 - **IMF reserves and balance of payments** come from the IMF data portal's SDMX 3.0 API
   (api.imf.org, no key). IFS was retired in 2025 and split into topic datasets: monthly reserves
   are in **IL** (International Liquidity) and the balance of payments in **BOP**. The IMF also

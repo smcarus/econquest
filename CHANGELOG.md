@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- IMF monthly exchange rates (LI3): the exchange rate history of currencies with no ECB reference
+  rate and no central bank daily feed in the app (for example the naira, Kenyan shilling, cedi,
+  Egyptian pound and taka) now comes from the IMF ER dataset on api.imf.org, monthly average per US
+  dollar, found by the IMF's code names (`IMF_FX_KEY` in `.env` overrides). The daily run saves it
+  to `data/live/imf-fx.json` (new step after the ECB run); daily rates still win where they exist.
+  New `npm run check:data` row imf_fx (Nigeria as the sample); the dataset's codes could not be
+  checked from the build machine.
+
 - Lower-income countries watchlist (LI2): a new ready-made list of fifteen of the most populous
   countries the World Bank classes as low or lower-middle income (India, Pakistan, Nigeria,
   Bangladesh, Ethiopia, Egypt, the Philippines, DR Congo, Viet Nam, Tanzania, Kenya, Myanmar,
