@@ -21,7 +21,7 @@ export interface ApiKeyField {
   /** False for settings that are not secret (a series code, a file path): shown in full. Default true. */
   secret?: boolean;
   /** Where Settings lists it: free sources with your own key (default), or your own paid data. */
-  section?: 'free_key' | 'own_account' | 'subscription' | 'ai' | 'alerts';
+  section?: 'free_key' | 'own_account' | 'subscription' | 'ai' | 'alerts' | 'research';
   /** Hint in the empty box, for settings that are not keys. */
   placeholder?: string;
   /** A pick-one setting (shown as a list) instead of a typed value. */
@@ -29,6 +29,10 @@ export interface ApiKeyField {
   /** Returns an error sentence, or null when the value looks right. */
   validate: (value: string) => string | null;
 }
+
+const RT_FEEDS = 'Lets Council chat call a research-tools server you run (backtests, volatility and price forecasts, nowcasts, option prices) from chat questions only.';
+const RT_WITHOUT = 'Off until both the address and the token are set; Council chat then works as before.';
+const RT_DOCS = 'https://github.com/smcarus/econquest/blob/main/docs/RESEARCH_TOOLS.md';
 
 export const API_KEY_FIELDS: ApiKeyField[] = [
   {
@@ -287,6 +291,61 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     checkId: 'gemini',
     section: 'ai',
     validate: (v) => (/^[A-Za-z0-9_-]{20,128}$/.test(v) ? null : 'A Gemini key is a run of letters, digits, dashes and underscores (usually starting AIza). Check it was copied in full.'),
+  },
+  // ---- Outside research tools (src/server/researchTools.ts): off until the address and token are set
+  {
+    id: 'RESEARCH_TOOLS_URL',
+    label: 'Research tools server address',
+    provider: 'Your own research-tools server (MCP)',
+    feeds: RT_FEEDS,
+    withoutIt: RT_WITHOUT,
+    getKeyUrl: RT_DOCS,
+    getKeySteps: 'The address of the server, for example https://research.example.net:8443. The app adds /mcp.',
+    checkId: 'research_tools',
+    section: 'research',
+    secret: false,
+    placeholder: 'https://research.example.net:8443',
+    validate: (v) => (/^https?:\/\/[^\s]+$/.test(v) ? null : 'The address starts with https:// (or http:// on your own network).'),
+  },
+  {
+    id: 'RESEARCH_TOOLS_TOKEN',
+    label: 'Research tools token',
+    provider: 'Your own research-tools server (MCP)',
+    feeds: RT_FEEDS,
+    withoutIt: RT_WITHOUT,
+    getKeyUrl: RT_DOCS,
+    getKeySteps: 'A key made for this app by the server\'s admin. It is sent only to that server and never logged.',
+    checkId: 'research_tools',
+    section: 'research',
+    validate: (v) => (/^\S{8,512}$/.test(v) ? null : 'A token has no spaces. Check it was copied in full.'),
+  },
+  {
+    id: 'RESEARCH_TOOLS_TIMEOUT_S',
+    label: 'Research tools time limit (seconds)',
+    provider: 'Your own research-tools server (MCP)',
+    feeds: 'How long Council chat waits for each tool call. 20 seconds when not set.',
+    withoutIt: RT_WITHOUT,
+    getKeyUrl: RT_DOCS,
+    getKeySteps: 'A whole number from 1 to 120.',
+    checkId: 'research_tools',
+    section: 'research',
+    secret: false,
+    placeholder: '20',
+    validate: (v) => (/^\d{1,3}$/.test(v) && Number(v) >= 1 && Number(v) <= 120 ? null : 'Use a whole number of seconds from 1 to 120.'),
+  },
+  {
+    id: 'RESEARCH_TOOLS_MAX_CALLS',
+    label: 'Research tool calls per question',
+    provider: 'Your own research-tools server (MCP)',
+    feeds: 'The most tool calls one Council chat question may make. 4 when not set.',
+    withoutIt: RT_WITHOUT,
+    getKeyUrl: RT_DOCS,
+    getKeySteps: 'A whole number from 1 to 10.',
+    checkId: 'research_tools',
+    section: 'research',
+    secret: false,
+    placeholder: '4',
+    validate: (v) => (/^\d{1,2}$/.test(v) && Number(v) >= 1 && Number(v) <= 10 ? null : 'Use a whole number from 1 to 10.'),
   },
   // ---- Server alerts (src/utils/serverAlerts.ts) ---------------------------------------------
   // Test sends a real test message instead of a connection check, so checkId names no check row.

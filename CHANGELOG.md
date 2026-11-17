@@ -5,6 +5,16 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Outside research tools, client (research tools item 1): Menu > Settings > Research tools holds a
+  research-tools server address, its token (stored like the other keys, never logged), a time limit
+  (20 s) and tool calls per question (4). A small MCP client (JSON-RPC 2.0 over HTTP POST:
+  `initialize`, `tools/list`, `tools/call`) sends the bearer token, `X-Correlation-Id` and
+  `X-Model-Location` on every request; each request goes in the audit log (new kind "Outside
+  research tools") with the tool, correlation id, outcome and the arguments cut to one line. Test
+  connection lists the tools the token can see. Off until the address and token are set. Routes
+  `POST /api/research-tools/test`, `GET /api/research-tools/status`. Contract in
+  `docs/contracts/research-tools.json`; guide in `docs/RESEARCH_TOOLS.md`. Four languages.
+
 - Inflation surprise index (R10): one number per place from the R9 inflation surprises (90-day
   half-life, a year at most, 3 needed), with a chart under Data surprises and a card on Today for
   Brazil, the euro area and the United States. Its test was registered before any run

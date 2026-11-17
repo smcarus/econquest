@@ -98,6 +98,7 @@ import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, ans
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, marketEdgePeers, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { councilAnswers, hasFindings, NO_FIGURES_REASON } from './src/utils/councilQuestion';
 import { agentsFrom, answersForApi, answerText, ASK_DISCLAIMER, briefWithoutHidden, checksFrom, citationsFrom, hiddenCountryPatterns, hiddenText, hideNames, historyTurns, isProblem, newRunId, parseAskRequest } from './src/server/councilAsk';
+import { auditSummary as researchAuditSummary, modelLocation as researchModelLocation, researchToolsConfig, ResearchToolsSession, testConnection as testResearchTools, type CallRecord as ResearchCallRecord } from './src/server/researchTools';
 import { addCost, isLocalAddress, mayUseCloud, OUTPUT_ALLOWANCE, pricesFromEnv, roundUsd, spentOn, stepCost } from './src/utils/aiCost';
 import { DEFAULT_HELP_LEVEL, promptHelpLevel } from './src/utils/helpLevel';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
@@ -184,7 +185,7 @@ import {
   withKey,
   withoutKey,
 } from './src/utils/userSettings';
-import { checkConnections, describeNetworkError, isFailure, type ConnectionReport } from './src/utils/connectionCheck';
+import { checkConnections, describeNetworkError, isFailure, type ConnectionReport, type ConnectionResult } from './src/utils/connectionCheck';
 import { notify, readLastAlert, testAlertRoute } from './src/server/alerts';
 import { backtestRegressionAlert, backtestRegressions, dataCheckAlert, jobFailedAlert } from './src/utils/alertEvents';
 import { calendarHealth, localDay } from './src/utils/calendarHealth';
@@ -1829,6 +1830,40 @@ function tracked<T extends { usedFallback: boolean }>(progress: ReturnType<typeo
       throw e;
     }
   );
+}
+
+/** Each research tools request in the audit log: tool, correlation id, outcome and the arguments cut to a line; never the token. */
+function auditResearchCall(r: ResearchCallRecord): void {
+  appendAudit(AUDIT_FILES, {
+    kind: 'research_tools',
+    summary: researchAuditSummary(r),
+    ...(r.correlationId ? { correlationId: r.correlationId } : {}),
+    detail: {
+      method: r.method,
+      ...(r.tool ? { tool: r.tool } : {}),
+      ...(r.args ? { args: r.args } : {}),
+      outcome: r.outcome,
+      ...(r.reason ? { reason: r.reason.slice(0, 300) } : {}),
+      modelLocation: r.modelLocation,
+      ms: r.ms,
+      ...(r.citeId ? { resultId: r.citeId } : {}),
+    },
+  });
+}
+
+/** What every research tools session uses: the global fetch and the audit log. */
+function researchDeps() {
+  return { fetch: (u: string | URL | Request, init?: RequestInit) => fetch(u, init), onCall: auditResearchCall };
+}
+
+/** Settings > Research tools > Test on one of its rows, as a connection check line. */
+async function researchToolsCheck(field: { checkId: string; label: string; feeds: string }, env: Record<string, string | undefined>): Promise<ConnectionResult> {
+  const base = { id: field.checkId, name: field.label, group: 'free' as const, feeds: field.feeds, host: '' };
+  const cfg = researchToolsConfig(env);
+  if (!cfg) return { ...base, state: 'needs_setup', detail: 'Set the server address and the token first.' };
+  const r = await testResearchTools(cfg, researchModelLocation(mayUseCloud(serverGuiRuntimeConfig, env)), researchDeps());
+  if (r.ok) return { ...base, host: cfg.endpoint, state: 'connected', detail: `${r.tools.length} tools this token can see.`, sample: `${r.tools.length} tools: ${r.tools.map((t) => t.name).join(', ').slice(0, 400)}` };
+  return { ...base, host: cfg.endpoint, state: /no answer|could not be reached/.test(r.reason) ? 'no_answer' : 'refused', detail: r.reason };
 }
 
 /** The synthesis agent: a short brief from the agents' answers only, checked for untraceable numbers (Council chat and the morning brief). */
@@ -4651,8 +4686,8 @@ async function startServer() {
     setSavedSettings(next.settings);
     applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
     onKeyChanged(req.params.id);
-    // Saving an alert setting sends nothing: the Test button does that.
-    const check = apiKeyField(req.params.id)?.section === 'alerts' ? null : await runKeyCheck(req.params.id, process.env, keySources(ENV_FILE_KEYS, savedSettings)).catch(() => null);
+    // Saving an alert or research tools setting sends nothing: the Test button does that.
+    const check = ['alerts', 'research'].includes(apiKeyField(req.params.id)?.section || '') ? null : await runKeyCheck(req.params.id, process.env, keySources(ENV_FILE_KEYS, savedSettings)).catch(() => null);
     res.json({ ...keysReply(req, res), check });
   });
   app.delete('/api/settings/keys/:id', async (req, res) => {
@@ -4681,10 +4716,25 @@ async function startServer() {
     }
     // Server alerts: Test sends a real test message on that route (src/server/alerts.ts).
     if (field.section === 'alerts') return res.json({ check: await testAlertRoute(field, value, process.env) });
+    // Research tools: Test opens a session with the server and lists the tools the token can see.
+    if (field.section === 'research') return res.json({ check: await researchToolsCheck(field, value ? { ...process.env, [field.id]: value } : process.env) });
     const env = value ? { ...process.env, [field.id]: value } : process.env;
     const sources = value ? { ...keySources(ENV_FILE_KEYS, savedSettings), [field.id]: 'app' as const } : keySources(ENV_FILE_KEYS, savedSettings);
     const check = await runKeyCheck(field.id, env, sources).catch(() => null);
     res.json({ check });
+  });
+
+  // Outside research tools (src/server/researchTools.ts): Test connection lists the tools this
+  // token can see. Only from this computer (or a signed-in account), like the key tests.
+  app.post('/api/research-tools/test', async (req, res) => {
+    if (refuseRemote(req, res)) return;
+    const location = researchModelLocation(mayUseCloud(req.body?.runtimeConfig || serverGuiRuntimeConfig, process.env));
+    res.json(await testResearchTools(researchToolsConfig(process.env), location, researchDeps()));
+  });
+  // Whether the research tools are on (address and token set), for Council chat's planner. Never the address or token.
+  app.get('/api/research-tools/status', (_req, res) => {
+    const cfg = researchToolsConfig(process.env);
+    res.json({ enabled: Boolean(cfg), ...(cfg ? { maxCalls: cfg.maxCalls, timeoutS: Math.round(cfg.timeoutMs / 1000) } : {}) });
   });
 
   // 1b'. Data connection check: asks every outside source for one small real answer, through the

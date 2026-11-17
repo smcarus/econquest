@@ -1,6 +1,6 @@
 import { CDS_HIDDEN } from '../utils/cdsHidden';
 import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
-import { Archive, Bell, Plug, CheckCircle2, CreditCard, Sunrise, Cpu, ExternalLink, Eye, EyeOff, KeyRound, Lock, Settings2, X, XCircle, Wrench } from 'lucide-react';
+import { Archive, Bell, FlaskConical, Plug, CheckCircle2, CreditCard, Sunrise, Cpu, ExternalLink, Eye, EyeOff, KeyRound, Lock, Settings2, X, XCircle, Wrench } from 'lucide-react';
 import type { AIRuntimeConfig } from '../types/council';
 import { AiModelSettings } from './AiModelSettings';
 import { BackupSettings } from './BackupSettings';
@@ -14,6 +14,7 @@ import { MENU } from '../i18n/messages/menu';
 const SubscriptionSeries = lazy(() => import('./SubscriptionSeries'));
 const ApiTokenSettings = lazy(() => import('./ApiTokenSettings'));
 const HiddenNamesSettings = lazy(() => import('./HiddenNamesSettings'));
+const ResearchToolsTest = lazy(() => import('./ResearchToolsTest'));
 
 /**
  * Settings (Menu > Settings, or Cmd/Ctrl + comma). The "Data API keys" section lets you paste your
@@ -24,7 +25,7 @@ const HiddenNamesSettings = lazy(() => import('./HiddenNamesSettings'));
 
 /**
  * Any part of the app can open Settings with openSettings('ai') (or the raw event, whose detail
- * may name the page: { tab: 'ai' | 'keys' | 'paid' | 'subscriptions' | 'alerts' | 'morning' | 'backup' | 'tokens' | 'hidden' | 'tools' }).
+ * may name the page: { tab: 'ai' | 'keys' | 'paid' | 'subscriptions' | 'alerts' | 'research' | 'morning' | 'backup' | 'tokens' | 'hidden' | 'tools' }).
  */
 export const OPEN_SETTINGS_EVENT = 'econquest:open-settings';
 
@@ -45,7 +46,7 @@ interface KeysReply {
 
 type KeySection = ApiKeyStatus['section'];
 
-const SECTIONS: KeySection[] = ['free_key', 'own_account', 'subscription', 'ai', 'alerts'];
+const SECTIONS: KeySection[] = ['free_key', 'own_account', 'subscription', 'ai', 'alerts', 'research'];
 
 function CheckLine({ check }: { check: ConnectionResult }) {
   const t = useT(MENU);
@@ -194,7 +195,7 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
   );
 };
 
-export type SettingsTab = 'ai' | 'keys' | 'paid' | 'subscriptions' | 'alerts' | 'morning' | 'backup' | 'tokens' | 'hidden' | 'tools';
+export type SettingsTab = 'ai' | 'keys' | 'paid' | 'subscriptions' | 'alerts' | 'research' | 'morning' | 'backup' | 'tokens' | 'hidden' | 'tools';
 
 /** The pages of Settings, in order, and which key sections each one shows. */
 const PAGES: Array<{ id: SettingsTab; sections: KeySection[] }> = [
@@ -205,6 +206,8 @@ const PAGES: Array<{ id: SettingsTab; sections: KeySection[] }> = [
   // Your paid data subscription (src/engine/paidData.ts): the switch, sign-in details and your series.
   { id: 'subscriptions', sections: ['subscription'] },
   { id: 'alerts', sections: ['alerts'] },
+  // Outside research tools for Council chat (src/server/researchTools.ts): off until address and token are set.
+  { id: 'research', sections: ['research'] },
   { id: 'morning', sections: [] },
   { id: 'backup', sections: [] },
   // Tokens for outside systems (console integration item 2, src/utils/apiTokens.ts).
@@ -219,6 +222,7 @@ const PAGE_ICON: Record<SettingsTab, React.ReactNode> = {
   paid: <Lock className="w-3.5 h-3.5" aria-hidden />,
   subscriptions: <CreditCard className="w-3.5 h-3.5" aria-hidden />,
   alerts: <Bell className="w-3.5 h-3.5" aria-hidden />,
+  research: <FlaskConical className="w-3.5 h-3.5" aria-hidden />,
   morning: <Sunrise className="w-3.5 h-3.5" aria-hidden />,
   backup: <Archive className="w-3.5 h-3.5" aria-hidden />,
   tokens: <Plug className="w-3.5 h-3.5" aria-hidden />,
@@ -435,6 +439,11 @@ export const SettingsDialog: React.FC<{
                   </div>
                 );
               })}
+            {reply && page.id === 'research' && (
+              <Suspense fallback={<p className="mt-3 text-xs text-slate-500">{t('c_loading')}</p>}>
+                <ResearchToolsTest canEdit={reply.canEdit} />
+              </Suspense>
+            )}
             {reply && page.id === 'subscriptions' && (
               <Suspense fallback={<p className="mt-3 text-xs text-slate-500">{t('c_loading')}</p>}>
                 <SubscriptionSeries canEdit={reply.canEdit} vendorSetting={reply.keys.find((k) => k.id === 'PAID_DATA_VENDOR')?.masked} />

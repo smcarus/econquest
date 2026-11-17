@@ -18,7 +18,7 @@
 import { createHash } from 'crypto';
 import { apiKeyField } from '../data/apiKeyFields';
 
-export type AuditKind = 'council' | 'research' | 'export' | 'settings' | 'data' | 'model' | 'workspace' | 'audit' | 'validation' | 'signoff' | 'access' | 'idea' | 'own_data' | 'paid_data' | 'api';
+export type AuditKind = 'council' | 'research' | 'export' | 'settings' | 'data' | 'model' | 'workspace' | 'audit' | 'validation' | 'signoff' | 'access' | 'idea' | 'own_data' | 'paid_data' | 'api' | 'research_tools';
 
 export const AUDIT_KIND_LABEL: Record<AuditKind, string> = {
   council: 'Council answer',
@@ -36,6 +36,7 @@ export const AUDIT_KIND_LABEL: Record<AuditKind, string> = {
   own_data: 'Your data',
   paid_data: 'Your subscription',
   api: 'API tokens',
+  research_tools: 'Outside research tools',
 };
 
 export interface AuditFigure {
@@ -212,6 +213,8 @@ export function describeRequest(method: string, path: string): AuditInput | null
   if (/^\/api\/council\/(synthesise|debate|choose-agents|rerun|regression)$/.test(p)) return null;
   if (/^\/api\/ai\/(ollama-status|runtime-config-load)$/.test(p)) return null;
   if (p === '/api/audit/check') return null;
+  // Research tools: each request to the server is logged by the client with its tool and outcome.
+  if (/^\/api\/research-tools\//.test(p) || p === '/api/council/quant') return null;
   // Sign-in, sign-out and account changes are logged by their routes, with the account name.
   if (/^\/api\/auth\//.test(p)) return null;
   // Sign-offs are logged by their route, with the name and content hash.
