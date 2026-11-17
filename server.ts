@@ -16,6 +16,7 @@ import { createNodePlatform } from './src/platform/node';
 import { secretBoxFromEnv } from './src/utils/secretBox';
 import type { Caller } from './src/engine/routes';
 import { registerOwnSeriesRoutes } from './src/server/routes/ownSeries';
+import { registerBudgetExecutionRoutes } from './src/server/routes/budgetExecution';
 import { ownSeriesViewsFor, OWN_NO_COUNTRY } from './src/engine/ownSeries';
 import { registerQuestRoutes } from './src/server/routes/quests';
 import { forwardSummary } from './src/utils/forwardRecord';
@@ -4252,6 +4253,7 @@ async function startServer() {
   registerIdeaRoutes(app, { quick, seriesFor, refuseRemoteChange, signedIn });
   registerFeedbackRoutes(app, { refuseRemoteChange });
   registerOwnSeriesRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
+  registerBudgetExecutionRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
   // Your paid data subscription (src/engine/paidData.ts): its figures show only on this computer's
   // own screens, beside (never inside) seriesFor, so nothing built from seriesFor (downloads, the
   // council, Quests, panels) can carry them.

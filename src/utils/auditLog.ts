@@ -218,6 +218,8 @@ export function describeRequest(method: string, path: string): AuditInput | null
   if (/^\/api\/signoffs\//.test(p)) return null;
   // Your own series: saves and deletes are logged by their route with the file's SHA-256; checks change nothing.
   if (/^\/api\/own-series(\/|$)/.test(p)) return null;
+  // Your budget execution file (R4): logged by its route with the file's SHA-256, never the figures.
+  if (/^\/api\/budget-execution\//.test(p)) return null;
 
   if ((x = p.match(/^\/api\/settings\/keys\/([^/]+)(\/test)?$/))) {
     const field = apiKeyField(decodeURIComponent(x[1]));
