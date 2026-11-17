@@ -1216,8 +1216,12 @@ hold no figures of their own; the handout reads them from the app's series when 
   you run yourself (backtests, volatility and price forecasts, nowcasts, option prices), a time
   limit (20 seconds) and the tool calls one chat question may make (4). Off until the address and
   token are both set. *Test connection* lists the tools the token can see. Only Council chat uses
-  it; every call goes in the audit log, never the token. Details in
-  [RESEARCH_TOOLS.md](./RESEARCH_TOOLS.md).
+  it, through the **Quant desk**: a desk agent that joins a chat question about a backtest, forecast,
+  volatility, nowcast, option price, drawdown or Sharpe ratio, and shows each figure from the server
+  with its link, data-through date and label ("Hypothetical, past performance; not a
+  recommendation"). If the server refuses or does not answer in time, a "Research tools unavailable"
+  line says why and the other desks still answer. Every call goes in the audit log, never the token.
+  Details in [RESEARCH_TOOLS.md](./RESEARCH_TOOLS.md).
 - **Morning brief** (Settings > Morning brief): at a time you set, the council answers your standing
   questions (up to four; three starting ones on policy stance, cheap or rich, and coming dates) about
   the watchlist you pick, your AI model writes each summary, and each is saved to Reports > Saved

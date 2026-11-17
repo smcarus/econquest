@@ -207,7 +207,17 @@ function AgentFindings({ d, items, onOpenCountry, onExplained }: { d: AgentDocum
                       <td className="py-0.5 pr-2 text-slate-600 dark:text-slate-400">{tx(g.label)}</td>
                       <td className="py-0.5 pr-2 tabular-nums text-slate-900 dark:text-slate-100 whitespace-nowrap">{g.value}</td>
                       <td className={`py-0.5 pr-2 whitespace-nowrap ${TAG_CLASS[g.tag]}`}>{g.tagText}</td>
-                      <td className="py-0.5 text-slate-500 dark:text-slate-400">{g.ref ? `[${g.ref}]` : g.source}</td>
+                      <td className="py-0.5 text-slate-500 dark:text-slate-400">
+                        {g.ref ? `[${g.ref}]` : g.source}
+                        {g.url && (
+                          <>
+                            {' '}
+                            <a href={g.url} target="_blank" rel="noreferrer noopener" className="text-blue-700 dark:text-blue-300 hover:underline" data-figure-link="true">
+                              {t('qd_open')}
+                            </a>
+                          </>
+                        )}
+                      </td>
                       {onExplained && (
                         <td className="py-0.5 pl-2 text-right">
                           <button

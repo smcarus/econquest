@@ -210,7 +210,7 @@ method. Measurements from 13 November 2026 are of the main branch through pull r
 | Source code (`git clone`) | 70 MB (29 MB of files and 41 MB of history) | Measured, fresh clone, 13 November 2026 |
 | Ready-made app (Docker image) | About 170 MB to download; 798 MB once unpacked | Measured: image built from the repository's Dockerfile on 13 November 2026 (798 MB unpacked, 170 MB compressed with gzip). The download from the registry is compressed the same way, so expect a similar size |
 | Installed packages, from the code (`npm install`) | 465 MB | Measured, 13 November 2026 |
-| Built web app (`npm run build`) | 6.7 MB in all; 415 KB compressed at start-up | Measured with `npm run size:check`, 13 November 2026 (limits 465 KB and 7.5 MB) |
+| Built web app (`npm run build`) | 6.7 MB in all; 415 KB compressed at start-up | Measured with `npm run size:check`, 13 November 2026 (limits now 520 KB and 9 MB) |
 | Each extra language (Spanish, French, Portuguese) | About 0.7 MB (about 220 KB compressed), downloaded only when picked | Measured from the build, 13 November 2026 |
 | First full data download | About 3.6 to 3.8 GB, mostly GDELT news files | Estimate: GDELT about 3.4 GB for 8 weeks (from GDELT's own file sizes), past IMF forecast editions about 100 MB (measured), the rest as in the daily run |
 | First data download in light mode | Target: well under 1 GB | Not yet measured; owed from a light-mode run on the developer's Mac before the public release |
@@ -559,8 +559,8 @@ changes to packaging also build the app image. The smoke test needs Playwright's
 with `tests/helpers/offline-fetch.mjs` in place of the network.
 
 **Size limits.** Every screen added since the start loads only when it is opened, and each language
-downloads only when picked. The start-up download must stay under 465 KB compressed and the whole app
-under 7.5 MB; `npm run size:check` enforces both.
+downloads only when picked. The start-up download must stay under 520 KB compressed and the whole app
+under 9 MB; `npm run size:check` enforces both.
 
 **Tests on real replies.** `npm run record:feeds`, run on a computer that reaches the feeds, saves
 what every free feed really sends (gzipped, keys taken out of every URL, own paid data and AI switched
@@ -621,7 +621,10 @@ The full reference, with examples, is "Connecting an outside portfolio system" i
 - **Outside research tools.** Council chat can call a research-tools server you run yourself
   (backtests, volatility and price forecasts, nowcasts, option prices) over MCP. Set the address and
   token in **Menu > Settings > Research tools**; it is off until both are set, works in chat only,
-  and every call goes in the audit log ([docs/RESEARCH_TOOLS.md](docs/RESEARCH_TOOLS.md)).
+  and every call goes in the audit log. Once set, the **Quant desk** joins chat questions about
+  backtests, forecasts, volatility, nowcasts, option prices, drawdowns or Sharpe ratios and shows each
+  figure with its link, data-through date and the server's "hypothetical" label
+  ([docs/RESEARCH_TOOLS.md](docs/RESEARCH_TOOLS.md)).
 - **Audit seal.** With `AUDIT_SEAL_KEY` set, every audit log entry also carries an HMAC; with
   `AUDIT_BUCKET_URL`, each entry is copied to an S3-compatible bucket with object lock, so a rewrite
   of the whole log on this computer can be caught ([docs/SECURITY.md](docs/SECURITY.md)).

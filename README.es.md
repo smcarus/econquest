@@ -407,6 +407,13 @@ La lista completa está en [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md) y lo q
 - **Insignias**: Validada, Provisional, En revisión, Retirada o Revisión pendiente. La mayoría de las
   señales no han superado su prueba, y la aplicación lo dice.
 - **Un registro de auditoría** guarda qué se preguntó, qué cifras se usaron y quién aprobó un informe.
+- **Herramientas de investigación externas** (opcional, apagado por defecto): si usted tiene su propio
+  servidor de herramientas de investigación, puede indicar su dirección y su clave en **Menú > Configuración >
+  Herramientas de investigación**. En el chat del Consejo, la **mesa cuantitativa** responde entonces a
+  preguntas sobre backtests, previsiones, volatilidad, nowcasts, precios de opciones, caídas máximas o
+  ratios de Sharpe, y muestra cada cifra con su enlace, la fecha de sus datos y la etiqueta del servidor
+  (resultado hipotético sobre datos pasados, no una recomendación). Cada llamada queda en el registro de
+  auditoría, nunca la clave ([docs/RESEARCH_TOOLS.md](./docs/RESEARCH_TOOLS.md), en inglés).
 
 El método completo está en [docs/METHODOLOGY.md](./docs/METHODOLOGY.md) (en inglés).
 

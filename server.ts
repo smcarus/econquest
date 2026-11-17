@@ -99,6 +99,7 @@ import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, marketEdgePe
 import { councilAnswers, hasFindings, NO_FIGURES_REASON } from './src/utils/councilQuestion';
 import { agentsFrom, answersForApi, answerText, ASK_DISCLAIMER, briefWithoutHidden, checksFrom, citationsFrom, hiddenCountryPatterns, hiddenText, hideNames, historyTurns, isProblem, newRunId, parseAskRequest } from './src/server/councilAsk';
 import { auditSummary as researchAuditSummary, modelLocation as researchModelLocation, researchToolsConfig, ResearchToolsSession, testConnection as testResearchTools, type CallRecord as ResearchCallRecord } from './src/server/researchTools';
+import { nowcastFollowUp, planToolCalls, quantAnswer, unavailableAnswer as quantUnavailable, type CallResult as QuantCallResult, type QuantCountry } from './src/utils/quantDesk';
 import { addCost, isLocalAddress, mayUseCloud, OUTPUT_ALLOWANCE, pricesFromEnv, roundUsd, spentOn, stepCost } from './src/utils/aiCost';
 import { DEFAULT_HELP_LEVEL, promptHelpLevel } from './src/utils/helpLevel';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
@@ -1856,6 +1857,28 @@ function researchDeps() {
   return { fetch: (u: string | URL | Request, init?: RequestInit) => fetch(u, init), onCall: auditResearchCall };
 }
 
+/** The Quant desk on one question: list the tools, plan from the words, call them in turn, build the answer. */
+async function runQuantDesk(question: string, why: string, countries: QuantCountry[], currencies: string[], session: ResearchToolsSession, maxCalls: number): Promise<AgentAnswer> {
+  const listed = await session.listTools();
+  if (!('tools' in listed)) return quantUnavailable(why, listed.reason || listed.outcome);
+  const names = listed.tools.map((t) => t.name);
+  const { calls, notes } = planToolCalls(question, countries, names, maxCalls, new Date(), currencies);
+  const results: QuantCallResult[] = [];
+  const queue = [...calls];
+  let made = 0;
+  while (queue.length && made < maxCalls) {
+    const call = queue.shift()!;
+    made++;
+    const r = await session.callTool(call.name, call.args);
+    results.push({ call, ok: r.ok, ...(r.data ? { data: r.data } : {}), ...(r.cite ? { cite: r.cite } : {}), ...(r.reason ? { reason: r.reason } : {}), ...(r.localOnly ? { localOnly: true } : {}) });
+    // Only local models may read results: stop here; the desk is left out of the answer.
+    if (r.localOnly) break;
+    if (r.ok && call.name === 'list_nowcasts' && r.data) queue.push(...nowcastFollowUp(r.data, countries, names));
+  }
+  if (queue.length && !results.some((r) => r.localOnly)) notes.push(`${queue.length} more tool ${queue.length === 1 ? 'call was' : 'calls were'} left out (limit of ${maxCalls} per question).`);
+  return quantAnswer(why, results, notes);
+}
+
 /** Settings > Research tools > Test on one of its rows, as a connection check line. */
 async function researchToolsCheck(field: { checkId: string; label: string; feeds: string }, env: Record<string, string | undefined>): Promise<ConnectionResult> {
   const base = { id: field.checkId, name: field.label, group: 'free' as const, feeds: field.feeds, host: '' };
@@ -1987,7 +2010,7 @@ async function answerAndRecord(question: string, answers: AgentAnswer[], opts: S
 }
 
 /** The AI step that picks the agents for a Council chat question (the chat and the data API's ask:council). */
-async function chooseAgentsStep(question: string, earlier: Array<{ question: string }>, runtimeConfig: any): Promise<{ out: AgentChoiceResult; step?: { providerUsed: string; usedFallback: boolean } }> {
+async function chooseAgentsStep(question: string, earlier: Array<{ question: string }>, runtimeConfig: any, opts: { quant?: boolean } = {}): Promise<{ out: AgentChoiceResult; step?: { providerUsed: string; usedFallback: boolean } }> {
   try {
     const step = await executeResilientLlmStep<{ agents: Array<{ id: string; why: string }> }>({
       stepName: 'COUNCIL_CHOOSE_AGENTS',
@@ -1995,7 +2018,7 @@ async function chooseAgentsStep(question: string, earlier: Array<{ question: str
       runtimeConfig: runtimeConfig || {},
       thinkingLevel: ThinkingLevel.LOW,
       systemInstruction: AGENT_CHOICE_INSTRUCTION,
-      prompt: agentChoicePrompt(question, earlier),
+      prompt: agentChoicePrompt(question, earlier, opts),
       responseSchema: {
         type: Type.OBJECT,
         properties: {
@@ -6350,7 +6373,28 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
     if (!question) return res.status(400).json({ error: 'A question is needed.' });
     if (loadExamMode().on) return res.json({ agents: null, reason: EXAM_CHOICE_REASON });
     const earlier = Array.isArray(req.body?.earlier) ? req.body.earlier.filter((t: any) => t && typeof t.question === 'string') : [];
-    res.json((await chooseAgentsStep(question, earlier, req.body?.runtimeConfig || {})).out);
+    // The Quant desk is offered to the model only when Council chat asks for it and the research tools are set up.
+    const quant = req.body?.quant === true && Boolean(researchToolsConfig(process.env));
+    res.json((await chooseAgentsStep(question, earlier, req.body?.runtimeConfig || {}, quant ? { quant } : {})).out);
+  });
+
+  // The Quant desk (src/utils/quantDesk.ts): Council chat only. Lists the tools this token can see,
+  // calls the ones the question needs (at most RESEARCH_TOOLS_MAX_CALLS), and answers with each
+  // figure's link, data-through date and label. Off, it answers with no desk.
+  app.post('/api/council/quant', async (req, res) => {
+    const question = typeof req.body?.question === 'string' ? req.body.question.trim().slice(0, 2000) : '';
+    const why = typeof req.body?.why === 'string' ? req.body.why.slice(0, 300) : 'the question asks for outside research tools';
+    if (!question) return res.status(400).json({ error: 'A question is needed.' });
+    const cfg = researchToolsConfig(process.env);
+    if (!cfg) return res.json({ answer: quantUnavailable(why, 'the research tools are not set up (Menu > Settings > Research tools)') });
+    const countries = (Array.isArray(req.body?.countries) ? req.body.countries : [])
+      .filter((c: any) => c && /^[A-Z]{3}$/.test(String(c.iso3)) && typeof c.countryName === 'string')
+      .slice(0, 4)
+      .map((c: any) => ({ iso3: String(c.iso3), countryName: String(c.countryName).slice(0, 80), ...(typeof c.currencyCode === 'string' && /^[A-Z]{3}$/.test(c.currencyCode) ? { currencyCode: c.currencyCode } : {}) }));
+    const currencies = (Array.isArray(req.body?.currencies) ? req.body.currencies : []).filter((c: unknown) => typeof c === 'string' && /^[A-Z]{3}$/.test(c)).slice(0, 300);
+    const location = researchModelLocation(mayUseCloud(req.body?.runtimeConfig || serverGuiRuntimeConfig, process.env));
+    const questionId = typeof req.body?.questionId === 'string' ? req.body.questionId : null;
+    res.json({ answer: await runQuantDesk(question, why, countries, currencies, new ResearchToolsSession(cfg, location, questionId, researchDeps()), cfg.maxCalls) });
   });
 
   app.post('/api/council/debate', async (req, res) => {

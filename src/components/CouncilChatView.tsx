@@ -37,6 +37,7 @@ import { EXAMPLES, VERDICT, fullCouncilPhase, time, toMarkdown, toSaved, useCoun
 // The chart card (recharts) loads only when an answer has a chart.
 const CouncilChartCard = lazyNamed(() => import('./CouncilChart'), 'CouncilChartCard');
 const WhatIfCard = lazyNamed(() => import('./WhatIfCard'), 'WhatIfCard');
+const QuantDeskCard = lazyNamed(() => import('./QuantDeskCard'), 'QuantDeskCard');
 
 export const AskCouncilPanel: React.FC<{
   onOpenCountry: (item: LiveWatchlistItem) => void;
@@ -280,6 +281,15 @@ export const AskCouncilPanel: React.FC<{
               ))
             : null;
         })()}
+
+        {/* The Quant desk's figures from the outside research tools, each with its link, date and label. */}
+        {t.asked.answers
+          .filter((a) => a.id === 'quant')
+          .map((a) => (
+            <React.Suspense key={`quant-${t.asked.askedAt}`} fallback={null}>
+              <QuantDeskCard answer={a} />
+            </React.Suspense>
+          ))}
 
         {/* The Chart Agent's chart and test results, when the question asked for one. */}
         {t.asked.answers
