@@ -299,6 +299,7 @@ export const SOURCE_IDS = [
   'worldbank_debt',
   'worldbank_dist',
   'worldbank_people',
+  'wb_budget_credibility',
   'worldbank_trade',
   'worldbank_climate',
   'owid_energy',
@@ -784,6 +785,21 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
         const row = Array.isArray(rows) ? (rows as Array<{ value?: unknown; date?: string }>).find((x) => typeof x?.value === 'number') : undefined;
         if (row) return `${SAMPLE_NAME} remittances received ${fmt(Number(row.value))}% of GDP (${row.date})`;
         return Array.isArray(rows) ? `Answered (no recent remittances figure for ${SAMPLE_NAME})` : null;
+      }
+    )
+  );
+
+  add('wb_budget_credibility', () =>
+    httpCheck(
+      { id: 'wb_budget_credibility', name: 'World Bank budget credibility (PEFA, SDG 16.6.1)', group: 'free', feeds: 'Spending against the approved budget, from PEFA assessments (Budget credibility panel)' },
+      fetchFn,
+      `https://api.worldbank.org/v2/country/${SAMPLE_ISO3}/indicator/GF.XPD.BUDG.ZS?format=json&per_page=30`,
+      T,
+      (r) => {
+        const rows = (parseJson(r.text) as unknown[])?.[1];
+        const row = Array.isArray(rows) ? (rows as Array<{ value?: unknown; date?: string }>).find((x) => typeof x?.value === 'number') : undefined;
+        if (row) return `${SAMPLE_NAME} spent ${fmt(Number(row.value))}% of its approved budget (${row.date})`;
+        return Array.isArray(rows) ? `Answered (no budget outturn figure for ${SAMPLE_NAME}; PEFA years only)` : null;
       }
     )
   );

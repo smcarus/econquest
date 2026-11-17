@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Budget credibility (R3): Research > History & data shows how much of the budget first approved for
+  each year the government actually spent (World Bank GF.XPD.BUDG.ZS, from PEFA assessments, UN goal
+  16.6.1), the PEFA PI-1 band of each year (A within 5%, B within 10%, C within 15%, D further) and a
+  grade on the PEFA rule over the latest three years, worked out by the app and labelled as not the
+  official PEFA score. Countries without a PEFA year read Missing with the reason. New Data health row
+  `wb_budget_credibility`; glossary entry in four languages.
+
 - Editable scenario card (WI6): the scenario read from a what-if question can be changed in Council
   chat (sizes, levels, changes taken out) and asked again as a follow-up, written in plain words the
   scenario reader reads back the same way (`scenarioText`). The Scenario Agent's debt paths can be

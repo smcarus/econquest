@@ -235,6 +235,7 @@ export const DEFINITIONS_TEXT_ES: Record<string, string> = {
   "People younger than 15 or older than 64 per 100 people aged 15-64 (World Bank SP.POP.DPND)": "Personas menores de 15 años o mayores de 64 por cada 100 personas de 15 a 64 años (Banco Mundial SP.POP.DPND)",
   // G19: debt structure
   "Interest payments of the central government, as % of its revenue (World Bank GC.XPN.INTP.RV.ZS)": "Pagos de intereses del gobierno central, en % de sus ingresos (Banco Mundial GC.XPN.INTP.RV.ZS)",
+  "Primary government spending as % of the original approved budget, interest and outside-financed project spending left out (World Bank GF.XPD.BUDG.ZS, from PEFA assessments, PEFA PI-1)": "Gasto primario del gobierno en % del presupuesto aprobado original, sin intereses ni gasto de proyectos financiado desde el exterior (Banco Mundial GF.XPD.BUDG.ZS, de evaluaciones PEFA, PEFA PI-1)",
   // G18: trade and commodity exposure
   "Fuels (oil, gas, coal and refined products) as % of merchandise exports (World Bank TX.VAL.FUEL.ZS.UN)": "Combustibles (petróleo, gas, carbón y productos refinados) en % de las exportaciones de mercancías (Banco Mundial TX.VAL.FUEL.ZS.UN)",
   "Ores and metals as % of merchandise exports (World Bank TX.VAL.MMTL.ZS.UN)": "Minerales y metales en % de las exportaciones de mercancías (Banco Mundial TX.VAL.MMTL.ZS.UN)",

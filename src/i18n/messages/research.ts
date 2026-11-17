@@ -106,6 +106,7 @@ export const RESEARCH = defineMessages('research', {
   tl_gross_financing_need: "Gross financing need",
   tl_fiscal_reaction: "Fiscal reaction",
   tl_fiscal_rules: "Fiscal rules",
+  tl_budget_credibility: "Budget credibility",
   tl_fiscal_multipliers: "Fiscal multipliers",
   tl_restructuring: "Debt restructuring calculator",
   tl_bank_sovereign: "Banks and the government",

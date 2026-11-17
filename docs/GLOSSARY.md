@@ -340,6 +340,16 @@ How much of the money the state raises and spends goes through each level: centr
 
 **Limits.** From Eurostat (EU members) and the IMF Government Finance Statistics, yearly and usually two or three years behind. Each level is counted before money passed between levels (grants to states, for example) is netted out, so the levels add up to more than general government; the share below central government is worked out from that sum and labelled so. Many countries report only central government to the IMF.
 
+### Budget credibility
+
+How much of the budget parliament approved the government actually spent in the year, as % of that budget. Interest and spending paid for by outside project loans and grants are left out.
+
+**Why it matters.** A budget is a promise about schools, clinics, roads and wages. When spending ends far below the budget, projects and services were usually cut during the year; far above, the budget was not a real limit. Ministries cannot plan, lenders trust the numbers less, and citizens cannot hold the government to what it said.
+
+**How to read it.** 100% means the government spent exactly what was approved. PEFA, the international public finance review, grades the gap: A within 5%, B within 10%, C within 15%, D further. 82% means 18% less was spent than approved.
+
+**Limits.** From PEFA assessments published by the World Bank (UN goal 16.6.1), so most countries have only the three years an assessment covered, or none. The grade shown is worked out by the app on the PEFA rule, not the official PEFA score. It says nothing about whether money moved between ministries during the year.
+
 ### Risk of debt distress (IMF/World Bank rating)
 
 A rating the IMF and World Bank give each low-income country after a debt sustainability analysis: low, moderate, high, or already in debt distress.

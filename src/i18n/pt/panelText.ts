@@ -702,6 +702,9 @@ export const PANEL_TEXT_PT: Record<string, string> = {
   "IMF Fiscal Monitor, general government net lending/borrowing (GGXCNL_G01_GDP_PT)": "Monitor Fiscal do FMI, capacidade/necessidade de financiamento do governo geral (GGXCNL_G01_GDP_PT)",
   // PA1 remittances
   "No saved World Bank history for this country yet (Data health > World Bank)": "Ainda não há histórico do Banco Mundial salvo para este país (Saúde dos dados > Banco Mundial)",
+  "The grade needs the latest three years in a row, and the World Bank does not publish all three": "A nota precisa dos três últimos anos seguidos, e o Banco Mundial não publica os três",
+  "The World Bank publishes no budget outturn figure for this country (it comes from PEFA assessments, which not every country has had)": "O Banco Mundial não publica nenhum número de execução do orçamento para este país (ele vem de avaliações PEFA, que nem todos os países tiveram)",
+  "World Bank World Development Indicators GF.XPD.BUDG.ZS (UN goal 16.6.1, from PEFA assessments), CC BY 4.0": "Indicadores de Desenvolvimento Mundial do Banco Mundial GF.XPD.BUDG.ZS (meta 16.6.1 da ONU, de avaliações PEFA), CC BY 4.0",
   "The World Bank publishes no remittance figure for this country before this year": "O Banco Mundial não publica números de remessas para este país antes deste ano",
   "The World Bank survey of sending costs does not cover this country": "A pesquisa do Banco Mundial sobre custos de envio não cobre este país",
   "World Bank World Development Indicators (IMF balance of payments; OECD DAC for aid; Remittance Prices Worldwide for cost), CC BY 4.0": "Indicadores de Desenvolvimento Mundial do Banco Mundial (balanço de pagamentos do FMI; CAD da OCDE para a ajuda; Remittance Prices Worldwide para o custo), CC BY 4.0",
