@@ -116,6 +116,7 @@ export const RESEARCH_PT: Messages<typeof RESEARCH> = {
   tl_sandboxes: "Ambientes de teste de modelos",
   tl_remittances: "Remessas",
   tl_aid: "Ajuda recebida",
+  tl_wb_projects: "Projetos do Banco Mundial",
   tl_financial_inclusion: "Inclusão financeira",
   tl_food_prices: "Preços dos alimentos e segurança alimentar",
   tl_risk_scorecard: "Quadro de risco-país",

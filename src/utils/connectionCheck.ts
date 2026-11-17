@@ -22,6 +22,7 @@ import { bcbActivityUrl, eurostatActivityUrl, monthText, onsActivityUrl, parseBc
 import { BIS_PRIVATE_DEBT_SAMPLE_URL, parseBisPrivateDebtAll } from './sectorBalances';
 import { BIS_CB_ASSETS_SAMPLE_URL, BIS_USD_CREDIT_SAMPLE_URL, parseBisCbAssets, parseBisUsdCredit } from './bisCreditCycle';
 import { NYFED_SWAPS_SAMPLE_URL, parseNyfedSwaps } from './fedSwapLines';
+import { idaByProject, idaCreditsPageUrl, parseIdaPage, parseProjectsPage, projectsCountryUrl } from './wbProjects';
 import { NASA_POWER_SAMPLE_URL, parseNasaPower } from './weatherPower';
 import { CCKP_SAMPLE_URL, parseCckp } from './weatherCountry';
 import { IBTRACS_SAMPLE_URL, ibtracsParser } from './stormTracks';
@@ -300,6 +301,8 @@ export const SOURCE_IDS = [
   'worldbank_dist',
   'worldbank_people',
   'wb_budget_credibility',
+  'wb_projects',
+  'wb_ida_credits',
   'worldbank_trade',
   'worldbank_climate',
   'owid_energy',
@@ -800,6 +803,38 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
         const row = Array.isArray(rows) ? (rows as Array<{ value?: unknown; date?: string }>).find((x) => typeof x?.value === 'number') : undefined;
         if (row) return `${SAMPLE_NAME} spent ${fmt(Number(row.value))}% of its approved budget (${row.date})`;
         return Array.isArray(rows) ? `Answered (no budget outturn figure for ${SAMPLE_NAME}; PEFA years only)` : null;
+      }
+    )
+  );
+
+  add('wb_projects', () =>
+    httpCheck(
+      { id: 'wb_projects', name: 'World Bank active projects (Projects API)', group: 'free', feeds: 'Active World Bank projects, amounts committed, approval and closing dates (World Bank projects panel)' },
+      fetchFn,
+      projectsCountryUrl('KE', 5),
+      T,
+      (r) => {
+        const got = parseProjectsPage(parseJson(r.text));
+        if (!got) return null;
+        const p = got.projects[0];
+        return p ? `Kenya: ${got.total} active projects, e.g. ${p.id} committed US$${Math.round(p.commitment ?? 0)} m, closing ${p.closing ?? '?'}` : 'Answered (no active project listed for Kenya)';
+      }
+    )
+  );
+
+  add('wb_ida_credits', () =>
+    httpCheck(
+      { id: 'wb_ida_credits', name: 'World Bank IDA statement of credits (Finances One DS00001)', group: 'free', feeds: 'IDA amounts paid out and still to pay, by project (World Bank projects panel)' },
+      fetchFn,
+      idaCreditsPageUrl(0, 5),
+      T,
+      (r) => {
+        const rows = parseIdaPage(parseJson(r.text));
+        if (!rows) return null;
+        const by = idaByProject(rows);
+        const first = Object.entries(by)[0];
+        if (first) return `${rows.length} rows read; ${first[0]} disbursed US$${(first[1].disbursed / 1e6).toFixed(1)} m`;
+        return `Answered, but no row had a project ID and a disbursed amount; column names: ${Object.keys(rows[0] ?? {}).slice(0, 12).join(', ') || 'none'}`;
       }
     )
   );

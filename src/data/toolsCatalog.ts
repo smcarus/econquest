@@ -309,6 +309,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-aid' },
   },
   {
+    id: 'wb_projects',
+    category: 'history',
+    title: "World Bank projects",
+    what: "Active World Bank projects in the country (roads, schools, clinics, power, budget support): amount committed, approval and closing dates, share of each project's planned time gone, and for IDA credits and grants the share paid out, with projects paying out slowly for the time gone flagged.",
+    sources: "World Bank Projects & Operations; Finances One IDA statement of credits",
+    target: { area: 'country', tab: 'history', anchor: 'tool-wb-projects' },
+  },
+  {
     id: 'food_prices',
     category: 'history',
     title: "Food prices and food security",

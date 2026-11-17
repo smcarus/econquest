@@ -78,6 +78,7 @@ export const COUNTRY_TOOL_GROUPS: CountryToolGroup[] = [
     tools: [
       { id: 'tool-remittances', label: 'tl_remittances' },
       { id: 'tool-aid', label: 'tl_aid' },
+      { id: 'tool-wb-projects', label: 'tl_wb_projects' },
       { id: 'tool-financial-inclusion', label: 'tl_financial_inclusion' },
       { id: 'tool-food-prices', label: 'tl_food_prices' },
     ],

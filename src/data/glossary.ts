@@ -159,6 +159,15 @@ export const GLOSSARY: GlossaryEntry[] = [
     match: [/^Spending by level of government/, /^Revenue by level of government/],
   },
   {
+    id: 'wb_projects',
+    term: "World Bank projects and money paid out",
+    group: 'budget',
+    what: "The projects the World Bank is paying for in a country, such as roads, schools, clinics, power lines or budget support, with the amount committed and, for IDA credits and grants, the amount actually paid out so far.",
+    why: "A loan or grant signed is a promise; the money reaches people only as it is paid out. Projects that pay out slowly often face problems on the ground, such as buying land, awarding contracts or hiring staff, and the services they were meant to bring arrive late.",
+    read: "Compare time gone with paid out: a project 60% through its planned life that has paid out 20% is well behind. Budget support loans pay out in one or two parts, so they are not compared this way.",
+    limits: "From the World Bank's own project list and IDA statement of credits (CC BY 4.0). Paid-out figures cover IDA credits and grants only, not IBRD loans. Projects usually pay out slowly in their first years, and other donors' projects are not included.",
+  },
+  {
     id: 'budget_credibility',
     term: "Budget credibility",
     group: 'budget',

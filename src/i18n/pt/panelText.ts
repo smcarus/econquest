@@ -702,6 +702,12 @@ export const PANEL_TEXT_PT: Record<string, string> = {
   "IMF Fiscal Monitor, general government net lending/borrowing (GGXCNL_G01_GDP_PT)": "Monitor Fiscal do FMI, capacidade/necessidade de financiamento do governo geral (GGXCNL_G01_GDP_PT)",
   // PA1 remittances
   "No saved World Bank history for this country yet (Data health > World Bank)": "Ainda não há histórico do Banco Mundial salvo para este país (Saúde dos dados > Banco Mundial)",
+  "The IDA statement of credits could not be read, so no paid-out share is shown": "Não foi possível ler o extrato de créditos da AID, então a parte desembolsada não é mostrada",
+  "None of these projects is an IDA credit or grant in the IDA statement (IBRD loans have no paid-out figure here yet)": "Nenhum destes projetos é um crédito ou doação da AID no extrato da AID (os empréstimos do BIRD ainda não têm número de desembolso aqui)",
+  "The World Bank lists no active project in this country": "O Banco Mundial não tem nenhum projeto ativo neste país",
+  "No two-letter country code for this country, so its World Bank projects cannot be matched": "Não há código de país de duas letras para este país, então seus projetos do Banco Mundial não podem ser associados",
+  "The World Bank project list has not been downloaded yet (it comes with the daily download; Data health > World Bank projects)": "A lista de projetos do Banco Mundial ainda não foi baixada (ela vem com o download diário; Saúde dos dados > Projetos do Banco Mundial)",
+  "World Bank Projects & Operations (search.worldbank.org API) and Finances One IDA Statement of Credits, Grants and Guarantees (DS00001), CC BY 4.0": "Projetos e Operações do Banco Mundial (API search.worldbank.org) e Extrato de Créditos, Doações e Garantias da AID do Finances One (DS00001), CC BY 4.0",
   "The grade needs the latest three years in a row, and the World Bank does not publish all three": "A nota precisa dos três últimos anos seguidos, e o Banco Mundial não publica os três",
   "The World Bank publishes no budget outturn figure for this country (it comes from PEFA assessments, which not every country has had)": "O Banco Mundial não publica nenhum número de execução do orçamento para este país (ele vem de avaliações PEFA, que nem todos os países tiveram)",
   "World Bank World Development Indicators GF.XPD.BUDG.ZS (UN goal 16.6.1, from PEFA assessments), CC BY 4.0": "Indicadores de Desenvolvimento Mundial do Banco Mundial GF.XPD.BUDG.ZS (meta 16.6.1 da ONU, de avaliações PEFA), CC BY 4.0",

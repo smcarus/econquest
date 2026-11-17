@@ -27,6 +27,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | Source | Status | Free non-commercial sharing | Show to others | Commercial use | Credit |
 | --- | --- | --- | --- | --- | --- |
 | World Bank indicators and debt statistics (IDS, QEDS) | Open with attribution | Free sharing allowed | Allowed: the data may be shared with third parties under CC BY 4.0. | Allowed (CC BY 4.0 sets no commercial limit). | The World Bank: <dataset name>: <data source>, e.g. "The World Bank: World Development Indicators". |
+| World Bank projects and IDA statement of credits (Projects & Operations, Finances One DS00001) | Open with attribution | Free sharing allowed | Allowed: both datasets are published under CC BY 4.0. | Allowed (CC BY 4.0 sets no commercial limit). | The World Bank: Projects & Operations; The World Bank: IDA Statement of Credits, Grants and Guarantees. |
 | World Bank Pink Sheet (commodity prices) | Terms not confirmed | Sharing unclear | Likely covered by the World Bank dataset terms (CC BY 4.0), but the Pink Sheet's own catalog entry could not be read. | Not confirmed. | The World Bank: Commodity Price Data (The Pink Sheet). |
 | IMF (World Economic Outlook, Fiscal Monitor, International Liquidity, Balance of Payments, COFER, Consumer Price Index) | Permission needed for client or commercial use | Free sharing allowed | Allowed with attribution: the IMF lets users publish and distribute its Data. | Needs permission: email copyright@imf.org. Systematic or bulk automated download also needs permission. | Source: International Monetary Fund, <database name>, <link to the dataset>. |
 | UN Comtrade | Permission needed for client or commercial use | Free sharing allowed | Internal use only. Free, not-for-profit visualisation is exempt; a paid report or dashboard is exempt only below 100,000 original records. | Paid, subscription or otherwise monetised use counts as commercial; commercial APIs need a premium subscription. | Source: UN Comtrade. |
@@ -99,6 +100,22 @@ From the terms:
 > You may extract, download, and make copies of the data contained in the Datasets, and you may share that data with third parties according to these terms of use.
 >
 > Some datasets and indicators are provided by third parties, and may not be redistributed or reused without the consent of the original data provider
+
+### World Bank projects and IDA statement of credits (Projects & Operations, Finances One DS00001)
+
+- **Used for:** Active World Bank projects with amounts committed, approval and closing dates (search.worldbank.org Projects API), and IDA amounts disbursed and undisbursed by project (IDA Statement of Credits, Grants and Guarantees, latest snapshot), for the World Bank projects panel
+- **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0 allows sharing with credit.
+- **Terms read:** [Projects & Operations in the Data Catalog](https://datacatalog.worldbank.org/search/dataset/0037800); [IDA Statement of Credits, Grants and Guarantees](https://financesone.worldbank.org/d/DS00001) (checked 2026-11-17)
+- **Show to others:** Allowed: both datasets are published under CC BY 4.0.
+- **Commercial use:** Allowed (CC BY 4.0 sets no commercial limit).
+- **Credit:** The World Bank: Projects & Operations; The World Bank: IDA Statement of Credits, Grants and Guarantees.
+
+From the terms:
+
+> This dataset is licensed under Creative Commons Attribution 4.0
+>
+> Creative Commons Attribution 4.0 International
 
 ### World Bank Pink Sheet (commodity prices)
 
