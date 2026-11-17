@@ -32,7 +32,7 @@ export interface ApiKeyField {
 
 const RT_FEEDS = 'Lets Council chat call a research-tools server you run (backtests, volatility and price forecasts, nowcasts, option prices) from chat questions only.';
 const RT_WITHOUT = 'Off until both the address and the token are set; Council chat then works as before.';
-const RT_DOCS = 'https://github.com/smcarus/econquest/blob/main/docs/RESEARCH_TOOLS.md';
+const RT_DOCS = 'https://github.com/e-conquest/econquest/blob/main/docs/RESEARCH_TOOLS.md';
 
 export const API_KEY_FIELDS: ApiKeyField[] = [
   {
@@ -153,7 +153,7 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     feeds:
       '5-year sovereign CDS on the watchlist, MarketEdge and the Country tab. No free source of CDS exists, so the app shows only quotes from your own file or your own LSEG account, labelled with whose data they are.',
     withoutIt: 'Off: CDS reads Missing.',
-    getKeyUrl: 'https://github.com/smcarus/econquest/blob/main/docs/DATA_SOURCES.md',
+    getKeyUrl: 'https://github.com/e-conquest/econquest/blob/main/docs/DATA_SOURCES.md',
     getKeySteps: 'Pick a file you export yourself (Bloomberg, LSEG, S&P) or your LSEG Data Platform account, then fill in the settings for it below.',
     checkId: 'own_cds',
     secret: false,
@@ -172,7 +172,7 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     provider: 'Your own licensed data',
     feeds: 'Full path to your CSV with columns iso3,date,cds5y_bps,source. The latest date per country is used.',
     withoutIt: 'Needed when the CDS source is My CSV file.',
-    getKeyUrl: 'https://github.com/smcarus/econquest/blob/main/docs/DATA_SOURCES.md',
+    getKeyUrl: 'https://github.com/e-conquest/econquest/blob/main/docs/DATA_SOURCES.md',
     getKeySteps: "Under Docker the app sees the project folder's data/local as /app/data/local, so put the file there and enter /app/data/local/cds.csv.",
     checkId: 'own_cds',
     secret: false,
@@ -240,7 +240,7 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     feeds:
       'Series you map from a data service you already pay for show next to the free ones, labelled "Your subscription". They stay on this computer: downloads, backups and shared copies say "Withheld: your subscription data" instead.',
     withoutIt: 'Off: the app uses free sources only.',
-    getKeyUrl: 'https://github.com/smcarus/econquest/blob/main/docs/DATA_SOURCES.md',
+    getKeyUrl: 'https://github.com/e-conquest/econquest/blob/main/docs/DATA_SOURCES.md',
     getKeySteps: 'Pick the service you subscribe to, enter your sign-in details below, then map the series you want under "Your series".',
     checkId: 'paid_data',
     secret: false,
@@ -388,7 +388,7 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     provider: 'Email',
     feeds: 'Who gets alert emails: one address, or several separated by commas.',
     withoutIt: 'Without it no alert email is sent.',
-    getKeyUrl: 'https://github.com/smcarus/econquest/blob/main/docs/HOME_SERVER.md#server-alerts',
+    getKeyUrl: 'https://github.com/e-conquest/econquest/blob/main/docs/HOME_SERVER.md#server-alerts',
     getKeySteps: 'Any address you read.',
     checkId: 'alert_email',
     section: 'alerts',
@@ -402,7 +402,7 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     provider: 'Email',
     feeds: 'The sender address on alert emails. Optional: without it the user name in the mail server address is used when it is an email address.',
     withoutIt: 'Many mail servers only accept their own account as the sender.',
-    getKeyUrl: 'https://github.com/smcarus/econquest/blob/main/docs/HOME_SERVER.md#server-alerts',
+    getKeyUrl: 'https://github.com/e-conquest/econquest/blob/main/docs/HOME_SERVER.md#server-alerts',
     getKeySteps: 'Usually the same account as the mail server.',
     checkId: 'alert_email',
     section: 'alerts',

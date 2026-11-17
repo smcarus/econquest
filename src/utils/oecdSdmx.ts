@@ -81,7 +81,7 @@ export function parseOecdReply(text: unknown, keepMonths?: number): SdmxObs[] | 
  */
 export const OECD_HEADERS: Record<string, string> = {
   Accept: 'application/json',
-  'User-Agent': 'EconQuest/1.0 (sovereign research terminal; +https://github.com/smcarus/econquest)',
+  'User-Agent': 'EconQuest/1.0 (sovereign research terminal; +https://github.com/e-conquest/econquest)',
 };
 
 /** After a refusal (429 or the bot check), the app leaves the OECD alone this long. */
