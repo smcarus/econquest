@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Full yield curves (R11): History & data > Full yield curves shows every maturity of the US Treasury
+  par yield curve and the ECB euro area government curve each day, a fitted Nelson-Siegel-Svensson
+  curve, level (10y), slope (10y minus 2y) and curvature with their one-day and one-month moves, and
+  three-month carry and roll-down for each maturity. Daily step `world:curves` (at most every 6 hours,
+  `data/live/yield-curves.json`); route `GET /api/yield-curves?area=us|ea`; connection checks
+  `ust_curve` and `ecb_curve`; licence row for the Treasury curve (US government work), ECB row
+  extended. Four languages.
+
 - Ranges from past misses (R8): History & data > IMF forecasts by edition gets *Range from past IMF
   misses*, a 70% and 90% range around the latest saved WEO edition's projections from how far past
   editions (same season, same years ahead) missed the country's outturn. Nowcast and forecasts gets

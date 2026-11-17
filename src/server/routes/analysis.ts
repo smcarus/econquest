@@ -44,6 +44,8 @@ import { wbProjectsProfile, wbProjectsSentence } from '../../utils/wbProjects';
 import { loadWbProjects } from '../feeds/wbProjects';
 import { regionalProfile, regionalSentence } from '../../utils/regional';
 import { loadDose, loadEuroRegions, loadGdl } from '../feeds/regional';
+import { loadCurves } from '../feeds/fullCurves';
+import { fullCurveReading, fullCurveSentence } from '../../utils/fullCurves';
 import { iso2For } from '../../data/iso3166Alpha2';
 import { foodView, foodSentence, FOOD_IDS } from '../../utils/foodPrices';
 import { faoCpiInput } from '../../utils/faoCpiStore';
@@ -994,6 +996,13 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       editions: store.editions.map((e) => ({ vintage: e.vintage, label: vintageLabel(e.vintage), file: e.file, countries: Object.keys(e.rows).length })),
       skipped: store.skipped,
     });
+  });
+  // R11: full yield curves (US Treasury par curve, ECB euro area curve) from the daily step world:curves.
+  app.get('/api/yield-curves', (req, res) => {
+    const area = req.query.area === 'ea' ? 'ea' : 'us';
+    const file = loadCurves();
+    const r = fullCurveReading(file?.[area] ?? { area, days: [] }, file?.pulledAt);
+    res.json(r.ok ? { ...r, sentence: fullCurveSentence(r) } : r);
   });
   // R8: ranges around the latest saved edition's projections from past IMF misses.
   app.get('/api/weo-vintages/:iso3/bands', (req, res) => {

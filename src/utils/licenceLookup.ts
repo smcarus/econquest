@@ -36,6 +36,7 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['cftc', /\bCFTC\b/i],
   ['tic', /\bTIC\b|Treasury International Capital/],
   ['us_fiscal_data', /Fiscal Data|Treasury Securities Auctions/i],
+  ['ust_curve', /Par Yield Curve|par yield curve/i],
   ['eia', /\bEIA\b/],
   ['gdelt', /GDELT/i],
   ['ucdp', /\bUCDP\b|Uppsala Conflict/i],

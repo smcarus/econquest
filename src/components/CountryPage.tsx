@@ -62,6 +62,7 @@ const StormTracksPanel = lazyNamed(() => import('./StormTracksPanel'), 'StormTra
 const CbWordsPanel = lazyNamed(() => import('./CbWordsPanel'), 'CbWordsPanel');
 const InflationDriversPanel = lazyNamed(() => import('./InflationDriversPanel'), 'InflationDriversPanel');
 const YieldCurvePanel = lazyNamed(() => import('./YieldCurvePanel'), 'YieldCurvePanel');
+const FullCurvesPanel = lazyNamed(() => import('./FullCurvesPanel'), 'FullCurvesPanel');
 const ExternalSustainabilityPanel = lazyNamed(() => import('./ExternalSustainabilityPanel'), 'ExternalSustainabilityPanel');
 const RiskScorecardPanel = lazyNamed(() => import('./RiskScorecardPanel'), 'RiskScorecardPanel');
 const UnitConverterPanel = lazyNamed(() => import('./UnitConverterPanel'), 'UnitConverterPanel');
@@ -493,6 +494,13 @@ export const CountryPage: React.FC<{
             <PanelBoundary name="Yield curve">
               <React.Suspense fallback={<DeskLoading />}>
                 <YieldCurvePanel key={`yc-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+              </React.Suspense>
+            </PanelBoundary>
+          </ToolSlot>
+          <ToolSlot id="tool-full-curves" pick={toolPick}>
+            <PanelBoundary name="Full yield curves">
+              <React.Suspense fallback={<DeskLoading />}>
+                <FullCurvesPanel key={`fyc-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
               </React.Suspense>
             </PanelBoundary>
           </ToolSlot>

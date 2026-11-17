@@ -109,6 +109,7 @@ import { loadOwidEnergy, fetchOwidEnergyPull } from './src/server/feeds/owidEner
 import { loadFedSwaps, fetchFedSwaps } from './src/server/feeds/fedSwaps';
 import { fetchWbProjects } from './src/server/feeds/wbProjects';
 import { fetchRegional } from './src/server/feeds/regional';
+import { fetchCurves } from './src/server/feeds/fullCurves';
 import { loadWeather, fetchWeather } from './src/server/feeds/nasaPower';
 import { loadCountryWeather, fetchCountryWeather } from './src/server/feeds/wbClimate';
 import { loadWages, fetchWagesPull, loadHousePrices, fetchHousePricesPull, loadPrivateDebt, fetchPrivateDebtPull } from './src/server/feeds/wagesHousing';
@@ -710,6 +711,12 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
       const note = `${got.projects.length} active projects, ${got.ida ? `IDA amounts for ${Object.keys(got.ida).length} projects` : 'no IDA amounts (statement not read)'}`;
       return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}, downloaded again after a week` };
+    }
+    case 'world:curves': {
+      const got = await fetchCurves();
+      if (!got) return { outcome: 'failed', note: 'Neither the US Treasury nor the ECB answered for the yield curves' };
+      const last = (d?: { days: Array<{ date: string }> }) => d?.days[d.days.length - 1]?.date;
+      return { outcome: 'done', note: `US Treasury ${last(got.us) ? `to ${last(got.us)}` : 'not read'}; ECB euro area ${last(got.ea) ? `to ${last(got.ea)}` : 'not read'} (copy of ${got.pulledAt.slice(0, 16).replace('T', ' ')} UTC)` };
     }
     case 'world:regional': {
       const got = await fetchRegional();

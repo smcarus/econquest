@@ -24,6 +24,7 @@ import { BIS_CB_ASSETS_SAMPLE_URL, BIS_USD_CREDIT_SAMPLE_URL, parseBisCbAssets, 
 import { NYFED_SWAPS_SAMPLE_URL, parseNyfedSwaps } from './fedSwapLines';
 import { idaByProject, idaCreditsPageUrl, parseIdaPage, parseProjectsPage, projectsCountryUrl } from './wbProjects';
 import { doseCsvLink, doseLatestUrl, eurostatRegionUnempUrl, latestByGeo } from './regional';
+import { ecbCurveUrl, parseEcbCurveCsv, parseUstCsv, ustCurveUrl } from './fullCurves';
 import { NASA_POWER_SAMPLE_URL, parseNasaPower } from './weatherPower';
 import { CCKP_SAMPLE_URL, parseCckp } from './weatherCountry';
 import { IBTRACS_SAMPLE_URL, ibtracsParser } from './stormTracks';
@@ -306,6 +307,8 @@ export const SOURCE_IDS = [
   'wb_ida_credits',
   'dose',
   'eurostat_regions',
+  'ust_curve',
+  'ecb_curve',
   'worldbank_trade',
   'worldbank_climate',
   'owid_energy',
@@ -850,6 +853,35 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       (r) => {
         const link = doseCsvLink(parseJson(r.text));
         return link ? `Latest version ${link.version ?? '?'} (record ${link.record}): ${link.file}` : null;
+      }
+    )
+  );
+
+  add('ust_curve', () =>
+    httpCheck(
+      { id: 'ust_curve', name: 'US Treasury daily par yield curve', group: 'free', feeds: 'Every maturity of the US Treasury curve each day (Full yield curves)' },
+      fetchFn,
+      ustCurveUrl(new Date().getUTCFullYear()),
+      T,
+      (r) => {
+        const got = parseUstCsv(r.text || '');
+        if ('reason' in got) return null;
+        const d = got[got.length - 1];
+        return `${got.length} days read; ${d.date}: 10-year ${d.yields['10'] ?? '?'}%, ${Object.keys(d.yields).length} maturities`;
+      }
+    )
+  );
+  add('ecb_curve', () =>
+    httpCheck(
+      { id: 'ecb_curve', name: 'ECB euro area yield curve', group: 'free', feeds: 'Every maturity of the euro area government curve each day (Full yield curves)' },
+      fetchFn,
+      ecbCurveUrl(5),
+      T,
+      (r) => {
+        const got = parseEcbCurveCsv(r.text || '');
+        if ('reason' in got) return null;
+        const d = got[got.length - 1];
+        return `${got.length} days read; ${d.date}: 10-year ${d.yields['10'] ?? '?'}%, ${Object.keys(d.yields).length} maturities`;
       }
     )
   );

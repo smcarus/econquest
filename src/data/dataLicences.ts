@@ -219,7 +219,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'ecb',
     name: 'ECB statistics: euro reference rates (through Frankfurter), Survey of Professional Forecasters',
-    usedFor: 'Daily exchange rate history per US dollar since 1999; FX volatility; last year\'s closing rate for the year-to-date move; Survey of Professional Forecasters inflation expectations (ECB Data Portal, dataset SPF, quarterly world series); euro area GDP, HICP inflation and unemployment as first published (ECB Euro Area Real-Time Database, dataset RTD, with its revision history)',
+    usedFor: 'Daily exchange rate history per US dollar since 1999; FX volatility; last year\'s closing rate for the year-to-date move; Survey of Professional Forecasters inflation expectations (ECB Data Portal, dataset SPF, quarterly world series); euro area GDP, HICP inflation and unemployment as first published (ECB Euro Area Real-Time Database, dataset RTD, with its revision history); the euro area government yield curve, every maturity each day (dataset YC, all euro area central government bonds, spot rates; the fitted curve, factor moves, carry and roll-down are the app\'s own calculations)',
     terms: [
       { label: 'ECB statistics reuse policy', url: 'https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html' },
       { label: 'Frankfurter licence', url: 'https://frankfurter.dev/license/' },
@@ -488,6 +488,25 @@ export const DATA_LICENCES: LicenceRow[] = [
     share: 'allowed',
     shareNote: 'Free, without restriction.',
     checked: '2026-11-08',
+  },
+  {
+    id: 'ust_curve',
+    name: 'US Treasury Daily Treasury Par Yield Curve Rates',
+    usedFor: 'Every maturity of the US Treasury par yield curve each day, for Full yield curves (the fitted curve, factor moves, carry and roll-down are the app\'s own calculations)',
+    terms: [
+      { label: 'Daily Treasury Par Yield Curve Rates', url: 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve' },
+      { label: 'Treasury site policies', url: 'https://home.treasury.gov/subfooter/site-policies-and-notices' },
+      { label: 'US government works (17 U.S.C. 105)', url: 'https://www.law.cornell.edu/uscode/text/17/105' },
+    ],
+    status: 'open',
+    display: 'Allowed: published by the US Treasury, a work of the US government, which has no copyright in the United States.',
+    commercial: 'No restriction stated.',
+    attribution: 'Source: U.S. Department of the Treasury, Daily Treasury Par Yield Curve Rates.',
+    quotes: ['Copyright protection under this title is not available for any work of the United States Government'],
+    flag: 'The Treasury site states no licence for the yield curve page; it is treated as a US government work. The fitted curve and the derived figures are labelled as the app\'s calculation.',
+    share: 'allowed',
+    shareNote: 'US government work, no copyright in the United States.',
+    checked: '2026-11-17',
   },
   {
     id: 'eia',
