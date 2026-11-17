@@ -97,6 +97,8 @@ export interface AgentAnswer {
   missing: string[];
   /** The Chart Agent's chart and test results (src/utils/councilChart.ts). */
   chart?: ChartResult;
+  /** The Scenario Agent's debt paths the user can keep for the trade-off chart (WI6); screen only, not sent to the model. */
+  keep?: Array<{ iso3: string; countryName: string; item: import('./tradeOff').TradeOffItem }>;
 }
 
 export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string; topic: RegExp }> = {
@@ -1297,7 +1299,7 @@ export function chartAnswer(req: ChartRequest, result: ChartResult): AgentAnswer
 
 /** Answers as sent to the AI steps: the chart's points stay on this computer, its test results go. */
 export function answersForModel(answers: AgentAnswer[]): AgentAnswer[] {
-  return answers.map(({ chart: _chart, ...a }) => a);
+  return answers.map(({ chart: _chart, keep: _keep, ...a }) => a);
 }
 
 /** Which dated figures each agent leans on (src/utils/freshness.ts ids). */

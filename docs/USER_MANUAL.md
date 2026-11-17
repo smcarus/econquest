@@ -221,6 +221,13 @@ full council and saved research.
   no figures reads *Missing* with the reason; the model is not asked to fill it. Sentences that
   quote a figure carry its reference number, and a study links to its DOI. Pressing *Explain* on a
   figure still gives an explanation, not this layout.
+  The *Scenario read from your question* box can be edited: press *Change the sizes*, change a size
+  or a level, or take a change out, and press *Ask again with these changes*. The app writes the new
+  question in plain words (shown before you send it) and asks it as a follow-up, so you can compare
+  the two answers in the conversation. A debt path the Scenario Agent worked out (for borrowing
+  costs, growth or inflation) has *Keep for the trade-off chart*, which puts it on the chart under
+  Debt sustainability beside the costed options, as one point (the debt identity gives no range).
+  Kept items stay only in this browser tab.
 - *Explain on a figure, chart or panel*: an *Explain* link sits beside every figure in an agent
   document and on the Research pages (point at a row on a wide screen to see it), at the top of
   each Research panel, and on every chat chart. It sends that exact figure, with its source and

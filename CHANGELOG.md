@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Editable scenario card (WI6): the scenario read from a what-if question can be changed in Council
+  chat (sizes, levels, changes taken out) and asked again as a follow-up, written in plain words the
+  scenario reader reads back the same way (`scenarioText`). The Scenario Agent's debt paths can be
+  kept for the trade-off chart under Debt sustainability (`itemFromScenarioDebt`); they are kept in
+  the browser tab only and never sent to the AI model.
+
 - What-if answer layout (WI5): when the Scenario Agent answers, the council's answer comes in eight
   sections, from where things stand now through the change, first effects, how it spreads, history,
   research and trends to what would change the answer (`src/utils/whatIfAnswer.ts`). Each section

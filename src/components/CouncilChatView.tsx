@@ -157,7 +157,15 @@ export const AskCouncilPanel: React.FC<{
           <span className="font-medium text-slate-700 dark:text-slate-200">{tr('councilLabel')}</span> · {tr('about', { scope: tx(t.asked.plan.scopeNote) })} · {time(t.asked.askedAt)}
         </p>
 
-        {t.asked.plan.scenario && <ScenarioReadNote scenario={t.asked.plan.scenario} />}
+        {t.asked.plan.scenario && (
+          <ScenarioReadNote
+            scenario={t.asked.plan.scenario}
+            countries={t.asked.plan.countries.slice(0, 4).map((c) => c.countryName)}
+            keep={t.asked.answers.find((a) => a.id === 'scenario')?.keep}
+            onAsk={(q) => void ask(q, 'followup')}
+            busy={busy}
+          />
+        )}
 
         {t.changes && (
           <div className="border border-slate-200 dark:border-slate-700 p-3 space-y-1" data-council-changes={t.changes.changes.length + t.changes.stanceChanges.length}>
