@@ -360,3 +360,30 @@ test('hidden names: a hidden country in the question, the figures or the model\'
     await post('/api/settings/hidden-names/clear', {});
   }
 });
+
+test('Scenario Agent (WI2): the server applies the stated shocks; a what-if question gets the Scenario Agent', { skip, timeout: 300_000 }, async () => {
+  const bad = await fetch(`${base}/api/council/scenario/TUR?shocks=${encodeURIComponent('[{"kind":"us_rate","change":999}]')}`);
+  assert.equal(bad.status, 400);
+  const shocks = encodeURIComponent(JSON.stringify([{ kind: 'us_rate', direction: 1, change: 1, target: null }, { kind: 'interest_cost', direction: 1, change: 2, target: null }, { kind: 'policy_rate', direction: 1, change: null, target: null }]));
+  const r = await fetch(`${base}/api/council/scenario/TUR?shocks=${shocks}`, { signal: AbortSignal.timeout(240_000) });
+  assert.equal(r.status, 200);
+  const d = await r.json();
+  assert.equal(d.iso3, 'TUR');
+  // Each channel either ran or says why not; nothing is filled in.
+  assert.equal(d.engine.length, 2);
+  for (const e of d.engine) assert.ok(e.ok ? Number.isFinite(e.value) && e.lo <= e.value && e.value <= e.hi : typeof e.reason === 'string', JSON.stringify(e));
+  assert.ok(d.dsa.ok ? d.dsa.runs.length === 1 && d.dsa.runs[0].kind === 'interest_cost' : typeof d.dsa.reason === 'string', JSON.stringify(d.dsa));
+  assert.ok(d.lp.ok ? d.lp.steps.length > 0 : typeof d.lp.reason === 'string', JSON.stringify(d.lp));
+  for (const l of d.largest || []) assert.match(l.month, /^\d{4}-\d{2}$/);
+
+  const rows = ((await (await fetch(`${base}/api/data/watchlist-live?iso3=TUR`)).json()).items || []) as WatchlistItem[];
+  const { plan, answers } = await councilAnswers(
+    { question: 'What would happen to Turkey if the Fed raised rates by 1 point?', items: rows.map((x) => toLive(x)), history: [] },
+    { chooseAgents: async () => null, get: (u) => fetch(`${base}${String(u)}`) }
+  );
+  assert.equal(plan.scenario?.shocks[0].kind, 'us_rate');
+  const sc = answers.find((a) => a.id === 'scenario');
+  assert.ok(sc, answers.map((a) => a.id).join(','));
+  assert.match(sc!.why, /US Federal Reserve rate raised \(\+1 pts\)/);
+  for (const f of sc!.findings.flatMap((x) => x.figures)) assert.ok(f.source.length > 0 && f.value.length > 0);
+});

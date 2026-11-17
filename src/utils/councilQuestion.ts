@@ -12,6 +12,8 @@ import { computeChart, fetchChartSeries } from './councilChart';
 import { withExplainAgents, type ExplainFocus } from './explain';
 import { asksForecast, forecastAnswer, type CountryModels } from './forecastAgent';
 import type { PolicyDoc } from './policyDocs';
+import type { ScenarioCountryData } from './scenarioAgent';
+import { scenarioQuery, type ScenarioQuestion } from './scenarioQuestion';
 import type { LiveWatchlistItem } from '../types/council';
 
 export const NO_FIGURES_REASON = 'The agents found no figures to answer with, so there is nothing to summarise.';
@@ -47,6 +49,19 @@ export async function fetchCountryModels(countries: Array<{ iso3: string; countr
   return Promise.all(countries.map(async (c) => ({ iso3: c.iso3, countryName: c.countryName, nowcast: await one(`/api/nowcast/${encodeURIComponent(c.iso3)}`), forecast: await one(`/api/forecast/${encodeURIComponent(c.iso3)}`) })));
 }
 
+/** The Scenario Agent's server pieces for each country (GET /api/council/scenario); a failed call leaves the country to read Missing. */
+export async function fetchScenarioData(sq: ScenarioQuestion, countries: Array<{ iso3: string }>, get: typeof fetch): Promise<ScenarioCountryData[]> {
+  const q = scenarioQuery(sq);
+  const one = (iso3: string) =>
+    get(`/api/council/scenario/${encodeURIComponent(iso3)}?shocks=${q}`)
+      .then((r) => (r.ok ? (r.json() as Promise<ScenarioCountryData>) : null))
+      .catch(() => null);
+  return (await Promise.all(countries.map((c) => one(c.iso3)))).filter((d): d is ScenarioCountryData => d !== null);
+}
+
+/** Countries the Scenario Agent runs for: the first four in the plan. */
+export const SCENARIO_MAX_COUNTRIES = 4;
+
 /**
  * Plans the question, asks the AI model which agents answer, runs the desk agents on the app's own
  * figures, and adds the Chart Agent and Nowcast & Forecast when the question asks for them.
@@ -60,7 +75,15 @@ export async function councilAnswers(input: QuestionInput, steps: QuestionSteps)
   // The Chart Agent: fetch the series the question names from the app's own history, draw, test.
   const charted = plan.chart ? [chartAnswer(plan.chart, computeChart(plan.chart, await fetchChartSeries(plan.chart, steps.get))), ...desk] : desk;
   // Nowcast & Forecast: the app's own estimates join when the question asks about the path ahead.
-  const answers = asksForecast(text) && plan.countries.length ? [...charted, forecastAnswer(await fetchCountryModels(plan.countries.slice(0, 4), steps.get))] : charted;
+  const forecasted = asksForecast(text) && plan.countries.length ? [...charted, forecastAnswer(await fetchCountryModels(plan.countries.slice(0, 4), steps.get))] : charted;
+  // Scenario Agent (WI2): a what-if's stated shocks applied to today's figures.
+  const sq = plan.scenario;
+  const scenarioCountries = plan.countries.slice(0, SCENARIO_MAX_COUNTRIES);
+  // Loaded only for a what-if, so the start-up bundle does not carry it.
+  const answers =
+    sq?.shocks.length && scenarioCountries.length
+      ? [(await import('./scenarioAgent')).scenarioAnswer(sq, scenarioCountries, await fetchScenarioData(sq, scenarioCountries, steps.get)), ...forecasted]
+      : forecasted;
   return { plan, answers };
 }
 

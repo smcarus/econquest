@@ -69,7 +69,9 @@ import { fetchBisCreditCycle, fetchDebtSchedule, fetchFxHistory, fetchPolicyDail
 import { beer, beerSentence } from '../../utils/beer';
 import { EVENT_METHOD, eventSentence, eventStudy } from '../../utils/eventStudy';
 import { fxDailySeries } from '../../utils/fxHistory';
-import { fitScenarioModel, monthEnd, monthlyChanges, PRESETS, SCENARIO_METHOD, FACTORS, RESPONSES, type ScenarioModel } from '../../utils/scenarioEngine';
+import { fitScenarioModel, monthEnd, monthlyChanges, PRESETS, SCENARIO_METHOD, FACTORS, RESPONSES, type FactorId, type ScenarioModel } from '../../utils/scenarioEngine';
+import { dsaRuns, engineRuns, largestMove, lpRun, scenarioFromQuery, type LargestMove, type ScenarioCountryData } from '../../utils/scenarioAgent';
+import type { ShockKind } from '../../utils/scenarioQuestion';
 import { grVar, grVarSentence, GRVAR_METHOD, type GrVarOutcome } from '../../utils/grVar';
 import { gprData } from '../../utils/gprStore';
 import { storyLeads, STORY_LEADS_METHOD, type LeadSeries } from '../../utils/storyLeads';
@@ -695,10 +697,11 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const study = eventStudy(bank, policy, fx.points);
     res.json({ iso3, name, ok: true, ...study, sentence: eventSentence(name, study), method: EVENT_METHOD, sources: ['BIS central bank policy rates, daily', fx.source || 'ECB euro reference rates (via Frankfurter)'] });
   });
-  app.get('/api/scenario/:iso3', async (req, res) => {
-    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  // The scenario engine's factors and fitted models for one country, shared by /api/scenario and the
+  // Scenario Agent (/api/council/scenario).
+  const scenarioFits = async (iso3: string, stressKey: unknown) => {
     const [set, hist, fxFile, pulls] = await Promise.all([seriesFor(iso3), modelHistory(), quick(fetchFxHistory()).then((h) => h ?? loadFxHistory()), quick(fetchStressPulls())]);
-    const pick = stressIndex(req.query.stress);
+    const pick = stressIndex(stressKey);
     const stress = pulls?.fred[pick.fred];
     const gscpi = pulls?.gscpi && 'obs' in pulls.gscpi ? pulls.gscpi.obs : null;
     const eur = fxDailySeries(fxFile, 'EUR');
@@ -730,6 +733,11 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
           ? fitScenarioModel('policy', monthlyChanges(monthEnd(ownPolicy.map((p) => ({ date: p.period, value: p.pct }))), 'diff'), factors)
           : { response: 'policy' as const, ok: false as const, reason: area ? 'BIS policy rate history not downloaded yet' : 'Not in BIS policy rates' },
     ];
+    return { set, pick, factors, missingFactors, fx, area, ownPolicy, models };
+  };
+  app.get('/api/scenario/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const { pick, factors, missingFactors, fx, models } = await scenarioFits(iso3, req.query.stress);
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     // Geopolitical risk VaR (src/utils/grVar.ts): currency moves in high-GPR months, and the fx model's implied move.
     const gpr = gprData(DATA_DIR);
@@ -755,6 +763,47 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       method: SCENARIO_METHOD,
       sources: ['ECB euro reference rates (via Frankfurter)', 'BIS central bank policy rates, monthly', `${pick.label} (${pick.fred}), retrieved from FRED, Federal Reserve Bank of St. Louis`, GSCPI_SOURCE],
     });
+  });
+  // Scenario Agent (WI2, src/utils/scenarioAgent.ts): the question's shocks (read in the browser by
+  // src/utils/scenarioQuestion.ts) applied with the scenario engine, local projections and the debt identity.
+  app.get('/api/council/scenario/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const sq = scenarioFromQuery(req.query.shocks);
+    if (!sq) return res.status(400).json({ error: 'shocks must be a JSON list of stated shocks' });
+    const kinds = new Set(sq.shocks.map((x) => x.kind));
+    const out: ScenarioCountryData = { iso3, countryName: name };
+    const needEngine = (['us_rate', 'dollar', 'fin_stress', 'supply_chain', 'policy_rate'] as ShockKind[]).some((k) => kinds.has(k));
+    if (needEngine) {
+      const fit = await scenarioFits(iso3, req.query.stress);
+      out.engine = engineRuns(fit.models, sq);
+      if (out.engine.length) out.missingFactors = fit.missingFactors;
+      const largest: LargestMove[] = [];
+      const FACTOR_SOURCE: Record<FactorId, string> = { us_rate: 'BIS, US policy rate, monthly', dollar: 'ECB euro per dollar, monthly', fin_stress: `${fit.pick.label}, FRED`, supply_chain: GSCPI_SOURCE };
+      for (const sh of sq.needsSize) {
+        if (sh.kind === 'policy_rate' && fit.ownPolicy.length) {
+          const l = largestMove('policy_rate', monthlyChanges(monthEnd(fit.ownPolicy.map((p) => ({ date: p.period, value: p.pct }))), 'diff'), 'BIS central bank policy rates, monthly');
+          if (l) largest.push(l);
+        } else if (sh.kind in FACTOR_SOURCE) {
+          const l = largestMove(sh.kind, fit.factors[sh.kind as FactorId], FACTOR_SOURCE[sh.kind as FactorId]);
+          if (l) largest.push(l);
+        }
+      }
+      if (largest.length) out.largest = largest;
+    }
+    if (kinds.has('policy_rate')) {
+      const set = await seriesFor(iso3);
+      const cpi = set.series.find((x) => x.id === 'cpi_monthly');
+      const rate = set.series.find((x) => x.id === 'policy_rate');
+      const why = (id: string) => set.missing.find((m) => m.id === id)?.reason;
+      out.lp = !cpi ? { ok: false, reason: `monthly inflation: ${why('cpi_monthly') || 'not saved'}` } : !rate ? { ok: false, reason: `policy rate: ${why('policy_rate') || 'not saved'}` } : lpRun(localProjections(cpi.points, rate.points), 1);
+    }
+    if (kinds.has('interest_cost') || kinds.has('growth') || kinds.has('inflation')) {
+      const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+      const r = dsaFrom(file);
+      out.dsa = r.ok ? dsaRuns(r, sq, iso3) : { ok: false, reason: r.reason };
+    }
+    res.json(out);
   });
   app.get('/api/nowcast/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');

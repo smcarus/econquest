@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Scenario Agent in Council chat (WI2): for a what-if question, today's figures beside what they
+  would be after the stated change, for up to four countries. Uses the app's own tools: the
+  scenario engine (Fed, dollar, financial stress, supply chains), local projections (inflation
+  after a rate change), the debt identity on the IMF's inputs (borrowing costs, growth, inflation),
+  dollar bonds (currency fall) and net trade (oil, food, commodity prices). Missing parts say why;
+  with no size given, the largest monthly move on record is offered with its month. New
+  `GET /api/council/scenario/:iso3`; model register row `scenario_agent`.
 - Council chat reads what-if questions (WI1): the changes a question states (a central bank or
   Fed rate, borrowing costs, the dollar, the currency, oil, food or commodity prices, financial
   stress, supply chain pressure, growth, inflation), each with the size in your words, shown above
