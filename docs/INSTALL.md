@@ -292,6 +292,8 @@ the file read Missing and say where to get it.
 | `data/local/acled/` | ACLED aggregated files (.xlsx or .csv, zipped or not) | acleddata.com, with your own account | Conflict events |
 | `data/local/aiddata/` | A newer AidData Chinese development finance file (optional) | aiddata.org | China lending; a shipped summary is used otherwise |
 | `data/local/ibtracs/` | An IBTrACS v04 CSV (optional: the since-1980 file or a basin file) | https://www.ncei.noaa.gov/products/international-best-track-archive | Tropical cyclones (History & data), instead of the download button in the panel |
+| `data/local/gdl/` | Global Data Lab subnational Human Development Index, the CSV download (optional) | https://globaldatalab.org, Subnational HDI (free for non-commercial use; the app never downloads or ships it) | Regional figures (History & data) |
+| `data/local/budget-execution/` | Your own approved budget and monthly spending, one row per line and month (columns line, approved, month, spent). Load it from the panel with *Download the template* and the file picker rather than copying it in | Your ministry or treasury | Budget execution (History & data). It stays on this computer; the audit log keeps only its fingerprint |
 | `data/local/cb-statements/<ISO3>/` | Central bank statements, one text, Markdown or web page file each, named from its date (for example `2026-10-29.txt`) | The central bank's own site | Central bank word count |
 
 [USER_MANUAL.md](./USER_MANUAL.md) explains each panel, and [DATA_LICENCES.md](./DATA_LICENCES.md)
@@ -331,8 +333,23 @@ page, and kept under `data/live/`:
 | `data/live/wb-cckp/` | Monthly temperature and rainfall averaged over each country since 1901, one file per country (World Bank climate portal, CRU TS) | Downloaded again after 30 days |
 | `data/live/ibtracs/` | Tropical cyclone tracks since 1980 (NOAA IBTrACS), cut down to the tracks the app needs | Only when you press *Download storm tracks from NOAA*; offered again after 30 days. The download is a large file, streamed and then deleted once the tracks are read |
 
+The daily download keeps a few more files in `data/live/` for the tools added on 17 November:
+
+| File | What it holds | How often |
+| --- | --- | --- |
+| `data/live/wb-projects.json` | Active World Bank projects and the IDA statement of credits | Once a week |
+| `data/live/dose-regions.json` | DOSE output per person by region (83 countries) | Once a week; downloaded again only when Zenodo lists a new version |
+| `data/live/eurostat-regions.json` | Eurostat GDP per person and unemployment by EU region | Once a week |
+| `data/live/yield-curves.json` | Every maturity of the US Treasury and ECB euro area curves, about 320 business days | At most every 6 hours |
+| `data/live/surprise-inputs.json` | Releases and the expectations saved before them (BCB Focus, ECB SPF, Kalshi CPI snapshots, BLS CPI) | At most every 6 hours |
+
+Research notebooks, with their pinned figures and fingerprints, are kept in `data/local/research.json`.
+
 If a download fails, the copy saved before is kept and nothing is filled in. `npm run check:data`
-then shows which source did not answer. The newest rows are `fed_h10` and `chinn_ito` (crisis
+then shows which source did not answer. The newest rows (17 November) are `wb_budget_credibility`
+(budget credibility), `wb_projects` and `wb_ida_credits` (World Bank projects), `dose` and
+`eurostat_regions` (regional figures), `ust_curve` and `ecb_curve` (full yield curves) and
+`focus_monthly` and `bls_cpi` (data surprises). Before them came `fed_h10` and `chinn_ito` (crisis
 replays and capital account openness), `bis_cb_assets`, `bis_usd_credit` and `nyfed_swaps` (central
 bank assets and dollar funding), `nasa_power` and `wb_cckp` (weather), `ibtracs` (storm tracks) and
 `irr_file` (the exchange rate regime workbook you save).
@@ -389,6 +406,7 @@ Useful commands in the code copy, on a computer that reaches the data sources:
 | `npm run replays:pull` | Save the monthly history for the past-crisis replays (`-- --force` saves it again) |
 | `npm run chinn-ito:pull` | Save the Chinn-Ito file (`-- --force` downloads it again) |
 | `npm run tokens -- list` | List, make or revoke API tokens |
+| `npm run notebook:check` | Check every pinned figure in your research notebooks against the figures today, while the app runs (`--url`, `--token`, `--json`) |
 
 ## Your own cloud server
 

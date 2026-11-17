@@ -99,12 +99,14 @@ y nunca se transmiten en descargas ni copias compartidas.
 | Tarea | Dónde | Qué obtiene |
 | --- | --- | --- |
 | Hacer una pregunta con palabras sencillas | **Espacio de trabajo** (Chat del consejo) | Agentes especializados responden con las cifras de la aplicación, cada uno con su fuente; con un modelo de IA, un agente de síntesis escribe un breve resumen que solo puede citar sus cifras, y un control numérico señala cualquier cifra que no pueda rastrear |
-| Estudiar un país | **Investigación > Un país** | Resumen, Mercados y señales, Historia y datos, y Fuentes: gráficos de muchos años, estimaciones del presente y previsiones con rangos, brecha del producto, sostenibilidad de la deuda, suficiencia de reservas, reglas de política, alerta temprana de crisis, curva de rendimientos, factores de la inflación, contabilidad del crecimiento, previsiones del FMI por edición y vistas «a una fecha pasada». Para países de menores ingresos: remesas, ayuda recibida, inclusión financiera, precios de materias primas y términos de intercambio, precios de los alimentos y seguridad alimentaria, y desastres naturales. Clima en la capital desde 1981 y en todo el país desde 1901, precios del arroz, el trigo, el maíz y la soja desde 1960, un diseñador de seguros paramétricos (costo de siniestralidad, precio justo, períodos de retorno, riesgo de base), un modelo de pérdidas por desastres y trayectorias de ciclones tropicales. Cómo se maneja la moneda de hecho, activos del banco central y tensión de financiación en dólares |
+| Preguntar qué haría un cambio | **Espacio de trabajo** (Chat del consejo) | Pregunte «¿qué pasaría con Turquía si la Fed subiera los tipos 1 punto?». La aplicación le muestra el cambio que entendió (puede editar los tamaños y volver a preguntar), el Scenario Agent pone las cifras de hoy junto a las cifras después del cambio, enumera lo que ocurrió en episodios pasados del mismo tipo y lo que hallaron estudios publicados, y la respuesta llega en ocho partes, cada una marcada con el tipo de evidencia en que se apoya |
+| Estudiar un país | **Investigación > Un país** | Resumen, Mercados y señales, Historia y datos, y Fuentes. Historia y datos muestra el gráfico de la historia y después un menú de herramientas en ocho grupos que se abren de una en una: gráficos de muchos años, estimaciones del presente y previsiones con rangos, brecha del producto, sostenibilidad de la deuda, suficiencia de reservas, reglas de política, alerta temprana de crisis, curva de rendimientos, factores de la inflación, contabilidad del crecimiento, previsiones del FMI por edición y vistas «a una fecha pasada». Para países de menores ingresos: remesas, ayuda recibida, inclusión financiera, precios de materias primas y términos de intercambio, precios de los alimentos y seguridad alimentaria, y desastres naturales. Clima en la capital desde 1981 y en todo el país desde 1901, precios del arroz, el trigo, el maíz y la soja desde 1960, un diseñador de seguros paramétricos (costo de siniestralidad, precio justo, períodos de retorno, riesgo de base), un modelo de pérdidas por desastres y trayectorias de ciclones tropicales. Cómo se maneja la moneda de hecho, activos del banco central y tensión de financiación en dólares. Para administraciones públicas y políticos: credibilidad del presupuesto (cuánto del presupuesto aprobado se gastó, con las bandas de nota PEFA), un seguimiento de la ejecución del presupuesto con su propio archivo, los proyectos del Banco Mundial y a qué ritmo desembolsan, y cifras regionales. Para economistas y operadores: rangos según errores pasados de las previsiones, curvas de rendimiento completas de EE. UU. y la zona del euro, y sorpresas en los datos con un índice de sorpresas de inflación |
 | Comparar países | **Investigación > Comparar países** | Su lista de seguimiento lado a lado (los 19 países miembros del G20 al empezar), pistas para investigar y dónde discrepan los precios de mercado y los datos |
 | Seguir sus posiciones | **Investigación > Mis posiciones** | Una lista de bonos o posiciones que usted carga, frente a los riesgos y las señales |
-| Evaluar una decisión de política | **Informes > Nueva revisión de políticas** | Un expediente paso a paso: plantear el problema, diagnosticar, ordenar opciones, revisar la evidencia y los precedentes, redactar un memorando de recomendación y un resumen de una página para no economistas, y después seguir lo que ocurrió. Compare el diagnóstico con hasta seis países pares, reciba un aviso en la página de inicio cuando una cifra vigilada cruce su umbral, y vea qué cambió al revisar de nuevo la misma política. El consejo de políticas sopesa una medida (costos y beneficios a tasas de descuento oficiales, quién gana y quién pierde, lo que sigue, escenarios) o lo que un evento significa para un mercado |
+| Evaluar una decisión de política | **Informes > Nueva revisión de políticas** | Un expediente paso a paso: plantear el problema, diagnosticar, ordenar opciones, revisar la evidencia y los precedentes, redactar un memorando de recomendación y un resumen de una página para no economistas, y después seguir lo que ocurrió. Compare el diagnóstico con hasta seis países pares, reciba un aviso en la página de inicio cuando una cifra vigilada cruce su umbral, y vea qué cambió al revisar de nuevo la misma política. El consejo de políticas sopesa una medida (costos y beneficios a tasas de descuento oficiales, quién gana y quién pierde, lo que sigue, escenarios) o lo que un evento significa para un mercado. **Para las personas** convierte una revisión en un resumen sencillo para la ciudadanía: qué cambia, el costo por persona, quién gana y quién paga, y las regiones más rezagadas |
 | Probar un «¿y si?» fiscal | **Historia y datos**, o desde el Chat del consejo | Cambie el gasto público o los impuestos y vea el efecto probable en el crecimiento y la deuda, con multiplicadores y elasticidades publicados y un rango |
-| Escribir un informe | **Informes** | Notas de país y de emisor, evaluaciones de sostenibilidad, revisiones de cartera e informes del consejo, en Markdown o PDF con fuentes y fechas |
+| Escribir un informe | **Informes** (pestañas: Escribir una nota, Revisiones de política, Documentos del consejo, Cuadernos, Docencia) | Notas de país y de emisor, evaluaciones de sostenibilidad, revisiones de cartera e informes del consejo, en Markdown o PDF con fuentes y fechas |
+| Escribir un documento de trabajo | Gráficos del **Chat del consejo**, **Informes > Cuadernos** | Fije un gráfico en un cuaderno de investigación con la fecha hasta la que llegan sus cifras y una huella de las cifras; descargue el cuaderno como un solo zip (borrador, datos, scripts de Python, R y Stata, archivo de cita); más tarde, *Comprobar que se mantiene* dice si cada cifra sigue igual, se revisó o ya no está |
 | Aprender sobre la marcha | Botones de la cabecera, **Menú > Manual de usuario**, **Menú > Ejemplos resueltos** | Tres niveles de ayuda, un glosario en lenguaje sencillo, cuatro casos resueltos, episodios didácticos y modo examen |
 | Usar sus propios datos y pruebas | **Menú > Sus datos**, **Menú > Modelos y validación** | Cargue sus propias series CSV; registre su propia prueba de señal o modelo con las mismas reglas estrictas que las de la aplicación |
 | Usar las cifras en R, Python o Stata | [docs/DATA_API.md](./docs/DATA_API.md) (en inglés) | Las mismas series, paneles y tablas que muestran las pantallas, con fuente y fecha en cada valor |
@@ -112,7 +114,11 @@ y nunca se transmiten en descargas ni copias compartidas.
 
 El **Chat del consejo** es el centro de la aplicación. Los agentes son Banco Central, Fiscal y Deuda,
 Política y Acontecimientos, Valor Relativo, Divisas, Contagio Global, Calendario, Momento y Finanzas
-Conductuales, más un agente de Documentos que lee los documentos de política que usted sube. **Ejecutar
+Conductuales, más un agente de Documentos que lee los documentos de política que usted sube, un agente de gráficos
+para gráficos y pruebas, y el **Scenario Agent** para las preguntas «¿y si...?». Si usted tiene su propio
+servidor de herramientas de investigación, la **mesa cuantitativa** puede traer a una respuesta del chat
+sus backtests y sus cifras de volatilidad y de opciones, cada una con su enlace y la etiqueta
+«hipotético» del servidor; está apagada si usted no la configura. **Ejecutar
 el consejo completo** envía un país a nueve agentes especializados en tres mesas (geopolítica, crédito
 soberano y economía en general); debaten, y la aplicación espera su aprobación antes de escribir el
 informe final. Un modelo de IA más grande actúa como **árbitro** y juzga si cada respuesta se ciñe a las
@@ -130,7 +136,8 @@ marca como escrita por IA.
 ## Guía con capturas de pantalla
 
 La guía completa, con pasos numerados para cada tarea, está en **[docs/GUIDE.es.md](./docs/GUIDE.es.md)**.
-Cubre: el primer inicio, preguntar al consejo, estudiar un país, comparar países, hacer una revisión de
+Cubre: el primer inicio, preguntar al consejo (también qué haría un cambio), estudiar un país y sus
+herramientas, comparar países, hacer una revisión de
 políticas y un informe, elegir un modelo de IA, las herramientas y las comprobaciones de datos, el idioma
 y los niveles de ayuda, las herramientas de clima y seguros, el uso en el teléfono y cómo probar los Retos.
 
@@ -140,7 +147,8 @@ y los niveles de ayuda, las herramientas de clima y seguros, el uso en el teléf
 | ![Comparar países: pistas para la lista del G20](docs/images/10-compare.png) **Compare países.** Pistas y discrepancias entre mercados y datos. | ![Formulario de nueva revisión de políticas](docs/images/12-policy-review.png) **Revise una política.** Del problema al memorando. |
 | ![Configuración > Modelo de IA con Ollama](docs/images/13-settings-ai.png) **Elija un modelo de IA.** Modelo rápido para las mesas, modelo grande para el árbitro. | ![Página de Investigación en español](docs/images/17-research-es.png) **Cambie de idioma.** Botón EN / ES / FR / PT en la cabecera. |
 
-Las capturas se tomaron el 13 de noviembre de 2026 de una compilación local de la rama principal, que
+Las capturas se tomaron el 13 de noviembre de 2026 (cuatro se rehicieron o se añadieron el 17 de
+noviembre) de una compilación local de la rama principal, que
 reproducía respuestas de las fuentes grabadas el 5 de noviembre de 2026, solo de las fuentes cuyos
 términos permiten transmitir los datos. Por eso muchas cifras aparecen como «Falta»; en un ordenador que
 llega a las fuentes se rellenan más. La mayoría están en inglés; la última muestra la aplicación en
@@ -209,15 +217,17 @@ registro de auditoría).
 ### Tamaños de descarga
 
 Cada cifra indica cómo se obtuvo. «Medido» significa medido en la fecha indicada; «estimación» indica
-el método. Las mediciones del 13 de noviembre de 2026 son de la rama principal hasta la solicitud #510.
+el método. Las mediciones del 13 de noviembre de 2026 son de la rama principal hasta la solicitud #510;
+la aplicación compilada y los archivos de idioma se midieron de nuevo el 17 de noviembre de 2026, hasta
+la solicitud #598.
 
 | Qué | Tamaño | Cómo se obtuvo |
 | --- | --- | --- |
 | Código fuente (`git clone`) | 70 MB (29 MB de archivos y 41 MB de historial) | Medido, clon nuevo, 13 de noviembre de 2026 |
 | Aplicación lista para usar (imagen Docker) | Unos 170 MB de descarga; 798 MB descomprimida | Medido: imagen construida con el Dockerfile del repositorio el 13 de noviembre de 2026 (798 MB descomprimida, 170 MB comprimida con gzip). La descarga del registro se comprime igual, así que el tamaño será parecido |
 | Paquetes instalados, desde el código (`npm install`) | 465 MB | Medido, 13 de noviembre de 2026 |
-| Aplicación web compilada | 6,7 MB en total; 415 KB comprimidos al arrancar | Medido con `npm run size:check`, 13 de noviembre de 2026 |
-| Cada idioma adicional | Unos 0,7 MB (unos 220 KB comprimidos), solo si se elige | Medido en la compilación, 13 de noviembre de 2026 |
+| Aplicación web compilada | 7,5 MB en total; 460 KB comprimidos al arrancar | Medido con `npm run size:check`, 17 de noviembre de 2026 (límites 520 KB y 9 MB) |
+| Cada idioma adicional | Unos 0,85 MB (unos 270 KB comprimidos), solo si se elige | Medido en la compilación, 17 de noviembre de 2026 |
 | Primera descarga completa de datos | Unos 3,6 a 3,8 GB, sobre todo archivos de noticias de GDELT | Estimación: GDELT unos 3,4 GB por 8 semanas (según los tamaños publicados por GDELT), ediciones pasadas del FMI unos 100 MB (medido), el resto como la descarga diaria |
 | Primera descarga en modo ligero | Objetivo: bastante menos de 1 GB | Aún no medido; pendiente de una prueba en el Mac del desarrollador antes de la publicación |
 | Descarga diaria de datos | Aproximadamente 150 a 200 MB (4,5 a 6 GB al mes) | Estimación a partir de respuestas grabadas y tamaños de archivo. La descarga diaria ya registra lo que baja; la cifra medida tras una semana (`npm run go -- status` en el Mac del desarrollador) sustituirá esta estimación |
@@ -232,7 +242,7 @@ el método. Las mediciones del 13 de noviembre de 2026 son de la rama principal 
 | Aplicación lista para usar, sin IA local | Alrededor de 1 GB, crece unos 40 MB al año | Imagen 0,8 GB (medido) más la carpeta `data/`, unos 150 MB tras los primeros días (medido en el Mac del desarrollador el 9 de noviembre de 2026, 22 países) |
 | Con un árbitro de 14B | Alrededor de 15 GB | Lo anterior más qwen2.5:7b y qwen2.5:14b |
 | Con toda la IA local | Alrededor de 26 GB | Lo anterior más qwen2.5:7b y qwen2.5:32b |
-| Desde el código en lugar de la imagen | Sume unos 0,5 GB | Código e historial 70 MB, paquetes 465 MB, compilación 7 MB (medido) |
+| Desde el código en lugar de la imagen | Sume unos 0,5 GB | Código e historial 70 MB, paquetes 465 MB, compilación 7,5 MB (medido) |
 
 Docker Desktop necesita además unos GB (consulte docker.com). Para ver el tamaño real en su ordenador,
 ejecute `du -sh data data/*` en la carpeta de EconQuest o abra Menú > Datos sin conexión.
@@ -381,9 +391,10 @@ Todas son gratuitas. Algunas necesitan una clave gratuita, que se añade en Men�
 | Área | Fuentes |
 | --- | --- |
 | Crecimiento, deuda, presupuestos, comercio | Banco Mundial (indicadores y estadísticas de deuda), FMI (Perspectivas de la economía mundial y ediciones pasadas, reservas, balanza de pagos, composición de reservas, gasto público por función), OCDE (indicadores adelantados, precios, PIB trimestral, vía DBnomics), precios al consumo mensuales del FMI, Eurostat, UN Comtrade y WITS |
-| Tipos de interés y bonos | BPI (tipos oficiales, títulos de deuda, tipos de cambio reales, activos totales de los bancos centrales, crédito en dólares a los no bancos), líneas de swap en dólares de la Fed de Nueva York, FRED (rendimientos oficiales a 10 años; clave gratuita), Fed de Nueva York, Tesoro de EE. UU. (tenedores extranjeros, subastas), Tesoro de Brasil, banco central de Perú (diferenciales EMBIG), y rendimientos a 10 años de la OCDE y tipos de cambio H.10 de la Reserva Federal, mensuales desde 1990 vía FRED, para repetir crisis pasadas |
+| Tipos de interés y bonos | Curva diaria de rendimientos a la par del Tesoro de EE. UU. y curva de rendimientos de la deuda pública de la zona del euro del BCE (todos los plazos, cada día), BPI (tipos oficiales, títulos de deuda, tipos de cambio reales, activos totales de los bancos centrales, crédito en dólares a los no bancos), líneas de swap en dólares de la Fed de Nueva York, FRED (rendimientos oficiales a 10 años; clave gratuita), Fed de Nueva York, Tesoro de EE. UU. (tenedores extranjeros, subastas), Tesoro de Brasil, banco central de Perú (diferenciales EMBIG), y rendimientos a 10 años de la OCDE y tipos de cambio H.10 de la Reserva Federal, mensuales desde 1990 vía FRED, para repetir crisis pasadas |
 | Divisas y materias primas | Tipos de cambio al contado (open.er-api.com), tipos de referencia del BCE, precios de materias primas del Banco Mundial (Pink Sheet; arroz, trigo, maíz y soja desde 1960), precios del petróleo de la EIA (clave gratuita), la clasificación de regímenes cambiarios de Ilzetzki, Reinhart y Rogoff (un libro que usted guarda; los autores piden una cita y no indican licencia) |
-| Encuestas y expectativas | Encuestas de empresas y consumidores de la UE (Comisión Europea, vía Eurostat; sustituto gratuito de los PMI de pago, marcado como tal), encuesta de previsores profesionales del BCE, encuesta Focus de Brasil, índice de presión de la cadena de suministro de la Fed de Nueva York |
+| Encuestas y expectativas | Encuestas de empresas y consumidores de la UE (Comisión Europea, vía Eurostat; sustituto gratuito de los PMI de pago, marcado como tal), encuesta de previsores profesionales del BCE, encuesta Focus de Brasil, índice de presión de la cadena de suministro de la Fed de Nueva York; para las sorpresas en los datos, los precios al consumidor de EE. UU. de la BLS y el mercado de IPC de Kalshi tal como se guardó antes de cada publicación |
+| Presupuestos, proyectos y regiones | Ejecución presupuestaria del Banco Mundial a partir de las evaluaciones PEFA (meta 16.6.1 de la ONU), proyectos del Banco Mundial y el estado de créditos de la AIF, producción por persona por región de DOSE (Wenz et al. 2023, CC BY 4.0), cifras de Eurostat para las regiones de la UE y el Índice de Desarrollo Humano subnacional de Global Data Lab (un archivo que usted guarda; términos no comerciales). Su propio archivo de gasto mensual para el seguimiento de la ejecución del presupuesto se queda en su ordenador |
 | Bancos centrales y calendario | Banco Central do Brasil, Banco de México (token gratuito), fechas oficiales de decisiones, fechas de publicación del IPC y del PIB de los institutos de estadística |
 | Instituciones y apertura | Indicadores de gobernanza del Banco Mundial (WGI), índice de apertura de la cuenta de capital de Chinn e Ito (se descarga en su ordenador como máximo una vez al mes, se cita a Chinn e Ito 2006 y nunca se reenvía) |
 | Política, conflicto y transporte marítimo | Noticias de GDELT, datos de conflicto de UCDP y ACLED (ACLED se descarga a mano), listas de sanciones de la OFAC y la ONU, índice de riesgo geopolítico, IMF PortWatch |
@@ -421,7 +432,7 @@ El método completo está en [docs/METHODOLOGY.md](./docs/METHODOLOGY.md) (en in
 
 ## Hoja de ruta
 
-Situación al 14 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./docs/ROADMAP.md), en inglés):
+Situación al 17 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./docs/ROADMAP.md), en inglés):
 
 **Hecho**
 
@@ -459,6 +470,22 @@ Situación al 14 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./docs/ROADM
     desde 1960, un diseñador de disparadores de seguros paramétricos con costo de siniestralidad,
     precio justo, períodos de retorno y riesgo de base, un modelo de pérdidas por desastres con EM-DAT
     y trayectorias de ciclones tropicales.
+11. **Preguntas desde otro programa y páginas más ordenadas** (15 y 16 de noviembre): otro programa puede
+    hacer una pregunta al Chat del consejo con un token `ask:council`; Informes en pestañas, e Historia
+    y datos como el gráfico más un menú de herramientas, de una en una.
+12. **Preguntas «¿y si...?»** (17 de noviembre): el Chat del consejo lee el cambio que plantea una
+    pregunta, el Scenario Agent pone las cifras de hoy junto a las cifras después del cambio con lo que
+    muestran la historia y la investigación publicada, la respuesta llega en ocho partes y los tamaños
+    se pueden editar para volver a preguntar.
+13. **Cinco perfiles de usuario** (17 de noviembre): para administraciones públicas, credibilidad y
+    ejecución del presupuesto y proyectos del Banco Mundial; para políticos, cifras regionales y un
+    resumen sencillo para la ciudadanía; para investigadores, un paquete de documento de trabajo y una
+    comprobación de replicación; para economistas, rangos según errores pasados de las previsiones; para
+    operadores, curvas de rendimiento completas, sorpresas en los datos y un índice de sorpresas de
+    inflación.
+14. **Herramientas de investigación externas** (17 de noviembre): el Chat del consejo puede llamar a un
+    servidor de herramientas de investigación que usted ejecuta, a través de la mesa cuantitativa;
+    apagado por defecto.
 
 **Siguiente**
 
@@ -477,10 +504,13 @@ Situación al 14 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./docs/ROADM
 - **La aplicación para el teléfono**: en pausa hasta después de la publicación.
 - **Ideas aparcadas** para el punto de control 1: enseñanza y difusión (un informe de país sin
   conexión, un laboratorio macro con modelos de manual y más ejemplos resueltos).
-- **Comprobaciones en el ordenador del responsable**: las fuentes más nuevas (clima, trayectorias de
+- **Comprobaciones en el ordenador del responsable**: algunas fuentes (clima, trayectorias de
   tormentas, activos del banco central, financiación en dólares, el archivo de régimen cambiario) están
   construidas y probadas con respuestas guardadas, pero no se pudieron alcanzar desde la máquina de
-  compilación; `npm run check:data` en un ordenador que llegue a ellas confirma cada una.
+  compilación; `npm run check:data` en un ordenador que llegue a ellas confirma cada una. Las fuentes de
+  los cinco perfiles de usuario respondieron allí el 17 de noviembre. La mesa cuantitativa espera una
+  primera prueba con un servidor real de herramientas de investigación, y las sorpresas en los datos
+  necesitan unas semanas de descargas diarias para acumularse.
 
 ---
 

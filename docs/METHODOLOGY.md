@@ -1,6 +1,6 @@
 # EconQuest Terminal: Methodology
 
-**Version 1.3, 14 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of release 0.1.0.
+**Version 1.4, 17 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of release 0.1.0.
 Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not validated advice.
 
 This document sets out how the EconQuest Terminal sources its data, how its council of agents
@@ -11,7 +11,7 @@ teachers, students and journalists) and for anyone who wants to check or reprodu
 
 Every statement here is meant to be checkable against the open code. Where a claim depends on a
 file, the file is named. The per-model detail (rule, inputs, limits, pre-registered tests and
-recorded verdicts for each of some 60 entries) is in the companion [Methods note](./METHODS.md),
+recorded verdicts for each of some 65 entries) is in the companion [Methods note](./METHODS.md),
 generated from the code; this document explains the framework those entries sit in.
 
 ---
@@ -176,9 +176,9 @@ what each fills, its address, how long it is cached and how to set it up is in
 
 | Group | Examples |
 | --- | --- |
-| Free feeds, no key | World Bank (indicators, governance, debt statistics, Pink Sheet commodity prices, remittances and remittance prices, Global Findex, aid received as republished from the OECD DAC, food security), IMF (World Economic Outlook, reserves and balance of payments, COFER), BIS (policy rates, real exchange rates, debt securities, credit gap, central bank total assets, US dollar credit to non-banks), OECD (via DBnomics), ECB reference rates, Eurostat, CFTC Commitments of Traders, US Treasury, New York Fed (rates and dollar swap lines), NASA POWER (weather at each capital since 1981), World Bank Climate Change Knowledge Portal (CRU TS country weather since 1901), UN Comtrade, WITS, national central banks (for example BCB, BCRP), GDELT, Polymarket and Kalshi odds |
+| Free feeds, no key | World Bank (indicators, governance, debt statistics, Pink Sheet commodity prices, remittances and remittance prices, Global Findex, aid received as republished from the OECD DAC, food security), IMF (World Economic Outlook, reserves and balance of payments, COFER), BIS (policy rates, real exchange rates, debt securities, credit gap, central bank total assets, US dollar credit to non-banks), OECD (via DBnomics), ECB reference rates, Eurostat, CFTC Commitments of Traders, US Treasury, New York Fed (rates and dollar swap lines), NASA POWER (weather at each capital since 1981), World Bank Climate Change Knowledge Portal (CRU TS country weather since 1901), UN Comtrade, WITS, national central banks (for example BCB, BCRP), GDELT, Polymarket and Kalshi odds (Kalshi CPI market snapshots saved before each US CPI release for the data surprises), World Bank Projects and Operations API and the IDA statement of credits, World Bank budget outturn from PEFA assessments (GF.XPD.BUDG.ZS), the DOSE regional output dataset (Zenodo, CC BY 4.0), Eurostat regional accounts and labour force survey (NUTS 2), the US Treasury daily par yield curve, the ECB euro area government yield curve, BLS consumer prices |
 | Free with the user's own key | FRED and ALFRED (St. Louis Fed), US EIA |
-| Free files the user downloads | IMF WEO past editions, Caldara-Iacoviello Geopolitical Risk index, Chinn-Ito capital account openness index, OFAC and UN sanctions lists, UCDP conflict data (one release ships with the code under CC BY 4.0), ACLED aggregated files, NOAA IBTrACS tropical cyclone tracks (downloaded only when the user presses the button, or read from a file the user saves). Read from `data/local/` and never shipped, because their terms are unconfirmed or forbid passing them on: FAOSTAT Consumer Price Indices, EM-DAT disasters (each user's own account), IMF Fiscal Rules Dataset, Database of Political Institutions 2020, IMF investor base workbook, the Ilzetzki-Reinhart-Rogoff exchange rate regime workbook, central bank statements the user saves. The full table is in [INSTALL.md](./INSTALL.md#files-you-save-yourself) |
+| Free files the user downloads | IMF WEO past editions, Caldara-Iacoviello Geopolitical Risk index, Chinn-Ito capital account openness index, OFAC and UN sanctions lists, UCDP conflict data (one release ships with the code under CC BY 4.0), ACLED aggregated files, NOAA IBTrACS tropical cyclone tracks (downloaded only when the user presses the button, or read from a file the user saves). Read from `data/local/` and never shipped, because their terms are unconfirmed or forbid passing them on: FAOSTAT Consumer Price Indices, EM-DAT disasters (each user's own account), IMF Fiscal Rules Dataset, Database of Political Institutions 2020, IMF investor base workbook, the Ilzetzki-Reinhart-Rogoff exchange rate regime workbook, the Global Data Lab subnational Human Development Index (non-commercial terms), central bank statements the user saves, and the user's own budget execution file. The full table is in [INSTALL.md](./INSTALL.md#files-you-save-yourself) |
 | The user's own paid data (off by default) | Their own CDS file or their own LSEG account |
 
 Prediction-market odds (Polymarket, Kalshi) are shown as market prices, labelled as such, and are
@@ -284,6 +284,31 @@ there as on screen:
   than filled with a proxy.
 - **Events, not judgements.** Events report what changed (a badge, a revision, a stale feed, a
   threshold crossed); indicator watches are set by the caller, and none is built in.
+- **Council chat questions over the API.** With the `ask:council` scope, a program can ask Council
+  chat a new question (`POST /api/v1/council/ask`). It runs the same code as the chat in the app: the
+  same agent choice, desk agents (including the Scenario Agent for a what-if question), synthesis and
+  checks (4.3). Only real figures whose licence allows passing them on are used; the rest are left out
+  with their findings and counted. Hidden names never appear, only a count. A cost limit can refuse a
+  model call before it is made. The Quant desk (3.9) never runs for a program.
+
+### 3.9 Figures from an outside research-tools server
+
+The user may connect Council chat to a research-tools server they run themselves (MCP, JSON-RPC 2.0
+over HTTP; contract in `docs/contracts/research-tools.json`, guide in
+[RESEARCH_TOOLS.md](./RESEARCH_TOOLS.md)). It is off until an address and a token are set.
+
+- **Chat only.** The Quant desk calls the server for a chat question that asks for a backtest, a
+  forecast, volatility, a nowcast, an option price, a drawdown or a Sharpe ratio, or when the AI model
+  picks it. Scheduled council runs, the daily download, briefs, the pre-registered tests, the data API
+  and every score, badge and signal never call it.
+- **Labelled as the server's.** Each figure is taken from the reply with its link, its data-through
+  date and the server's label ("Hypothetical, past performance; not a recommendation"); a result
+  without that cite block is not used. The server's models and data are not checked by the app. The
+  register lists the desk as Description, not a tested signal.
+- **Bounded and logged.** Only tools the server lists for the token are called, at most four per
+  question by default, within a time limit (20 s by default). Every call goes in the audit log with
+  the tool, a correlation ID and the outcome; the token never does. A refusal or time-out reads
+  "Research tools unavailable" and the other desks still answer.
 
 ## 4. The council of agents
 
@@ -291,7 +316,9 @@ there as on screen:
 
 A user asks a question about their watchlist. Desk agents that cover the question answer it: Central
 Bank, Fiscal & Debt, Politics & Events, Relative Value, FX, Global Spillover, Calendar, Timing,
-Nowcast & Forecast, and a Document agent for policy files the user uploads. The AI model chooses
+Nowcast & Forecast, Behavioural Finance, a Chart Agent for charts and statistical tests, a Document
+agent for policy files the user uploads, the Scenario Agent for what-if questions (5.4) and, only when
+the user has set up outside research tools, the Quant desk (3.9). The AI model chooses
 which agents to ask when one is set up; otherwise stated keyword rules do. Either way the reason each
 agent was asked is shown.
 
@@ -300,6 +327,14 @@ and the register's rules and returns findings, each with its source and tag. A s
 is a language model (a local model through Ollama, Google Gemini, or any OpenAI-compatible server the
 user chooses), then writes a short brief from the agents' findings alone. Every AI-written answer is
 labelled as such in the terminal, with the model that wrote it.
+
+For a what-if question the summary agent follows a separate instruction and writes eight sections in
+a fixed order: where things stand now, the change, first effects, how it spreads, what history shows,
+what research finds, trends now, and what would change the answer (`src/utils/whatIfAnswer.ts`).
+Each section is written only from the findings that belong to it and is marked with its kind of
+evidence (data, app calculation, past, published study, interpretation). A section with no findings
+reads Missing with the reason; the model is not asked to fill it. Every sentence goes through the
+same checks (4.3).
 
 ### 4.2 The referee model
 
@@ -484,6 +519,59 @@ the [Methods note](./METHODS.md).
   country with winds of 34 knots or more there; strength on the Saffir-Simpson scale from the highest
   wind within that distance. The distance of the centre is not the reach of the winds, and wind is
   not damage.
+
+### 5.4 What-if questions: the Scenario Agent
+
+Council chat reads the changes a question states (a central bank or Fed rate, government borrowing
+costs, the dollar, the currency, oil, food or commodity prices, financial stress, supply chain
+pressure, growth, inflation), each with the size in the user's words; a change with no size is asked
+for and never filled in (`src/utils/scenarioQuestion.ts`). The agents holding the figures each change
+moves are always asked. The Scenario Agent (`src/utils/scenarioAgent.ts`, register `scenario_agent`)
+then sets today's figures beside the figures after the change, for up to four countries:
+
+- **Fed, dollar, financial stress, supply chains:** the currency and policy rate from 15 years of
+  monthly co-movement in the scenario engine, with a 90% band, flagged when the shock is larger than
+  any month on record.
+- **A rate change:** inflation 6, 12 and 24 months on from local projections, and the real rate on
+  impact. Local projections show co-movement, not the effect of the rate alone.
+- **Borrowing costs, growth, inflation:** government debt at the end of the IMF's five-year inputs
+  against the baseline, from the debt identity.
+- **A currency fall:** the rise in debt from government bonds owed abroad, a lower bound.
+- **Oil, food or commodity prices:** the first-round change in the trade balance from the country's
+  net trade in that group.
+- **History:** moves of the currency, 10-year yield and USD bond spread over a fixed list of past
+  episodes of the same kind (`episodeMove`, shared with the crisis replays); for growth, inflation or
+  the currency, the cases since 1980 with a move as large in one year and the medians of what
+  followed over three years, with the eight closest starting points; and where the new level would
+  sit in the country's own record.
+- **Published research:** a fixed list of peer-reviewed studies by kind of shock
+  (`src/data/shockResearch.ts`: Iacoviello and Navarro 2019; Ha, Stocker and Yilmazkuday 2020; Kilian
+  2009; Reinhart and Rogoff 2009; Cerra and Saxena 2008), each number checked against the paper with
+  its page and the paper's own words, and the finding shown for the country's IMF group (advanced or
+  emerging). It is labelled as a published average, not an estimate for the country.
+
+A part with no inputs reads Missing with the reason. A debt path can be kept for the trade-off chart
+under Debt sustainability, in the browser tab only. Status: Description, not a tested signal.
+
+### 5.5 Tools for five kinds of users
+
+On 17 November 2026 the app was checked against what a policy researcher, a public administrator, a
+politician, an economist and a market trader need, and eleven tools were added (group R in the
+[roadmap](./ROADMAP.md)). All are listed in the register; the rules are in the
+[Methods note](./METHODS.md).
+
+| Tool | What it does | Status |
+| --- | --- | --- |
+| Budget credibility | Spending as % of the budget first approved (World Bank GF.XPD.BUDG.ZS from PEFA assessments, UN goal 16.6.1), the PEFA PI-1 band of each year and a grade on the PEFA rule over the latest three years, labelled as the app's, not the official score | Description |
+| Budget execution | The user's approved budget and monthly spending by line, against the share of the fiscal year gone; behind or ahead by more than 10 points; a same-pace year-end figure only when no month is missing. The file stays in `data/local/budget-execution/`; the audit log keeps its SHA-256, never its contents | Description |
+| World Bank projects | Active projects, amounts committed, share of planned time gone, and for IDA credits and grants the share paid out; a project a quarter or more through its time and more than 25 points behind is marked as paying out slowly (budget support never marked) | Description |
+| Regional figures | DOSE output per person by first-level region (constant 2015 US$), the gap to the national figure, the richest-to-poorest ratio and the spread against ten years before; Eurostat NUTS 2 GDP per person in PPS and unemployment; the Global Data Lab subnational HDI from the user's file | Description |
+| For people | A plain summary of a policy review for constituents (cost per person, who gains and who pays, regions furthest behind, precedents) from fixed sentences, no AI | Description |
+| Working-paper bundle and replication check | Pinned Chart Agent figures with their As of day and a SHA-256 fingerprint; a zip with the draft, data, Python, R and Stata scripts, `CITATION.cff` and a manifest; a later check reads the series again and reports Same, Revised or Source no longer answers (`npm run notebook:check`) | Stated method |
+| Ranges from past misses | 70% and 90% ranges from the 15th-85th and 5th-95th percentiles of past misses: IMF WEO editions (same season, same horizon) against the newest edition's outturn, and the app's forecasts against their out-of-sample misses for the country; fewer than 8 cases reads Missing | Description |
+| Full yield curves | US Treasury par curve and ECB euro area spot curve each day; a Nelson-Siegel-Svensson fit (decay times on a grid, weights by least squares); level, slope, curvature and their moves; three-month carry and roll-down before costs | Description |
+| Data surprises | Each release against an expectation published before it (BCB Focus for Brazil's IPCA, ECB SPF for euro area HICP, the Kalshi CPI market for US CPI, the app's own GDP nowcast on the forward record), scaled by the spread of earlier surprises once there are 8 | Description |
+| Inflation surprise index | The scaled inflation surprises with a 90-day half-life, a year at most and 3 needed. Its test (a reading above +0.5 followed by a policy rate rise within three months more often than usual) was registered and hashed before any run (`docs/validation/pending/surprise_index.json`) and runs once 60 month ends qualify | Not validated |
 
 ## 6. The signal standard
 
@@ -789,6 +877,15 @@ The terminal states what it cannot do. In particular:
   levels beyond the record assume no trend in climate or markets. The index of a parametric cover is
   not the insured loss, and the fair price leaves out reinsurance, taxes, brokerage and the insurer's
   own models.
+- **What-if answers are arithmetic on stated changes.** The scenario engine and local projections
+  show past co-movement, not cause; the debt identity leaves out feedback from the shock to growth and
+  rates; a published study is an average over its sample. None is a forecast for the country.
+- **The five-roles tools rest on what is published.** Budget credibility has only the years a PEFA
+  assessment covered; regional figures come out years late and GDP is counted where people work; IBRD
+  loans have no paid-out figure yet; US data surprises build up only from the user's first daily run,
+  and the surprise index's test needs years of releases before it can run.
+- **Outside research tools are not checked.** Figures from the user's own research-tools server are
+  shown with the server's label and link; the app does not check that server's models or data.
 - **Not a compliance tool.** The sanctions panel counts entries on official lists; it does no alias
   or fuzzy matching and does not apply ownership rules. EU and UK lists are not yet read.
 - **Single-user controls.** On a single-user installation, a report "approved" by its author is
@@ -816,12 +913,16 @@ version number.
   112(4), 1194-1225.
 - Chinn, M. D. and Ito, H. (2006). What matters for financial development? Capital controls,
   institutions, and interactions. *Journal of Development Economics*, 81(1), 163-192.
+- Cerra, V. and Saxena, S. C. (2008). Growth dynamics: the myth of economic recovery. *American
+  Economic Review*, 98(1), 439-457. doi:10.1257/aer.98.1.439.
 - CFA Institute. *Global Investment Performance Standards (GIPS)*, 2020 edition.
 - Diebold, F. X. and Mariano, R. S. (1995). Comparing predictive accuracy. *Journal of Business &
   Economic Statistics*, 13(3), 253-263.
 - Gahtan, J., Knapp, K. R., Schreck, C. J., Diamond, H. J., Kossin, J. P. and Kruk, M. C. (2024).
   International Best Track Archive for Climate Stewardship (IBTrACS) Project, Version 4r01. NOAA
   National Centers for Environmental Information. doi:10.25921/82ty-9e16.
+- Ha, J., Stocker, M. and Yilmazkuday, H. (2020). Inflation and exchange rate pass-through. *Journal of
+  International Money and Finance*, 105, 102187. doi:10.1016/j.jimonfin.2020.102187.
 - Harvey, C. R., Liu, Y. and Zhu, H. (2016). ... and the cross-section of expected returns. *Review of
   Financial Studies*, 29(1), 5-68.
 - Harvey, D., Leybourne, S. and Newbold, P. (1997). Testing the equality of prediction mean squared
@@ -833,13 +934,29 @@ version number.
 - Hosking, J. R. M. (1990). L-moments: analysis and estimation of distributions using linear
   combinations of order statistics. *Journal of the Royal Statistical Society, Series B*, 52(1),
   105-124.
+- Iacoviello, M. and Navarro, G. (2019). Foreign effects of higher U.S. interest rates. *Journal of
+  International Money and Finance*, 95, 232-250. doi:10.1016/j.jimonfin.2018.06.012.
 - Ilzetzki, E., Reinhart, C. M. and Rogoff, K. S. (2019). Exchange arrangements entering the
   twenty-first century: which anchor will hold? *Quarterly Journal of Economics*, 134(2), 599-646.
+- Kilian, L. (2009). Not all oil price shocks are alike: disentangling demand and supply shocks in the
+  crude oil market. *American Economic Review*, 99(3), 1053-1069. doi:10.1257/aer.99.3.1053.
+- Nelson, C. R. and Siegel, A. F. (1987). Parsimonious modeling of yield curves. *Journal of
+  Business*, 60(4), 473-489.
+- PEFA Secretariat (2016). *Framework for assessing public financial management* (PI-1, aggregate
+  expenditure outturn). Washington, DC.
+- Reinhart, C. M. and Rogoff, K. S. (2009). The aftermath of financial crises. *American Economic
+  Review*, 99(2), 466-472 (NBER Working Paper 14656). doi:10.3386/w14656.
+- Svensson, L. E. O. (1994). Estimating and interpreting forward interest rates: Sweden 1992-1994.
+  NBER Working Paper 4871.
 - Taylor, J. B. (1993). Discretion versus policy rules in practice. *Carnegie-Rochester Conference
   Series on Public Policy*, 39, 195-214.
 - US Office of Management and Budget (2003). *Circular A-4: Regulatory Analysis.*
 - US Securities and Exchange Commission (2020). *Investment Adviser Marketing* (Rule 206(4)-1, the
   Marketing Rule). Release No. IA-5653.
+
+- Wenz, L., Carr, R. D., Kögel, N., Kotz, M. and Kalkuhl, M. (2023). DOSE: global data set of reported
+  sub-national economic output. *Scientific Data*, 10, 425. Data on Zenodo,
+  doi:10.5281/zenodo.20035157.
 
 Per-model references are given in the [Methods note](./METHODS.md).
 
@@ -851,8 +968,9 @@ Per-model references are given in the [Methods note](./METHODS.md).
 | 1.1 | 8 November 2026 | Opening section on why EconQuest exists; a plain-language companion, [How EconQuest works](./HOW_IT_WORKS.md); where it runs (1.1), explanations and help levels (4.7), geopolitical risk VaR (5.1), which countries the results rest on (11.1) and Quests (12). Published on the project website; joined the repository with version 1.2 |
 | 1.2 | 13 November 2026 | Sources and the files you save (3.1), statistics conventions in the charts and tables (7.4), figures served to outside systems and hypothetical scenario estimates (3.8), the audit seal and locked copies (4.5), the country risk scorecard listed as Not validated with its registered default test (5, 14), scenario limits (14). The short version corrected: the council's chat agents are fixed code, and only the summary writer is an AI model |
 | 1.3 | 14 November 2026 | New sources in 3.1 (BIS central bank assets and dollar credit, New York Fed swap lines, NASA POWER, the World Bank climate portal, IBTrACS, the exchange rate regime workbook); the policy council (5.2); weather, disasters and parametric insurance (5.3); short-record limits of those tools (14); references for L-moments, IBTrACS, the exchange rate regime classification and the official discount rates |
+| 1.4 | 17 November 2026 | New sources in 3.1 (World Bank projects and IDA credits, PEFA budget outturn, DOSE and Eurostat regional figures, the Global Data Lab file, US Treasury and ECB yield curves, BLS prices, Kalshi CPI snapshots, the user's budget file); Council chat questions over the API and figures from an outside research-tools server (3.8, 3.9); the Chart Agent, Scenario Agent and Quant desk in 4.1, with the eight-section what-if answer; the Scenario Agent (5.4); the tools for five kinds of users (5.5); limits of what-if answers, the new tools and outside figures (14); references for the shock studies, DOSE, PEFA and the Nelson-Siegel-Svensson curve |
 
 ---
 
-*EconQuest Terminal methodology, version 1.3 (14 November 2026). Text licensed under CC BY 4.0: you may
+*EconQuest Terminal methodology, version 1.4 (17 November 2026). Text licensed under CC BY 4.0: you may
 share and adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*

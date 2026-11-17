@@ -163,6 +163,26 @@ tropical cyclones) and the policy council are calculations on these series and o
 they are not served as separate tables. Use the series above to rebuild them in your own code, with
 the rules in [METHODS.md](./METHODS.md).
 
+## Added from 15 to 17 November
+
+No new series ids were added. The new tools are calculations the screens make on saved files and on
+the series above, so they are not part of the addresses in this guide:
+
+- **Budget credibility** reads the World Bank series `GF.XPD.BUDG.ZS`; a script can fetch it from the
+  World Bank directly (CC BY 4.0) and apply the PEFA bands in [METHODS.md](./METHODS.md).
+- **World Bank projects, regional figures (DOSE and Eurostat), full yield curves and data surprises**
+  are downloaded by the daily run into `data/live/wb-projects.json`, `data/live/dose-regions.json`,
+  `data/live/eurostat-regions.json`, `data/live/yield-curves.json` and
+  `data/live/surprise-inputs.json`. The screens read them through their own panel routes, which may
+  change between versions; use the original sources, named in
+  [DATA_SOURCES.md](./DATA_SOURCES.md), for research code.
+- **Budget execution** reads only your own file in `data/local/budget-execution/`.
+- **Ranges from past misses** come from the past IMF editions you save and the forecast evaluation on
+  your computer.
+- **Pinned figures in a research notebook** export with their data, scripts and fingerprints in the
+  working-paper bundle (Reports > Notebooks), and `npm run notebook:check` checks them again through
+  the running app.
+
 ## How fast, and how often
 
 The addresses answer from the app's saved copies first; a first download that is slow finishes in
@@ -530,6 +550,14 @@ The reply:
 - `checks`: `pass` when a summary was written, with the number of sentences each check removed;
   `no_answer` when none was.
 - `run_id` names this call in the audit log.
+
+**What-if questions.** A question that states a change ("what would happen to Turkey if the Fed
+raised rates by 1 point?") is read and answered as in the chat: the agents holding the figures the
+change moves are always asked, and the Scenario Agent sets today's figures beside the figures after
+the change. Its findings appear in `agents` and `citations` like any other agent's, under the same
+licence rule. A change with no size is not filled in. The Quant desk, which reads an outside
+research-tools server ([RESEARCH_TOOLS.md](./RESEARCH_TOOLS.md)), only runs in the chat in the app,
+never for a token.
 
 **Only real figures that may be passed on.** Estimates, built-in samples and your own documents are
 never used. A figure whose source the licence register does not mark as free to share is left out,

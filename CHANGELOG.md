@@ -5,6 +5,44 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Documentation brought up to date with Ask Council chat (`ask:council`), the Research and Reports
+  layout, the deep what-if work, the five user roles, the feed check fixes, the outside research
+  tools and the Quant desk: README and walk-through guide in English, Spanish, French and Portuguese
+  (what-if questions in Council chat, the History & data tools menu, the new tools for public
+  administrators, politicians, researchers, economists and traders, Reports tabs, notebooks and the
+  working-paper bundle, Settings > Research tools); four screenshots retaken or added
+  (`06-history.png`, `11-reports.png`, `21-history-tools.png`, `22-what-if.png`); methodology version
+  1.4 (new sources, the Scenario Agent and what-if answers in 4.1 and 5.4, the five-roles tools in
+  5.5, outside research tools in 3.8, limits, references); the plain-language guide version 1.4 (new
+  sections on what-if questions and on the tools for people who run and judge policy); the install
+  guide (data/local/gdl/ and data/local/budget-execution/, the new data/live/ files, the newest
+  check:data rows, `npm run notebook:check`); the data API (what-if questions through
+  `ask:council`, and which new figures are panel calculations rather than series); the roadmap;
+  built app sizes measured again on 17 November.
+
+- Feed check fixes (#594 to #596): requests to Zenodo (the DOSE regional file) now name the app and
+  where its code lives, after Zenodo answered the check with HTTP 403. The ECB yield curve check asks
+  for the 10-year only with a 30 s limit, and the daily download asks for each maturity in turn. The
+  ECB SPF check asks for the newest 8 quarters with a 30 s limit and tries once more after 5 s; the
+  daily download keeps the full history with a 45 s limit and asks for the three SPF series one at a
+  time.
+
+- Research layout (#576): One country > History & data shows the history chart, then a menu of the
+  tools in eight groups (Debt and budget, Rates and prices, External and currency, Growth and
+  forecasts, People and development, Risks and shocks, Look back, Learn and convert); one tool opens
+  at a time, and *All tools* goes back to the menu (before, every tool was stacked, about 10 screens).
+  Links from Tools still open the tool. Summary, Sources and My holdings show one figure group at a
+  time from a row of buttons, with *Show all*. Markets & signals is in three parts (Economy and
+  policy, Markets and positioning, Risks and links). Compare has MarketEdge, scenario exposure and the
+  Fed balance sheet as parts; where data and price disagree shows four countries until *Show all*.
+  Figures with no history fold into one line. Nothing was removed, and every Missing figure keeps its
+  reason.
+
+- Reports layout (#575): Reports opens with tabs (Write a note, Policy reviews, Council documents,
+  Notebooks and Teaching), each on its own, so the page fits about one laptop screen (was 5.6).
+  Links from Tools, worked examples and Council chat open the right tab. The note's text and preview
+  scroll inside a fixed height; on a phone they take turns.
+
 - Size limits raised (Sam): start-up 520 KB compressed (was 465), whole app 9 MB (was 7.5).
 
 - Quant desk in Council chat (research tools item 2): with research tools set up, a desk agent

@@ -7,8 +7,8 @@ supõe que o app já está instalado e aberto no seu navegador (veja [INSTALL.md
 Para cada página e painel em detalhe, veja o [manual do usuário](./USER_MANUAL.md) (em inglês); para
 qualquer termo, o glossário dentro do app (Menu > Manual do usuário).
 
-Sobre as capturas: foram feitas em 13 de novembro de 2026 a partir de uma compilação local do branch
-principal, reproduzindo respostas gravadas em 5 de novembro de 2026 das fontes cujos termos permitem
+Sobre as capturas: foram feitas em 13 de novembro de 2026 (quatro refeitas ou acrescentadas em 17 de
+novembro) a partir de uma compilação local do branch principal, reproduzindo respostas gravadas em 5 de novembro de 2026 das fontes cujos termos permitem
 repassar os dados, sem nenhum modelo de IA configurado. Por isso muitos números aparecem como **Ausente** e
 o conselho não escreve um resumo nelas. No seu computador, com as fontes acessíveis e um modelo de IA
 escolhido, mais números são preenchidos e o conselho escreve seu resumo. As capturas estão em inglês,
@@ -83,6 +83,36 @@ minutos.
    Documentos ou **executar o conselho completo**: nove agentes em três mesas debatem um país, e o app pede
    a sua aprovação antes do relatório final.
 
+**Perguntar o que uma mudança faria.** O Chat do conselho também responde perguntas do tipo "e se...?".
+
+![Chat do conselho depois de uma pergunta "e se...?": o quadro Cenário lido da sua pergunta com a taxa do Fed, o dólar e seus tamanhos, as constatações dos agentes e o painel de agentes com o Scenario Agent em primeiro](images/22-what-if.png)
+
+1. Escreva a mudança com suas palavras e com o tamanho: "What would happen to Brazil if the Fed raised
+   rates by 1 point and the dollar strengthened 5%?". Você pode citar a taxa de um banco central ou do
+   Fed, o custo de endividamento do governo, o dólar, a moeda, os preços do petróleo, dos alimentos ou
+   das commodities, o estresse financeiro, a pressão nas cadeias de suprimento, o crescimento ou a
+   inflação.
+2. **Cenário lido da sua pergunta** mostra cada mudança que o app entendeu, com o tamanho. Se você não
+   deu um tamanho, o app pede um; ele nunca escolhe um por você.
+3. O **Scenario Agent** (agente de cenários) coloca os números de hoje ao lado dos números depois da
+   mudança, para até quatro países, e acrescenta o que aconteceu em episódios passados do mesmo tipo e o
+   que estudos publicados encontraram (cada estudo com sua página e seu DOI; o número de um estudo é uma
+   média de muitos países). As partes sem números mostram **Ausente** com o motivo.
+4. Com um modelo de IA configurado, a resposta vem em oito partes, de *Onde as coisas estão hoje* a *O que
+   mudaria a resposta*, cada uma marcada com o tipo de evidência em que se apoia: *Dados*, *Cálculo do
+   app*, *Passado*, *Estudo publicado* ou *Interpretação*.
+5. Clique em **Mudar os tamanhos**, mude um tamanho ou tire uma mudança, e clique em **Perguntar de novo
+   com estas mudanças**. A nova resposta vem como continuação, para você comparar as duas. Uma trajetória
+   de dívida tem **Guardar para o gráfico de escolhas**, que a leva ao gráfico de Sustentabilidade da
+   dívida.
+
+Se você tem seu próprio servidor de ferramentas de pesquisa e o configura (Menu > Configurações >
+Ferramentas de pesquisa), uma **mesa quantitativa** também responde perguntas sobre backtests, previsões,
+volatilidade, nowcasts, preços de opções, quedas máximas ou índices de Sharpe, com o link de cada número,
+a data dos dados e o rótulo do servidor (resultado hipotético sobre dados passados, não uma
+recomendação). Ela fica desligada até você configurá-la ([RESEARCH_TOOLS.md](./RESEARCH_TOOLS.md), em
+inglês).
+
 ## 4. Estudar um país
 
 Abra **Pesquisa**. O seletor de país fica no alto à esquerda; a faixa ao lado mostra dívida, spread dos
@@ -100,7 +130,9 @@ dados. **Atualizar agora** busca de novo os números daquele país.
    qualquer um para ver o motivo e o que o preencheria.
 3. **O que é isto?** abaixo de um número o explica. **Explicar** pergunta ao conselho o que ele significa
    para esse país.
-4. **Escrever a nota do país** transforma a página num rascunho de relatório.
+4. Os números aparecem por grupo: escolha um grupo na fileira de botões, ou **Mostrar tudo**. **Fontes**
+   e **Minhas posições** funcionam do mesmo jeito.
+5. **Escrever a nota do país** transforma a página num rascunho de relatório.
 
 ### Mercados e sinais
 
@@ -112,6 +144,8 @@ dados. **Atualizar agora** busca de novo os números daquele país.
    diz até onde chegou o teste. A maioria dos sinais ainda não passou num teste, e o selo diz isso.
 3. As probabilidades dos mercados de previsão (Kalshi, Polymarket), os spreads dos títulos e o câmbio
    aparecem aqui quando suas fontes respondem.
+4. A página tem três partes: **Economia e política**, **Mercados e posicionamento** e **Riscos e
+   ligações**.
 
 ### Histórico e dados
 
@@ -123,12 +157,22 @@ dados. **Atualizar agora** busca de novo os números daquele país.
    o que significa na vida real.
 3. Abaixo: **Baixar esta série** (CSV ou Excel), **Baixar todas as séries** do país, **Citar** (texto,
    BibTeX ou RIS), **Sinalizar** (avisar de um problema) e **Publicar gráfico** (PNG ou SVG).
-4. Mais abaixo ficam os painéis de análise: estimativas do presente e previsões com faixas de 50, 70 e
-   90%, hiato do produto, sustentabilidade da dívida, necessidade bruta de financiamento, adequação das
-   reservas, sustentabilidade externa, alerta antecipado de crise, curva de juros, fatores da inflação,
-   contabilidade do crescimento, regras de política monetária, "e se" fiscais e um pequeno modelo de hiato
-   que você mesmo preenche.
-5. Seguem painéis para países de renda mais baixa: **Remessas** (ao lado de exportações, investimento e
+4. Abaixo do gráfico, **Ferramentas para <país>** lista todas as ferramentas de análise em oito grupos:
+   Dívida e orçamento, Juros e preços, Setor externo e moeda, Crescimento e previsões, Pessoas e
+   desenvolvimento, Riscos e choques, Olhar para trás, e Aprender e converter. Clique numa e ela abre
+   abaixo do gráfico. Para trocar, escolha outra na lista **Ferramenta**, ou clique em **Todas as
+   ferramentas** para voltar ao menu. Os números que ainda não têm histórico ficam agrupados numa linha
+   (**Ainda sem histórico**) na lista da direita.
+
+   ![Ferramentas para o Brasil: o menu de ferramentas de Histórico e dados em oito grupos, de Dívida e orçamento a Aprender e converter](images/21-history-tools.png)
+
+   Entre elas: estimativas do presente e previsões com faixas de 50, 70 e 90%, hiato do produto,
+   sustentabilidade da dívida, necessidade bruta de financiamento, adequação das reservas,
+   sustentabilidade externa, alerta antecipado de crise, curva de juros, fatores da inflação,
+   contabilidade do crescimento, regras de política, "e se" fiscais e um pequeno modelo de hiatos que
+   você preenche.
+5. Ferramentas para países de renda mais baixa, em Pessoas e desenvolvimento e em Riscos e choques:
+   **Remessas** (ao lado de exportações, investimento e
    ajuda, e o custo de enviar US$ 200 frente à meta de 3% da ONU), **Inclusão financeira** (quem tem
    conta, por sexo e renda), **Preços de commodities e termos de troca** (o que os últimos movimentos dos
    preços mundiais significam para o país, em % do PIB), **Ajuda recebida**, **Preços dos alimentos e
@@ -165,7 +209,38 @@ dados. **Atualizar agora** busca de novo os números daquele país.
    200 km do país desde 1980, pelas trajetórias IBTrACS da NOAA. Nada é baixado até você clicar em
    **Baixar trajetórias de tempestades da NOAA**; você também pode salvar um arquivo IBTrACS em
    `data/local/ibtracs/`.
-10. O **Painel de risco-país** coloca lado a lado a governança, os conflitos armados, a agitação social,
+10. Ferramentas para quem administra ou avalia um orçamento, em **Dívida e orçamento** e **Pessoas e
+    desenvolvimento**:
+    - **Credibilidade do orçamento**: quanto do orçamento aprovado no início de cada ano o governo de
+      fato gastou, com a faixa PEFA de cada ano (A dentro de 5% do orçamento, B dentro de 10%, C dentro
+      de 15%, D além disso) e uma nota calculada pelo app (não a nota oficial do PEFA).
+    - **Execução do orçamento (seu arquivo)**: clique em **Baixar o modelo**, preencha seu orçamento
+      aprovado e o gasto mensal por ministério ou programa, diga em que mês começa o ano fiscal, a
+      unidade e a fonte, e carregue o arquivo. Cada linha mostra o gasto diante da parte do ano já
+      decorrida; as linhas mais de 10 pontos atrasadas ou adiantadas são marcadas, e os meses sem número
+      são listados, nunca preenchidos. O arquivo fica no seu computador.
+    - **Projetos do Banco Mundial**: os projetos em andamento no país, do maior para o menor, com o valor
+      comprometido, a parte do prazo previsto já decorrida e, para os créditos e doações da AID, a parte
+      desembolsada. Um projeto que desembolsa devagar para a idade que tem é marcado como motivo para
+      olhar de perto.
+    - **Números regionais**: a produção por pessoa em cada região, a distância para o número nacional e
+      se as regiões se aproximaram em dez anos; para os países da UE e da AELC, o PIB por pessoa e o
+      desemprego por região; e o Índice de Desenvolvimento Humano por região se você salvar o arquivo do
+      Global Data Lab em `data/local/gdl/`.
+11. Ferramentas para economistas e operadores de mercado, em **Juros e preços** e **Crescimento e
+    previsões**:
+    - **Curvas de juros completas (EUA, zona do euro)**: cada prazo das curvas do Tesouro dos EUA e da
+      zona do euro todo dia, uma curva ajustada, o nível, a inclinação e a curvatura com seus movimentos
+      em um dia e em um mês, e o carry e o roll-down em três meses de cada prazo.
+    - **Surpresas nos dados**: cada divulgação diante do que se esperava logo antes (a pesquisa Focus do
+      Brasil, a pesquisa de previsores do BCE, o mercado de CPI da Kalshi para os Estados Unidos ou o
+      nowcast do PIB do próprio app), e o **Índice de surpresas de inflação**, que resume as surpresas
+      recentes de inflação (também um cartão em Hoje para o Brasil, a zona do euro e os Estados Unidos).
+      Uma descrição, não um sinal.
+    - **Nowcast e previsões** ganha **Faixas a partir de erros passados**: uma faixa de 70% e de 90% em
+      cada passo testado, a partir de quanto a previsão errou para este país no teste. Com menos de 8
+      casos passados, mostra **Ausente**.
+12. O **Painel de risco-país** coloca lado a lado a governança, os conflitos armados, a agitação social,
     o risco geopolítico, a abertura da conta de capital (o índice de Chinn e Ito, citado como Chinn e Ito
     2006) e a economia, cada dado com sua fonte e seu ano. Ele não dá uma nota geral. Em 13 de novembro
     de 2026 foi fixado de antemão um teste para saber se uma governança fraca vem antes de um calote;
@@ -193,11 +268,13 @@ baseiam em projeções do FMI.
 
 ![Em um dia passado: escolha uma data para ver os números que o app tinha então, ao lado dos de hoje](images/08-as-of-past-day.png)
 
-1. Em **Histórico e dados**, desça até **Em um dia passado**.
+1. Em **Histórico e dados**, abra **Em uma data passada** pelo menu de ferramentas (em Olhar para trás).
 2. Escolha uma data. A tabela mostra cada número como o app o tinha naquele dia, ao lado do número de hoje
    e da variação. Cada download diário é arquivado, então nada se perde.
-3. **Previsões do FMI por edição** (logo acima) mostra como a visão do FMI sobre o país mudou de uma
-   edição para outra, depois que as edições passadas forem salvas.
+3. **Previsões do FMI por edição** (outra ferramenta de Olhar para trás) mostra como a visão do FMI sobre o
+   país mudou de uma edição para outra, quando as edições passadas estão salvas. Abaixo da tabela, **Faixa
+   a partir de erros passados do FMI** coloca uma faixa de 70% e de 90% em torno das projeções da última
+   edição, a partir de quanto as edições passadas erraram para este país.
 
 ## 6. Comparar países
 
@@ -208,7 +285,9 @@ baseiam em projeções do FMI.
 2. **Pautas** aponta recordes, grandes movimentos e revisões nos números oficiais.
 3. **Onde dados e preços discordam** ordena os países em que mercados e dados apontam para lados
    diferentes, com os números que sustentam isso.
-4. Clique no nome de um país para abri-lo sozinho.
+4. MarketEdge, a exposição a cenários e o balanço do Fed são partes separadas; **Onde dados e preços
+   discordam** mostra quatro países até você clicar em **Mostrar tudo**.
+5. Clique no nome de um país para abri-lo sozinho.
 
 **Minhas posições**, a terceira visão, faz o mesmo com uma lista de títulos ou posições que você carrega de
 um arquivo CSV.
@@ -217,12 +296,13 @@ um arquivo CSV.
 
 ![Página Relatórios: revisões de política, documentos do conselho e o montador de relatórios com uma prévia de nota de país](images/11-reports.png)
 
-**Relatórios** reúne as revisões de política, os documentos salvos do Chat do conselho e o montador de
-relatórios.
+**Relatórios** tem cinco abas, cada uma sozinha: **Escrever uma nota** (o montador de relatórios),
+**Revisões de política**, **Documentos do conselho** (os documentos salvos do Chat do conselho),
+**Cadernos** e **Ensino**.
 
 Para escrever um relatório:
 
-1. Escolha um tipo: Nota do país, Nota do emissor, Avaliação de sustentabilidade, Revisão da carteira,
+1. Em **Escrever uma nota**, escolha um tipo: Nota do país, Nota do emissor, Avaliação de sustentabilidade, Revisão da carteira,
    Revisão da carteira do cliente ou Resumo do conselho.
 2. Marque as seções que quiser. O rascunho se atualiza e a prévia mostra o resultado.
 3. Edite o texto e depois **Copiar**, baixe em **Markdown** ou **Imprimir ou salvar PDF**. Cada número leva
@@ -232,7 +312,7 @@ Para revisar uma política:
 
 ![Formulário de nova revisão de política: país, data de referência, o problema, o indicador a melhorar, direção, meta, restrições e para quem é](images/12-policy-review.png)
 
-1. Clique em **Nova revisão de política**.
+1. Abra a aba **Revisões de política** e clique em **Nova revisão de política**.
 2. Escolha o país e a data de referência (cada passo seguinte lê os dados como estavam naquele dia).
 3. Descreva o problema em uma ou duas frases, por exemplo "A inflação está bem acima da meta enquanto o
    crescimento desacelera e a dívida sobe".
@@ -270,6 +350,24 @@ Para revisar uma política:
    termina com essas partes, e em 12 e 24 meses os casos de uma revisão sobre a moeda são comparados com
    o que o câmbio fez.
 
+10. No memorando, **Para as pessoas** dá um resumo simples para a população: o que muda, o custo por
+    pessoa, quem ganha e quem paga, as regiões mais atrasadas e o que três países em situação parecida
+    viram depois. É escrito com frases fixas preenchidas com os números, não por IA, e entra no resumo de
+    uma página.
+
+Para escrever um texto para discussão que você possa conferir depois:
+
+1. No Chat do conselho, peça um gráfico ("chart Brazil's policy rate since 2015"). Abaixo do gráfico do
+   agente de gráficos, clique em **Fixar no caderno** e escolha um caderno. O app guarda a data até onde
+   vão os números e uma impressão digital dos números (um código curto que muda se qualquer número
+   mudar).
+2. Abra **Relatórios > Cadernos**. **Pacote de texto para discussão (.zip)** baixa um único zip: um
+   rascunho em Markdown com suas notas, uma pasta para cada número fixado com os dados e os scripts de
+   Python, R e Stata, um arquivo de citação e a lista da impressão digital de cada arquivo.
+3. Depois, clique em **Verificar se ainda vale** num número fixado. A resposta é *Igual*, *Revisado* (com
+   os valores antigos e novos) ou *A fonte não responde mais*. `npm run notebook:check` confere todos os
+   números fixados de uma vez.
+
 ## 8. Escolher um modelo de IA
 
 ![Configurações > Modelo de IA com Ollama: onde o Ollama roda, o modelo rápido qwen2.5:7b, o modelo árbitro qwen2.5:32b e a opção Permitir um árbitro de 14B](images/13-settings-ai.png)
@@ -301,6 +399,10 @@ O **Menu** reúne tudo o que não é uma página. O que vale conhecer primeiro:
 
 - **Ferramentas**: todas as ferramentas agrupadas pelo que você quer fazer, e **Conexões de dados**.
 - **Dados offline**: baixe os dados de todos os países para usar sem internet e veja quanto espaço ocupam.
+- **Configurações > Ferramentas de pesquisa**: o endereço e o token de um servidor de ferramentas de
+  pesquisa que você roda, para a mesa quantitativa do Chat do conselho. Desligado até os dois estarem
+  preenchidos; **Testar a conexão** lista as ferramentas que o token enxerga, e cada chamada vai para o
+  registro de auditoria, nunca o token.
 - **Saúde dos dados**: quais fontes chegam, quais falham e quais números foram revisados. A aba
   **Daily download** (em inglês) acompanha o download diário enquanto ele roda: cada parte, o que
   falhou e por quê, as fontes que pedem uma chave ou um arquivo, e o que baixar à mão.
