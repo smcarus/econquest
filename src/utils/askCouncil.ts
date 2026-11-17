@@ -57,6 +57,7 @@ import { IMF_ADVANCED, TNM_CITATION, multiplierView } from './fiscalMultipliers'
 import { parseWhatIf, runWhatIf, whatIfSentence, whatIfSetup } from './fiscalWhatIf';
 import { parseScenario, SHOCK_KINDS, type ScenarioQuestion, type ShockKind } from './scenarioQuestion';
 import { sectorLine, sectorsInQuestion } from './govSpending';
+import { QUANT_AGENT_NAME, QUANT_DESK_COVERS } from './quantDeskInfo';
 import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
 import type { DebateResult } from './agentDebate';
 import { changeLines } from './whatChanged';
@@ -64,8 +65,8 @@ import { carryChart, chartFinding, chartFollowUps, chartRequest, seriesInQuestio
 
 /** Desk agents the planner (or the AI model) can pick. */
 export type CoreAgentId = 'cb' | 'fiscal' | 'politics' | 'rv' | 'fx' | 'spill' | 'calendar' | 'timing' | 'behaviour';
-/** 'doc' = the Policy Document Agent, asked whenever you have added documents; 'chart' = the Chart Agent, when a chart or test is asked for; 'forecast' = the app's nowcasts and forecasts (src/utils/forecastAgent.ts); 'scenario' = the Scenario Agent for what-if questions (src/utils/scenarioAgent.ts). */
-export type AgentId = CoreAgentId | 'doc' | 'chart' | 'forecast' | 'claim' | 'scenario';
+/** 'doc' = the Policy Document Agent, asked whenever you have added documents; 'chart' = the Chart Agent, when a chart or test is asked for; 'forecast' = the app's nowcasts and forecasts (src/utils/forecastAgent.ts); 'scenario' = the Scenario Agent for what-if questions (src/utils/scenarioAgent.ts); 'quant' = the Quant desk, from an outside research-tools server, Council chat only and only when one is set up (src/utils/quantDesk.ts). */
+export type AgentId = CoreAgentId | 'doc' | 'chart' | 'forecast' | 'claim' | 'scenario' | 'quant';
 export type FigureTag = Quality | 'official' | 'model' | 'document';
 
 export interface AgentFigure {
@@ -73,6 +74,8 @@ export interface AgentFigure {
   value: string;
   source: string;
   tag: FigureTag;
+  /** A link to the figure's own page (the Quant desk's result on the research tools server). */
+  url?: string;
 }
 
 export interface AgentFinding {
@@ -223,6 +226,8 @@ export interface CouncilPlan {
   explain?: import('./explain').ExplainPlan;
   /** A what-if question's shocks as read from the words (src/utils/scenarioQuestion.ts, WI1). */
   scenario?: ScenarioQuestion;
+  /** The Quant desk (outside research tools), when it is set up and the question or the AI model calls for it. */
+  quant?: { why: string };
 }
 
 /** Countries named in the question (by name, ISO code or a common alias). */
@@ -410,10 +415,12 @@ export const AGENT_CHOICE_INSTRUCTION = [
   'Do not answer the question and do not write any numbers.',
 ].join(' ');
 
-export function agentChoicePrompt(question: string, earlier: EarlierTurn[] = []): string {
+export function agentChoicePrompt(question: string, earlier: EarlierTurn[] = [], opts: { quant?: boolean } = {}): string {
   return [
     'Agents:',
     ...AGENT_ORDER.map((id) => `- ${id}: ${COUNCIL_AGENTS[id].name} Agent, covers ${COUNCIL_AGENTS[id].covers}`),
+    // Listed only when outside research tools are set up, so the prompt is unchanged otherwise.
+    ...(opts.quant ? [`- quant: ${QUANT_AGENT_NAME} Agent, covers ${QUANT_DESK_COVERS}`] : []),
     '',
     ...(earlier.length ? ['Earlier questions in this conversation:', ...earlier.slice(-4).map((t) => `- ${t.question.slice(0, 300)}`), ''] : []),
     `Question: ${question.slice(0, 500)}`,
@@ -427,8 +434,12 @@ export interface AgentChoiceResult {
   reason?: string;
 }
 
-/** Use the model's picks when at least one names a real agent; otherwise keep the word-matched plan. */
-export function applyAgentChoice(plan: CouncilPlan, choice: AgentChoiceResult | null): CouncilPlan {
+/**
+ * Use the model's picks when at least one names a real agent; otherwise keep the word-matched plan.
+ * `extraIds` are agents outside the desk list the model may also pick (the Quant desk, when set up):
+ * they count as a valid pick but are added by the caller.
+ */
+export function applyAgentChoice(plan: CouncilPlan, choice: AgentChoiceResult | null, extraIds: string[] = []): CouncilPlan {
   const seen = new Set<CoreAgentId>();
   const picked: CouncilPlan['agents'] = [];
   for (const a of choice?.agents || []) {
@@ -438,7 +449,8 @@ export function applyAgentChoice(plan: CouncilPlan, choice: AgentChoiceResult | 
     const why = String(a?.why || '').replace(/\s+/g, ' ').replace(/[.\s]+$/, '').trim().slice(0, 200);
     picked.push({ id, why: why ? `the AI model judged: ${why}` : 'the AI model picked it' });
   }
-  if (picked.length) {
+  const extra = (choice?.agents || []).some((a) => extraIds.includes(String(a?.id || '').trim().toLowerCase()));
+  if (picked.length || extra) {
     // A what-if keeps the agents that hold the figures its shocks move.
     if (plan.scenario) addScenarioAgents(picked, plan.scenario);
     picked.sort((x, y) => AGENT_ORDER.indexOf(x.id) - AGENT_ORDER.indexOf(y.id));

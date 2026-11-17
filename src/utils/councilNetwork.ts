@@ -74,8 +74,8 @@ export function askCouncilColumns(answers: AgentAnswer[], writing: boolean, synt
         task: a.why.replace(/^the question mentions/, 'Asked: you mentioned').replace(/^the AI model judged:/, 'AI pick:').replace(/^you added/, 'Asked: you added'),
         status: 'done' as const,
         note: a.findings.length
-          ? `${a.findings.length} ${a.id === 'doc' ? (a.findings.length === 1 ? 'passage' : 'passages') : a.findings.length === 1 ? 'country' : 'countries'}`
-          : 'nothing to report',
+          ? `${a.findings.length} ${a.id === 'doc' ? (a.findings.length === 1 ? 'passage' : 'passages') : a.id === 'quant' ? (a.findings.length === 1 ? 'result' : 'results') : a.findings.length === 1 ? 'country' : 'countries'}`
+          : a.id === 'quant' && a.missing.some((m) => m.startsWith('Research tools unavailable')) ? 'Research tools unavailable' : 'nothing to report',
       })),
     },
     { title: '3. Synthesis', nodes: [{ id: 'synthesis', label: 'Synthesis agent', task: 'Writes the brief from the agents’ figures only', ...synth }] },

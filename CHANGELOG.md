@@ -5,6 +5,16 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Quant desk in Council chat (research tools item 2): with research tools set up, a desk agent
+  "Quant desk" joins a chat question that asks for a backtest, forecast, volatility, nowcast, option
+  price, drawdown or Sharpe, or when the AI model picks it. It calls only tools the server lists for
+  the token (at most the per-question limit), and each figure from the reply goes to the synthesis
+  as a desk finding with its link, data-through date and label; the answer card, agent documents and
+  network view (badge "reads: outside research tools") show them. A refusal or time-out shows
+  "Research tools unavailable" and the other desks still answer; a local-only refusal shows the
+  reason and leaves the desk out. Off by default: with no server set, the chat and its prompts are
+  unchanged. Route `POST /api/council/quant`; model register `quant_desk`. Four languages.
+
 - Outside research tools, client (research tools item 1): Menu > Settings > Research tools holds a
   research-tools server address, its token (stored like the other keys, never logged), a time limit
   (20 s) and tool calls per question (4). A small MCP client (JSON-RPC 2.0 over HTTP POST:

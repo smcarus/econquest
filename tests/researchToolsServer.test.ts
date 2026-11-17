@@ -99,3 +99,57 @@ test('a revoked token: Test connection says Research tools unavailable with the 
   const audit = await (await fetch(`${base}/api/audit?kind=research_tools`)).json();
   assert.match(audit.entries[0].summary, /Research tools server opened: refused \(Unknown or revoked key\)/);
 });
+
+const QID = 'q-brl-vol-0001';
+const ask = (question: string, body: Record<string, unknown> = {}) =>
+  fetch(`${base}/api/council/quant`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Correlation-Id': QID },
+    body: JSON.stringify({ question, why: 'the question mentions "volatility"', questionId: QID, countries: [{ iso3: 'BRA', countryName: 'Brazil', currencyCode: 'BRL' }], currencies: ['BRL', 'USD'], ...body }),
+  }).then((r) => r.json());
+
+test('Quant desk: "What\'s the 20-day volatility forecast for BRL?" quotes only the reply\'s figures, with its link and label; the audit log has the call under the question\'s id', { timeout: 60_000 }, async () => {
+  assert.equal((await send('PUT', '/api/settings/keys/RESEARCH_TOOLS_TOKEN', { value: TOKEN })).status, 200);
+  const before = requests().length;
+  const { answer } = await ask("What's the 20-day volatility forecast for BRL?");
+  assert.equal(answer.id, 'quant');
+  assert.equal(answer.name, 'Quant desk');
+  assert.equal(answer.findings.length, 1, JSON.stringify(answer));
+  const garch = CONTRACT.examples.find((e: { what: string }) => /GARCH/.test(e.what)).reply.result;
+  const cite = garch.structuredContent.cite;
+  const f = answer.findings[0];
+  assert.ok(f.figures.length > 0);
+  for (const g of f.figures) {
+    assert.equal(g.url, cite.url);
+    assert.ok(g.source.includes(`data through ${cite.data_through}`));
+    assert.ok(g.source.endsWith(cite.label));
+  }
+  assert.ok(f.reading.includes(cite.label));
+  assert.doesNotMatch(JSON.stringify(answer), /\b(buy|sell)\b/i);
+  const calls = requests().slice(before).filter((x) => x.method === 'tools/call');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].tool, 'forecast_series');
+  assert.equal(calls[0].headers['x-correlation-id'], QID);
+  assert.equal(calls[0].headers['x-model-location'], 'local');
+  const audit = await (await fetch(`${base}/api/audit?kind=research_tools`)).json();
+  const call = audit.entries.find((e: { summary: string }) => e.summary === 'Research tool forecast_series: answered');
+  assert.ok(call, JSON.stringify(audit.entries.slice(0, 3)));
+  assert.equal(call.correlationId, QID);
+  assert.equal(call.detail.tool, 'forecast_series');
+  assert.ok(String(call.detail.args).length <= 160);
+});
+
+test('Quant desk: a local-only refusal shows its reason and leaves the desk out; a timed-out call shows Research tools unavailable', { timeout: 60_000 }, async () => {
+  assert.equal((await send('PUT', '/api/settings/keys/RESEARCH_TOOLS_TOKEN', { value: `${TOKEN}-localonly` })).status, 200);
+  const cloud = { providerMode: 'openai_compatible', openAiBaseUrl: 'https://models.example.net/v1' };
+  const refused = (await ask("What's the 20-day volatility forecast for BRL?", { runtimeConfig: cloud })).answer;
+  assert.deepEqual(refused.findings, []);
+  assert.ok(refused.missing.some((m: string) => /Compliance limits council research to local models/.test(m)), JSON.stringify(refused.missing));
+
+  assert.equal((await send('PUT', '/api/settings/keys/RESEARCH_TOOLS_TIMEOUT_S', { value: '1' })).status, 200);
+  assert.equal((await send('PUT', '/api/settings/keys/RESEARCH_TOOLS_TOKEN', { value: `${TOKEN}-slow` })).status, 200);
+  const slow = (await ask("What's the 20-day volatility forecast for BRL?")).answer;
+  assert.deepEqual(slow.findings, []);
+  assert.ok(slow.missing.some((m: string) => /^Research tools unavailable: /.test(m)), JSON.stringify(slow.missing));
+  assert.equal((await send('PUT', '/api/settings/keys/RESEARCH_TOOLS_TIMEOUT_S', { value: '20' })).status, 200);
+});

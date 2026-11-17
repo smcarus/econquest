@@ -411,6 +411,13 @@ dans [docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md) (en anglais).
 - **Badges** : Validé, Provisoire, En cours d'examen, Retiré ou Revue due. La plupart des signaux n'ont
   pas réussi leur test, et l'application le dit.
 - **Un journal d'audit** garde ce qui a été demandé, quels chiffres ont servi et qui a validé un rapport.
+- **Outils de recherche externes** (facultatif, désactivé par défaut) : si vous avez votre propre serveur
+  d'outils de recherche, vous pouvez saisir son adresse et sa clé dans **Menu > Réglages > Outils de
+  recherche**. Dans le chat du Conseil, le **desk quantitatif** répond alors aux questions sur les
+  backtests, prévisions, volatilité, nowcasts, prix d'options, baisses maximales ou ratios de Sharpe, et
+  affiche chaque chiffre avec son lien, la date de ses données et l'étiquette du serveur (résultat
+  hypothétique sur données passées, pas une recommandation). Chaque appel figure dans le journal d'audit,
+  jamais la clé ([docs/RESEARCH_TOOLS.md](./docs/RESEARCH_TOOLS.md), en anglais).
 
 La méthode complète est dans [docs/METHODOLOGY.md](./docs/METHODOLOGY.md) (en anglais).
 

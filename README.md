@@ -621,7 +621,10 @@ The full reference, with examples, is "Connecting an outside portfolio system" i
 - **Outside research tools.** Council chat can call a research-tools server you run yourself
   (backtests, volatility and price forecasts, nowcasts, option prices) over MCP. Set the address and
   token in **Menu > Settings > Research tools**; it is off until both are set, works in chat only,
-  and every call goes in the audit log ([docs/RESEARCH_TOOLS.md](docs/RESEARCH_TOOLS.md)).
+  and every call goes in the audit log. Once set, the **Quant desk** joins chat questions about
+  backtests, forecasts, volatility, nowcasts, option prices, drawdowns or Sharpe ratios and shows each
+  figure with its link, data-through date and the server's "hypothetical" label
+  ([docs/RESEARCH_TOOLS.md](docs/RESEARCH_TOOLS.md)).
 - **Audit seal.** With `AUDIT_SEAL_KEY` set, every audit log entry also carries an HMAC; with
   `AUDIT_BUCKET_URL`, each entry is copied to an S3-compatible bucket with object lock, so a rewrite
   of the whole log on this computer can be caught ([docs/SECURITY.md](docs/SECURITY.md)).

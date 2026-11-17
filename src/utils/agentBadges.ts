@@ -33,6 +33,7 @@ export type AgentIconKey =
   | 'user'
   | 'gavel'
   | 'crowd'
+  | 'flask'
   | 'agent';
 
 export interface AgentBadgeInfo {
@@ -110,6 +111,11 @@ export const AGENT_BADGES: Record<string, AgentBadgeInfo> = {
     icon: 'check',
     plain: 'Checks a number or ranking stated in your question against the app’s own figures and says whether it holds up.',
     reads: 'The same live and official figures the other agents use.',
+  },
+  quant: {
+    icon: 'flask',
+    plain: 'Asks a research-tools server you run for backtests, volatility and price forecasts, nowcasts and option prices. Results are hypothetical, on past data, not a recommendation.',
+    reads: 'Outside research tools, with each result\'s link and data-through date.',
   },
   planner: {
     icon: 'route',

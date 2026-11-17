@@ -61,6 +61,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Ranges from past forecast misses (R8) | Research | Description, not a tested signal | None |
 | Costed fiscal options | Research | Description, not a tested signal | None |
 | Scenario Agent (what-if questions) | Research | Description, not a tested signal | None |
+| Quant desk (outside research tools, Council chat only) | Research | Description, not a tested signal | None |
 | Remittances | Research | Description, not a tested signal | None |
 | Financial inclusion | Research | Description, not a tested signal | None |
 | Commodity prices and terms of trade | Research | Description, not a tested signal | None |
@@ -810,6 +811,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: a stated what-if on stated assumptions, not a forecast or a recommendation.
 - **Limits:** Co-movement, not cause; linear in the shock; first round only for trade (volumes held); dollar bonds only, a lower bound for currency debt; a shock larger than any month in the sample is flagged as extrapolation.
 - **Code:** `src/utils/scenarioAgent.ts, src/utils/scenarioQuestion.ts`
+
+### Quant desk (outside research tools, Council chat only)
+
+- **Says:** Figures from a research-tools server you run yourself, for a Council chat question that asks for them: a volatility or price forecast, return statistics (drawdown, Sharpe), a backtest, a nowcast or an option chain, each with the link to the result, its data-through date and the server's label ("Hypothetical, past performance; not a recommendation").
+- **Rule:** Not the app's own model: the server runs it. The app picks the tool calls by stated rules on the question's words, from the tools the server lists for the token only, at most RESEARCH_TOOLS_MAX_CALLS (4) per question; horizon and period only from the question. FX pairs are named as units per US dollar (BRL means USDBRL), as the contract quotes them. Each number is taken from the reply, rounded to 4 decimals at most; a yearly volatility fraction is also shown as a percentage. A result without a labelled cite block is not used. Off until a server address and token are set.
+- **Reads:** Your research-tools server over MCP (docs/contracts/research-tools.json): forecast_series, describe_series, run_backtest, get_run, list_runs, correlations, list_nowcasts, get_nowcast, option_chain
+- **Shows in:** Council chat (Quant desk), only when research tools are set up
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: results from an outside server, labelled hypothetical. Never used by scheduled council runs, the daily download, briefs, the pre-registered backtests, or any score, badge or signal.
+- **Limits:** The server's models and data are its own and are not checked by the app; the app checks only that each figure comes from the reply with its cite block. A refusal or no answer within the time limit reads "Research tools unavailable"; a server that lets only local models read results leaves the desk out when the chat's model may be in the cloud.
+- **Code:** `src/utils/quantDesk.ts, src/utils/quantDeskInfo.ts, src/server/researchTools.ts`
 
 ### Remittances
 

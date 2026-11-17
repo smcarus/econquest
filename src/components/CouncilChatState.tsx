@@ -20,6 +20,25 @@ import { EXPLAIN_EVENT } from '../utils/explainHandoff';
 import { councilAnswers, hasFindings, NO_FIGURES_REASON } from '../utils/councilQuestion';
 
 const AI_RUNTIME_STORAGE_KEY = 'econquest_ai_runtime_config_v1';
+/** A new id for one Council chat question, sent as X-Correlation-Id so the audit log and the research tools server can join their entries. */
+export function newQuestionId(): string {
+  return `q-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/** Whether the outside research tools are set up, asked once a minute at most (GET /api/research-tools/status). */
+let researchStatus: { at: number; on: boolean } | null = null;
+async function researchToolsOn(): Promise<boolean> {
+  if (researchStatus && Date.now() - researchStatus.at < 60_000) return researchStatus.on;
+  try {
+    const r = await fetch('/api/research-tools/status');
+    const on = r.ok ? Boolean((await r.json())?.enabled) : false;
+    researchStatus = { at: Date.now(), on };
+    return on;
+  } catch {
+    return false;
+  }
+}
+
 export function runtimeConfig(): Record<string, unknown> {
   try {
     return JSON.parse(localStorage.getItem(AI_RUNTIME_STORAGE_KEY) || '{}') || {};
@@ -135,14 +154,14 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
   };
 
   /** Ask the AI model which agents should answer; null when it cannot be reached in time. */
-  const chooseAgents = async (question: string, history: EarlierTurn[]): Promise<AgentChoiceResult | null> => {
+  const chooseAgents = async (question: string, history: EarlierTurn[], opts?: { quant?: boolean }): Promise<AgentChoiceResult | null> => {
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), 15000);
     try {
       const r = await fetch('/api/council/choose-agents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, earlier: history.map((t) => ({ question: t.question })), runtimeConfig: runtimeConfig() }),
+        body: JSON.stringify({ question, earlier: history.map((t) => ({ question: t.question })), ...(opts?.quant ? { quant: true } : {}), runtimeConfig: runtimeConfig() }),
         signal: ctl.signal,
       });
       return r.ok ? ((await r.json()) as AgentChoiceResult) : { agents: null, reason: `the AI step did not answer (HTTP ${r.status})` };
@@ -167,19 +186,27 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
     else if (mode === 'new') setPast([]);
     setEarlier(history);
     setQuestion('');
-    // The same steps as the data API's ask:council (src/utils/councilQuestion.ts).
+    const questionId = newQuestionId();
+    // The same steps as the data API's ask:council (src/utils/councilQuestion.ts), plus the Quant desk, which only the chat may ask.
     const { plan, answers } = await councilAnswers(
-      { question: text, items, history, previous: asFollowUp && asked ? asked.plan : undefined, scopeIso3: asFollowUp ? undefined : scope || undefined, focus, docs },
+      { question: text, items, history, previous: asFollowUp && asked ? asked.plan : undefined, scopeIso3: asFollowUp ? undefined : scope || undefined, focus, docs, questionId },
       {
-        chooseAgents: async (q, h) => {
+        chooseAgents: async (q, h, o) => {
           setChoosing(true);
           try {
-            return await chooseAgents(q, h);
+            return await chooseAgents(q, h, o);
           } finally {
             setChoosing(false);
           }
         },
         get: (u) => fetch(u),
+        quant: {
+          enabled: researchToolsOn,
+          run: async (req) => {
+            const r = await fetch('/api/council/quant', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Correlation-Id': questionId }, body: JSON.stringify({ ...req, runtimeConfig: runtimeConfig() }) });
+            return r.ok ? (((await r.json()) as { answer: AgentAnswer | null }).answer ?? null) : null;
+          },
+        },
       }
     );
     const askedAt = new Date().toISOString();
@@ -195,7 +222,8 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
     try {
       const r = await fetch('/api/council/synthesise', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        // The question's id joins this answer's audit entry with its research tools calls.
+        headers: { 'Content-Type': 'application/json', ...(plan.quant ? { 'X-Correlation-Id': questionId } : {}) },
         body: JSON.stringify({ question: text, askedAt, ...(pinned ? { dataPinnedAt: pinned.at } : {}), answers: answersForModel(answers), scope: plan.scopeNote, countries: plan.countries.length, earlier: history.map((t) => ({ question: t.question, headline: t.headline })), ...(plan.explain ? { explain: { ...plan.explain, helpLevel: promptHelpLevel(readHelpLevel()) } } : {}), runtimeConfig: runtimeConfig() }),
       });
       setSynthesis(r.ok ? ((await r.json()) as SynthesisResult) : { brief: null, removed: [], reason: `The summary step did not answer (HTTP ${r.status}).` });

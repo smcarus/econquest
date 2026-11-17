@@ -401,6 +401,13 @@ A lista completa está em [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md) e o que
   passou no teste, e o app diz isso.
 - **Um log de auditoria** guarda o que foi perguntado, quais números foram usados e quem aprovou um
   relatório.
+- **Ferramentas de pesquisa externas** (opcional, desligado por padrão): se você tem seu próprio servidor
+  de ferramentas de pesquisa, pode informar o endereço e a chave em **Menu > Configurações > Ferramentas
+  de pesquisa**. No chat do Conselho, a **mesa quantitativa** responde então a perguntas sobre backtests,
+  previsões, volatilidade, nowcasts, preços de opções, quedas máximas ou índices de Sharpe, e mostra cada
+  número com o link, a data dos dados e o rótulo do servidor (resultado hipotético com dados passados,
+  não uma recomendação). Cada chamada fica no log de auditoria, nunca a chave
+  ([docs/RESEARCH_TOOLS.md](./docs/RESEARCH_TOOLS.md), em inglês).
 
 O método completo está em [docs/METHODOLOGY.md](./docs/METHODOLOGY.md) (em inglês).
 

@@ -8,6 +8,7 @@ import {
   ChartLine,
   Database,
   FileText,
+  FlaskConical,
   Gavel,
   Globe,
   HandCoins,
@@ -53,6 +54,7 @@ const ICONS: Record<AgentIconKey, LucideIcon> = {
   user: UserCheck,
   gavel: Gavel,
   crowd: Users,
+  flask: FlaskConical,
   agent: Bot,
 };
 
