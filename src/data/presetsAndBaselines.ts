@@ -281,6 +281,149 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     cds5YBps: N,
     debtToGdpPct: N,
     fxReservesMonths: N,
+  },  // Lower-income countries (LI2, 17 November 2026): names and plain-language topics only.
+  {
+    iso3: 'NGA',
+    countryName: 'Nigeria',
+    region: 'Sub-Saharan Africa',
+    currencyCode: 'NGN',
+    focusTheme: 'Oil income, the naira after its float, high inflation and the cost of debt',
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
+  },
+  {
+    iso3: 'ETH',
+    countryName: 'Ethiopia',
+    region: 'Sub-Saharan Africa',
+    currencyCode: 'ETB',
+    focusTheme: 'Debt restructuring, the birr after its float and an IMF programme',
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
+  },
+  {
+    iso3: 'COD',
+    countryName: 'DR Congo',
+    region: 'Sub-Saharan Africa',
+    currencyCode: 'CDF',
+    focusTheme: 'Copper and cobalt exports, conflict in the east and an IMF programme',
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
+  },
+  {
+    iso3: 'TZA',
+    countryName: 'Tanzania',
+    region: 'Sub-Saharan Africa',
+    currencyCode: 'TZS',
+    focusTheme: 'Gold and tourism earnings, the shilling and borrowing for infrastructure',
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
+  },
+  {
+    iso3: 'KEN',
+    countryName: 'Kenya',
+    region: 'Sub-Saharan Africa',
+    currencyCode: 'KES',
+    focusTheme: 'The cost of servicing debt, tax protests and access to market borrowing',
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
+  },
+  {
+    iso3: 'UGA',
+    countryName: 'Uganda',
+    region: 'Sub-Saharan Africa',
+    currencyCode: 'UGX',
+    focusTheme: 'Oil production to come, the cost of debt and coffee exports',
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
+  },
+  {
+    iso3: 'GHA',
+    countryName: 'Ghana',
+    region: 'Sub-Saharan Africa',
+    currencyCode: 'GHS',
+    focusTheme: 'Recovery from the 2022 default, gold and cocoa earnings and an IMF programme',
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
+  },
+  {
+    iso3: 'PAK',
+    countryName: 'Pakistan',
+    region: 'South Asia',
+    currencyCode: 'PKR',
+    focusTheme: 'An IMF programme, low reserves, energy sector debts and inflation',
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
+  },
+  {
+    iso3: 'BGD',
+    countryName: 'Bangladesh',
+    region: 'South Asia',
+    currencyCode: 'BDT',
+    focusTheme: 'Garment exports, low reserves, weak banks and an IMF programme',
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
+  },
+  {
+    iso3: 'PHL',
+    countryName: 'Philippines',
+    region: 'Asia-Pacific',
+    currencyCode: 'PHP',
+    focusTheme: 'Money sent home by workers abroad, food prices and typhoon risk',
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
+  },
+  {
+    iso3: 'VNM',
+    countryName: 'Viet Nam',
+    region: 'Asia-Pacific',
+    currencyCode: 'VND',
+    focusTheme: 'Exports to the United States, tariffs and property sector debt',
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
+  },
+  {
+    iso3: 'MMR',
+    countryName: 'Myanmar',
+    region: 'Asia-Pacific',
+    currencyCode: 'MMK',
+    focusTheme: 'Civil conflict, sanctions and more than one exchange rate for the kyat',
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
+  },
+  {
+    iso3: 'BOL',
+    countryName: 'Bolivia',
+    region: 'Latin America',
+    currencyCode: 'BOB',
+    focusTheme: 'Falling gas exports, a shortage of dollars and the fixed boliviano rate',
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
   },
 ];
 
@@ -289,6 +432,13 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
  * African Union are members too but are blocs, not countries, so they are not on this list.
  */
 export const G20_ISO3 = ['ARG', 'AUS', 'BRA', 'CAN', 'CHN', 'FRA', 'DEU', 'IND', 'IDN', 'ITA', 'JPN', 'KOR', 'MEX', 'RUS', 'SAU', 'ZAF', 'TUR', 'GBR', 'USA'];
+
+/**
+ * Fifteen of the most populous countries in the World Bank's low and lower-middle income groups
+ * (fiscal year 2026), largest first, spread across Africa, the Middle East, South Asia, East Asia
+ * and Latin America. Chosen by the maintainer on 17 November 2026 (LI2).
+ */
+export const LOWER_INCOME_ISO3 = ['IND', 'PAK', 'NGA', 'BGD', 'ETH', 'EGY', 'PHL', 'COD', 'VNM', 'TZA', 'KEN', 'MMR', 'UGA', 'GHA', 'BOL'];
 
 /** ISO-3 codes that have a free official 10Y yield feed (FRED, Brazil Treasury). Turkey needs a key. */
 const OFFICIAL_YIELD_GROUP_ISO3 = ['BRA', 'MEX', 'ZAF', 'POL', 'CHL', 'GBR', 'JPN'];
@@ -345,6 +495,14 @@ export const DEFAULT_WATCHLISTS: WatchlistGroup[] = [
     description: 'Countries whose 10-year government bond yield comes from a free official source (FRED or the Brazil Treasury), not a sample figure.',
     isCustom: false,
     items: OFFICIAL_YIELD_GROUP_ISO3.map((iso3) => SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)!),
+  },
+  {
+    id: 'wl_lower_income',
+    name: 'Lower-income countries',
+    description:
+      'Fifteen of the most populous countries the World Bank classes as low or lower-middle income, spread across Africa, the Middle East, South Asia, East Asia and Latin America. Fewer sources cover them, so more figures read Missing; each one says why.',
+    isCustom: false,
+    items: LOWER_INCOME_ISO3.map((iso3) => SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)!),
   },
 ];
 
