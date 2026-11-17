@@ -5,6 +5,8 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Size limits raised (Sam): start-up 520 KB compressed (was 465), whole app 9 MB (was 7.5).
+
 - Quant desk in Council chat (research tools item 2): with research tools set up, a desk agent
   "Quant desk" joins a chat question that asks for a backtest, forecast, volatility, nowcast, option
   price, drawdown or Sharpe, or when the AI model picks it. It calls only tools the server lists for

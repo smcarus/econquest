@@ -17,7 +17,7 @@ The same rules hold for every change:
   a licence row, plain-language help at each help level, and its words in English, Spanish, French and Portuguese.
 - **New data is fetched by the daily download**, not when a page opens, so no page waits on a website.
 - **New screens load only when opened**, and each language downloads only when picked, so the app
-  stays within its size limits (465 KB compressed at start-up, 7.5 MB in all).
+  stays within its size limits (520 KB compressed at start-up, 9 MB in all).
 
 ## Done so far
 
