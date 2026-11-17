@@ -253,6 +253,8 @@ export interface PlainBrief {
   researchOnly: boolean;
   /** PK8: the policy or market council parts that are up to date with the frame. */
   council?: { heading: string; lines: string[] };
+  /** R7: what this means for people (src/utils/peopleSummary.ts), when it was worked out. */
+  people?: { heading: string; lines: string[] };
 }
 
 const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k) => String(v[k] ?? ''));
@@ -342,7 +344,7 @@ export function councilBrief(review: Pick<PolicyReview, 'steps' | 'councilParts'
   return { heading: market ? L.councilMarket : L.councilPolicy, lines };
 }
 
-export function plainBrief(review: Pick<PolicyReview, 'title' | 'steps'> & Partial<Pick<PolicyReview, 'councilParts'>>, inputs: MemoInputs, lang: BriefLang): PlainBrief {
+export function plainBrief(review: Pick<PolicyReview, 'title' | 'steps'> & Partial<Pick<PolicyReview, 'councilParts'>>, inputs: MemoInputs, lang: BriefLang, people?: PlainBrief['people']): PlainBrief {
   const L = BRIEF_TEXT[lang];
   const frame = review.steps.frame!.content as ReviewFrame;
   const d = review.steps.diagnose!.content as Diagnosis;
@@ -375,6 +377,7 @@ export function plainBrief(review: Pick<PolicyReview, 'title' | 'steps'> & Parti
     reviewDate: inputs.reviewDate,
     researchOnly: e.researchOnly,
     ...(frame.council ? { council: councilBrief(review, lang) } : {}),
+    ...(people ? { people } : {}),
   };
 }
 
@@ -406,6 +409,11 @@ export function briefLines(b: PlainBrief): BriefLine[] {
   out.push({ text: L.watch, kind: 'heading' });
   for (const w of b.watch) out.push({ text: w, kind: 'bullet' });
   out.push({ text: fill(L.lookAgain, { date: b.reviewDate }), kind: 'body' });
+  // R7: what this means for people, before the council parts (a long brief cuts from the end).
+  if (b.people) {
+    out.push({ text: b.people.heading, kind: 'heading' });
+    for (const l of b.people.lines) out.push({ text: l, kind: 'bullet' });
+  }
   // PK8: the council parts come last, so a long brief cuts them before the option and what to watch.
   if (b.council) {
     out.push({ text: b.council.heading, kind: 'heading' });

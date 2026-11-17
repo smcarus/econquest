@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import type { PeopleExtras } from '../utils/peopleSummary';
 import { ClipboardList, Download, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 import { COUNCIL_MAX_YEARS, COUNCIL_SIZE_LABEL, COUNCIL_SIZE_UNITS, MARKET_KINDS, MARKET_LABEL, type MarketKind, REVIEW_STEPS, STEP_HINT, STEP_LABEL, STEP_STATE_LABEL, type CouncilSizeUnit, type PolicyReview, type ReviewFrame, type ReviewStep, type ReviewSummary, type StepState } from '../utils/policyReview';
 import { GOAL_INDICATORS, type Diagnosis, type DiagnosisFigure } from '../utils/reviewDiagnosis';
@@ -670,6 +671,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
   const [busy, setBusy] = useState('');
   const [own, setOwn] = useState<UserOption[]>([]);
   const [prefill, setPrefill] = useState<{ frame: ReviewFrame; previousId?: string } | null>(null);
+  const [people, setPeople] = useState<{ id: string; heading: string; lines: string[] } | null>(null);
   const t = useT(REPORTS);
   const tx = useTx();
   const lang = useLang();
@@ -709,6 +711,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
 
   const open = async (id: string | null) => {
     setEditingFrame(false);
+    setPeople(null);
     if (!id) return setOpened(null);
     try {
       setOpened(await api<Opened>(`/api/reviews/${encodeURIComponent(id)}`));
@@ -1083,14 +1086,43 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                       title={t('pr_briefTitle')}
                       onClick={() =>
                         run('brief', async () => {
-                          const [{ plainBrief, plainBriefFileName, asBriefLang }, { plainBriefPdf }] = await Promise.all([import('../utils/plainBrief'), import('../utils/plainBriefPdf')]);
-                          const pdf = await plainBriefPdf(plainBrief(r, memo.inputs, asBriefLang(lang)), r.steps.memo!.savedAt, r.steps.memo!.hash);
+                          const [{ plainBrief, plainBriefFileName, asBriefLang }, { plainBriefPdf }, { peopleSummary }] = await Promise.all([import('../utils/plainBrief'), import('../utils/plainBriefPdf'), import('../utils/peopleSummary')]);
+                          // R7: the people section goes in when its figures can be read; the brief is made without it otherwise.
+                          const extras = await api<PeopleExtras>(`/api/reviews/${encodeURIComponent(r.id)}/people`).catch(() => null);
+                          const pp = extras ? peopleSummary(r, memo.inputs, extras, asBriefLang(lang), tx) : undefined;
+                          const pdf = await plainBriefPdf(plainBrief(r, memo.inputs, asBriefLang(lang), pp), r.steps.memo!.savedAt, r.steps.memo!.hash);
                           saveFile(plainBriefFileName(r.title, asBriefLang(lang)), pdf.bytes, 'application/pdf');
                         })
                       }
                     >
                       <Download className="w-3.5 h-3.5" /> {t('pr_brief')}
                     </button>
+                    <button
+                      type="button"
+                      className="ui-btn"
+                      data-review-people="true"
+                      title={t('pr_peopleTitle')}
+                      onClick={() =>
+                        run('people', async () => {
+                          const [{ peopleSummary }, { asBriefLang }] = await Promise.all([import('../utils/peopleSummary'), import('../utils/plainBrief')]);
+                          const extras = await api<PeopleExtras>(`/api/reviews/${encodeURIComponent(r.id)}/people`);
+                          setPeople({ id: r.id, ...peopleSummary(r, memo.inputs, extras, asBriefLang(lang), tx) });
+                        })
+                      }
+                    >
+                      {t('pr_people')}
+                    </button>
+                  </div>
+                )}
+                {memo && people?.id === r.id && (
+                  <div className="border border-slate-200 dark:border-slate-700 rounded p-3 space-y-1" data-review-people-text="true">
+                    <p className="text-sm font-medium">{people.heading}</p>
+                    <ul className="list-disc pl-4 text-sm space-y-0.5">
+                      {people.lines.map((l) => (
+                        <li key={l}>{l}</li>
+                      ))}
+                    </ul>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{t('pr_peopleNote')}</p>
                   </div>
                 )}
               </div>
