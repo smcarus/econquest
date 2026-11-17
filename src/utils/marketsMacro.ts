@@ -49,8 +49,8 @@ export const INFLATION_TARGETS: Record<string, InflationTarget> = {
   JPN: { pct: 2, bank: 'Bank of Japan', url: 'https://www.boj.or.jp/en/mopo/outline/qqe.htm', checked: true },
   BRA: { pct: 3, bandPts: 1.5, bank: 'BCB', url: 'https://www.bcb.gov.br/en/monetarypolicy/inflationtargeting', checked: false },
   MEX: { pct: 3, bandPts: 1, bank: 'Banxico', url: 'https://www.banxico.org.mx/monetary-policy/inflation-target.html', checked: false },
-  // The rest of the G20, read on each bank's own page on 2026-11-07. India's page could not be
-  // found that day, so it carries the published 4% (2-6%) target and says so. Argentina, China
+  // The rest of the G20, read on each bank's own page on 2026-11-07. India's page was read
+  // 2026-11-17 (below). Argentina, China
   // and Saudi Arabia have no stated central bank inflation target, so none is filed for them.
   USA: { pct: 2, bank: 'Federal Reserve (PCE prices)', url: 'https://www.federalreserve.gov/faqs/economy_14400.htm', checked: true },
   CAN: { pct: 2, bandPts: 1, bank: 'Bank of Canada', url: 'https://www.bankofcanada.ca/rates/indicators/key-variables/inflation-control-target/', checked: true },
@@ -60,7 +60,13 @@ export const INFLATION_TARGETS: Record<string, InflationTarget> = {
   DEU: { pct: 2, bank: 'ECB', url: 'https://www.ecb.europa.eu/mopo/strategy/html/index.en.html', checked: true },
   FRA: { pct: 2, bank: 'ECB', url: 'https://www.ecb.europa.eu/mopo/strategy/html/index.en.html', checked: true },
   ITA: { pct: 2, bank: 'ECB', url: 'https://www.ecb.europa.eu/mopo/strategy/html/index.en.html', checked: true },
-  IND: { pct: 4, bandPts: 2, bank: 'Reserve Bank of India', url: 'https://www.rbi.org.in/', checked: false },
+  // Read 2026-11-17: India's government-notified target, retained on 2026-03-25 for April 2026 to
+  // March 2031; Ghana's target from the Bank of Ghana's framework page. Kenya (set each year by the
+  // Treasury, no figure on the pages read), Tanzania ("within a 5 percent range" over 3-5 years, not
+  // a point target) and DR Congo (7% in a page summary, not a formal target) are not filed; nor are
+  // the other lower-income countries whose pages state no target or could not be read.
+  IND: { pct: 4, bandPts: 2, bank: 'Reserve Bank of India', url: 'https://www.rbi.org.in/scripts/FS_Overview.aspx?fn=2752', checked: true },
+  GHA: { pct: 8, bandPts: 2, bank: 'Bank of Ghana', url: 'https://www.bog.gov.gh/monetary-policy/our-monetary-policy-framework/', checked: true },
 };
 
 /**

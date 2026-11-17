@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Reference facts for the lower-income watchlist, read on each bank's own page on 2026-11-17:
+  Ghana's inflation target (8%, band 2 points) and India's target now linked to the RBI page that
+  states it; next central bank decision dates for Kenya, Ghana, Tanzania and India. Countries whose
+  pages state no target or date, or could not be read, are listed with the reason in
+  `src/data/officialCalendar.ts` and show "no date on file".
 - IMF monthly policy rates (LI4): countries the app does not take from the BIS policy-rate
   collection (for example Egypt, Nigeria, Kenya, Ghana, Pakistan, Bangladesh, Australia and Canada)
   now show the central bank policy rate from the IMF MFS_IR dataset on api.imf.org, monthly, with
