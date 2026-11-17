@@ -5,6 +5,15 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Lower-income countries watchlist (LI2): a new ready-made list of fifteen of the most populous
+  countries the World Bank classes as low or lower-middle income (India, Pakistan, Nigeria,
+  Bangladesh, Ethiopia, Egypt, the Philippines, DR Congo, Viet Nam, Tanzania, Kenya, Myanmar,
+  Uganda, Ghana, Bolivia), offered once to existing users. The thirteen not already in the app join
+  its country list (names and plain-language topics only; every figure comes from a feed), so the
+  start-up download and the daily run cover them. Their UN Comtrade reporter codes are the standard
+  M49 codes, not yet checked against a live reply. No central bank inflation targets are filed for
+  them yet.
+
 - Countries you add in the daily download (LI1): the server now reads the countries you added
   (Menu > Add a country) from the shared workspace and each account's own, and puts them in its
   country list. The start-up download and the daily run save them like the built-in countries, so

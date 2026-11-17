@@ -117,6 +117,12 @@ When no feed has answered for the watchlist it reads Missing with that reason, n
 
 **Watchlist.** A compact card with your list, under Your inputs; the open country is marked *Open* and countries in your imported holdings are marked *Held*. *Pop out* opens the full table in its own window,
 with your choice of columns; *Edit* adds or removes countries and switches lists.
+The ready-made lists are the G20 members (the one the app opens with), an emerging-market fiscal
+watch, shipping chokepoints, a carry monitor, countries with an official 10Y yield, and
+*Lower-income countries*: fifteen of the most populous countries the World Bank classes as low or
+lower-middle income (India, Pakistan, Nigeria, Bangladesh, Ethiopia, Egypt, the Philippines, DR
+Congo, Viet Nam, Tanzania, Kenya, Myanmar, Uganda, Ghana and Bolivia). Fewer sources cover these
+countries, so more of their figures read Missing, each with the reason.
 
 **Council chat.** A chat with the council. Type a question in the box at the bottom, or pick one of
 the suggestions. Your question appears as a message, and the council answers in the chat: the

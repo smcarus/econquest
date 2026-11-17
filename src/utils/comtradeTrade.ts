@@ -49,6 +49,21 @@ export const COMTRADE_REPORTERS: Record<string, number> = {
   KOR: 410,
   RUS: 643,
   SAU: 682,
+  // Lower-income countries (LI2, 2026-11-17): the standard M49 codes, not yet checked against a
+  // live Comtrade reply.
+  NGA: 566,
+  ETH: 231,
+  COD: 180,
+  TZA: 834,
+  KEN: 404,
+  UGA: 800,
+  GHA: 288,
+  PAK: 586,
+  BGD: 50,
+  PHL: 608,
+  VNM: 704,
+  MMR: 104,
+  BOL: 68,
 };
 
 /** Partners the scenarios ask about. Comtrade files Taiwan as "Other Asia, nes" (490). */
