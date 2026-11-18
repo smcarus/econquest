@@ -688,7 +688,7 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
     }
     case 'world:imf_policy': {
       const got = await fetchImfPolicyPull({ force: true });
-      if (!got) return { outcome: 'failed', note: 'The IMF did not answer for monthly policy rates (npm run check:data, row imf_policy, shows why)' };
+      if (!got) return { outcome: 'failed', note: 'No IMF monthly policy rate was saved (npm run check:data, row imf_policy, shows why)' };
       const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
       const months = Object.values(got.series).map((s) => s.points[s.points.length - 1]?.period || '');
       const note = `${Object.keys(got.series).length} countries to ${months.sort().pop() || '?'}`;
@@ -696,7 +696,7 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
     }
     case 'world:imf_fx': {
       const got = await fetchImfFxPull(fxHistoryCurrencies(loadFxHistory()), { force: true });
-      if (!got) return { outcome: 'failed', note: 'The IMF did not answer for monthly exchange rates (npm run check:data, row imf_fx, shows why)' };
+      if (!got) return { outcome: 'failed', note: 'No IMF monthly exchange rate was saved (npm run check:data, row imf_fx, shows why)' };
       const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
       const months = Object.values(got.series).map((s) => s.points[s.points.length - 1]?.period || '');
       const note = `${Object.keys(got.series).length} countries to ${months.sort().pop() || '?'}`;

@@ -140,3 +140,23 @@ test('IMF FX: a saved copy of another shape is not read; the daily run and check
   assert.ok(PRELOAD_WORLD_STEPS.findIndex((s) => s.id === 'world:imf_fx') > ecb, 'after the ECB run, so its currencies are known');
   assert.ok(CONNECTION_IDS.includes('imf_fx' as never));
 });
+
+test('IMF FX: a live reply without dimension names or with day-dated months is still read', async () => {
+  const bare = data([{ dims: ['NGA', 'USD_XDC', 'PA_RT', 'M'], obs: [['2026-09-01', 1520.4], ['2026-10-01', 1498.1]] }]) as {
+    data: { structures: Array<{ dimensions: { series: Array<{ values: Array<{ id: string; name?: string }> }> } }> };
+  };
+  for (const d of bare.data.structures[0].dimensions.series) for (const v of d.values) delete v.name;
+  const fetchFn = async (u: string) => reply(u.includes('/structure/') ? structure : bare);
+  const r = await pullImfMonthly(IMF_FX_SPEC, { fetchFn: fetchFn as never }, 'NGA');
+  assert.equal(r.step.ok, true, r.step.note);
+  assert.deepEqual(r.series!.points.map((p) => p.period), ['2026-09', '2026-10']);
+  // With the .env key and no structure read, the key itself says which series it is.
+  const own = await pullImfMonthly(IMF_FX_SPEC, { fetchFn: fetchFn as never, env: { IMF_FX_KEY: '{ISO3}.USD_XDC.PA_RT.M' } }, 'NGA');
+  assert.equal(own.step.ok, true, own.step.note);
+});
+
+test('IMF FX: a series that is not monthly says so in the reason', async () => {
+  const fetchFn = async (u: string) => reply(u.includes('/structure/') ? structure : data([{ dims: ['NGA', 'USD_XDC', 'PA_RT', 'M'], obs: [['2025', 1480]] }]));
+  const r = await pullImfMonthly(IMF_FX_SPEC, { fetchFn: fetchFn as never }, 'NGA');
+  assert.match(r.step.note, /none that fits \(no monthly figures \(periods such as 2025\)\)/);
+});
