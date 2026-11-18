@@ -5,7 +5,8 @@ import { langInfo, nextLang, writeLang } from '../i18n/lang';
 import { useLang, useT } from '../i18n/useLang';
 import { SHELL } from '../i18n/messages/shell';
 
-export const LanguageButton: React.FC = () => {
+/** `labelled` shows the full language name (used in the Menu on a phone). */
+export const LanguageButton: React.FC<{ labelled?: boolean }> = ({ labelled = false }) => {
   const lang = useLang();
   const t = useT(SHELL);
   const info = langInfo(lang);
@@ -22,7 +23,7 @@ export const LanguageButton: React.FC = () => {
       className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap"
     >
       <Languages className="w-3.5 h-3.5" aria-hidden />
-      <span>{info.short}</span>
+      <span>{labelled ? info.name : info.short}</span>
     </button>
   );
 };
