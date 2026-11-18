@@ -56,7 +56,12 @@ español.
    modelo de IA, sus posiciones y su investigación guardada. Pulse una línea para cambiarla.
 3. Añada primero la clave gratuita de **FRED** (Menú > Configuración > Claves de datos gratuitos).
    Rellena los rendimientos oficiales de los bonos a 10 años de varios países.
-4. Pulse **Editar** en la tarjeta de la lista de seguimiento para añadir o quitar países.
+4. Pulse **Editar** en la tarjeta de la lista de seguimiento para añadir o quitar países. Para seguir
+   economías más pobres, elija la lista **Países de ingreso bajo**: los 15 mayores por región, de India
+   y Nigeria a Ghana y Bolivia. Un país que no está en la lista de la aplicación se puede añadir con
+   **Añadir un país** (en **Investigación > Un país**, o en el editor de la lista); desde la siguiente
+   descarga diaria se guarda como los demás, con historia, vistas "a una fecha" y alertas (hasta 25
+   países añadidos; los demás se nombran en **Menú > Datos sin conexión** con el motivo).
 5. Elija un modelo de IA si quiere resúmenes escritos ([sección 8](#8-elegir-un-modelo-de-ia)). Todo lo
    demás funciona sin él.
 
@@ -293,6 +298,15 @@ años discontinuos se basan en proyecciones del FMI.
 4. MarketEdge, la exposición a escenarios y el balance de la Fed son partes separadas; **Donde los datos y
    el precio no coinciden** muestra cuatro países hasta que pulsa **Mostrar todo**.
 5. Pulse el nombre de un país para abrirlo por separado.
+
+En los países de ingreso bajo, algunas cifras vienen de fuentes más lentas y lo dicen en su etiqueta.
+Donde no hay tipo de cambio diario de un banco central o del BCE (por ejemplo el naira, el chelín
+keniano o el cedi), el gráfico histórico muestra el tipo medio mensual del FMI por dólar
+estadounidense. Donde el BPI no publica el tipo oficial de un país (por ejemplo Egipto, Nigeria, Kenia
+o Pakistán), la lista de seguimiento y la página del país muestran la cifra mensual del FMI, marcada
+"FMI, mensual" con su mes; aparece como Missing si tiene más de cuatro meses. Las metas de inflación y
+las fechas de decisión de los bancos centrales solo aparecen donde la página del propio banco las
+indica, así que muchos de estos países no muestran ninguna fecha.
 
 **Mis posiciones**, la tercera vista, hace lo mismo con una lista de bonos o posiciones que usted carga
 desde un archivo CSV.

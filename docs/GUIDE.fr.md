@@ -55,7 +55,13 @@ tels qu'ils apparaissent avec l'application en français.
    le modèle d'IA, vos positions et vos recherches enregistrées. Appuyez sur une ligne pour la modifier.
 3. Ajoutez d'abord la clé gratuite **FRED** (Menu > Réglages > Clés de données gratuites). Elle fournit
    les rendements officiels des obligations d'État à 10 ans de plusieurs pays.
-4. Appuyez sur **Modifier** sur la carte de la liste de suivi pour ajouter ou retirer des pays.
+4. Appuyez sur **Modifier** sur la carte de la liste de suivi pour ajouter ou retirer des pays. Pour
+   suivre les économies plus pauvres, choisissez la liste **Pays à faible revenu** : les 15 plus grands
+   par région, de l'Inde et du Nigeria au Ghana et à la Bolivie. Un pays absent de la liste de
+   l'application s'ajoute avec **Ajouter un pays** (dans **Recherche > Un pays**, ou dans l'éditeur de
+   la liste) ; dès le téléchargement quotidien suivant, il est enregistré comme les autres, avec
+   historique, vues « à une date » et alertes (jusqu'à 25 pays ajoutés ; les autres sont nommés dans
+   **Menu > Données hors ligne** avec la raison).
 5. Choisissez un modèle d'IA si vous voulez des synthèses rédigées ([section 8](#8-choisir-un-modèle-dia)).
    Tout le reste fonctionne sans.
 
@@ -298,6 +304,16 @@ années en pointillés reposent sur des projections du FMI.
 4. MarketEdge, l'exposition aux scénarios et le bilan de la Fed sont des parties séparées ; **Là où
    données et prix divergent** montre quatre pays jusqu'à ce que vous appuyiez sur **Tout afficher**.
 5. Appuyez sur le nom d'un pays pour l'ouvrir seul.
+
+Pour les pays à faible revenu, certains chiffres viennent de sources plus lentes et le disent sur leur
+étiquette. Là où il n'existe pas de taux de change quotidien d'une banque centrale ou de la BCE (par
+exemple le naira, le shilling kényan ou le cedi), le graphique historique montre le taux moyen mensuel
+du FMI par dollar américain. Là où la BRI ne publie pas le taux directeur d'un pays (par exemple
+l'Égypte, le Nigeria, le Kenya ou le Pakistan), la liste de suivi et la page du pays montrent le chiffre
+mensuel du FMI, étiqueté « FMI, mensuel » avec son mois ; il s'affiche Missing s'il date de plus de
+quatre mois. Les cibles d'inflation et les dates de décision des banques centrales n'apparaissent que
+là où la page de la banque elle-même les indique, si bien que beaucoup de ces pays
+n'affichent aucune date.
 
 **Mes positions**, la troisième vue, fait de même pour une liste d'obligations ou de positions que vous
 chargez depuis un fichier CSV.

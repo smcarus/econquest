@@ -1,6 +1,6 @@
 # EconQuest Terminal: Methodology
 
-**Version 1.4, 17 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of release 0.1.0.
+**Version 1.5, 17 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of release 0.2.0.
 Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not validated advice.
 
 This document sets out how the EconQuest Terminal sources its data, how its council of agents
@@ -176,7 +176,7 @@ what each fills, its address, how long it is cached and how to set it up is in
 
 | Group | Examples |
 | --- | --- |
-| Free feeds, no key | World Bank (indicators, governance, debt statistics, Pink Sheet commodity prices, remittances and remittance prices, Global Findex, aid received as republished from the OECD DAC, food security), IMF (World Economic Outlook, reserves and balance of payments, COFER), BIS (policy rates, real exchange rates, debt securities, credit gap, central bank total assets, US dollar credit to non-banks), OECD (via DBnomics), ECB reference rates, Eurostat, CFTC Commitments of Traders, US Treasury, New York Fed (rates and dollar swap lines), NASA POWER (weather at each capital since 1981), World Bank Climate Change Knowledge Portal (CRU TS country weather since 1901), UN Comtrade, WITS, national central banks (for example BCB, BCRP), GDELT, Polymarket and Kalshi odds (Kalshi CPI market snapshots saved before each US CPI release for the data surprises), World Bank Projects and Operations API and the IDA statement of credits, World Bank budget outturn from PEFA assessments (GF.XPD.BUDG.ZS), the DOSE regional output dataset (Zenodo, CC BY 4.0), Eurostat regional accounts and labour force survey (NUTS 2), the US Treasury daily par yield curve, the ECB euro area government yield curve, BLS consumer prices |
+| Free feeds, no key | World Bank (indicators, governance, debt statistics, Pink Sheet commodity prices, remittances and remittance prices, Global Findex, aid received as republished from the OECD DAC, food security), IMF (World Economic Outlook, reserves and balance of payments, COFER, monthly exchange rates and monthly policy rates where no daily or BIS figure exists), BIS (policy rates, real exchange rates, debt securities, credit gap, central bank total assets, US dollar credit to non-banks), OECD (via DBnomics), ECB reference rates, Eurostat, CFTC Commitments of Traders, US Treasury, New York Fed (rates and dollar swap lines), NASA POWER (weather at each capital since 1981), World Bank Climate Change Knowledge Portal (CRU TS country weather since 1901), UN Comtrade, WITS, national central banks (for example BCB, BCRP), GDELT, Polymarket and Kalshi odds (Kalshi CPI market snapshots saved before each US CPI release for the data surprises), World Bank Projects and Operations API and the IDA statement of credits, World Bank budget outturn from PEFA assessments (GF.XPD.BUDG.ZS), the DOSE regional output dataset (Zenodo, CC BY 4.0), Eurostat regional accounts and labour force survey (NUTS 2), the US Treasury daily par yield curve, the ECB euro area government yield curve, BLS consumer prices |
 | Free with the user's own key | FRED and ALFRED (St. Louis Fed), US EIA |
 | Free files the user downloads | IMF WEO past editions, Caldara-Iacoviello Geopolitical Risk index, Chinn-Ito capital account openness index, OFAC and UN sanctions lists, UCDP conflict data (one release ships with the code under CC BY 4.0), ACLED aggregated files, NOAA IBTrACS tropical cyclone tracks (downloaded only when the user presses the button, or read from a file the user saves). Read from `data/local/` and never shipped, because their terms are unconfirmed or forbid passing them on: FAOSTAT Consumer Price Indices, EM-DAT disasters (each user's own account), IMF Fiscal Rules Dataset, Database of Political Institutions 2020, IMF investor base workbook, the Ilzetzki-Reinhart-Rogoff exchange rate regime workbook, the Global Data Lab subnational Human Development Index (non-commercial terms), central bank statements the user saves, and the user's own budget execution file. The full table is in [INSTALL.md](./INSTALL.md#files-you-save-yourself) |
 | The user's own paid data (off by default) | Their own CDS file or their own LSEG account |
@@ -210,7 +210,14 @@ The rule is applied without exception. Examples of what reads Missing today, and
 - **Credit ratings, PMIs, government bond auction results outside the United States and consensus
   forecasts** have no free source that the terminal can use, so they read Missing. (US Treasury
   auction results come from the Treasury's Fiscal Data API.)
-- **Egypt's policy rate** is not in the BIS dataset, so it reads Missing.
+- **Policy rates outside the BIS dataset** (for example Egypt, Nigeria, Kenya) come from the IMF's
+  monthly Monetary and Financial Statistics, labelled "IMF, monthly" with the month. The series is
+  found by the IMF's code names and every figure carries its IMF series key. When the IMF has no
+  figure, or the latest is more than four months old, the rate reads Missing. Signals and tests
+  registered on BIS policy rates keep reading the BIS only, so their registered inputs do not change.
+- **Inflation targets and central bank decision dates** are filed only where the bank's own page
+  states them, with the page and the date it was read. A range stated over several years or a figure
+  in a summary is not filed as a target.
 
 Where an AI model writes the council's final report and leaves a field empty, the field reads
 Missing; template text is never shown as a result (`src/utils/councilResult.ts`).
@@ -857,7 +864,8 @@ The terminal states what it cannot do. In particular:
 
 - **No free source, so Missing:** sovereign CDS (hidden; a USD bond spread stands in, labelled as
   such), credit ratings, PMIs, government bond auction results outside the United States, consensus
-  forecasts, and some countries' series (for example Egypt's policy rate).
+  forecasts, and some countries' series (for example inflation targets and decision dates for many
+  lower-income countries; policy rates for these countries are monthly, from the IMF).
 - **Revised data.** Where real-time vintages are not available, tests use today's revised data and
   say so. OECD figures obtained through DBnomics can lag the official release by about five months.
 - **Small samples.** Many emerging-market series are short and stress episodes cluster. Results from a
@@ -969,8 +977,9 @@ Per-model references are given in the [Methods note](./METHODS.md).
 | 1.2 | 13 November 2026 | Sources and the files you save (3.1), statistics conventions in the charts and tables (7.4), figures served to outside systems and hypothetical scenario estimates (3.8), the audit seal and locked copies (4.5), the country risk scorecard listed as Not validated with its registered default test (5, 14), scenario limits (14). The short version corrected: the council's chat agents are fixed code, and only the summary writer is an AI model |
 | 1.3 | 14 November 2026 | New sources in 3.1 (BIS central bank assets and dollar credit, New York Fed swap lines, NASA POWER, the World Bank climate portal, IBTrACS, the exchange rate regime workbook); the policy council (5.2); weather, disasters and parametric insurance (5.3); short-record limits of those tools (14); references for L-moments, IBTrACS, the exchange rate regime classification and the official discount rates |
 | 1.4 | 17 November 2026 | New sources in 3.1 (World Bank projects and IDA credits, PEFA budget outturn, DOSE and Eurostat regional figures, the Global Data Lab file, US Treasury and ECB yield curves, BLS prices, Kalshi CPI snapshots, the user's budget file); Council chat questions over the API and figures from an outside research-tools server (3.8, 3.9); the Chart Agent, Scenario Agent and Quant desk in 4.1, with the eight-section what-if answer; the Scenario Agent (5.4); the tools for five kinds of users (5.5); limits of what-if answers, the new tools and outside figures (14); references for the shock studies, DOSE, PEFA and the Nelson-Siegel-Svensson curve |
+| 1.5 | 17 November 2026 | Release 0.2.0. IMF monthly exchange rates and policy rates where no daily or BIS figure exists (3.1, 3.3); inflation targets and decision dates filed only from banks' own pages (3.3); countries the user adds are part of the daily download; limits for lower-income countries (14) |
 
 ---
 
-*EconQuest Terminal methodology, version 1.4 (17 November 2026). Text licensed under CC BY 4.0: you may
+*EconQuest Terminal methodology, version 1.5 (17 November 2026). Text licensed under CC BY 4.0: you may
 share and adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*
