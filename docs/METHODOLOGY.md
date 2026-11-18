@@ -215,6 +215,10 @@ The rule is applied without exception. Examples of what reads Missing today, and
   found by the IMF's code names and every figure carries its IMF series key. When the IMF has no
   figure, or the latest is more than four months old, the rate reads Missing. Signals and tests
   registered on BIS policy rates keep reading the BIS only, so their registered inputs do not change.
+  The policy rate forecast uses the IMF monthly rate for these countries when its latest month is
+  four months old or less, and the inflation nowcast and forecast use the IMF monthly consumer
+  prices where no OECD or national series exists. The registered forecast evaluations score only
+  the OECD and BIS series, so these paths are not part of any recorded verdict.
 - **Inflation targets and central bank decision dates** are filed only where the bank's own page
   states them, with the page and the date it was read. A range stated over several years or a figure
   in a summary is not filed as a target.

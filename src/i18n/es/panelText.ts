@@ -103,6 +103,8 @@ export const PANEL_TEXT_ES: Record<string, string> = {
   'The BIS daily policy rate history did not answer': 'La serie diaria de tipos de política del BPI no respondió',
   'This central bank is not in the BIS policy rate data': 'Este banco central no figura en los datos de tipos de política del BPI',
   'The BIS publishes no policy rate for this country.': 'El BPI no publica tipo de política para este país.',
+  "The BIS publishes no policy rate for this country, and no IMF monthly policy rate is saved for it.": "El BPI no publica tipo de política para este país, y no hay guardado ningún tipo de política mensual del FMI para él.",
+  "The BIS publishes no policy rate for this country, and the IMF's latest monthly figure is from {date}, more than {n} months ago.": "El BPI no publica tipo de política para este país, y la última cifra mensual del FMI es de {date}, hace más de {n} meses.",
   'The US dollar is the base currency': 'El dólar de EE. UU. es la moneda base',
   'The US dollar is the base currency, so there is no exchange rate against it to study':
     'El dólar de EE. UU. es la moneda base, así que no hay tipo de cambio frente a él que estudiar',

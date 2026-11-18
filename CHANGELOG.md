@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Nowcasts and forecasts for the lower-income countries: the inflation nowcast and forecast now use
+  the IMF monthly consumer prices when neither the OECD nor a national series covers the country
+  (until now the 13 new countries read "No monthly inflation series"), and the policy rate forecast
+  uses the IMF monthly policy rate for countries the BIS does not cover, when its latest month is
+  four months old or less; otherwise it says why. Each path names the IMF series it came from. The
+  registered forecast evaluations keep their OECD and BIS inputs, so their verdicts do not change.
+
 - IMF monthly exchange rates and policy rates: the first live check (17 November) found the right
   IMF codes for every country but took no series, because the live replies leave the code names out.
   Names now come from the IMF structure where the reply leaves them out, a series returned under the

@@ -66,7 +66,9 @@ import { parseAsOfDate } from '../../utils/asOf';
 import { decisionsFrom, replayDecision, replaySentence } from '../../utils/decisionReplay';
 import { INFLATION_TARGETS } from '../../utils/marketsMacro';
 import { qnaFor, QNA_LABEL } from '../../utils/oecdQna';
-import { loadModelHistory, MODEL_HISTORY_MAX_AGE_MS, pullModelHistory, saveModelHistory, spliceInflation, type ModelHistory } from '../../utils/modelHistory';
+import { inflationRunOrImf, loadModelHistory, MODEL_HISTORY_MAX_AGE_MS, pullModelHistory, saveModelHistory, spliceInflation, type ModelHistory } from '../../utils/modelHistory';
+import { imfPolicyForecastInput } from '../../utils/imfPolicyRate';
+import { loadImfCpi, loadImfPolicy } from '../feeds/imf';
 import { cpiNowcast, gdpNowcast, nowcastSentence } from '../../utils/nowcast';
 import { forecastSentence, forecastSeries, withImf, type ForecastOutcome } from '../../utils/forecasts';
 import { loadForecastValidation } from '../../utils/forecastEvalRun';
@@ -894,7 +896,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const gdpPts = qnaFor(iso3, qna?.series)?.qoq ?? [];
     const act = activity?.series?.[iso3];
     const cliPts = areaSeries(iso3, hist?.cli ?? undefined);
-    const cpiRun = spliceInflation(areaSeries(iso3, hist?.cpi ?? undefined)?.points, nationalCpi?.series?.[iso3]);
+    const cpiRun = inflationRunOrImf(spliceInflation(areaSeries(iso3, hist?.cpi ?? undefined)?.points, nationalCpi?.series?.[iso3]), loadImfCpi()?.series?.[iso3]);
     const inputs = {
       iso3,
       asOf,
@@ -931,7 +933,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       return s && 'points' in s ? { points: s.points, source: s.source, pulledAt: s.pulledAt } : null;
     };
     const gdpPts = qnaFor(iso3, qna?.series)?.qoq ?? [];
-    const cpiRun = spliceInflation(areaSeries(iso3, hist?.cpi ?? undefined)?.points, nationalCpi?.series?.[iso3]);
+    const cpiRun = inflationRunOrImf(spliceInflation(areaSeries(iso3, hist?.cpi ?? undefined)?.points, nationalCpi?.series?.[iso3]), loadImfCpi()?.series?.[iso3]);
     const area = CBPOL_AREA[iso3];
     const pol = area ? hist?.policyMonthly?.[area]?.points : undefined;
     const debt = imfSeries('debt_gdp');
@@ -943,8 +945,10 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       withImf(forecastSeries('debt_gdp', debt ? { points: debt.points.filter((p) => p.note !== 'IMF projection'), source: debt.source, label: 'Government debt, % of GDP', pulledAt: debt.pulledAt } : null), debt),
     ];
     if (!area) {
+      // Not a BIS country: the IMF monthly policy rate (LI4) when it is recent, else the reason.
       const i = out.findIndex((r) => r.id === 'policy_rate');
-      out[i] = { ok: false, id: 'policy_rate', reason: 'The BIS publishes no policy rate for this country.' };
+      const imf = imfPolicyForecastInput(loadImfPolicy(), iso3);
+      out[i] = 'reason' in imf ? { ok: false, id: 'policy_rate', reason: imf.reason } : forecastSeries('policy_rate', { ...imf, label: 'Policy rate', pulledAt: loadImfPolicy()?.pulledAt });
     }
     const v = loadForecastValidation(path.join(DATA_DIR, 'local', 'validation', 'forecasts.json'));
     const validation = Object.fromEntries(Object.values(v.results).map((r) => [r.id, { status: r.status, verdict: r.verdict, ranAt: r.ranAt }]));
