@@ -50,7 +50,11 @@ export const ResearchCompare: React.FC<{
   onSection: (id: ResearchSectionId) => void;
   /** Opens one country under Research > One country, on the given country tab. */
   onOpenCountry: (item: LiveWatchlistItem, tab?: string) => void;
-}> = ({ run, watchlistName, watchlistItems, section, onSection, onOpenCountry }) => {
+  /** Every watchlist, so the page can switch to another (e.g. Lower-income countries) in place. */
+  watchlists?: Array<{ id: string; name: string; items: unknown[] }>;
+  activeWatchlistId?: string;
+  onSelectWatchlist?: (id: string) => void;
+}> = ({ run, watchlistName, watchlistItems, section, onSection, onOpenCountry, watchlists = [], activeWatchlistId, onSelectWatchlist }) => {
   const t = useT(RESEARCH);
   const [lastLook] = useState(loadLastVisitRows);
   const anchors = useMarketEdgeAnchors();
@@ -74,6 +78,25 @@ export const ResearchCompare: React.FC<{
         title={watchlistName}
         subtitle={watchlistItems.length === 1 ? t('compareSubOne') : t('compareSubMany', { n: watchlistItems.length })}
         badge={<LiveCountBadge items={watchlistItems} />}
+        actions={
+          watchlists.length > 1 && onSelectWatchlist ? (
+            <label className="inline-flex items-center gap-1.5 ui-label">
+              <span>{t('compareList')}</span>
+              <select
+                value={activeWatchlistId}
+                onChange={(e) => onSelectWatchlist(e.target.value)}
+                className="px-1.5 py-1 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white max-w-[16rem]"
+                data-compare-watchlist="true"
+              >
+                {watchlists.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name} ({w.items.length})
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : undefined
+        }
         section={section}
         onSection={(id) => onSection(id as ResearchSectionId)}
       />

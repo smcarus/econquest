@@ -144,6 +144,8 @@ const FIG_KEY: Record<string, 'fig_debt' | 'fig_spread' | 'fig_yield' | 'fig_pol
 export const CountryPage: React.FC<{
   run: CouncilAssessmentRun;
   watchlistItems: WatchlistItem[];
+  /** Countries the app covers that are not on the open watchlist (src/utils/countryChoices.ts). */
+  otherCountries?: WatchlistItem[];
   activeTab: CountryTabId;
   onChangeTab: (tab: CountryTabId) => void;
   onSelectCountry: (item: WatchlistItem) => void;
@@ -157,6 +159,7 @@ export const CountryPage: React.FC<{
 }> = ({
   run,
   watchlistItems,
+  otherCountries = [],
   activeTab,
   onChangeTab,
   onSelectCountry,
@@ -214,17 +217,36 @@ export const CountryPage: React.FC<{
                   onAddCountry();
                   return;
                 }
-                const next = watchlistItems.find((w) => w.iso3 === e.target.value);
+                const next = watchlistItems.find((w) => w.iso3 === e.target.value) || otherCountries.find((w) => w.iso3 === e.target.value);
                 if (next) onSelectCountry(next);
               }}
               className="text-lg font-semibold text-slate-900 dark:text-white bg-transparent border border-slate-200 dark:border-slate-700 px-2 py-1 pr-7"
             >
-              {!item && <option value={run.iso3}>{run.countryName}</option>}
-              {watchlistItems.map((w) => (
-                <option key={w.iso3} value={w.iso3}>
-                  {w.countryName}
-                </option>
-              ))}
+              {!item && !otherCountries.some((w) => w.iso3 === run.iso3) && <option value={run.iso3}>{run.countryName}</option>}
+              {otherCountries.length ? (
+                <>
+                  <optgroup label={t('onWatchlist')}>
+                    {watchlistItems.map((w) => (
+                      <option key={w.iso3} value={w.iso3}>
+                        {w.countryName}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label={t('otherCountries')}>
+                    {otherCountries.map((w) => (
+                      <option key={w.iso3} value={w.iso3}>
+                        {w.countryName}
+                      </option>
+                    ))}
+                  </optgroup>
+                </>
+              ) : (
+                watchlistItems.map((w) => (
+                  <option key={w.iso3} value={w.iso3}>
+                    {w.countryName}
+                  </option>
+                ))
+              )}
               <option value="__add">{t('addCountry')}</option>
             </select>
             {/* On a phone, Refresh sits beside the country as an icon. */}
