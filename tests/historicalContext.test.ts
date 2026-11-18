@@ -33,3 +33,9 @@ test('units: share of GDP changes are points', () => {
   const c = historicalContext(yearly([50, 55, 60, 70]), 'annual')!;
   assert.match(contextSentence('Government debt', '% of GDP', c), /was 70% of GDP in 2003, the highest on record \(since 2000\).*up 10 points on 2002/);
 });
+
+test('a daily date reads "on", a month or year "in"', () => {
+  const c = { value: 13.75, date: '2026-11-03', first: '2024-10', observations: 26, percentile: 31 } as Parameters<typeof contextSentence>[2];
+  assert.match(contextSentence('Policy rate', '%', c), /^Policy rate was 13\.75% on 2026-11-03,/);
+  assert.match(contextSentence('Policy rate', '%', { ...c, date: '2026-10' }), /^Policy rate was 13\.75% in 2026-10,/);
+});

@@ -56,6 +56,7 @@ export const PANELS_PT: Messages<typeof PANELS> = {
   h_noHistory: "Ainda sem histórico",
   h_missingSuffix: ": Ausente. {reason}.",
   ctx_was: "{label} estava em {value} em {date}",
+  ctx_wasOn: "{label} estava em {value} no dia {date}",
   ctx_highestSince: "o mais alto desde {since}",
   ctx_lowestSince: "o mais baixo desde {since}",
   ctx_highestOnRecord: "o mais alto já registrado (desde {first})",

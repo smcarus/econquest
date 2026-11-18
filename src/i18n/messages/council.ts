@@ -12,7 +12,7 @@ export const COUNCIL = defineMessages('council', {
   newShort: 'New',
   close: 'Close',
   closeAria: 'Close Council chat',
-  welcome: 'What do you want to know about the Economy?',
+  welcome: 'What do you want to know about the economy?',
   welcomeNote: 'Agents answer from the app’s own figures, each with its source; with an AI model, a summary agent writes a short brief from their answers only.',
   // Shown only in languages other than English, so it is empty here.
   askInEnglish: '',

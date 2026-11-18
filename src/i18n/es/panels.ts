@@ -59,6 +59,7 @@ export const PANELS_ES: Partial<Record<Keys, string>> = {
   h_noHistory: 'Todavía sin historia',
   h_missingSuffix: ': falta. {reason}.',
   ctx_was: '{label} fue {value} en {date}',
+  ctx_wasOn: '{label} fue {value} el {date}',
   ctx_highestSince: 'el nivel más alto desde {since}',
   ctx_lowestSince: 'el nivel más bajo desde {since}',
   ctx_highestOnRecord: 'el más alto registrado (desde {first})',

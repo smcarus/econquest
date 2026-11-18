@@ -446,7 +446,7 @@ const OFFICIAL_YIELD_GROUP_ISO3 = ['BRA', 'MEX', 'ZAF', 'POL', 'CHL', 'GBR', 'JP
 export const DEFAULT_WATCHLISTS: WatchlistGroup[] = [
   {
     id: 'wl_g20',
-    name: 'G20 Members',
+    name: 'G20 members',
     description:
       "The Group of Twenty: 19 of the world's largest economies, whose leaders meet every year to agree on the world economy, trade and finance. The EU and the African Union are also members but are groups of countries, so they are not listed here.",
     isCustom: false,
@@ -454,8 +454,8 @@ export const DEFAULT_WATCHLISTS: WatchlistGroup[] = [
   },
   {
     id: 'wl_em_sovereign_core',
-    name: 'EM Sovereign Fiscal & Rollover Watch',
-    description: 'High-carry Emerging Market sovereigns sensitive to fiscal anchors, domestic debt rollover walls, and US real yields.',
+    name: 'Emerging markets: debt and refinancing',
+    description: 'Emerging-market governments that pay high interest and are sensitive to their budget rules, large amounts of debt falling due, and US interest rates after inflation.',
     isCustom: false,
     items: [
       SOVEREIGN_CATALOG[0], // BRA
@@ -467,8 +467,8 @@ export const DEFAULT_WATCHLISTS: WatchlistGroup[] = [
   },
   {
     id: 'wl_chokepoint_geopol',
-    name: 'Maritime Chokepoints & Tariff Flashpoints',
-    description: 'Sovereigns exposed to Red Sea / Suez shipping diversions, energy import shocks, and cross-border supply chain tariffs.',
+    name: 'Shipping routes and tariffs',
+    description: 'Countries exposed to ships avoiding the Red Sea and Suez, jumps in energy import prices, and tariffs on trade.',
     isCustom: false,
     items: [
       SOVEREIGN_CATALOG[2], // EGY
@@ -479,8 +479,8 @@ export const DEFAULT_WATCHLISTS: WatchlistGroup[] = [
   },
   {
     id: 'wl_g10_em_spillover',
-    name: 'Global Duration & Carry Unwind Monitor',
-    description: 'G10 funding markets and high-yielding EM destination markets vulnerable to volatility spikes.',
+    name: 'Low-rate lenders and high-rate borrowers',
+    description: 'Rich countries with low interest rates that investors borrow in, and emerging markets with high rates where that money goes, which can both move sharply when markets turn.',
     isCustom: false,
     items: [
       SOVEREIGN_CATALOG[6], // JPN
@@ -491,7 +491,7 @@ export const DEFAULT_WATCHLISTS: WatchlistGroup[] = [
   },
   {
     id: 'wl_official_yields',
-    name: 'Official 10Y Yields',
+    name: 'Official 10Y yields',
     description: 'Countries whose 10-year government bond yield comes from a free official source (FRED or the Brazil Treasury), not a sample figure.',
     isCustom: false,
     items: OFFICIAL_YIELD_GROUP_ISO3.map((iso3) => SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)!),

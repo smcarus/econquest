@@ -65,6 +65,7 @@ export const PANELS = defineMessages('panels', {
   h_noHistory: 'No history yet',
   h_missingSuffix: ': Missing. {reason}.',
   ctx_was: '{label} was {value} in {date}',
+  ctx_wasOn: '{label} was {value} on {date}',
   ctx_highestSince: 'the highest since {since}',
   ctx_lowestSince: 'the lowest since {since}',
   ctx_highestOnRecord: 'the highest on record (since {first})',

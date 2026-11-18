@@ -248,9 +248,9 @@ export const AiModelSettings: React.FC<{
 
       {(config.providerMode === 'gemini' || config.providerMode === 'hybrid') && (
         <div>
-          <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('ai_geminiKey')}</h4>
+          {/* The key field below carries its own heading ("Google Gemini API key"). */}
           {geminiKeySet === false && config.providerMode === 'gemini' && (
-            <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">{t('ai_noGemini')}</p>
+            <p className="mb-1 text-xs text-amber-800 dark:text-amber-300">{t('ai_noGemini')}</p>
           )}
           {geminiKey}
         </div>

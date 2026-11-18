@@ -57,3 +57,16 @@ test('the earlier conversation is the latest saved one on the same countries and
   assert.equal(pickPrevious(s, s[0].id, [cb('15.00%', '4.6%', 'tight')])?.question, 'old');
   assert.equal(pickPrevious(s.filter((b) => b.question !== 'old'), s[0].id, [cb('15.00%', '4.6%', 'tight')]), undefined);
 });
+
+test('a what-if is compared only with the same question asked before, and never with a plain question', () => {
+  const ask = (lib: typeof EMPTY_LIBRARY, question: string, at: string) => addBrief(lib, { question, askedAt: at, scopeNote: '', answers: [cb('15.00%', '4.6%', 'tight')], synthesis: null }).lib;
+  let lib = ask(EMPTY_LIBRARY, "Is Brazil's central bank behind the curve?", '2026-11-01T10:00:00Z');
+  lib = ask(lib, 'What if Brazil cut rates by 200bp?', '2026-11-02T10:00:00Z');
+  lib = ask(lib, "Is Brazil's central bank behind the curve, and what if it cut rates by 200bp?", '2026-11-03T10:00:00Z');
+  lib = ask(lib, 'current', '2026-11-05T10:00:00Z');
+  const s = summarise(lib).briefs;
+  const answers = [cb('15.00%', '4.6%', 'tight')];
+  assert.equal(pickPrevious(s, s[0].id, answers, 'What if Brazil cut rates by 200bp?')?.question, 'What if Brazil cut rates by 200bp?');
+  assert.equal(pickPrevious(s, s[0].id, answers, 'What if Brazil cut rates by 300bp?'), undefined);
+  assert.equal(pickPrevious(s, s[0].id, answers, 'Is Brazil tight?')?.question, "Is Brazil's central bank behind the curve?");
+});

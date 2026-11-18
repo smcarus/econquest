@@ -6,6 +6,7 @@
  */
 import type { AgentAnswer, SavedCouncilBrief } from './askCouncil';
 import type { BriefSummary } from './researchLibrary';
+import { isWhatIfQuestion } from './scenarioQuestion';
 
 export interface FigureChange {
   iso3: string;
@@ -111,11 +112,22 @@ export function whatChanged(prev: SavedCouncilBrief, answers: AgentAnswer[]): Ch
 }
 
 /** The latest saved conversation, other than this one, that asked an agent of this answer about a country of this answer. */
-export function pickPrevious(saved: BriefSummary[], currentId: string, answers: AgentAnswer[]): BriefSummary | undefined {
+export function pickPrevious(saved: BriefSummary[], currentId: string, answers: AgentAnswer[], question?: string): BriefSummary | undefined {
   const agents = new Set<string>(answers.filter((a) => !SKIP_AGENTS.has(a.id)).map((a) => a.id));
   const countries = new Set(answers.flatMap((a) => a.findings.filter((f) => !f.iso3.startsWith('doc:')).map((f) => f.iso3)));
-  return saved.find((b) => b.id !== currentId && (b.agents || []).some((a) => agents.has(a)) && (b.countries || []).some((c) => countries.has(c)));
+  // A what-if answer moves figures by its own shocks, so it is compared only with the same question
+  // asked before; an ordinary question is never compared with a what-if.
+  const whatIf = question !== undefined && isWhatIfQuestion(question);
+  const same = (q: string) => norm(q) === norm(question ?? '');
+  return saved.find(
+    (b) =>
+      b.id !== currentId &&
+      (b.agents || []).some((a) => agents.has(a)) &&
+      (b.countries || []).some((c) => countries.has(c)) &&
+      (question === undefined || (whatIf ? same(b.question) : !isWhatIfQuestion(b.question)))
+  );
 }
+const norm = (q: string) => q.trim().toLowerCase().replace(/\s+/g, ' ').replace(/[?.!]+$/, '');
 
 /** Lines for the brief and the screen. */
 export function changeLines(r: ChangeReport, max = 15): string[] {
