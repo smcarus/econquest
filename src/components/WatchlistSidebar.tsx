@@ -1,6 +1,11 @@
 import { CDS_HIDDEN } from '../utils/cdsHidden';
 import React, { useState } from 'react';
 import { yieldSourceHelp, yieldSourceNote } from '../utils/watchlistYield';
+
+/** A figure with its unit, or a dash when no source filled it (saved rows carry null, not a number). */
+export function fixedOrDash(v: number | null | undefined, digits: number, unit: string): string {
+  return typeof v === 'number' && Number.isFinite(v) ? `${v.toFixed(digits)}${unit}` : '–';
+}
 import { WatchlistGroup, WatchlistItem } from '../types/council';
 import { SOVEREIGN_CATALOG } from '../data/presetsAndBaselines';
 import { Plus, Trash2, ArrowUpRight, FolderPlus, Search } from 'lucide-react';
@@ -388,7 +393,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                 </p>
 
                 <div className={`grid ${CDS_HIDDEN ? 'grid-cols-3' : 'grid-cols-4'} gap-2 mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/70 text-xs tabular-nums`}>
-                  <div title={`${yieldSourceNote(item)}. ${yieldSourceHelp(item)}`}>
+                  <div title={typeof item.yield10YPct === 'number' ? `${yieldSourceNote(item)}. ${yieldSourceHelp(item)}` : 'Missing: no source has filled the 10Y yield yet'}>
                     <span className="text-slate-400 block">
                       10Y yield
                     </span>
@@ -399,7 +404,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                           : 'text-slate-800 dark:text-slate-200'
                       }`}
                     >
-                      {item.yield10YPct.toFixed(1)}%
+                      {fixedOrDash(item.yield10YPct, 1, '%')}
                     </span>
                   </div>
                   {/* CDS hidden for now (src/utils/cdsHidden.ts). */}
@@ -414,13 +419,13 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                   <div>
                     <span className="text-slate-400 block">Debt/GDP</span>
                     <span className="text-slate-800 dark:text-slate-200 font-semibold">
-                      {item.debtToGdpPct.toFixed(0)}%
+                      {fixedOrDash(item.debtToGdpPct, 0, '%')}
                     </span>
                   </div>
                   <div>
                     <span className="text-slate-400 block">FX Res</span>
                     <span className="text-slate-800 dark:text-slate-200 font-semibold">
-                      {item.fxReservesMonths.toFixed(1)}m
+                      {fixedOrDash(item.fxReservesMonths, 1, 'm')}
                     </span>
                   </div>
                 </div>
