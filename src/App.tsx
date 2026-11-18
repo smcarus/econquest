@@ -488,6 +488,12 @@ export default function App() {
   useEffect(() => {
     const open = (e?: Event) => {
       const tab = (e as CustomEvent<{ tab?: SettingsTab }> | undefined)?.detail?.tab;
+      // Tools has one home, its own page; a link to "Settings > Tools" opens that page.
+      if (tab === 'tools') {
+        setAppArea('desks');
+        window.scrollTo({ top: 0 });
+        return;
+      }
       if (tab) setSettingsTab(tab);
       setIsSettingsOpen(true);
     };
@@ -1402,8 +1408,8 @@ export default function App() {
                         label: t('tools'),
                         hint: '',
                         onClick: () => {
-                          setSettingsTab('tools');
-                          setIsSettingsOpen(true);
+                          setAppArea('desks');
+                          window.scrollTo({ top: 0 });
                         },
                         className: '',
                       },
@@ -2003,18 +2009,6 @@ export default function App() {
         onTabChange={setSettingsTab}
         aiConfig={runtimeConfig}
         onAiConfigChange={setRuntimeConfig}
-        tools={
-          <ToolsPage
-            run={run}
-            items={liveWatchlistItems}
-            watchlistName={watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}
-            onOpen={(t) => {
-              setIsSettingsOpen(false);
-              openTool(t);
-            }}
-            inDialog
-          />
-        }
       />
 
       {isRuntimeModalOpen && (

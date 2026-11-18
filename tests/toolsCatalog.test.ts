@@ -23,3 +23,20 @@ test('tools page: every ready tool sits in one group, and no group is empty', ()
     assert.ok(c.purpose.length > 10, `${c.id} says what it is for`);
   }
 });
+
+test('no tool group is a catch-all: each holds at most ten tools, and Look back is only about the past', async () => {
+  const { READY_TOOLS: tools, TOOL_CATEGORIES: cats } = await import('../src/data/toolsCatalog.ts');
+  for (const c of cats) assert.ok(tools.filter((t) => t.category === c.id).length <= 10, `${c.id} holds more than ten tools`);
+  const past = tools.filter((t) => t.category === 'history').map((t) => t.id);
+  for (const id of ['restructuring_calc', 'growth_accounting', 'bank_sovereign', 'disasters']) assert.ok(!past.includes(id), `${id} is not a look-back tool`);
+});
+
+test('find a tool by words, in any order, ignoring case and accents', async () => {
+  const { READY_TOOLS: tools } = await import('../src/data/toolsCatalog.ts');
+  const { searchTools } = await import('../src/utils/toolSearch.ts');
+  assert.ok(searchTools(tools, 'restructuring').some((t) => t.id === 'restructuring_calc'));
+  assert.ok(searchTools(tools, 'CYCLONES').some((t) => t.id === 'storm_tracks'));
+  assert.deepEqual(searchTools(tools, '   '), []);
+  assert.deepEqual(searchTools(tools, 'zzzz-nothing'), []);
+  assert.ok(searchTools([{ id: 'x', title: 'Dívida', what: '' }], 'divida').length === 1);
+});

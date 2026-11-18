@@ -93,13 +93,12 @@ try {
       ['Tools'],
     ];
     for (const [navName, scope] of stops) {
-      // Tools sits inside the Settings window (Menu > Tools), unless the full desk library is on.
+      // Tools is its own page (Menu > Tools), unless the full desk library is on.
       if (navName === 'Tools' && !allTools) {
         await page.getByRole('button', { name: 'Menu', exact: true }).click();
         await page.getByRole('menuitem', { name: /^Tools/ }).first().click();
-        await page.waitForSelector('[data-settings-tools] [data-ready-tools]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Menu > Tools did not open Tools in Settings`));
-        await settle('Settings > Tools');
-        await page.keyboard.press('Escape');
+        await page.waitForSelector('main [data-ready-tools]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Menu > Tools did not open the Tools page`));
+        await settle('Tools');
         // Menu > Settings > Backup says what is saved here.
         await page.getByRole('button', { name: 'Menu', exact: true }).click();
         await page.getByRole('menuitem', { name: /^Settings/ }).first().click();
