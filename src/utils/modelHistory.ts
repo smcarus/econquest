@@ -109,6 +109,20 @@ export function saveModelHistory(dataDir: string, h: ModelHistory): void {
  * Inflation run for a country: the OECD's full history, with a national series (BCB IPCA, Eurostat
  * HICP) appended for the months after the OECD's newest one. The source line names both.
  */
+/**
+ * The inflation run for nowcasts and forecasts, with the IMF monthly consumer prices as the last
+ * choice: used only when neither the OECD nor a national series has the country (for example the
+ * lower-income watchlist), so countries the registered evaluations score keep their own inputs.
+ */
+export function inflationRunOrImf(
+  run: { points: { date: string; value: number }[]; source: string } | null,
+  imf: { points: { period: string; value: number }[]; long?: string; short?: string } | undefined
+): { points: { date: string; value: number }[]; source: string } | null {
+  if (run?.points.length) return run;
+  const points = (imf?.points || []).filter((p) => /^\d{4}-\d{2}$/.test(p.period) && Number.isFinite(p.value)).map((p) => ({ date: p.period, value: p.value }));
+  return points.length ? { points, source: imf?.long || imf?.short || 'IMF monthly consumer prices' } : run;
+}
+
 export function spliceInflation(
   oecd: { period: string; value: number }[] | undefined,
   national: { points: { period: string; value: number }[]; short?: string } | undefined,

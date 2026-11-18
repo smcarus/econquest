@@ -85,6 +85,8 @@ export const PANEL_TEXT_PT: Record<string, string> = {
   "The BIS daily policy rate history did not answer": "O histórico diário da taxa básica do BIS não respondeu",
   "This central bank is not in the BIS policy rate data": "Este banco central não está nos dados de taxa básica do BIS",
   "The BIS publishes no policy rate for this country.": "O BIS não publica taxa básica para este país.",
+  "The BIS publishes no policy rate for this country, and no IMF monthly policy rate is saved for it.": "O BIS não publica taxa básica para este país, e nenhuma taxa básica mensal do FMI está salva para ele.",
+  "The BIS publishes no policy rate for this country, and the IMF's latest monthly figure is from {date}, more than {n} months ago.": "O BIS não publica taxa básica para este país, e o último número mensal do FMI é de {date}, há mais de {n} meses.",
   "The US dollar is the base currency": "O dólar americano é a moeda-base",
   "The US dollar is the base currency, so there is no exchange rate against it to study": "O dólar americano é a moeda-base, então não há taxa de câmbio contra ele para estudar",
   "The US policy rate is itself a factor": "A taxa básica dos EUA é ela própria um fator",

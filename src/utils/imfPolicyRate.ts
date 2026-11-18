@@ -63,6 +63,23 @@ export function imfPolicyRateFor(pull: ImfMonthlyPull | null | undefined, iso3: 
   };
 }
 
+/**
+ * The IMF monthly policy rate as forecast input, for a country the BIS does not cover. A series whose
+ * latest month is more than IMF_POLICY_STALE_MONTHS old gives a reason instead, so no path is drawn
+ * from a rate the bank may have changed since.
+ */
+export function imfPolicyForecastInput(
+  pull: ImfMonthlyPull | null | undefined,
+  iso3: string,
+  now = new Date()
+): { points: { date: string; value: number }[]; source: string } | { reason: string } {
+  const rate = imfPolicyRateFor(pull, iso3, now);
+  const s = imfPolicySeries(pull, iso3);
+  if (!rate || !s) return { reason: 'The BIS publishes no policy rate for this country, and no IMF monthly policy rate is saved for it.' };
+  if (rate.stale) return { reason: `The BIS publishes no policy rate for this country, and the IMF's latest monthly figure is from ${rate.date}, more than ${IMF_POLICY_STALE_MONTHS} months ago.` };
+  return { points: s.points, source: s.source };
+}
+
 /** The saved IMF monthly policy rate as a policy rate history, or null. */
 export function imfPolicySeries(pull: ImfMonthlyPull | null | undefined, iso3: string): Series | null {
   const s = pull?.series?.[String(iso3 || '').toUpperCase()];
