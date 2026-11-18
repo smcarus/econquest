@@ -53,7 +53,11 @@ figures fill in and the council writes its summary.
    your holdings and saved research. Press a line to change it.
 3. Add the free **FRED** key first (Menu > Settings > Free data keys). It fills official 10-year
    government bond yields for several countries.
-4. Press **Edit** on the watchlist card to add or remove countries.
+4. Press **Edit** on the watchlist card to add or remove countries. To follow poorer economies,
+   pick the **Lower-income countries** list: the 15 largest by region, from India and Nigeria to
+   Ghana and Bolivia. A country not in the app's list can be added with **Add a country** (in **Research > One country**, or in the watchlist editor); from
+   the next daily download it is saved like the others, so it gets history, "as of" views and alerts
+   (up to 25 added countries; any more are named on **Menu > Offline data** with the reason).
 5. Choose an AI model if you want written summaries ([section 8](#8-choose-an-ai-model)). Everything
    else works without one.
 
@@ -274,6 +278,14 @@ projections. The sentence above the chart states the latest reading and where it
 4. MarketEdge, scenario exposure and the Fed balance sheet are separate parts; **Where data and price
    disagree** shows four countries until you press **Show all**.
 5. Press a country's name to open it on its own.
+
+For lower-income countries, some figures come from slower sources and say so on their label. Where no
+central bank or ECB daily exchange rate exists (for example the naira, the Kenyan shilling or the
+cedi), the history chart shows the IMF's monthly average rate per US dollar. Where the BIS does not
+publish a country's policy rate (for example Egypt, Nigeria, Kenya or Pakistan), the watchlist and
+country page show the IMF's monthly figure, labelled "IMF, monthly" with its month; it reads Missing
+when it is more than four months old. Inflation targets and central bank decision dates appear only
+where the bank's own page states them, so many of these countries show "no date on file".
 
 **My holdings**, the third view, does the same for a list of bonds or positions you load from a CSV
 file (Menu > Your data, or the template in the holdings screen).

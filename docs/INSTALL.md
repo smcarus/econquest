@@ -342,11 +342,18 @@ The daily download keeps a few more files in `data/live/` for the tools added on
 | `data/live/eurostat-regions.json` | Eurostat GDP per person and unemployment by EU region | Once a week |
 | `data/live/yield-curves.json` | Every maturity of the US Treasury and ECB euro area curves, about 320 business days | At most every 6 hours |
 | `data/live/surprise-inputs.json` | Releases and the expectations saved before them (BCB Focus, ECB SPF, Kalshi CPI snapshots, BLS CPI) | At most every 6 hours |
+| `data/live/imf-fx.json` | IMF monthly exchange rates per US dollar for currencies with no ECB or central bank daily rate in the app | With each daily download |
+| `data/live/imf-policy.json` | IMF monthly central bank policy rates for countries the app does not take from the BIS | With each daily download |
+
+Countries you add with Menu > Add a country are part of the daily download too (up to 25), so their
+figures are saved under `data/live/` like the built-in countries'.
 
 Research notebooks, with their pinned figures and fingerprints, are kept in `data/local/research.json`.
 
 If a download fails, the copy saved before is kept and nothing is filled in. `npm run check:data`
-then shows which source did not answer. The newest rows (17 November) are `wb_budget_credibility`
+then shows which source did not answer. The newest rows are `imf_fx` and `imf_policy` (IMF monthly
+exchange rates and policy rates, found by the IMF's code names; if they do not match, set
+`IMF_FX_KEY` or `IMF_POLICY_KEY` in `.env` as the row says). Before them (17 November) came `wb_budget_credibility`
 (budget credibility), `wb_projects` and `wb_ida_credits` (World Bank projects), `dose` and
 `eurostat_regions` (regional figures), `ust_curve` and `ecb_curve` (full yield curves) and
 `focus_monthly` and `bls_cpi` (data surprises). Before them came `fed_h10` and `chinn_ito` (crisis

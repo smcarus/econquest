@@ -54,7 +54,12 @@ exceto a da seção 10; os nomes dos botões aparecem aqui como no app em portug
    modelo de IA, suas posições e sua pesquisa salva. Clique numa linha para alterá-la.
 3. Adicione primeiro a chave gratuita do **FRED** (Menu > Configurações > Chaves de dados gratuitos). Ela
    preenche os rendimentos oficiais dos títulos públicos de 10 anos de vários países.
-4. Clique em **Editar** no cartão da lista de acompanhamento para incluir ou tirar países.
+4. Clique em **Editar** no cartão da lista de acompanhamento para incluir ou tirar países. Para
+   acompanhar economias mais pobres, escolha a lista **Países de baixa renda**: os 15 maiores por
+   região, da Índia e da Nigéria a Gana e à Bolívia. Um país que não está na lista do app pode ser
+   incluído com **Adicionar um país** (em **Pesquisa > Um país**, ou no editor da lista); a partir do
+   próximo download diário ele é salvo como os outros, com histórico, visões "em uma data" e alertas
+   (até 25 países incluídos; os demais aparecem em **Menu > Dados offline** com o motivo).
 5. Escolha um modelo de IA se quiser resumos escritos ([seção 8](#8-escolher-um-modelo-de-ia)). Todo o
    resto funciona sem ele.
 
@@ -288,6 +293,15 @@ baseiam em projeções do FMI.
 4. MarketEdge, a exposição a cenários e o balanço do Fed são partes separadas; **Onde dados e preços
    discordam** mostra quatro países até você clicar em **Mostrar tudo**.
 5. Clique no nome de um país para abri-lo sozinho.
+
+Nos países de baixa renda, alguns números vêm de fontes mais lentas e dizem isso no rótulo. Onde não
+há taxa de câmbio diária de um banco central ou do BCE (por exemplo a naira, o xelim queniano ou o
+cedi), o gráfico histórico mostra a taxa média mensal do FMI por dólar americano. Onde o BIS não
+publica a taxa básica de um país (por exemplo Egito, Nigéria, Quênia ou Paquistão), a lista de
+acompanhamento e a página do país mostram o número mensal do FMI, com o rótulo "FMI, mensal" e o mês;
+ele aparece como Missing se tiver mais de quatro meses. Metas de inflação e datas de decisão dos
+bancos centrais só aparecem onde a página do próprio banco as informa, por isso muitos desses países
+não mostram nenhuma data.
 
 **Minhas posições**, a terceira visão, faz o mesmo com uma lista de títulos ou posições que você carrega de
 um arquivo CSV.
