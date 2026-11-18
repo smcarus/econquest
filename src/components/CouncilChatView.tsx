@@ -81,11 +81,20 @@ export const AskCouncilPanel: React.FC<{
   const closeDoc = React.useCallback(() => setOpenDoc(null), []);
   const savedDocIds = useMemo(() => new Set(lib.councilDocs.map((d) => d.id)), [lib.councilDocs]);
 
-  // Keep the newest message in view as the conversation grows.
+  // Keep the newest message in view as the conversation grows. When the newest answer is taller than
+  // the chat, show it from the top (the question, then the findings), not from its last lines.
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    if (!el) return;
+    const questions = el.querySelectorAll<HTMLElement>('[data-chat-user="true"]');
+    const last = questions[questions.length - 1];
+    if (!last) {
+      el.scrollTop = el.scrollHeight;
+      return;
+    }
+    const top = last.getBoundingClientRect().top - el.getBoundingClientRect().top + el.scrollTop - 8;
+    el.scrollTop = el.scrollHeight - top > el.clientHeight ? top : el.scrollHeight;
   }, [asked?.askedAt, past.length, choosing, writing, synthesis, debate, debating, phase]);
 
   const submit = () => void ask(question, asked ? 'followup' : 'new');
@@ -225,7 +234,7 @@ export const AskCouncilPanel: React.FC<{
               </p>
               {/* No model: the agents' own readings and key figures here, and what nothing answered (src/utils/noModelDigest.ts). */}
               {(() => {
-                const d = noModelDigest(t.asked.question, t.asked.answers, !!parseWhatIf(t.asked.question));
+                const d = noModelDigest(t.asked.question, t.asked.answers, !!parseWhatIf(t.asked.question), t.asked.plan.countries.length > 0);
                 return (
                   <div className="space-y-2" data-council-digest="true">
                     {d.lines.length > 0 && (
@@ -254,14 +263,16 @@ export const AskCouncilPanel: React.FC<{
                       </div>
                     )}
                     {d.gaps.length > 0 && (
-                      <div data-digest-gaps="true">
-                        <div className="ui-label mt-1">{tr('digestGaps')}</div>
-                        <ul className="list-disc pl-5 text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                      <details data-digest-gaps="true">
+                        <summary className="ui-label mt-1 cursor-pointer">
+                          {tr('digestGaps')} ({d.gaps.length})
+                        </summary>
+                        <ul className="list-disc pl-5 mt-1 text-xs text-slate-600 dark:text-slate-300 space-y-1">
                           {d.gaps.map((g) => (
                             <li key={g}>{tx(g)}</li>
                           ))}
                         </ul>
-                      </div>
+                      </details>
                     )}
                   </div>
                 );

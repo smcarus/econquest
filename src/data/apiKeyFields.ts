@@ -2,7 +2,7 @@ import { isValidEvdsSeriesCode } from '../utils/officialYields';
 import { parseRicMap } from '../utils/ownCds';
 
 /**
- * The keys you can enter in Menu > Settings > Data API keys. Browser-safe (no Node imports): the
+ * The keys you can enter in Menu > Settings > Free data keys. Browser-safe (no Node imports): the
  * server's storage lives in src/utils/userSettings.ts. Add an entry here to add a key to Settings.
  */
 export interface ApiKeyField {

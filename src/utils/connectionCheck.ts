@@ -1788,7 +1788,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       name: 'Turkey central bank (EVDS)',
       group: 'free_key',
       feeds: 'Turkey monthly CPI inflation; Turkey 10Y yield once its series code is set',
-      setup: 'Menu > Settings > Data API keys, or in .env: EVDS_API_KEY="..." (free: evds3.tcmb.gov.tr > profile > API key). For the 10Y yield also EVDS_TR10Y_SERIES="TP...." (the 10Y bond series code in EVDS).',
+      setup: 'Menu > Settings > Free data keys, or in .env: EVDS_API_KEY="..." (free: evds3.tcmb.gov.tr > profile > API key). For the 10Y yield also EVDS_TR10Y_SERIES="TP...." (the 10Y bond series code in EVDS).',
     };
     const key = (env.EVDS_API_KEY || '').trim();
     const series = (env.EVDS_TR10Y_SERIES || '').trim();
@@ -1828,7 +1828,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       name: 'Banco de México (SIE)',
       group: 'free_key',
       feeds: "Mexico's monthly INPC inflation over 12 months, fresher than the OECD mirror",
-      setup: 'Menu > Settings > Data API keys, or BANXICO_TOKEN="..." in .env (free: banxico.org.mx/SieAPIRest/service/v1/token). Without it Mexico keeps the OECD inflation series.',
+      setup: 'Menu > Settings > Free data keys, or BANXICO_TOKEN="..." in .env (free: banxico.org.mx/SieAPIRest/service/v1/token). Without it Mexico keeps the OECD inflation series.',
     };
     const token = (env.BANXICO_TOKEN || '').trim();
     if (!token) return setRow(def, 'optional', 'No token set. Mexico keeps the OECD inflation series, which lags five to six months.', 'www.banxico.org.mx');
@@ -1849,7 +1849,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       name: 'ACLED (conflict events)',
       group: 'free_key',
       feeds: 'Conflict events per country over twelve months, for the Politics & Events Agent',
-      setup: 'Menu > Settings > Data API keys, or in .env: ACLED_EMAIL="..." and ACLED_PASSWORD="..." (free for non-commercial use; the API needs a myACLED Research-level account).',
+      setup: 'Menu > Settings > Free data keys, or in .env: ACLED_EMAIL="..." and ACLED_PASSWORD="..." (free for non-commercial use; the API needs a myACLED Research-level account).',
     };
     const email = (env.ACLED_EMAIL || '').trim();
     const password = env.ACLED_PASSWORD || '';
@@ -2048,7 +2048,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       name: 'US EIA oil prices (free key)',
       group: 'free_key',
       feeds: 'Daily Brent and WTI spot prices (spillover scenarios)',
-      setup: 'Menu > Settings > Data API keys, or EIA_API_KEY="..." in .env (free: eia.gov/opendata > Register). Without it oil comes monthly from the World Bank Pink Sheet.',
+      setup: 'Menu > Settings > Free data keys, or EIA_API_KEY="..." in .env (free: eia.gov/opendata > Register). Without it oil comes monthly from the World Bank Pink Sheet.',
     };
     const key = (env.EIA_API_KEY || '').trim();
     if (!key) return setRow(def, 'optional', 'No key set. Oil comes monthly from the World Bank Pink Sheet instead.', 'api.eia.gov');

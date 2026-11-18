@@ -17,7 +17,7 @@ const HiddenNamesSettings = lazy(() => import('./HiddenNamesSettings'));
 const ResearchToolsTest = lazy(() => import('./ResearchToolsTest'));
 
 /**
- * Settings (Menu > Settings, or Cmd/Ctrl + comma). The "Data API keys" section lets you paste your
+ * Settings (Menu > Settings, or Cmd/Ctrl + comma). The "Free data keys" section lets you paste your
  * own key for a data source instead of editing .env. Keys are saved by the app server on this
  * computer only (data/local/settings.json), win over .env, and come back to the browser masked.
  * Each key can be tested before it is saved; the test is the same as the Data connections check.

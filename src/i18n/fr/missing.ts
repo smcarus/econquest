@@ -22,8 +22,8 @@ export const MISSING_FR: Record<string, string> = {
     "Le rendement des obligations d'État à 10 ans provient d'une source officielle (FRED, le service de données gratuit de la Réserve fédérale américaine, qui republie les chiffres de l'OCDE), et celle-ci n'a pas répondu cette fois-ci. C'est généralement temporaire. Appuyez sur Actualiser maintenant dans Recherche > Un pays pour réessayer. Une clé FRED gratuite dans Menu > Réglages offre une connexion plus stable.",
   "Needs EVDS key":
     "Clé EVDS requise",
-  "Turkey's 10-year government bond yield comes from EVDS, the central bank of Turkey's free data service, which needs a free key. Add the key and the 10Y series code under Menu > Settings > Data API keys, or in .env.":
-    "Le rendement des obligations d'État turques à 10 ans provient d'EVDS, le service de données gratuit de la banque centrale de Turquie, qui exige une clé gratuite. Ajoutez la clé et le code de la série à 10 ans dans Menu > Réglages > Clés d'API de données, ou dans .env.",
+  "Turkey's 10-year government bond yield comes from EVDS, the central bank of Turkey's free data service, which needs a free key. Add the key and the 10Y series code under Menu > Settings > Free data keys, or in .env.":
+    "Le rendement des obligations d'État turques à 10 ans provient d'EVDS, le service de données gratuit de la banque centrale de Turquie, qui exige une clé gratuite. Ajoutez la clé et le code de la série à 10 ans dans Menu > Réglages > Clés de données gratuites, ou dans .env.",
   "No source yet":
     "Pas encore de source",
   "No free official source of this country's 10-year government bond yield is connected yet, and the app does not estimate one. If you have the official figures (for example from the central bank or finance ministry website), upload them as a yields file.":

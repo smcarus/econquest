@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { noModelDigest } from '../src/utils/noModelDigest.ts';
+import { noModelDigest, plainGap } from '../src/utils/noModelDigest.ts';
 import type { AgentAnswer } from '../src/utils/askCouncil.ts';
 
 const fiscal: AgentAnswer = {
@@ -52,4 +52,25 @@ test('no figures at all says so', () => {
   const d = noModelDigest('Tell me about the weather', [{ ...fiscal, findings: [], missing: [] }]);
   assert.equal(d.lines.length, 0);
   assert.equal(d.unanswered.length, 1);
+});
+
+test('Missing lines in the chat carry no terminal commands', () => {
+  const lines = [
+    'Brazil, COVID, Feb-Mar 2020: USD bond spread (The replay series have not been downloaded yet (the daily download saves them; npm run replays:pull))',
+    'Brazil: weekly event counts missing (GDELT raw files not pulled yet: Menu > Offline data, or npm run gdelt:pull)',
+    'Brazil: long-run event history missing (GDELT 1.0 files not pulled yet: Pull them with npm run gdelt:daily (about 25 GB from 2016; --estimate shows the size first.))',
+    'X missing (saved by the daily download: npm run go -- daily, or Menu > Offline data > Download)',
+  ];
+  const d = noModelDigest('Brazil?', [{ ...fiscal, missing: lines }], false, true);
+  assert.equal(d.gaps.length, 4);
+  for (const g of d.gaps) assert.ok(!/npm run|--estimate|-- daily/.test(g), g);
+  assert.match(d.gaps[0], /\(the daily download saves them\)\)$/);
+  assert.match(d.gaps[1], /not pulled yet: Menu > Offline data\)$/);
+  assert.equal(plainGap('Kenya: no debt figures (IMF WEO did not answer)'), 'Kenya: no debt figures (IMF WEO did not answer)');
+});
+
+test('a named country with no figures is not told to name a country', () => {
+  const d = noModelDigest('How is Kenya doing?', [{ ...fiscal, findings: [], missing: [] }], false, true);
+  assert.equal(d.unanswered.length, 1);
+  assert.doesNotMatch(d.unanswered[0].where, /Try naming a country/);
 });
