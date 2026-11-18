@@ -8,12 +8,13 @@ import { councilBriefMarkdown } from '../utils/briefExport';
 import type { CouncilAssessmentRun, CROOverrideState, LiveWatchlistItem, WatchlistItem } from '../types/council';
 import { useResearchLibrary } from './SavedResearch';
 import { toLive } from '../utils/liveFigures';
+import { SOVEREIGN_CATALOG } from '../data/presetsAndBaselines';
 import { briefId } from '../utils/researchLibrary';
 import { pickPrevious, whatChanged, type ChangeReport } from '../utils/whatChanged';
 import type { PolicyDoc } from '../utils/policyDocs';
 import { findChallenges, type DebateResult } from '../utils/agentDebate';
 import { type FullCouncilPhase } from '../utils/councilNetwork';
-import { type AgentChoiceResult, type EarlierTurn, answersForModel, type AgentAnswer, type CouncilPlan, type SavedCouncilBrief, type SynthesisResult } from '../utils/askCouncil';
+import { type AgentChoiceResult, type EarlierTurn, coveredOffWatchlist, answersForModel, type AgentAnswer, type CouncilPlan, type SavedCouncilBrief, type SynthesisResult } from '../utils/askCouncil';
 import type { CouncilTiming } from '../utils/councilTiming';
 import { focusQuestion, type ExplainFocus } from '../utils/explain';
 import { EXPLAIN_EVENT } from '../utils/explainHandoff';
@@ -176,10 +177,29 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
    * new: starts a conversation. followup: keeps this one's countries and agents unless others are
    * named. replace: asks the latest question again (after adding a country) without a new message.
    */
+  /** Live figures for the given countries from the app server, leaving out any already in the pool. */
+  async function pullCountries(codes: string[], have: LiveWatchlistItem[]): Promise<LiveWatchlistItem[]> {
+    const r = await fetch(`/api/data/watchlist-live?iso3=${encodeURIComponent(codes.join(','))}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const rows = ((await r.json())?.items || []) as WatchlistItem[];
+    return rows.filter((row) => !have.some((p) => p.iso3 === row.iso3)).map((row) => toLive(row as unknown as WatchlistItem));
+  }
+
   const ask = async (q: string, mode: 'new' | 'followup' | 'replace' = 'new', poolOverride?: LiveWatchlistItem[], focus?: ExplainFocus) => {
     const text = q.trim();
-    const items = poolOverride ?? pool;
+    let items = poolOverride ?? pool;
     if (!text || !items.length) return;
+    // A country the app already covers but the open watchlist leaves out: pull its figures first.
+    if (!poolOverride) {
+      const codes = coveredOffWatchlist(text, items, SOVEREIGN_CATALOG.map((c) => c.iso3));
+      if (codes.length) {
+        const fresh = await pullCountries(codes, items).catch(() => []);
+        if (fresh.length) {
+          items = [...items, ...fresh];
+          setExtra((e) => [...e, ...fresh.filter((f) => !e.some((x) => x.iso3 === f.iso3))]);
+        }
+      }
+    }
     const asFollowUp = mode === 'followup' && Boolean(asked);
     const history = asFollowUp && asked ? [...earlier, { question: asked.question, headline: synthesis?.brief?.headline || undefined }] : mode === 'replace' ? earlier : [];
     if (asFollowUp && asked) setPast((p) => [...p, { asked, synthesis, debate, changes, earlier }]);
@@ -254,10 +274,7 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
     if (!asked || !codes?.length) return;
     setAdding(null);
     try {
-      const r = await fetch(`/api/data/watchlist-live?iso3=${encodeURIComponent(codes.join(','))}`);
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const rows = ((await r.json())?.items || []) as WatchlistItem[];
-      const fresh = rows.filter((row) => !pool.some((p: LiveWatchlistItem) => p.iso3 === row.iso3)).map((row) => toLive(row as unknown as WatchlistItem));
+      const fresh = await pullCountries(codes, pool);
       if (!fresh.length) {
         setAdding('The app could not pull figures for that country.');
         return;

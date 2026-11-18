@@ -253,6 +253,18 @@ export function offWatchlistCodes(question: string, items: LiveWatchlistItem[]):
   return out.filter((o) => !all.some((m) => m !== o.name && m.toLowerCase().includes(o.name.toLowerCase())));
 }
 
+/**
+ * Countries the question names that are off the watchlist but already covered by the app (the
+ * built-in list, the lower-income countries, any the user added). Council chat pulls their figures
+ * before it asks, so "How is Kenya doing?" answers without a trip to the watchlist.
+ */
+export function coveredOffWatchlist(question: string, items: LiveWatchlistItem[], coveredIso3: Iterable<string>): string[] {
+  const covered = new Set(coveredIso3);
+  return offWatchlistCodes(question, items)
+    .filter((o) => covered.has(o.iso3))
+    .map((o) => o.iso3);
+}
+
 /** Countries named in the question that are not on the watchlist, so the agents hold no figures for them. */
 export function offWatchlistCountries(question: string, items: LiveWatchlistItem[]): string[] {
   return offWatchlistCodes(question, items).map((o) => o.name);

@@ -83,6 +83,7 @@ import type { HiddenView } from './utils/exclusions';
 type AppArea = 'today' | 'country' | 'compare' | 'portfolio' | 'reports' | 'desks';
 import { EconQuestLogo } from './components/EconQuestLogo';
 import { lazyNamed, DeskLoading } from './components/LazyDesk';
+import { otherCountries } from './utils/countryChoices';
 import { SavedCouncilDocuments } from './components/CouncilDocuments';
 import { describeSnapshotSync } from './utils/syncMessages';
 import { watchlistYieldFields } from './utils/watchlistYield';
@@ -1059,6 +1060,9 @@ export default function App() {
   }, [hiddenView, allHoldings, watchlists]);
   // The core view never shows a built-in figure: only what a real source filled (utils/liveFigures.ts).
   const liveWatchlistItems = useMemo(() => activeWatchlistItems.map(toLive), [activeWatchlistItems]);
+  // Every other country the app covers, so pickers can reach the lower-income list and the rest from any watchlist.
+  const offListCountries = useMemo(() => otherCountries(activeWatchlistItems, [...watchlists.flatMap((w) => w.items), ...SOVEREIGN_CATALOG], hidden.iso3), [activeWatchlistItems, watchlists, hidden]);
+  const liveOffListCountries = useMemo(() => offListCountries.map(toLive), [offListCountries]);
   // Council chat: one conversation for the whole app, on Workspace and in the side panel elsewhere.
   const councilAnchors = useMarketEdgeAnchors();
   const councilItems = useMemo(() => marketEdgePeers(liveWatchlistItems, councilAnchors?.peers || []), [liveWatchlistItems, councilAnchors]);
@@ -1708,6 +1712,9 @@ export default function App() {
                 run={run}
                 watchlistName={watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}
                 watchlistItems={liveWatchlistItems}
+                watchlists={visibleWatchlists}
+                activeWatchlistId={activeWatchlistId}
+                onSelectWatchlist={setActiveWatchlistId}
                 section={researchSection}
                 onSection={setResearchSection}
                 onOpenCountry={(item, tab) => {
@@ -1762,6 +1769,7 @@ export default function App() {
             <CountryPage
               run={run}
               watchlistItems={activeWatchlistItems}
+              otherCountries={offListCountries}
               activeTab={countryTab}
               onChangeTab={setCountryTab}
               onSelectCountry={handleSelectSovereign}
@@ -1890,7 +1898,7 @@ export default function App() {
                   {reportsTab === 'reviews' && (
                   <div id="tool-policy-reviews" className="scroll-mt-4">
                     <PanelBoundary name="Policy reviews">
-                      <PolicyReviews countries={liveWatchlistItems} defaultIso3={run.iso3} />
+                      <PolicyReviews countries={liveWatchlistItems} otherCountries={liveOffListCountries} defaultIso3={run.iso3} />
                     </PanelBoundary>
                   </div>
                   )}

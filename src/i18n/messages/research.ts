@@ -55,6 +55,9 @@ export const RESEARCH = defineMessages('research', {
   noCountries: 'No countries yet.',
   // One country: header.
   addCountry: '+ Add a country…',
+  onWatchlist: 'On this watchlist',
+  otherCountries: 'Other countries in the app',
+  compareList: 'Watchlist to compare',
   refresh: 'Refresh now',
   refreshingShort: 'Refreshing',
   refreshing: 'Refreshing…',
