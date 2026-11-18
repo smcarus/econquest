@@ -284,7 +284,9 @@ central bank or ECB daily exchange rate exists (for example the naira, the Kenya
 cedi), the history chart shows the IMF's monthly average rate per US dollar. Where the BIS does not
 publish a country's policy rate (for example Egypt, Nigeria, Kenya or Pakistan), the watchlist and
 country page show the IMF's monthly figure, labelled "IMF, monthly" with its month; it reads Missing
-when it is more than four months old. Inflation targets and central bank decision dates appear only
+when it is more than four months old. The inflation nowcast and forecast and the policy rate
+forecast (History & data) use the same IMF monthly figures for these countries and say they are the
+IMF's; a policy rate more than four months old gives no forecast. Inflation targets and central bank decision dates appear only
 where the bank's own page states them, so many of these countries show "no date on file".
 
 **My holdings**, the third view, does the same for a list of bonds or positions you load from a CSV

@@ -311,7 +311,9 @@ exemple le naira, le shilling kényan ou le cedi), le graphique historique montr
 du FMI par dollar américain. Là où la BRI ne publie pas le taux directeur d'un pays (par exemple
 l'Égypte, le Nigeria, le Kenya ou le Pakistan), la liste de suivi et la page du pays montrent le chiffre
 mensuel du FMI, étiqueté « FMI, mensuel » avec son mois ; il s'affiche Missing s'il date de plus de
-quatre mois. Les cibles d'inflation et les dates de décision des banques centrales n'apparaissent que
+quatre mois. La prévision immédiate et la prévision d'inflation ainsi que la prévision du taux
+directeur (Historique et données) utilisent les mêmes chiffres mensuels du FMI pour ces pays, avec la
+mention qu'ils viennent du FMI ; un taux directeur de plus de quatre mois ne donne pas de prévision. Les cibles d'inflation et les dates de décision des banques centrales n'apparaissent que
 là où la page de la banque elle-même les indique, si bien que beaucoup de ces pays
 n'affichent aucune date.
 

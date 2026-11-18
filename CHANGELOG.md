@@ -5,6 +5,8 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Documentation for the lower-income nowcasts and forecasts (#608): README and walk-through guide in
+  English, Spanish, French and Portuguese, the user manual and How EconQuest works 1.5.
 - Nowcasts and forecasts for the lower-income countries: the inflation nowcast and forecast now use
   the IMF monthly consumer prices when neither the OECD nor a national series covers the country
   (until now the 13 new countries read "No monthly inflation series"), and the policy rate forecast

@@ -503,7 +503,8 @@ Where things stand on 17 November 2026 (details and status in [docs/ROADMAP.md](
     alerts; a **Lower-income countries** watchlist of the 15 largest by region (India, Pakistan,
     Nigeria, Bangladesh, Ethiopia, Egypt, the Philippines, DR Congo, Viet Nam, Tanzania, Kenya,
     Myanmar, Uganda, Ghana and Bolivia); IMF monthly exchange rates and policy rates where no daily or
-    BIS figure exists; and inflation targets and decision dates read on the banks' own pages.
+    BIS figure exists, also used for inflation nowcasts and forecasts and policy rate forecasts; and
+    inflation targets and decision dates read on the banks' own pages.
 
 **Next**
 

@@ -304,7 +304,9 @@ Donde no hay tipo de cambio diario de un banco central o del BCE (por ejemplo el
 keniano o el cedi), el gráfico histórico muestra el tipo medio mensual del FMI por dólar
 estadounidense. Donde el BPI no publica el tipo oficial de un país (por ejemplo Egipto, Nigeria, Kenia
 o Pakistán), la lista de seguimiento y la página del país muestran la cifra mensual del FMI, marcada
-"FMI, mensual" con su mes; aparece como Missing si tiene más de cuatro meses. Las metas de inflación y
+"FMI, mensual" con su mes; aparece como Missing si tiene más de cuatro meses. La previsión inmediata y la previsión de inflación
+y la previsión del tipo oficial (Historia y datos) usan las mismas cifras mensuales del FMI para estos
+países e indican que son del FMI; un tipo oficial de más de cuatro meses no da previsión. Las metas de inflación y
 las fechas de decisión de los bancos centrales solo aparecen donde la página del propio banco las
 indica, así que muchos de estos países no muestran ninguna fecha.
 
