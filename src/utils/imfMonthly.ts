@@ -10,6 +10,11 @@
  * If the IMF names differ, the series key can be set in .env (the spec's `env`, with {ISO3} for the
  * country); `npm run check:data` says what matched.
  *
+ * The live IMF data replies can carry dimension codes without their names, so a series' label
+ * takes the names from the structure where the reply leaves them out. A series asked for by a key
+ * with a code in every dimension (matched names or the .env key) and returned under that key is
+ * the one asked for, so only its frequency and months are tested, not its label.
+ *
  * A month the IMF has not published is skipped, never filled in.
  */
 import { getJson, IMF_AGENCY, IMF_SDMX_BASE, normalizePeriod, parseImfData, type ImfFetch, type ImfSeries } from './imfReserves';
@@ -86,15 +91,41 @@ export const imfSeriesLabel = (s: ImfSeries) =>
     .map(([dim, d]) => `${dim} ${d.id} ${d.name}`)
     .join(' | ');
 
-/** The one monthly series that passes the spec; shortest label wins. */
-export function pickImfMonthly(spec: ImfMonthlySpec, series: ImfSeries[]): ImfSeries | null {
-  const ok = series.filter((s) => {
-    if (!s.obs.some((o) => /^\d{4}-\d{2}$/.test(normalizePeriod(o.period)))) return false;
-    const f = Object.entries(s.dims).find(([id]) => FREQ.test(id))?.[1]?.id;
-    if (f && f !== 'M') return false;
-    const l = imfSeriesLabel(s);
-    return !spec.avoid.test(l) && spec.accept(l);
+/** A period as YYYY-MM when it is a month ("2026-M10", "2026M10", "2026-10", "2026-10-01"). */
+export function imfMonth(p: string): string {
+  const n = normalizePeriod(p);
+  const d = /^(\d{4}-\d{2})-\d{2}$/.exec(n);
+  return d ? d[1] : n;
+}
+
+/** Fills dimension names the data reply left out from the structure's codelists. */
+export function withStructureNames(series: ImfSeries[], structure: ImfCpiStructure | null): ImfSeries[] {
+  if (!structure) return series;
+  return series.map((s) => {
+    const dims: ImfSeries['dims'] = {};
+    for (const [id, c] of Object.entries(s.dims)) {
+      const name = c.name && c.name !== c.id ? c.name : structure.dims.find((d) => d.id === id)?.codes.find((x) => x.id === c.id)?.name;
+      dims[id] = { id: c.id, name: name || c.name };
+    }
+    return { ...s, dims };
   });
+}
+
+/** Why a series is not taken, or '' when it is. `exact`: the key named a code in every dimension. */
+export function imfMonthlyRejection(spec: ImfMonthlySpec, s: ImfSeries, exact = false): string {
+  if (!s.obs.some((o) => /^\d{4}-\d{2}$/.test(imfMonth(o.period)))) return `no monthly figures (periods such as ${s.obs.slice(-1).map((o) => o.period).join('') || 'none'})`;
+  const f = Object.entries(s.dims).find(([id]) => FREQ.test(id))?.[1]?.id;
+  if (f && f !== 'M') return `frequency ${f}, not monthly`;
+  if (exact) return '';
+  const l = imfSeriesLabel(s);
+  if (spec.avoid.test(l)) return `label left out (${l})`;
+  if (!spec.accept(l)) return `label does not fit (${l})`;
+  return '';
+}
+
+/** The one monthly series that passes the spec; shortest label wins. */
+export function pickImfMonthly(spec: ImfMonthlySpec, series: ImfSeries[], exact = false): ImfSeries | null {
+  const ok = series.filter((s) => !imfMonthlyRejection(spec, s, exact));
   return ok.sort((a, b) => imfSeriesLabel(a).length - imfSeriesLabel(b).length)[0] ?? null;
 }
 
@@ -102,7 +133,7 @@ export function pickImfMonthly(spec: ImfMonthlySpec, series: ImfSeries[]): ImfSe
 export function imfMonthlySeries(spec: ImfMonthlySpec, s: ImfSeries): ImfMonthlySeries | null {
   const f = 10 ** spec.decimals;
   const points = s.obs
-    .map((o) => ({ period: normalizePeriod(o.period), value: Math.round(o.value * f) / f }))
+    .map((o) => ({ period: imfMonth(o.period), value: Math.round(o.value * f) / f }))
     .filter((p) => /^\d{4}-\d{2}$/.test(p.period) && Number.isFinite(p.value))
     .sort((a, b) => (a.period < b.period ? -1 : a.period > b.period ? 1 : 0));
   return points.length ? { points, key: s.key, short: spec.short, long: `${spec.long} (series ${s.key})` } : null;
@@ -134,12 +165,16 @@ export async function pullImfMonthly(
   }
   const r = await getJson(opts.fetchFn, imfDataUrl(spec.flow, key), t);
   if (!r.json) return { series: null, structure, step: { iso3, ok: false, note: `${how}: ${r.error}` } };
-  const all = parseImfData(r.json);
-  const picked = pickImfMonthly(spec, all);
+  const all = withStructureNames(parseImfData(r.json), structure);
+  // A key with a code in every dimension: the series with exactly that key is the one asked for.
+  const asked = key.split('.').includes('*') ? [] : all.filter((x) => x.key === key);
+  const exact = asked.length > 0;
+  const picked = exact ? pickImfMonthly(spec, asked, true) : pickImfMonthly(spec, all);
   const series = picked ? imfMonthlySeries(spec, picked) : null;
   if (!series) {
     const hint = override ? '' : ` Set ${spec.env} in .env (dimension order: ${(structure?.dims ?? []).map((d) => d.id).join('.')}).`;
-    return { series: null, structure, step: { iso3, ok: false, note: `${how}: ${all.length ? `${all.length} series came back, none that fits` : 'no series for this country'}.${hint}` } };
+    const why = all.length ? `${all.length} series came back, none that fits (${imfMonthlyRejection(spec, exact ? asked[0] : all[0], exact) || 'no figures'})` : 'no series for this country';
+    return { series: null, structure, step: { iso3, ok: false, note: `${how}: ${why}.${hint}` } };
   }
   return { series, structure, step: { iso3, ok: true, note: `${how}; series ${picked!.key}, to ${series.points[series.points.length - 1].period}` } };
 }

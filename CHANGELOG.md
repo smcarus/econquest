@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- IMF monthly exchange rates and policy rates: the first live check (17 November) found the right
+  IMF codes for every country but took no series, because the live replies leave the code names out.
+  Names now come from the IMF structure where the reply leaves them out, a series returned under the
+  exact key asked for is taken on its key, months dated to the day are read, and the reason in
+  `check:data` says why a series was not taken.
+
 ## [0.2.0] - 2026-11-17
 
 The first tagged release since 0.1.0. In short: data and tools for lower-income countries
