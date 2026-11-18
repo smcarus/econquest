@@ -18,6 +18,13 @@
 import type { Holding } from './holdings';
 import type { LiveWatchlistItem } from '../types/council';
 
+// Names read with "the" in a sentence, so a suggestion says "the United States' bond yields", not "United States's".
+const WITH_THE = new Set(['United States', 'United Kingdom', 'Philippines', 'Netherlands', 'Czech Republic', 'Dominican Republic', 'DR Congo', 'United Arab Emirates', 'Central African Republic']);
+export function possessive(name: string): string {
+  const n = WITH_THE.has(name) ? `the ${name}` : name;
+  return /s$/.test(name) ? `${n}'` : `${n}'s`;
+}
+
 export type ChatSuggestionKind = 'book' | 'watchlist' | 'recent' | 'example';
 
 export interface ChatSuggestion {
@@ -103,7 +110,7 @@ function watchlistSuggestions(items: LiveWatchlistItem[], now: Date): ChatSugges
     const { i, m, size } = moves[0];
     const bank = i.policyRateBank || 'The central bank';
     const verb = m.toPct > m.fromPct ? 'raised' : 'cut';
-    out.push({ text: `Is ${i.countryName}'s central bank behind the curve?`, kind: 'watchlist', why: `${bank} ${verb} its rate from ${fmtPct(m.fromPct)} to ${fmtPct(m.toPct)} (${m.period}; BIS)`, score: size * 4 });
+    out.push({ text: `Is ${possessive(i.countryName)} central bank behind the curve?`, kind: 'watchlist', why: `${bank} ${verb} its rate from ${fmtPct(m.fromPct)} to ${fmtPct(m.toPct)} (${m.period}; BIS)`, score: size * 4 });
   }
 
   const yields = own
@@ -111,7 +118,7 @@ function watchlistSuggestions(items: LiveWatchlistItem[], now: Date): ChatSugges
     .sort((a, b) => Math.abs(b.yield10YChange3mPts!) - Math.abs(a.yield10YChange3mPts!));
   if (yields[0]) {
     const i = yields[0];
-    out.push({ text: `What is driving ${i.countryName}'s bond yields?`, kind: 'watchlist', why: `10Y yield ${fmtPts(i.yield10YChange3mPts!)} in three months${i.yield10YPeriod ? ` (to ${i.yield10YPeriod})` : ''}`, score: Math.abs(i.yield10YChange3mPts!) * 2 });
+    out.push({ text: `What is driving ${possessive(i.countryName)} bond yields?`, kind: 'watchlist', why: `10Y yield ${fmtPts(i.yield10YChange3mPts!)} in three months${i.yield10YPeriod ? ` (to ${i.yield10YPeriod})` : ''}`, score: Math.abs(i.yield10YChange3mPts!) * 2 });
   }
 
   const debt = own
@@ -125,7 +132,7 @@ function watchlistSuggestions(items: LiveWatchlistItem[], now: Date): ChatSugges
     .sort((a, b) => b.rise - a.rise);
   if (debt[0]) {
     const { i, d, rise } = debt[0];
-    out.push({ text: `Is ${i.countryName}'s government debt on a rising path?`, kind: 'watchlist', why: `Debt path ${Math.round(d.debtNow)}% to ${Math.round(d.base!.end)}% of GDP by ${d.base!.year} (${d.base!.label})`, score: rise / 5 });
+    out.push({ text: `Is ${possessive(i.countryName)} government debt on a rising path?`, kind: 'watchlist', why: `Debt path ${Math.round(d.debtNow)}% to ${Math.round(d.base!.end)}% of GDP by ${d.base!.year} (${d.base!.label})`, score: rise / 5 });
   }
 
   return out.sort((a, b) => b.score - a.score).slice(0, 2).map(({ score: _s, ...s }) => s);

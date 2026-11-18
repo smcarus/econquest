@@ -33,7 +33,7 @@ const FREQ_KEY = {
 function contextLine(t: PanelT, label: string, unit: string | undefined, c: HistoricalContext): string {
   const r2 = (v: number) => Math.round(v * 100) / 100;
   const u = unit?.startsWith('%') ? unit : unit ? ` ${unit}` : '';
-  const parts = [t('ctx_was', { label, value: `${r2(c.value)}${u}`, date: c.date })];
+  const parts = [t(/^\d{4}-\d{2}-\d{2}$/.test(c.date) ? 'ctx_wasOn' : 'ctx_was', { label, value: `${r2(c.value)}${u}`, date: c.date })];
   if (c.record) {
     const high = c.record.kind === 'highest';
     parts.push(c.record.since ? t(high ? 'ctx_highestSince' : 'ctx_lowestSince', { since: c.record.since }) : t(high ? 'ctx_highestOnRecord' : 'ctx_lowestOnRecord', { first: c.first }));

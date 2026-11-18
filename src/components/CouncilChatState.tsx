@@ -303,7 +303,7 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
   useEffect(() => {
     setChanges(null);
     if (!asked) return;
-    const prev = pickPrevious(lib.briefs, briefId(asked.startedAt), asked.answers);
+    const prev = pickPrevious(lib.briefs, briefId(asked.startedAt), asked.answers, asked.question);
     if (!prev) return;
     let live = true;
     void lib.loadBrief(prev.id).then((b) => {
