@@ -47,7 +47,8 @@ export const RangeNote: React.FC<{ none?: 'noRangeImf' | 'noRangeOwn' | 'noRange
 };
 
 /** Header button: shows the level and moves to the next one (Key help, Full help, Expert, Off). */
-export const HelpLevelButton: React.FC = () => {
+/** `labelled` keeps the words visible on a phone (used in the Menu there). */
+export const HelpLevelButton: React.FC<{ labelled?: boolean }> = ({ labelled = false }) => {
   const level = useHelpLevel();
   const t = useT(SHELL);
   const keys = LEVEL_KEYS[level];
@@ -63,7 +64,7 @@ export const HelpLevelButton: React.FC = () => {
       className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap"
     >
       <HelpCircle className="w-3.5 h-3.5" />
-      <span className="hidden sm:inline">{label}</span>
+      <span className={labelled ? '' : 'hidden sm:inline'}>{label}</span>
     </button>
   );
 };

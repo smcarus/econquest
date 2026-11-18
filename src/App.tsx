@@ -1318,6 +1318,8 @@ export default function App() {
           </button>
           )}
 
+          {/* On a phone these three move into the Menu, with their names, so the header is not a row of bare icons. */}
+          <div className="hidden sm:flex items-center gap-1.5">
           <HelpLevelButton />
 
           <LanguageButton />
@@ -1335,6 +1337,7 @@ export default function App() {
               <Moon className="w-3.5 h-3.5 text-slate-700" />
             )}
           </button>
+          </div>
 
           <OfflinePill status={onlineStatus} onOpen={() => setIsOfflineDataOpen(true)} />
 
@@ -1373,7 +1376,7 @@ export default function App() {
               className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap"
             >
               <Settings2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{t('menu')}</span>
+              <span>{t('menu')}</span>
               <ChevronDown className="w-3 h-3 opacity-70" />
             </button>
 
@@ -1382,6 +1385,19 @@ export default function App() {
                 role="menu"
                 className="absolute right-0 top-full mt-1 w-72 max-w-[calc(100vw-2rem)] z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-3 space-y-3 text-xs"
               >
+                {/* Phone only: explanations, language and light or dark, which sit in the header on wider screens. */}
+                <div className="sm:hidden flex flex-wrap items-center gap-1.5 pb-3 border-b border-slate-200 dark:border-slate-800" data-menu-display="true">
+                  <HelpLevelButton labelled />
+                  <LanguageButton labelled />
+                  <button
+                    type="button"
+                    onClick={() => setDarkMode(!darkMode)}
+                    className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap"
+                  >
+                    {darkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5" />}
+                    <span>{darkMode ? t('lightMode') : t('darkMode')}</span>
+                  </button>
+                </div>
                 <div className="flex flex-col">
                   {(
                     [

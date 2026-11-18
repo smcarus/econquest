@@ -52,7 +52,7 @@ export const ResearchSectionNav: React.FC<{
   return (
     <nav
       ref={ref}
-      className={`mt-3 -mb-3 flex gap-1 ui-scroll-x border-t border-slate-100 dark:border-slate-800 ${moreRight ? '[mask-image:linear-gradient(to_right,black_80%,transparent)]' : ''}`}
+      className={`mt-3 -mb-3 flex flex-wrap sm:flex-nowrap gap-1 ui-scroll-x border-t border-slate-100 dark:border-slate-800 ${moreRight ? '[mask-image:linear-gradient(to_right,black_80%,transparent)]' : ''}`}
       aria-label={ariaLabel ?? t('sectionsAria')}
       data-research-sections="true"
       data-more-right={moreRight ? 'true' : undefined}

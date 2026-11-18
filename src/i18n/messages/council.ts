@@ -35,7 +35,7 @@ export const COUNCIL = defineMessages('council', {
   followUpLabel: 'Follow-up question',
   questionLabel: 'Question',
   placeholderFollowUp: 'Ask a follow-up, for example: and the currency? or what about Egypt?',
-  placeholderNew: "For example: Is Turkey's central bank behind the curve, and what would a Hormuz closure do?",
+  placeholderNew: "For example: Is Turkey's central bank behind the curve?",
   send: 'Send',
   pinnedAt: 'Figures pinned at {when}: answers in this conversation use them even if the feeds refresh.',
   useLatest: 'Use the latest figures',

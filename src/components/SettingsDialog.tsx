@@ -248,6 +248,7 @@ export const SettingsDialog: React.FC<{
   const tx = useTx();
   const showTools = tab === 'tools' && !!tools;
   const showAi = tab === 'ai' && !!aiConfig && !!onAiConfigChange;
+  const visiblePages = PAGES.filter((p) => (p.id === 'tools' ? !!tools : p.id === 'ai' ? !!aiConfig : true));
   const page = PAGES.find((p) => p.id === tab) || PAGES[1];
   const [reply, setReply] = useState<KeysReply | null>(null);
   const [error, setError] = useState('');
@@ -295,8 +296,22 @@ export const SettingsDialog: React.FC<{
         </div>
 
         <div className="flex flex-col sm:flex-row min-h-0 flex-1">
-          <nav aria-label={t('set_navAria')} className="sm:w-48 shrink-0 border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800 p-2 flex sm:flex-col gap-1 overflow-x-auto">
-            {PAGES.filter((p) => (p.id === 'tools' ? !!tools : p.id === 'ai' ? !!aiConfig : true)).map((p) => (
+          {/* Phone: one drop-down instead of a row of tabs that runs off the screen. */}
+          <div className="sm:hidden px-4 py-2 border-b border-slate-200 dark:border-slate-800">
+            <select
+              aria-label={t('set_navAria')}
+              value={tab}
+              onChange={(e) => onTabChange?.(e.target.value as typeof tab)}
+              className="w-full px-2 py-1.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+              data-settings-select="true"
+            >
+              {visiblePages.map((p) => (
+                <option key={p.id} value={p.id}>{t(`set_p_${p.id}`)}</option>
+              ))}
+            </select>
+          </div>
+          <nav aria-label={t('set_navAria')} className="hidden sm:flex sm:w-48 shrink-0 sm:border-r border-slate-200 dark:border-slate-800 p-2 sm:flex-col gap-1">
+            {visiblePages.map((p) => (
               <button
                 key={p.id}
                 type="button"

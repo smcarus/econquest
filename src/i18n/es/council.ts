@@ -30,7 +30,7 @@ export const COUNCIL_ES: Messages<typeof COUNCIL> = {
   followUpLabel: 'Pregunta de seguimiento',
   questionLabel: 'Pregunta',
   placeholderFollowUp: 'Haga una pregunta de seguimiento en inglés, por ejemplo: and the currency? o what about Egypt?',
-  placeholderNew: "En inglés, por ejemplo: Is Turkey's central bank behind the curve, and what would a Hormuz closure do?",
+  placeholderNew: "En inglés, por ejemplo: Is Turkey's central bank behind the curve?",
   send: 'Enviar',
   pinnedAt: 'Cifras fijadas el {when}: las respuestas de esta conversación las usan aunque los datos se actualicen.',
   useLatest: 'Usar las cifras más recientes',
