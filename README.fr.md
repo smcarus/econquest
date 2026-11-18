@@ -493,7 +493,9 @@ Où en est le projet au 17 novembre 2026 (détail dans [docs/ROADMAP.md](./docs/
     revenu** des 15 plus grands par région (Inde, Pakistan, Nigeria, Bangladesh, Éthiopie, Égypte,
     Philippines, RD Congo, Viêt Nam, Tanzanie, Kenya, Myanmar, Ouganda, Ghana et Bolivie) ; taux de
     change et taux directeurs mensuels du FMI là où il n'existe ni chiffre quotidien ni chiffre de la
-    BRI ; et cibles d'inflation et dates de décision lues sur les pages des banques elles-mêmes.
+    BRI, utilisés aussi par la prévision immédiate et les prévisions d'inflation et la prévision du
+    taux directeur ; et cibles d'inflation et dates de décision lues sur les pages des banques
+    elles-mêmes.
 
 **Ensuite**
 

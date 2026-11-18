@@ -299,7 +299,9 @@ há taxa de câmbio diária de um banco central ou do BCE (por exemplo a naira, 
 cedi), o gráfico histórico mostra a taxa média mensal do FMI por dólar americano. Onde o BIS não
 publica a taxa básica de um país (por exemplo Egito, Nigéria, Quênia ou Paquistão), a lista de
 acompanhamento e a página do país mostram o número mensal do FMI, com o rótulo "FMI, mensal" e o mês;
-ele aparece como Missing se tiver mais de quatro meses. Metas de inflação e datas de decisão dos
+ele aparece como Missing se tiver mais de quatro meses. O nowcast e a previsão de inflação e a
+previsão da taxa básica (Histórico e dados) usam os mesmos números mensais do FMI para esses países,
+e informam que são do FMI; uma taxa básica com mais de quatro meses não gera previsão. Metas de inflação e datas de decisão dos
 bancos centrais só aparecem onde a página do próprio banco as informa, por isso muitos desses países
 não mostram nenhuma data.
 

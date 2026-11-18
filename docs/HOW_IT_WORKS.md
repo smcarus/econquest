@@ -1,6 +1,6 @@
 # How EconQuest works, in plain words
 
-**Version 1.4, 17 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
+**Version 1.5, 18 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
 validated advice.
 
 This guide explains, without jargon, where EconQuest's figures come from, what its AI does and does
@@ -138,6 +138,14 @@ appear on any screen or in anything sent out; the app then shows only how many a
   the app to download or pass on their files; for those, you download the file yourself and put it in
   a folder the [install guide](./INSTALL.md#files-you-save-yourself) names, and until then the parts
   that need it read Missing.
+- **Fifteen lower-income countries on one list.** The *Lower-income countries* watchlist holds the 15
+  largest by region, from India and Nigeria to Ghana and Bolivia, and any country you add is saved by
+  the daily download like the built-in ones. Where the usual sources skip these countries, the IMF
+  fills in, once a month: the exchange rate per US dollar, the central bank policy rate and consumer
+  prices. The app's inflation nowcast and forecast and its policy rate forecast use these monthly IMF
+  figures too, each labelled as the IMF's. A policy rate more than four months old reads Missing
+  rather than being treated as today's. Central bank targets and meeting dates appear only where the
+  bank's own website states them, so many of these countries have none yet.
 - **Figures for the people who run a budget or judge one.** How much of the approved budget each
   government really spent (from PEFA assessments, published by the World Bank), the World Bank
   projects under way in the country and how fast they pay out, and how far apart a country's regions
@@ -510,5 +518,5 @@ other.
 
 ---
 
-*How EconQuest works, version 1.4 (17 November 2026). Text licensed under CC BY 4.0: you may share and
+*How EconQuest works, version 1.5 (18 November 2026). Text licensed under CC BY 4.0: you may share and
 adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*

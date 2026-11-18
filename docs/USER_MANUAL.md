@@ -693,6 +693,13 @@ tuned and run again under the same name; a new method is a new test. The Nowcast
 in Council chat gives the same figures with the same verdicts. `npm run forecast:worst` lists the
 series where a model missed most.
 
+For countries the OECD, national and BIS series do not cover (for example the lower-income
+watchlist), the inflation nowcast and forecast use the IMF's monthly consumer prices, and the policy
+rate forecast uses the IMF's monthly policy rate when its latest month is four months old or less;
+otherwise the panel says why. Each path names the IMF series it came from. The model and its
+verdict are the same as for every other country, so a forecast whose model failed is still not drawn
+unless you press *Show it anyway*; the evaluation itself scored only the OECD and BIS series.
+
 *Ranges from past misses* (R8). Below the chart, with ranges shown (Help level), a table puts a
 range on each tested step of the forecast built only from how far that forecast missed for this
 country in its out-of-sample test: the 70% range runs from the 15th to the 85th percentile of the

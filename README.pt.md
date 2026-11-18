@@ -482,8 +482,9 @@ Situação em 17 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./docs/ROADM
     histórico, visões "em uma data" e alertas; uma lista de acompanhamento **Países de baixa renda** com
     os 15 maiores por região (Índia, Paquistão, Nigéria, Bangladesh, Etiópia, Egito, Filipinas,
     RD do Congo, Vietnã, Tanzânia, Quênia, Mianmar, Uganda, Gana e Bolívia); taxas de câmbio e taxas
-    básicas mensais do FMI onde não há dado diário nem do BIS; e metas de inflação e datas de decisão
-    lidas nas páginas dos próprios bancos.
+    básicas mensais do FMI onde não há dado diário nem do BIS, usadas também no nowcast e nas
+    previsões de inflação e na previsão da taxa básica; e metas de inflação e datas de decisão lidas
+    nas páginas dos próprios bancos.
 
 **Próximo**
 

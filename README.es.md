@@ -491,8 +491,9 @@ Situación al 17 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./docs/ROADM
     historia, vistas "a una fecha" y alertas; una lista de seguimiento **Países de ingreso bajo** con
     los 15 mayores por región (India, Pakistán, Nigeria, Bangladés, Etiopía, Egipto, Filipinas,
     RD del Congo, Vietnam, Tanzania, Kenia, Myanmar, Uganda, Ghana y Bolivia); tipos de cambio y tipos
-    oficiales mensuales del FMI donde no hay dato diario ni del BPI; y metas de inflación y fechas de
-    decisión leídas en las páginas de los propios bancos.
+    oficiales mensuales del FMI donde no hay dato diario ni del BPI, que también usan las previsiones
+    inmediatas y previsiones de inflación y la previsión del tipo oficial; y metas de inflación y
+    fechas de decisión leídas en las páginas de los propios bancos.
 
 **Siguiente**
 
