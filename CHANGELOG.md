@@ -5,6 +5,21 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-17
+
+The first tagged release since 0.1.0. In short: data and tools for lower-income countries
+(remittances, aid, financial inclusion, food prices, disasters, weather and parametric insurance, a
+Lower-income countries watchlist, IMF monthly exchange rates and policy rates, countries you add saved
+by the daily download); policy review tools and the policy council; markets and financing data
+(exchange rate regime, central bank assets, dollar funding); what-if questions with the Scenario
+Agent; tools for five kinds of users; connecting other systems (API tokens, webhooks, OpenID Connect);
+the whole app in Portuguese; and outside research tools through the Quant desk. Every change is listed
+below.
+
+- Documentation for the lower-income work (#601-#605): README and walk-through guide in English,
+  Spanish, French and Portuguese (the Lower-income countries watchlist, adding a country, IMF monthly
+  figures and where targets and decision dates come from), INSTALL (the two new IMF files and
+  `check:data` rows) and METHODOLOGY 1.5.
 - Reference facts for the lower-income watchlist, read on each bank's own page on 2026-11-17:
   Ghana's inflation target (8%, band 2 points) and India's target now linked to the RBI page that
   states it; next central bank decision dates for Kenya, Ghana, Tanzania and India. Countries whose
