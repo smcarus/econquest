@@ -119,7 +119,7 @@ export function mergeNationalCpi(oecd: CpiSeries | null | undefined, national: R
 
 /**
  * Mexico: Banco de México SIE API, series SP30578 (INPC, annual change, monthly). Needs the user's
- * own free token (BANXICO_TOKEN, Menu > Settings > Data API keys), sent in the Bmx-Token header,
+ * own free token (BANXICO_TOKEN, Menu > Settings > Free data keys), sent in the Bmx-Token header,
  * never in the URL. Series code checked 2026-11-06 against open-source SIE clients (banxicolab
  * catalogue: SP30578 "INPC, variación anual", monthly, %). Reply: {"bmx":{"series":[{"idSerie":
  * "SP30578","datos":[{"fecha":"01/09/2026","dato":"3.76"}]}]}}; "N/E" marks a missing value.

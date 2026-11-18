@@ -4,6 +4,7 @@
  */
 export const BRIEF_TEXT_FR: Record<string, string> = {
   "No agent works out the effect of a rate change. Research > History & data > Debt sustainability runs a stated interest rate shock (the effective rate up to 2 points higher, phased in as debt rolls over) on the debt path; Research > Markets & signals shows the policy rate and its history.": "Aucun agent ne calcule l'effet d'une variation des taux. Recherche > Historique et données > Soutenabilité de la dette applique un choc de taux d'intérêt déclaré (le taux effectif jusqu'à 2 points plus haut, introduit au fil du refinancement de la dette) à la trajectoire de la dette ; Recherche > Marchés et signaux montre le taux directeur et son historique.",
+  "No agent found figures for this question: the country's sources have not answered yet. Research for that country shows what the app holds and why each figure is missing.": "Aucun agent n'a trouvé de chiffres pour cette question : les sources de ce pays n'ont pas encore répondu. Recherche pour ce pays montre ce que l'application détient et pourquoi chaque chiffre manque.",
   "No agent found figures for this question. Try naming a country, or open Research for that country to see what the app holds.": "Aucun agent n'a trouvé de chiffres pour cette question. Essayez de nommer un pays, ou ouvrez Recherche pour ce pays afin de voir ce que l'application détient.",
   "Growth and inflation": "Croissance et inflation",
   "Monetary policy": "Politique monétaire",
