@@ -177,6 +177,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'overview' },
   },
   {
+    id: 'policy_review',
+    category: 'country',
+    title: 'Policy review',
+    what: 'A step-by-step case file for improving policy in one country: frame the problem, diagnose it, weigh options and evidence, write the recommendation and track what happened. It lives under Reports.',
+    sources: 'Saved figures for the country on the As of day; the policy council',
+    target: { area: 'reports', anchor: 'tool-policy-reviews' },
+  },
+  {
     id: 'history',
     category: 'history',
     title: 'History',

@@ -84,6 +84,7 @@ type AppArea = 'today' | 'country' | 'compare' | 'portfolio' | 'reports' | 'desk
 import { EconQuestLogo } from './components/EconQuestLogo';
 import { lazyNamed, DeskLoading } from './components/LazyDesk';
 import { otherCountries } from './utils/countryChoices';
+import { MENU_GROUP_LABEL, menuGroupOf, menuRank, type MenuGroup } from './utils/menuGroups';
 import { SavedCouncilDocuments } from './components/CouncilDocuments';
 import { describeSnapshotSync } from './utils/syncMessages';
 import { watchlistYieldFields } from './utils/watchlistYield';
@@ -1545,7 +1546,16 @@ export default function App() {
                   )
                     // The audit log is for admins once accounts exist (src/utils/permissions.ts).
                     .filter((item) => item.key !== 'audit' || !me || me.role === 'admin')
-                    .map((item) => (
+                    // Tools on its own at the top, then three short groups (src/utils/menuGroups.ts).
+                    .map((item) => ({ ...item, group: menuGroupOf(item.key) }))
+                    .sort((a, b) => menuRank(a.key) - menuRank(b.key))
+                    .map((item, i, all) => (
+                    <React.Fragment key={item.key}>
+                    {item.group !== 'top' && item.group !== all[i - 1]?.group && (
+                      <div role="presentation" className={`px-2 pb-0.5 ui-label ${i > 0 ? 'mt-2 pt-2 border-t border-slate-200 dark:border-slate-800' : ''}`} data-menu-group={item.group}>
+                        {t(MENU_GROUP_LABEL[item.group as Exclude<MenuGroup, 'top'>])}
+                      </div>
+                    )}
                     <button
                       key={item.key}
                       type="button"
@@ -1567,6 +1577,7 @@ export default function App() {
                         </span>
                       )}
                     </button>
+                    </React.Fragment>
                   ))}
                 </div>
               </div>
