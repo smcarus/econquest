@@ -452,7 +452,7 @@ export function localRateRows(open: CouncilAssessmentRun['openData']): BriefRow[
   const lr = open.localRates;
   const rows: BriefRow[] = LOCAL_RATE_KINDS.map((k) => {
     const r = lr?.[k];
-    if (!r) return missingRow(LOCAL_RATE_LABEL[k], localRateMissing(k, open.iso3, Boolean(lr)));
+    if (!r) return missingRow(LOCAL_RATE_LABEL[k], localRateMissing(k, open.iso3, Boolean(lr), lr?.old?.[k]));
     return { label: LOCAL_RATE_LABEL[k], value: localRateValue(r), source: localRateSource(r), verified: !r.stale, help: LOCAL_RATE_ABOUT[k] };
   });
   rows.push(missingRow('Stock index', STOCK_INDEX_MISSING));

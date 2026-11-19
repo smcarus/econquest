@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- IMF local market rates, after the first live check (19 November): the Treasury bill rate now
+  comes from "Government securities: Treasury bills yields" (the IMF's "Treasury bills, Rate" code
+  holds no series), which covers Kenya, Nigeria, Ghana, Bangladesh, Bolivia, the Philippines and
+  Egypt among others. A latest month more than two years old reads Missing with that month
+  instead of an old number; its history stays in History & data. The `imf_rates` check row tests
+  Ghana, which reports all three rates.
+
 ## [0.3.0] - 2026-11-19
 
 Fixes to features added in 0.2.0, nowcasts, forecasts and local market rates for the lower-income
