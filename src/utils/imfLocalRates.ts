@@ -29,8 +29,10 @@ export const IMF_LOCAL_RATE_SPECS: Record<LocalRateKind, ImfMonthlySpec> = {
     short: 'IMF MFS',
     long: 'IMF Monetary and Financial Statistics, interest rates (MFS_IR dataset), Treasury bill rate, monthly',
     env: 'IMF_TBILL_KEY',
-    want: [/treasury bills?/i, /\bbills?\b/i],
-    avoid: new RegExp(`${AVOID_COMMON.source}|bond|money market|interbank`, 'i'),
+    // Live check 2026-11-19: "Government securities: Treasury bills yields, Rate" (GSTBILY_RT_PT_A_PT) has 87
+    // countries; "Treasury bills, Rate" (IRTBILL_RT_PT_A_PT) is in the structure but holds no series.
+    want: [/treasury bills? yields?/i, /treasury bills?/i, /\bbills?\b/i],
+    avoid: new RegExp(`${AVOID_COMMON.source}|\\bbonds?\\b|money market|interbank|long-term|\\d+ months?|bond equivalent|ukraine`, 'i'),
     accept: (l) => /bill/i.test(l),
     decimals: 3,
   },
@@ -85,6 +87,8 @@ export const LOCAL_RATE_SERIES_ID: Record<LocalRateKind, string> = {
 
 /** Months after the end of the latest month before a figure is marked as possibly out of date. */
 export const LOCAL_RATE_STALE_MONTHS = 4;
+/** Months after which the latest figure is not shown as current at all (it stays in the history). */
+export const LOCAL_RATE_DROP_MONTHS = 24;
 
 /**
  * Countries the IMF local rates are asked for: those with no official 10-year yield in the app
@@ -108,7 +112,11 @@ export interface LocalRate {
 export type LocalRatePulls = Partial<Record<LocalRateKind, ImfMonthlyPull | null>>;
 
 /** The three rates laid on a country snapshot, each only when the IMF published it. */
-export type LocalRatesReading = Partial<Record<LocalRateKind, LocalRate>> & { pulledAt: string };
+export type LocalRatesReading = Partial<Record<LocalRateKind, LocalRate>> & {
+  pulledAt: string;
+  /** Rates whose latest IMF month is more than LOCAL_RATE_DROP_MONTHS old: that month (YYYY-MM), shown as Missing with it. */
+  old?: Partial<Record<LocalRateKind, string>>;
+};
 
 const monthsBetween = (from: string, to: Date) => {
   const [y, m] = from.split('-').map(Number);
@@ -139,11 +147,12 @@ export function localRatesFor(pulls: LocalRatePulls, iso3: string, now = new Dat
   for (const k of LOCAL_RATE_KINDS) {
     const r = localRateFor(pulls[k], iso3, now);
     if (!r) continue;
-    out[k] = r;
+    if (monthsBetween(r.date, now) > LOCAL_RATE_DROP_MONTHS) out.old = { ...(out.old || {}), [k]: r.date };
+    else out[k] = r;
     const at = pulls[k]?.pulledAt || '';
     if (at > latest) latest = at;
   }
-  if (!LOCAL_RATE_KINDS.some((k) => out[k])) return null;
+  if (!LOCAL_RATE_KINDS.some((k) => out[k] || out.old?.[k])) return null;
   out.pulledAt = latest;
   return out;
 }
@@ -173,7 +182,13 @@ export function localRateWhen(period: string): string {
 }
 
 /** Why a rate is missing for a country, in words. */
-export function localRateMissing(kind: LocalRateKind, iso3: string, pulled: boolean): { kind: 'setup' | 'unreachable'; short: string; help: string } {
+export function localRateMissing(kind: LocalRateKind, iso3: string, pulled: boolean, oldMonth?: string): { kind: 'setup' | 'unreachable'; short: string; help: string } {
+  if (oldMonth)
+    return {
+      kind: 'setup',
+      short: 'IMF figure too old',
+      help: `The IMF's latest monthly ${IN_TEXT[kind]} for this country is from ${localRateWhen(oldMonth)}, more than two years ago, so it is not shown as a current figure. Its history is in History & data.`,
+    };
   if (!imfLocalRatesWanted(iso3))
     return {
       kind: 'setup',

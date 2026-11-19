@@ -42,7 +42,10 @@ const structure = {
           { id: 'LR', name: 'Lending rate, Percent per annum' },
           { id: 'DR', name: 'Deposit rate, Percent per annum' },
           { id: 'MPRR', name: 'Monetary policy-related interest rate, Percent per annum' },
-          { id: 'TB', name: 'Treasury bill rate, Percent per annum' },
+          { id: 'IRTB', name: 'Treasury bills, Rate, Percent per annum' },
+          { id: 'TB3', name: 'Government securities: Treasury bills yields, 3 Months Rate, Percent per annum' },
+          { id: 'TB', name: 'Government securities: Treasury bills yields, Rate, Percent per annum' },
+          { id: 'TBFC', name: 'Treasury bills, Foreign Currency, Rate, Percent per annum' },
           { id: 'GB', name: 'Government bonds yield, Percent per annum' },
           { id: 'MM', name: 'Money market rate, Percent per annum' },
           { id: 'MMF', name: 'Money market funds rate, Percent per annum' },
@@ -53,7 +56,7 @@ const structure = {
   },
 };
 
-test('IMF local rates: each rate picked by IMF name, none taking another or the policy rate', () => {
+test('IMF local rates: each rate picked by IMF name (the Treasury bill yields code that holds data, live 2026-11-19), none taking another or the policy rate', () => {
   const s = parseImfCpiStructure(structure)!;
   assert.equal(imfMonthlyKey(IMF_LOCAL_RATE_SPECS.tbill, s, 'KEN').key, 'KEN.TB.M');
   assert.equal(imfMonthlyKey(IMF_LOCAL_RATE_SPECS.govbond, s, 'KEN').key, 'KEN.GB.M');
@@ -145,4 +148,37 @@ test('IMF local rates: the daily run asks after the IMF policy rates, and check:
   const policy = WORLD_STEPS.findIndex((s) => s.id === 'world:imf_policy');
   assert.equal(WORLD_STEPS.findIndex((s) => s.id === 'world:imf_rates'), policy + 1);
   assert.ok(SOURCE_IDS.includes('imf_rates' as never));
+});
+
+test('IMF local rates: a latest month more than two years old reads Missing with that month; the history keeps it', () => {
+  const old = pull('KEN.TB.M', [{ period: '2021-02', value: 7.1 }]);
+  const reading = localRatesFor({ tbill: old, govbond }, 'KEN', new Date('2026-11-18'))!;
+  assert.equal(reading.tbill, undefined);
+  assert.equal(reading.old?.tbill, '2021-02');
+  const open = buildBaselineOpenData('KEN');
+  open.localRates = reading;
+  const row = localRateRows(open)[0];
+  assert.equal(row.source, 'IMF figure too old');
+  assert.match(row.help || '', /from Feb 2021, more than two years ago/);
+  assert.equal(countrySeries('KEN', { localRates: { tbill: old } }).series.find((s) => s.id === 'tbill_rate')?.points.length, 1);
+  assert.ok(localRatesFor({ tbill: old }, 'KEN', new Date('2026-11-18')), 'a country with only old figures still gets the reason');
+});
+
+test('IMF local rates: the too-old reason has Spanish, French and Portuguese', async () => {
+  const { attachLanguage, translateText } = await import('../src/i18n/lang');
+  const { ES, ES_TEXT } = await import('../src/i18n/es');
+  const { FR, FR_TEXT } = await import('../src/i18n/fr');
+  const { PT, PT_TEXT } = await import('../src/i18n/pt');
+  attachLanguage('es', ES, ES_TEXT);
+  attachLanguage('fr', FR, FR_TEXT);
+  attachLanguage('pt', PT, PT_TEXT);
+  for (const k of ['tbill', 'govbond', 'money'] as const) {
+    const m = localRateMissing(k, 'KEN', true, '2021-02');
+    for (const lang of ['es', 'fr', 'pt'] as const) {
+      assert.notEqual(translateText(m.short, lang), m.short, `${lang} short`);
+      const t = translateText(m.help, lang);
+      assert.notEqual(t, m.help, `${lang} ${k}`);
+      assert.match(t, /Feb 2021/);
+    }
+  }
 });

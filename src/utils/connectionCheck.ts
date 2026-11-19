@@ -1116,14 +1116,14 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
   });
 
   add('imf_rates', async () => {
-    const def: Def = { id: 'imf_rates', name: 'IMF monthly local market rates (api.imf.org)', group: 'free', feeds: 'Treasury bill rate, government bond yield and money market rate, monthly, for countries with no official 10-year yield in the app (for example Kenya, Nigeria, Ghana, Egypt)' };
+    const def: Def = { id: 'imf_rates', name: 'IMF monthly local market rates (api.imf.org)', group: 'free', feeds: 'Treasury bill rate, government bond yield and money market rate, monthly, for countries with no official 10-year yield in the app (for example Ghana, Bangladesh, Nigeria, Kenya)' };
     const t0 = Date.now();
     const got: string[] = [];
     const notes: string[] = [];
     let structure: Awaited<ReturnType<typeof pullImfMonthly>>['structure'] = null;
     for (const k of LOCAL_RATE_KINDS) {
       try {
-        const r = await pullImfMonthly(IMF_LOCAL_RATE_SPECS[k], { fetchFn, env, timeoutMs: Math.max(T, 30000), structure }, 'KEN');
+        const r = await pullImfMonthly(IMF_LOCAL_RATE_SPECS[k], { fetchFn, env, timeoutMs: Math.max(T, 30000), structure }, 'GHA');
         structure = r.structure ?? structure;
         const last = r.series?.points[r.series.points.length - 1];
         if (last) got.push(`${LOCAL_RATE_LABEL[k]} ${fmt(last.value, 2)}% (${formatMonth(last.period)})`);
@@ -1135,7 +1135,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     const latencyMs = Date.now() - t0;
     const setup = `If the IMF codes are not matched by name, set ${LOCAL_RATE_KINDS.map((k) => IMF_LOCAL_RATE_SPECS[k].env).join(', ')} in .env to the series key ({ISO3} for the country); the note says which dimensions the dataset has.`;
     const note = notes.join(' | ');
-    if (got.length) return { ...setRow(def, 'connected', `Answered in ${latencyMs} ms. ${note}.`, IMF_SDMX_HOST), latencyMs, sample: `Kenya: ${got.join('; ')}`, setup };
+    if (got.length) return { ...setRow(def, 'connected', `Answered in ${latencyMs} ms. ${note}.`, IMF_SDMX_HOST), latencyMs, sample: `Ghana: ${got.join('; ')}`, setup };
     const status = Number(/HTTP (\d{3})/.exec(note)?.[1] ?? 0) || undefined;
     const state: ConnectionState = status ? 'refused' : /no answer within|fetch failed|request failed/i.test(note) ? 'no_answer' : 'bad_reply';
     return { ...setRow(def, state, note, IMF_SDMX_HOST), latencyMs, ...(status ? { httpStatus: status } : {}), setup };

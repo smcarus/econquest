@@ -269,15 +269,18 @@ Notes from the first check on Sam's Mac (2026-11-05):
   matched). They are asked for only for countries the app does not take from the BIS; the BIS figure
   wins wherever the app pulls it. A figure more than four months old is marked "may be out of date".
 - **IMF monthly local market rates** (Treasury bill rate, government bond yield, money market rate)
-  come from the same MFS_IR dataset, found by name: the code named "Treasury bill", "Government
-  bond" or "Money market" (or "interbank"), monthly, other dimensions open (`IMF_TBILL_KEY`,
+  come from the same MFS_IR dataset, found by name: the code named "Treasury bills yields" (the
+  "Treasury bills, Rate" code holds no series), "Government bonds" or "Money market", monthly, other dimensions open (`IMF_TBILL_KEY`,
   `IMF_GOVBOND_KEY` and `IMF_MONEY_KEY` in `.env` override them; `npm run check:data`, row
   imf_rates, shows what matched). They are asked for only for countries with no official 10-year
   yield in the app (most lower-income countries, plus Turkey, Argentina, China, Indonesia, Russia
   and Saudi Arabia) and saved to `data/live/imf-tbill.json`, `imf-govbond.json` and
   `imf-money.json`. The government bond yield is the one each country reports, whose maturity
   differs by country, so it is never shown as a 10-year yield or used for the spread over US
-  Treasuries. A figure more than four months old is marked "may be out of date". Stock index levels
+  Treasuries. A figure more than four months old is marked "may be out of date"; one more than two years old
+  reads Missing with its month (the history keeps it). The first live check (19 November) found no
+  figures at all for Ethiopia or Vietnam; Treasury bill rates for Kenya, Nigeria, Egypt, Ghana,
+  Bangladesh, Bolivia and the Philippines (Tanzania, Uganda and Pakistan only more than two years old). Stock index levels
   for these countries have no free source with terms that allow reuse, and US dollar bond spreads
   are free only for eight Latin American countries (BCRP), so both read Missing with the reason.
 - **IMF monthly exchange rates** come from the ER dataset on api.imf.org, found by name in the
