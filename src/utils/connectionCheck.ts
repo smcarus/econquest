@@ -14,6 +14,7 @@
 import { pullImfMonthly } from './imfMonthly';
 import { IMF_FX_SPEC } from './imfFx';
 import { IMF_POLICY_SPEC } from './imfPolicyRate';
+import { IMF_LOCAL_RATE_SPECS, LOCAL_RATE_KINDS, LOCAL_RATE_LABEL } from './imfLocalRates';
 import { CHINN_ITO_PAGE, chinnItoLinks } from './chinnIto';
 import { FX_REGIME_SETUP_HELP, fxRegimeReading, fxRegimeValue } from './fxRegime';
 import { parseFredCsvSeries } from './fedBalanceSheet';
@@ -342,6 +343,7 @@ export const SOURCE_IDS = [
   'imf_cpi',
   'imf_fx',
   'imf_policy',
+  'imf_rates',
   'gdelt',
   'gdelt_v1',
   'polymarket',
@@ -1111,6 +1113,32 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     const status = Number(/HTTP (\d{3})/.exec(r.step.note)?.[1] ?? 0) || undefined;
     const state: ConnectionState = status ? 'refused' : /no answer within|fetch failed|request failed/i.test(r.step.note) ? 'no_answer' : 'bad_reply';
     return { ...setRow(def, state, r.step.note, IMF_SDMX_HOST), latencyMs, ...(status ? { httpStatus: status } : {}), setup };
+  });
+
+  add('imf_rates', async () => {
+    const def: Def = { id: 'imf_rates', name: 'IMF monthly local market rates (api.imf.org)', group: 'free', feeds: 'Treasury bill rate, government bond yield and money market rate, monthly, for countries with no official 10-year yield in the app (for example Kenya, Nigeria, Ghana, Egypt)' };
+    const t0 = Date.now();
+    const got: string[] = [];
+    const notes: string[] = [];
+    let structure: Awaited<ReturnType<typeof pullImfMonthly>>['structure'] = null;
+    for (const k of LOCAL_RATE_KINDS) {
+      try {
+        const r = await pullImfMonthly(IMF_LOCAL_RATE_SPECS[k], { fetchFn, env, timeoutMs: Math.max(T, 30000), structure }, 'KEN');
+        structure = r.structure ?? structure;
+        const last = r.series?.points[r.series.points.length - 1];
+        if (last) got.push(`${LOCAL_RATE_LABEL[k]} ${fmt(last.value, 2)}% (${formatMonth(last.period)})`);
+        notes.push(`${LOCAL_RATE_LABEL[k]}: ${r.step.note}`);
+      } catch (err) {
+        notes.push(`${LOCAL_RATE_LABEL[k]}: ${describeNetworkError(err, Math.max(T, 30000))}`);
+      }
+    }
+    const latencyMs = Date.now() - t0;
+    const setup = `If the IMF codes are not matched by name, set ${LOCAL_RATE_KINDS.map((k) => IMF_LOCAL_RATE_SPECS[k].env).join(', ')} in .env to the series key ({ISO3} for the country); the note says which dimensions the dataset has.`;
+    const note = notes.join(' | ');
+    if (got.length) return { ...setRow(def, 'connected', `Answered in ${latencyMs} ms. ${note}.`, IMF_SDMX_HOST), latencyMs, sample: `Kenya: ${got.join('; ')}`, setup };
+    const status = Number(/HTTP (\d{3})/.exec(note)?.[1] ?? 0) || undefined;
+    const state: ConnectionState = status ? 'refused' : /no answer within|fetch failed|request failed/i.test(note) ? 'no_answer' : 'bad_reply';
+    return { ...setRow(def, state, note, IMF_SDMX_HOST), latencyMs, ...(status ? { httpStatus: status } : {}), setup };
   });
 
   add('gdelt', () =>

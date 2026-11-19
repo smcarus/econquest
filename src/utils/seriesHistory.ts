@@ -26,6 +26,7 @@ import type { FxExtraFile } from './fxExtra';
 import type { ImfMonthlyPull } from './imfMonthly';
 import { imfFxSeries } from './imfFx';
 import { imfPolicySeries } from './imfPolicyRate';
+import { LOCAL_RATE_KINDS, LOCAL_RATE_LABEL, LOCAL_RATE_SERIES_ID, imfLocalRatesWanted, localRateMissing, localRateSeries, type LocalRatePulls } from './imfLocalRates';
 import { bisCreditSeries, type BisCreditCycle } from './bisCreditCycle';
 import { privateDebtSeries, sectorBalanceSeries } from './sectorBalances';
 import { idsCreditorSeries, type IdsCreditors } from './idsCreditors';
@@ -119,6 +120,8 @@ export interface SeriesInputs {
   imfFx?: ImfMonthlyPull | null;
   /** IMF monthly policy rates (src/utils/imfPolicyRate.ts), for countries the app does not take from the BIS. */
   imfPolicy?: ImfMonthlyPull | null;
+  /** IMF monthly local market rates (src/utils/imfLocalRates.ts), for countries with no official 10Y yield. */
+  localRates?: LocalRatePulls | null;
   /** BIS credit-to-GDP gap, debt service ratio and real house prices (src/utils/bisCreditCycle.ts), when pulled. */
   bisCredit?: BisCreditCycle | null;
   /** Creditor mix and terms of public external debt (src/utils/idsCreditors.ts), when pulled. */
@@ -187,6 +190,12 @@ export function snapshotValue(snapshot: Record<string, unknown>, field: string):
 
 const sortByDate = (pts: SeriesPoint[]) => pts.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+
+/** IMF monthly local market rates (LP1), only for countries they are asked for; Missing with the reason otherwise. */
+function localRateSeriesAll(iso3: string, pulls: LocalRatePulls | null | undefined): Array<Series | SeriesMissing> {
+  if (!imfLocalRatesWanted(iso3)) return [];
+  return LOCAL_RATE_KINDS.map((k) => localRateSeries(k, pulls?.[k], iso3) ?? { id: LOCAL_RATE_SERIES_ID[k], label: LOCAL_RATE_LABEL[k], reason: localRateMissing(k, iso3, Boolean(pulls?.[k])).short });
+}
 
 /** The BIS policy rate; where the app does not take it from the BIS, the IMF monthly rate (LI4). */
 function policyRateOrImf(iso3: string, inputs: SeriesInputs): Series | SeriesMissing {
@@ -407,6 +416,7 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
     ticHoldings(code, inputs.tic),
     hcSpread(code, inputs.hcSpread),
     impliedDefaultSeries(hcSpread(code, inputs.hcSpread)),
+    ...localRateSeriesAll(code, inputs.localRates),
     ...bisCreditSeries(inputs.bisCredit, Boolean(BIS_ISO2[code])),
     ...privateDebtSeries(inputs.bisCredit, Boolean(BIS_ISO2[code])),
     ...idsCreditorSeries(inputs.idsCreditors),
