@@ -5,7 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-- Local market rates for countries with no official 10-year yield (most of the lower-income
+## [0.3.0] - 2026-11-19
+
+Fixes to features added in 0.2.0, nowcasts, forecasts and local market rates for the lower-income
+countries, and a clearer Menu, Tools page and watchlist screen. Numbered 0.3.0 rather than 0.2.1 because these
+are new features.
+
+- Local market rates for countries with no official 10-year yield (#617; most of the lower-income
   watchlist): the Treasury bill rate, government bond yield and money market rate from the IMF's
   free monthly interest-rate data (MFS_IR), found by the IMF's code names (`IMF_TBILL_KEY`,
   `IMF_GOVBOND_KEY`, `IMF_MONEY_KEY` in `.env` override). They show in Research (brief, Markets &
@@ -14,6 +20,33 @@ and versions follow [Semantic Versioning](https://semver.org/).
   differs by country, so it never fills the 10-year yield. The daily run has a new step and
   `npm run check:data` a new row, `imf_rates`. Stock index levels read Missing with the reason (no
   free source with terms that allow reuse).
+- Package updates (#618 to #620): minor and patch updates, lucide-react 1.76, and newer GitHub
+  Actions steps; they replace the matching Dependabot pull requests.
+- Phone layout (#616): the header controls move into the Menu with their names, Settings has a page
+  picker, the Research tabs wrap onto a second line, and the starter question is shorter.
+- Menu in three groups (#615): Tools on its own at the top, then Set up (Settings, Account, Offline
+  data, Your data, Sharing and Exam mode), Check the data (Data health, Models and validation, Audit
+  log, Idea journal) and Learn (User manual, Worked examples, About, Quests), with headings in four
+  languages. Tools > Study one country now lists Policy review.
+- Tools on one page (#614): Menu > Tools opens the Tools page and is no longer also a tab in
+  Settings. "Look back" held 28 of 49 tools; it now holds only the look-back tools, and four new
+  groups take the rest (Debt and the budget; Rates, prices and trade; Growth, people and aid;
+  Disasters and climate). "Find a tool" searches every tool's name, description and group, in
+  English and the reader's language, ignoring case and accents.
+- Plain wording (#613): plain labels on the watchlist screen, plain default watchlist names for new
+  installs (saved watchlists keep theirs), and small wording fixes in four languages. A what-if
+  answer is now compared only with the same question asked before; before, it could show changes
+  from an unrelated earlier question.
+- Council chat (#612): "Missing for this question" is folded under its count (the agents' documents
+  under Sources keep the full text), terminal commands are taken out of the chat, a question that
+  names a country with no figures is no longer told to name a country, and a long answer opens at
+  its question and findings.
+- Every country the app covers can be reached from any watchlist (#611): Research > One country and
+  Policy review list the open watchlist, then "Other countries in the app"; Compare countries has a
+  watchlist picker; Council chat pulls the figures of a covered country named in a question. Before,
+  the 15 lower-income countries were out of reach unless their watchlist was open.
+- The watchlist screen no longer crashes on a Missing figure (#610): a 10Y yield, debt or reserves
+  figure no source filled now reads as a dash, and the 10Y tooltip says Missing.
 
 - Documentation for the lower-income nowcasts and forecasts (#608): README and walk-through guide in
   English, Spanish, French and Portuguese, the user manual and How EconQuest works 1.5.
