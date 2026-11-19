@@ -134,7 +134,7 @@ From the terms:
 
 ### IMF (World Economic Outlook, Fiscal Monitor, International Liquidity, Balance of Payments, COFER, Consumer Price Index, Exchange Rates, Monetary and Financial Statistics)
 
-- **Used for:** Debt/GDP, inflation, growth, primary balance, output gap, reserves, current account, imports, COFER shares, monthly consumer prices (CPI dataset), monthly exchange rates per US dollar (ER dataset), monthly central bank policy rates (MFS_IR dataset), government spending by function (GFS COFOG, read through DBnomics); revenue and spending by level of government (GFS main aggregates by sub-sector, GFSMAB, read through DBnomics)
+- **Used for:** Debt/GDP, inflation, growth, primary balance, output gap, reserves, current account, imports, COFER shares, monthly consumer prices (CPI dataset), monthly exchange rates per US dollar (ER dataset), monthly central bank policy rates, Treasury bill rates, government bond yields and money market rates (MFS_IR dataset), government spending by function (GFS COFOG, read through DBnomics); revenue and spending by level of government (GFS main aggregates by sub-sector, GFSMAB, read through DBnomics)
 - **Status:** Permission needed for client or commercial use
 - **Free non-commercial sharing:** Free sharing allowed. IMF Data may be published and distributed with attribution; only commercial reuse needs permission.
 - **Terms read:** [Copyright and Usage (Special Terms for Statistical Data)](https://www.imf.org/en/About/copyright-and-terms) (checked 2026-11-06)

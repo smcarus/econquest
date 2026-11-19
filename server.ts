@@ -253,8 +253,9 @@ import { US_10Y_SERIES } from './src/utils/officialYields.ts';
 import { fetchCftcPull, fetchTicPull, fetchCbpolPull, fetchUstAuctionPull, loadUstAuctions } from './src/server/feeds/positioning';
 import { fetchGovSpendingPull } from './src/server/feeds/govSpending';
 import { gdeltPausedUntil, gdeltFetch, GDELT_REFRESH_MS } from './src/server/feeds/gdelt';
-import { fetchImfPull, fetchCoferPull, fetchImfCpiPull, loadImfCpi, fetchImfFxPull, loadImfFx, fetchImfPolicyPull, loadImfPolicy } from './src/server/feeds/imf';
+import { fetchImfPull, fetchCoferPull, fetchImfCpiPull, loadImfCpi, fetchImfFxPull, loadImfFx, fetchImfPolicyPull, loadImfPolicy, fetchImfLocalRatePulls, loadImfLocalRates } from './src/server/feeds/imf';
 import { imfPolicyRateFor } from './src/utils/imfPolicyRate';
+import { localRatesFor } from './src/utils/imfLocalRates';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
 import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, nationalCpiOrSaved, forgetNationalCpi, fetchMonthlyActivity, fetchEuSurveyPull, loadEuSurveys } from './src/server/feeds/oecd';
 import { commodityMemory, fetchCommodities, forgetCommodityPulls } from './src/server/feeds/commodities';
@@ -693,6 +694,14 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       const months = Object.values(got.series).map((s) => s.points[s.points.length - 1]?.period || '');
       const note = `${Object.keys(got.series).length} countries to ${months.sort().pop() || '?'}`;
       return fresh ? { outcome: 'done', note } : { outcome: 'failed', note: `The IMF did not answer; kept the copy from ${got.pulledAt.slice(0, 10)} (${note})` };
+    }
+    case 'world:imf_rates': {
+      const got = await fetchImfLocalRatePulls({ force: true });
+      const pulls = Object.values(got).filter((p): p is NonNullable<typeof p> => Boolean(p));
+      if (!pulls.length) return { outcome: 'failed', note: 'No IMF monthly local market rate was saved (npm run check:data, row imf_rates, shows why)' };
+      const fresh = pulls.some((p) => Date.now() - Date.parse(p.pulledAt) < 60 * 60 * 1000);
+      const note = (['tbill', 'govbond', 'money'] as const).map((k) => `${k === 'tbill' ? 'T-bill' : k === 'govbond' ? 'gov bond' : 'money market'} ${Object.keys(got[k]?.series || {}).length}`).join(', ') + ' countries';
+      return fresh ? { outcome: 'done', note } : { outcome: 'failed', note: `The IMF did not answer; kept the saved copies (${note})` };
     }
     case 'world:imf_fx': {
       const got = await fetchImfFxPull(fxHistoryCurrencies(loadFxHistory()), { force: true });
@@ -1339,7 +1348,14 @@ function topUpGdeltRaw(): void {
 }
 
 function withGdeltRaw(snapshot: OpenDataSnapshot): OpenDataSnapshot {
-  return withUcdp(withGdeltRawOnly(snapshot));
+  return withLocalRates(withUcdp(withGdeltRawOnly(snapshot)));
+}
+
+/** IMF monthly local market rates (LP1) from the saved copies; never waits on the network. */
+function withLocalRates(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  const { localRates: _drop, ...rest } = snapshot;
+  const reading = localRatesFor(loadImfLocalRates(), snapshot.iso3);
+  return reading ? { ...(rest as OpenDataSnapshot), localRates: reading } : (rest as OpenDataSnapshot);
 }
 function withGdeltRawOnly(snapshot: OpenDataSnapshot): OpenDataSnapshot {
   const reading = gdeltRawReadingFor(snapshot.iso3);
@@ -4347,6 +4363,7 @@ async function startServer() {
       fxExtra,
       imfFx: loadImfFx(),
       imfPolicy: loadImfPolicy(),
+      localRates: loadImfLocalRates(),
       bisCredit,
       idsCreditors,
       sovereignDefaults,

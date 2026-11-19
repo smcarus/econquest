@@ -8,7 +8,7 @@ import type { CouncilAssessmentRun, LiveWatchlistItem, OpenDataSnapshot, Watchli
 import { missingReason } from './liveFigures';
 import { getSnapshotDataStatus } from './dataStatus';
 import { formatPeriod } from './officialYields';
-import { liveRow, missingNote, missingRow, noSourceRow, pct, pts, type BriefRow, type CountryBrief } from './countryNotes';
+import { liveRow, localRateRows, missingNote, missingRow, noSourceRow, pct, pts, type BriefRow, type CountryBrief } from './countryNotes';
 import { cdsSourceNote, yieldSourceNote } from './watchlistYield';
 import { carryToVol, reerLabel } from './fxValuation';
 import { formatMonth, ticMissing, ticTrend } from './ticHoldings';
@@ -220,6 +220,8 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
       title: 'Market pricing',
       rows: [
         liveRow(status, '10Y government yield', 'market.sovereign10YBondYieldPct', (v) => pct(v, 2), open),
+        // IMF monthly local market rates (LP1) and the stock index, for countries with no official 10Y yield.
+        ...localRateRows(open),
         us
           ? { label: 'US 10Y Treasury', value: pct(us.valuePct, 2), source: `official, OECD via FRED, ${formatPeriod(us.period)} avg`, verified: true }
           : missingRow('US 10Y Treasury', { kind: 'unreachable', short: 'FRED did not answer', help: 'The free FRED feed did not answer. Press Refresh now under Research > One country, or add a free FRED key under Menu > Settings.' }),

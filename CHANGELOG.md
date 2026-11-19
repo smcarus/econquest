@@ -7,10 +7,21 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [0.3.0] - 2026-11-19
 
-Fixes to features added in 0.2.0, nowcasts and forecasts for the lower-income countries, and a
-clearer Menu, Tools page and watchlist screen. Numbered 0.3.0 rather than 0.2.1 because the
-nowcasts and forecasts are new features.
+Fixes to features added in 0.2.0, nowcasts, forecasts and local market rates for the lower-income
+countries, and a clearer Menu, Tools page and watchlist screen. Numbered 0.3.0 rather than 0.2.1 because these
+are new features.
 
+- Local market rates for countries with no official 10-year yield (#617; most of the lower-income
+  watchlist): the Treasury bill rate, government bond yield and money market rate from the IMF's
+  free monthly interest-rate data (MFS_IR), found by the IMF's code names (`IMF_TBILL_KEY`,
+  `IMF_GOVBOND_KEY`, `IMF_MONEY_KEY` in `.env` override). They show in Research (brief, Markets &
+  signals, data sources), History & data, the market council and the council's figures, each with
+  its month and a "may be out of date" note after four months. The government bond yield's maturity
+  differs by country, so it never fills the 10-year yield. The daily run has a new step and
+  `npm run check:data` a new row, `imf_rates`. Stock index levels read Missing with the reason (no
+  free source with terms that allow reuse).
+- Package updates (#618 to #620): minor and patch updates, lucide-react 1.76, and newer GitHub
+  Actions steps; they replace the matching Dependabot pull requests.
 - Phone layout (#616): the header controls move into the Menu with their names, Settings has a page
   picker, the Research tabs wrap onto a second line, and the starter question is shorter.
 - Menu in three groups (#615): Tools on its own at the top, then Set up (Settings, Account, Offline

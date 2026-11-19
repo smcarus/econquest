@@ -19,6 +19,7 @@ import { CBPOL_AREA, CBPOL_NOT_COVERED } from '../../utils/bisPolicyRates';
 import type { ImfCpiStructure as ImfMonthlyStructure } from '../../utils/imfCpi';
 import { IMF_FX_SPEC } from '../../utils/imfFx';
 import { EXTRA_FX } from '../../utils/fxExtra';
+import { IMF_LOCAL_RATE_SPECS, LOCAL_RATE_KINDS, imfLocalRatesWanted, type LocalRateKind, type LocalRatePulls } from '../../utils/imfLocalRates';
 
 /**
  * IMF reserves and balance of payments (src/utils/imfReserves.ts): monthly official reserves (IL)
@@ -307,3 +308,28 @@ export function imfPolicyCountries(): string[] {
   return SOVEREIGN_CATALOG.map((c) => c.iso3).filter((iso3) => !CBPOL_AREA[iso3] || CBPOL_NOT_COVERED.has(iso3));
 }
 export const fetchImfPolicyPull = (opts: { force?: boolean } = {}) => imfPolicyFeed.fetchPull(imfPolicyCountries(), opts);
+
+/**
+ * IMF monthly local market rates (LP1, src/utils/imfLocalRates.ts): Treasury bill rate, government
+ * bond yield and money market rate for the catalog countries with no official 10-year yield in the
+ * app. Saved to data/live/imf-tbill.json, imf-govbond.json and imf-money.json.
+ */
+const imfLocalRateFeeds: Record<LocalRateKind, ReturnType<typeof imfMonthlyFeed>> = {
+  tbill: imfMonthlyFeed('imf-tbill.json', IMF_LOCAL_RATE_SPECS.tbill, 'IMF T-bill'),
+  govbond: imfMonthlyFeed('imf-govbond.json', IMF_LOCAL_RATE_SPECS.govbond, 'IMF gov bond'),
+  money: imfMonthlyFeed('imf-money.json', IMF_LOCAL_RATE_SPECS.money, 'IMF money market'),
+};
+/** The saved copies only, without asking the IMF. */
+export function loadImfLocalRates(): LocalRatePulls {
+  return { tbill: imfLocalRateFeeds.tbill.load(), govbond: imfLocalRateFeeds.govbond.load(), money: imfLocalRateFeeds.money.load() };
+}
+export function imfLocalRateCountries(): string[] {
+  return SOVEREIGN_CATALOG.map((c) => c.iso3).filter(imfLocalRatesWanted);
+}
+/** All three rates, one after the other (the IMF asks callers not to send many requests at once). */
+export async function fetchImfLocalRatePulls(opts: { force?: boolean } = {}): Promise<LocalRatePulls> {
+  const countries = imfLocalRateCountries();
+  const out: LocalRatePulls = {};
+  for (const k of LOCAL_RATE_KINDS) out[k] = await imfLocalRateFeeds[k].fetchPull(countries, opts);
+  return out;
+}
