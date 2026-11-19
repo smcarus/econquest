@@ -47,6 +47,7 @@ npm test             # unit and server tests, network replaced by fixtures
 npm run build
 npx playwright install chromium   # once
 npm run test:smoke   # every page with all feeds down
+npm run test:a11y    # accessibility check of the main pages
 ```
 
 - Keep pull requests small and about one thing. Rebase on `main` rather than merging it in.

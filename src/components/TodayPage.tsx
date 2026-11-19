@@ -266,10 +266,10 @@ export const TodayPage: React.FC<{
       aria-expanded={briefing}
       aria-controls="ws-briefing"
       data-briefing-toggle="true"
-      aria-label={t('briefing')}
       title={`${t('briefingTitle')}${toFix > 0 ? (toFix === 1 ? t('briefingNeedsOne') : t('briefingNeedsMany', { n: toFix })) : ''}`}
     >
-      <PanelRight className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{t('briefing')}</span>
+      <PanelRight className="w-3.5 h-3.5" aria-hidden /> {/* Named by its own text, so the spoken name matches what is shown; on a phone the word is read but not shown. */}
+      <span className="sr-only sm:not-sr-only">{t('briefing')}</span>
       {toFix > 0 && (
         <span className="ml-0.5 inline-flex items-center gap-1" data-briefing-setup={toFix}>
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" aria-hidden />

@@ -12,18 +12,20 @@ export const LanguageButton: React.FC<{ labelled?: boolean }> = ({ labelled = fa
   const info = langInfo(lang);
   const next = langInfo(nextLang(lang));
   const vars = { name: info.name, next: next.name };
+  const shown = labelled ? info.name : info.short;
   return (
     <button
       type="button"
       onClick={() => writeLang(next.code)}
       title={t(info.reviewed ? 'langTitle' : 'langNotReviewed', vars)}
-      aria-label={t('langAria', vars)}
+      // The spoken name starts with the visible text, so voice-control users can say what they see.
+      aria-label={`${shown}. ${t('langAria', vars)}`}
       data-lang={lang}
       lang={lang}
       className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap"
     >
       <Languages className="w-3.5 h-3.5" aria-hidden />
-      <span>{labelled ? info.name : info.short}</span>
+      <span>{shown}</span>
     </button>
   );
 };

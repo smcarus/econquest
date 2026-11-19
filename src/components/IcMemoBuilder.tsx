@@ -607,7 +607,10 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
           </div>
           <div className={`p-4 ${phonePane === 'preview' ? '' : 'hidden lg:block'}`}>
             <div className="ui-label mb-1">{t('im_preview')}</div>
+            {/* Focusable so keyboard users can scroll the preview with the arrow keys. */}
             <article
+              tabIndex={0}
+              aria-label={t('im_preview')}
               className="ic-memo-preview max-h-[60vh] lg:max-h-[68vh] overflow-y-auto pr-1 text-sm text-slate-800 dark:text-slate-200 space-y-2 [&_h1]:text-xl [&_h1]:font-semibold [&_h1]:text-slate-900 dark:[&_h1]:text-white [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:mt-4 [&_h2]:pb-1 [&_h2]:border-b [&_h2]:border-slate-200 dark:[&_h2]:border-slate-700 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5"
               dangerouslySetInnerHTML={{ __html: html }}
             />
