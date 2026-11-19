@@ -15,7 +15,7 @@ test('a chart cites the app and each register source once, with the date read', 
   const c = citation({ kind: 'chart', title: 'Policy rate vs inflation, Turkey', sources: ['BIS policy rates', 'IMF WEO, 2025', 'BIS, month-end figures', undefined, ''], accessed: '2026-11-11', asOf: '2026-11-10' });
   assert.deepEqual(c.sources.map((s) => s.id).sort(), ['bis', 'imf']);
   assert.equal(c.ownCalculation, false);
-  assert.match(c.text, /^EconQuest Terminal contributors \(2026\)\. "Policy rate vs inflation, Turkey" \[chart\]\. EconQuest Terminal, version 0\.2\.0\. Accessed 11 November 2026\./);
+  assert.match(c.text, /^EconQuest Terminal contributors \(2026\)\. "Policy rate vs inflation, Turkey" \[chart\]\. EconQuest Terminal, version 0\.3\.0\. Accessed 11 November 2026\./);
   assert.match(c.text, /Figures as read from their sources on 10 November 2026/);
   assert.match(c.text, /Source: International Monetary Fund, IMF WEO, 2025/);
   assert.match(c.text, /Retrieved through EconQuest Terminal on 10 November 2026/);
@@ -57,11 +57,11 @@ test('a citation names the code commit when the build recorded one, and the vers
   assert.equal(versionWithCommit('0.1.0', ''), '0.1.0');
   assert.equal(versionWithCommit('0.1.0', '1a2b3c4d5e6f'), '0.1.0 (commit 1a2b3c4d5e6f)');
   const withCommit = citation({ kind: 'chart', title: 'Policy rate, Brazil', sources: [], accessed: '2026-11-14', commit: '1a2b3c4d5e6f' });
-  assert.match(withCommit.text, /version 0\.2\.0 \(commit 1a2b3c4d5e6f\)\./);
-  assert.match(withCommit.bibtex, /howpublished = \{Chart in EconQuest Terminal, version 0\.2\.0 \(commit 1a2b3c4d5e6f\)\}/);
+  assert.match(withCommit.text, /version 0\.3\.0 \(commit 1a2b3c4d5e6f\)\./);
+  assert.match(withCommit.bibtex, /howpublished = \{Chart in EconQuest Terminal, version 0\.3\.0 \(commit 1a2b3c4d5e6f\)\}/);
   assert.match(withCommit.ris, /N1  - .*Code commit 1a2b3c4d5e6f\./);
   const without = citation({ kind: 'chart', title: 'Policy rate, Brazil', sources: [], accessed: '2026-11-14', commit: '' });
-  assert.match(without.text, /version 0\.2\.0\. Accessed/);
+  assert.match(without.text, /version 0\.3\.0\. Accessed/);
   assert.match(packCitationCff('Pack', '2026-11-14', 'abcdef123456'), /^ {4}commit: "abcdef123456"$/m);
   assert.doesNotMatch(packCitationCff('Pack', '2026-11-14', ''), /commit:/);
   const saved = process.env.APP_COMMIT;

@@ -6,8 +6,8 @@ type: software
 authors:
   - name: "EconQuest Terminal contributors"
 license: Apache-2.0
-version: 0.2.0
-date-released: "2026-11-17"
+version: 0.3.0
+date-released: "2026-11-19"
 keywords:
   - sovereign risk
   - emerging markets
