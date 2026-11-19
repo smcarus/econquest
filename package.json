@@ -57,6 +57,7 @@
     "council:time": "tsx scripts/council-time.ts",
     "docs:methods": "tsx scripts/docs-methods.ts",
     "docs:track-record": "tsx scripts/docs-track-record.ts",
+    "track-record:import": "tsx scripts/track-record-import.ts",
     "docs:glossary": "tsx scripts/docs-glossary.ts",
     "users": "tsx scripts/users.ts",
     "tokens": "tsx scripts/tokens.ts",

@@ -5,8 +5,9 @@ import { VERDICT_FOLDER, type RecordedVerdict, type VerdictKind } from './method
 import { trackRecordMarkdown, trackRows, type RecordedRun, type TestFile, type TrackRow } from './trackRecordDoc';
 import { loadTestRecord, testRecordPath } from './questTestStore';
 import type { QuestTestVerdict } from './questSignal';
+import type { ForwardRecordSummary } from './trackRecordImport';
 
-function repoInputs(root: string, questsDir = path.join(root, 'quests')): { verdicts: RecordedVerdict[]; files: TestFile[]; runs: RecordedRun[]; questVerdicts: QuestTestVerdict[] } {
+function repoInputs(root: string, questsDir = path.join(root, 'quests')): { verdicts: RecordedVerdict[]; files: TestFile[]; runs: RecordedRun[]; questVerdicts: QuestTestVerdict[]; forward?: ForwardRecordSummary } {
   const files: TestFile[] = [];
   for (const [kind, folder] of Object.entries(VERDICT_FOLDER) as [VerdictKind, string][]) {
     const dir = path.join(root, 'docs/validation', folder);
@@ -20,12 +21,12 @@ function repoInputs(root: string, questsDir = path.join(root, 'quests')): { verd
   const quests = loadTestRecord(testRecordPath(questsDir));
   if (quests.problems.length) throw new Error(`quests/test-verdicts.json: ${quests.problems.join('; ')}`);
   const questRuns = quests.record.runs.map((r) => ({ ranAt: r.ranAt, where: `${r.where}, npm run quests:run-tests for Signal Quest ${r.questId} (run by ${r.by})` }));
-  return { verdicts: record.verdicts as RecordedVerdict[], files, runs: [...(record.runs || []), ...questRuns], questVerdicts: quests.record.verdicts };
+  return { verdicts: record.verdicts as RecordedVerdict[], files, runs: [...(record.runs || []), ...questRuns], questVerdicts: quests.record.verdicts, ...(record.forward ? { forward: record.forward as ForwardRecordSummary } : {}) };
 }
 
 export function trackRecordFromRepo(root: string): string {
   const x = repoInputs(root);
-  return trackRecordMarkdown(x.verdicts, x.files, x.runs, x.questVerdicts);
+  return trackRecordMarkdown(x.verdicts, x.files, x.runs, x.questVerdicts, x.forward);
 }
 
 /** Every row of the track record with its Holm reading; Signal Quest verdicts read from `questsDir`. */

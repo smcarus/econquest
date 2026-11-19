@@ -39,6 +39,8 @@ export interface RecordedVerdict {
   method?: number;
   /** The p the verdict was judged on, copied from the run (older rows state it only in the summary). */
   p?: number;
+  /** When `p` came from a later run of the same test file with the same verdict (rows recorded before rows carried p). */
+  pRanAt?: string;
   summary: string;
 }
 
