@@ -26,7 +26,7 @@ import { ruleFamily } from './ruleFamily';
 import type { CftcWeek } from './cftcPositioning';
 import type { ValidationStatus } from '../data/modelRegister';
 
-export type BacktestMethod = 'cli_turn_policy' | 'cftc_crowding' | 'taylor_gap' | 'regime_quadrant' | 'cycle_clock' | 'timing_unwind' | 'rule_family' | 'unrest_onset' | 'expectations_direction' | 'yield_curve_recession';
+export type BacktestMethod = 'cli_turn_policy' | 'cftc_crowding' | 'taylor_gap' | 'regime_quadrant' | 'cycle_clock' | 'timing_unwind' | 'rule_family' | 'unrest_onset' | 'expectations_direction' | 'yield_curve_recession' | 'scorecard_default';
 
 export interface BacktestSpec {
   id: string;
@@ -977,4 +977,86 @@ export function yieldCurveCases(spec: BacktestSpec, countries: CurveCountry[], l
     out.push({ where: r.where, when: String(r.year), what: `${what}; real GDP ${r.next >= 0 ? '+' : '−'}${Math.abs(r.next).toFixed(1)}% in ${r.year + 1}`, hit: r.next < 0, base: Math.round(base * 10000) / 10000 });
   }
   return out;
+}
+
+/** The six World Bank WGI estimates the country risk scorecard reads (scorecard_default averages them). */
+export const WGI_CODES = ['VA.EST', 'PV.EST', 'GE.EST', 'RQ.EST', 'RL.EST', 'CC.EST'] as const;
+export type WgiCode = (typeof WGI_CODES)[number];
+
+/** WGI estimates by country and year: ISO3 -> "YYYY" -> code -> estimate. */
+export type WgiTable = Record<string, Record<string, Partial<Record<WgiCode, number>>>>;
+
+/** The BoC-BoE table as the app reads it (src/utils/sovereignDefaults.ts): ISO3 -> "YYYY" -> TOTAL in US$ m (0 = not in default). */
+export interface DefaultTable {
+  edition: number;
+  span: { from: number; to: number };
+  countries: Record<string, Record<string, { TOTAL?: number }>>;
+}
+
+/**
+ * scorecard_default (docs/validation/preregistered/scorecard_default.json): for each WGI year t, the
+ * governance reading is the plain average of the six WGI estimates (a country-year needs all six).
+ * The universe is every country with all six estimates in year t and a BoC-BoE row; its readings
+ * are ranked and the lowest bottomShare of them (the floor of n x 0.25 countries, lowest first) are
+ * the calls. WGI for t is published in the autumn of t+1, so it is first usable at the end of t+1;
+ * a country already in default at the end of t+1 is left out, and the outcome is a default start
+ * (TOTAL zero in one year, above zero the next) in t+2, t+3 or t+4. Only years whose whole window
+ * ends inside the edition are judged (2021 with the 2026 edition). The base rate is the share of
+ * all those country-years, called or not, followed by a default start, pooled ("more often than
+ * country-years in general"). A call whose window ends after the edition is an open call, due in
+ * t+4, scored when a later edition covers it.
+ */
+export function scorecardDefaultCases(spec: BacktestSpec, wgi: WgiTable, defaults: DefaultTable, open?: OpenCall[]): BacktestCase[] {
+  const p = spec.params as Record<string, unknown>;
+  const share = Number(p.bottomShare ?? 0.25);
+  const lag = Number(p.releaseLagYears ?? 1);
+  const horizon = Number(p.horizonYears ?? 3);
+  const fromYear = Number(String(spec.sample.from).match(/\d{4}/)?.[0] ?? 1996);
+  const lastJudged = defaults.span.to - lag - horizon;
+  const total = (iso3: string, y: number): number | undefined => {
+    if (y < defaults.span.from || y > defaults.span.to) return undefined;
+    return defaults.countries[iso3]?.[String(y)]?.TOTAL ?? (defaults.countries[iso3]?.[String(y)] ? 0 : undefined);
+  };
+  const years = new Set<number>();
+  for (const rows of Object.values(wgi)) for (const y of Object.keys(rows)) if (/^\d{4}$/.test(y) && Number(y) >= fromYear) years.add(Number(y));
+  type Row = { where: string; year: number; reading: number; bottom: boolean; hit?: boolean };
+  const judged: Row[] = [];
+  const calls: Row[] = [];
+  for (const t of [...years].sort((a, b) => a - b)) {
+    const readings: Array<{ where: string; reading: number }> = [];
+    for (const [iso3, rows] of Object.entries(wgi)) {
+      if (!defaults.countries[iso3]) continue;
+      const r = rows[String(t)];
+      const vals = WGI_CODES.map((c) => r?.[c]);
+      if (vals.some((v) => typeof v !== 'number' || !Number.isFinite(v))) continue;
+      readings.push({ where: iso3, reading: (vals as number[]).reduce((a, b) => a + b, 0) / vals.length });
+    }
+    readings.sort((a, b) => a.reading - b.reading || a.where.localeCompare(b.where));
+    const cut = Math.floor(readings.length * share);
+    readings.forEach((x, i) => {
+      const atUse = total(x.where, t + lag);
+      if (atUse === undefined || atUse > 0) return; // not known yet, or already in default when the reading is first usable
+      const row: Row = { where: x.where, year: t, reading: x.reading, bottom: i < cut };
+      if (t <= lastJudged) {
+        let hit = false;
+        let known = true;
+        for (let s = t + lag + 1; s <= t + lag + horizon; s++) {
+          const before = total(x.where, s - 1);
+          const now = total(x.where, s);
+          if (before === undefined || now === undefined) known = false;
+          else if (before === 0 && now > 0) hit = true;
+        }
+        if (!known) return;
+        row.hit = hit;
+        judged.push(row);
+      } else if (row.bottom) calls.push(row);
+    });
+  }
+  const base = judged.length ? judged.filter((r) => r.hit).length / judged.length : 0;
+  const what = (r: Row) => `governance reading ${r.reading >= 0 ? '+' : '−'}${Math.abs(r.reading).toFixed(2)} for ${r.year}, in the bottom quarter that year`;
+  for (const r of calls) open?.push({ where: r.where, when: String(r.year), what: `${what(r)}, so the call is a default start in ${r.year + lag + 1} to ${r.year + lag + horizon}`, due: String(r.year + lag + horizon) });
+  return judged
+    .filter((r) => r.bottom)
+    .sort((a, b) => a.where.localeCompare(b.where) || a.year - b.year)
+    .map((r) => ({ where: r.where, when: String(r.year), what: `${what(r)}; ${r.hit ? 'a default started' : 'no default started'} in ${r.year + lag + 1} to ${r.year + lag + horizon}`, hit: !!r.hit, base: Math.round(base * 10000) / 10000 }));
 }
