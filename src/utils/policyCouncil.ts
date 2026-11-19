@@ -614,11 +614,15 @@ export interface MarketReadings {
 }
 
 /** The history series copied in for a market council, in the order shown. */
-export const MARKET_SERIES: Array<{ id: string; markets: MarketKind[] }> = [
+export const MARKET_SERIES: Array<{ id: string; markets: MarketKind[]; optional?: boolean }> = [
   { id: 'policy_rate', markets: ['currency', 'local_bonds', 'dollar_bonds'] },
   { id: 'fx_per_usd', markets: ['currency', 'local_bonds', 'dollar_bonds'] },
   { id: 'yield_10y', markets: ['currency', 'local_bonds', 'dollar_bonds'] },
   { id: 'hc_spread', markets: ['currency', 'local_bonds', 'dollar_bonds'] },
+  // IMF monthly local market rates (LP1): only countries with no official 10Y yield have them, so others skip the rows.
+  { id: 'tbill_rate', markets: ['currency', 'local_bonds'], optional: true },
+  { id: 'gov_bond_yield', markets: ['currency', 'local_bonds'], optional: true },
+  { id: 'money_market_rate', markets: ['currency', 'local_bonds'], optional: true },
   { id: 'cftc_lev_net', markets: ['currency', 'local_bonds', 'dollar_bonds'] },
   { id: 'fed_swaps_total', markets: ['currency', 'local_bonds', 'dollar_bonds'] },
   { id: 'fed_swaps_cb', markets: ['currency', 'local_bonds', 'dollar_bonds'] },
@@ -659,6 +663,7 @@ export function buildMarketReadings(market: MarketKind, asOf: string, set: { ser
   for (const spec of MARKET_SERIES.filter((x) => x.markets.includes(market))) {
     const s = set.series.find((x) => x.id === spec.id);
     const miss = set.missing.find((x) => x.id === spec.id);
+    if (!s && !miss && spec.optional) continue;
     if (!s) {
       readings.push({ id: spec.id, label: miss?.label ?? spec.id, value: null, unit: '', date: '', source: '', reason: miss?.reason ?? 'The app has no history of this for the country' });
       continue;

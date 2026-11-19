@@ -471,6 +471,8 @@ export interface OpenDataSnapshot {
   gdeltRaw?: import('../utils/gdeltRaw').GdeltRawReading;
   /** UCDP conflict figures from the downloaded CSV files in data/local/ucdp/; laid over when served (utils/ucdpConflict.ts). */
   ucdp?: import('../utils/ucdpConflict').UcdpReading;
+  /** IMF monthly local market rates (LP1): Treasury bill, government bond and money market rates; laid over when served (utils/imfLocalRates.ts). */
+  localRates?: import('../utils/imfLocalRates').LocalRatesReading;
   /** Low-income country debt (U1): debt-distress rating, DSSI, Common Framework, lending from China (AidData file); laid over when served (utils/lowIncomeDebt.ts). */
   licDebt?: import('../utils/lowIncomeDebt').LicDebtReading;
   /** GDELT 1.0 monthly history: latest complete month against all months on disk; laid over when served (utils/gdeltDaily.ts). */

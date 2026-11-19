@@ -5,6 +5,16 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Local market rates for countries with no official 10-year yield (most of the lower-income
+  watchlist): the Treasury bill rate, government bond yield and money market rate from the IMF's
+  free monthly interest-rate data (MFS_IR), found by the IMF's code names (`IMF_TBILL_KEY`,
+  `IMF_GOVBOND_KEY`, `IMF_MONEY_KEY` in `.env` override). They show in Research (brief, Markets &
+  signals, data sources), History & data, the market council and the council's figures, each with
+  its month and a "may be out of date" note after four months. The government bond yield's maturity
+  differs by country, so it never fills the 10-year yield. The daily run has a new step and
+  `npm run check:data` a new row, `imf_rates`. Stock index levels read Missing with the reason (no
+  free source with terms that allow reuse).
+
 - Documentation for the lower-income nowcasts and forecasts (#608): README and walk-through guide in
   English, Spanish, French and Portuguese, the user manual and How EconQuest works 1.5.
 - Nowcasts and forecasts for the lower-income countries: the inflation nowcast and forecast now use

@@ -351,7 +351,9 @@ figures are saved under `data/live/` like the built-in countries'.
 Research notebooks, with their pinned figures and fingerprints, are kept in `data/local/research.json`.
 
 If a download fails, the copy saved before is kept and nothing is filled in. `npm run check:data`
-then shows which source did not answer. The newest rows are `imf_fx` and `imf_policy` (IMF monthly
+then shows which source did not answer. The newest row is `imf_rates` (IMF monthly Treasury bill,
+government bond and money market rates; if the code names do not match, set `IMF_TBILL_KEY`,
+`IMF_GOVBOND_KEY` or `IMF_MONEY_KEY` in `.env` as the row says). Before it came `imf_fx` and `imf_policy` (IMF monthly
 exchange rates and policy rates, found by the IMF's code names; if they do not match, set
 `IMF_FX_KEY` or `IMF_POLICY_KEY` in `.env` as the row says). Before them (17 November) came `wb_budget_credibility`
 (budget credibility), `wb_projects` and `wb_ida_credits` (World Bank projects), `dose` and

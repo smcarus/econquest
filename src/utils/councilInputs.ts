@@ -10,6 +10,7 @@ import { CDS_HIDDEN } from './cdsHidden';
 import type { OpenDataSnapshot } from '../types/council';
 import { getSnapshotDataStatus } from './dataStatus';
 import { pathMissing } from './countryNotes';
+import { LOCAL_RATE_KINDS, LOCAL_RATE_LABEL, localRateWhen } from './imfLocalRates';
 
 const FIGURES: Array<{ label: string; path: string; fmt: (v: number, s: OpenDataSnapshot) => string }> = [
   { label: 'IMF gross debt / GDP', path: 'imf.debtToGdpPct', fmt: (v) => `${v}%` },
@@ -79,6 +80,12 @@ export function councilInputs(snapshot: OpenDataSnapshot): CouncilInputs {
       ? `- GDELT long-run events, ${h.month}: protests ${h.protestPct}% of events (percentile ${h.protestPctile ?? 'n/a'}), violence ${h.violencePct}% (percentile ${h.violencePctile ?? 'n/a'}), Goldstein ${h.goldsteinMean} (percentile ${h.goldsteinPctile ?? 'n/a'}), against ${h.months} months from ${h.from} (GDELT 1.0 event files, pulled ${h.pulledAt?.slice(0, 10) || 'date unknown'})`
       : `- GDELT long-run events: MISSING (${v1Missing(false).short})`
   );
+  // IMF monthly local market rates (LP1): only when saved, so the prompt is unchanged for countries without them.
+  // The government bond yield's maturity differs by country: it is not a 10-year yield.
+  for (const k of LOCAL_RATE_KINDS) {
+    const r = snapshot.localRates?.[k];
+    if (r) lines.push(`- ${LOCAL_RATE_LABEL[k]}${k === 'govbond' ? ' (maturity as the country reports it, not a 10-year yield)' : ''}: ${r.ratePct}% (IMF monthly, ${localRateWhen(r.date)}${r.stale ? ', may be out of date' : ''}${r.change12mPts !== undefined ? `; ${r.change12mPts >= 0 ? '+' : ''}${r.change12mPts} pts in 12 months` : ''})`);
+  }
   const missingDeskInputs = DESK_ENGINE_INPUTS.filter((path) => !status.isLive(path));
   return { lines, live, missing, deskEnginesLive: missingDeskInputs.length === 0, missingDeskInputs };
 }
