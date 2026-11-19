@@ -5,7 +5,7 @@
 - [ ] `npm run lint`
 - [ ] `npm test`
 - [ ] `npm run build`
-- [ ] `npm run test:smoke` (if UI changed)
+- [ ] `npm run test:smoke` and `npm run test:a11y` (if UI changed)
 
 ## Research rules
 

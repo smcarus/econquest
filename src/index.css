@@ -133,3 +133,12 @@
     padding-bottom: 0.625rem;
   }
 }
+
+/* Faint grey text: in the light theme Tailwind's slate-400 is 2.6:1 on white, below the 4.5:1
+   that WCAG AA asks for body text, so it reads as slate-500 (4.8:1). Dark-theme colours, and
+   hover or other state colours, are unchanged. Checked by npm run test:a11y. */
+@layer utilities {
+  .text-slate-400:not(:where(.dark *)) {
+    color: var(--color-slate-500);
+  }
+}
