@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Country risk scorecard test (C12): the runner for scorecard_default, registered and hashed on
+  13 November before any run, is built. The test file moved unchanged (same hash) to
+  docs/validation/preregistered/, and `npm run backtest` now reads the six World Bank WGI estimates
+  for every country and the BoC-BoE Sovereign Default Database to judge it. It has its own register
+  entry (Governance reading and sovereign default); the scorecard itself still shows no overall
+  score. The first verdict comes from a run on a computer that reaches the World Bank and the Bank
+  of Canada.
 - IMF local market rates, after the first live check (19 November): the Treasury bill rate now
   comes from "Government securities: Treasury bills yields" (the IMF's "Treasury bills, Rate" code
   holds no series), which covers Kenya, Nigeria, Ghana, Bangladesh, Bolivia, the Philippines and

@@ -268,7 +268,7 @@ validated, with the reason.
 | Exchange rate regime (PB1) | The IRR monthly workbook saved in `data/local/irr/`, then `npm run check:data` (row irr_file); the file layout is tested only on made-up rows so far |
 | Capital account openness (C13) | A first run of `npm run chinn-ito:pull`, then `npm run check:data` (row chinn_ito); the file layout is tested only on made-up rows so far |
 | Crisis early-warning test (G23) | The licence for the Laeven-Valencia crisis dates (asked of the IMF) |
-| Country risk scorecard test (C12) | Its runner; the test was fixed and hashed on 13 November before any run |
+| Country risk scorecard test (C12) | A first run of `npm run backtest` on the Mac (the cloud cannot reach the World Bank or the Bank of Canada); the runner was built on 19 November and is tested only on made-up rows so far |
 | Data surprises and the surprise index (R9, R10) | Some weeks of the daily download, to build a log of expectations saved before each release; the index's registered test runs once 60 month ends qualify, which will take years |
 | Ranges from past IMF misses (R8) | The past IMF editions saved in `data/local/weo-vintages/`, then `npm run forecast:evaluate` for the app's own forecast ranges |
 | Quant desk (outside research tools) | A first live check against the maintainer's own research-tools server on the Mac; so far tested against a stand-in server only |

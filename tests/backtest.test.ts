@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { addMonths, binomialUpperTail, cftcCrowdingCases, cliTurnPolicyCases, cycleClockCases, regimeQuadrantCases, timingUnwindCases, judge, judgeWithRobustness, monthlyRuns, robustness, taylorGapCases, ruleFamilyCases, type BacktestCase, type BacktestSpec } from '../src/utils/backtest';
+import { addMonths, binomialUpperTail, cftcCrowdingCases, cliTurnPolicyCases, cycleClockCases, regimeQuadrantCases, timingUnwindCases, judge, judgeWithRobustness, monthlyRuns, robustness, taylorGapCases, ruleFamilyCases, scorecardDefaultCases, type BacktestCase, type BacktestSpec, type DefaultTable, type OpenCall, type WgiTable } from '../src/utils/backtest';
 import { targetIn } from '../src/data/inflationTargetHistory';
-import { loadSpecs, loadValidation, runBacktests, sha256 } from '../src/utils/backtestRun';
+import { loadSpecs, loadValidation, parseWbPage, runBacktests, sha256, wgiAllUrl } from '../src/utils/backtestRun';
 import { registerEntry } from '../src/data/modelRegister';
 import type { CftcWeek } from '../src/utils/cftcPositioning';
 
@@ -122,7 +122,14 @@ test('runBacktests pulls the histories once, judges each registered test and sav
       throw new Error('HTTP 503');
     },
   });
-  const core = urls.filter((u) => !u.includes('NGDP_RPCH') && !u.includes('ec.europa.eu') && !u.includes('fred.stlouisfed.org'));
+  const core = urls.filter((u) => !u.includes('NGDP_RPCH') && !u.includes('ec.europa.eu') && !u.includes('fred.stlouisfed.org') && !u.includes('api.worldbank.org') && !u.includes('bankofcanada.ca'));
+  // scorecard_default: each of the six WGI estimates once (all countries), then the BoC-BoE editions newest first; no verdict when they do not answer.
+  const wgi = urls.filter((u) => u.includes('api.worldbank.org'));
+  assert.deepEqual(wgi.map((u) => u.match(/indicator\/([A-Z.]+)\?/)![1]), ['VA.EST', 'PV.EST', 'GE.EST', 'RQ.EST', 'RL.EST', 'CC.EST']);
+  assert.ok(urls.some((u) => u.includes('bankofcanada.ca/valet/observations/group/DEBT_2026/csv')));
+  assert.ok(out.problems.some((p) => /World Bank WGI estimates did not answer for VA.EST/.test(p)));
+  assert.ok(out.problems.some((p) => /BoC-BoE Sovereign Default Database/.test(p)));
+  assert.equal(out.results.scorecard_default, undefined, 'no verdict without WGI and BoC-BoE');
   assert.equal(core.length, 4, 'BIS, leading indicator, CFTC and consumer prices, each once');
   // inflation_expectations_lead (G32): the EC price-expectations survey and HICP, each once; no successor HICP pull when the first fails.
   const eurostat = urls.filter((u) => u.includes('ec.europa.eu'));
@@ -410,4 +417,86 @@ test('tests registered ahead of their tool match their hashes and are not yet ru
     assert.ok(spec.plannedStep && spec.hypothesis && spec.passMark && spec.knownLimits.length, f);
     assert.ok(!fs.existsSync(path.join(SPEC_DIR, f)), `${f} is in both pending/ and preregistered/`);
   }
+});
+
+test('scorecardDefaultCases: bottom quarter of the six-estimate average, used a year late, against a default start in t+2 to t+4', () => {
+  const sc = spec({ method: 'scorecard_default', sample: { from: '1996', to: 'x' }, params: { bottomShare: 0.25, releaseLagYears: 1, horizonYears: 3 } as unknown as Record<string, number> });
+  const six = (v: number) => ({ 'VA.EST': v, 'PV.EST': v, 'GE.EST': v, 'RQ.EST': v, 'RL.EST': v, 'CC.EST': v });
+  // Eight made-up countries, readings -2 (AAA) up to +1.5 (HHH), for 2016 to 2021.
+  const names = ['AAA', 'BBB', 'CCC', 'DDD', 'EEE', 'FFF', 'GGG', 'HHH'];
+  const wgi: WgiTable = {};
+  names.forEach((n, i) => {
+    wgi[n] = {};
+    for (let y = 2016; y <= 2021; y++) wgi[n][String(y)] = six(-2 + i * 0.5);
+  });
+  delete wgi.HHH['2018']['RL.EST']; // one estimate missing: HHH is out of 2018
+  wgi.ZZZ = { '2016': six(-3) }; // no BoC-BoE row: never in the universe
+  const defaults: DefaultTable = { edition: 2026, span: { from: 1960, to: 2025 }, countries: {} };
+  for (const n of names) {
+    defaults.countries[n] = {};
+    for (let y = 1960; y <= 2025; y++) defaults.countries[n][String(y)] = { TOTAL: 0 };
+  }
+  defaults.countries.AAA['2019'] = { TOTAL: 50 }; // AAA defaults in 2019
+  defaults.countries.BBB['2017'] = { TOTAL: 10 }; // BBB in default at the end of 2017: its 2016 reading is left out
+  defaults.countries.EEE['2022'] = { TOTAL: 5 }; // a default start outside the bottom quarter
+  const open: OpenCall[] = [];
+  const cases = scorecardDefaultCases(sc, wgi, defaults, open);
+  // 8 countries a year -> the 2 lowest are calls; 2018 has 7 (HHH out) -> 1 call.
+  // AAA 2018 is left out: AAA is in default at the end of 2019, when that reading is first usable.
+  assert.deepEqual(cases.map((c) => `${c.where} ${c.when} ${c.hit}`), ['AAA 2016 true', 'AAA 2017 true', 'AAA 2019 false', 'AAA 2020 false', 'AAA 2021 false', 'BBB 2017 false', 'BBB 2019 false', 'BBB 2020 false', 'BBB 2021 false']);
+  assert.ok(!cases.some((c) => c.where === 'BBB' && c.when === '2016'), 'in default when first usable');
+  assert.ok(!cases.some((c) => c.where === 'ZZZ'));
+  // Base rate: every judged country-year (called or not) followed by a start, pooled.
+  assert.ok(cases.every((c) => c.base === cases[0].base) && cases[0].base > 0 && cases[0].base < 0.2);
+  assert.equal(open.length, 0, 'every window ends inside the 2026 edition');
+  // With the edition ending in 2023, years from 2019 are open calls due in t+4.
+  const short: DefaultTable = { ...defaults, span: { from: 1960, to: 2023 } };
+  const open2: OpenCall[] = [];
+  const c2 = scorecardDefaultCases(sc, wgi, short, open2);
+  assert.ok(c2.length && c2.every((c) => Number(c.when) <= 2019));
+  assert.deepEqual(open2.map((o) => `${o.where} ${o.when}`), ['AAA 2020', 'BBB 2020', 'AAA 2021', 'BBB 2021']);
+  assert.ok(open2.length > 0 && open2.every((o) => Number(o.due) === Number(o.when) + 4));
+});
+
+test('parseWbPage reads every country-year of a World Bank reply and the page count', () => {
+  const into: WgiTable = {};
+  const pages = parseWbPage([{ page: 1, pages: 3 }, [
+    { countryiso3code: 'KEN', date: '2020', value: -0.42 },
+    { countryiso3code: 'KEN', date: '2019', value: null },
+    { countryiso3code: '', date: '2020', value: 1 },
+  ]], 'GE.EST', into);
+  assert.equal(pages, 3);
+  assert.deepEqual(into, { KEN: { '2020': { 'GE.EST': -0.42 } } });
+  assert.throws(() => parseWbPage({ message: 'x' }, 'GE.EST', into));
+  assert.match(wgiAllUrl('CC.EST', 2, 2026), /country\/all\/indicator\/CC\.EST\?format=json&per_page=20000&date=1996:2026&page=2$/);
+});
+
+test('runBacktests judges scorecard_default from the WGI and BoC-BoE replies (made-up rows)', async () => {
+  const specDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sc-'));
+  const body = fs.readFileSync(path.join(SPEC_DIR, 'scorecard_default.json'));
+  fs.writeFileSync(path.join(specDir, 'scorecard_default.json'), body);
+  fs.writeFileSync(path.join(specDir, 'manifest.json'), JSON.stringify({ files: { 'scorecard_default.json': sha256(body) } }));
+  const names = Array.from({ length: 12 }, (_, i) => `Q${String.fromCharCode(65 + i)}X`);
+  const wb = (code: string) => JSON.stringify([{ page: 1, pages: 1 }, names.flatMap((n, i) => Array.from({ length: 26 }, (_, k) => ({ countryiso3code: n, date: String(1996 + k), value: code === 'RL.EST' && n === 'QLX' && k === 0 ? null : -1.5 + i * 0.25 })))]);
+  const head = '"k","DEBT_COUNTRY","DEBT_COUNTRY_GROUP","DEBT_YEAR","DEBT_TOTAL_2026"';
+  const rows = names.flatMap((n, i) => Array.from({ length: 66 }, (_, k) => 1960 + k).map((y) => `"${n}_${y}","${n}","x","${y}","${i < 3 && y % 7 === i ? '10.00' : ''}"`));
+  const csv = ['"OBSERVATIONS"', head, ...rows].join('\n');
+  const out = await runBacktests({
+    specDir,
+    resultFile: path.join(specDir, 'results.json'),
+    forwardFile: path.join(specDir, 'forward.jsonl'),
+    now: new Date('2026-11-19T12:00:00Z'),
+    fetcher: async (url) => {
+      const m = url.match(/api\.worldbank\.org\/v2\/country\/all\/indicator\/([A-Z.]+)\?/);
+      if (m) return wb(m[1]);
+      if (url.includes('DEBT_2026')) return csv;
+      throw new Error('HTTP 404');
+    },
+  });
+  const r = out.results.scorecard_default;
+  assert.ok(r, out.problems.join('; '));
+  assert.equal(r.framework, 2);
+  assert.ok(r.cases > 0 && r.series.every((s) => ['QAX', 'QBX', 'QCX'].includes(s)), 'the calls are the lowest quarter: 3 of 12');
+  assert.match(r.data, /2026 edition \(1960 to 2025\)/);
+  assert.ok(r.span.to <= '2021', 'judged years end where the three-year window leaves the edition');
 });

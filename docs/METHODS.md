@@ -35,6 +35,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Fiscal reaction (Bohn test) | Research | Description, not a tested signal | None |
 | Gross financing need | Research | Description, not a tested signal | None |
 | Country risk scorecard | Research | Not validated | None |
+| Governance reading and sovereign default (scorecard test) | Research | Not validated | None |
 | Sanctions lists | Research | Description, not a tested signal | None |
 | Geopolitical risk VaR | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
@@ -459,9 +460,38 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Shows in:** Country Research > History & data (Country risk scorecard)
 - **Use:** Research
 - **Status:** Not validated
-- **How it is tested:** Pre-registered on 13 November 2026 before any run (docs/validation/pending/scorecard_default.json): a governance reading in the bottom quarter of countries that year (plain average of the six WGI estimates, used a year after) followed by the start of a sovereign default (BoC-BoE) within 3 years more often than usual; at least 30 cases over 15 years, lift 3 points, p at or below 0.05 with whole years resampled. Not validated until the runner is built and the test passes. The average is fixed for the test only; the scorecard still shows no overall score.
+- **How it is tested:** The scorecard shows figures side by side and makes no call. The one rule drawn from it, a governance reading in the bottom quarter followed by a sovereign default, is tested on its own (Governance reading and sovereign default, scorecard_default). The scorecard still shows no overall score.
 - **Limits:** WGI and UCDP are yearly and lag a year or more; WGI estimates have wide margins of error; GDELT counts news reports, not events on the ground.
 - **Code:** `src/utils/countryRiskScorecard.ts`
+
+### Governance reading and sovereign default (scorecard test)
+
+- **Says:** Whether countries whose governance figures on the risk scorecard are among the weakest quarter that year have gone on to default on government debt more often than countries in general.
+- **Rule:** Governance reading = plain average of the six WGI estimates for year t, all six needed; the bottom quarter of countries that year are the calls; a call counts as followed when government debt in default goes from zero to above zero (BoC-BoE) in t+2 to t+4. Countries already in default at the end of t+1 are left out. Whole calendar years resampled.
+- **Reads:** World Bank WGI estimates (VA, PV, GE, RQ, RL, CC), Bank of Canada and Bank of England Sovereign Default Database
+- **Shows in:** Menu > Models & validation (the test only; the scorecard shows no overall score)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered on 13 November 2026 before any run (docs/validation/preregistered/scorecard_default.json; runner built 19 November 2026): at least 30 cases over 15 years, lift 3 points, p at or below 0.05 with whole years resampled. Passing would not turn the average into a score shown in the app.
+- **Limits:** WGI is today's vintage, revised when its method changes; WGI was published every two years until 2002; BoC-BoE counts small arrears as defaults; the pooled base rate mixes rich and poor countries, so a pass can partly reflect income, not governance alone.
+- **Code:** `src/utils/backtest.ts (scorecardDefaultCases), src/utils/backtestRun.ts`
+
+**Pre-registered tests**
+
+- Version 1 (`docs/validation/preregistered/scorecard_default.json`, registered 2026-11-13, method 2, whole years resampled, sample from WGI year 1996). A country-year whose governance reading on the scorecard is in the bottom quarter of all countries that year (the plain average of the six World Bank WGI estimates) is followed by the start of a sovereign default in that country within the next three calendar years more often than country-years in general. Pass mark: at least 30 cases, a lift of 3 points or more over the base rate, p at or below 0.05, at least 15 years. SHA-256 11eb76b62362a6a6…
+
+**Recorded verdicts**
+
+- None recorded yet. Run `npm run backtest` (or Menu > Models & validation > Run backtests).
+
+**Known limits, stated before the run**
+
+- v1: The scorecard itself shows no overall score. The plain average of the six WGI estimates is a rule fixed here only to have something testable; it is not shown as a score in the app, and passing would not make it one.
+- v1: WGI was published every two years until 2002 (1996, 1998, 2000, 2002), so the early years are thinner; whole years are resampled, so this counts as fewer blocks rather than more cases.
+- v1: WGI estimates are revised when the method or sources change; the series on file is today's vintage, not the figures available at the time. The one-year release lag is applied on top.
+- v1: Defaults cluster in time (the early 2000s, the 2020s) and in countries; resampling whole years treats each cluster as one block. The base rate is pooled over every country-year, so a pass can partly reflect which countries are poorer, not governance alone.
+- v1: BoC-BoE counts any arrears, including small ones to official creditors; a default start can be a small arrear rather than a bond default. A country that leaves default and falls back in counts again.
+- v1: Licence: WGI is CC BY 4.0. BoC-BoE is under the Bank of Canada terms (free use with attribution); the database draws on third-party published sources, which the licence row records as an open question. The result is shown in the app only; the outcome file is not re-published.
 
 ### Sanctions lists
 
@@ -1156,7 +1186,7 @@ These show where things stand on a stated method and make no call a backtest cou
 - Capital account: the Chinn-Ito index (Chinn and Ito 2006, Journal of Development Economics 81(1)), openness in law from the IMF AREAER, read from the authors' file in data/local/chinn-ito/ (fetched by the daily start-up run or npm run chinn-ito:pull). The latest year on file, scaled 0 (least open) to 1 (most open), where it sits among all countries that year, the change over five years, and the index as published.
 - Economy: government debt, real growth, inflation (IMF WEO, latest outturn year, projections left out), current account, reserves in months of imports and external debt (World Bank), against five years earlier.
 - No overall score: any weighting of the pillars would be a guess, and one number would look more certain than the figures are.
-- Pre-registered test (scorecard_default v1, registered 13 November 2026, runner not built yet): a country-year whose plain average of the six WGI estimates is in the bottom quarter of countries that year, used from the end of the next year (WGI is published a year late), is a call that a sovereign default starts (BoC-BoE: debt in default goes from zero to above zero) in the following three years. Base rate: all country-years not already in default, pooled. Method 2: whole years resampled, p at most 0.05, a lift of at least 3 points, 30 cases over 15 years. The average is fixed for the test only and is not shown as a score.
+- Pre-registered test (scorecard_default v1, registered 13 November 2026, runner built 19 November 2026; no verdict until its first run): a country-year whose plain average of the six WGI estimates is in the bottom quarter of countries that year, used from the end of the next year (WGI is published a year late), is a call that a sovereign default starts (BoC-BoE: debt in default goes from zero to above zero) in the following three years. Base rate: all country-years not already in default, pooled. Method 2: whole years resampled, p at most 0.05, a lift of at least 3 points, 30 cases over 15 years. The average is fixed for the test only and is not shown as a score.
 - **Limits:** WGI and UCDP are yearly and lag a year or more. WGI estimates are built from surveys and expert ratings and carry wide margins of error; small changes are within them. GDELT counts news reports, which rise with media attention. Figures not on file are listed as missing with the reason.
 - **Code:** `src/utils/countryRiskScorecard.ts`
 

@@ -12,7 +12,8 @@
     "taylor_gap.v2.json": "eab6b716189c7258f3ad2e1861a4623187a257f161014ba936f04b7e0559b5c1",
     "timing_agent.json": "abc80cc6cbb282a187458a3a93c979a7d9265b803167591b0cfe966c83321fa2",
     "unrest_onset.json": "36191d40a31c0c326ef43b70355a0c44ced1aec98c078f753a3242f2cdb2b054",
-    "yield_curve_recession.json": "de6ccb7b4827e48561918d31b588c43efcaa94bee6a2a8861f8bde8e9460b0e8"
+    "yield_curve_recession.json": "de6ccb7b4827e48561918d31b588c43efcaa94bee6a2a8861f8bde8e9460b0e8",
+    "scorecard_default.json": "11eb76b62362a6a647b8b7a37fdfd8b8d4a79d96150d55639e8f6385ba382b14"
   },
   "amended": {
     "cftc_crowding.json": {
