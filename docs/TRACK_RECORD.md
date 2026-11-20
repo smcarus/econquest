@@ -8,7 +8,7 @@ re-tuned after a fail; a changed test is a new version and counts as a new test.
 from the owner's real runs and never edited. Backtest and evaluation results are hypothetical: they
 show how a rule would have done on past data, not money made.
 
-**When each test was written down.** 20 of the 20 tests were written down on the day they ran or the day before (6 on the same day). For a test written down shortly before it ran,
+**When each test was written down.** 20 of the 25 tests were written down on the day they ran or the day before (6 on the same day). The longest gap between writing a test down and running it is 11 days. For a test written down shortly before it ran,
 on data already public, the hash shows the rule did not change after the run; it does not show that
 the rule was fixed before anyone looked at the data. Read those as *specified and hashed before the
 run*. Only a test written down before its data exist rules out both. The *Registered* and *Run*
@@ -23,14 +23,14 @@ column raises the bar because many rules were tried, and some would pass by luck
 data does not mean a rule will work in future, which is why passes are also tracked forward (below).
 Terms are explained in the [Glossary](./GLOSSARY.md).
 
-**20 tests on record: 6 passed, 12 failed, 2 too few cases.**
+**25 tests on record: 6 passed, 17 failed, 2 too few cases.**
 
-Because 20 tests were tried, a single p under 0.05 is not enough. The Holm correction across all 20
+Because 25 tests were tried, a single p under 0.05 is not enough. The Holm correction across all 25
 asks whether each pass still holds at its own pass mark once the number of tries is counted.
 
-- Passes that still hold after the correction: cftc_crowding v1, cftc_crowding v2.
+- Passes that still hold after the correction: cftc_crowding v1, cftc_crowding v2, timing_agent v1, cycle_clock v1, gdp_nowcast v1.
 - Passes that do not hold after it: fx_carry v1.
-- Passes whose record gives no p, so the correction cannot be read for them: timing_agent v1, cycle_clock v1, gdp_nowcast v1.
+- Passes whose record gives no p, so the correction cannot be read for them: none.
 
 A pass that does not hold after the correction is shown in the app as *Provisional pass* until its
 forward record (below) confirms it or the test is run again with a new pre-registered version.
@@ -39,28 +39,33 @@ forward record (below) confirms it or the test is run again with a new pre-regis
 
 | Test | Kind | Registered | Run | Verdict | p | Holm p | Holds at pass mark |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| cftc_crowding v1 | Backtest, method 1 | 2026-11-05 | 2026-11-05 | Passed | 1.3e-11 | 2.6e-10 | Yes (0.05) |
-| cftc_crowding v2 | Backtest, method 2 | 2026-11-05 | 2026-11-06 | Passed | 2.5e-4 | 0.00475 | Yes (0.05) |
-| timing_agent v1 | Backtest, method 2 | 2026-11-06 | 2026-11-06 | Passed | not recorded |  | p not recorded |
-| cycle_clock v1 | Backtest, method 2 | 2026-11-06 | 2026-11-06 | Passed | not recorded |  | p not recorded |
-| cli_turn_policy v1 | Backtest, method 1 | 2026-11-05 | 2026-11-05 | Failed | not recorded |  | p not recorded |
+| cftc_crowding v1 | Backtest, method 1 | 2026-11-05 | 2026-11-05 | Passed | 1.3e-11 | 3.1e-10 | Yes (0.05) |
+| cftc_crowding v2 | Backtest, method 2 | 2026-11-05 | 2026-11-06 | Passed | 2.5e-4 | 0.00575 | Yes (0.05) |
+| timing_agent v1 | Backtest, method 2 | 2026-11-06 | 2026-11-06 | Passed | 2.5e-4 | 0.00575 | Yes (0.05) |
+| cycle_clock v1 | Backtest, method 2 | 2026-11-06 | 2026-11-06 | Passed | 2.5e-4 | 0.00575 | Yes (0.05) |
+| cli_turn_policy v1 | Backtest, method 1 | 2026-11-05 | 2026-11-05 | Failed | 1 | 1 | No (0.05) |
 | taylor_gap v1 | Backtest, method 1 | 2026-11-05 | 2026-11-05 | Failed | 0.23 | 1 | No (0.05) |
 | taylor_gap v2 | Backtest, method 2 | 2026-11-05 | 2026-11-06 | Failed | 0.149 | 1 | No (0.05) |
 | regime_quadrant v1 | Backtest, method 2 | 2026-11-06 | 2026-11-06 | Failed | 0.23 | 1 | No (0.05) |
 | unrest_onset v1 | Backtest, method 2 | 2026-11-06 | 2026-11-07 | Failed | 0.49 | 1 | No (0.05) |
 | rule_family v1 | Backtest, method 2 | 2026-11-06 | 2026-11-07 | Too few cases | not recorded |  | p not recorded |
-| gdp_nowcast v1 | Forecast evaluation | 2026-11-06 | 2026-11-07 | Passed | not recorded |  | p not recorded |
+| gdp_nowcast v1 | Forecast evaluation | 2026-11-06 | 2026-11-07 | Passed | < 0.001 | < 0.001 | Yes (0.1) |
 | cpi_nowcast v2 | Forecast evaluation | 2026-11-06 | 2026-11-07 | Failed | 0.719 | 1 | No (0.1) |
 | cpi_forecast v2 | Forecast evaluation | 2026-11-06 | 2026-11-07 | Failed | 1 | 1 | No (0.1) |
 | gdp_forecast v1 | Forecast evaluation | 2026-11-06 | 2026-11-07 | Failed | 0.98 | 1 | No (0.1) |
 | policy_rate_forecast v1 | Forecast evaluation | 2026-11-06 | 2026-11-07 | Failed | 0.994 | 1 | No (0.1) |
 | debt_forecast v2 | Forecast evaluation | 2026-11-06 | 2026-11-07 | Failed | 0.975 | 1 | No (0.1) |
 | debt_fan_coverage v1 | Forecast evaluation | 2026-11-06 | 2026-11-07 | Too few cases | not recorded |  | p not recorded |
-| fx_carry v1 | Signal test | 2026-11-06 | 2026-11-07 | Passed | 0.0257 | 0.463 | No (0.05) |
+| fx_carry v1 | Signal test | 2026-11-06 | 2026-11-07 | Passed | 0.0257 | 0.514 | No (0.05) |
 | fx_momentum v1 | Signal test | 2026-11-06 | 2026-11-07 | Failed | 0.716 | 1 | No (0.05) |
 | fx_value v1 | Signal test | 2026-11-06 | 2026-11-07 | Failed | 0.941 | 1 | No (0.05) |
+| inflation_expectations_lead v1 | Backtest, method 2 | 2026-11-11 | 2026-11-17 | Failed | 0.063 | 1 | No (0.05) |
+| yield_curve_recession v1 | Backtest, method 2 | 2026-11-11 | 2026-11-17 | Failed | 0.311 | 1 | No (0.05) |
+| cpi_forecast v1 | Forecast evaluation | 2026-11-06 | 2026-11-17 | Failed | 1 | 1 | No (0.1) |
+| cpi_nowcast v1 | Forecast evaluation | 2026-11-06 | 2026-11-17 | Failed | 1 | 1 | No (0.1) |
+| debt_forecast v1 | Forecast evaluation | 2026-11-06 | 2026-11-17 | Failed | 1 | 1 | No (0.1) |
 
-Holm p is across all 20 tests above; a test whose record gives no p is counted with p = 1, which can only
+Holm p is across all 25 tests above; a test whose record gives no p is counted with p = 1, which can only
 make the other adjusted p-values larger. The app's own reading (Menu > Models & validation) uses every
 version run on that computer, so it can count more tests than this page. A computer that has not run a
 test yet shows the verdict on this page instead, marked "from the project's published track record".
@@ -69,15 +74,15 @@ test yet shows the verdict on this page instead, marked "from the project's publ
 
 - **cftc_crowding v1** (passed; test file [docs/validation/preregistered/cftc_crowding.json](./validation/preregistered/cftc_crowding.json), SHA-256 `d2f50657b535`): 195 of 228 crowded weeks unwound (85.5%) against 65.8% after any week; lift 19.8 points, p 1.3e-11 with cases counted as independent; 6 currency futures, 2007-06 to 2026-09.
 - **cftc_crowding v2** (passed; test file [docs/validation/preregistered/cftc_crowding.v2.json](./validation/preregistered/cftc_crowding.v2.json), SHA-256 `f7d9a4599a2f`): Lift 19.8 points, 90% range 15.7 to 23.8, p 0.00025 (the smallest value 4,000 year-block redraws can give), positive in 6 of 6 currencies.
-- **timing_agent v1** (passed; test file [docs/validation/preregistered/timing_agent.json](./validation/preregistered/timing_agent.json), SHA-256 `abc80cc6cbb2`): Lift 21.4 points, 90% range 13.4 to 29.0, positive in 6 of 6 currencies.
-- **cycle_clock v1** (passed; test file [docs/validation/preregistered/cycle_clock.json](./validation/preregistered/cycle_clock.json), SHA-256 `75fe94292802`): Lift 35.8 points, positive in 24 of 24 countries. Caveat: it confirms that rate moves come in runs; it is not an edge over a forecaster who already expects the next move.
-- **cli_turn_policy v1** (failed; test file [docs/validation/preregistered/cli_turn_policy.json](./validation/preregistered/cli_turn_policy.json), SHA-256 `a991477f71db`): 96 of 351 turns (27.4%) came before a policy move the expected way, against a 35.6% base rate; lift -8.3 points. Banks kept moving the same way after leading-indicator turns.
+- **timing_agent v1** (passed; test file [docs/validation/preregistered/timing_agent.json](./validation/preregistered/timing_agent.json), SHA-256 `abc80cc6cbb2`): Lift 21.4 points, 90% range 13.4 to 29.0, positive in 6 of 6 currencies. The p (2.5e-4) is from the run of 2026-11-17, on the same test file with the same verdict; this row was recorded before rows carried p.
+- **cycle_clock v1** (passed; test file [docs/validation/preregistered/cycle_clock.json](./validation/preregistered/cycle_clock.json), SHA-256 `75fe94292802`): Lift 35.8 points, positive in 24 of 24 countries. Caveat: it confirms that rate moves come in runs; it is not an edge over a forecaster who already expects the next move. The p (2.5e-4) is from the run of 2026-11-17, on the same test file with the same verdict; this row was recorded before rows carried p.
+- **cli_turn_policy v1** (failed; test file [docs/validation/preregistered/cli_turn_policy.json](./validation/preregistered/cli_turn_policy.json), SHA-256 `a991477f71db`): 96 of 351 turns (27.4%) came before a policy move the expected way, against a 35.6% base rate; lift -8.3 points. Banks kept moving the same way after leading-indicator turns. The p (1) is from the run of 2026-11-17, on the same test file with the same verdict; this row was recorded before rows carried p.
 - **taylor_gap v1** (failed; test file [docs/validation/preregistered/taylor_gap.json](./validation/preregistered/taylor_gap.json), SHA-256 `0dcd2ef9ac29`): 61 of 161 (37.9%) against a 34.8% base rate; lift 3.1 points, p 0.23; 13 series, 2000-02 to 2026-02.
 - **taylor_gap v2** (failed; test file [docs/validation/preregistered/taylor_gap.v2.json](./validation/preregistered/taylor_gap.v2.json), SHA-256 `eab6b716189c`): Re-test adding the real-time output gap: lift 4.8 points, p 0.149, above the 0.05 pass mark.
 - **regime_quadrant v1** (failed; test file [docs/validation/preregistered/regime_quadrant.json](./validation/preregistered/regime_quadrant.json), SHA-256 `28f7aab1c7eb`): Lift 2.7 points, p 0.23.
 - **unrest_onset v1** (failed; test file [docs/validation/preregistered/unrest_onset.json](./validation/preregistered/unrest_onset.json), SHA-256 `36191d40a31c`): Lift 0.1 points, 90% range -1.8 to 2.1, p 0.49 with whole years resampled (7 years); positive in 0 of 8 series with 5 or more cases; 113 series, 2018 to 2024. Pass mark was a lift of 3 points.
 - **rule_family v1** (too few cases; test file [docs/validation/preregistered/rule_family.json](./validation/preregistered/rule_family.json), SHA-256 `1fffb8f01b61`): 23 cases in 10 years; method 2 needs 30 cases in 8 years. 12 series, 2000-02 to 2023-02.
-- **gdp_nowcast v1** (passed; test file [docs/validation/forecasts/gdp_nowcast.json](./validation/forecasts/gdp_nowcast.json), SHA-256 `f304891bfd42`): Against the historical mean, 1 quarter ahead: relative RMSE 0.896 (90% range 0.876 to 0.924), better in 28 of 35 series; 2007-Q4 to 2025-Q4.
+- **gdp_nowcast v1** (passed; test file [docs/validation/forecasts/gdp_nowcast.json](./validation/forecasts/gdp_nowcast.json), SHA-256 `f304891bfd42`): Against the historical mean, 1 quarter ahead: relative RMSE 0.896 (90% range 0.876 to 0.924), better in 28 of 35 series; 2007-Q4 to 2025-Q4. The p (< 0.001) is from the run of 2026-11-17, on the same test file with the same verdict; this row was recorded before rows carried p.
 - **cpi_nowcast v2** (failed; test file [docs/validation/forecasts/cpi_nowcast.v2.json](./validation/forecasts/cpi_nowcast.v2.json), SHA-256 `d7adebf498bb`): Against the last value carried on: 1 month ahead relative RMSE 0.83 (p 0.001) but better in only 23 of 46 series; 2 months ahead 1.201 (p 0.719), better in 17 of 46. 2008-01 to 2026-04.
 - **cpi_forecast v2** (failed; test file [docs/validation/forecasts/cpi_forecast.v2.json](./validation/forecasts/cpi_forecast.v2.json), SHA-256 `f4a9b65fc5b4`): Against the last value carried on: 3 months ahead relative RMSE 1.5 (p 0.999), better in 15 of 46 series; 12 months ahead 4.321 (p 1), better in 11 of 46. 2008-01 to 2026-02.
 - **gdp_forecast v1** (failed; test file [docs/validation/forecasts/gdp_forecast.json](./validation/forecasts/gdp_forecast.json), SHA-256 `b9f6e2a38cd3`): Against the historical mean: 1 quarter ahead relative RMSE 1.178 (p 0.97), better in 9 of 46 series; 4 quarters ahead 1.117 (p 0.98), better in 11 of 46. 2008-Q1 to 2025-Q4.
@@ -87,6 +92,11 @@ test yet shows the verdict on this page instead, marked "from the project's publ
 - **fx_carry v1** (passed; test file [docs/validation/signals/fx_carry.json](./validation/signals/fx_carry.json), SHA-256 `e4fdfcad91cc`): Carry long-short, 321 months: 3.341% a year net of a 0.25% cost per side (gross 3.646%), 90% range 0.581 to 6.036%, Sharpe 0.451, p 0.0257 with whole years resampled; 25 currencies, 2000-01 to 2026-09. Not adjusted for the other tests run (Holm), which it may not survive.
 - **fx_momentum v1** (failed; test file [docs/validation/signals/fx_momentum.json](./validation/signals/fx_momentum.json), SHA-256 `f4d5f22fa4d9`): Momentum long-short, 321 months: -0.868% a year net (gross 1.46%), 90% range -3.386 to 1.541%, Sharpe -0.127, p 0.716; 25 currencies, 2000-01 to 2026-09.
 - **fx_value v1** (failed; test file [docs/validation/signals/fx_value.json](./validation/signals/fx_value.json), SHA-256 `4fae0975520e`): Value long-short, 265 months: -1.96% a year net (gross -0.47%), 90% range -3.905 to 0.121%, Sharpe -0.321, p 0.941; 20 currencies, 2004-01 to 2026-02.
+- **inflation_expectations_lead v1** (failed; test file [docs/validation/preregistered/inflation_expectations_lead.json](./validation/preregistered/inflation_expectations_lead.json), SHA-256 `b2b4b504765c`): Fails method 2 (the method this test was registered under): p is above 0.05 once cases in the same year are not counted as independent. Lift 5.7 points, 90% range -0.3 to 11.9, p = 0.063 with whole years resampled together (25 years). Positive in 16 of 27 series with 5 or more cases; dropping NLD leaves a lift of 4.7 points.
+- **yield_curve_recession v1** (failed; test file [docs/validation/preregistered/yield_curve_recession.json](./validation/preregistered/yield_curve_recession.json), SHA-256 `de6ccb7b4827`): Fails method 2 (the method this test was registered under): the lift is below 10 points; p is above 0.05 once cases in the same year are not counted as independent. Lift 4.3 points, 90% range -7.4 to 20.7, p = 0.311 with whole years resampled together (22 years). Positive in 4 of 5 series with 5 or more cases; dropping ZAF leaves a lift of 1.4 points.
+- **cpi_forecast v1** (failed; test file [docs/validation/forecasts/cpi_forecast.json](./validation/forecasts/cpi_forecast.json), SHA-256 `66ae39cc5a35`): Failed against the naive benchmark (last value carried on). 3 ahead: relative RMSE 3.417 (90% range 2.635 to 6.605, p 1), beat the naive benchmark in 32 of 46 series; 12 ahead: relative RMSE 6.236 (90% range 5.409 to 11.107, p 1), beat the naive benchmark in 28 of 46 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
+- **cpi_nowcast v1** (failed; test file [docs/validation/forecasts/cpi_nowcast.json](./validation/forecasts/cpi_nowcast.json), SHA-256 `b8903a56a159`): Failed against the naive benchmark (last value carried on). 1 ahead: relative RMSE 1.837 (90% range 1.404 to 3.136, p 1), beat the naive benchmark in 38 of 46 series; 2 ahead: relative RMSE 2.724 (90% range 2.108 to 4.941, p 1), beat the naive benchmark in 35 of 46 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
+- **debt_forecast v1** (failed; test file [docs/validation/forecasts/debt_forecast.json](./validation/forecasts/debt_forecast.json), SHA-256 `92439f04e86e`): Failed against the naive benchmark (last value carried on). 1 ahead: relative RMSE 1.913 (90% range 1.182 to 2.713, p 0.995), beat the naive benchmark in 30 of 128 series; 2 ahead: relative RMSE 2.44 (90% range 1.127 to 3.55, p 1), beat the naive benchmark in 21 of 115 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
 
 ## Forward record
 
@@ -97,8 +107,14 @@ line hashed over the one before). The server runs all the pre-registered tests e
 by default (Menu > Data health > Scheduled; `SCHEDULE_BACKTESTS=off` stops it), so this record grows
 without anyone pressing a button. Menu > Models & validation > Track record shows it, with a CSV.
 
-No forward results are copied into this page yet: the first scored calls come once each pass's
-window has ended. They will be added here from a real run, never by hand.
+Imported from a real run on 2026-11-19: 81 lines of data/local/validation/forward.jsonl, written up to 2026-11-17, hash chain checked, last hash `c97301c6dbf7`. 4 calls have been scored so far.
+Too few calls have been scored to say anything yet; a handful of hits or misses is what luck alone gives. The lines themselves stay on the computer that made them, because they hold figures from feeds whose terms do not allow re-publishing.
+
+- **cftc_crowding v1**: Forward record since 2026-11-07: 5 calls, 2 scored, 2 followed (100% against a base rate of 66.5%), 3 still open; too few to lean on.
+- **cftc_crowding v2**: Forward record since 2026-11-07: 5 calls, 2 scored, 2 followed (100% against a base rate of 66.5%), 3 still open; too few to lean on.
+- **cycle_clock v1**: Forward record since 2026-11-07: 7 calls, none scored yet.
+- **fx_carry v1**: Forward record since 2026-11-07: 1 call, none scored yet.
+- **gdp_nowcast v1**: Forward record since 2026-11-07: 59 calls, none scored yet.
 
 ## Runs
 
@@ -106,3 +122,4 @@ window has ended. They will be added here from a real run, never by hand.
 - 2026-11-05T22:50Z: Sam's Mac, npm run backtest (Taylor gap v1)
 - 2026-11-06T02:31Z: Sam's Mac, npm run backtest (8 tests, method 2 where registered)
 - 2026-11-07T00:24Z: Sam's Mac, npm run mac:validate on d3bae6b (backtest, forecast:evaluate, signals:evaluate). The six backtests recorded before gave the same verdicts; only the tests not recorded before are added. signals:evaluate noted that 112 quarters of ECB rates were downloaded during the run because they were not saved.
+- 2026-11-17T17:57Z: Sam's Mac (Jahre), npm run mac:validate on aca9fa7 (17 November): imported with npm run track-record:import from data/local/validation/; added inflation_expectations_lead v1, yield_curve_recession v1, cpi_forecast v1, cpi_nowcast v1, debt_forecast v1; p filled in from this run for cli_turn_policy v1, cycle_clock v1, timing_agent v1, gdp_nowcast v1 (recorded before rows carried p; same test file and same verdict, which stays as recorded); forward record summarised (81 lines). Tests already on record keep their first recorded verdict.

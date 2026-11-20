@@ -27,6 +27,12 @@ has ended or moved."
 4. **Success measures.** After the public release, run `npm run check:success` to keep a record of
    GitHub stars, issues, flags and downloads, and of the outcome checks and answer ratings on this
    computer. The list and its review date are in docs/ROADMAP.md, "How we will know it works".
+5. **Track record.** On a computer that reaches the feeds, run `npm run mac:validate`, then
+   `npm run track-record:import -- --where "<which computer>"`. It adds a row for every test run
+   there that is not on record yet (a recorded verdict is never changed; a passed or failed row
+   recorded without a p takes the run's p when the test file and verdict match), summarises the forward
+   record after checking its hash chain, and rebuilds docs/TRACK_RECORD.md and docs/METHODS.md.
+   Commit the three files in a pull request.
 
 ## Each release (maintainer)
 

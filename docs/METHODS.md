@@ -28,7 +28,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Cycle clock | Research | Backtest passed | v1, 2026-11-06, method 2 |
 | Timing Agent | Research | Backtest passed | v1, 2026-11-06, method 2 |
 | Behavioural Finance Agent | Research | Not validated | None |
-| Household price expectations before inflation | Research | Not validated | None |
+| Household price expectations before inflation | Research | Backtest failed | v1, 2026-11-17, method 2 |
 | Council summary (AI synthesis) | Decision input | Model-assisted, not validated | None |
 | GDP nowcast (bridge equation) | Research | Forecast evaluation passed | v1, 2026-11-07 |
 | Forecasts with fan charts (AR models) | Research | Forecast evaluation failed | debt_forecast v2, 2026-11-07 |
@@ -52,7 +52,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Banks and the government | Research | Description, not a tested signal | None |
 | Growth accounting | Research | Description, not a tested signal | None |
 | Inflation drivers | Research | Description, not a tested signal | None |
-| Yield curve and financial conditions | Research | Not validated | None |
+| Yield curve and financial conditions | Research | Backtest failed | v1, 2026-11-17, method 2 |
 | Crisis early-warning (credit gap) | Research | Not validated | None |
 | Inflation after rate changes (local projections) | Research | Description, not a tested signal | None |
 | Policy rule family | Research | Backtest too few cases | v1, 2026-11-07, method 2 |
@@ -359,7 +359,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Reads:** European Commission consumer survey (ei_bsco_m, BS-PT-NY) and Eurostat HICP annual rate, via Eurostat
 - **Shows in:** Behavioural Finance Agent (only once the test passes)
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Backtest failed (version 1, recorded 2026-11-17)
 - **How it is tested:** Pre-registered on 11 November 2026 before the runner existed (docs/validation/preregistered/inflation_expectations_lead.json): at least 100 cases in 15 years, hit rate 55% or more, p at or below 0.05 with whole years resampled.
 - **Limits:** Direction only, not size; EU members only; common energy and food shocks move countries together.
 - **Code:** `src/utils/backtest.ts (expectationsDirectionCases), src/utils/backtestRun.ts`
@@ -370,7 +370,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 **Recorded verdicts**
 
-- None recorded yet. Run `npm run backtest` (or Menu > Models & validation > Run backtests).
+- Version 1, 2026-11-17T17:57Z: **Failed** (method 2). Fails method 2 (the method this test was registered under): p is above 0.05 once cases in the same year are not counted as independent. Lift 5.7 points, 90% range -0.3 to 11.9, p = 0.063 with whole years resampled together (25 years). Positive in 16 of 27 series with 5 or more cases; dropping NLD leaves a lift of 4.7 points.
 
 **Known limits, stated before the run**
 
@@ -424,6 +424,9 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 - gdp_forecast, version 1, 2026-11-07T00:24Z: **Failed** (forecast evaluation). Against the historical mean: 1 quarter ahead relative RMSE 1.178 (p 0.97), better in 9 of 46 series; 4 quarters ahead 1.117 (p 0.98), better in 11 of 46. 2008-Q1 to 2025-Q4.
 - policy_rate_forecast, version 1, 2026-11-07T00:24Z: **Failed** (forecast evaluation). Against the last value carried on: 3 months ahead relative RMSE 0.99 (p 0.318), better in 19 of 24 series; 12 months ahead 1.092 (p 0.994), better in 12 of 24. 2008-01 to 2026-07.
+- cpi_forecast, version 1, 2026-11-17T17:57Z: **Failed** (forecast evaluation). Failed against the naive benchmark (last value carried on). 3 ahead: relative RMSE 3.417 (90% range 2.635 to 6.605, p 1), beat the naive benchmark in 32 of 46 series; 12 ahead: relative RMSE 6.236 (90% range 5.409 to 11.107, p 1), beat the naive benchmark in 28 of 46 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
+- cpi_nowcast, version 1, 2026-11-17T17:57Z: **Failed** (forecast evaluation). Failed against the naive benchmark (last value carried on). 1 ahead: relative RMSE 1.837 (90% range 1.404 to 3.136, p 1), beat the naive benchmark in 38 of 46 series; 2 ahead: relative RMSE 2.724 (90% range 2.108 to 4.941, p 1), beat the naive benchmark in 35 of 46 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
+- debt_forecast, version 1, 2026-11-17T17:57Z: **Failed** (forecast evaluation). Failed against the naive benchmark (last value carried on). 1 ahead: relative RMSE 1.913 (90% range 1.182 to 2.713, p 0.995), beat the naive benchmark in 30 of 128 series; 2 ahead: relative RMSE 2.44 (90% range 1.127 to 3.55, p 1), beat the naive benchmark in 21 of 115 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
 - cpi_nowcast, version 2, 2026-11-07T00:24Z: **Failed** (forecast evaluation). Against the last value carried on: 1 month ahead relative RMSE 0.83 (p 0.001) but better in only 23 of 46 series; 2 months ahead 1.201 (p 0.719), better in 17 of 46. 2008-01 to 2026-04.
 - cpi_forecast, version 2, 2026-11-07T00:24Z: **Failed** (forecast evaluation). Against the last value carried on: 3 months ahead relative RMSE 1.5 (p 0.999), better in 15 of 46 series; 12 months ahead 4.321 (p 1), better in 11 of 46. 2008-01 to 2026-02.
 - debt_forecast, version 2, 2026-11-07T00:24Z: **Failed** (forecast evaluation). Against the last value carried on: 1 year ahead relative RMSE 1.903 (p 0.975), better in 21 of 128 series; 2 years ahead 2.477 (p 0.971), better in 18 of 115. 184 series, 2008 to 2024.
@@ -692,7 +695,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Reads:** FRED / OECD 10-year government bond yields (IRLTLT01), BIS policy rates and real effective exchange rates, IMF WEO real GDP growth (outturns only, for the test)
 - **Shows in:** Country Research > History & data (Yield curve and financial conditions)
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Backtest failed (version 1, recorded 2026-11-17)
 - **How it is tested:** Pre-registered on 11 November 2026 before the tool existed (docs/validation/preregistered/yield_curve_recession.json): at least 30 cases over 15 years, lift 10 points, p at or below 0.05 with whole years resampled. Until it passes no recession figure is shown; after, only its historical hit rate. The conditions index is description only (fixed weights, no forward call).
 - **Limits:** The policy rate stands in for a 3-month bill rate; annual GDP misses short recessions; growth is today's WEO vintage; FRED covers OECD members and India only.
 - **Code:** `src/utils/yieldCurve.ts, src/utils/backtest.ts (yieldCurveCases), src/utils/backtestRun.ts`
@@ -703,7 +706,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 **Recorded verdicts**
 
-- None recorded yet. Run `npm run backtest` (or Menu > Models & validation > Run backtests).
+- Version 1, 2026-11-17T17:57Z: **Failed** (method 2). Fails method 2 (the method this test was registered under): the lift is below 10 points; p is above 0.05 once cases in the same year are not counted as independent. Lift 4.3 points, 90% range -7.4 to 20.7, p = 0.311 with whole years resampled together (22 years). Positive in 4 of 5 series with 5 or more cases; dropping ZAF leaves a lift of 1.4 points.
 
 **Known limits, stated before the run**
 

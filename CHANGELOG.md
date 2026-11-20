@@ -5,6 +5,24 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Track record brought up to date from the owner's 17 November run (npm run mac:validate on
+  aca9fa7): five tests that had run but were missing from docs/TRACK_RECORD.md are added
+  (inflation_expectations_lead v1 and yield_curve_recession v1, both failed; the first versions of
+  cpi_forecast, cpi_nowcast and debt_forecast, all failed, which had been left out when their second
+  versions were recorded). The record now holds 25 tests, and the Holm correction counts all of
+  them. timing_agent, cycle_clock, gdp_nowcast and cli_turn_policy, recorded before rows carried a
+  p, take the p of the 17 November run on the same test file with the same verdict (owner's choice,
+  19 November); their verdicts are unchanged. With those p values, timing_agent, cycle_clock and
+  gdp_nowcast are shown to hold after the correction, as cftc_crowding does; fx_carry still does not. The forward record section now shows each passing test's calls and scored outcomes (4 calls
+  scored so far, too few to read anything into).
+- `npm run track-record:import` copies verdicts and the forward record from a real run
+  (data/local/validation/) into docs/validation/recorded-verdicts.json and rebuilds the track record
+  and methods pages, so no figure is copied by hand. It never changes a row already on record, leaves
+  out results run from a test file whose hash differs from the registered one, adds a run's p to a
+  passed or failed row that has none only when the file and verdict match, and refuses a forward
+  record whose hash chain is broken. The forward lines stay on the computer; only per-test counts and
+  the chain's last hash are published.
+
 - Country risk scorecard test (C12): the runner for scorecard_default, registered and hashed on
   13 November before any run, is built. The test file moved unchanged (same hash) to
   docs/validation/preregistered/, and `npm run backtest` now reads the six World Bank WGI estimates
