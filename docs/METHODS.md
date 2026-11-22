@@ -32,6 +32,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Council summary (AI synthesis) | Decision input | Model-assisted, not validated | None |
 | GDP nowcast (bridge equation) | Research | Forecast evaluation passed | v1, 2026-11-07 |
 | Forecasts with fan charts (AR models) | Research | Forecast evaluation failed | debt_forecast v2, 2026-11-07 |
+| Forecast tests on data as first published | Research | Not validated | None |
 | Fiscal reaction (Bohn test) | Research | Description, not a tested signal | None |
 | Gross financing need | Research | Description, not a tested signal | None |
 | Country risk scorecard | Research | Not validated | None |
@@ -430,6 +431,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - cpi_nowcast, version 2, 2026-11-07T00:24Z: **Failed** (forecast evaluation). Against the last value carried on: 1 month ahead relative RMSE 0.83 (p 0.001) but better in only 23 of 46 series; 2 months ahead 1.201 (p 0.719), better in 17 of 46. 2008-01 to 2026-04.
 - cpi_forecast, version 2, 2026-11-07T00:24Z: **Failed** (forecast evaluation). Against the last value carried on: 3 months ahead relative RMSE 1.5 (p 0.999), better in 15 of 46 series; 12 months ahead 4.321 (p 1), better in 11 of 46. 2008-01 to 2026-02.
 - debt_forecast, version 2, 2026-11-07T00:24Z: **Failed** (forecast evaluation). Against the last value carried on: 1 year ahead relative RMSE 1.903 (p 0.975), better in 21 of 128 series; 2 years ahead 2.477 (p 0.971), better in 18 of 115. 184 series, 2008 to 2024.
+
+### Forecast tests on data as first published
+
+- **Says:** Whether the app's GDP and inflation forecast rules would have beaten simple benchmarks using only the figures as they were first published at the time, not today's revised numbers.
+- **Rule:** At each origin the series is rebuilt as published that day (US ALFRED, euro area ECB real-time database, past IMF WEO editions for every country), the same AR rule is fitted, and the forecast is scored against the first published figure. The IMF's own projection in the same edition is shown beside the verdict.
+- **Reads:** ALFRED (your FRED key), ECB Euro Area Real-Time Database, IMF WEO past editions saved in data/local/weo-vintages/
+- **Shows in:** Menu > Models & validation
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered (docs/validation/forecasts/*_realtime.json): rolling origin on vintages, relative RMSE against the historical mean (GDP) or no change (inflation), year-block bootstrap, from 2008.
+- **Limits:** Two areas for the quarterly and monthly tests; the yearly tests read only the WEO editions you have saved. A test of the method, not a new forecast shown in the app.
+- **Code:** `src/utils/realTimeEval.ts`
 
 ### Fiscal reaction (Bohn test)
 

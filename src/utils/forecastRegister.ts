@@ -8,6 +8,7 @@ export const REGISTER_FORECAST_IDS: Record<string, string[]> = {
   gdp_nowcast: ['gdp_nowcast'],
   app_forecasts: ['cpi_nowcast', 'gdp_forecast', 'cpi_forecast', 'policy_rate_forecast', 'debt_forecast'],
   debt_fan: ['debt_fan_coverage'],
+  realtime_forecasts: ['gdp_forecast_realtime', 'cpi_forecast_realtime', 'gdp_weo_realtime', 'cpi_weo_realtime'],
   // Currency factor tests (docs/validation/signals/, npm run signals:evaluate) use the same verdict shape.
   fx_carry: ['fx_carry'],
   fx_value: ['fx_value'],
@@ -24,10 +25,10 @@ export interface ForecastVerdict {
   /** Currency factor tests: how the strategy lost when it lost (src/utils/fxFactors.ts crashSentence). */
   crash?: string;
   /** Forecast evaluations: per-horizon scores, read for the "also reported" line. */
-  horizons?: Array<{ h: number; alsoAgainst?: Array<{ benchmark: string; relRmse: number }>; distribution?: { crps: number; crpsRatio: number; intervalScore90: number; pinball: number } | null }>;
+  horizons?: Array<{ h: number; alsoAgainst?: Array<{ benchmark: string; relRmse: number; cases?: number }>; distribution?: { crps: number; crpsRatio: number; intervalScore90: number; pinball: number } | null }>;
 }
 
-const OTHER_BENCH: Record<string, string> = { naive: 'last value', mean: 'historical mean', drift: 'random walk with drift', seasonal_naive: 'seasonal naive' };
+const OTHER_BENCH: Record<string, string> = { naive: 'last value', mean: 'historical mean', drift: 'random walk with drift', seasonal_naive: 'seasonal naive', imf: "the IMF's projection in the same edition" };
 
 /**
  * One plain line of what the evaluation also reports beside its verdict (never part of it): the
@@ -38,7 +39,7 @@ export function alsoReported(v: ForecastVerdict): string {
   const parts: string[] = [];
   for (const h of v.horizons || []) {
     const bits: string[] = [];
-    const also = (h.alsoAgainst || []).map((a) => `${OTHER_BENCH[a.benchmark] || a.benchmark} ${a.relRmse}`);
+    const also = (h.alsoAgainst || []).map((a) => `${OTHER_BENCH[a.benchmark] || a.benchmark} ${a.relRmse}${a.cases ? ` (${a.cases} cases)` : ''}`);
     if (also.length) bits.push(`relative RMSE against ${also.join(', ')}`);
     if (h.distribution) bits.push(`band CRPS ratio ${h.distribution.crpsRatio}, 90% interval score ${h.distribution.intervalScore90}`);
     if (bits.length) parts.push(`${h.h} ahead: ${bits.join('; ')}`);

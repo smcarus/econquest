@@ -666,6 +666,18 @@ means the band beats the benchmark; the 90% interval score (band width plus 20 t
 it); and the mean pinball loss over the 5th, 25th, 50th, 75th and 95th percentiles. A new benchmark
 can be made the registered one only in a new spec version.
 
+**Real-time tests (data as first published).** The tests above use today's figures with each
+series' release lag, so the model never sees a period early but does see it as later revised. Four
+further tests (`docs/validation/forecasts/*_realtime.json`, `src/utils/realTimeEval.ts`) rebuild the
+series as it was published on each origin day, fit the same rule on it, and score the forecast
+against the target period's first published figure (Croushore and Stark 2001). Quarterly GDP and
+monthly inflation use the US vintages in ALFRED (the user's FRED key) and the euro area vintages in
+the ECB Real-Time Database; the origins are the days a new period was first published. Yearly GDP
+growth and inflation use the past IMF WEO editions saved in `data/local/weo-vintages/`, for every
+country they cover: at each edition the series is the years it marks as actual data, and the target
+year's figure is taken from the first edition that marks it as actual. The IMF's own projection in
+the origin edition is reported beside the verdict, not used for it.
+
 ### 7.4 Conventions in the charts and tables
 
 These settings apply wherever the terminal computes a statistic (`src/utils/stats.ts`), and the
@@ -944,6 +956,8 @@ version number.
 - Cerra, V. and Saxena, S. C. (2008). Growth dynamics: the myth of economic recovery. *American
   Economic Review*, 98(1), 439-457. doi:10.1257/aer.98.1.439.
 - CFA Institute. *Global Investment Performance Standards (GIPS)*, 2020 edition.
+- Croushore, D. and Stark, T. (2001). A real-time data set for macroeconomists. *Journal of
+  Econometrics*, 105(1), 111-130.
 - Diebold, F. X. and Mariano, R. S. (1995). Comparing predictive accuracy. *Journal of Business &
   Economic Statistics*, 13(3), 253-263.
 - Gahtan, J., Knapp, K. R., Schreck, C. J., Diamond, H. J., Kossin, J. P. and Kruk, M. C. (2024).

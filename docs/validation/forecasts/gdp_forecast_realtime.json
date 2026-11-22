@@ -1,0 +1,36 @@
+{
+  "id": "gdp_forecast_realtime",
+  "version": 1,
+  "registeredOn": "2026-11-22",
+  "registeredBy": "Sam (owner); registered on his instruction to close the predictive econometrics gaps, before any run of this test",
+  "hypothesis": "The app's GDP forecast rule (AR on quarterly real GDP growth, lag 0-4 by BIC, all data to then), fitted at each origin on the series exactly as published that day, has a lower RMSE than the historical mean computed on the same vintage, one and four quarters ahead, when both are scored against each quarter's first published figure. US (ALFRED GDPC1, % q/q annualised) and euro area (ECB real-time database, % q/q), pooled.",
+  "target": "gdp_realtime_q",
+  "params": {
+    "maxLag": 4,
+    "d": 0,
+    "intercept": 1,
+    "window": 0,
+    "minTrain": 40
+  },
+  "benchmark": "mean",
+  "horizons": [
+    1,
+    4
+  ],
+  "sample": {
+    "from": "2008-Q1"
+  },
+  "passMark": {
+    "maxRelRmse": 0.95,
+    "maxPValue": 0.1,
+    "minSeriesShare": 0.5,
+    "minCasesPerHorizon": 100,
+    "minYears": 10
+  },
+  "knownLimits": [
+    "Two areas only: free vintages with a full revision history exist for the US (ALFRED, needs the user's own FRED key) and the euro area (ECB). The minimum series share of 0.5 means one of the two must beat the benchmark.",
+    "ALFRED is read from observation 1999-01-01, so the US model starts with a short history; the first origins come about ten years later (minTrain 40 quarters).",
+    "Origins are the days a new quarter was first published; the forecast is scored on the target quarter's first published figure, not on today's.",
+    "Same model rule as gdp_forecast v1 (the live forecast); the US series is annualised, so its errors are about four times the euro area's and weigh more in the pooled RMSE."
+  ]
+}

@@ -10,7 +10,11 @@
     "cpi_forecast.v2.json": "f4a9b65fc5b436bc899849512f52c23ebede6cda135a6490ada06090b79c38e8",
     "cpi_nowcast.v2.json": "d7adebf498bbae7f505c09f74815fea562eac0db0043e0349d5b7847792e13b4",
     "debt_forecast.v2.json": "d9df83a7b3f9aa72a653405b2fe58e3a85633fe52ca0e45c04c7f9b26549aba2",
-    "debt_fan_coverage.json": "bb5442c806fbe6037fe4728a38e4b028b053ec3387cf773b45ff339c7756c9b7"
+    "debt_fan_coverage.json": "bb5442c806fbe6037fe4728a38e4b028b053ec3387cf773b45ff339c7756c9b7",
+    "gdp_forecast_realtime.json": "9e6f29e5749764cda9ee2b25a1d4fdbeb036d3227b24e761cf5d04189c22423d",
+    "cpi_forecast_realtime.json": "17aaabd4ee7bae18f5c47926e245ca8d78ca0c0596fa4a2d6ad219dc3f75b7bb",
+    "gdp_weo_realtime.json": "8f2d7fab3997c7284c97b79e210ea4fe37572dff7d8e66662dddf2aad19ecca2",
+    "cpi_weo_realtime.json": "e2f3ade77454c751334792dcaff07d16d1027573919f85e996679f81ff14ce27"
   },
   "amended": {
     "cpi_forecast.json": {
