@@ -6,6 +6,7 @@ import { addDays, periodEnd, type DatedPoint } from './forecastModels';
 import { arForecastCases, type ForecastCase, type ForecastSpec, type PlainSeries } from './forecastEval';
 import { unbrokenRun } from './forecasts';
 import { gdpNowcast } from './nowcast';
+import { penalizedNowcastCases } from './penalizedNowcast';
 
 export interface CountryData {
   iso3: string;
@@ -114,5 +115,6 @@ export function gdpNowcastOpen(spec: ForecastSpec, data: CountryData[], asOf: st
 }
 
 export function casesFor(spec: ForecastSpec, data: CountryData[]): { cases: ForecastCase[]; series: string[] } {
+  if (spec.target === 'gdp_penalized_nowcast_q') return penalizedNowcastCases(spec, data);
   return spec.target === 'gdp_nowcast_q' ? gdpNowcastCases(spec, data) : forecastTargetCases(spec, data);
 }

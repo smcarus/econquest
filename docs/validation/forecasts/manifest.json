@@ -15,7 +15,9 @@
     "cpi_forecast_realtime.json": "17aaabd4ee7bae18f5c47926e245ca8d78ca0c0596fa4a2d6ad219dc3f75b7bb",
     "gdp_weo_realtime.json": "8f2d7fab3997c7284c97b79e210ea4fe37572dff7d8e66662dddf2aad19ecca2",
     "cpi_weo_realtime.json": "e2f3ade77454c751334792dcaff07d16d1027573919f85e996679f81ff14ce27",
-    "fx_vol_garch.json": "b599b8d3f71a49d6fed2ca2f73ee5a3ef07d7a7ec3f1b0270b9f6cfbdc81fca7"
+    "fx_vol_garch.json": "b599b8d3f71a49d6fed2ca2f73ee5a3ef07d7a7ec3f1b0270b9f6cfbdc81fca7",
+    "gdp_nowcast_ridge.json": "c3398a1e0019cc84d02175ed24d28921e3223db8d0289c4cfe071ad289305183",
+    "gdp_nowcast_lasso.json": "e7c221da7584836c27f5b84b906d40f3ba566df64a7ecac2a17091a06512000f"
   },
   "amended": {
     "cpi_forecast.json": {

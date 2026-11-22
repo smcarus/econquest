@@ -1,0 +1,39 @@
+{
+  "id": "gdp_nowcast_ridge",
+  "version": 1,
+  "registeredOn": "2026-11-22",
+  "registeredBy": "Sam (owner); registered on his instruction to close the predictive econometrics gaps, before any run of this test",
+  "hypothesis": "A ridge regression nowcast of quarterly real GDP growth (q/q), made 30 days after the quarter ends from up to ten predictors published by then (GDP growth in the four quarters before; the activity index growth and the OECD leading indicator change in the quarter and the one before; the change in average inflation and in the average policy rate in the quarter), with the penalty chosen in time order (first 80% of past quarters fit, last 20% scored), has a lower RMSE than the historical mean of GDP growth published by then.",
+  "target": "gdp_penalized_nowcast_q",
+  "params": {
+    "penalty": 1,
+    "asOfDaysAfterQuarter": 30,
+    "gdpLagDays": 60,
+    "activityLagDays": 45,
+    "cliLagDays": 45,
+    "cpiLagDays": 30,
+    "policyLagDays": 1,
+    "minTrain": 32
+  },
+  "benchmark": "mean",
+  "horizons": [
+    1
+  ],
+  "sample": {
+    "from": "2008-Q1"
+  },
+  "passMark": {
+    "maxRelRmse": 0.9,
+    "maxPValue": 0.1,
+    "minSeriesShare": 0.5,
+    "minCasesPerHorizon": 150,
+    "minYears": 10
+  },
+  "knownLimits": [
+    "Same release lags, countries, quarters and pass mark as gdp_nowcast v1 (the bridge equation), so the two compare like for like; policy rates are taken as known the day after the month ends.",
+    "Values are today's vintage (later revisions included): a pseudo real-time test.",
+    "Penalty grids: ridge alpha 0.01 to 1,000, lasso alpha 0.001 to 1 (20 points each, evenly spaced on a log scale), on standardised predictors, as scikit-learn's StandardScaler with Ridge or Lasso.",
+    "The euro area policy rate enters for the first euro area country in the list only (a shared rate is not repeated).",
+    "Registered together with gdp_nowcast_lasso; the Holm correction counts both."
+  ]
+}

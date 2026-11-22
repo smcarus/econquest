@@ -686,6 +686,16 @@ loss is QLIKE (Patton 2011), which still ranks forecasts correctly when realised
 stand-in for the true variance. The fit uses the same variance start as the Python `arch` package and
 matches its estimates in the tests. The app shows a GARCH forecast only if this test passes.
 
+**Many predictors (ridge and lasso).** `gdp_nowcast_ridge.json` and `gdp_nowcast_lasso.json` test a
+GDP nowcast that uses up to ten published predictors at once (GDP growth in the four quarters before,
+the activity index and OECD leading indicator in the quarter and the one before, and the changes in
+average inflation and the average policy rate in the quarter), with ridge (Hoerl and Kennard 1970) or
+lasso (Tibshirani 1996) shrinkage on standardised predictors (`src/utils/penalized.ts`,
+`src/utils/penalizedNowcast.ts`). The penalty is chosen in time order only: the first 80% of past
+quarters are fitted, the last 20% scored, and the chosen penalty is refitted on all of them. Release
+lags, countries, quarters, benchmark and pass mark are those of the bridge nowcast, so the three
+compare like for like. The fits match scikit-learn's in the tests.
+
 ### 7.4 Conventions in the charts and tables
 
 These settings apply wherever the terminal computes a statistic (`src/utils/stats.ts`), and the
@@ -985,6 +995,8 @@ version number.
   and discount rate schedule as cited in the app).
 - Hobijn, B., Franses, P. H. and Ooms, M. (1998). Generalisations of the KPSS-test for stationarity.
   Econometric Institute Report 9802, Erasmus University Rotterdam.
+- Hoerl, A. E. and Kennard, R. W. (1970). Ridge regression: biased estimation for nonorthogonal
+  problems. *Technometrics*, 12(1), 55-67.
 - Holm, S. (1979). A simple sequentially rejective multiple test procedure. *Scandinavian Journal of
   Statistics*, 6(2), 65-70.
 - Hosking, J. R. M. (1990). L-moments: analysis and estimation of distributions using linear
@@ -1012,6 +1024,8 @@ version number.
   NBER Working Paper 4871.
 - Taylor, J. B. (1993). Discretion versus policy rules in practice. *Carnegie-Rochester Conference
   Series on Public Policy*, 39, 195-214.
+- Tibshirani, R. (1996). Regression shrinkage and selection via the lasso. *Journal of the Royal
+  Statistical Society, Series B*, 58(1), 267-288.
 - US Office of Management and Budget (2003). *Circular A-4: Regulatory Analysis.*
 - US Securities and Exchange Commission (2020). *Investment Adviser Marketing* (Rule 206(4)-1, the
   Marketing Rule). Release No. IA-5653.

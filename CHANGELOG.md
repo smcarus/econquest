@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Ridge and lasso GDP nowcasts: up to ten published predictors with the penalty chosen in time
+  order (never random folds), fits matching scikit-learn, and two pre-registered tests
+  (gdp_nowcast_ridge, gdp_nowcast_lasso) with the bridge nowcast's lags, countries and pass mark.
 - GARCH(1,1) currency volatility: a maximum-likelihood fit that matches the Python arch package,
   and a pre-registered test (fx_vol_garch) of whether it forecasts next month's swings in 23
   currencies better than the three-month volatility the app shows (QLIKE loss, years resampled).
