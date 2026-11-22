@@ -8,6 +8,7 @@ import { unbrokenRun } from './forecasts';
 import { gdpNowcast } from './nowcast';
 import { penalizedNowcastCases } from './penalizedNowcast';
 import { armaForecastCases } from './arimaEval';
+import { dfmNowcastCases } from './dynamicFactor';
 
 export interface CountryData {
   iso3: string;
@@ -117,5 +118,6 @@ export function gdpNowcastOpen(spec: ForecastSpec, data: CountryData[], asOf: st
 
 export function casesFor(spec: ForecastSpec, data: CountryData[]): { cases: ForecastCase[]; series: string[] } {
   if (spec.target === 'gdp_penalized_nowcast_q') return penalizedNowcastCases(spec, data);
+  if (spec.target === 'gdp_dfm_nowcast_q') return dfmNowcastCases(spec, data);
   return spec.target === 'gdp_nowcast_q' ? gdpNowcastCases(spec, data) : forecastTargetCases(spec, data);
 }

@@ -705,6 +705,15 @@ Gaussian maximum likelihood through the Kalman filter (`src/utils/kalman.ts`, Du
 BIC chosen once a year, on the data, samples, benchmarks and pass marks of the AR tests. They are
 separate tests of a different model class, not versions of the failed AR tests, whose verdicts stand.
 
+**Dynamic factor nowcast (Kalman filter).** `gdp_nowcast_dfm.json` tests a nowcast built on one
+common factor of the monthly indicators a country publishes (activity index, leading indicator,
+inflation and policy-rate changes), with the two-step method of Doz, Giannone and Reichlin (2011):
+principal components on the months where every indicator is published give the loadings and the
+factor's AR(1), and a Kalman filter and smoother then read the factor in every month, skipping the
+figures not out yet (`src/utils/dynamicFactor.ts`). GDP growth is bridged on the quarter's average
+factor and last quarter's growth. The free data give two to four monthly series per country, far
+fewer than central bank factor models use; the test has the bridge nowcast's lags and pass mark.
+
 ### 7.4 Conventions in the charts and tables
 
 These settings apply wherever the terminal computes a statistic (`src/utils/stats.ts`), and the
@@ -989,6 +998,8 @@ version number.
   Econometrics*, 105(1), 111-130.
 - Diebold, F. X. and Mariano, R. S. (1995). Comparing predictive accuracy. *Journal of Business &
   Economic Statistics*, 13(3), 253-263.
+- Doz, C., Giannone, D. and Reichlin, L. (2011). A two-step estimator for large approximate dynamic
+  factor models based on Kalman filtering. *Journal of Econometrics*, 164(1), 188-205.
 - Durbin, J. and Koopman, S. J. (2012). *Time Series Analysis by State Space Methods*, 2nd ed.
   Oxford University Press.
 - Gahtan, J., Knapp, K. R., Schreck, C. J., Diamond, H. J., Kossin, J. P. and Kruk, M. C. (2024).

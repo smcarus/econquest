@@ -19,7 +19,8 @@
     "gdp_nowcast_ridge.json": "c3398a1e0019cc84d02175ed24d28921e3223db8d0289c4cfe071ad289305183",
     "gdp_nowcast_lasso.json": "e7c221da7584836c27f5b84b906d40f3ba566df64a7ecac2a17091a06512000f",
     "gdp_forecast_arma.json": "0d63b855270c69727e5d86b5331c2a5dc9083d099e41a40b7688d49151012f1c",
-    "cpi_forecast_arma.json": "6ddf34e3bd4dcd4b51002fe221fc66eec052c0af86c1ee12b81a719a18b01248"
+    "cpi_forecast_arma.json": "6ddf34e3bd4dcd4b51002fe221fc66eec052c0af86c1ee12b81a719a18b01248",
+    "gdp_nowcast_dfm.json": "5611868ccf3f60fc09f6c9df989de612a156ecc36e88e7cb6a24397eaff5e1b3"
   },
   "amended": {
     "cpi_forecast.json": {
