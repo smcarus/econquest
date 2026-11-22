@@ -73,7 +73,9 @@ async function getSeries(key: string): Promise<AlfredSeries | null> {
       console.warn(`[First published] ECB RTD ${key} refused (HTTP ${res.status})`);
       return null;
     }
-    const rows = parseEcbHistory(await res.text());
+    const text = await res.text();
+    const rows = parseEcbHistory(text);
+    if (!rows.length) console.warn(`[First published] ECB RTD ${key} answered but no figures could be read (first line: ${text.split(/\r?\n/)[0].slice(0, 200) || 'empty reply'})`);
     return rows.length ? { id: key, rows } : null;
   } catch (e) {
     console.warn(`[First published] ECB RTD ${key}: ${describeNetworkError(e, 60000)}`);
