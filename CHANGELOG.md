@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Dynamic factor GDP nowcast: one common factor of each country's monthly indicators read with a
+  Kalman filter and smoother (two-step method), and a pre-registered test (gdp_nowcast_dfm) with the
+  bridge nowcast's lags, countries and pass mark.
 - ARIMA with moving-average and seasonal terms and outside predictors, by exact maximum likelihood
   through a Kalman filter (matching statsmodels' ARIMA in the tests), and two pre-registered tests
   (gdp_forecast_arma, cpi_forecast_arma) on the AR tests' data and pass marks.

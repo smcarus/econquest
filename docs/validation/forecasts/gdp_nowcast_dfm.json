@@ -1,0 +1,38 @@
+{
+  "id": "gdp_nowcast_dfm",
+  "version": 1,
+  "registeredOn": "2026-11-22",
+  "registeredBy": "Sam (owner); registered on his instruction to close the predictive econometrics gaps, before any run of this test",
+  "hypothesis": "A dynamic factor nowcast of quarterly real GDP growth (q/q), made 30 days after the quarter ends (one common factor of the monthly indicators published by then, read with a Kalman filter and smoother, two-step method of Doz, Giannone and Reichlin 2011; GDP growth bridged on the quarter's average factor and last quarter's growth), has a lower RMSE than the historical mean of GDP growth published by then.",
+  "target": "gdp_dfm_nowcast_q",
+  "params": {
+    "asOfDaysAfterQuarter": 30,
+    "gdpLagDays": 60,
+    "activityLagDays": 45,
+    "cliLagDays": 45,
+    "cpiLagDays": 30,
+    "policyLagDays": 1,
+    "minQuarters": 24,
+    "minBalancedMonths": 36
+  },
+  "benchmark": "mean",
+  "horizons": [
+    1
+  ],
+  "sample": {
+    "from": "2008-Q1"
+  },
+  "passMark": {
+    "maxRelRmse": 0.9,
+    "maxPValue": 0.1,
+    "minSeriesShare": 0.5,
+    "minCasesPerHorizon": 150,
+    "minYears": 10
+  },
+  "knownLimits": [
+    "Few monthly series per country in the free data (activity index, leading indicator, inflation, policy rate; two to four), far fewer than the dozens a central bank factor model uses; the test asks whether even this small factor helps.",
+    "Same lags, countries, quarters, benchmark and pass mark as gdp_nowcast v1, so the two compare like for like.",
+    "Values are today's vintage (pseudo real-time).",
+    "One factor; loadings and the factor's AR(1) from principal components on months with every series published, then fixed in the Kalman filter (two-step), not iterated to maximum likelihood."
+  ]
+}

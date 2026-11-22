@@ -36,6 +36,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Currency volatility forecast (GARCH) | Research | Not validated | None |
 | GDP nowcast with many predictors (ridge and lasso) | Research | Not validated | None |
 | Forecasts with moving-average terms (ARMA) | Research | Not validated | None |
+| GDP nowcast from a common factor (Kalman filter) | Research | Not validated | None |
 | Fiscal reaction (Bohn test) | Research | Description, not a tested signal | None |
 | Gross financing need | Research | Description, not a tested signal | None |
 | Country risk scorecard | Research | Not validated | None |
@@ -482,6 +483,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_forecast_arma.json, cpi_forecast_arma.json): same data, sample, benchmark and pass mark as the AR tests.
 - **Limits:** Today's data vintage; order re-chosen once a year.
 - **Code:** `src/utils/arima.ts`
+
+### GDP nowcast from a common factor (Kalman filter)
+
+- **Says:** Whether the common movement of a country's monthly indicators, read with a Kalman filter that copes with each indicator ending in a different month, estimates the latest quarter's GDP growth better than the historical average.
+- **Rule:** One dynamic factor (principal component, AR(1)) through a Kalman filter and smoother, two-step method of Doz, Giannone and Reichlin (2011); GDP growth bridged on the quarterly average factor and last quarter's growth.
+- **Reads:** OECD quarterly national accounts, BCB IBC-Br, Eurostat industrial production, OECD leading indicator and inflation (via DBnomics), BIS policy rates
+- **Shows in:** Menu > Models & validation (shown in the app only if it passes)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_nowcast_dfm.json): same lags, countries and pass mark as the bridge nowcast, against the historical mean, from 2008.
+- **Limits:** Two to four monthly series per country in the free data; two-step estimates, not full maximum likelihood.
+- **Code:** `src/utils/dynamicFactor.ts`
 
 ### Fiscal reaction (Bohn test)
 

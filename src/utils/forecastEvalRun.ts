@@ -84,6 +84,7 @@ export async function pullEvaluationData(fetcher: TextFetcher, problems: string[
       gdp_growth_q: QNA_LABEL,
       gdp_nowcast_q: `${QNA_LABEL}; ${IBCBR_LONG}; ${EUROSTAT_IP_LONG}; OECD composite leading indicator via DBnomics (full history)`,
       gdp_penalized_nowcast_q: `${QNA_LABEL}; ${IBCBR_LONG}; ${EUROSTAT_IP_LONG}; OECD composite leading indicator, OECD consumer price inflation via DBnomics; BIS policy rates`,
+      gdp_dfm_nowcast_q: `${QNA_LABEL}; ${IBCBR_LONG}; ${EUROSTAT_IP_LONG}; OECD composite leading indicator, OECD consumer price inflation via DBnomics; BIS policy rates`,
       cpi_yoy_m: 'OECD consumer price inflation via DBnomics (full history, y/y)',
       cpi_nowcast_m: 'OECD consumer price inflation via DBnomics (full history, y/y)',
       policy_rate_m: 'BIS central bank policy rates (monthly, from 1990)',
