@@ -145,8 +145,8 @@ export async function runForecastEvaluations(opts: { specDir: string; resultFile
       problems.push(`${s.id}: ${got.problem}; not run`);
       continue;
     }
-    for (const e of ('empty' in got && got.empty) || []) problems.push(`${s.id}: ${e}`);
-    if (!got.cases.length) problems.push(`${s.id}: no case could be computed from the data read (${got.data})`);
+    for (const e of ('empty' in got && got.empty) || []) problems.push(`${s.id} v${s.version}: ${e}`);
+    if (!got.cases.length) problems.push(`${s.id} v${s.version}: no case could be computed from the data read (${got.data})`);
     const result = judgeForecast(s, hash, got.cases, got.data, at);
     file.versions[`${s.id} v${s.version}`] = result;
     file.results[s.id] = result;
