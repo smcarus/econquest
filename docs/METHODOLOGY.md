@@ -655,6 +655,17 @@ Diebold-Mariano test with the Harvey-Leybourne-Newbold small-sample correction i
 for reference, and the coverage of the 70% and 90% bands is reported beside the verdict
 (`src/utils/forecastEval.ts`). A forecast that fails is not drawn by default in the terminal.
 
+Two further sets of figures are reported beside the verdict and never change it. First, the relative
+RMSE against every simple benchmark, not only the registered one: the last value carried on (random
+walk), the historical mean, the random walk with drift, and, for monthly and quarterly targets, the
+seasonal naive (the same period a year earlier), following Hyndman and Athanasopoulos, *Forecasting:
+Principles and Practice*, section 5.2. Second, how good the whole band is, not only its middle
+(Gneiting and Raftery 2007): the mean continuous ranked probability score (CRPS) of the model's normal
+band, divided by the registered benchmark's mean absolute error (a single number's CRPS), so below 1
+means the band beats the benchmark; the 90% interval score (band width plus 20 times any miss outside
+it); and the mean pinball loss over the 5th, 25th, 50th, 75th and 95th percentiles. A new benchmark
+can be made the registered one only in a new spec version.
+
 ### 7.4 Conventions in the charts and tables
 
 These settings apply wherever the terminal computes a statistic (`src/utils/stats.ts`), and the
@@ -663,6 +674,11 @@ replication packs use the same ones.
 - **Unit-root test (ADF).** The lag is chosen by AIC, with every candidate lag fitted on one common
   sample; the test statistic is then refitted at the chosen lag on every usable row, as statsmodels
   `adfuller` does.
+- **Stationarity test (KPSS).** Shown beside ADF. KPSS starts from the opposite assumption (the
+  series is stationary around its mean), with the Newey-West long-run variance and the lag picked by
+  Hobijn, Franses and Ooms (1998), as statsmodels `kpss(regression='c', nlags='auto')` does; critical
+  values from Kwiatkowski et al. (1992). The two are read together: both say stationary, both say a
+  unit root, or mixed.
 - **Year-on-year change of a daily series.** Each point is compared with the last observation on or
   before the same date a year earlier, at most 7 days older; 29 February compares with 28 February.
   With no observation in that window the change is left out.
@@ -933,6 +949,8 @@ version number.
 - Gahtan, J., Knapp, K. R., Schreck, C. J., Diamond, H. J., Kossin, J. P. and Kruk, M. C. (2024).
   International Best Track Archive for Climate Stewardship (IBTrACS) Project, Version 4r01. NOAA
   National Centers for Environmental Information. doi:10.25921/82ty-9e16.
+- Gneiting, T. and Raftery, A. E. (2007). Strictly proper scoring rules, prediction, and estimation.
+  *Journal of the American Statistical Association*, 102(477), 359-378.
 - Ha, J., Stocker, M. and Yilmazkuday, H. (2020). Inflation and exchange rate pass-through. *Journal of
   International Money and Finance*, 105, 102187. doi:10.1016/j.jimonfin.2020.102187.
 - Harvey, C. R., Liu, Y. and Zhu, H. (2016). ... and the cross-section of expected returns. *Review of
@@ -941,17 +959,23 @@ version number.
   errors. *International Journal of Forecasting*, 13(2), 281-291.
 - HM Treasury. *The Green Book: Central Government Guidance on Appraisal and Evaluation* (edition
   and discount rate schedule as cited in the app).
+- Hobijn, B., Franses, P. H. and Ooms, M. (1998). Generalisations of the KPSS-test for stationarity.
+  Econometric Institute Report 9802, Erasmus University Rotterdam.
 - Holm, S. (1979). A simple sequentially rejective multiple test procedure. *Scandinavian Journal of
   Statistics*, 6(2), 65-70.
 - Hosking, J. R. M. (1990). L-moments: analysis and estimation of distributions using linear
   combinations of order statistics. *Journal of the Royal Statistical Society, Series B*, 52(1),
   105-124.
+- Hyndman, R. J. and Athanasopoulos, G. (2021). *Forecasting: Principles and Practice*, 3rd ed.
+  OTexts. https://otexts.com/fpp3/
 - Iacoviello, M. and Navarro, G. (2019). Foreign effects of higher U.S. interest rates. *Journal of
   International Money and Finance*, 95, 232-250. doi:10.1016/j.jimonfin.2018.06.012.
 - Ilzetzki, E., Reinhart, C. M. and Rogoff, K. S. (2019). Exchange arrangements entering the
   twenty-first century: which anchor will hold? *Quarterly Journal of Economics*, 134(2), 599-646.
 - Kilian, L. (2009). Not all oil price shocks are alike: disentangling demand and supply shocks in the
   crude oil market. *American Economic Review*, 99(3), 1053-1069. doi:10.1257/aer.99.3.1053.
+- Kwiatkowski, D., Phillips, P. C. B., Schmidt, P. and Shin, Y. (1992). Testing the null hypothesis of
+  stationarity against the alternative of a unit root. *Journal of Econometrics*, 54(1-3), 159-178.
 - Nelson, C. R. and Siegel, A. F. (1987). Parsimonious modeling of yield curves. *Journal of
   Business*, 60(4), 473-489.
 - PEFA Secretariat (2016). *Framework for assessing public financial management* (PI-1, aggregate

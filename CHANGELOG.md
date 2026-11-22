@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Forecast checks: the Chart Agent's stationarity test now runs KPSS beside ADF and reads the two
+  together (statsmodels kpss with the automatic lag, matched to 1e-9 in tests); the Python
+  replication file includes it. Forecast evaluations also report, beside the verdict and without
+  changing it, the relative RMSE against the random walk with drift and the seasonal naive as well as
+  the last value and the historical mean, and how good the whole band is (CRPS ratio, 90% interval
+  score, pinball loss). Models & validation and `npm run forecast:evaluate` show the extra line.
 - Track record brought up to date from the owner's 17 November run (npm run mac:validate on
   aca9fa7): five tests that had run but were missing from docs/TRACK_RECORD.md are added
   (inflation_expectations_lead v1 and yield_curve_recession v1, both failed; the first versions of

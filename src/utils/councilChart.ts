@@ -13,6 +13,8 @@ import { breaksTest, hacRegression, JOHANSEN_CRIT, johansenTest, lpTest, SUPF_CR
 import { TAYLOR_R_STAR, TAYLOR_WEIGHTS } from './taylorRule';
 import {
   adf,
+  kpss,
+  stationarityVerdict,
   alignPair,
   commonFreq,
   crossCorrelation,
@@ -48,7 +50,7 @@ export const TEST_TITLE: Record<ChartTest, string> = {
   regression: 'Regression',
   leadlag: 'Which moves first (lead/lag)',
   granger: 'Granger causality',
-  adf: 'Stationarity (ADF test)',
+  adf: 'Stationarity (ADF and KPSS tests)',
   hp: 'Trend and cycle (HP filter)',
   rolling: 'Is the relationship stable? (rolling correlation)',
   hac: 'Regression with Newey-West errors',
@@ -207,7 +209,7 @@ const TEST_WORDS: Array<[RegExp, ChartTest]> = [
   [/regress|sensitiv|elasticit|\bbeta\b|scatter/i, 'regression'],
   [/lead.?lag|leads? or lags|which (?:one )?leads|moves? first|comes? first/i, 'leadlag'],
   [/granger|helps? (?:to )?predict|predictive/i, 'granger'],
-  [/stationar|unit root|\badf\b|dickey/i, 'adf'],
+  [/stationar|unit root|\badf\b|dickey|\bkpss\b/i, 'adf'],
   [/\bhp\b|hodrick|prescott|trend and cycle|cycle and trend|(?:gap from|against|above|below) (?:its )?trend|detrend/i, 'hp'],
   [/\bstable\b|rolling|still hold|over time/i, 'rolling'],
   [/newey|west errors|\bhac\b|robust (?:standard )?errors|autocorrelation[- ]robust/i, 'hac'],
@@ -901,7 +903,9 @@ export function computeChart(req: ChartRequest, fetched: Array<FetchedSeries | {
     }
     if (test === 'adf') {
       for (const l of lines.slice(0, 2)) {
-        const r = adf(l.points.map((p) => p.value));
+        const vals = l.points.map((p) => p.value);
+        const r = adf(vals);
+        const k = kpss(vals);
         if ('error' in r) {
           out.tests.push({ test, title: `${TEST_TITLE.adf}: ${l.label}`, reading: `Not run: ${r.error}`, figures: [] });
           continue;
@@ -909,11 +913,16 @@ export function computeChart(req: ChartRequest, fetched: Array<FetchedSeries | {
         out.tests.push({
           test,
           title: `${TEST_TITLE.adf}: ${l.label}`,
-          reading: `${l.label}: ADF statistic ${r2(r.stat)} against a 5% critical value of ${r2(r.critical['5%'])} (${r.lags} lag(s), ${r.n} points). ${r.stationary ? 'The unit root is rejected: the series looks stationary (it tends to return to its mean).' : 'The unit root is not rejected: the series may wander (trend or random walk), so correlations and regressions on its level can mislead; its change is safer.'}`,
+          reading: `${l.label}: ADF statistic ${r2(r.stat)} against a 5% critical value of ${r2(r.critical['5%'])} (${r.lags} lag(s), ${r.n} points). ${r.stationary ? 'The unit root is rejected: the series looks stationary (it tends to return to its mean).' : 'The unit root is not rejected: the series may wander (trend or random walk), so correlations and regressions on its level can mislead; its change is safer.'}${
+            'error' in k
+              ? ` KPSS not run: ${k.error}`
+              : ` KPSS, which starts from the opposite assumption (stationary), gives ${k.stat.toFixed(3)} against a 5% critical value of 0.463 (${k.lags} lag(s)): ${k.stationary ? 'stationarity is not rejected' : 'stationarity is rejected'}. ${stationarityVerdict(r.stationary, k.stationary)}`
+          }`,
           figures: [
             { label: `ADF statistic, ${l.label}`, value: r2(r.stat) },
             { label: '5% critical value', value: r2(r.critical['5%']) },
             { label: 'Lags', value: String(r.lags) },
+            ...('error' in k ? [] : [{ label: `KPSS statistic, ${l.label}`, value: k.stat.toFixed(3) }, { label: 'KPSS 5% critical value', value: '0.463' }]),
           ],
           caution: sampleCaution(r.n, freq) ?? undefined,
         });
