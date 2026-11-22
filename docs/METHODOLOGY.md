@@ -696,6 +696,15 @@ quarters are fitted, the last 20% scored, and the chosen penalty is refitted on 
 lags, countries, quarters, benchmark and pass mark are those of the bridge nowcast, so the three
 compare like for like. The fits match scikit-learn's in the tests.
 
+**Moving-average terms (ARMA, SARIMAX-style).** `src/utils/arima.ts` fits ARIMA models with
+moving-average and seasonal terms and outside predictors (regression with ARIMA errors) by exact
+Gaussian maximum likelihood through the Kalman filter (`src/utils/kalman.ts`, Durbin and Koopman
+2012), with the stationary start and the stationarity and invertibility transform statsmodels uses
+(Monahan 1984); estimates, log-likelihoods and forecasts match statsmodels' ARIMA in the tests.
+`gdp_forecast_arma.json` and `cpi_forecast_arma.json` test ARMA(p, q) forecasts, p and q 0 to 2 by
+BIC chosen once a year, on the data, samples, benchmarks and pass marks of the AR tests. They are
+separate tests of a different model class, not versions of the failed AR tests, whose verdicts stand.
+
 ### 7.4 Conventions in the charts and tables
 
 These settings apply wherever the terminal computes a statistic (`src/utils/stats.ts`), and the
@@ -980,6 +989,8 @@ version number.
   Econometrics*, 105(1), 111-130.
 - Diebold, F. X. and Mariano, R. S. (1995). Comparing predictive accuracy. *Journal of Business &
   Economic Statistics*, 13(3), 253-263.
+- Durbin, J. and Koopman, S. J. (2012). *Time Series Analysis by State Space Methods*, 2nd ed.
+  Oxford University Press.
 - Gahtan, J., Knapp, K. R., Schreck, C. J., Diamond, H. J., Kossin, J. P. and Kruk, M. C. (2024).
   International Best Track Archive for Climate Stewardship (IBTrACS) Project, Version 4r01. NOAA
   National Centers for Environmental Information. doi:10.25921/82ty-9e16.
@@ -1012,6 +1023,8 @@ version number.
   crude oil market. *American Economic Review*, 99(3), 1053-1069. doi:10.1257/aer.99.3.1053.
 - Kwiatkowski, D., Phillips, P. C. B., Schmidt, P. and Shin, Y. (1992). Testing the null hypothesis of
   stationarity against the alternative of a unit root. *Journal of Econometrics*, 54(1-3), 159-178.
+- Monahan, J. F. (1984). A note on enforcing stationarity in autoregressive-moving average models.
+  *Biometrika*, 71(2), 403-404.
 - Nelson, C. R. and Siegel, A. F. (1987). Parsimonious modeling of yield curves. *Journal of
   Business*, 60(4), 473-489.
 - Patton, A. J. (2011). Volatility forecast comparison using imperfect volatility proxies. *Journal

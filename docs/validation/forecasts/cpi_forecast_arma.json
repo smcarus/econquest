@@ -1,0 +1,38 @@
+{
+  "id": "cpi_forecast_arma",
+  "version": 1,
+  "registeredOn": "2026-11-22",
+  "registeredBy": "Sam (owner); registered on his instruction to close the predictive econometrics gaps, before any run of this test",
+  "hypothesis": "An ARMA(p, q) forecast of monthly y/y inflation, p and q each 0 to 2 chosen by BIC at the first origin of each year, coefficients re-estimated by exact maximum likelihood at every origin on the last 120 months, has a lower RMSE than carrying the newest figure on, 3 and 12 months ahead.",
+  "target": "cpi_yoy_m",
+  "params": {
+    "arma": 1,
+    "maxP": 2,
+    "maxQ": 2,
+    "d": 0,
+    "intercept": 1,
+    "window": 120,
+    "minTrain": 60
+  },
+  "benchmark": "naive",
+  "horizons": [
+    3,
+    12
+  ],
+  "sample": {
+    "from": "2008-01"
+  },
+  "passMark": {
+    "maxRelRmse": 0.95,
+    "maxPValue": 0.1,
+    "minSeriesShare": 0.5,
+    "minCasesPerHorizon": 300,
+    "minYears": 10
+  },
+  "knownLimits": [
+    "A different model class on the same data, window, benchmark and pass mark as cpi_forecast v2, which failed; a separate test, not a version of that one.",
+    "Values are today's vintage (pseudo real-time).",
+    "With p at most 2 the model cannot read the 12-month base effect the AR (lags to 13) can; the MA terms are what is being tested.",
+    "Order chosen once a year; coefficients every month."
+  ]
+}

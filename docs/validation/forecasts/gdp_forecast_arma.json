@@ -1,0 +1,38 @@
+{
+  "id": "gdp_forecast_arma",
+  "version": 1,
+  "registeredOn": "2026-11-22",
+  "registeredBy": "Sam (owner); registered on his instruction to close the predictive econometrics gaps, before any run of this test",
+  "hypothesis": "An ARMA(p, q) forecast of quarterly real GDP growth (q/q), p and q each 0 to 2 chosen by BIC at the first origin of each year, coefficients re-estimated by exact maximum likelihood at every origin on all data to then, has a lower RMSE than the historical mean, one and four quarters ahead.",
+  "target": "gdp_growth_q",
+  "params": {
+    "arma": 1,
+    "maxP": 2,
+    "maxQ": 2,
+    "d": 0,
+    "intercept": 1,
+    "window": 0,
+    "minTrain": 40
+  },
+  "benchmark": "mean",
+  "horizons": [
+    1,
+    4
+  ],
+  "sample": {
+    "from": "2008-Q1"
+  },
+  "passMark": {
+    "maxRelRmse": 0.95,
+    "maxPValue": 0.1,
+    "minSeriesShare": 0.5,
+    "minCasesPerHorizon": 300,
+    "minYears": 10
+  },
+  "knownLimits": [
+    "A different model class (moving-average terms added) on the same data, sample, benchmark and pass mark as gdp_forecast v1, which failed; it is a separate test, not a version of that one, and the AR verdict stands whatever this one finds.",
+    "Values are today's vintage (pseudo real-time).",
+    "Order chosen once a year; coefficients every quarter.",
+    "Registered together with cpi_forecast_arma; the Holm correction counts every test on record."
+  ]
+}

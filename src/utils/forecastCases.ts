@@ -7,6 +7,7 @@ import { arForecastCases, type ForecastCase, type ForecastSpec, type PlainSeries
 import { unbrokenRun } from './forecasts';
 import { gdpNowcast } from './nowcast';
 import { penalizedNowcastCases } from './penalizedNowcast';
+import { armaForecastCases } from './arimaEval';
 
 export interface CountryData {
   iso3: string;
@@ -36,7 +37,7 @@ export function forecastTargetCases(spec: ForecastSpec, data: CountryData[]): { 
   const get = pick[spec.target];
   if (!get) return { cases: [], series: [] };
   const all = data.map((c) => plain(c.iso3, get(c))).filter((s): s is PlainSeries => Boolean(s));
-  const cases = arForecastCases(all, spec);
+  const cases = spec.params.arma === 1 ? armaForecastCases(all, spec) : arForecastCases(all, spec);
   return { cases, series: [...new Set(cases.map((c) => c.where))].sort() };
 }
 

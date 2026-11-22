@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- ARIMA with moving-average and seasonal terms and outside predictors, by exact maximum likelihood
+  through a Kalman filter (matching statsmodels' ARIMA in the tests), and two pre-registered tests
+  (gdp_forecast_arma, cpi_forecast_arma) on the AR tests' data and pass marks.
 - Ridge and lasso GDP nowcasts: up to ten published predictors with the penalty chosen in time
   order (never random folds), fits matching scikit-learn, and two pre-registered tests
   (gdp_nowcast_ridge, gdp_nowcast_lasso) with the bridge nowcast's lags, countries and pass mark.

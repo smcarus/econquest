@@ -10,6 +10,7 @@ export const REGISTER_FORECAST_IDS: Record<string, string[]> = {
   debt_fan: ['debt_fan_coverage'],
   fx_vol_garch: ['fx_vol_garch'],
   penalized_nowcast: ['gdp_nowcast_ridge', 'gdp_nowcast_lasso'],
+  arma_forecasts: ['gdp_forecast_arma', 'cpi_forecast_arma'],
   realtime_forecasts: ['gdp_forecast_realtime', 'cpi_forecast_realtime', 'gdp_weo_realtime', 'cpi_weo_realtime'],
   // Currency factor tests (docs/validation/signals/, npm run signals:evaluate) use the same verdict shape.
   fx_carry: ['fx_carry'],
