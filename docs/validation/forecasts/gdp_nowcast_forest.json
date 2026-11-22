@@ -1,0 +1,41 @@
+{
+  "id": "gdp_nowcast_forest",
+  "version": 1,
+  "registeredOn": "2026-11-22",
+  "registeredBy": "Sam (owner); registered on his instruction to close the predictive econometrics gaps, before any run of this test",
+  "hypothesis": "A random forest nowcast of quarterly real GDP growth (q/q), made 30 days after the quarter ends from the same up-to-ten published predictors as the ridge and lasso nowcasts (300 trees, depth at most 6, leaves of at least 5 quarters, a third of the predictors tried at each split, fixed seed), has a lower RMSE than the historical mean of GDP growth published by then.",
+  "target": "gdp_forest_nowcast_q",
+  "params": {
+    "asOfDaysAfterQuarter": 30,
+    "gdpLagDays": 60,
+    "activityLagDays": 45,
+    "cliLagDays": 45,
+    "cpiLagDays": 30,
+    "policyLagDays": 1,
+    "minTrain": 32,
+    "trees": 300,
+    "maxDepth": 6,
+    "minLeaf": 5,
+    "seed": 20261122
+  },
+  "benchmark": "mean",
+  "horizons": [
+    1
+  ],
+  "sample": {
+    "from": "2008-Q1"
+  },
+  "passMark": {
+    "maxRelRmse": 0.9,
+    "maxPValue": 0.1,
+    "minSeriesShare": 0.5,
+    "minCasesPerHorizon": 150,
+    "minYears": 10
+  },
+  "knownLimits": [
+    "Settings fixed before the run, not tuned: with 30 to 70 past quarters per country there is too little data to tune a forest without overfitting the tuning.",
+    "Same predictors, lags, countries, quarters, benchmark and pass mark as gdp_nowcast_ridge and gdp_nowcast_lasso.",
+    "Values are today's vintage (pseudo real-time).",
+    "Bands from the out-of-bag error (each quarter predicted only by trees that did not see it), assumed normal."
+  ]
+}
