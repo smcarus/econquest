@@ -68,7 +68,8 @@ function pull(area: FirstPublishedArea, force: boolean | undefined, run: (saved:
 
 async function getSeries(key: string): Promise<AlfredSeries | null> {
   try {
-    const res = await fetchWithTimeout(ecbRtdUrl(key), 60000);
+    // Ask for CSV: the default Accept header (application/json) makes the ECB Data Portal answer in SDMX-JSON, which the CSV reader cannot read.
+    const res = await fetchWithTimeout(ecbRtdUrl(key), 60000, { Accept: 'text/csv' });
     if (!res.ok) {
       console.warn(`[First published] ECB RTD ${key} refused (HTTP ${res.status})`);
       return null;

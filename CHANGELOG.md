@@ -8,8 +8,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 - cpi_weo_realtime version 2 failed on its first run and stays failed (owner's decision, no retest).
   Known weakness: its pooled RMSE is dominated by hyperinflations (one year ahead, 367,474 against
   986 for the last year carried on); country by country the AR was better in 89 of 169 countries.
-- Real-time Problem lines name the test version, and the run says when the ECB real-time database
-  answers with nothing readable.
+- Euro area figures as first published: the app now asks the ECB Data Portal for CSV. It had sent
+  its default Accept header (JSON), so the reply could not be read and the euro area was left out
+  of the real-time tests. Real-time Problem lines name the test version, and the run says when the
+  ECB answers with nothing readable.
 
 - cpi_weo_realtime version 2: an 18-year window instead of 15. With 15 years and 2 lags the AR had
   13 rows, below the 16 it needs, so version 1 produced no case and no verdict. `npm run
