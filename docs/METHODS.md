@@ -33,6 +33,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | GDP nowcast (bridge equation) | Research | Forecast evaluation passed | v1, 2026-11-07 |
 | Forecasts with fan charts (AR models) | Research | Forecast evaluation failed | debt_forecast v2, 2026-11-07 |
 | Forecast tests on data as first published | Research | Not validated | None |
+| Currency volatility forecast (GARCH) | Research | Not validated | None |
 | Fiscal reaction (Bohn test) | Research | Description, not a tested signal | None |
 | Gross financing need | Research | Description, not a tested signal | None |
 | Country risk scorecard | Research | Not validated | None |
@@ -443,6 +444,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Pre-registered (docs/validation/forecasts/*_realtime.json): rolling origin on vintages, relative RMSE against the historical mean (GDP) or no change (inflation), year-block bootstrap, from 2008.
 - **Limits:** Two areas for the quarterly and monthly tests; the yearly tests read only the WEO editions you have saved. A test of the method, not a new forecast shown in the app.
 - **Code:** `src/utils/realTimeEval.ts`
+
+### Currency volatility forecast (GARCH)
+
+- **Says:** Whether a GARCH model, which lets a burst of big moves raise the expected swings for the next days and then fade, forecasts next month's currency swings better than the plain three-month volatility.
+- **Rule:** GARCH(1,1) by maximum likelihood on the last 1,000 daily returns at each month-end, next 21 trading days' variance, against the last 63 days' realised variance; QLIKE loss, years resampled.
+- **Reads:** ECB euro reference rates per US dollar (via Frankfurter), daily from 1999
+- **Shows in:** Menu > Models & validation (shown in the app only if it passes)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered (docs/validation/forecasts/fx_vol_garch.json): mean QLIKE loss ratio at most 0.95, p at most 0.10, better in half the currencies, from 2005.
+- **Limits:** One ECB fixing a day, not market closes; managed currencies left out; normal errors in the likelihood.
+- **Code:** `src/utils/garch.ts`
 
 ### Fiscal reaction (Bohn test)
 

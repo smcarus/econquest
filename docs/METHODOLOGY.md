@@ -678,6 +678,14 @@ country they cover: at each edition the series is the years it marks as actual d
 year's figure is taken from the first edition that marks it as actual. The IMF's own projection in
 the origin edition is reported beside the verdict, not used for it.
 
+**Currency volatility (GARCH).** `docs/validation/forecasts/fx_vol_garch.json` tests a GARCH(1,1)
+(Bollerslev 1986, `src/utils/garch.ts`), fitted by Gaussian maximum likelihood on the last 1,000 daily
+returns of each currency against the US dollar at each month-end, against the three-month realised
+volatility the app shows. The outcome is the realised variance of the next 21 trading days, and the
+loss is QLIKE (Patton 2011), which still ranks forecasts correctly when realised variance is a noisy
+stand-in for the true variance. The fit uses the same variance start as the Python `arch` package and
+matches its estimates in the tests. The app shows a GARCH forecast only if this test passes.
+
 ### 7.4 Conventions in the charts and tables
 
 These settings apply wherever the terminal computes a statistic (`src/utils/stats.ts`), and the
@@ -949,6 +957,8 @@ version number.
   International Settlements.
 - Board of Governors of the Federal Reserve System and Office of the Comptroller of the Currency
   (2011). *Supervisory Guidance on Model Risk Management* (SR 11-7 / OCC 2011-12).
+- Bollerslev, T. (1986). Generalized autoregressive conditional heteroskedasticity. *Journal of
+  Econometrics*, 31(3), 307-327.
 - Caldara, D. and Iacoviello, M. (2022). Measuring geopolitical risk. *American Economic Review*,
   112(4), 1194-1225.
 - Chinn, M. D. and Ito, H. (2006). What matters for financial development? Capital controls,
@@ -992,6 +1002,8 @@ version number.
   stationarity against the alternative of a unit root. *Journal of Econometrics*, 54(1-3), 159-178.
 - Nelson, C. R. and Siegel, A. F. (1987). Parsimonious modeling of yield curves. *Journal of
   Business*, 60(4), 473-489.
+- Patton, A. J. (2011). Volatility forecast comparison using imperfect volatility proxies. *Journal
+  of Econometrics*, 160(1), 246-256.
 - PEFA Secretariat (2016). *Framework for assessing public financial management* (PI-1, aggregate
   expenditure outturn). Washington, DC.
 - Reinhart, C. M. and Rogoff, K. S. (2009). The aftermath of financial crises. *American Economic

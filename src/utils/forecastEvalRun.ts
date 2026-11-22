@@ -8,6 +8,8 @@ import fs from 'fs';
 import { loadSpecs } from './backtestRun';
 import { judgeForecast, REALTIME_TARGETS, type ForecastResult, type ForecastSpec, type RealTimeTarget } from './forecastEval';
 import { realTimeCases, weoRealTimeCases, type VintageSeriesInput } from './realTimeEval';
+import { judgeVol, volCases, type VolSpec } from './volEval';
+import { allQuarters, fxQuarterUrl, parseFxQuarter, FX_HISTORY_SOURCE, type FxHistoryFile } from './fxHistory';
 import { casesFor, gdpNowcastOpen, type CountryData } from './forecastCases';
 import path from 'path';
 import { forwardStep, type ForwardBody, type ForwardCallLine } from './forwardRecord';
@@ -89,7 +91,7 @@ export async function pullEvaluationData(fetcher: TextFetcher, problems: string[
   };
 }
 
-export async function runForecastEvaluations(opts: { specDir: string; resultFile: string; fetcher: TextFetcher; now?: Date; onResult?: (r: ForecastResult) => void; /** Past WEO editions, for the debt fan coverage test and the WEO real-time tests. */ weoStore?: WeoVintageStore; forwardFile?: string; /** Vintages for the real-time tests: US (ALFRED) and euro area (ECB RTD) GDP and inflation. */ vintages?: RealTimeVintages }): Promise<ForecastValidationFile & { problems: string[] }> {
+export async function runForecastEvaluations(opts: { specDir: string; resultFile: string; fetcher: TextFetcher; now?: Date; onResult?: (r: ForecastResult) => void; /** Past WEO editions, for the debt fan coverage test and the WEO real-time tests. */ weoStore?: WeoVintageStore; forwardFile?: string; /** Vintages for the real-time tests: US (ALFRED) and euro area (ECB RTD) GDP and inflation. */ vintages?: RealTimeVintages; /** Saved daily FX history (data/live/fx-history.json), for the volatility test. */ savedFx?: FxHistoryFile | null }): Promise<ForecastValidationFile & { problems: string[] }> {
   const problems: string[] = [];
   const specs = loadSpecs(opts.specDir);
   for (const s of specs) if (s.problem) problems.push(`${s.file}: ${s.problem}; not run`);
@@ -142,7 +144,18 @@ export async function runForecastEvaluations(opts: { specDir: string; resultFile
     file.results[s.id] = result;
     opts.onResult?.(result);
   }
-  const rest = runnable.filter((x) => !isFan(x) && !isRt(x));
+  // The GARCH volatility test reads daily ECB reference rates: the saved history plus any quarter not saved.
+  const isVol = (x: { spec?: unknown }) => (x.spec as { target?: string } | undefined)?.target === 'fx_vol_d';
+  for (const { spec, hash } of runnable.filter(isVol)) {
+    const s = spec as unknown as VolSpec;
+    const daily = await pullDailyFx(opts.fetcher, s.universe, problems, opts.savedFx, opts.now);
+    const cases = volCases(daily, s);
+    const result = judgeVol(s, hash, cases, `${FX_HISTORY_SOURCE}, daily from 1999; GARCH(1,1) on the last ${s.params.window} returns at each month-end`, at);
+    file.versions[`${s.id} v${s.version}`] = result;
+    file.results[s.id] = result;
+    opts.onResult?.(result);
+  }
+  const rest = runnable.filter((x) => !isFan(x) && !isRt(x) && !isVol(x));
   if (rest.length) {
     const { data, sources } = await pullEvaluationData(opts.fetcher, problems, opts.now);
     const forwardFile = opts.forwardFile ?? path.join(path.dirname(opts.resultFile), 'forward.jsonl');
@@ -209,4 +222,29 @@ export function realTimeRun(s: ForecastSpec, weoStore: WeoVintageStore | undefin
   const cases = realTimeCases(inputs, s);
   const names = inputs.map((i) => `${i.where} ${i.def.id}`).join(', ');
   return { cases, data: `Data as first published: ${names} (ALFRED, Federal Reserve Bank of St. Louis; ECB Euro Area Real-Time Database); each forecast made from the vintage of its origin day, scored against the first published figure${vintages?.missing.length ? `; not read: ${vintages.missing.join('; ')}` : ''}` };
+}
+
+/** Daily units per US dollar for the currencies asked, from the saved history and any quarter not saved. */
+export async function pullDailyFx(fetcher: TextFetcher, ccys: string[], problems: string[], saved?: FxHistoryFile | null, now = new Date()): Promise<Record<string, Array<{ date: string; value: number }>>> {
+  const out: Record<string, Array<{ date: string; value: number }>> = {};
+  const add = (rates: Record<string, Record<string, number>>) => {
+    for (const [day, row] of Object.entries(rates)) for (const c of ccys) if (row[c] > 0) (out[c] ||= []).push({ date: day, value: row[c] });
+  };
+  for (const q of allQuarters(now)) {
+    const chunk = saved?.chunks?.[q];
+    if (chunk) {
+      add(chunk.rates);
+      continue;
+    }
+    const url = fxQuarterUrl(q, now);
+    if (!url) continue;
+    try {
+      const r = parseFxQuarter(JSON.parse(await fetcher(url)));
+      if (r) add(r);
+    } catch (e: any) {
+      problems.push(`ECB reference rates for ${q} did not answer (${e?.message || e})`);
+    }
+  }
+  for (const c of Object.keys(out)) out[c].sort((a, b) => (a.date < b.date ? -1 : 1));
+  return out;
 }

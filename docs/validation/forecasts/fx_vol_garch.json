@@ -1,0 +1,58 @@
+{
+  "id": "fx_vol_garch",
+  "version": 1,
+  "registeredOn": "2026-11-22",
+  "registeredBy": "Sam (owner); registered on his instruction to close the predictive econometrics gaps, before any run of this test",
+  "hypothesis": "At each month-end, a GARCH(1,1) fitted on the last 1,000 daily returns of a currency against the US dollar forecasts the realised variance of the next 21 trading days better (lower mean QLIKE loss) than the realised variance of the last 63 trading days (the three-month volatility the app shows), pooled over the listed currencies.",
+  "target": "fx_vol_d",
+  "params": {
+    "window": 1000,
+    "horizonDays": 21,
+    "benchDays": 63,
+    "resamples": 4000,
+    "seed": 20261122
+  },
+  "universe": [
+    "AUD",
+    "CAD",
+    "CHF",
+    "EUR",
+    "GBP",
+    "JPY",
+    "NOK",
+    "NZD",
+    "SEK",
+    "BRL",
+    "CZK",
+    "HUF",
+    "IDR",
+    "INR",
+    "ILS",
+    "KRW",
+    "MXN",
+    "PHP",
+    "PLN",
+    "SGD",
+    "THB",
+    "TRY",
+    "ZAR"
+  ],
+  "sample": {
+    "from": "2005-01"
+  },
+  "passMark": {
+    "maxLossRatio": 0.95,
+    "maxPValue": 0.1,
+    "minSeriesShare": 0.5,
+    "minCasesPerCurrency": 60,
+    "minCases": 2000,
+    "minYears": 10
+  },
+  "knownLimits": [
+    "ECB euro reference rates turned into units per US dollar (one fixing a day, 14:15 CET), not market closes; days the ECB did not publish have no return.",
+    "Pegged or tightly managed currencies against the dollar (CNY, HKD, DKK, BGN and others) are left out; DKK would repeat EUR.",
+    "Realised variance from 21 daily returns is a noisy stand-in for the true variance; QLIKE is used because it still ranks forecasts correctly with such a stand-in (Patton 2011).",
+    "Normal errors in the likelihood (quasi-maximum likelihood); currency returns have fatter tails, which affects the estimates' precision but not their consistency.",
+    "A test of the forecast only: the app does not show a GARCH forecast unless this test passes."
+  ]
+}

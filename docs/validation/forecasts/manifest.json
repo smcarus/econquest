@@ -14,7 +14,8 @@
     "gdp_forecast_realtime.json": "9e6f29e5749764cda9ee2b25a1d4fdbeb036d3227b24e761cf5d04189c22423d",
     "cpi_forecast_realtime.json": "17aaabd4ee7bae18f5c47926e245ca8d78ca0c0596fa4a2d6ad219dc3f75b7bb",
     "gdp_weo_realtime.json": "8f2d7fab3997c7284c97b79e210ea4fe37572dff7d8e66662dddf2aad19ecca2",
-    "cpi_weo_realtime.json": "e2f3ade77454c751334792dcaff07d16d1027573919f85e996679f81ff14ce27"
+    "cpi_weo_realtime.json": "e2f3ade77454c751334792dcaff07d16d1027573919f85e996679f81ff14ce27",
+    "fx_vol_garch.json": "b599b8d3f71a49d6fed2ca2f73ee5a3ef07d7a7ec3f1b0270b9f6cfbdc81fca7"
   },
   "amended": {
     "cpi_forecast.json": {
