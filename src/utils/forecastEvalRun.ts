@@ -145,11 +145,14 @@ export async function runForecastEvaluations(opts: { specDir: string; resultFile
       problems.push(`${s.id}: ${got.problem}; not run`);
       continue;
     }
+    for (const e of ('empty' in got && got.empty) || []) problems.push(`${s.id}: ${e}`);
+    if (!got.cases.length) problems.push(`${s.id}: no case could be computed from the data read (${got.data})`);
     const result = judgeForecast(s, hash, got.cases, got.data, at);
     file.versions[`${s.id} v${s.version}`] = result;
     file.results[s.id] = result;
     opts.onResult?.(result);
   }
+  if (runnable.some(isRt)) for (const m of opts.vintages?.missing || []) problems.push(`real-time data not read: ${m}`);
   // The GARCH volatility test reads daily ECB reference rates: the saved history plus any quarter not saved.
   const isVol = (x: { spec?: unknown }) => (x.spec as { target?: string } | undefined)?.target === 'fx_vol_d';
   for (const { spec, hash } of runnable.filter(isVol)) {
@@ -225,7 +228,7 @@ export interface RealTimeVintages {
 const WEO_RT_CODE: Partial<Record<RealTimeTarget, string>> = { gdp_weo_realtime_a: 'NGDP_RPCH', cpi_weo_realtime_a: 'PCPIPCH' };
 
 /** Cases for one real-time spec, or the reason it cannot run. */
-export function realTimeRun(s: ForecastSpec, weoStore: WeoVintageStore | undefined, vintages: RealTimeVintages | undefined): { cases: import('./forecastEval').ForecastCase[]; data: string } | { problem: string } {
+export function realTimeRun(s: ForecastSpec, weoStore: WeoVintageStore | undefined, vintages: RealTimeVintages | undefined): { cases: import('./forecastEval').ForecastCase[]; data: string; empty?: string[] } | { problem: string } {
   const code = WEO_RT_CODE[s.target as RealTimeTarget];
   if (code) {
     if (!weoStore?.editions.length) return { problem: 'no past WEO editions saved in data/local/weo-vintages/ (npm run weo:vintages)' };
@@ -237,7 +240,8 @@ export function realTimeRun(s: ForecastSpec, weoStore: WeoVintageStore | undefin
   if (!inputs?.length) return { problem: `no vintages to read (${vintages?.missing.join('; ') || 'ALFRED and the ECB real-time database were not read'})` };
   const cases = realTimeCases(inputs, s);
   const names = inputs.map((i) => `${i.where} ${i.def.id}`).join(', ');
-  return { cases, data: `Data as first published: ${names} (ALFRED, Federal Reserve Bank of St. Louis; ECB Euro Area Real-Time Database); each forecast made from the vintage of its origin day, scored against the first published figure${vintages?.missing.length ? `; not read: ${vintages.missing.join('; ')}` : ''}` };
+  const empty = inputs.filter((i) => !cases.some((c) => c.where === i.where)).map((i) => `${i.where} ${i.def.id} (${i.rows.length} published values read, no case)`);
+  return { cases, empty, data: `Data as first published: ${names} (ALFRED, Federal Reserve Bank of St. Louis; ECB Euro Area Real-Time Database); each forecast made from the vintage of its origin day, scored against the first published figure${vintages?.missing.length ? `; not read: ${vintages.missing.join('; ')}` : ''}` };
 }
 
 /** Daily units per US dollar for the currencies asked, from the saved history and any quarter not saved. */

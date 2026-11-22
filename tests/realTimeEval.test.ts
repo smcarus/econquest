@@ -107,3 +107,25 @@ test('a real-time spec with nothing to read says so', () => {
   assert.match((realTimeRun(spec({ target: 'gdp_weo_realtime_a' }), undefined, undefined) as { problem: string }).problem, /no past WEO editions/);
   assert.match((realTimeRun(spec(), undefined, { gdp: [], cpi: [], missing: ['US GDPC1: needs your free FRED API key'] }) as { problem: string }).problem, /FRED API key/);
 });
+
+test('the WEO inflation test: version 1 (15-year window) could never fit; version 2 (18 years) does', async () => {
+  const fs = await import('node:fs');
+  const read = (f: string) => JSON.parse(fs.readFileSync(new URL(`../docs/validation/forecasts/${f}`, import.meta.url), 'utf8')) as ForecastSpec;
+  const rand = seededRandom(11);
+  const editions = [] as WeoVintageStore['editions'];
+  const truth: Record<string, number> = {};
+  for (let t = 1980; t <= 2020; t++) truth[String(t)] = 4 + 3 * rand();
+  for (let y = 2010; y <= 2018; y++) {
+    const years: Record<string, number> = {};
+    for (let t = 1980; t <= y + 1; t++) years[String(t)] = truth[String(t)];
+    editions.push({ vintage: `${y}-10`, publishedBy: `${y}-10-31`, file: `WEOOct${y}all.xls`, rows: { AAA: { PCPIPCH: { estimatesAfter: y - 1, years } } } });
+  }
+  const store = { editions, skipped: [] };
+  const v1 = read('cpi_weo_realtime.json');
+  const v2 = read('cpi_weo_realtime.v2.json');
+  assert.equal(v2.version, 2);
+  assert.equal(weoRealTimeCases(store, 'PCPIPCH', v1).length, 0);
+  const cases = weoRealTimeCases(store, 'PCPIPCH', v2);
+  assert.ok(cases.length > 0);
+  assert.ok(cases.every((c) => c.where === 'AAA' && Number.isFinite(c.model.mean)));
+});
