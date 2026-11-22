@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- GARCH(1,1) currency volatility: a maximum-likelihood fit that matches the Python arch package,
+  and a pre-registered test (fx_vol_garch) of whether it forecasts next month's swings in 23
+  currencies better than the three-month volatility the app shows (QLIKE loss, years resampled).
+  The app shows no GARCH figure unless the test passes. Runs with `npm run forecast:evaluate`.
 - Forecast tests on data as first published: four pre-registered tests (gdp_forecast_realtime,
   cpi_forecast_realtime, gdp_weo_realtime, cpi_weo_realtime) rebuild each series as it was
   published on the forecast day, from ALFRED (US, your FRED key), the ECB Real-Time Database (euro

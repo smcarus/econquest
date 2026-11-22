@@ -139,6 +139,8 @@ export interface ForecastResult {
   /** Fan coverage test only (src/utils/fanCoverage.ts): coverage by horizon, editions used, sample cases. */
   coverage?: import('./fanCoverage').FanCoverageHorizon[];
   origins?: string[];
+  /** Set when the score is not RMSE: 'qlike' = volatility test (src/utils/volEval.ts), where the RMSE fields hold mean QLIKE losses and their ratio. */
+  loss?: 'qlike';
   fanSample?: import('./fanCoverage').FanCase[];
 }
 
