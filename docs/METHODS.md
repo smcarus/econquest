@@ -35,6 +35,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Forecast tests on data as first published | Research | Not validated | None |
 | Currency volatility forecast (GARCH) | Research | Not validated | None |
 | GDP nowcast with many predictors (ridge and lasso) | Research | Not validated | None |
+| Forecasts with moving-average terms (ARMA) | Research | Not validated | None |
 | Fiscal reaction (Bohn test) | Research | Description, not a tested signal | None |
 | Gross financing need | Research | Description, not a tested signal | None |
 | Country risk scorecard | Research | Not validated | None |
@@ -469,6 +470,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_nowcast_ridge.json, gdp_nowcast_lasso.json): same lags, countries and pass mark as the bridge nowcast, against the historical mean, from 2008.
 - **Limits:** Today's data vintage with release-lag rules; the penalty is chosen on one time-ordered split.
 - **Code:** `src/utils/penalizedNowcast.ts`
+
+### Forecasts with moving-average terms (ARMA)
+
+- **Says:** Whether adding moving-average terms (yesterday's surprises) to the forecast of GDP growth and inflation beats the simple benchmarks where the plain autoregression did not.
+- **Rule:** ARMA(p, q), p and q 0 to 2 by BIC once a year, exact maximum likelihood through the Kalman filter at every origin, as statsmodels ARIMA; outside predictors and seasonal terms supported in the code.
+- **Reads:** OECD quarterly national accounts and consumer price inflation (via DBnomics)
+- **Shows in:** Menu > Models & validation (shown in the app only if it passes)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_forecast_arma.json, cpi_forecast_arma.json): same data, sample, benchmark and pass mark as the AR tests.
+- **Limits:** Today's data vintage; order re-chosen once a year.
+- **Code:** `src/utils/arima.ts`
 
 ### Fiscal reaction (Bohn test)
 
