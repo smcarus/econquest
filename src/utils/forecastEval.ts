@@ -26,7 +26,22 @@ import { BAND_Z, fitAr, forecastAr, type Prediction } from './forecastModels';
 import { missQuantiles } from './missBands';
 
 export type ForecastTarget = 'gdp_growth_q' | 'cpi_yoy_m' | 'policy_rate_m' | 'debt_gdp_a' | 'gdp_nowcast_q' | 'cpi_nowcast_m';
-export type BenchmarkKind = 'naive' | 'mean';
+/**
+ * Benchmarks: naive = the last value carries on (random walk); mean = the average of everything known
+ * so far; drift = random walk with drift (the last value plus the average step so far, times the
+ * horizon); seasonal_naive = the value of the same period one year earlier (Hyndman and
+ * Athanasopoulos, Forecasting: Principles and Practice, 3rd ed., section 5.2).
+ */
+export type BenchmarkKind = 'naive' | 'mean' | 'drift' | 'seasonal_naive';
+export const BENCHMARK_KINDS: BenchmarkKind[] = ['naive', 'mean', 'drift', 'seasonal_naive'];
+export const BENCHMARK_LABEL: Record<BenchmarkKind, string> = {
+  naive: 'the naive benchmark (last value carried on)',
+  mean: 'the historical-mean benchmark',
+  drift: 'the random walk with drift',
+  seasonal_naive: 'the seasonal naive benchmark (same period a year earlier)',
+};
+/** Periods per year for each target, for the seasonal naive benchmark. */
+export const TARGET_SEASON: Record<ForecastTarget, number> = { gdp_growth_q: 4, cpi_yoy_m: 12, policy_rate_m: 12, debt_gdp_a: 1, gdp_nowcast_q: 4, cpi_nowcast_m: 12 };
 
 export interface ForecastSpec {
   id: string;
@@ -57,6 +72,23 @@ export interface ForecastCase {
   actual: number;
   model: Prediction;
   bench: Prediction;
+  /** Every benchmark's point forecast for the same case: reported beside the verdict, never used for it. */
+  others?: Partial<Record<BenchmarkKind, number>>;
+}
+
+/** Scores for the forecast distribution (Gneiting and Raftery 2007), on the cases where the model gives a band. */
+export interface DistributionScore {
+  cases: number;
+  /** Mean continuous ranked probability score of the model's normal band; lower is better, in the target's units. */
+  crps: number;
+  /** Mean absolute error of the registered benchmark: a point forecast's CRPS. */
+  benchMae: number;
+  /** crps / benchMae: below 1 means the model's band beats the benchmark's point forecast. */
+  crpsRatio: number;
+  /** Mean interval score of the 90% band (width plus 20 times any miss outside it); lower is better. */
+  intervalScore90: number;
+  /** Mean pinball (quantile) loss over the 5th, 25th, 50th, 75th and 95th percentiles. */
+  pinball: number;
 }
 
 export interface HorizonScore {
@@ -75,6 +107,10 @@ export interface HorizonScore {
   /** Share of outcomes inside the model's 70% and 90% bands. */
   coverage70: number | null;
   coverage90: number | null;
+  /** Relative RMSE against every benchmark the cases carry (reported only; the verdict uses the registered one). */
+  alsoAgainst?: Array<{ benchmark: BenchmarkKind; relRmse: number }>;
+  /** How good the whole band is, not only its middle (reported only). */
+  distribution?: DistributionScore | null;
   /** Per series; `miss` (5th, 15th, 85th, 95th percentile of outcome minus forecast) and `meanMiss` when it has minSeriesCases or more (R8). */
   bySeries: Array<{ where: string; cases: number; relRmse: number; dm: number | null; dmPValue: number | null; miss?: [number, number, number, number]; meanMiss?: number }>;
 }
@@ -120,13 +156,14 @@ export function unbrokenTail(s: PlainSeries, next: (d: string) => string): Plain
  * Rolling-origin cases for the AR forecast against a benchmark. At each origin from sample.from
  * (and with at least minTrain periods before it) the AR is refitted on data up to the origin only.
  */
-export function arForecastCases(series: PlainSeries[], spec: Pick<ForecastSpec, 'params' | 'benchmark' | 'horizons' | 'sample'>): ForecastCase[] {
+export function arForecastCases(series: PlainSeries[], spec: Pick<ForecastSpec, 'params' | 'benchmark' | 'horizons' | 'sample'> & { target?: ForecastTarget }): ForecastCase[] {
   const maxLag = spec.params.maxLag ?? 4;
   const d = (spec.params.d ?? 0) as 0 | 1;
   const intercept = (spec.params.intercept ?? 1) !== 0;
   const window = spec.params.window ?? 0;
   const minTrain = spec.params.minTrain ?? 40;
   const maxH = Math.max(...spec.horizons);
+  const season = spec.params.season ?? (spec.target ? TARGET_SEASON[spec.target] : 1);
   const out: ForecastCase[] = [];
   for (const s of series) {
     for (let i = 0; i < s.dates.length; i++) {
@@ -139,17 +176,103 @@ export function arForecastCases(series: PlainSeries[], spec: Pick<ForecastSpec, 
       const f = forecastAr(fit, train, maxH);
       for (const h of spec.horizons) {
         if (i + h >= s.values.length) continue;
-        out.push({ where: s.where, origin, target: s.dates[i + h], h, actual: s.values[i + h], model: f[h - 1], bench: benchmark(spec.benchmark, train) });
+        out.push({ where: s.where, origin, target: s.dates[i + h], h, actual: s.values[i + h], model: f[h - 1], bench: benchmark(spec.benchmark, train, h, season), others: allBenchmarks(train, h, season) });
       }
     }
   }
   return out;
 }
 
-/** Naive = the last value carries on (random walk); mean = the average of everything known so far. */
-export function benchmark(kind: BenchmarkKind, train: number[]): Prediction {
-  if (kind === 'mean') return { mean: train.reduce((a, b) => a + b, 0) / train.length };
-  return { mean: train[train.length - 1] };
+/**
+ * The benchmark's forecast h steps after the end of train (see BenchmarkKind). `season` is the
+ * number of periods in a year; with too short a history for drift or seasonal naive, the naive
+ * forecast stands in (the same rule every time, so no case is dropped).
+ */
+export function benchmark(kind: BenchmarkKind, train: number[], h = 1, season = 1): Prediction {
+  const n = train.length;
+  const last = train[n - 1];
+  if (kind === 'mean') return { mean: train.reduce((a, b) => a + b, 0) / n };
+  if (kind === 'drift' && n >= 2) return { mean: last + (h * (last - train[0])) / (n - 1) };
+  if (kind === 'seasonal_naive' && season > 1 && n >= season) {
+    const k = Math.floor((h - 1) / season) + 1;
+    return { mean: train[n + h - k * season - 1] };
+  }
+  return { mean: last };
+}
+
+/** Every benchmark's point forecast, for the "also against" line. */
+export function allBenchmarks(train: number[], h: number, season: number): Partial<Record<BenchmarkKind, number>> {
+  const out: Partial<Record<BenchmarkKind, number>> = {};
+  for (const k of BENCHMARK_KINDS) {
+    if (k === 'seasonal_naive' && season <= 1) continue;
+    out[k] = benchmark(k, train, h, season).mean;
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ distribution scores */
+
+const SQRT_PI = Math.sqrt(Math.PI);
+function normPdf(z: number): number {
+  return Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI);
+}
+/** Standard normal CDF (Abramowitz and Stegun 7.1.26 through erf; error below 1.5e-7). */
+export function normCdf(z: number): number {
+  const x = Math.abs(z) / Math.SQRT2;
+  const t = 1 / (1 + 0.3275911 * x);
+  const erf = 1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+  return z >= 0 ? 0.5 * (1 + erf) : 0.5 * (1 - erf);
+}
+/** CRPS of a normal forecast N(mu, sd^2) at outcome y (Gneiting and Raftery 2007, eq. 21). */
+export function crpsNormal(mu: number, sd: number, y: number): number {
+  const z = (y - mu) / sd;
+  return sd * (z * (2 * normCdf(z) - 1) + 2 * normPdf(z) - 1 / SQRT_PI);
+}
+/** Interval score of a central (1 - alpha) interval [lo, hi] at outcome y (Gneiting and Raftery 2007, eq. 43). */
+export function intervalScore(lo: number, hi: number, y: number, alpha: number): number {
+  return hi - lo + (2 / alpha) * Math.max(0, lo - y) + (2 / alpha) * Math.max(0, y - hi);
+}
+/** Pinball (quantile) loss of the q-th quantile forecast at outcome y. */
+export function pinballLoss(qf: number, y: number, q: number): number {
+  return y >= qf ? q * (y - qf) : (1 - q) * (qf - y);
+}
+export const PINBALL_QUANTILES = [0.05, 0.25, 0.5, 0.75, 0.95];
+const Z_OF: Record<number, number> = { 0.05: -1.6448536, 0.25: -0.6744898, 0.5: 0, 0.75: 0.6744898, 0.95: 1.6448536 };
+
+/** CRPS, 90% interval score and pinball loss over the cases whose model forecast has a band. */
+export function distributionScore(cases: ForecastCase[]): DistributionScore | null {
+  const withSd = cases.filter((c) => c.model.sd !== undefined && Number.isFinite(c.model.sd) && c.model.sd! > 0);
+  if (!withSd.length) return null;
+  let crps = 0;
+  let mae = 0;
+  let is90 = 0;
+  let pin = 0;
+  for (const c of withSd) {
+    const { mean: mu, sd } = c.model as { mean: number; sd: number };
+    crps += crpsNormal(mu, sd, c.actual);
+    mae += Math.abs(c.actual - c.bench.mean);
+    is90 += intervalScore(mu - 1.6448536 * sd, mu + 1.6448536 * sd, c.actual, 0.1);
+    pin += PINBALL_QUANTILES.reduce((a, q) => a + pinballLoss(mu + Z_OF[q] * sd, c.actual, q), 0) / PINBALL_QUANTILES.length;
+  }
+  const n = withSd.length;
+  return { cases: n, crps: r3(crps / n), benchMae: r3(mae / n), crpsRatio: r3(mae > 0 ? crps / mae : crps > 0 ? Infinity : 1), intervalScore90: r3(is90 / n), pinball: r3(pin / n) };
+}
+
+/** Relative RMSE of the model against each benchmark the cases carry (only benchmarks every case has). */
+export function alsoAgainst(cases: ForecastCase[]): Array<{ benchmark: BenchmarkKind; relRmse: number }> {
+  if (!cases.length) return [];
+  const out: Array<{ benchmark: BenchmarkKind; relRmse: number }> = [];
+  for (const k of BENCHMARK_KINDS) {
+    if (!cases.every((c) => c.others && Number.isFinite(c.others[k]))) continue;
+    let sm = 0;
+    let sb = 0;
+    for (const c of cases) {
+      sm += (c.actual - c.model.mean) ** 2;
+      sb += (c.actual - c.others![k]!) ** 2;
+    }
+    out.push({ benchmark: k, relRmse: r3(sb > 0 ? Math.sqrt(sm / sb) : Infinity) });
+  }
+  return out;
 }
 
 /* ------------------------------------------------------------------ statistics */
@@ -239,6 +362,8 @@ export function scoreHorizon(cases: ForecastCase[], h: number, minSeriesCases = 
     seriesBeat: tested.filter((s) => s.relRmse < 1).length,
     coverage70: cover(BAND_Z[70]),
     coverage90: cover(BAND_Z[90]),
+    alsoAgainst: alsoAgainst(hc),
+    distribution: distributionScore(hc),
     bySeries,
   };
 }
@@ -247,7 +372,7 @@ export function scoreHorizon(cases: ForecastCase[], h: number, minSeriesCases = 
 export function judgeForecast(spec: ForecastSpec, specHash: string, cases: ForecastCase[], data: string, ranAt = new Date().toISOString()): ForecastResult {
   const horizons = spec.horizons.map((h) => scoreHorizon(cases, h));
   const pm = spec.passMark;
-  const bench = spec.benchmark === 'naive' ? 'the naive benchmark (last value carried on)' : 'the historical-mean benchmark';
+  const bench = BENCHMARK_LABEL[spec.benchmark];
   const tooFew = horizons.filter((s) => s.cases < pm.minCasesPerHorizon || s.years < pm.minYears);
   const failing = horizons.filter((s) => !(s.relRmse <= pm.maxRelRmse && s.pValue <= pm.maxPValue && s.seriesTested > 0 && s.seriesBeat / s.seriesTested >= pm.minSeriesShare));
   const desc = (s: HorizonScore) => `${s.h} ahead: relative RMSE ${s.relRmse} (90% range ${s.relRmseRange[0]} to ${s.relRmseRange[1]}, p ${s.pValue}), beat ${bench.split(' (')[0]} in ${s.seriesBeat} of ${s.seriesTested} series`;

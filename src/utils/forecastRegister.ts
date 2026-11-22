@@ -23,6 +23,27 @@ export interface ForecastVerdict {
   ranAt: string;
   /** Currency factor tests: how the strategy lost when it lost (src/utils/fxFactors.ts crashSentence). */
   crash?: string;
+  /** Forecast evaluations: per-horizon scores, read for the "also reported" line. */
+  horizons?: Array<{ h: number; alsoAgainst?: Array<{ benchmark: string; relRmse: number }>; distribution?: { crps: number; crpsRatio: number; intervalScore90: number; pinball: number } | null }>;
+}
+
+const OTHER_BENCH: Record<string, string> = { naive: 'last value', mean: 'historical mean', drift: 'random walk with drift', seasonal_naive: 'seasonal naive' };
+
+/**
+ * One plain line of what the evaluation also reports beside its verdict (never part of it): the
+ * relative RMSE against the other simple benchmarks and how good the model's band is (CRPS ratio:
+ * below 1 means the band beats the benchmark's single number). Empty for older result files.
+ */
+export function alsoReported(v: ForecastVerdict): string {
+  const parts: string[] = [];
+  for (const h of v.horizons || []) {
+    const bits: string[] = [];
+    const also = (h.alsoAgainst || []).map((a) => `${OTHER_BENCH[a.benchmark] || a.benchmark} ${a.relRmse}`);
+    if (also.length) bits.push(`relative RMSE against ${also.join(', ')}`);
+    if (h.distribution) bits.push(`band CRPS ratio ${h.distribution.crpsRatio}, 90% interval score ${h.distribution.intervalScore90}`);
+    if (bits.length) parts.push(`${h.h} ahead: ${bits.join('; ')}`);
+  }
+  return parts.length ? `Also reported (not part of the verdict): ${parts.join('. ')}.` : '';
 }
 
 /** Passed only when every evaluation behind the entry passed; failed when any failed; else none. */
