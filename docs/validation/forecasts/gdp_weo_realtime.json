@@ -1,0 +1,35 @@
+{
+  "id": "gdp_weo_realtime",
+  "version": 1,
+  "registeredOn": "2026-11-22",
+  "registeredBy": "Sam (owner); registered on his instruction to close the predictive econometrics gaps, before any run of this test",
+  "hypothesis": "An AR on yearly real GDP growth (lag 0-2 by BIC), fitted at each past IMF WEO edition on the years that edition marks as actual data, has a lower RMSE than the historical mean of the same years, one and two years after the last actual year, scored against the first edition that marks the target year as actual. Every country the saved editions cover.",
+  "target": "gdp_weo_realtime_a",
+  "params": {
+    "maxLag": 2,
+    "d": 0,
+    "intercept": 1,
+    "window": 0,
+    "minTrain": 15
+  },
+  "benchmark": "mean",
+  "horizons": [
+    1,
+    2
+  ],
+  "sample": {
+    "from": "2008-01"
+  },
+  "passMark": {
+    "maxRelRmse": 0.95,
+    "maxPValue": 0.1,
+    "minSeriesShare": 0.5,
+    "minCasesPerHorizon": 500,
+    "minYears": 8
+  },
+  "knownLimits": [
+    "Reads only the WEO editions saved in data/local/weo-vintages/; with few editions it reports too few cases.",
+    "Two editions a year, so each target year is forecast from up to two origins; the year-block bootstrap resamples whole target years together.",
+    "The IMF's own projection in the origin edition is reported beside the verdict (relative RMSE against it); it is not the benchmark, because the IMF also sees the year in progress."
+  ]
+}

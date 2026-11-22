@@ -1,0 +1,35 @@
+{
+  "id": "cpi_forecast_realtime",
+  "version": 1,
+  "registeredOn": "2026-11-22",
+  "registeredBy": "Sam (owner); registered on his instruction to close the predictive econometrics gaps, before any run of this test",
+  "hypothesis": "The app's inflation forecast rule (AR on monthly y/y inflation, lag 0-13 by BIC, last 120 months), fitted at each origin on the series as published that day, has a lower RMSE than carrying the newest published figure on, 3 and 12 months ahead, scored against each month's first published figure. US (ALFRED CPIAUCSL, % y/y) and euro area (ECB real-time database HICP, % y/y), pooled.",
+  "target": "cpi_realtime_m",
+  "params": {
+    "maxLag": 13,
+    "d": 0,
+    "intercept": 1,
+    "window": 120,
+    "minTrain": 60
+  },
+  "benchmark": "naive",
+  "horizons": [
+    3,
+    12
+  ],
+  "sample": {
+    "from": "2008-01"
+  },
+  "passMark": {
+    "maxRelRmse": 0.95,
+    "maxPValue": 0.1,
+    "minSeriesShare": 0.5,
+    "minCasesPerHorizon": 300,
+    "minYears": 10
+  },
+  "knownLimits": [
+    "Two areas only (see gdp_forecast_realtime).",
+    "Same model rule as cpi_forecast v2, which failed on today's data; this test asks whether the verdict holds on data as first published, not a re-test of that rule. A pass here does not change the cpi_forecast verdict.",
+    "Price indices are revised less than GDP (mostly seasonal factors), so this test is expected to differ little from the pseudo real-time one."
+  ]
+}

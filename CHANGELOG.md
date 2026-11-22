@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Forecast tests on data as first published: four pre-registered tests (gdp_forecast_realtime,
+  cpi_forecast_realtime, gdp_weo_realtime, cpi_weo_realtime) rebuild each series as it was
+  published on the forecast day, from ALFRED (US, your FRED key), the ECB Real-Time Database (euro
+  area) and the IMF WEO editions you have saved (every country), and score forecasts on the first
+  published figure. The IMF's own projection from the same edition is reported beside the verdict.
+  `npm run forecast:evaluate` runs them; Models & validation has a new entry. No verdict yet: they
+  run on the Mac.
 - Forecast checks: the Chart Agent's stationarity test now runs KPSS beside ADF and reads the two
   together (statsmodels kpss with the automatic lag, matched to 1e-9 in tests); the Python
   replication file includes it. Forecast evaluations also report, beside the verdict and without

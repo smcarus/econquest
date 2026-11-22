@@ -6,7 +6,8 @@
  */
 import fs from 'fs';
 import { loadSpecs } from './backtestRun';
-import { judgeForecast, type ForecastResult, type ForecastSpec } from './forecastEval';
+import { judgeForecast, REALTIME_TARGETS, type ForecastResult, type ForecastSpec, type RealTimeTarget } from './forecastEval';
+import { realTimeCases, weoRealTimeCases, type VintageSeriesInput } from './realTimeEval';
 import { casesFor, gdpNowcastOpen, type CountryData } from './forecastCases';
 import path from 'path';
 import { forwardStep, type ForwardBody, type ForwardCallLine } from './forwardRecord';
@@ -88,7 +89,7 @@ export async function pullEvaluationData(fetcher: TextFetcher, problems: string[
   };
 }
 
-export async function runForecastEvaluations(opts: { specDir: string; resultFile: string; fetcher: TextFetcher; now?: Date; onResult?: (r: ForecastResult) => void; /** Past WEO editions, for the debt fan coverage test. */ weoStore?: WeoVintageStore; forwardFile?: string }): Promise<ForecastValidationFile & { problems: string[] }> {
+export async function runForecastEvaluations(opts: { specDir: string; resultFile: string; fetcher: TextFetcher; now?: Date; onResult?: (r: ForecastResult) => void; /** Past WEO editions, for the debt fan coverage test and the WEO real-time tests. */ weoStore?: WeoVintageStore; forwardFile?: string; /** Vintages for the real-time tests: US (ALFRED) and euro area (ECB RTD) GDP and inflation. */ vintages?: RealTimeVintages }): Promise<ForecastValidationFile & { problems: string[] }> {
   const problems: string[] = [];
   const specs = loadSpecs(opts.specDir);
   for (const s of specs) if (s.problem) problems.push(`${s.file}: ${s.problem}; not run`);
@@ -127,7 +128,21 @@ export async function runForecastEvaluations(opts: { specDir: string; resultFile
     file.results[s.id] = result;
     opts.onResult?.(result);
   }
-  const rest = runnable.filter((x) => !isFan(x));
+  // Real-time tests read vintages handed in (ALFRED, ECB RTD) or the saved WEO editions; no other download.
+  const isRt = (x: { spec?: unknown }) => REALTIME_TARGETS.includes((x.spec as { target?: string } | undefined)?.target as RealTimeTarget);
+  for (const { spec, hash } of runnable.filter(isRt)) {
+    const s = spec as unknown as ForecastSpec;
+    const got = realTimeRun(s, opts.weoStore, opts.vintages);
+    if ('problem' in got) {
+      problems.push(`${s.id}: ${got.problem}; not run`);
+      continue;
+    }
+    const result = judgeForecast(s, hash, got.cases, got.data, at);
+    file.versions[`${s.id} v${s.version}`] = result;
+    file.results[s.id] = result;
+    opts.onResult?.(result);
+  }
+  const rest = runnable.filter((x) => !isFan(x) && !isRt(x));
   if (rest.length) {
     const { data, sources } = await pullEvaluationData(opts.fetcher, problems, opts.now);
     const forwardFile = opts.forwardFile ?? path.join(path.dirname(opts.resultFile), 'forward.jsonl');
@@ -169,4 +184,29 @@ export async function runForecastEvaluations(opts: { specDir: string; resultFile
   fs.mkdirSync(opts.resultFile.replace(/[/\\][^/\\]+$/, ''), { recursive: true });
   writeFileAtomic(opts.resultFile, JSON.stringify(out, null, 1), 0o600);
   return { ...out, problems };
+}
+
+export interface RealTimeVintages {
+  gdp: VintageSeriesInput[];
+  cpi: VintageSeriesInput[];
+  /** Sources that did not answer, with the reason (shown as problems). */
+  missing: string[];
+}
+
+const WEO_RT_CODE: Partial<Record<RealTimeTarget, string>> = { gdp_weo_realtime_a: 'NGDP_RPCH', cpi_weo_realtime_a: 'PCPIPCH' };
+
+/** Cases for one real-time spec, or the reason it cannot run. */
+export function realTimeRun(s: ForecastSpec, weoStore: WeoVintageStore | undefined, vintages: RealTimeVintages | undefined): { cases: import('./forecastEval').ForecastCase[]; data: string } | { problem: string } {
+  const code = WEO_RT_CODE[s.target as RealTimeTarget];
+  if (code) {
+    if (!weoStore?.editions.length) return { problem: 'no past WEO editions saved in data/local/weo-vintages/ (npm run weo:vintages)' };
+    const cases = weoRealTimeCases(weoStore, code, s, isCountryIso3);
+    const eds = weoStore.editions.map((e) => e.vintage).sort();
+    return { cases, data: `${WEO_VINTAGE_SOURCE}, ${code}: ${eds.length} editions (${eds[0]} to ${eds[eds.length - 1]}); each forecast made from the years an edition marks as actual, scored against the first edition that marks the target year as actual; countries only` };
+  }
+  const inputs = s.target === 'gdp_realtime_q' ? vintages?.gdp : vintages?.cpi;
+  if (!inputs?.length) return { problem: `no vintages to read (${vintages?.missing.join('; ') || 'ALFRED and the ECB real-time database were not read'})` };
+  const cases = realTimeCases(inputs, s);
+  const names = inputs.map((i) => `${i.where} ${i.def.id}`).join(', ');
+  return { cases, data: `Data as first published: ${names} (ALFRED, Federal Reserve Bank of St. Louis; ECB Euro Area Real-Time Database); each forecast made from the vintage of its origin day, scored against the first published figure${vintages?.missing.length ? `; not read: ${vintages.missing.join('; ')}` : ''}` };
 }

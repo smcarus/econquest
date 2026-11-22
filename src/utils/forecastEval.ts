@@ -25,7 +25,10 @@ import { tPValue } from './stats';
 import { BAND_Z, fitAr, forecastAr, type Prediction } from './forecastModels';
 import { missQuantiles } from './missBands';
 
-export type ForecastTarget = 'gdp_growth_q' | 'cpi_yoy_m' | 'policy_rate_m' | 'debt_gdp_a' | 'gdp_nowcast_q' | 'cpi_nowcast_m';
+export type ForecastTarget = 'gdp_growth_q' | 'cpi_yoy_m' | 'policy_rate_m' | 'debt_gdp_a' | 'gdp_nowcast_q' | 'cpi_nowcast_m' | RealTimeTarget;
+/** Evaluations on data as first published (src/utils/realTimeEval.ts). */
+export type RealTimeTarget = 'gdp_realtime_q' | 'cpi_realtime_m' | 'gdp_weo_realtime_a' | 'cpi_weo_realtime_a';
+export const REALTIME_TARGETS: RealTimeTarget[] = ['gdp_realtime_q', 'cpi_realtime_m', 'gdp_weo_realtime_a', 'cpi_weo_realtime_a'];
 /**
  * Benchmarks: naive = the last value carries on (random walk); mean = the average of everything known
  * so far; drift = random walk with drift (the last value plus the average step so far, times the
@@ -34,6 +37,9 @@ export type ForecastTarget = 'gdp_growth_q' | 'cpi_yoy_m' | 'policy_rate_m' | 'd
  */
 export type BenchmarkKind = 'naive' | 'mean' | 'drift' | 'seasonal_naive';
 export const BENCHMARK_KINDS: BenchmarkKind[] = ['naive', 'mean', 'drift', 'seasonal_naive'];
+/** What a case can be compared with beside the verdict: the benchmarks, and the IMF projection of the same date. */
+export type OtherForecast = BenchmarkKind | 'imf';
+const OTHER_FORECASTS: OtherForecast[] = [...BENCHMARK_KINDS, 'imf'];
 export const BENCHMARK_LABEL: Record<BenchmarkKind, string> = {
   naive: 'the naive benchmark (last value carried on)',
   mean: 'the historical-mean benchmark',
@@ -41,7 +47,7 @@ export const BENCHMARK_LABEL: Record<BenchmarkKind, string> = {
   seasonal_naive: 'the seasonal naive benchmark (same period a year earlier)',
 };
 /** Periods per year for each target, for the seasonal naive benchmark. */
-export const TARGET_SEASON: Record<ForecastTarget, number> = { gdp_growth_q: 4, cpi_yoy_m: 12, policy_rate_m: 12, debt_gdp_a: 1, gdp_nowcast_q: 4, cpi_nowcast_m: 12 };
+export const TARGET_SEASON: Record<ForecastTarget, number> = { gdp_growth_q: 4, cpi_yoy_m: 12, policy_rate_m: 12, debt_gdp_a: 1, gdp_nowcast_q: 4, cpi_nowcast_m: 12, gdp_realtime_q: 4, cpi_realtime_m: 12, gdp_weo_realtime_a: 1, cpi_weo_realtime_a: 1 };
 
 export interface ForecastSpec {
   id: string;
@@ -72,8 +78,8 @@ export interface ForecastCase {
   actual: number;
   model: Prediction;
   bench: Prediction;
-  /** Every benchmark's point forecast for the same case: reported beside the verdict, never used for it. */
-  others?: Partial<Record<BenchmarkKind, number>>;
+  /** Every benchmark's point forecast for the same case, and in the WEO real-time test the IMF's own projection: reported beside the verdict, never used for it. */
+  others?: Partial<Record<OtherForecast, number>>;
 }
 
 /** Scores for the forecast distribution (Gneiting and Raftery 2007), on the cases where the model gives a band. */
@@ -108,7 +114,7 @@ export interface HorizonScore {
   coverage70: number | null;
   coverage90: number | null;
   /** Relative RMSE against every benchmark the cases carry (reported only; the verdict uses the registered one). */
-  alsoAgainst?: Array<{ benchmark: BenchmarkKind; relRmse: number }>;
+  alsoAgainst?: Array<{ benchmark: OtherForecast; relRmse: number; cases?: number }>;
   /** How good the whole band is, not only its middle (reported only). */
   distribution?: DistributionScore | null;
   /** Per series; `miss` (5th, 15th, 85th, 95th percentile of outcome minus forecast) and `meanMiss` when it has minSeriesCases or more (R8). */
@@ -258,19 +264,20 @@ export function distributionScore(cases: ForecastCase[]): DistributionScore | nu
   return { cases: n, crps: r3(crps / n), benchMae: r3(mae / n), crpsRatio: r3(mae > 0 ? crps / mae : crps > 0 ? Infinity : 1), intervalScore90: r3(is90 / n), pinball: r3(pin / n) };
 }
 
-/** Relative RMSE of the model against each benchmark the cases carry (only benchmarks every case has). */
-export function alsoAgainst(cases: ForecastCase[]): Array<{ benchmark: BenchmarkKind; relRmse: number }> {
+/** Relative RMSE of the model against each benchmark the cases carry, on the cases that carry it (`cases` given when fewer than all). */
+export function alsoAgainst(cases: ForecastCase[]): Array<{ benchmark: OtherForecast; relRmse: number; cases?: number }> {
   if (!cases.length) return [];
-  const out: Array<{ benchmark: BenchmarkKind; relRmse: number }> = [];
-  for (const k of BENCHMARK_KINDS) {
-    if (!cases.every((c) => c.others && Number.isFinite(c.others[k]))) continue;
+  const out: Array<{ benchmark: OtherForecast; relRmse: number; cases?: number }> = [];
+  for (const k of OTHER_FORECASTS) {
+    const sub = cases.filter((c) => c.others && Number.isFinite(c.others[k]));
+    if (!sub.length) continue;
     let sm = 0;
     let sb = 0;
-    for (const c of cases) {
+    for (const c of sub) {
       sm += (c.actual - c.model.mean) ** 2;
       sb += (c.actual - c.others![k]!) ** 2;
     }
-    out.push({ benchmark: k, relRmse: r3(sb > 0 ? Math.sqrt(sm / sb) : Infinity) });
+    out.push({ benchmark: k, relRmse: r3(sb > 0 ? Math.sqrt(sm / sb) : Infinity), ...(sub.length < cases.length ? { cases: sub.length } : {}) });
   }
   return out;
 }
