@@ -34,6 +34,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Forecasts with fan charts (AR models) | Research | Forecast evaluation failed | debt_forecast v2, 2026-11-07 |
 | Forecast tests on data as first published | Research | Not validated | None |
 | Currency volatility forecast (GARCH) | Research | Not validated | None |
+| GDP nowcast with many predictors (ridge and lasso) | Research | Not validated | None |
 | Fiscal reaction (Bohn test) | Research | Description, not a tested signal | None |
 | Gross financing need | Research | Description, not a tested signal | None |
 | Country risk scorecard | Research | Not validated | None |
@@ -456,6 +457,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Pre-registered (docs/validation/forecasts/fx_vol_garch.json): mean QLIKE loss ratio at most 0.95, p at most 0.10, better in half the currencies, from 2005.
 - **Limits:** One ECB fixing a day, not market closes; managed currencies left out; normal errors in the likelihood.
 - **Code:** `src/utils/garch.ts`
+
+### GDP nowcast with many predictors (ridge and lasso)
+
+- **Says:** Whether a nowcast that weighs up to ten published indicators at once, shrinking the weak ones towards zero, estimates the latest quarter's GDP growth better than the historical average.
+- **Rule:** Ridge and lasso regression on standardised predictors (GDP growth lags, activity index, OECD leading indicator, inflation and policy-rate changes), penalty chosen in time order (first 80% fit, last 20% scored), refitted each quarter.
+- **Reads:** OECD quarterly national accounts, BCB IBC-Br, Eurostat industrial production, OECD leading indicator and inflation (via DBnomics), BIS policy rates
+- **Shows in:** Menu > Models & validation (shown in the app only if it passes)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_nowcast_ridge.json, gdp_nowcast_lasso.json): same lags, countries and pass mark as the bridge nowcast, against the historical mean, from 2008.
+- **Limits:** Today's data vintage with release-lag rules; the penalty is chosen on one time-ordered split.
+- **Code:** `src/utils/penalizedNowcast.ts`
 
 ### Fiscal reaction (Bohn test)
 
