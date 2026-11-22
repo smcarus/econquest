@@ -1,0 +1,40 @@
+{
+  "id": "cpi_weo_realtime",
+  "version": 2,
+  "registeredOn": "2026-11-22",
+  "registeredBy": "Sam (owner); registered before any run of this version",
+  "hypothesis": "An AR on yearly consumer price inflation (lag 0-2 by BIC), fitted at each past IMF WEO edition on the last 18 years that edition marks as actual data, has a lower RMSE than carrying the last actual year on, one and two years ahead, scored against the first edition that marks the target year as actual. Every country the saved editions cover.",
+  "target": "cpi_weo_realtime_a",
+  "retestOf": {
+    "version": 1,
+    "verdict": "too few cases (0): no case could be computed",
+    "change": "Fits on the last 18 years that each edition marks as actual data instead of 15. With 15 years and up to 2 lags, at most 13 rows were left, below the 16 the app's AR fitting requires (MIN_AR_OBS in src/utils/forecastModels.ts), so version 1 could never fit a model and produced no case and no verdict. 18 years = 16 rows plus 2 lags. Everything else is as in version 1."
+  },
+  "params": {
+    "maxLag": 2,
+    "d": 0,
+    "intercept": 1,
+    "window": 18,
+    "minTrain": 18
+  },
+  "benchmark": "naive",
+  "horizons": [
+    1,
+    2
+  ],
+  "sample": {
+    "from": "2008-01"
+  },
+  "passMark": {
+    "maxRelRmse": 0.95,
+    "maxPValue": 0.1,
+    "minSeriesShare": 0.5,
+    "minCasesPerHorizon": 500,
+    "minYears": 8
+  },
+  "knownLimits": [
+    "An 18-year window keeps old hyperinflations from setting today's coefficients (the reason cpi_forecast v1 failed); 18 is the shortest window that leaves the 16 rows the AR needs after 2 lags.",
+    "Reads only the WEO editions saved in data/local/weo-vintages/.",
+    "The IMF's own projection in the origin edition is reported beside the verdict, not used for it."
+  ]
+}

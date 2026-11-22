@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- cpi_weo_realtime version 2: an 18-year window instead of 15. With 15 years and 2 lags the AR had
+  13 rows, below the 16 it needs, so version 1 produced no case and no verdict. `npm run
+  forecast:evaluate` now names any real-time series it could not read or score, and labels QLIKE and
+  pinball losses as such.
+
 - Random forest GDP nowcast (tree ensemble on the ridge and lasso predictors, fixed settings) and
   quantile-regression growth bands (matching statsmodels QuantReg), with two pre-registered tests
   (gdp_nowcast_forest; gdp_forecast_quantile, scored by pinball loss against the AR's normal band).
