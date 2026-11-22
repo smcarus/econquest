@@ -37,6 +37,8 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | GDP nowcast with many predictors (ridge and lasso) | Research | Not validated | None |
 | Forecasts with moving-average terms (ARMA) | Research | Not validated | None |
 | GDP nowcast from a common factor (Kalman filter) | Research | Not validated | None |
+| GDP nowcast from a random forest (tree ensemble) | Research | Not validated | None |
+| Lopsided forecast bands (quantile regression) | Research | Not validated | None |
 | Fiscal reaction (Bohn test) | Research | Description, not a tested signal | None |
 | Gross financing need | Research | Description, not a tested signal | None |
 | Country risk scorecard | Research | Not validated | None |
@@ -495,6 +497,30 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_nowcast_dfm.json): same lags, countries and pass mark as the bridge nowcast, against the historical mean, from 2008.
 - **Limits:** Two to four monthly series per country in the free data; two-step estimates, not full maximum likelihood.
 - **Code:** `src/utils/dynamicFactor.ts`
+
+### GDP nowcast from a random forest (tree ensemble)
+
+- **Says:** Whether hundreds of decision trees, each grown on a resample of past quarters and averaged, estimate the latest quarter's GDP growth from the published indicators better than the historical average.
+- **Rule:** Random forest (Breiman 2001): 300 regression trees, depth at most 6, leaves of at least 5 quarters, a third of the predictors per split, fixed seed; same predictors as the ridge and lasso nowcasts.
+- **Reads:** OECD quarterly national accounts, BCB IBC-Br, Eurostat industrial production, OECD leading indicator and inflation (via DBnomics), BIS policy rates
+- **Shows in:** Menu > Models & validation (shown in the app only if it passes)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_nowcast_forest.json): same predictors, lags, countries and pass mark as the ridge and lasso nowcasts, against the historical mean, from 2008.
+- **Limits:** Settings fixed, not tuned (too few quarters to tune); today's data vintage.
+- **Code:** `src/utils/randomForest.ts`
+
+### Lopsided forecast bands (quantile regression)
+
+- **Says:** Whether a band built percentile by percentile, which can lean towards the downside when growth risks are lopsided, describes where GDP growth ends up better than the even normal band the app draws.
+- **Rule:** Linear quantile regression (Koenker and Bassett 1978) of growth 1 and 4 quarters ahead on growth now and a quarter ago, 5th to 95th percentiles; mean pinball loss against the AR forecast's normal band.
+- **Reads:** OECD quarterly national accounts
+- **Shows in:** Menu > Models & validation (shown in the app only if it passes)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_forecast_quantile.json): mean pinball loss ratio at most 0.95, p at most 0.10, better in half the countries, from 2008.
+- **Limits:** Two predictors; no financial conditions index in the free data for every country.
+- **Code:** `src/utils/quantileForecast.ts`
 
 ### Fiscal reaction (Bohn test)
 

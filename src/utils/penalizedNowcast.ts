@@ -104,9 +104,14 @@ export function predictorRows(c: CountryData, asOf: string, targetQ: string, lag
   return { names, rows, gdp };
 }
 
-/** Out-of-sample cases for the ridge or lasso nowcast (spec.params.penalty: 1 ridge, 2 lasso). */
-export function penalizedNowcastCases(spec: ForecastSpec, data: CountryData[]): { cases: ForecastCase[]; series: string[] } {
-  const kind: PenaltyKind = spec.params.penalty === 2 ? 'lasso' : 'ridge';
+/** A fitted model for the nowcast: its prediction for a predictor row and its error spread (when it has one). */
+export type RowModel = { predict: (x: number[]) => number; sd?: number };
+
+/**
+ * Out-of-sample cases for any model fitted on the predictor rows (ridge, lasso, random forest...):
+ * the same quarters, release lags, benchmark and training rows whatever the model.
+ */
+export function predictorNowcastCases(spec: ForecastSpec, data: CountryData[], fitRows: (X: number[][], y: number[]) => RowModel | null): { cases: ForecastCase[]; series: string[] } {
   const after = spec.params.asOfDaysAfterQuarter ?? 30;
   const lags = { gdp: spec.params.gdpLagDays ?? 60, activity: spec.params.activityLagDays ?? 45, cli: spec.params.cliLagDays ?? 45, cpi: spec.params.cpiLagDays ?? 30, policy: spec.params.policyLagDays ?? 1 };
   const minTrain = spec.params.minTrain ?? 32;
@@ -125,22 +130,28 @@ export function penalizedNowcastCases(spec: ForecastSpec, data: CountryData[]): 
       // At least one indicator month of the target quarter must be out (as in the bridge test).
       const ms = monthsOf(g.date);
       const outIn = (pts: DatedPoint[] | undefined, lag: number) => Boolean(pts?.length && publishedBy(pts, asOf, lag).some((p) => ms.includes(p.date)));
-      const actP = outIn(c.activity, lags.activity);
-      const cliP = outIn(c.cli, lags.cli);
-      if (!actP && !cliP) continue;
+      if (!outIn(c.activity, lags.activity) && !outIn(c.cli, lags.cli)) continue;
       const train = [...pr.rows.values()].filter((r) => r.quarter < g.date && r.complete && pr.gdp.has(r.quarter)).sort((a, b) => (a.quarter < b.quarter ? -1 : 1));
       if (train.length < minTrain) continue;
-      const fit = fitPenalizedCv(
+      const model = fitRows(
         train.map((r) => r.x),
         train.map((r) => pr.gdp.get(r.quarter)!),
-        kind,
       );
-      if ('error' in fit) continue;
+      if (!model) continue;
       const known = [...pr.gdp.values()];
       const bench = spec.benchmark === 'mean' ? known.reduce((a, b) => a + b, 0) / known.length : gdpAll.filter((x) => pr.gdp.has(x.date)).slice(-1)[0].value;
       const lastPub = [...pr.gdp.keys()].sort().slice(-1)[0];
-      out.push({ where: c.iso3, origin: lastPub, target: g.date, h: 1, actual: g.value, model: { mean: predictPenalized(fit, target.x), sd: fit.sigma }, bench: { mean: bench } });
+      out.push({ where: c.iso3, origin: lastPub, target: g.date, h: 1, actual: g.value, model: { mean: model.predict(target.x), ...(model.sd !== undefined ? { sd: model.sd } : {}) }, bench: { mean: bench } });
     }
   }
   return { cases: out, series: [...new Set(out.map((x) => x.where))].sort() };
+}
+
+/** Out-of-sample cases for the ridge or lasso nowcast (spec.params.penalty: 1 ridge, 2 lasso). */
+export function penalizedNowcastCases(spec: ForecastSpec, data: CountryData[]): { cases: ForecastCase[]; series: string[] } {
+  const kind: PenaltyKind = spec.params.penalty === 2 ? 'lasso' : 'ridge';
+  return predictorNowcastCases(spec, data, (X, y) => {
+    const fit = fitPenalizedCv(X, y, kind);
+    return 'error' in fit ? null : { predict: (x) => predictPenalized(fit, x), sd: fit.sigma };
+  });
 }

@@ -10,7 +10,9 @@ import { judgeForecast, REALTIME_TARGETS, type ForecastResult, type ForecastSpec
 import { realTimeCases, weoRealTimeCases, type VintageSeriesInput } from './realTimeEval';
 import { judgeVol, volCases, type VolSpec } from './volEval';
 import { allQuarters, fxQuarterUrl, parseFxQuarter, FX_HISTORY_SOURCE, type FxHistoryFile } from './fxHistory';
-import { casesFor, gdpNowcastOpen, type CountryData } from './forecastCases';
+import { casesFor, gdpNowcastOpen, gdpSeries, type CountryData } from './forecastCases';
+import { judgeLoss, type LossPassMark } from './lossEval';
+import { quantileForecastCases } from './quantileForecast';
 import path from 'path';
 import { forwardStep, type ForwardBody, type ForwardCallLine } from './forwardRecord';
 import { appendForward, loadForward } from './forwardRecordStore';
@@ -85,6 +87,8 @@ export async function pullEvaluationData(fetcher: TextFetcher, problems: string[
       gdp_nowcast_q: `${QNA_LABEL}; ${IBCBR_LONG}; ${EUROSTAT_IP_LONG}; OECD composite leading indicator via DBnomics (full history)`,
       gdp_penalized_nowcast_q: `${QNA_LABEL}; ${IBCBR_LONG}; ${EUROSTAT_IP_LONG}; OECD composite leading indicator, OECD consumer price inflation via DBnomics; BIS policy rates`,
       gdp_dfm_nowcast_q: `${QNA_LABEL}; ${IBCBR_LONG}; ${EUROSTAT_IP_LONG}; OECD composite leading indicator, OECD consumer price inflation via DBnomics; BIS policy rates`,
+      gdp_forest_nowcast_q: `${QNA_LABEL}; ${IBCBR_LONG}; ${EUROSTAT_IP_LONG}; OECD composite leading indicator, OECD consumer price inflation via DBnomics; BIS policy rates`,
+      gdp_quantile_q: QNA_LABEL,
       cpi_yoy_m: 'OECD consumer price inflation via DBnomics (full history, y/y)',
       cpi_nowcast_m: 'OECD consumer price inflation via DBnomics (full history, y/y)',
       policy_rate_m: 'BIS central bank policy rates (monthly, from 1990)',
@@ -165,6 +169,16 @@ export async function runForecastEvaluations(opts: { specDir: string; resultFile
     const forwardNew: ForwardBody[] = [];
     for (const { spec, hash } of rest) {
       const s = spec as unknown as ForecastSpec;
+      if (s.target === 'gdp_quantile_q') {
+        // Quantile bands: scored by pinball loss against the AR's normal band (src/utils/quantileForecast.ts).
+        const qs = spec as unknown as ForecastSpec & { passMark: LossPassMark & ForecastSpec['passMark'] };
+        const lc = quantileForecastCases(gdpSeries(data), qs);
+        const result = judgeLoss(qs, hash, lc, `${sources.gdp_growth_q}; countries only; today's vintage`, { loss: 'pinball', lossLabel: 'mean pinball loss', benchLabel: "the AR forecast's normal band (the live forecast rule)", unit: 'quarter(s)', resamples: qs.params.resamples ?? 4000, seed: qs.params.seed ?? 20261122 }, at);
+        file.versions[`${s.id} v${s.version}`] = result;
+        file.results[s.id] = result;
+        opts.onResult?.(result);
+        continue;
+      }
       const { cases } = casesFor(s, data);
       const result = judgeForecast(s, hash, cases, `${sources[s.target] || s.target}; countries only (ISO 3166, regional groups and the euro-area aggregate left out); today's vintage, release lags as registered`, at);
       if (s.target === 'gdp_nowcast_q') {

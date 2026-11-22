@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Random forest GDP nowcast (tree ensemble on the ridge and lasso predictors, fixed settings) and
+  quantile-regression growth bands (matching statsmodels QuantReg), with two pre-registered tests
+  (gdp_nowcast_forest; gdp_forecast_quantile, scored by pinball loss against the AR's normal band).
 - Dynamic factor GDP nowcast: one common factor of each country's monthly indicators read with a
   Kalman filter and smoother (two-step method), and a pre-registered test (gdp_nowcast_dfm) with the
   bridge nowcast's lags, countries and pass mark.

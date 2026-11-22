@@ -714,6 +714,16 @@ figures not out yet (`src/utils/dynamicFactor.ts`). GDP growth is bridged on the
 factor and last quarter's growth. The free data give two to four monthly series per country, far
 fewer than central bank factor models use; the test has the bridge nowcast's lags and pass mark.
 
+**Tree ensemble and quantile bands.** `gdp_nowcast_forest.json` tests a random forest (Breiman 2001,
+`src/utils/randomForest.ts`) on the ridge and lasso nowcasts' predictors, with settings fixed before
+the run (300 trees, depth at most 6, leaves of at least 5 quarters, a third of the predictors per
+split, fixed seed), because 30 to 70 past quarters per country are too few to tune a forest.
+`gdp_forecast_quantile.json` tests lopsided bands: linear quantile regressions (Koenker and Bassett
+1978; the algorithm of statsmodels QuantReg, matched in the tests) of growth one and four quarters
+ahead on growth now and a quarter ago, for the 5th to 95th percentiles, sorted if they cross
+(Chernozhukov, Fernandez-Val and Galichon 2010). It is scored by mean pinball loss against the same
+percentiles of the AR forecast's normal band (`src/utils/lossEval.ts`, years resampled).
+
 ### 7.4 Conventions in the charts and tables
 
 These settings apply wherever the terminal computes a statistic (`src/utils/stats.ts`), and the
@@ -987,12 +997,15 @@ version number.
   (2011). *Supervisory Guidance on Model Risk Management* (SR 11-7 / OCC 2011-12).
 - Bollerslev, T. (1986). Generalized autoregressive conditional heteroskedasticity. *Journal of
   Econometrics*, 31(3), 307-327.
+- Breiman, L. (2001). Random forests. *Machine Learning*, 45(1), 5-32.
 - Caldara, D. and Iacoviello, M. (2022). Measuring geopolitical risk. *American Economic Review*,
   112(4), 1194-1225.
 - Chinn, M. D. and Ito, H. (2006). What matters for financial development? Capital controls,
   institutions, and interactions. *Journal of Development Economics*, 81(1), 163-192.
 - Cerra, V. and Saxena, S. C. (2008). Growth dynamics: the myth of economic recovery. *American
   Economic Review*, 98(1), 439-457. doi:10.1257/aer.98.1.439.
+- Chernozhukov, V., Fernandez-Val, I. and Galichon, A. (2010). Quantile and probability curves
+  without crossing. *Econometrica*, 78(3), 1093-1125.
 - CFA Institute. *Global Investment Performance Standards (GIPS)*, 2020 edition.
 - Croushore, D. and Stark, T. (2001). A real-time data set for macroeconomists. *Journal of
   Econometrics*, 105(1), 111-130.
@@ -1032,6 +1045,7 @@ version number.
   twenty-first century: which anchor will hold? *Quarterly Journal of Economics*, 134(2), 599-646.
 - Kilian, L. (2009). Not all oil price shocks are alike: disentangling demand and supply shocks in the
   crude oil market. *American Economic Review*, 99(3), 1053-1069. doi:10.1257/aer.99.3.1053.
+- Koenker, R. and Bassett, G. (1978). Regression quantiles. *Econometrica*, 46(1), 33-50.
 - Kwiatkowski, D., Phillips, P. C. B., Schmidt, P. and Shin, Y. (1992). Testing the null hypothesis of
   stationarity against the alternative of a unit root. *Journal of Econometrics*, 54(1-3), 159-178.
 - Monahan, J. F. (1984). A note on enforcing stationarity in autoregressive-moving average models.
