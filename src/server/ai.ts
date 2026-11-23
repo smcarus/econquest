@@ -4,6 +4,7 @@
  * that retries, falls back across providers and reports which model answered.
  */
 
+import { answerLanguageNow, withAnswerLanguage } from '../utils/answerLanguage';
 import { AIRuntimeConfig, SubAgentReport } from '../types/council.ts';
 import { geminiModel } from '../utils/geminiModel';
 import { DEFAULT_REFEREE_MODEL, allowedRefereeModel, isRefereeStep, refereeModelOrDefault } from '../utils/refereeModel';
@@ -411,6 +412,8 @@ export async function executeResilientLlmStep<T>(options: {
   /** Ollama's own counters for the answer: load, read and write time, tokens (src/utils/councilTiming.ts). */
   stats?: ModelStats;
 }> {
+  // Council answers in the language picked on the page (src/utils/answerLanguage.ts); English adds nothing.
+  options = { ...options, systemInstruction: withAnswerLanguage(options.systemInstruction, answerLanguageNow()) };
   const startMs = Date.now();
   const attempts: ModelAttempt[] = [];
   const maxRetries = options.maxRetries ?? 2;

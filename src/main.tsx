@@ -7,12 +7,15 @@ import { forgetOtherAccount, mirrorSavesToDisk, startWorkspaceSync } from './uti
 import { fetchAuthStatus, needsSignIn, watchForSignedOut } from './utils/authClient';
 import { SignInPage } from './components/SignInPage';
 import { ensureLang, readLang } from './i18n/lang';
+import { answerLanguageFetch } from './utils/answerLanguage';
 
 // The page's language for screen readers and spelling (Menu language button; src/i18n).
 // Spanish words load on their own (src/i18n/es/), only when Spanish is chosen; wait for them so the
 // first draw is already in the chosen language.
 document.documentElement.lang = readLang();
 const langReady = ensureLang(readLang());
+// Council answers in the chosen language (src/utils/answerLanguage.ts): requests to /api/ say which.
+window.fetch = answerLanguageFetch(window.fetch.bind(window), readLang, window.location.origin);
 
 // /?view=watchlist is the watchlist popped out into its own window or tab.
 const popOut = new URLSearchParams(window.location.search).get('view') === 'watchlist';
