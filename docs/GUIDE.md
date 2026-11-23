@@ -237,6 +237,15 @@ now** pulls that country's figures again.
     governance comes before a default was fixed in advance on 13 November 2026; until it is run the
     panel's badge reads Not validated.
 
+13. More tools in History & data: **How shocks spread between economies** (a small global VAR:
+    pick where a surprise starts, growth or inflation, and its size; each economy's response over
+    five years with a 90% band, and the trade weight behind it), the **Estimated gap model** inside
+    the small gap model (shown only when its pre-registered test passed), **Official documents**
+    (World Bank reports and BIS central bankers' speeches for the country, each linked to the
+    publisher's page), and the **Macro lab** for teaching (aggregate demand and supply, and a debt
+    path, with sliders that start at zero). **Download offline report** saves a one-page HTML file
+    of the country's figures that opens without the app.
+
 ![Output gap chart for Brazil: the middle of three estimates with a band showing their spread, dashed for IMF projection years](images/07-output-gap.png)
 
 Example: the **output gap** shows how far the economy runs above or below its normal capacity. The
@@ -402,8 +411,13 @@ Which model fits which computer, and the settings the app uses, are in the READM
   need a key or a file, and what to download by hand.
 - **Models & validation**: the model register, test results and **Your tests**.
 - **Your data**: load your own series from a CSV file.
+- **Find data**: one search across the free catalogues (DBnomics, the IMF, the World Bank and
+  Eurostat), each result with its provider and a link to it.
+- **Settings > Your subscriptions > Your broker prices**: live prices for contracts you list from
+  your own Interactive Brokers account, through the IBKR Client Portal Gateway you run and sign in to
+  on your computer. Off by default; shown on screen only and never saved.
 - **Exam mode**: turns every AI step off for a class test.
-- **Worked examples**: four case studies from a question to a memo.
+- **Worked examples**: five case studies from a question to a memo.
 - **Quests**: greyed out, "Not yet available" ([section 12](#12-try-quests)).
 
 ![Settings > Tools: tools grouped by task, then Data connections with its source count](images/14-data-connections.png)
@@ -457,7 +471,8 @@ connect is in [DATA_API.md](./DATA_API.md) and [DEPLOYMENT.md](./DEPLOYMENT.md).
    - **Expert**: figures, sources and forecast ranges, with no plain-language explanations.
 
 Figures, source names and series names stay as the source wrote them. Some lines the app writes about
-a country are still in English, as the screenshot shows; the council agents work in English.
+a country are still in English, as the screenshot shows; Council chat and the council answer in the language
+you pick; their agents still read questions best in English.
 
 | French | Portuguese |
 | --- | --- |

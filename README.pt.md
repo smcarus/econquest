@@ -107,7 +107,7 @@ repassados em downloads ou cópias compartilhadas.
 | Testar um "e se" fiscal | **Histórico e dados**, ou a partir do Chat do conselho | Mude os gastos do governo ou os impostos e veja o efeito provável no crescimento e na dívida, com multiplicadores e elasticidades publicados e uma faixa |
 | Escrever um relatório | **Relatórios** (abas: Escrever uma nota, Revisões de política, Documentos do conselho, Cadernos, Ensino) | Notas de país e de emissor, avaliações de sustentabilidade, revisões de carteira e resumos do conselho, em Markdown ou PDF com fontes e datas |
 | Escrever um texto para discussão | Gráficos do **Chat do conselho**, **Relatórios > Cadernos** | Fixe um gráfico num caderno de pesquisa com a data até onde vão os números e uma impressão digital dos números; baixe o caderno como um único zip (rascunho, dados, scripts de Python, R e Stata, arquivo de citação); depois, *Verificar se ainda vale* diz se cada número continua igual, foi revisado ou sumiu |
-| Aprender pelo caminho | Botões do cabeçalho, **Menu > Manual do usuário**, **Menu > Exemplos resolvidos** | Três níveis de ajuda, um glossário em linguagem simples, quatro casos resolvidos, episódios didáticos e modo prova |
+| Aprender pelo caminho | Botões do cabeçalho, **Menu > Manual do usuário**, **Menu > Exemplos resolvidos** | Três níveis de ajuda, um glossário em linguagem simples, cinco casos resolvidos, episódios didáticos e modo prova |
 | Usar seus próprios dados e testes | **Menu > Seus dados**, **Menu > Modelos e validação** | Carregue suas próprias séries em CSV; registre seu próprio teste de sinal ou modelo com as mesmas regras rígidas dos testes do app |
 | Usar os números em R, Python ou Stata | [docs/DATA_API.md](./docs/DATA_API.md) (em inglês) | As mesmas séries, painéis e tabelas das telas, com fonte e data em cada valor |
 | Conectar um sistema de carteira | **Menu > Configurações > Tokens de API**, [docs/DATA_API.md](./docs/DATA_API.md) (em inglês) | Outro programa lê resumos de país e eventos, envia suas posições e roda choques e repetições de crises passadas na carteira dele, cada um com um token limitado ao que você marcar. Os países e títulos da lista **Nomes ocultos** não aparecem em lugar nenhum |
@@ -315,10 +315,11 @@ resumo de política de uma página sai nos quatro idiomas. Troque com o botão *
 cabeçalho; a escolha fica salva no seu navegador. Um idioma só é baixado quando escolhido.
 
 Algumas coisas ficam como foram escritas, e o app avisa: números, nomes de fontes e de séries aparecem
-como a fonte os entrega; os agentes do conselho leem as perguntas e escrevem seus documentos em inglês;
+como a fonte os entrega; o Chat do conselho e o conselho escrevem as respostas no idioma que você escolher (os agentes ainda
+entendem melhor perguntas em inglês);
 as notas de método citam artigos em inglês; algumas frases que as regras do app escrevem sobre um país
-ainda estão em inglês. Nenhuma tradução foi revisada ainda por um falante nativo; ajuda é bem-vinda
-([CONTRIBUTING.md](./CONTRIBUTING.md)).
+ainda estão em inglês. Nenhuma tradução foi revisada ainda por um falante nativo; ajuda é bem-vinda:
+os passos e a lista de arquivos estão em [docs/TRANSLATION_REVIEW.md](./docs/TRANSLATION_REVIEW.md) (em inglês).
 
 Este README e o guia estão nos quatro idiomas. Os outros documentos estão em inglês.
 
@@ -426,7 +427,7 @@ O método completo está em [docs/METHODOLOGY.md](./docs/METHODOLOGY.md) (em ing
 
 ## Roteiro
 
-Situação em 17 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./docs/ROADMAP.md), em inglês):
+Situação em 23 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./docs/ROADMAP.md), em inglês):
 
 **Feito**
 
@@ -491,6 +492,18 @@ Situação em 17 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./docs/ROADM
     elas) em Histórico e dados; e dias de divulgação, em que o aplicativo relê a cada hora as fontes de
     IPC e de atividade mensal até chegar o novo mês, em Hoje.
 
+17. **Fechar as lacunas com as plataformas líderes** (23 de novembro): previsões escritas antes de os
+    números existirem e pontuadas todo mês; uma busca em todos os catálogos gratuitos (Menu > Buscar
+    dados); VAR bayesianos e estruturais no Agente de gráficos; um pequeno modelo de economia aberta
+    estimado e testado antes de aparecer; números em tempo real para os 38 membros da OCDE;
+    documentos oficiais e discursos de banqueiros centrais por país; um relatório de país offline, um
+    laboratório macro e um exemplo resolvido sobre commodities; comentários e links somente leitura em
+    um servidor doméstico; preços ao vivo da sua própria conta na Interactive Brokers, só na tela;
+    respostas do conselho em espanhol, francês ou português; metas de inflação e datas de decisão para
+    mais países de baixa renda; um processo de revisão das traduções por falantes nativos; e como os
+    choques se espalham entre economias (um pequeno VAR global com pesos de comércio do FMI). O
+    arcabouço de dívida dos países de baixa renda espera sua nota de orientação de 2027.
+
 **Próximo**
 
 - **O lançamento público** em e-conquest/econquest. O modo leve e a revisão de segurança estão
@@ -505,8 +518,6 @@ Situação em 17 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./docs/ROADM
   semestre com dois professores); a construção começa quando o responsável pelo projeto disser.
 - **Árabe e suaíli**: planejados, pausados pelo responsável pelo projeto.
 - **O app para celular**: pausado até depois do lançamento.
-- **Ideias em espera** para o ponto de controle 1: ensino e compartilhamento (um relatório de país
-  offline, um laboratório macro com modelos de livro-texto e mais exemplos resolvidos).
 - **Checagens no computador do responsável**: algumas fontes (clima, trajetórias de tempestades,
   ativos do banco central, financiamento em dólares, o arquivo de regime cambial) estão construídas e
   testadas com respostas salvas, mas não puderam ser alcançadas da máquina de compilação;

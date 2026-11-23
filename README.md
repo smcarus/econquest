@@ -101,7 +101,7 @@ in downloads or shared copies.
 | Try a fiscal what-if | **History & data**, or from Council chat | Change government spending or taxes and see the likely effect on growth and debt, using published multipliers and budget elasticities, with a range |
 | Write a report | **Reports** (tabs: Write a note, Policy reviews, Council documents, Notebooks, Teaching) | Country notes, issuer notes, debt sustainability assessments, portfolio and client reviews and council briefs, as Markdown or PDF with sources and dates |
 | Write a working paper | **Council chat** charts, **Reports > Notebooks** | Pin a chart to a research notebook with the date its figures run to and a fingerprint of the figures; download the notebook as one zip (draft, data, Python, R and Stata scripts, citation file); later, *Check it still holds* says whether each figure is the same, revised or gone |
-| Learn as you go | Header buttons, **Menu > User manual**, **Menu > Worked examples** | Three help levels, a plain-language glossary, four worked case studies, teaching episodes and exam mode |
+| Learn as you go | Header buttons, **Menu > User manual**, **Menu > Worked examples** | Three help levels, a plain-language glossary, five worked case studies, teaching episodes and exam mode |
 | Bring your own data and tests | **Menu > Your data**, **Menu > Models & validation** | Load your own CSV series; register your own signal or model test under the same strict rules as the app's own |
 | Use the figures in R, Python or Stata | [docs/DATA_API.md](./docs/DATA_API.md) | The same series, panels and tables the screens show, with source and date on every value |
 | Connect a portfolio system | **Menu > Settings > API tokens**, [docs/DATA_API.md](./docs/DATA_API.md) | Another program reads country snapshots and events, sends its positions in, and runs shocks and past-crisis replays on its portfolio, each with a token limited to what you tick ([details](#connecting-an-outside-system)) |
@@ -317,10 +317,11 @@ choice is kept in your browser. A language downloads only when picked, so it nev
 anyone else.
 
 Some things stay as they are written and say so: figures, source names and series names show as the
-source gave them; the council agents read questions in English and write their documents in English;
+source gave them; Council chat and the council write their answers in the language you pick (the agents still read questions best in English);
 method notes cite papers in English; some text the app's rules write about a country (such as the
 brief's headline sentences) is still in English. None of the translations has yet been checked by a
-native speaker; help with that is welcome ([CONTRIBUTING.md](./CONTRIBUTING.md)).
+native speaker; help with that is welcome: the steps and the file checklist are in
+[docs/TRANSLATION_REVIEW.md](./docs/TRANSLATION_REVIEW.md).
 
 This README and the walk-through guide are in all four languages. The other documents are in English.
 
@@ -453,7 +454,7 @@ The full method is in [docs/METHODOLOGY.md](./docs/METHODOLOGY.md); the same in 
 
 ## Roadmap
 
-Where things stand on 17 November 2026 (details and status in [docs/ROADMAP.md](./docs/ROADMAP.md)):
+Where things stand on 23 November 2026 (details and status in [docs/ROADMAP.md](./docs/ROADMAP.md)):
 
 **Done**
 
@@ -511,6 +512,17 @@ Where things stand on 17 November 2026 (details and status in [docs/ROADMAP.md](
     days, when the app re-reads CPI and monthly activity sources hourly until the new month arrives,
     shown on Today.
 
+17. **Closing the gaps with leading platforms** (23 November): forecasts written down before the
+    figures exist and scored each month; one search across the free catalogues (Menu > Find data);
+    Bayesian and structural VARs in the Chart Agent; a small open-economy model estimated and tested
+    before it shows; real-time figures for all 38 OECD members; official documents and central bank
+    speeches per country; an offline country report, a macro lab and a commodity worked example;
+    comments and read-only links on a home server; live prices from your own Interactive Brokers
+    account, shown on screen only; council answers in Spanish, French or Portuguese; inflation
+    targets and decision dates for more lower-income countries; a native-speaker review process for
+    the translations; and how shocks spread between economies (a small global VAR with IMF trade
+    weights). The low-income debt framework waits for its 2027 guidance note.
+
 **Next**
 
 - **The public release** at e-conquest/econquest. Light mode and the security review are done; a
@@ -524,8 +536,6 @@ Where things stand on 17 November 2026 (details and status in [docs/ROADMAP.md](
   two professors); building starts when the maintainer says go.
 - **Arabic and Swahili**: planned, paused by the maintainer.
 - **The phone app**: paused until after the public release.
-- **Parked ideas** for checkpoint 1: teaching and sharing (an offline country report, a macro lab
-  with textbook models, more worked examples).
 - **Checks on the maintainer's computer**: some sources (weather, storm tracks, central bank assets,
   dollar funding, the exchange rate regime file) are built and tested on saved replies, but could not
   be reached from the build machine; `npm run check:data` on a computer that reaches them confirms

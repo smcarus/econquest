@@ -260,6 +260,16 @@ indiquent la fraîcheur des données. **Actualiser maintenant** récupère de no
     globale. Un test pour savoir si une gouvernance faible précède un défaut a été fixé à l’avance le
     13 novembre 2026 ; tant qu’il n’est pas exécuté, le badge du panneau indique Non validé.
 
+13. D’autres outils dans Historique et données : **Comment les chocs se propagent entre économies**
+    (un petit VAR global : choisissez d’où part la surprise, croissance ou inflation, et sa taille ; la
+    réponse de chaque économie sur cinq ans avec une bande à 90 % et la pondération commerciale qui
+    l’explique), le **Modèle d’écarts estimé** dans le petit modèle d’écarts (affiché seulement s’il a
+    réussi son test enregistré à l’avance), **Documents officiels** (rapports de la Banque mondiale et
+    discours de banquiers centraux de la BRI sur le pays, chacun relié à la page de l’éditeur) et le
+    **Laboratoire macro** pour l’enseignement (demande et offre agrégées, et une trajectoire de dette,
+    avec des curseurs qui partent de zéro). **Télécharger le rapport hors ligne** enregistre un fichier
+    HTML d’une page avec les chiffres du pays, qui s’ouvre sans l’application.
+
 ![Écart de production du Brésil : le milieu de trois estimations avec une bande qui montre leur dispersion, en pointillés pour les années de projection du FMI](images/07-output-gap.png)
 
 Exemple : l'**écart de production** montre de combien l'économie tourne au-dessus ou en dessous de sa
@@ -441,8 +451,14 @@ Le **Menu** rassemble tout ce qui n'est pas une page. À connaître d'abord :
   qu'il faut télécharger à la main.
 - **Modèles et validation** : le registre des modèles, les résultats des tests et **Vos tests**.
 - **Vos données** : chargez vos propres séries depuis un fichier CSV.
+- **Chercher des données** : une recherche dans les catalogues gratuits (DBnomics, le FMI, la Banque
+  mondiale et Eurostat), chaque résultat avec son fournisseur et un lien.
+- **Réglages > Vos abonnements > Vos cours du courtier** : cours en direct des contrats que vous
+  indiquez, depuis votre propre compte Interactive Brokers, via l’IBKR Client Portal Gateway que vous
+  lancez et auquel vous vous connectez sur votre ordinateur. Désactivé par défaut ; affichés à l’écran
+  uniquement et jamais enregistrés.
 - **Mode examen** : désactive toutes les étapes d'IA pour un examen.
-- **Exemples guidés** : quatre cas, d'une question à une note.
+- **Exemples guidés** : cinq cas, d'une question à une note.
 - **Quêtes** : grisé, « Pas encore disponible » ([section 12](#12-essayer-les-quêtes)).
 
 ![Réglages > Outils : outils regroupés par tâche, puis Connexions de données](images/14-data-connections.png)
@@ -502,8 +518,8 @@ dans [DATA_API.md](./DATA_API.md) et [DEPLOYMENT.md](./DEPLOYMENT.md) (en anglai
    - **Expert** : chiffres, sources et intervalles de prévision, sans explications en langage courant.
 
 Les chiffres et les noms de sources et de séries restent tels que la source les écrit. Certaines phrases
-que l'application écrit sur un pays sont encore en anglais, comme le montre la capture ; les agents du
-conseil travaillent en anglais.
+que l'application écrit sur un pays sont encore en anglais, comme le montre la capture ; le Chat du
+conseil et le conseil répondent dans la langue choisie ; leurs agents comprennent encore mieux les questions en anglais.
 
 ## 11. L'utiliser sur un téléphone
 

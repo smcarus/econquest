@@ -107,7 +107,7 @@ les Réglages, et ne sont jamais transmises dans les téléchargements ou les co
 | Tester une hypothèse budgétaire | **Historique et données**, ou depuis le Chat du conseil | Modifiez les dépenses publiques ou les impôts et voyez l'effet probable sur la croissance et la dette, avec des multiplicateurs et élasticités publiés et un intervalle |
 | Rédiger un rapport | **Rapports** (onglets : Rédiger une note, Revues de politique, Documents du conseil, Carnets, Enseignement) | Notes pays et émetteur, évaluations de soutenabilité, revues de portefeuille et synthèses du conseil, en Markdown ou PDF avec sources et dates |
 | Rédiger un document de travail | Graphiques du **Chat du conseil**, **Rapports > Carnets** | Épinglez un graphique dans un carnet de recherche avec la date jusqu'à laquelle vont ses chiffres et une empreinte des chiffres ; téléchargez le carnet en un seul zip (brouillon, données, scripts Python, R et Stata, fichier de citation) ; plus tard, *Vérifier que cela tient* dit si chaque chiffre est identique, révisé ou disparu |
-| Apprendre en chemin | Boutons de l'en-tête, **Menu > Manuel d'utilisation**, **Menu > Exemples guidés** | Trois niveaux d'aide, un glossaire en langage clair, quatre cas guidés, des séquences pédagogiques et un mode examen |
+| Apprendre en chemin | Boutons de l'en-tête, **Menu > Manuel d'utilisation**, **Menu > Exemples guidés** | Trois niveaux d'aide, un glossaire en langage clair, cinq cas guidés, des séquences pédagogiques et un mode examen |
 | Utiliser vos propres données et tests | **Menu > Vos données**, **Menu > Modèles et validation** | Chargez vos propres séries CSV ; enregistrez votre propre test de signal ou de modèle selon les mêmes règles strictes que ceux de l'application |
 | Utiliser les chiffres dans R, Python ou Stata | [docs/DATA_API.md](./docs/DATA_API.md) (en anglais) | Les mêmes séries, panels et tableaux qu'à l'écran, avec source et date pour chaque valeur |
 | Connecter un système de portefeuille | **Menu > Réglages > Jetons d’API**, [docs/DATA_API.md](./docs/DATA_API.md) (en anglais) | Un autre programme lit des instantanés de pays et des événements, envoie ses positions et lance des chocs et des rejeux de crises passées sur son portefeuille, chacun avec un jeton limité à ce que vous cochez. Les pays et titres de la liste **Noms masqués** n’apparaissent nulle part |
@@ -322,10 +322,11 @@ l'en-tête ; le choix est gardé dans votre navigateur. Une langue n'est téléc
 choisie.
 
 Certaines choses restent telles qu'écrites, et l'application le signale : les chiffres, les noms de
-sources et de séries s'affichent comme la source les donne ; les agents du conseil lisent les questions
-et rédigent leurs documents en anglais ; les notes de méthode citent des articles en anglais ; certaines
+sources et de séries s'affichent comme la source les donne ; le Chat du conseil et le conseil rédigent
+leurs réponses dans la langue choisie (les agents comprennent encore mieux les questions en anglais) ; les notes de méthode citent des articles en anglais ; certaines
 phrases que les règles de l'application écrivent sur un pays sont encore en anglais. Aucune traduction
-n'a encore été relue par un locuteur natif ; toute aide est la bienvenue ([CONTRIBUTING.md](./CONTRIBUTING.md)).
+n'a encore été relue par un locuteur natif ; toute aide est la bienvenue : les étapes et la liste des fichiers sont dans
+[docs/TRANSLATION_REVIEW.md](./docs/TRANSLATION_REVIEW.md) (en anglais).
 
 Ce README et le guide existent dans les quatre langues. Les autres documents sont en anglais.
 
@@ -434,7 +435,7 @@ La méthode complète est dans [docs/METHODOLOGY.md](./docs/METHODOLOGY.md) (en 
 
 ## Feuille de route
 
-Où en est le projet au 17 novembre 2026 (détail dans [docs/ROADMAP.md](./docs/ROADMAP.md), en anglais) :
+Où en est le projet au 23 novembre 2026 (détail dans [docs/ROADMAP.md](./docs/ROADMAP.md), en anglais) :
 
 **Fait**
 
@@ -503,6 +504,19 @@ Où en est le projet au 17 novembre 2026 (détail dans [docs/ROADMAP.md](./docs/
     l’application relit chaque heure les sources d’IPC et d’activité mensuelle jusqu’à l’arrivée du
     nouveau mois, dans Aujourd’hui.
 
+17. **Combler les écarts avec les plateformes de référence** (23 novembre) : des prévisions écrites
+    avant que les chiffres existent et notées chaque mois ; une recherche dans tous les catalogues
+    gratuits (Menu > Chercher des données) ; des VAR bayésiens et structurels dans l’Agent graphiques ;
+    un petit modèle d’économie ouverte estimé et testé avant d’être affiché ; des chiffres en temps
+    réel pour les 38 membres de l’OCDE ; documents officiels et discours de banquiers centraux par
+    pays ; un rapport pays hors ligne, un laboratoire macro et un exemple guidé sur les matières
+    premières ; commentaires et liens en lecture seule sur un serveur domestique ; cours en direct de
+    votre propre compte Interactive Brokers, affichés à l’écran uniquement ; réponses du conseil en
+    espagnol, français ou portugais ; cibles d’inflation et dates de décision pour davantage de pays à
+    faible revenu ; une procédure de relecture des traductions par des locuteurs natifs ; et la
+    propagation des chocs entre économies (un petit VAR global avec des pondérations commerciales du
+    FMI). Le cadre de la dette des pays à faible revenu attend sa note d’orientation de 2027.
+
 **Ensuite**
 
 - **La publication** sur e-conquest/econquest. Le mode léger et la revue de sécurité sont faits ; il
@@ -518,8 +532,6 @@ Où en est le projet au 17 novembre 2026 (détail dans [docs/ROADMAP.md](./docs/
   avec deux professeurs) ; la construction commence quand le responsable du projet le décide.
 - **Arabe et swahili** : prévus, mis en pause par le responsable du projet.
 - **L’application mobile** : en pause jusqu’après la publication.
-- **Idées en attente** pour le point d’étape 1 : enseignement et partage (un rapport pays hors ligne, un
-  laboratoire macro avec des modèles de manuel, d’autres exemples guidés).
 - **Vérifications sur l’ordinateur du responsable** : certaines sources (météo, trajectoires des
   tempêtes, actifs des banques centrales, financement en dollars, fichier des régimes de change) sont
   construites et testées sur des réponses enregistrées, mais n’ont pas pu être jointes depuis la
