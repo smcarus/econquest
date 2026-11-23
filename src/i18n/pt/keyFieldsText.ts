@@ -136,4 +136,18 @@ export const KEY_FIELDS_PT: Record<string, string> = {
   "the result had no cite block with a label, so none of its figures are used": "o resultado não trazia um bloco de citação com rótulo, então nenhum de seus números é usado",
   "Set the server address and the token first.": "Informe primeiro o endereço do servidor e o token.",
   "{n} tools this token can see.": "{n} ferramentas que este token vê.",
+  // Your broker prices (gap CG9)
+  "Your broker prices": "Preços da sua corretora",
+  "Live prices for contracts you list, from your own Interactive Brokers account through the IBKR Client Portal Gateway you run and sign in to on this computer. Shown on screen only: never saved, put in downloads, backups or shared copies, or sent to the AI model.": "Preços ao vivo dos contratos que você listar, da sua própria conta na Interactive Brokers, pelo IBKR Client Portal Gateway que você executa e no qual entra neste computador. Mostrados só na tela: nunca salvos, colocados em downloads, backups ou cópias compartilhadas, nem enviados ao modelo de IA.",
+  "Off: no broker prices are shown.": "Desligado: nenhum preço da corretora é mostrado.",
+  "Download the Client Portal Gateway from IBKR, start it on this computer, open its address in your browser and sign in. Then pick Interactive Brokers here and list your contracts below.": "Baixe o Client Portal Gateway da IBKR, inicie-o neste computador, abra o endereço dele no navegador e entre. Depois escolha Interactive Brokers aqui e liste seus contratos abaixo.",
+  "Interactive Brokers (Client Portal Gateway)": "Interactive Brokers (gateway do Client Portal)",
+  "IBKR gateway address": "Endereço do gateway da IBKR",
+  "Where the Client Portal Gateway runs on this computer. The app asks only this address and never sees your IBKR password.": "Onde o Client Portal Gateway roda neste computador. O aplicativo consulta só este endereço e nunca vê sua senha da IBKR.",
+  "Empty: https://localhost:5000, the gateway default.": "Vazio: https://localhost:5000, o padrão do gateway.",
+  "Under Docker use https://host.docker.internal:5000 so the app can reach the gateway on your computer.": "No Docker use https://host.docker.internal:5000 para que o aplicativo alcance o gateway no seu computador.",
+  "IBKR contracts": "Contratos da IBKR",
+  "The contracts to price, as IBKR contract id = your label, separated by commas. The app ships no contract ids; your market data subscriptions decide what you see.": "Os contratos a cotar, como id de contrato da IBKR = seu rótulo, separados por vírgulas. O aplicativo não traz ids de contrato; suas assinaturas de dados de mercado decidem o que você vê.",
+  "Needed when your broker prices are switched on.": "Necessário quando os preços da sua corretora estão ligados.",
+  "Find each contract id (conid) in Trader Workstation under Contract Description, or in the Client Portal contract search, then list them with your own label.": "Encontre cada id de contrato (conid) no Trader Workstation em Contract Description, ou na busca de contratos do Client Portal, e liste-os com seu próprio rótulo.",
 };

@@ -12,6 +12,7 @@ import { MENU } from '../i18n/messages/menu';
 
 // Your subscriptions page (data plan G4): its series list loads only when the page is opened.
 const SubscriptionSeries = lazy(() => import('./SubscriptionSeries'));
+const BrokerPrices = lazy(() => import('./BrokerPrices'));
 const ApiTokenSettings = lazy(() => import('./ApiTokenSettings'));
 const HiddenNamesSettings = lazy(() => import('./HiddenNamesSettings'));
 const ResearchToolsTest = lazy(() => import('./ResearchToolsTest'));
@@ -462,6 +463,7 @@ export const SettingsDialog: React.FC<{
             {reply && page.id === 'subscriptions' && (
               <Suspense fallback={<p className="mt-3 text-xs text-slate-500">{t('c_loading')}</p>}>
                 <SubscriptionSeries canEdit={reply.canEdit} vendorSetting={reply.keys.find((k) => k.id === 'PAID_DATA_VENDOR')?.masked} />
+                <BrokerPrices />
               </Suspense>
             )}
           </section>

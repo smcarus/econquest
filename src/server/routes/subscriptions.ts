@@ -20,6 +20,8 @@ import {
   removePaidMapping,
 } from '../../engine/paidData';
 import { macrobondCredentials, pullMacrobond, type MacrobondStep } from '../../engine/macrobond';
+import { brokerQuotes, type GatewayGet } from '../brokerGateway';
+import { BROKER_WITHHELD } from '../../engine/brokerPrices';
 
 /** What the last fetch from your subscription said: counts and dates, never a figure. */
 export interface SubscriptionFetch {
@@ -68,6 +70,8 @@ export interface SubscriptionDeps {
   platform?: Platform;
   /** Settings as applied (process.env in the app). */
   env?: Record<string, string | undefined>;
+  /** Tests hand in a fake IBKR gateway. */
+  gatewayGet?: GatewayGet;
 }
 
 /**
@@ -148,6 +152,14 @@ export function registerSubscriptionRoutes(app: express.Express, deps: Subscript
     if (viewer(res)) return;
     if (!paidVisibleTo(req, env)) return res.status(403).json({ error: 'Fetching from your subscription works only on the computer running the app.' });
     res.json(await fetchSubscription(platform, env));
+  });
+
+  // Your broker prices (gap CG9, src/engine/brokerPrices.ts): this computer only, never saved,
+  // never logged, never cached by the browser. Scripts and other addresses are told they are withheld.
+  app.get('/api/broker/prices', async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    if (!paidVisibleTo(req, env)) return res.status(403).json({ error: `${BROKER_WITHHELD}, on the computer running the app.` });
+    res.json(await brokerQuotes(env, { get: deps.gatewayGet }));
   });
 
   app.delete('/api/subscriptions/mappings/:id', async (req, res) => {
