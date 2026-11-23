@@ -38,7 +38,7 @@ const ADMIN_WRITE: RegExp[] = [
 ];
 
 /** Changes a viewer may still make: their own sign-in, password and workspace (own lists and holdings). */
-const VIEWER_WRITE: RegExp[] = [/^\/api\/auth\//, /^\/api\/workspace\//];
+const VIEWER_WRITE: RegExp[] = [/^\/api\/auth\//, /^\/api\/workspace\//, /^\/api\/comments(\/|$)/];
 
 const WRITE = new Set(['POST', 'PUT', 'DELETE', 'PATCH']);
 

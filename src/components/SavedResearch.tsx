@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { TeamControl } from './TeamControl';
 import { Copy, Download, FileText, Trash2, X } from 'lucide-react';
 import { downloadCouncilBrief } from '../utils/briefExport';
 import { councilBriefSections, saveCouncilBrief, type SavedCouncilBrief } from '../utils/askCouncil';
@@ -173,6 +174,7 @@ export function SavedResearchList({ lib, toMarkdown, onSendToReports }: { lib: R
             </div>
             {b.headline && <p className="text-xs text-slate-600 dark:text-slate-400">{b.headline}</p>}
             <SignOffControl briefId={b.id} />
+            <TeamControl kind="report" id={b.id} />
             {openId === b.id && (
               <div className="pt-2 space-y-2">
                 {open ? <BriefView brief={open} /> : <p className="text-xs text-slate-500">{t('sr_opening')}</p>}

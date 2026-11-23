@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { TeamControl } from './TeamControl';
 import type { PeopleExtras } from '../utils/peopleSummary';
 import { ClipboardList, Download, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 import { COUNCIL_MAX_YEARS, COUNCIL_SIZE_LABEL, COUNCIL_SIZE_UNITS, MARKET_KINDS, MARKET_LABEL, type MarketKind, REVIEW_STEPS, STEP_HINT, STEP_LABEL, STEP_STATE_LABEL, type CouncilSizeUnit, type PolicyReview, type ReviewFrame, type ReviewStep, type ReviewSummary, type StepState } from '../utils/policyReview';
@@ -1173,6 +1174,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; otherCountries?: C
               {memo && opened!.states.memo === 'done' && (
                 <>
                   <SignOffControl briefId={r.id} kind="review" />
+                  <TeamControl kind="review" id={r.id} />
                   {lang !== 'en' && <p className="text-xs text-slate-500 dark:text-slate-400">{t('pr_memoEnglish')}</p>}
                   <MemoView m={memo} />
                   <p className="text-xs text-slate-500 dark:text-slate-400">

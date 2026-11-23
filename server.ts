@@ -14,6 +14,7 @@ import { registerFeedbackRoutes } from './src/server/routes/feedback';
 import { registerCatalogueRoutes } from './src/server/routes/catalogue';
 import { offlineReportHtml } from './src/utils/offlineReport';
 import { registerOfficialDocsRoutes } from './src/server/routes/officialDocs';
+import { registerTeamRoutes } from './src/server/routes/team';
 import { mountEngineRoutes } from './src/server/engineRoutes';
 import { ENGINE_ROUTES } from './src/engine/routeTable';
 import { createNodePlatform } from './src/platform/node';
@@ -4487,6 +4488,7 @@ async function startServer() {
   registerFeedbackRoutes(app, { refuseRemoteChange });
   registerCatalogueRoutes(app);
   registerOfficialDocsRoutes(app);
+  registerTeamRoutes(app, { signedIn, refuseRemoteChange });
   registerOwnSeriesRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
   registerBudgetExecutionRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
   // Your paid data subscription (src/engine/paidData.ts): its figures show only on this computer's
