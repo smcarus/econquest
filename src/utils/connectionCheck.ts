@@ -11,6 +11,7 @@
  * Used by GET /api/data/connections (the Tools page) and by `npm run check:data` in a terminal.
  * Keys and passwords are never put in a row: only whether they are set.
  */
+import { CATALOGUE_URLS, parseDbnomicsSearch } from './catalogueSearch';
 import { pullImfMonthly } from './imfMonthly';
 import { IMF_FX_SPEC } from './imfFx';
 import { IMF_POLICY_SPEC } from './imfPolicyRate';
@@ -317,6 +318,7 @@ export const SOURCE_IDS = [
   'eurostat_regions',
   'wb_gep',
   'oecd_eo',
+  'catalogues',
   'ust_curve',
   'ecb_curve',
   'focus_monthly',
@@ -958,6 +960,19 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
         if (!row) return null;
         const y = String(new Date().getUTCFullYear() + 1);
         return `${SAMPLE_NAME}${typeof row[y] === 'number' ? `: growth ${row[y]}% in ${y}` : `: years ${Object.keys(row).join(', ')}`}${got.edition ? ` (${got.edition})` : ''}`;
+      }
+    )
+  );
+
+  add('catalogues', () =>
+    httpCheck(
+      { id: 'catalogues', name: 'DBnomics catalogue search', group: 'free', feeds: 'Menu > Find data (the IMF, World Bank and Eurostat lists are fetched by the same screen)' },
+      fetchFn,
+      CATALOGUE_URLS.dbnomics('inflation', 3),
+      T,
+      (r) => {
+        const got = parseDbnomicsSearch(parseJson(r.text));
+        return got.length ? `${got.length} datasets for "inflation", first ${got[0].code}` : null;
       }
     )
   );

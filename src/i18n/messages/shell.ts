@@ -31,6 +31,7 @@ export const SHELL = defineMessages(
     downloading: 'Downloading',
     offline: 'Offline',
     dataHealth: 'Data health',
+    findData: 'Find data',
     account: 'Account',
     users: 'Users',
     auditLog: 'Audit log',
