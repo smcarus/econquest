@@ -28,8 +28,20 @@ export const ECB_RTD_SERIES: AlfredDef[] = [
 
 export const ECB_RTD_SOURCE = 'ECB Euro Area Real-Time Database (RTD), ECB Data Portal; Source: ECB statistics';
 
-export const ecbRtdUrl = (key: string, startPeriod = '1999') =>
-  `https://data-api.ecb.europa.eu/service/data/RTD/${key}?format=csvdata&includeHistory=true&startPeriod=${startPeriod}`;
+export const ecbRtdUrl = (key: string, startPeriod = '1999', endPeriod?: string) =>
+  `https://data-api.ecb.europa.eu/service/data/RTD/${key}?format=csvdata&includeHistory=true&startPeriod=${startPeriod}${endPeriod ? `&endPeriod=${endPeriod}` : ''}`;
+
+/**
+ * Year ranges for reading a series' full history in parts. With every vintage included, one request
+ * for 1999 to now can take longer than the ECB keeps the reply open (euro area GDP timed out on the
+ * Mac, 22 Nov 2026); each part holds every published value for its own periods, so the parts join
+ * without overlap.
+ */
+export function ecbRtdChunks(fromYear = 1999, toYear = new Date().getUTCFullYear(), span = 5): Array<[string, string]> {
+  const out: Array<[string, string]> = [];
+  for (let y = fromYear; y <= toYear; y += span) out.push([String(y), String(Math.min(toYear, y + span - 1))]);
+  return out;
+}
 
 /** "2024-Q2" -> 2024-04-01, "2026-02" -> 2026-02-01, "2026" -> 2026-01-01; anything else undefined. */
 export function periodStart(p: string): string | undefined {

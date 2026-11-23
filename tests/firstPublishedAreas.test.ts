@@ -138,3 +138,9 @@ test('the downloads: ECB saved gzipped, ONS refused so the copy in data/local/on
     globalThis.fetch = realFetch;
   }
 });
+
+test('ECB real-time history is read in parts of five years that join without overlap', async () => {
+  const { ecbRtdChunks } = await import('../src/utils/ecbRealTime.ts');
+  assert.deepEqual(ecbRtdChunks(1999, 2026), [['1999', '2003'], ['2004', '2008'], ['2009', '2013'], ['2014', '2018'], ['2019', '2023'], ['2024', '2026']]);
+  assert.equal(ecbRtdUrl('M.S0.N.P_C_OV.A', '2004', '2008'), 'https://data-api.ecb.europa.eu/service/data/RTD/M.S0.N.P_C_OV.A?format=csvdata&includeHistory=true&startPeriod=2004&endPeriod=2008');
+});

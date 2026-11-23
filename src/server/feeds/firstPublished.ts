@@ -17,7 +17,7 @@ import { DATA_DIR } from '../config';
 import { describeNetworkError } from '../../utils/connectionCheck';
 import { fetchWithTimeout } from '../http';
 import type { AlfredSeries } from '../../utils/alfredVintages';
-import { ECB_RTD_SERIES, ECB_RTD_SOURCE, ecbRtdUrl, parseEcbHistory } from '../../utils/ecbRealTime';
+import { ECB_RTD_SERIES, ECB_RTD_SOURCE, ecbRtdChunks, ecbRtdUrl, parseEcbHistory } from '../../utils/ecbRealTime';
 import { type FirstPublishedArea, type FirstPublishedFile, loadFirstPublished, saveFirstPublished } from '../firstPublishedStore';
 import { cellsToRows, type VintageCell } from '../../utils/firstPublished';
 import { editionFileUrl, latestEditionUri, ONS_TRIANGLE_PAGE, ONS_TRIANGLE_SERIES, ONS_TRIANGLE_SOURCE, readOnsTriangle } from '../../utils/onsTriangles';
@@ -66,22 +66,40 @@ function pull(area: FirstPublishedArea, force: boolean | undefined, run: (saved:
   return p;
 }
 
+async function getPart(key: string, from: string, to: string): Promise<string> {
+  let last: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      // Ask for CSV: the default Accept header (application/json) makes the ECB Data Portal answer in SDMX-JSON, which the CSV reader cannot read.
+      const res = await fetchWithTimeout(ecbRtdUrl(key, from, to), 90000, { Accept: 'text/csv' });
+      if (res.status === 404) return ''; // no figures for these years
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.text();
+    } catch (e) {
+      last = e;
+    }
+  }
+  throw last;
+}
+
+/** A series' whole history with every vintage, read in parts of a few years each (one request can time out). */
 async function getSeries(key: string): Promise<AlfredSeries | null> {
-  try {
-    // Ask for CSV: the default Accept header (application/json) makes the ECB Data Portal answer in SDMX-JSON, which the CSV reader cannot read.
-    const res = await fetchWithTimeout(ecbRtdUrl(key), 60000, { Accept: 'text/csv' });
-    if (!res.ok) {
-      console.warn(`[First published] ECB RTD ${key} refused (HTTP ${res.status})`);
+  const rows: AlfredSeries['rows'] = [];
+  for (const [from, to] of ecbRtdChunks()) {
+    let text: string;
+    try {
+      text = await getPart(key, from, to);
+    } catch (e) {
+      // A missing part would leave a gap in the history, so the series is not used this time.
+      console.warn(`[First published] ECB RTD ${key} ${from}-${to}: ${describeNetworkError(e, 90000)}`);
       return null;
     }
-    const text = await res.text();
-    const rows = parseEcbHistory(text);
-    if (!rows.length) console.warn(`[First published] ECB RTD ${key} answered but no figures could be read (first line: ${text.split(/\r?\n/)[0].slice(0, 200) || 'empty reply'})`);
-    return rows.length ? { id: key, rows } : null;
-  } catch (e) {
-    console.warn(`[First published] ECB RTD ${key}: ${describeNetworkError(e, 60000)}`);
-    return null;
+    if (!text) continue;
+    const part = parseEcbHistory(text);
+    if (!part.length && text.trim()) console.warn(`[First published] ECB RTD ${key} ${from}-${to} answered but no figures could be read (first line: ${text.split(/\r?\n/)[0].slice(0, 200)})`);
+    rows.push(...part);
   }
+  return rows.length ? { id: key, rows } : null;
 }
 
 export function fetchEuroFirstPublished(opts: { force?: boolean } = {}): Promise<FirstPublishedFile | null> {
