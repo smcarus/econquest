@@ -505,6 +505,11 @@ Where things stand on 17 November 2026 (details and status in [docs/ROADMAP.md](
     Myanmar, Uganda, Ghana and Bolivia); IMF monthly exchange rates and policy rates where no daily or
     BIS figure exists, also used for inflation nowcasts and forecasts and policy rate forecasts; and
     inflation targets and decision dates read on the banks' own pages.
+16. **Quick wins from the platform comparison** (23 November): spreadsheets refresh from the app
+    (an Excel Power Query helper and a Google Sheets script); official forecasts side by side (the
+    IMF, the World Bank and the OECD, with the spread between them) in History & data; and release
+    days, when the app re-reads CPI and monthly activity sources hourly until the new month arrives,
+    shown on Today.
 
 **Next**
 

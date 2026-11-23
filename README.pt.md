@@ -485,6 +485,11 @@ Situação em 17 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./docs/ROADM
     básicas mensais do FMI onde não há dado diário nem do BIS, usadas também no nowcast e nas
     previsões de inflação e na previsão da taxa básica; e metas de inflação e datas de decisão lidas
     nas páginas dos próprios bancos.
+16. **Melhorias rápidas após a comparação com outras plataformas** (23 de novembro): as planilhas se
+    atualizam a partir do aplicativo (um assistente de Power Query para Excel e um script para Google
+    Sheets); previsões oficiais lado a lado (o FMI, o Banco Mundial e a OCDE, com a diferença entre
+    elas) em Histórico e dados; e dias de divulgação, em que o aplicativo relê a cada hora as fontes de
+    IPC e de atividade mensal até chegar o novo mês, em Hoje.
 
 **Próximo**
 

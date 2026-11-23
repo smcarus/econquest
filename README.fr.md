@@ -496,6 +496,12 @@ Où en est le projet au 17 novembre 2026 (détail dans [docs/ROADMAP.md](./docs/
     BRI, utilisés aussi par la prévision immédiate et les prévisions d'inflation et la prévision du
     taux directeur ; et cibles d'inflation et dates de décision lues sur les pages des banques
     elles-mêmes.
+16. **Améliorations rapides issues de la comparaison avec d’autres plateformes** (23 novembre) : les
+    feuilles de calcul se mettent à jour depuis l’application (un assistant Power Query pour Excel et
+    un script pour Google Sheets) ; prévisions officielles côte à côte (le FMI, la Banque mondiale et
+    l’OCDE, avec l’écart entre elles) dans Historique et données ; et jours de publication, où
+    l’application relit chaque heure les sources d’IPC et d’activité mensuelle jusqu’à l’arrivée du
+    nouveau mois, dans Aujourd’hui.
 
 **Ensuite**
 
