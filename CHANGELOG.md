@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- `npm run oecd:vintages` no longer trips the OECD's request limit: requests go 4 seconds apart,
+  a "too many requests" (429) or busy-server (500-504) answer is retried up to 4 times after a
+  wait (the OECD's Retry-After when given), and the run stops after repeated 429s so the next run
+  carries on from the files already saved. Countries with only quarterly consumer prices (for
+  example Australia and New Zealand) are now named as such instead of "no new edition".
 - How shocks spread between economies (History & data tool): a small global VAR of 16 main
   economies plus the country being looked at. Each country's growth and inflation read its trading
   partners' through IMF trade weights (International Trade in Goods by partner, latest three years);
