@@ -38,6 +38,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Forecasts with moving-average terms (ARMA) | Research | Forecast evaluation failed | gdp_forecast_arma v1, 2026-11-23 |
 | GDP nowcast from a common factor (Kalman filter) | Research | Forecast evaluation failed | gdp_nowcast_dfm v1, 2026-11-23 |
 | GDP nowcast from a random forest (tree ensemble) | Research | Forecast evaluation failed | gdp_nowcast_forest v1, 2026-11-23 |
+| Small gap model estimated from data (inflation projection) | Research | Not validated | None |
 | Lopsided forecast bands (quantile regression) | Research | Forecast evaluation passed | gdp_forecast_quantile v1, 2026-11-23 |
 | Fiscal reaction (Bohn test) | Research | Description, not a tested signal | None |
 | Gross financing need | Research | Description, not a tested signal | None |
@@ -539,6 +540,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 **Recorded verdicts**
 
 - gdp_nowcast_forest, version 1, 2026-11-23T02:23Z: **Failed** (forecast evaluation). Failed against the historical-mean benchmark. 1 ahead: relative RMSE 0.967 (90% range 0.872 to 0.989, p 0), beat the historical-mean benchmark in 28 of 35 series. Pass mark: relative RMSE at most 0.9, p at most 0.1, better in at least 50% of series.
+
+### Small gap model estimated from data (inflation projection)
+
+- **Says:** Whether an IS curve, a Phillips curve and a policy rule, each fitted on the country's own quarters, project inflation one and two years ahead better than today's inflation carried on.
+- **Rule:** Three quarterly equations after Berg, Karam and Laxton (2006), each by OLS on the last 60 quarters; real-time output gap from a one-sided HP filter (lambda 1600) on log GDP; projection with no shocks.
+- **Reads:** OECD quarterly national accounts and consumer prices (via DBnomics), BIS policy rates
+- **Shows in:** Country Research > History & data > Small gap model (estimates and projection shown only if it passes)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered (docs/validation/forecasts/cpi_gap_model.json): inflation 4 and 8 quarters ahead against the last quarter carried on, from 2005, pass mark relative RMSE 0.95.
+- **Limits:** Today's data vintage; the gap is a filter, not estimated inside the model; no exchange-rate equation.
+- **Code:** `src/utils/gapModelEstimate.ts`
 
 ### Lopsided forecast bands (quantile regression)
 

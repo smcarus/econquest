@@ -1,0 +1,34 @@
+{
+  "id": "cpi_gap_model",
+  "version": 1,
+  "registeredOn": "2026-11-23",
+  "registeredBy": "Sam (owner); registered on his instruction to close every closable gap, before any run of this test",
+  "hypothesis": "A three-equation quarterly gap model (IS curve, Phillips curve and policy rule with smoothing, after Berg, Karam and Laxton 2006), with each equation fitted by OLS on each country's last 60 quarters of a real-time output gap (one-sided HP, lambda 1600, on the log GDP level), CPI inflation and the policy rate, projects inflation 4 and 8 quarters ahead with a lower RMSE than the last quarter's inflation carried on.",
+  "target": "cpi_gap_model_q",
+  "params": {
+    "window": 60,
+    "minTrain": 32
+  },
+  "benchmark": "naive",
+  "horizons": [
+    4,
+    8
+  ],
+  "sample": {
+    "from": "2005-Q1"
+  },
+  "passMark": {
+    "maxRelRmse": 0.95,
+    "maxPValue": 0.1,
+    "minSeriesShare": 0.5,
+    "minCasesPerHorizon": 500,
+    "minYears": 10
+  },
+  "knownLimits": [
+    "Settings fixed before the run: the gap model's form, the HP lambda (the usual 1600 for quarterly data), the window and the training length are not tuned.",
+    "Values are today's vintage (pseudo real-time); the origin quarter is treated as fully known, as after its GDP release.",
+    "The output gap is the one-sided HP cycle, not an estimate from the model itself (a full Kalman-filtered gap as in the IMF's QPMs needs priors per country that would have to be calibrated, which this test avoids).",
+    "No exchange-rate equation: the evaluation data have no exchange-rate gap for every country.",
+    "Countries with OECD quarterly GDP, OECD consumer prices and BIS policy rates only; a shared policy area (the euro area) counts once."
+  ]
+}

@@ -61,4 +61,13 @@ export const GAP_MODEL_ES: Messages<typeof GAP_MODEL> = {
   s_p0: 'Inflación inicial, % anual',
   s_i0: 'Tipo oficial inicial, %',
   s_q0: 'Brecha del tipo de cambio inicial, %',
+  est_title: "Estimado con datos (probado)",
+  est_intro: "Una versión aparte de tres ecuaciones, sin tipo de cambio, ajustada con los trimestres propios de {country} de brecha del producto, inflación y tipo oficial. Su proyección solo se muestra mientras su prueba registrada de antemano esté aprobada (inflación a uno y dos años frente a la inflación actual mantenida).",
+  est_passed: "Prueba aprobada el {date}. Ajustado con {n} trimestres hasta {through}.",
+  est_notPassed: "No se muestra: la prueba no está aprobada (estado {status}). {verdict}",
+  est_notRun: "No se muestra: la prueba aún no se ha ejecutado. Se ejecuta con las pruebas semanales de los modelos.",
+  est_noCountry: "No se muestra para {country}: los datos de la prueba no tienen suficientes trimestres de PIB, inflación y tipo oficial.",
+  est_oddSigns: "Signos contrarios a la teoría (se informan, no se cambian): {list}",
+  est_coef: "Coeficientes ajustados",
+  est_path: "Proyección sin choques",
 };

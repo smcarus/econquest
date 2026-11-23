@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Gap model estimated from data: an IS curve, a Phillips curve and a policy rule (after Berg, Karam
+  and Laxton 2006), each fitted on the country's last 60 quarters with a real-time output gap
+  (one-sided HP filter). A new pre-registered test (docs/validation/forecasts/cpi_gap_model.json)
+  compares its inflation projection one and two years ahead with today's inflation carried on.
+  Country Research > Small gap model shows the fitted coefficients and projection only while the
+  test passes, and says why otherwise. Models & validation lists it.
+
 - Bayesian and structural VARs in the Chart Agent's lab: ask for a "Bayesian VAR" (Minnesota prior,
   random-walk or white-noise prior mean chosen by each series' persistence, 90% posterior bands) or a
   "structural VAR" (recursive order as on the chart, the reverse order for two series, and the

@@ -25,7 +25,7 @@ import { tPValue } from './stats';
 import { BAND_Z, fitAr, forecastAr, type Prediction } from './forecastModels';
 import { missQuantiles } from './missBands';
 
-export type ForecastTarget = 'gdp_growth_q' | 'cpi_yoy_m' | 'policy_rate_m' | 'debt_gdp_a' | 'gdp_nowcast_q' | 'cpi_nowcast_m' | 'gdp_penalized_nowcast_q' | 'gdp_dfm_nowcast_q' | 'gdp_forest_nowcast_q' | 'gdp_quantile_q' | RealTimeTarget;
+export type ForecastTarget = 'gdp_growth_q' | 'cpi_yoy_m' | 'policy_rate_m' | 'debt_gdp_a' | 'gdp_nowcast_q' | 'cpi_nowcast_m' | 'gdp_penalized_nowcast_q' | 'gdp_dfm_nowcast_q' | 'gdp_forest_nowcast_q' | 'gdp_quantile_q' | 'cpi_gap_model_q' | RealTimeTarget;
 /** Evaluations on data as first published (src/utils/realTimeEval.ts). */
 export type RealTimeTarget = 'gdp_realtime_q' | 'cpi_realtime_m' | 'gdp_weo_realtime_a' | 'cpi_weo_realtime_a';
 export const REALTIME_TARGETS: RealTimeTarget[] = ['gdp_realtime_q', 'cpi_realtime_m', 'gdp_weo_realtime_a', 'cpi_weo_realtime_a'];
@@ -47,7 +47,7 @@ export const BENCHMARK_LABEL: Record<BenchmarkKind, string> = {
   seasonal_naive: 'the seasonal naive benchmark (same period a year earlier)',
 };
 /** Periods per year for each target, for the seasonal naive benchmark. */
-export const TARGET_SEASON: Record<ForecastTarget, number> = { gdp_growth_q: 4, cpi_yoy_m: 12, policy_rate_m: 12, debt_gdp_a: 1, gdp_nowcast_q: 4, cpi_nowcast_m: 12, gdp_penalized_nowcast_q: 4, gdp_dfm_nowcast_q: 4, gdp_forest_nowcast_q: 4, gdp_quantile_q: 4, gdp_realtime_q: 4, cpi_realtime_m: 12, gdp_weo_realtime_a: 1, cpi_weo_realtime_a: 1 };
+export const TARGET_SEASON: Record<ForecastTarget, number> = { gdp_growth_q: 4, cpi_yoy_m: 12, policy_rate_m: 12, debt_gdp_a: 1, gdp_nowcast_q: 4, cpi_nowcast_m: 12, gdp_penalized_nowcast_q: 4, gdp_dfm_nowcast_q: 4, gdp_forest_nowcast_q: 4, gdp_quantile_q: 4, cpi_gap_model_q: 4, gdp_realtime_q: 4, cpi_realtime_m: 12, gdp_weo_realtime_a: 1, cpi_weo_realtime_a: 1 };
 
 export interface ForecastSpec {
   id: string;
@@ -132,6 +132,8 @@ export interface ForecastResult {
   span: { from: string; to: string };
   series: string[];
   data: string;
+  /** cpi_gap_model_q only, and only while the test passes: each country's estimate and projection (src/utils/gapModelEstimate.ts). */
+  gapEstimates?: Record<string, import('./gapModelEstimate').GapEstimate>;
   /** A few cases, newest first, so a reader can check them. */
   sample: ForecastCase[];
   /** The test's own p where it is not a horizon's relative-RMSE p (the fan coverage test). */

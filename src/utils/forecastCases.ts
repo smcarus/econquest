@@ -10,6 +10,7 @@ import { penalizedNowcastCases, predictorNowcastCases, type RowModel } from './p
 import { fitForest, predictForest } from './randomForest';
 import { armaForecastCases } from './arimaEval';
 import { dfmNowcastCases } from './dynamicFactor';
+import { gapModelCases } from './gapModelEstimate';
 
 export interface CountryData {
   iso3: string;
@@ -129,6 +130,7 @@ export function forestRowModel(spec: ForecastSpec): (X: number[][], y: number[])
 export function casesFor(spec: ForecastSpec, data: CountryData[]): { cases: ForecastCase[]; series: string[] } {
   if (spec.target === 'gdp_penalized_nowcast_q') return penalizedNowcastCases(spec, data);
   if (spec.target === 'gdp_dfm_nowcast_q') return dfmNowcastCases(spec, data);
+  if (spec.target === 'cpi_gap_model_q') return gapModelCases(spec, data);
   if (spec.target === 'gdp_forest_nowcast_q') return predictorNowcastCases(spec, data, forestRowModel(spec));
   return spec.target === 'gdp_nowcast_q' ? gdpNowcastCases(spec, data) : forecastTargetCases(spec, data);
 }
