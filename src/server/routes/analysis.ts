@@ -976,6 +976,14 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       history: hist ? { pulledAt: hist.pulledAt, problems: hist.problems } : { pulledAt: null, problems: ['Long histories not downloaded yet; the first download runs in the background.'] },
     });
   });
+  // Gap model estimated from data (CG7): the estimate and projection only while its test passes.
+  app.get('/api/gap-model/estimate', (req, res) => {
+    const iso3 = String(req.query.iso3 || '').toUpperCase();
+    const r = loadForecastValidation(path.join(DATA_DIR, 'local', 'validation', 'forecasts.json')).results['cpi_gap_model'];
+    if (!r) return res.json({ iso3, status: 'not_run' });
+    const estimate = r.status === 'passed' ? r.gapEstimates?.[iso3] : undefined;
+    res.json({ iso3, status: r.status, verdict: r.verdict, ranAt: r.ranAt, specVersion: r.specVersion, ...(estimate ? { estimate } : {}) });
+  });
   // US data as first published and as known on a date (ALFRED vintages, src/utils/alfredVintages.ts).
   app.get('/api/us-vintages', async (req, res) => {
     const def = ALFRED_SERIES.find((d) => d.id === req.query.series) || ALFRED_SERIES[0];

@@ -10,6 +10,7 @@ import { judgeForecast, REALTIME_TARGETS, type ForecastResult, type ForecastSpec
 import { realTimeCases, weoRealTimeCases, type VintageSeriesInput } from './realTimeEval';
 import { judgeVol, volCases, type VolSpec } from './volEval';
 import { allQuarters, fxQuarterUrl, parseFxQuarter, FX_HISTORY_SOURCE, type FxHistoryFile } from './fxHistory';
+import { estimateGapModel, type GapEstimate } from './gapModelEstimate';
 import { casesFor, forestRowModel, gdpNowcastOpen, gdpSeries, type CountryData } from './forecastCases';
 import { predictorNowcastOpen, rowModelFor } from './penalizedNowcast';
 import { judgeLoss, type LossPassMark } from './lossEval';
@@ -90,6 +91,7 @@ export async function pullEvaluationData(fetcher: TextFetcher, problems: string[
       gdp_dfm_nowcast_q: `${QNA_LABEL}; ${IBCBR_LONG}; ${EUROSTAT_IP_LONG}; OECD composite leading indicator, OECD consumer price inflation via DBnomics; BIS policy rates`,
       gdp_forest_nowcast_q: `${QNA_LABEL}; ${IBCBR_LONG}; ${EUROSTAT_IP_LONG}; OECD composite leading indicator, OECD consumer price inflation via DBnomics; BIS policy rates`,
       gdp_quantile_q: QNA_LABEL,
+      cpi_gap_model_q: `${QNA_LABEL}; OECD consumer price inflation via DBnomics (y/y, quarter means); BIS central bank policy rates (quarter means)`,
       cpi_yoy_m: 'OECD consumer price inflation via DBnomics (full history, y/y)',
       cpi_nowcast_m: 'OECD consumer price inflation via DBnomics (full history, y/y)',
       policy_rate_m: 'BIS central bank policy rates (monthly, from 1990)',
@@ -204,6 +206,11 @@ export async function runForecastEvaluations(opts: { specDir: string; resultFile
         const step = forwardStep(forward, { key, specHash: hash, passing: result.status === 'passed' }, scored, open, at);
         forward.push(...step);
         forwardNew.push(...step);
+      }
+      if (s.target === 'cpi_gap_model_q' && result.status === 'passed') {
+        // A passing gap model: each country's estimate and projection, shown on its gap model screen.
+        const est = Object.fromEntries(data.map((c) => [c.iso3, estimateGapModel(c, { window: s.params.window, minTrain: s.params.minTrain, horizon: Math.max(...s.horizons) })]).filter((e): e is [string, GapEstimate] => Boolean(e[1])));
+        if (Object.keys(est).length) result.gapEstimates = est;
       }
       file.versions[`${s.id} v${s.version}`] = result;
       file.results[s.id] = result;

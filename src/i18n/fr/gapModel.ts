@@ -61,4 +61,13 @@ export const GAP_MODEL_FR: Messages<typeof GAP_MODEL> = {
   s_p0: "Inflation de départ, % par an",
   s_i0: "Taux directeur de départ, %",
   s_q0: "Écart de taux de change de départ, %",
+  est_title: "Estimé à partir des données (testé)",
+  est_intro: "Une version distincte à trois équations, sans taux de change, ajustée sur les trimestres propres de {country} : écart de production, inflation et taux directeur. Sa projection n'est affichée que tant que son test enregistré à l'avance est réussi (inflation à un et deux ans contre l'inflation actuelle reconduite).",
+  est_passed: "Test réussi le {date}. Ajusté sur {n} trimestres jusqu’à {through}.",
+  est_notPassed: "Non affiché : le test n'est pas réussi (statut {status}). {verdict}",
+  est_notRun: "Non affiché : le test n'a pas encore été exécuté. Il s'exécute avec les tests hebdomadaires des modèles.",
+  est_noCountry: "Non affiché pour {country} : les données du test ne comptent pas assez de trimestres de PIB, d'inflation et de taux directeur.",
+  est_oddSigns: "Signes contraires à la théorie (signalés, non modifiés) : {list}",
+  est_coef: "Coefficients ajustés",
+  est_path: "Projection sans choc",
 };
