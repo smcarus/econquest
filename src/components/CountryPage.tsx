@@ -70,6 +70,7 @@ const UnitConverterPanel = lazyNamed(() => import('./UnitConverterPanel'), 'Unit
 const ExercisesPanel = lazyNamed(() => import('./ExercisesPanel'), 'ExercisesPanel');
 const ModelSandboxPanel = lazyNamed(() => import('./ModelSandboxPanel'), 'ModelSandboxPanel');
 const GapModelPanel = lazyNamed(() => import('./GapModelPanel'), 'GapModelPanel');
+const GvarPanel = lazyNamed(() => import('./GvarPanel'), 'GvarPanel');
 const MacroLabPanel = lazyNamed(() => import('./MacroLabPanel'), 'MacroLabPanel');
 const OfficialDocsPanel = lazyNamed(() => import('./OfficialDocsPanel'), 'OfficialDocsPanel');
 const SanctionsPanel = lazyNamed(() => import('./SanctionsPanel'), 'SanctionsPanel');
@@ -473,6 +474,13 @@ export const CountryPage: React.FC<{
             <PanelBoundary name="Small gap model">
               <React.Suspense fallback={<DeskLoading />}>
                 <GapModelPanel key={`gm-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} snapshot={run.openData} />
+              </React.Suspense>
+            </PanelBoundary>
+          </ToolSlot>
+          <ToolSlot id="tool-gvar" pick={toolPick}>
+            <PanelBoundary name="How shocks spread between economies">
+              <React.Suspense fallback={<DeskLoading />}>
+                <GvarPanel key={`gv-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
               </React.Suspense>
             </PanelBoundary>
           </ToolSlot>

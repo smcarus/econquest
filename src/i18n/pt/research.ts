@@ -120,6 +120,7 @@ export const RESEARCH_PT: Messages<typeof RESEARCH> = {
   tl_output_gap: "Hiato do produto",
   tl_growth_accounting: "Contabilidade do crescimento",
   tl_gap_model: "Modelo de hiatos pequeno",
+  tl_gvar: "Como os choques se espalham entre economias",
   tl_sandboxes: "Ambientes de teste de modelos",
   tl_remittances: "Remessas",
   tl_aid: "Ajuda recebida",
