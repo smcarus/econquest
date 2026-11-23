@@ -133,6 +133,7 @@ export const RESEARCH = defineMessages('research', {
   tl_output_gap: "Output gap",
   tl_growth_accounting: "Growth accounting",
   tl_gap_model: "Small gap model",
+  tl_gvar: "How shocks spread between economies",
   tl_sandboxes: "Model sandboxes",
   tl_remittances: "Remittances",
   tl_aid: "Aid received",

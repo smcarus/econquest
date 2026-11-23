@@ -72,6 +72,7 @@ export const COUNTRY_TOOL_GROUPS: CountryToolGroup[] = [
       { id: 'tool-output-gap', label: 'tl_output_gap' },
       { id: 'tool-growth-accounting', label: 'tl_growth_accounting' },
       { id: 'tool-gap-model', label: 'tl_gap_model' },
+      { id: 'tool-gvar', label: 'tl_gvar' },
       { id: 'tool-sandboxes', label: 'tl_sandboxes' },
     ],
   },

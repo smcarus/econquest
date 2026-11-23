@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- How shocks spread between economies (History & data tool): a small global VAR of 16 main
+  economies plus the country being looked at. Each country's growth and inflation read its trading
+  partners' through IMF trade weights (International Trade in Goods by partner, latest three years);
+  the models are joined, checked for stability and a surprise of your size is traced over five
+  years with generalised impulse responses and 90% bootstrap bands. Annual IMF World Economic
+  Outlook figures from 1996; the United States sees the others with a one-year lag. A source that
+  does not answer reads Missing with the reason.
 - Council answers in your language: with Spanish, French or Portuguese picked (Menu language
   button), Council chat, the Supreme Council, what-ifs and policy reviews write their text in that
   language ("usted", "vous", "você"). Field names, stances, ratings, numbers, units and source names

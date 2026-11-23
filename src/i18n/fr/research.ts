@@ -120,6 +120,7 @@ export const RESEARCH_FR: Messages<typeof RESEARCH> = {
   tl_output_gap: "Écart de production",
   tl_growth_accounting: "Comptabilité de la croissance",
   tl_gap_model: "Petit modèle d'écarts",
+  tl_gvar: "Comment les chocs se propagent entre économies",
   tl_sandboxes: "Bacs à sable de modèles",
   tl_remittances: "Envois de fonds",
   tl_aid: "Aide reçue",
