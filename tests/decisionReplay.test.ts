@@ -53,7 +53,7 @@ test('replay: rate the week before, inflation from the month before the decision
 test('replay of a hold, and missing inputs named rather than filled', () => {
   const held = replayDecision({ iso3: 'BRA', date: '2026-05-08', policy: policy as any, cpi: cpi as any, target });
   assert.ok(!('error' in held) && held.action === 'held');
-  const noTarget = replayDecision({ iso3: 'EGY', date: '2026-09-18', policy: policy as any });
+  const noTarget = replayDecision({ iso3: 'ARG', date: '2026-09-18', policy: policy as any });
   assert.ok(!('error' in noTarget));
   if ('error' in noTarget) return;
   assert.equal(noTarget.rule, undefined);

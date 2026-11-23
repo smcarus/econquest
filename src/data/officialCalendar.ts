@@ -111,6 +111,10 @@ const CBK_SRC = { sourceName: 'Central Bank of Kenya, next MPC meeting notice', 
 const BOG_SRC = { sourceName: 'Bank of Ghana MPC meeting dates 2026 (press release date)', sourceUrl: 'https://www.bog.gov.gh/wp-content/uploads/2025/12/MPC-Meeting-Dates-2026.pdf', primarySource: true, retrieved: R17 };
 const BOT_SRC = { sourceName: 'Bank of Tanzania MPC calendar 2026/27 (statement date; the bank says dates may change)', sourceUrl: 'https://www.bot.go.tz/webdocs/Other/MPC_Calendar.pdf', primarySource: true, retrieved: R17 };
 const RBI_SRC = { sourceName: 'Reserve Bank of India MPC meeting schedule (meeting days; announcement day not stated)', sourceUrl: 'https://www.rbi.org.in/', primarySource: true, retrieved: R17 };
+const R23 = '2026-11-23';
+const SBP_SRC = { sourceName: 'State Bank of Pakistan MPC calendar FY27 (the bank says dates may change)', sourceUrl: 'https://www.sbp.org.pk/our-operations/monetary-policy', primarySource: true, retrieved: R23 };
+const BSP_SRC = { sourceName: 'Bangko Sentral ng Pilipinas Monetary Board meeting schedule', sourceUrl: 'https://www.bsp.gov.ph/', primarySource: true, retrieved: R23 };
+const CBN_SRC = { sourceName: 'Central Bank of Nigeria MPC calendar', sourceUrl: 'https://www.cbn.gov.ng/MonetaryPolicy/calendar.html', primarySource: true, retrieved: R23 };
 const CBR_SRC = { sourceName: 'Bank of Russia calendar of key rate meetings', sourceUrl: 'https://www.cbr.ru/eng/dkp/cal_mp/', primarySource: true, retrieved: R8 };
 
 /*
@@ -340,6 +344,15 @@ export const OFFICIAL_CALENDAR: OfficialCalendarEvent[] = [
     ['TZA', 'MPC_DECISION', 'BoT MPC statement (Central Bank Rate)', '2027-01-07'],
     ['TZA', 'MPC_DECISION', 'BoT MPC statement (Central Bank Rate)', '2027-04-01'],
   ]),
+  ...rows(SBP_SRC, [
+    ['PAK', 'MPC_DECISION', 'SBP MPC meeting and policy statement', '2026-12-14'],
+    ['PAK', 'MPC_DECISION', 'SBP MPC meeting and policy statement', '2027-01-25'],
+    ['PAK', 'MPC_DECISION', 'SBP MPC meeting and policy statement', '2027-03-08'],
+    ['PAK', 'MPC_DECISION', 'SBP MPC meeting and policy statement', '2027-04-26'],
+    ['PAK', 'MPC_DECISION', 'SBP MPC meeting and policy statement', '2027-06-17'],
+  ]),
+  ...rows(BSP_SRC, [['PHL', 'MPC_DECISION', 'BSP Monetary Board policy meeting', '2026-12-17']]),
+  ...rows(CBN_SRC, [['NGA', 'MPC_DECISION', 'CBN MPC meeting, last day', '2026-11-24']]),
   ...rows(RBI_SRC, [
     ['IND', 'MPC_DECISION', 'RBI MPC meeting, last day (2-4 Dec; announcement day not stated)', '2026-12-04'],
     ['IND', 'MPC_DECISION', 'RBI MPC meeting, last day (3-5 Feb; announcement day not stated)', '2027-02-05'],

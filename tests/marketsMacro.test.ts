@@ -24,10 +24,12 @@ test('policy stance rules read as stated', () => {
   assert.match(policyStance(5, undefined), /high real rate/);
 });
 
-test('targets: checked ones name the bank page; Brazil and Mexico say they were not re-checked; Egypt not on file', () => {
+test('targets: checked ones name the bank page; Brazil and Mexico say they were not re-checked; lower-income targets read 2026-11-23', () => {
   for (const iso of ['ZAF', 'TUR', 'IDN', 'POL', 'CHL', 'GBR', 'JPN']) assert.equal(INFLATION_TARGETS[iso].checked, true, iso);
   assert.equal(INFLATION_TARGETS.BRA.checked, false);
-  assert.equal(INFLATION_TARGETS.EGY, undefined);
+  for (const iso of ['PHL', 'EGY', 'UGA', 'PAK']) assert.equal(INFLATION_TARGETS[iso].checked, true, iso);
+  assert.equal(INFLATION_TARGETS.EGY.pct, 7);
+  assert.equal(INFLATION_TARGETS.KEN, undefined);
 });
 
 function run(iso3: string, us = true, live = true): CouncilAssessmentRun {
@@ -69,7 +71,7 @@ test('brief: figures keep their sources, model readings are tagged model, judgem
 });
 
 test('brief: no US yield, no target, too few peers: says so instead of guessing', () => {
-  const b = marketsMacroBrief(run('EGY', false), [peer('EGY', 500)]);
+  const b = marketsMacroBrief(run('ARG', false), [peer('ARG', 500)]);
   const rows = Object.fromEntries(b.groups.flatMap((g) => g.rows).map((r) => [r.label, r]));
   assert.equal(rows['Inflation target'].value, 'Missing');
   assert.equal(rows['US 10Y Treasury'].value, 'Missing');

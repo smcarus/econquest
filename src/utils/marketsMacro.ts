@@ -67,6 +67,15 @@ export const INFLATION_TARGETS: Record<string, InflationTarget> = {
   // the other lower-income countries whose pages state no target or could not be read.
   IND: { pct: 4, bandPts: 2, bank: 'Reserve Bank of India', url: 'https://www.rbi.org.in/scripts/FS_Overview.aspx?fn=2752', checked: true },
   GHA: { pct: 8, bandPts: 2, bank: 'Bank of Ghana', url: 'https://www.bog.gov.gh/monetary-policy/our-monetary-policy-framework/', checked: true },
+  // Read 2026-11-23 on each bank's own page. Egypt's target is the one for Q4 2026 (the CBE sets
+  // a path of dated targets). Pakistan's "medium-term inflation target of 5 - 7 percent" is filed
+  // as its midpoint with a 1-point band. Kenya's page says the target comes from the National
+  // Treasury and gives no figure; Ethiopia, Bangladesh, Viet Nam, DR Congo, Myanmar and Bolivia are
+  // not filed (no stated target on the pages read, or the page could not be read).
+  PHL: { pct: 3, bandPts: 1, bank: 'Bangko Sentral ng Pilipinas', url: 'https://www.bsp.gov.ph/Price%20Stability/MonetaryPolicyReport/FullReport-Aug2026.pdf', checked: true },
+  EGY: { pct: 7, bandPts: 2, bank: 'Central Bank of Egypt (Q4 2026 target)', url: 'https://www.cbe.org.eg/en/monetary-policy/inflation-target', checked: true },
+  UGA: { pct: 5, bank: 'Bank of Uganda', url: 'https://bou.or.ug/monetary_policy', checked: true },
+  PAK: { pct: 6, bandPts: 1, bank: 'State Bank of Pakistan (medium-term 5-7%)', url: 'https://www.sbp.org.pk/our-operations/monetary-policy', checked: true },
 };
 
 /**

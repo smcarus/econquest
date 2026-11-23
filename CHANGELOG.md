@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Lower-income central banks: inflation targets for the Philippines (3% ±1), Egypt (7% ±2 for
+  Q4 2026), Uganda (5%) and Pakistan (5-7%, filed as 6% ±1), and decision dates for Pakistan
+  (FY27 calendar), the Philippines and Nigeria, all read on each bank's own page on 23 November
+  2026. Kenya, Ethiopia, Bangladesh, Viet Nam, DR Congo, Myanmar and Bolivia stay Missing: their
+  pages state no target or could not be read.
+
 - Forward record for release days: the ridge, lasso and random forest GDP nowcasts now write their
   live calls to the forward record while their test passes, as the bridge nowcast already did (each
   ended quarter whose GDP is not out yet, fitted exactly as in the test, with the benchmark beside
