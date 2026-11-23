@@ -5,6 +5,15 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Official forecasts side by side (History & data > IMF forecasts by edition): growth and inflation
+  forecasts for this year and the next two from the IMF World Economic Outlook, World Bank Global
+  Economic Prospects and the OECD Economic Outlook, with the spread between them; for the United
+  States, the Philadelphia Fed Survey of Professional Forecasters from medianLevel.xlsx you save in
+  data/local/philly-spf/ (no terms of use found, so never downloaded). A free stand-in for paid
+  consensus forecasts, labelled as official forecasts. Daily step world:official_forecasts; Data
+  health rows wb_gep and oecd_eo. The OECD terms were read: data may be used for any purpose with
+  credit, so the OECD licence row is now open.
+
 - Google Sheets: `scripts/data-api/econquest.gs` adds EQ_SERIES, EQ_COUNTRY, EQ_WORLD, EQ_PANEL and
   EQ_FIGURES for a copy of the app on a home server at an https address; the key stays in the
   script's settings and travels only in a header (docs/DATA_API.md, "Google Sheets").

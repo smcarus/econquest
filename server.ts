@@ -112,6 +112,7 @@ import { loadOwidEnergy, fetchOwidEnergyPull } from './src/server/feeds/owidEner
 import { loadFedSwaps, fetchFedSwaps } from './src/server/feeds/fedSwaps';
 import { fetchWbProjects } from './src/server/feeds/wbProjects';
 import { fetchRegional } from './src/server/feeds/regional';
+import { fetchOfficialForecasts } from './src/server/feeds/officialForecasts';
 import { fetchCurves } from './src/server/feeds/fullCurves';
 import { fetchSurpriseInputs } from './src/server/feeds/dataSurprises';
 import { loadWeather, fetchWeather } from './src/server/feeds/nasaPower';
@@ -783,6 +784,18 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       if (!got) return { outcome: 'failed', note: 'Neither the US Treasury nor the ECB answered for the yield curves' };
       const last = (d?: { days: Array<{ date: string }> }) => d?.days[d.days.length - 1]?.date;
       return { outcome: 'done', note: `US Treasury ${last(got.us) ? `to ${last(got.us)}` : 'not read'}; ECB euro area ${last(got.ea) ? `to ${last(got.ea)}` : 'not read'} (copy of ${got.pulledAt.slice(0, 16).replace('T', ' ')} UTC)` };
+    }
+    case 'world:official_forecasts': {
+      const got = await fetchOfficialForecasts();
+      if (!got) return { outcome: 'failed', note: 'None of the IMF, the World Bank or the OECD answered for the official forecasts' };
+      const n = (x?: Record<string, unknown>) => (x ? Object.keys(x).length : 0);
+      const parts = [
+        got.weo ? `IMF WEO ${n(got.weo.gdp)} countries` : 'IMF WEO not read',
+        got.gep ? `World Bank GEP ${n(got.gep.byIso)} countries${got.gep.edition ? ` (${got.gep.edition})` : ''}` : 'World Bank GEP not read',
+        got.oecd ? `OECD ${n(got.oecd.byIso)} countries${got.oecd.edition ? ` (${got.oecd.edition})` : ''}` : 'OECD Economic Outlook not read',
+      ];
+      const problems = Object.values(got.problems || {});
+      return { outcome: 'done', note: `${parts.join('; ')} (copy of ${got.pulledAt.slice(0, 10)})${problems.length ? `; ${problems.join('; ')}` : ''}` };
     }
     case 'world:regional': {
       const got = await fetchRegional();

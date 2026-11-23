@@ -78,6 +78,7 @@ export const WORLD_STEPS: PreloadStep[] = [
   { id: 'world:wb_projects', kind: 'world', label: 'World Bank active projects and IDA amounts paid out (weekly)' },
   { id: 'world:surprises', kind: 'world', label: 'Data surprises: Focus and Kalshi expectations, IPCA, euro area HICP and US CPI outturns' },
   { id: 'world:curves', kind: 'world', label: 'Full yield curves: US Treasury par curve and ECB euro area curve, every maturity' },
+  { id: 'world:official_forecasts', kind: 'world', label: 'Official forecasts: IMF WEO, World Bank Global Economic Prospects and OECD Economic Outlook (daily)' },
   { id: 'world:regional', kind: 'world', label: 'Regional output (DOSE) and EU regional GDP and unemployment (Eurostat), weekly' },
   { id: 'world:monthly_activity', kind: 'world', label: 'Industrial production, retail sales and monthly unemployment' },
   { id: 'world:gov_levels', kind: 'world', label: 'Revenue and spending by level of government (Eurostat, IMF GFS)' },
