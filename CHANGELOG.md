@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Team work on a home server: comments under each policy review memo and saved report (any
+  signed-in account, Viewers included; the author or an Admin marks one done) and read-only links
+  to a memo or report (an Analyst or Admin makes one for 1 to 90 days; it opens without signing in,
+  shows the saved text with no scripts, and can be withdrawn; only the link's hash is saved). The
+  second approver was already in place through sign-off. Every comment and link goes in the audit log.
+
 - Teaching (group D): an offline country report (one HTML file of the saved figures with sources,
   Missing reasons and licences, no scripts, opens without the app; button beside the CSV download);
   a Macro lab under Country Research > Learn (aggregate demand and supply, and the debt equation,
