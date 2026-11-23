@@ -98,6 +98,7 @@ import {
   ListChecks,
   ScrollText,
   Activity,
+  Search,
   ShieldQuestion,
   NotebookPen,
   FileUp,
@@ -138,6 +139,7 @@ const PolicyReviews = lazyNamed(() => import('./components/PolicyReviews'), 'Pol
 const TeachingEpisodes = lazyNamed(() => import('./components/TeachingEpisodes'), 'TeachingEpisodes');
 const AuditLogDialog = lazyNamed(() => import('./components/AuditLogDialog'), 'AuditLogDialog');
 const DataHealthDialog = lazyNamed(() => import('./components/DataHealthDialog'), 'DataHealthDialog');
+const CatalogueSearchDialog = lazyNamed(() => import('./components/CatalogueSearchDialog'), 'CatalogueSearchDialog');
 const IdeaJournalDialog = lazyNamed(() => import('./components/IdeaJournalDialog'), 'IdeaJournalDialog');
 const OwnSeriesDialog = lazyNamed(() => import('./components/OwnSeriesDialog'), 'OwnSeriesDialog');
 const AboutDialog = lazyNamed(() => import('./components/AboutDialog'), 'AboutDialog');
@@ -261,6 +263,7 @@ export default function App() {
   const [isAuditLogOpen, setIsAuditLogOpen] = useState<boolean>(false);
   // Menu > Data health, and the counts shown beside it (refreshed every 5 minutes).
   const [isDataHealthOpen, setIsDataHealthOpen] = useState<boolean>(false);
+  const [isFindDataOpen, setIsFindDataOpen] = useState<boolean>(false);
   const [dataHealthSummary, setDataHealthSummary] = useState<{ failingSources: number; missingFigures: number; staleFigures: number } | null>(null);
   useEffect(() => {
     let alive = true;
@@ -1454,6 +1457,14 @@ export default function App() {
                         className: '',
                       },
                       {
+                        key: 'findData',
+                        icon: <Search className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: t('findData'),
+                        hint: '',
+                        onClick: () => setIsFindDataOpen(true),
+                        className: '',
+                      },
+                      {
                         key: 'account',
                         icon: <UserRound className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
                         label: t('account'),
@@ -1998,6 +2009,7 @@ export default function App() {
 
       {isOfflineDataOpen && <OfflineDataDialog onClose={() => setIsOfflineDataOpen(false)} />}
       <Suspense fallback={null}>{isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}</Suspense>
+      <Suspense fallback={null}>{isFindDataOpen && <CatalogueSearchDialog onClose={() => setIsFindDataOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isDataHealthOpen && <DataHealthDialog initialTab={dataHealthTab} onClose={() => (setIsDataHealthOpen(false), setDataHealthTab(undefined))} />}</Suspense>
       <Suspense fallback={null}>{isIdeasOpen && <IdeaJournalDialog onClose={() => setIsIdeasOpen(false)} />}</Suspense>
       <Suspense fallback={null}>

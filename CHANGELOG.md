@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Find data: Menu > Find data searches DBnomics (about 90 statistical providers), the IMF DataMapper,
+  the World Bank's World Development Indicators and Eurostat in one box, with each provider's
+  licence note and a link to its own page. A catalogue that does not answer is named with the
+  reason. New check:data row `catalogues`.
+
 - Gap model estimated from data: an IS curve, a Phillips curve and a policy rule (after Berg, Karam
   and Laxton 2006), each fitted on the country's last 60 quarters with a real-time output gap
   (one-sided HP filter). A new pre-registered test (docs/validation/forecasts/cpi_gap_model.json)

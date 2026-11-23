@@ -30,6 +30,7 @@ export const SHELL_FR: Messages<typeof SHELL> = {
   downloading: 'Téléchargement',
   offline: 'Hors ligne',
   dataHealth: 'État des données',
+  findData: 'Chercher des données',
   account: 'Compte',
   users: 'Utilisateurs',
   auditLog: "Journal d'audit",

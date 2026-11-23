@@ -11,6 +11,7 @@ import type { HistoryInput } from './src/utils/precedentFinder';
 import { registerIdeaRoutes } from './src/server/routes/ideas';
 import { isWgiCode, wbReplyHasRows, wgiUrls } from './src/utils/wgiCodes';
 import { registerFeedbackRoutes } from './src/server/routes/feedback';
+import { registerCatalogueRoutes } from './src/server/routes/catalogue';
 import { mountEngineRoutes } from './src/server/engineRoutes';
 import { ENGINE_ROUTES } from './src/engine/routeTable';
 import { createNodePlatform } from './src/platform/node';
@@ -4479,6 +4480,7 @@ async function startServer() {
   });
   registerIdeaRoutes(app, { quick, seriesFor, refuseRemoteChange, signedIn });
   registerFeedbackRoutes(app, { refuseRemoteChange });
+  registerCatalogueRoutes(app);
   registerOwnSeriesRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
   registerBudgetExecutionRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
   // Your paid data subscription (src/engine/paidData.ts): its figures show only on this computer's
