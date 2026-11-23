@@ -22,6 +22,7 @@ import { fetchWithTimeout } from '../http';
 import { officialYieldFeedLabel } from '../../utils/officialYields.ts';
 import { polymarketMoves } from '../../utils/oddsMoves.ts';
 import { IMF_EXTRA } from '../../utils/imfFiscal';
+import { isWgiCode, wbReplyHasRows, wgiUrls } from '../../utils/wgiCodes';
 
 function getLatestImfValue(series: Record<string, number> | undefined, targetYears: string[]): number | undefined {
   if (!series || typeof series !== 'object') return undefined;
@@ -72,11 +73,15 @@ export async function fetchLiveOpenDataSnapshotNetwork(
       ];
       const results = await Promise.allSettled(
         wbIndicators.map(async (ind) => {
-          const res = await fetchWithTimeout(
-            `https://api.worldbank.org/v2/country/${normalizedIso}/indicator/${ind}?format=json&per_page=6`
-          );
-          if (!res.ok) return { ind, row: null };
-          const data: any = await res.json();
+          // WGI estimates moved to GOV_WGI_<code> (src/utils/wgiCodes.ts): try each address form in turn.
+          const urls = isWgiCode(ind) ? wgiUrls(normalizedIso, ind, 'format=json&per_page=6') : [`https://api.worldbank.org/v2/country/${normalizedIso}/indicator/${ind}?format=json&per_page=6`];
+          let data: any = null;
+          for (const url of urls) {
+            const res = await fetchWithTimeout(url);
+            if (!res.ok) return { ind, row: null };
+            data = await res.json();
+            if (wbReplyHasRows(data)) break;
+          }
           const rows = Array.isArray(data?.[1]) ? data[1] : [];
           const validRow = rows.find((r: any) => typeof r?.value === 'number' && !Number.isNaN(r.value));
           return { ind, row: validRow };

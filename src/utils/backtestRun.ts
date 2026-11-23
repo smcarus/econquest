@@ -31,6 +31,7 @@ import { EUROSTAT_GEO, parseEurostatHicp } from './nationalCpi';
 import { EU_PRICE_EXPECTATIONS, euSurveyUrl } from './euSurveys';
 import { FRED_10Y_SERIES } from './officialYields';
 import { parseFredCsvSeries } from './fedBalanceSheet';
+import { wbReplyHasRows, wgiUrls } from './wgiCodes';
 import { bocBoeEditions, bocBoeUrl, parseBocBoeCsv, type SovereignDefaults } from './sovereignDefaults';
 
 const EUROSTAT_API = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data';
@@ -188,7 +189,8 @@ async function pullCurve(fetcher: Fetcher, problems: string[]) {
 }
 
 /** World Bank WGI estimate for every country and year from 1996, one indicator, every page of the reply. */
-export const wgiAllUrl = (code: string, page = 1, toYear = new Date().getUTCFullYear()) => `https://api.worldbank.org/v2/country/all/indicator/${code}?format=json&per_page=20000&date=1996:${toYear}&page=${page}`;
+/** Addresses for one WGI estimate for every country and year from 1996, newest API form first (src/utils/wgiCodes.ts). */
+export const wgiAllUrls = (code: string, page = 1, toYear = new Date().getUTCFullYear()) => wgiUrls('all', code, `format=json&per_page=20000&date=1996:${toYear}&page=${page}`);
 
 /** Parses one page of a World Bank API v2 reply into the table; returns the number of pages. */
 export function parseWbPage(json: unknown, code: (typeof WGI_CODES)[number], into: WgiTable): number {
@@ -207,13 +209,26 @@ async function pullScorecard(fetcher: Fetcher, problems: string[]) {
   const missing: string[] = [];
   for (const code of WGI_CODES) {
     try {
+      // The first address form whose first page holds data is used for every page.
+      let form = -1;
       let pages = 1;
-      for (let page = 1; page <= pages && page <= 20; page++) pages = parseWbPage(JSON.parse(await fetcher(wgiAllUrl(code, page))), code, wgi);
+      for (let i = 0; i < 3 && form < 0; i++) {
+        try {
+          const json = JSON.parse(await fetcher(wgiAllUrls(code, 1)[i]));
+          if (!wbReplyHasRows(json)) continue;
+          pages = parseWbPage(json, code, wgi);
+          form = i;
+        } catch {
+          // try the next form
+        }
+      }
+      if (form < 0) throw new Error('no address form answered with data');
+      for (let page = 2; page <= pages && page <= 20; page++) parseWbPage(JSON.parse(await fetcher(wgiAllUrls(code, page)[form])), code, wgi);
     } catch {
       missing.push(code);
     }
   }
-  if (missing.length) problems.push(`World Bank WGI estimates did not answer for ${missing.join(', ')}`);
+  if (missing.length) problems.push(`World Bank WGI estimates did not answer with data for ${missing.join(', ')} (tried GOV_WGI_<code> in source 3, the same without the source, and the old code)`);
   let defaults: SovereignDefaults | null = null;
   for (const edition of bocBoeEditions()) {
     try {
