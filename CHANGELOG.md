@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- World Bank governance figures (WGI): the World Bank API stopped serving the old codes (VA.EST,
+  PV.EST, GE.EST, RQ.EST, RL.EST, CC.EST), answering "The indicator was not found", so the
+  scorecard's six governance estimates, the political stability figure in the country snapshot and
+  the scorecard_default test (owner's run, 22 November) all came back empty. The same estimates are
+  now read as GOV_WGI_<code> in the WGI source (source 3), with the old forms tried after it
+  (src/utils/wgiCodes.ts).
+
 - Track record: 13 tests added from the owner's run of 22 November (`npm run track-record:import`),
   the new forecast evaluations registered on 22 November. 38 tests are now on record: 10 passed, 25
   failed, 3 too few cases. fx_vol_garch v1 and gdp_forecast_quantile v1 pass and still hold after the

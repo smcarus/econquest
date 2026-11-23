@@ -5,7 +5,7 @@ import os from 'os';
 import path from 'path';
 import { addMonths, binomialUpperTail, cftcCrowdingCases, cliTurnPolicyCases, cycleClockCases, regimeQuadrantCases, timingUnwindCases, judge, judgeWithRobustness, monthlyRuns, robustness, taylorGapCases, ruleFamilyCases, scorecardDefaultCases, type BacktestCase, type BacktestSpec, type DefaultTable, type OpenCall, type WgiTable } from '../src/utils/backtest';
 import { targetIn } from '../src/data/inflationTargetHistory';
-import { loadSpecs, loadValidation, parseWbPage, runBacktests, sha256, wgiAllUrl } from '../src/utils/backtestRun';
+import { loadSpecs, loadValidation, parseWbPage, runBacktests, sha256, wgiAllUrls } from '../src/utils/backtestRun';
 import { registerEntry } from '../src/data/modelRegister';
 import type { CftcWeek } from '../src/utils/cftcPositioning';
 
@@ -125,9 +125,12 @@ test('runBacktests pulls the histories once, judges each registered test and sav
   const core = urls.filter((u) => !u.includes('NGDP_RPCH') && !u.includes('ec.europa.eu') && !u.includes('fred.stlouisfed.org') && !u.includes('api.worldbank.org') && !u.includes('bankofcanada.ca'));
   // scorecard_default: each of the six WGI estimates once (all countries), then the BoC-BoE editions newest first; no verdict when they do not answer.
   const wgi = urls.filter((u) => u.includes('api.worldbank.org'));
-  assert.deepEqual(wgi.map((u) => u.match(/indicator\/([A-Z.]+)\?/)![1]), ['VA.EST', 'PV.EST', 'GE.EST', 'RQ.EST', 'RL.EST', 'CC.EST']);
+  // Each code: GOV_WGI_<code> in source 3, the same without the source, then the old code.
+  assert.equal(wgi.length, 18);
+  assert.deepEqual([...new Set(wgi.map((u) => u.match(/indicator\/(?:GOV_WGI_)?([A-Z]{2}\.EST)\?/)![1]))], ['VA.EST', 'PV.EST', 'GE.EST', 'RQ.EST', 'RL.EST', 'CC.EST']);
+  assert.ok(wgi[0].includes('GOV_WGI_VA.EST?source=3&'));
   assert.ok(urls.some((u) => u.includes('bankofcanada.ca/valet/observations/group/DEBT_2026/csv')));
-  assert.ok(out.problems.some((p) => /World Bank WGI estimates did not answer for VA.EST/.test(p)));
+  assert.ok(out.problems.some((p) => /World Bank WGI estimates did not answer with data for VA.EST/.test(p)));
   assert.ok(out.problems.some((p) => /BoC-BoE Sovereign Default Database/.test(p)));
   assert.equal(out.results.scorecard_default, undefined, 'no verdict without WGI and BoC-BoE');
   assert.equal(core.length, 4, 'BIS, leading indicator, CFTC and consumer prices, each once');
@@ -468,7 +471,10 @@ test('parseWbPage reads every country-year of a World Bank reply and the page co
   assert.equal(pages, 3);
   assert.deepEqual(into, { KEN: { '2020': { 'GE.EST': -0.42 } } });
   assert.throws(() => parseWbPage({ message: 'x' }, 'GE.EST', into));
-  assert.match(wgiAllUrl('CC.EST', 2, 2026), /country\/all\/indicator\/CC\.EST\?format=json&per_page=20000&date=1996:2026&page=2$/);
+  const tries = wgiAllUrls('CC.EST', 2, 2026);
+  assert.equal(tries[0], 'https://api.worldbank.org/v2/country/all/indicator/GOV_WGI_CC.EST?source=3&format=json&per_page=20000&date=1996:2026&page=2');
+  assert.match(tries[1], /indicator\/GOV_WGI_CC\.EST\?format=json/);
+  assert.match(tries[2], /indicator\/CC\.EST\?format=json/);
 });
 
 test('runBacktests judges scorecard_default from the WGI and BoC-BoE replies (made-up rows)', async () => {
@@ -487,8 +493,10 @@ test('runBacktests judges scorecard_default from the WGI and BoC-BoE replies (ma
     forwardFile: path.join(specDir, 'forward.jsonl'),
     now: new Date('2026-11-19T12:00:00Z'),
     fetcher: async (url) => {
-      const m = url.match(/api\.worldbank\.org\/v2\/country\/all\/indicator\/([A-Z.]+)\?/);
+      // The old codes answer with the World Bank's "indicator was not found" message (as since 2025); GOV_WGI_<code> in source 3 has the data.
+      const m = url.match(/api\.worldbank\.org\/v2\/country\/all\/indicator\/GOV_WGI_([A-Z.]+)\?source=3&/);
       if (m) return wb(m[1]);
+      if (url.includes('api.worldbank.org')) return JSON.stringify([{ message: [{ id: '175', key: 'Invalid format', value: 'The indicator was not found. It may have been deleted or archived.' }] }]);
       if (url.includes('DEBT_2026')) return csv;
       throw new Error('HTTP 404');
     },

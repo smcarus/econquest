@@ -9,6 +9,7 @@ import { spawn } from 'child_process';
 import { registerReviewRoutes } from './src/server/routes/reviews';
 import type { HistoryInput } from './src/utils/precedentFinder';
 import { registerIdeaRoutes } from './src/server/routes/ideas';
+import { isWgiCode, wbReplyHasRows, wgiUrls } from './src/utils/wgiCodes';
 import { registerFeedbackRoutes } from './src/server/routes/feedback';
 import { mountEngineRoutes } from './src/server/engineRoutes';
 import { ENGINE_ROUTES } from './src/engine/routeTable';
@@ -435,14 +436,22 @@ async function downloadOfficialHistory(iso3: string): Promise<OfficialHistoryFil
   // A few requests at a time (about 100 figures per country; one after another took more than the
   // 3-minute preload limit on a slow line), each worker keeping a polite gap between its requests.
   const one = async (fig: (typeof OFFICIAL_FIGURES)[number]) => {
-    const url =
+    const wbQuery = `format=json&per_page=200&date=1960:${lastYear}`;
+    // WGI estimates moved to GOV_WGI_<code> (src/utils/wgiCodes.ts): try each address form in turn.
+    const urls =
       fig.source === 'wb'
-        ? `https://api.worldbank.org/v2/country/${iso3}/indicator/${fig.code}?format=json&per_page=200&date=1960:${lastYear}`
-        : `https://www.imf.org/external/datamapper/api/v1/${fig.code}/${iso3}`;
+        ? isWgiCode(fig.code)
+          ? wgiUrls(iso3, fig.code, wbQuery)
+          : [`https://api.worldbank.org/v2/country/${iso3}/indicator/${fig.code}?${wbQuery}`]
+        : [`https://www.imf.org/external/datamapper/api/v1/${fig.code}/${iso3}`];
     try {
-      const res = await fetchWithTimeout(url, 15000);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const body = await res.json();
+      let body: any = null;
+      for (const url of urls) {
+        const res = await fetchWithTimeout(url, 15000);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        body = await res.json();
+        if (fig.source !== 'wb' || wbReplyHasRows(body)) break;
+      }
       const years = fig.source === 'wb' ? parseWorldBankYears(body) : parseImfYears(body, fig.code, iso3);
       if (!years) throw new Error('unexpected answer');
       answered++;
