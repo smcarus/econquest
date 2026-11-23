@@ -494,6 +494,11 @@ Situación al 17 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./docs/ROADM
     oficiales mensuales del FMI donde no hay dato diario ni del BPI, que también usan las previsiones
     inmediatas y previsiones de inflación y la previsión del tipo oficial; y metas de inflación y
     fechas de decisión leídas en las páginas de los propios bancos.
+16. **Mejoras rápidas tras la comparación con otras plataformas** (23 de noviembre): las hojas de
+    cálculo se actualizan desde la aplicación (un asistente de Power Query para Excel y un script para
+    Google Sheets); previsiones oficiales lado a lado (el FMI, el Banco Mundial y la OCDE, con la
+    diferencia entre ellas) en Historia y datos; y días de publicación, en los que la aplicación vuelve
+    a leer cada hora las fuentes de IPC y de actividad mensual hasta que llega el nuevo mes, en Hoy.
 
 **Siguiente**
 
