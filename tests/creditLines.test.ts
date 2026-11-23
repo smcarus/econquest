@@ -35,9 +35,11 @@ test('Publish chart: restricted sources block; unclear and unmapped are named; o
   assert.equal(open.blocked.length, 0);
   assert.equal(open.credits.length, 1);
   assert.deepEqual(publicationCheck(['Kalshi market']).blocked.map((b) => b.id), ['kalshi']);
+  // OECD terms were confirmed open on 23 November 2026; the Philadelphia Fed has none on file.
   const oecd = publicationCheck(['OECD via DBnomics']);
   assert.equal(oecd.blocked.length, 0);
-  assert.deepEqual(oecd.unclear.map((u) => u.id), ['oecd']);
+  assert.deepEqual(oecd.unclear, []);
+  assert.deepEqual(publicationCheck(['Philadelphia Fed SPF']).unclear.map((u) => u.id), ['philly_spf']);
   assert.deepEqual(publicationCheck(['my spreadsheet']).unmapped, ['my spreadsheet']);
   assert.equal(publicationCheck(['World Bank WDI', 'World Bank WGI']).credits.length, 1);
   // A BIS policy rate for Turkey, "(CBRT)" in its source, is not read as the EVDS feed.

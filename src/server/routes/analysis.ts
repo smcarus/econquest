@@ -94,6 +94,8 @@ import { grVar, grVarSentence, GRVAR_METHOD, type GrVarOutcome } from '../../uti
 import { gprData } from '../../utils/gprStore';
 import { storyLeads, STORY_LEADS_METHOD, type LeadSeries } from '../../utils/storyLeads';
 import { buildExercises, checkAnswer, EXERCISES_METHOD, type ExerciseArgs } from '../../utils/exercises';
+import { officialForecastsFor } from '../../utils/officialForecasts';
+import { loadOfficialForecasts, loadPhillySpf } from '../feeds/officialForecasts';
 
 
 /**
@@ -543,6 +545,12 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const p = regionalProfile({ iso3, iso2: iso2For(iso3), dose: loadDose(), euro: loadEuroRegions(), gdl: g.rows, gdlFile: g.file });
     const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...p, sentence: regionalSentence(p, name) });
+  });
+  // Official forecasts side by side (CG2, src/utils/officialForecasts.ts): the saved copy from the daily download, and your Philadelphia Fed workbook for the United States; never fetched on page open.
+  app.get('/api/official-forecasts/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const p = iso3 === 'USA' ? await loadPhillySpf() : { file: null, value: null };
+    res.json(officialForecastsFor(iso3, loadOfficialForecasts(), p.value, { phillyFile: !!p.file }));
   });
   // Food prices and food security (PA2, src/utils/foodPrices.ts): saved World Bank history, the Pink Sheet moves, and the FAOSTAT file in data/local/fao-cpi/.
   app.get('/api/food-prices/:iso3', async (req, res) => {

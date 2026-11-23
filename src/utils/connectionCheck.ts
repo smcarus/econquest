@@ -28,6 +28,7 @@ import { BIS_CB_ASSETS_SAMPLE_URL, BIS_USD_CREDIT_SAMPLE_URL, parseBisCbAssets, 
 import { NYFED_SWAPS_SAMPLE_URL, parseNyfedSwaps } from './fedSwapLines';
 import { idaByProject, idaCreditsPageUrl, parseIdaPage, parseProjectsPage, projectsCountryUrl } from './wbProjects';
 import { ZENODO_HEADERS, doseCsvLink, doseLatestUrl, eurostatRegionUnempUrl, latestByGeo } from './regional';
+import { gepCountryUrl, oecdEoCountryUrl, parseGepAll, parseOecdEoCsv } from './officialForecasts';
 import { ECB_CURVE_TENORS, ecbCurveUrl, parseEcbCurveCsv, parseUstCsv, ustCurveUrl } from './fullCurves';
 import { BLS_CPI_URL, FOCUS_MONTHLY_URL, parseBlsCpi, parseFocusMonthly } from './dataSurprises';
 import { NASA_POWER_SAMPLE_URL, parseNasaPower } from './weatherPower';
@@ -314,6 +315,8 @@ export const SOURCE_IDS = [
   'wb_ida_credits',
   'dose',
   'eurostat_regions',
+  'wb_gep',
+  'oecd_eo',
   'ust_curve',
   'ecb_curve',
   'focus_monthly',
@@ -942,6 +945,37 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     )
   );
 
+
+  add('wb_gep', () =>
+    httpCheck(
+      { id: 'wb_gep', name: 'World Bank Global Economic Prospects', group: 'free', feeds: 'Growth forecasts for this year and the next two (Official forecasts side by side)' },
+      fetchFn,
+      gepCountryUrl(SAMPLE_ISO3, new Date().getUTCFullYear()),
+      T,
+      (r) => {
+        const got = parseGepAll(parseJson(r.text));
+        const row = got.byIso[SAMPLE_ISO3];
+        if (!row) return null;
+        const y = String(new Date().getUTCFullYear() + 1);
+        return `${SAMPLE_NAME}${typeof row[y] === 'number' ? `: growth ${row[y]}% in ${y}` : `: years ${Object.keys(row).join(', ')}`}${got.edition ? ` (${got.edition})` : ''}`;
+      }
+    )
+  );
+
+  add('oecd_eo', () =>
+    httpCheck(
+      { id: 'oecd_eo', name: 'OECD Economic Outlook', group: 'free', feeds: 'Growth and inflation forecasts for OECD members and partners (Official forecasts side by side)' },
+      fetchFn,
+      oecdEoCountryUrl(SAMPLE_ISO3, new Date().getUTCFullYear()),
+      T,
+      (r) => {
+        const got = parseOecdEoCsv(r.text || '')[SAMPLE_ISO3];
+        if (!got?.gdp && !got?.cpi) return null;
+        const y = String(new Date().getUTCFullYear() + 1);
+        return `${SAMPLE_NAME}: growth ${got.gdp?.[y] ?? 'not given'}%, inflation ${got.cpi?.[y] ?? 'not given'}% in ${y}`;
+      }
+    )
+  );
 
   add('worldbank_debt_structure', () =>
     httpCheck(
