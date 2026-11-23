@@ -1,0 +1,36 @@
+name: Translation review
+description: You are a native speaker and checked (or want to check) the Spanish, French or Portuguese wording
+labels: [translation]
+body:
+  - type: dropdown
+    id: lang
+    attributes:
+      label: Language
+      options:
+        - Español (usted)
+        - Français (vous)
+        - Português do Brasil (você)
+    validations:
+      required: true
+  - type: input
+    id: files
+    attributes:
+      label: Files you read
+      description: Paths under src/i18n/ (see docs/TRANSLATION_REVIEW.md for the list).
+      placeholder: e.g. src/i18n/es/council.ts, src/i18n/messages/menu.ts
+    validations:
+      required: true
+  - type: textarea
+    id: findings
+    attributes:
+      label: Wording to change
+      description: Quote the current text, give your wording and say why (wrong meaning, wrong register, unnatural, wrong economics term).
+    validations:
+      required: true
+  - type: checkboxes
+    id: native
+    attributes:
+      label: Reviewer
+      options:
+        - label: This is my first language, and I read every string in the files listed above.
+          required: true

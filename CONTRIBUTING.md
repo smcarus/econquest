@@ -97,6 +97,14 @@ it, test it, and say in the pull request that a tool helped.
 - A methods note in `docs/METHODS.md` that is unclear or wrong.
 - Issues labelled `good first issue`.
 
+## Review a translation
+
+If Spanish, French or Brazilian Portuguese is your first language, the most useful thing you can do
+is read the app's text in it. None of the three has been checked by a native speaker yet. The
+checklist, the register for each language and the steps are in
+[docs/TRANSLATION_REVIEW.md](docs/TRANSLATION_REVIEW.md); start with a **Translation review** issue
+so two people do not take the same files.
+
 ## Quests
 
 A section on proposing and entering Quests will be added here when Quests launch.
