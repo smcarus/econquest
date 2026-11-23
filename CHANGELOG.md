@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Google Sheets: `scripts/data-api/econquest.gs` adds EQ_SERIES, EQ_COUNTRY, EQ_WORLD, EQ_PANEL and
+  EQ_FIGURES for a copy of the app on a home server at an https address; the key stays in the
+  script's settings and travels only in a header (docs/DATA_API.md, "Google Sheets").
+
 - Excel: `scripts/data-api/econquest.pq` is a Power Query that brings the app's series, panels and
   figures into a workbook, refreshed with Data > Refresh All; values arrive as numbers, Missing stays
   empty with its reason, and a key for a copy with sign-in on travels only in a header
