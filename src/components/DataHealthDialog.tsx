@@ -12,7 +12,7 @@
  *
  * Nothing here changes a figure: it says what to check.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { Activity, RefreshCw, X } from 'lucide-react';
 import type { ConnectionState } from '../utils/connectionCheck';
 import { ENDED_NOTE, possiblyEnded, type SourceHealth } from '../utils/dataHealth';
@@ -438,6 +438,8 @@ function ScheduledView() {
   );
 }
 
+const ReleaseWatchCard = lazy(() => import('./ReleaseWatchCard').then((m) => ({ default: m.ReleaseWatchCard })));
+
 function CalendarView() {
   const { data, error } = useJson<CalendarHealth>('/api/data/health/calendar');
   const short = (d: string | null) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '');
@@ -447,6 +449,9 @@ function CalendarView() {
       <p className="text-sm text-slate-600 dark:text-slate-300">
         Central bank, release, election and budget dates are typed in by hand from each source page (src/data/officialCalendar.ts), so they go out of date unless someone reads the pages again. This lists what to check; it never adds or moves a date.
       </p>
+      <Suspense fallback={null}>
+        <ReleaseWatchCard />
+      </Suspense>
       {data && (
         <p className="text-sm">
           {data.needsLook ? `${data.needsLook} item${data.needsLook === 1 ? '' : 's'} to check.` : 'Nothing to check: every schedule runs beyond the next two months and was read recently.'}
