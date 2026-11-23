@@ -136,6 +136,7 @@ export const RESEARCH = defineMessages('research', {
   tl_remittances: "Remittances",
   tl_aid: "Aid received",
   tl_wb_projects: "World Bank projects",
+  tl_official_docs: "Official documents",
   tl_regional: "Regional figures",
   tl_financial_inclusion: "Financial inclusion",
   tl_food_prices: "Food prices and food security",
