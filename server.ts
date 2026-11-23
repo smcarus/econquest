@@ -4,7 +4,7 @@ import { geminiModel } from './src/utils/geminiModel';
 import { loadModelHistoryCached } from './src/utils/modelHistory';
 import { withLongCli, withLongCpi, withLongPolicy } from './src/utils/longHistory';
 import { refreshModelHistory, registerAnalysisRoutes } from './src/server/routes/analysis';
-import { BY_HAND, FILE_PULLS, dailyDue, dailyFilePath, formatDaily, interestingLines, readDaily, sweepNote, testsDue, writeDaily, type DailyRun, type DailyStep } from './src/utils/dailyRun';
+import { BY_HAND, FILE_PULLS, dailyDue, dailyFilePath, formatDaily, interestingLines, readDaily, preReleaseTestsDue, sweepNote, testsDue, writeDaily, type DailyRun, type DailyStep } from './src/utils/dailyRun';
 import { spawn } from 'child_process';
 import { registerReviewRoutes } from './src/server/routes/reviews';
 import type { HistoryInput } from './src/utils/precedentFinder';
@@ -20,7 +20,7 @@ import { registerOwnSeriesRoutes } from './src/server/routes/ownSeries';
 import { registerBudgetExecutionRoutes } from './src/server/routes/budgetExecution';
 import { ownSeriesViewsFor, OWN_NO_COUNTRY } from './src/engine/ownSeries';
 import { registerQuestRoutes } from './src/server/routes/quests';
-import { forwardSummary } from './src/utils/forwardRecord';
+import { forwardByMonth, forwardSummary } from './src/utils/forwardRecord';
 import { SPIKE_METHOD, spikeMonths, spikeSentence } from './src/utils/unrestSpikes';
 import { forwardFilePath, loadForward } from './src/utils/forwardRecordStore';
 import { fetchWithTimeout } from './src/server/http';
@@ -1240,14 +1240,15 @@ async function runDailyCli(): Promise<void> {
       add({ id: 'tests', label: 'Pre-registered tests', outcome: 'skipped', note: 'switched off (SCHEDULE_BACKTESTS=off)' });
     } else if (offline) {
       add({ id: 'tests', label: 'Pre-registered tests', outcome: 'skipped', note: 'offline' });
-    } else if (!testsDue(last?.startedAt, new Date())) {
+    } else if (!testsDue(last?.startedAt, new Date()) && !preReleaseTestsDue(OFFICIAL_CALENDAR, last?.startedAt, new Date())) {
       add({ id: 'tests', label: 'Pre-registered tests', outcome: 'skipped', note: `last run ${last!.startedAt.slice(0, 10)}, less than 7 days ago${last?.summary ? ` (${last.summary})` : ''}` });
     } else {
       const now = new Date();
       writeJobs(SCHEDULED_JOBS_FILE, markStarted(jobs, 'backtests', clockIn(now, SCHEDULE_TZ).day, now.toISOString()));
       const r = await runScheduledJob('backtests').catch((e: any) => ({ ok: false, summary: `Failed: ${e?.message || String(e)}` }));
       writeJobs(SCHEDULED_JOBS_FILE, markFinished(readJobs(SCHEDULED_JOBS_FILE), 'backtests', new Date().toISOString(), r.ok, `${r.summary} (daily start-up run)`));
-      add({ id: 'tests', label: 'Pre-registered tests (backtests, forecast evaluations, currency signal tests)', outcome: r.ok ? 'done' : 'failed', note: r.summary });
+      const release = testsDue(last?.startedAt, now) ? null : preReleaseTestsDue(OFFICIAL_CALENDAR, last?.startedAt, now);
+      add({ id: 'tests', label: 'Pre-registered tests (backtests, forecast evaluations, currency signal tests)', outcome: r.ok ? 'done' : 'failed', note: `${r.summary}${release ? ` (run early: ${release.iso3} ${release.title} on ${release.date}, so the nowcast is on record first)` : ''}` });
     }
   }
 
@@ -2716,7 +2717,7 @@ function validationReplyNow() {
     forecastTests.push({ id: r.id, version: r.specVersion, status: r.status, p: r.pValue, alpha: Number((sSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.05 });
   }
   const fwd = loadForward(forwardFilePath(DATA_DIR));
-  return { ...v, specs, projectRecord: projectRecordNow(), running: validationRunning, file: 'data/local/validation/results.json', forecasts, forecastTests, forward: forwardSummary(fwd.lines), forwardCheck: { chainOk: fwd.chainOk, badLines: fwd.badLines, lines: fwd.lines.length, file: 'data/local/validation/forward.jsonl' } };
+  return { ...v, specs, projectRecord: projectRecordNow(), running: validationRunning, file: 'data/local/validation/results.json', forecasts, forecastTests, forward: forwardSummary(fwd.lines), forwardMonthly: forwardByMonth(fwd.lines), forwardCheck: { chainOk: fwd.chainOk, badLines: fwd.badLines, lines: fwd.lines.length, file: 'data/local/validation/forward.jsonl' } };
 }
 
 /** The badge of every registered model and signal now (src/utils/validationGrades.ts). */

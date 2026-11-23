@@ -23,7 +23,7 @@
 import type { RecordedVerdict, VerdictKind } from './methodsDoc';
 import type { RecordedRun } from './trackRecordDoc';
 import { pFromSummary } from './trackRecordDoc';
-import { forwardSummary, type ForwardBody, type ForwardSummary } from './forwardRecord';
+import { forwardSummary, type ForwardBody, type ForwardSummary, forwardByMonth, type ForwardMonthRow } from './forwardRecord';
 import { REGISTER_FORECAST_IDS } from './forecastRegister';
 
 /** One saved result as the three runners write it (only the fields read here). */
@@ -52,6 +52,8 @@ export interface ForwardRecordSummary {
   lines: number;
   chainHead: string;
   tests: Array<Omit<ForwardSummary, 'recent'>>;
+  /** CG5: calls written and scored month by month, newest first (counts only, no figures). */
+  monthly?: ForwardMonthRow[];
 }
 
 export interface RecordFile {
@@ -163,6 +165,7 @@ export function importRun(record: RecordFile, input: ImportInput, registered: Re
         tests: Object.values(sums)
           .sort((a, b) => a.test.localeCompare(b.test))
           .map(({ recent: _recent, ...s }) => s),
+        monthly: forwardByMonth(fw.lines),
       };
       forwardUpdated = true;
     }

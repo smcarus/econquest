@@ -10,7 +10,8 @@ import { judgeForecast, REALTIME_TARGETS, type ForecastResult, type ForecastSpec
 import { realTimeCases, weoRealTimeCases, type VintageSeriesInput } from './realTimeEval';
 import { judgeVol, volCases, type VolSpec } from './volEval';
 import { allQuarters, fxQuarterUrl, parseFxQuarter, FX_HISTORY_SOURCE, type FxHistoryFile } from './fxHistory';
-import { casesFor, gdpNowcastOpen, gdpSeries, type CountryData } from './forecastCases';
+import { casesFor, forestRowModel, gdpNowcastOpen, gdpSeries, type CountryData } from './forecastCases';
+import { predictorNowcastOpen, rowModelFor } from './penalizedNowcast';
 import { judgeLoss, type LossPassMark } from './lossEval';
 import { quantileForecastCases } from './quantileForecast';
 import path from 'path';
@@ -184,7 +185,8 @@ export async function runForecastEvaluations(opts: { specDir: string; resultFile
       }
       const { cases } = casesFor(s, data);
       const result = judgeForecast(s, hash, cases, `${sources[s.target] || s.target}; countries only (ISO 3166, regional groups and the euro-area aggregate left out); today's vintage, release lags as registered`, at);
-      if (s.target === 'gdp_nowcast_q') {
+      const rowModel = rowModelFor(s, forestRowModel(s));
+      if (s.target === 'gdp_nowcast_q' || rowModel) {
         // Rule 7: a passing nowcast's calls for quarters not yet published go on the forward record;
         // recorded calls are scored on the first published figure (closer than the benchmark = hit).
         const key = `${s.id} v${s.version}`;
@@ -197,7 +199,8 @@ export async function runForecastEvaluations(opts: { specDir: string; resultFile
             const gain = Math.abs(l.forecast!.bench - a) - Math.abs(l.forecast!.model - a);
             return { where: l.where, when: l.when, what: l.what, hit: gain > 0, base: beat, value: gain };
           });
-        const open = result.status === 'passed' ? gdpNowcastOpen(s, data, at.slice(0, 10)) : [];
+        const asOf = at.slice(0, 10);
+        const open = result.status !== 'passed' ? [] : rowModel ? predictorNowcastOpen(s, data, asOf, rowModel) : gdpNowcastOpen(s, data, asOf);
         const step = forwardStep(forward, { key, specHash: hash, passing: result.status === 'passed' }, scored, open, at);
         forward.push(...step);
         forwardNew.push(...step);

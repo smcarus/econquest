@@ -6,7 +6,7 @@ import { addDays, periodEnd, type DatedPoint } from './forecastModels';
 import { arForecastCases, type ForecastCase, type ForecastSpec, type PlainSeries } from './forecastEval';
 import { unbrokenRun } from './forecasts';
 import { gdpNowcast } from './nowcast';
-import { penalizedNowcastCases, predictorNowcastCases } from './penalizedNowcast';
+import { penalizedNowcastCases, predictorNowcastCases, type RowModel } from './penalizedNowcast';
 import { fitForest, predictForest } from './randomForest';
 import { armaForecastCases } from './arimaEval';
 import { dfmNowcastCases } from './dynamicFactor';
@@ -117,16 +117,19 @@ export function gdpNowcastOpen(spec: ForecastSpec, data: CountryData[], asOf: st
   return out;
 }
 
+/** The random forest nowcast's row model, with the spec's registered settings. */
+export function forestRowModel(spec: ForecastSpec): (X: number[][], y: number[]) => RowModel | null {
+  const fp = { trees: spec.params.trees ?? 300, maxDepth: spec.params.maxDepth ?? 6, minLeaf: spec.params.minLeaf ?? 5, seed: spec.params.seed ?? 1 };
+  return (X, y) => {
+    const f = fitForest(X, y, fp);
+    return 'error' in f ? null : { predict: (x) => predictForest(f, x), ...(f.oobRmse !== null ? { sd: f.oobRmse } : {}) };
+  };
+}
+
 export function casesFor(spec: ForecastSpec, data: CountryData[]): { cases: ForecastCase[]; series: string[] } {
   if (spec.target === 'gdp_penalized_nowcast_q') return penalizedNowcastCases(spec, data);
   if (spec.target === 'gdp_dfm_nowcast_q') return dfmNowcastCases(spec, data);
-  if (spec.target === 'gdp_forest_nowcast_q') {
-    const fp = { trees: spec.params.trees ?? 300, maxDepth: spec.params.maxDepth ?? 6, minLeaf: spec.params.minLeaf ?? 5, seed: spec.params.seed ?? 1 };
-    return predictorNowcastCases(spec, data, (X, y) => {
-      const f = fitForest(X, y, fp);
-      return 'error' in f ? null : { predict: (x) => predictForest(f, x), ...(f.oobRmse !== null ? { sd: f.oobRmse } : {}) };
-    });
-  }
+  if (spec.target === 'gdp_forest_nowcast_q') return predictorNowcastCases(spec, data, forestRowModel(spec));
   return spec.target === 'gdp_nowcast_q' ? gdpNowcastCases(spec, data) : forecastTargetCases(spec, data);
 }
 
