@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Track record: 13 tests added from the owner's run of 22 November (`npm run track-record:import`),
+  the new forecast evaluations registered on 22 November. 38 tests are now on record: 10 passed, 25
+  failed, 3 too few cases. fx_vol_garch v1 and gdp_forecast_quantile v1 pass and still hold after the
+  Holm correction across all 38; gdp_nowcast_lasso v1 and gdp_nowcast_ridge v1 pass on their own but
+  do not hold after it.
+
 - Euro area figures as first published are read from the ECB in five-year parts with one retry
   each; the whole GDP history in one request timed out. A series with a missing part is not used.
 

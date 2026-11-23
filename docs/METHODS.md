@@ -32,13 +32,13 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Council summary (AI synthesis) | Decision input | Model-assisted, not validated | None |
 | GDP nowcast (bridge equation) | Research | Forecast evaluation passed | v1, 2026-11-07 |
 | Forecasts with fan charts (AR models) | Research | Forecast evaluation failed | debt_forecast v2, 2026-11-07 |
-| Forecast tests on data as first published | Research | Not validated | None |
-| Currency volatility forecast (GARCH) | Research | Not validated | None |
-| GDP nowcast with many predictors (ridge and lasso) | Research | Not validated | None |
-| Forecasts with moving-average terms (ARMA) | Research | Not validated | None |
-| GDP nowcast from a common factor (Kalman filter) | Research | Not validated | None |
-| GDP nowcast from a random forest (tree ensemble) | Research | Not validated | None |
-| Lopsided forecast bands (quantile regression) | Research | Not validated | None |
+| Forecast tests on data as first published | Research | Forecast evaluation failed | cpi_weo_realtime v2, 2026-11-23 |
+| Currency volatility forecast (GARCH) | Research | Forecast evaluation passed | v1, 2026-11-23 |
+| GDP nowcast with many predictors (ridge and lasso) | Research | Forecast evaluation passed | gdp_nowcast_ridge v1, 2026-11-23 |
+| Forecasts with moving-average terms (ARMA) | Research | Forecast evaluation failed | gdp_forecast_arma v1, 2026-11-23 |
+| GDP nowcast from a common factor (Kalman filter) | Research | Forecast evaluation failed | gdp_nowcast_dfm v1, 2026-11-23 |
+| GDP nowcast from a random forest (tree ensemble) | Research | Forecast evaluation failed | gdp_nowcast_forest v1, 2026-11-23 |
+| Lopsided forecast bands (quantile regression) | Research | Forecast evaluation passed | gdp_forecast_quantile v1, 2026-11-23 |
 | Fiscal reaction (Bohn test) | Research | Description, not a tested signal | None |
 | Gross financing need | Research | Description, not a tested signal | None |
 | Country risk scorecard | Research | Not validated | None |
@@ -445,10 +445,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Reads:** ALFRED (your FRED key), ECB Euro Area Real-Time Database, IMF WEO past editions saved in data/local/weo-vintages/
 - **Shows in:** Menu > Models & validation
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Forecast evaluation failed (cpi_weo_realtime version 2, recorded 2026-11-23)
 - **How it is tested:** Pre-registered (docs/validation/forecasts/*_realtime.json): rolling origin on vintages, relative RMSE against the historical mean (GDP) or no change (inflation), year-block bootstrap, from 2008.
 - **Limits:** Two areas for the quarterly and monthly tests; the yearly tests read only the WEO editions you have saved. A test of the method, not a new forecast shown in the app.
 - **Code:** `src/utils/realTimeEval.ts`
+
+**Recorded verdicts**
+
+- cpi_forecast_realtime, version 1, 2026-11-23T02:23Z: **Failed** (forecast evaluation). Failed against the naive benchmark (last value carried on). 3 ahead: relative RMSE 1.079 (90% range 0.935 to 1.277, p 0.786), beat the naive benchmark in 0 of 2 series; 12 ahead: relative RMSE 1.391 (90% range 1.053 to 1.729, p 0.972), beat the naive benchmark in 0 of 2 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
+- cpi_weo_realtime, version 1, 2026-11-23T02:23Z: **Too few cases** (forecast evaluation). Too few cases to judge: 1 ahead has 0 cases over 0 years; 2 ahead has 0 cases over 0 years (needs 500 cases over 8 years).
+- gdp_forecast_realtime, version 1, 2026-11-23T02:23Z: **Failed** (forecast evaluation). Failed against the historical-mean benchmark. 1 ahead: relative RMSE 1.5 (90% range 1.074 to 1.516, p 0.997), beat the historical-mean benchmark in 0 of 2 series; 4 ahead: relative RMSE 1.343 (90% range 1 to 4.482, p 0.915), beat the historical-mean benchmark in 0 of 2 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
+- gdp_weo_realtime, version 1, 2026-11-23T02:23Z: **Failed** (forecast evaluation). Failed against the historical-mean benchmark. 1 ahead: relative RMSE 0.981 (90% range 0.925 to 1.044, p 0.281), beat the historical-mean benchmark in 95 of 165 series; 2 ahead: relative RMSE 1.004 (90% range 0.96 to 1.032, p 0.575), beat the historical-mean benchmark in 78 of 160 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
+- cpi_weo_realtime, version 2, 2026-11-23T02:23Z: **Failed** (forecast evaluation). Failed against the naive benchmark (last value carried on). 1 ahead: relative RMSE 372.804 (90% range 4.014 to 372.818, p 0.991), beat the naive benchmark in 89 of 169 series; 2 ahead: relative RMSE 0.985 (90% range 0.984 to 11.38, p 0.344), beat the naive benchmark in 107 of 167 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
 
 ### Currency volatility forecast (GARCH)
 
@@ -457,10 +465,14 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Reads:** ECB euro reference rates per US dollar (via Frankfurter), daily from 1999
 - **Shows in:** Menu > Models & validation (shown in the app only if it passes)
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Forecast evaluation passed (version 1, recorded 2026-11-23)
 - **How it is tested:** Pre-registered (docs/validation/forecasts/fx_vol_garch.json): mean QLIKE loss ratio at most 0.95, p at most 0.10, better in half the currencies, from 2005.
 - **Limits:** One ECB fixing a day, not market closes; managed currencies left out; normal errors in the likelihood.
 - **Code:** `src/utils/garch.ts`
+
+**Recorded verdicts**
+
+- Version 1, 2026-11-23T02:23Z: **Passed** (forecast evaluation). Passed against the three-month realised volatility: QLIKE loss ratio 0.846 (90% range 0.769 to 0.933, p 0.001) over 6003 month-ends, better in 19 of 23 currencies.
 
 ### GDP nowcast with many predictors (ridge and lasso)
 
@@ -469,10 +481,15 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Reads:** OECD quarterly national accounts, BCB IBC-Br, Eurostat industrial production, OECD leading indicator and inflation (via DBnomics), BIS policy rates
 - **Shows in:** Menu > Models & validation (shown in the app only if it passes)
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Forecast evaluation passed (gdp_nowcast_ridge version 1, recorded 2026-11-23)
 - **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_nowcast_ridge.json, gdp_nowcast_lasso.json): same lags, countries and pass mark as the bridge nowcast, against the historical mean, from 2008.
 - **Limits:** Today's data vintage with release-lag rules; the penalty is chosen on one time-ordered split.
 - **Code:** `src/utils/penalizedNowcast.ts`
+
+**Recorded verdicts**
+
+- gdp_nowcast_lasso, version 1, 2026-11-23T02:23Z: **Passed** (forecast evaluation). Passed against the historical-mean benchmark. 1 ahead: relative RMSE 0.872 (90% range 0.836 to 1.025, p 0.09), beat the historical-mean benchmark in 25 of 35 series.
+- gdp_nowcast_ridge, version 1, 2026-11-23T02:23Z: **Passed** (forecast evaluation). Passed against the historical-mean benchmark. 1 ahead: relative RMSE 0.889 (90% range 0.864 to 0.996, p 0.044), beat the historical-mean benchmark in 27 of 35 series.
 
 ### Forecasts with moving-average terms (ARMA)
 
@@ -481,10 +498,15 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Reads:** OECD quarterly national accounts and consumer price inflation (via DBnomics)
 - **Shows in:** Menu > Models & validation (shown in the app only if it passes)
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Forecast evaluation failed (gdp_forecast_arma version 1, recorded 2026-11-23)
 - **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_forecast_arma.json, cpi_forecast_arma.json): same data, sample, benchmark and pass mark as the AR tests.
 - **Limits:** Today's data vintage; order re-chosen once a year.
 - **Code:** `src/utils/arima.ts`
+
+**Recorded verdicts**
+
+- cpi_forecast_arma, version 1, 2026-11-23T02:23Z: **Failed** (forecast evaluation). Failed against the naive benchmark (last value carried on). 3 ahead: relative RMSE 0.807 (90% range 0.739 to 0.923, p 0.017), beat the naive benchmark in 28 of 46 series; 12 ahead: relative RMSE 1.084 (90% range 0.892 to 1.364, p 0.739), beat the naive benchmark in 30 of 46 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
+- gdp_forecast_arma, version 1, 2026-11-23T02:23Z: **Failed** (forecast evaluation). Failed against the historical-mean benchmark. 1 ahead: relative RMSE 1.095 (90% range 0.978 to 1.131, p 0.665), beat the historical-mean benchmark in 3 of 46 series; 4 ahead: relative RMSE 1.013 (90% range 0.997 to 1.07, p 0.849), beat the historical-mean benchmark in 8 of 46 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
 
 ### GDP nowcast from a common factor (Kalman filter)
 
@@ -493,10 +515,14 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Reads:** OECD quarterly national accounts, BCB IBC-Br, Eurostat industrial production, OECD leading indicator and inflation (via DBnomics), BIS policy rates
 - **Shows in:** Menu > Models & validation (shown in the app only if it passes)
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Forecast evaluation failed (gdp_nowcast_dfm version 1, recorded 2026-11-23)
 - **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_nowcast_dfm.json): same lags, countries and pass mark as the bridge nowcast, against the historical mean, from 2008.
 - **Limits:** Two to four monthly series per country in the free data; two-step estimates, not full maximum likelihood.
 - **Code:** `src/utils/dynamicFactor.ts`
+
+**Recorded verdicts**
+
+- gdp_nowcast_dfm, version 1, 2026-11-23T02:23Z: **Failed** (forecast evaluation). Failed against the historical-mean benchmark. 1 ahead: relative RMSE 1.082 (90% range 0.945 to 1.121, p 0.646), beat the historical-mean benchmark in 17 of 35 series. Pass mark: relative RMSE at most 0.9, p at most 0.1, better in at least 50% of series.
 
 ### GDP nowcast from a random forest (tree ensemble)
 
@@ -505,10 +531,14 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Reads:** OECD quarterly national accounts, BCB IBC-Br, Eurostat industrial production, OECD leading indicator and inflation (via DBnomics), BIS policy rates
 - **Shows in:** Menu > Models & validation (shown in the app only if it passes)
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Forecast evaluation failed (gdp_nowcast_forest version 1, recorded 2026-11-23)
 - **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_nowcast_forest.json): same predictors, lags, countries and pass mark as the ridge and lasso nowcasts, against the historical mean, from 2008.
 - **Limits:** Settings fixed, not tuned (too few quarters to tune); today's data vintage.
 - **Code:** `src/utils/randomForest.ts`
+
+**Recorded verdicts**
+
+- gdp_nowcast_forest, version 1, 2026-11-23T02:23Z: **Failed** (forecast evaluation). Failed against the historical-mean benchmark. 1 ahead: relative RMSE 0.967 (90% range 0.872 to 0.989, p 0), beat the historical-mean benchmark in 28 of 35 series. Pass mark: relative RMSE at most 0.9, p at most 0.1, better in at least 50% of series.
 
 ### Lopsided forecast bands (quantile regression)
 
@@ -517,10 +547,14 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Reads:** OECD quarterly national accounts
 - **Shows in:** Menu > Models & validation (shown in the app only if it passes)
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Forecast evaluation passed (gdp_forecast_quantile version 1, recorded 2026-11-23)
 - **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_forecast_quantile.json): mean pinball loss ratio at most 0.95, p at most 0.10, better in half the countries, from 2008.
 - **Limits:** Two predictors; no financial conditions index in the free data for every country.
 - **Code:** `src/utils/quantileForecast.ts`
+
+**Recorded verdicts**
+
+- gdp_forecast_quantile, version 1, 2026-11-23T02:23Z: **Passed** (forecast evaluation). Passed against the AR forecast's normal band (the live forecast rule). 1 quarter(s) ahead: mean pinball loss ratio 0.923 (90% range 0.907 to 0.947, p 0) over 3119 cases, better in 35 of 44 series; 4 quarter(s) ahead: mean pinball loss ratio 0.945 (90% range 0.888 to 0.98, p 0) over 2981 cases, better in 29 of 44 series.
 
 ### Fiscal reaction (Bohn test)
 
