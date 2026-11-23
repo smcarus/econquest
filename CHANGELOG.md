@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Translation review: CONTRIBUTING.md asks native speakers to check the Spanish, French and
+  Portuguese text, with a checklist of every file in docs/TRANSLATION_REVIEW.md and a Translation
+  review issue form. A language loses its "not yet reviewed" note only when every file is ticked.
+
 - Lower-income central banks: inflation targets for the Philippines (3% ±1), Egypt (7% ±2 for
   Q4 2026), Uganda (5%) and Pakistan (5-7%, filed as 6% ±1), and decision dates for Pakistan
   (FY27 calendar), the Philippines and Nigeria, all read on each bank's own page on 23 November
