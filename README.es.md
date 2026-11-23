@@ -107,7 +107,7 @@ y nunca se transmiten en descargas ni copias compartidas.
 | Probar un «¿y si?» fiscal | **Historia y datos**, o desde el Chat del consejo | Cambie el gasto público o los impuestos y vea el efecto probable en el crecimiento y la deuda, con multiplicadores y elasticidades publicados y un rango |
 | Escribir un informe | **Informes** (pestañas: Escribir una nota, Revisiones de política, Documentos del consejo, Cuadernos, Docencia) | Notas de país y de emisor, evaluaciones de sostenibilidad, revisiones de cartera e informes del consejo, en Markdown o PDF con fuentes y fechas |
 | Escribir un documento de trabajo | Gráficos del **Chat del consejo**, **Informes > Cuadernos** | Fije un gráfico en un cuaderno de investigación con la fecha hasta la que llegan sus cifras y una huella de las cifras; descargue el cuaderno como un solo zip (borrador, datos, scripts de Python, R y Stata, archivo de cita); más tarde, *Comprobar que se mantiene* dice si cada cifra sigue igual, se revisó o ya no está |
-| Aprender sobre la marcha | Botones de la cabecera, **Menú > Manual de usuario**, **Menú > Ejemplos resueltos** | Tres niveles de ayuda, un glosario en lenguaje sencillo, cuatro casos resueltos, episodios didácticos y modo examen |
+| Aprender sobre la marcha | Botones de la cabecera, **Menú > Manual de usuario**, **Menú > Ejemplos resueltos** | Tres niveles de ayuda, un glosario en lenguaje sencillo, cinco casos resueltos, episodios didácticos y modo examen |
 | Usar sus propios datos y pruebas | **Menú > Sus datos**, **Menú > Modelos y validación** | Cargue sus propias series CSV; registre su propia prueba de señal o modelo con las mismas reglas estrictas que las de la aplicación |
 | Usar las cifras en R, Python o Stata | [docs/DATA_API.md](./docs/DATA_API.md) (en inglés) | Las mismas series, paneles y tablas que muestran las pantallas, con fuente y fecha en cada valor |
 | Conectar un sistema de cartera | **Menú > Configuración > Tokens de API**, [docs/DATA_API.md](./docs/DATA_API.md) (en inglés) | Otro programa lee resúmenes de país y eventos, envía sus posiciones y ejecuta choques y repeticiones de crisis pasadas sobre su cartera, cada uno con un token limitado a lo que usted marque. Los países y valores de la lista de **Nombres ocultos** no aparecen en ninguna parte |
@@ -321,10 +321,11 @@ FR / PT** de la cabecera; la elección se guarda en su navegador. Un idioma solo
 elige.
 
 Algunas cosas quedan como se escribieron, y la aplicación lo indica: las cifras, los nombres de fuentes y
-de series aparecen como los da la fuente; los agentes del consejo leen las preguntas y escriben sus
-documentos en inglés; las notas de método citan artículos en inglés; algunas frases que las reglas de la
+de series aparecen como los da la fuente; el Chat del consejo y el consejo escriben sus respuestas en el idioma que usted elija (los agentes
+siguen entendiendo mejor las preguntas en inglés); las notas de método citan artículos en inglés; algunas frases que las reglas de la
 aplicación escriben sobre un país siguen en inglés. Ninguna traducción ha sido revisada todavía por un
-hablante nativo; se agradece la ayuda ([CONTRIBUTING.md](./CONTRIBUTING.md)).
+hablante nativo; se agradece la ayuda: los pasos y la lista de archivos están en
+[docs/TRANSLATION_REVIEW.md](./docs/TRANSLATION_REVIEW.md) (en inglés).
 
 Este README y la guía están en los cuatro idiomas. Los demás documentos están en inglés.
 
@@ -432,7 +433,7 @@ El método completo está en [docs/METHODOLOGY.md](./docs/METHODOLOGY.md) (en in
 
 ## Hoja de ruta
 
-Situación al 17 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./docs/ROADMAP.md), en inglés):
+Situación al 23 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./docs/ROADMAP.md), en inglés):
 
 **Hecho**
 
@@ -500,6 +501,19 @@ Situación al 17 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./docs/ROADM
     diferencia entre ellas) en Historia y datos; y días de publicación, en los que la aplicación vuelve
     a leer cada hora las fuentes de IPC y de actividad mensual hasta que llega el nuevo mes, en Hoy.
 
+17. **Cerrar las brechas con las plataformas líderes** (23 de noviembre): previsiones escritas antes
+    de que existan las cifras y puntuadas cada mes; una búsqueda en todos los catálogos gratuitos
+    (Menú > Buscar datos); VAR bayesianos y estructurales en el Agente de gráficos; un modelo pequeño
+    de economía abierta estimado y probado antes de mostrarse; cifras en tiempo real para los 38
+    miembros de la OCDE; documentos oficiales y discursos de bancos centrales por país; un informe de
+    país sin conexión, un laboratorio macro y un ejemplo resuelto sobre materias primas; comentarios
+    y enlaces de solo lectura en un servidor doméstico; precios en vivo de su propia cuenta de
+    Interactive Brokers, solo en pantalla; respuestas del consejo en español, francés o portugués;
+    metas de inflación y fechas de decisión para más países de ingreso bajo; un proceso de revisión
+    de las traducciones por hablantes nativos; y cómo se propagan los choques entre economías (un VAR
+    global pequeño con ponderaciones comerciales del FMI). El marco de deuda de los países de ingreso
+    bajo espera su nota de orientación de 2027.
+
 **Siguiente**
 
 - **La publicación** en e-conquest/econquest. El modo ligero y la revisión de seguridad están hechos;
@@ -515,8 +529,6 @@ Situación al 17 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./docs/ROADM
   con dos profesores); la construcción empieza cuando el responsable del proyecto lo indique.
 - **Árabe y suajili**: previstos, en pausa por decisión del responsable del proyecto.
 - **La aplicación para el teléfono**: en pausa hasta después de la publicación.
-- **Ideas aparcadas** para el punto de control 1: enseñanza y difusión (un informe de país sin
-  conexión, un laboratorio macro con modelos de manual y más ejemplos resueltos).
 - **Comprobaciones en el ordenador del responsable**: algunas fuentes (clima, trayectorias de
   tormentas, activos del banco central, financiación en dólares, el archivo de régimen cambiario) están
   construidas y probadas con respuestas guardadas, pero no se pudieron alcanzar desde la máquina de

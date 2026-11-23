@@ -241,25 +241,25 @@ Group D waits for checkpoint 1, unless the maintainer brings it forward. A sourc
 
 Raised in the scored comparison of 23 November 2026 against Bloomberg, Haver, Macrobond, CEIC, the IMF
 and World Bank tools, FRED, Oxford Economics, Trading Economics and research software. CG1 to CG3 were
-pulled forward the same day; CG4 is parked until the 2027 guidance note.
+pulled forward the same day; CG4 is parked until the 2027 guidance note; CG5 to CG17 were built
+the same day ("close every closeable gap").
 
 | # | Idea | Why it matters | Source |
 | --- | --- | --- | --- |
 | CG4 | The IMF and World Bank low-income debt framework: the risk rating from the published thresholds, with the stress tests | Lower-income countries are rated on this framework; the app shows published ratings only | The revised framework (approved September 2026) and its guidance note due mid-2027; built on that note, not the 2018 one |
-| CG5 | Forecasts written down before the figures exist, scored each month | The only check that rules out hindsight; the forward record is weeks old | The app's own forecasts and the official calendar |
-| CG6 | One search across every free catalogue | Millions of series instead of the ones each screen uses | DBnomics, IMF, World Bank, Eurostat, national offices; licence shown per provider, unknown terms read only from your file |
-| CG7 | A small open-economy projection model (output gap, inflation, policy rate, exchange rate) | The kind of model many central banks use; tested before any forecast shows | Berg, Karam and Laxton (2006), IMF working paper; the app's Kalman filter |
-| CG8 | Bayesian and structural vector autoregressions with impulse responses | Standard tools for how shocks pass through an economy | No new data |
-| CG9 | Live prices from your own broker or data account | Live market prices without the app redistributing paid data | Your own account, behind the Settings switch; shown on screen only |
-| CG10 | Team work on a home server: comments, a second approver, read-only links | One user per installation today | No new data |
-| CG11 | Council answers in the chosen language | The council writes in English today | A prompt change; needs a new council recording on the Mac |
-| CG12 | Native speakers check the Spanish, French and Portuguese | No translation has been checked by a native speaker | Volunteers |
-| CG13 | Inflation targets and decision dates for 12 more lower-income countries | Missing today for Nigeria, Ethiopia, Uganda, Pakistan, Bangladesh and others | Each central bank's own page, read from the Mac |
-| CG14 | Teaching: macro lab, offline country report, more worked examples | Same as group D below | Group D |
-| CG15 | Real-time figures beyond the United States and the euro area | Tests on data as first published for more countries | OECD original-release data (OECD terms now confirmed) |
-| CG16 | A small global VAR for how shocks spread between economies | Spillover questions; an Oxford-scale model is out of reach | Published data and methods |
-| CG17 | A feed of official documents (IMF country reports, central bank statements and minutes) | Curated reading beside the figures | Each publisher's own terms |
-
+| CG5 | Forecasts written down before the figures exist, scored each month | The only check that rules out hindsight; the forward record is weeks old | The app's own forecasts and the official calendar. Built 23 November: forecasts written before the figures, scored monthly |
+| CG6 | One search across every free catalogue | Millions of series instead of the ones each screen uses | DBnomics, IMF, World Bank, Eurostat, national offices; licence shown per provider, unknown terms read only from your file. Built 23 November: Menu > Find data (DBnomics, IMF, World Bank, Eurostat) |
+| CG7 | A small open-economy projection model (output gap, inflation, policy rate, exchange rate) | The kind of model many central banks use; tested before any forecast shows | Berg, Karam and Laxton (2006), IMF working paper; the app's Kalman filter. Built 23 November: estimated small open-economy model with a pre-registered test (cpi_gap_model); shown only when it passes |
+| CG8 | Bayesian and structural vector autoregressions with impulse responses | Standard tools for how shocks pass through an economy | No new data. Built 23 November: Bayesian (Minnesota prior) and structural (recursive and long-run) VARs in the Chart Agent |
+| CG9 | Live prices from your own broker or data account | Live market prices without the app redistributing paid data | Your own account, behind the Settings switch; shown on screen only. Built 23 November: Interactive Brokers through the Client Portal Gateway you run; shown on screen only, never saved |
+| CG10 | Team work on a home server: comments, a second approver, read-only links | One user per installation today | No new data. Built 23 November: comments and read-only share links; the second approver was already in place (sign-off) |
+| CG11 | Council answers in the chosen language | The council writes in English today | A prompt change; needs a new council recording on the Mac. Built 23 November: Spanish, French and Portuguese; English prompts unchanged, so the recorded council replay still applies |
+| CG12 | Native speakers check the Spanish, French and Portuguese | No translation has been checked by a native speaker | Volunteers. Built 23 November: docs/TRANSLATION_REVIEW.md and an issue form; waits on volunteers |
+| CG13 | Inflation targets and decision dates for 12 more lower-income countries | Missing today for Nigeria, Ethiopia, Uganda, Pakistan, Bangladesh and others | Each central bank's own page, read from the Mac. Built 23 November: targets for Philippines, Egypt, Uganda and Pakistan; decision dates for Pakistan, the Philippines and Nigeria; others named as without a target |
+| CG14 | Teaching: macro lab, offline country report, more worked examples | Same as group D below | Group D. Built 23 November: offline country report, macro lab and a commodity worked example |
+| CG15 | Real-time figures beyond the United States and the euro area | Tests on data as first published for more countries | OECD original-release data (OECD terms now confirmed). Built 23 November: OECD revisions dataset, all 38 members (`npm run oecd:vintages`) |
+| CG16 | A small global VAR for how shocks spread between economies | Spillover questions; an Oxford-scale model is out of reach | Published data and methods. Built 23 November: 16 main economies plus the country, IMF trade weights, generalised impulse responses with bootstrap bands |
+| CG17 | A feed of official documents (IMF country reports, central bank statements and minutes) | Curated reading beside the figures | Each publisher's own terms. Built 23 November: World Bank documents and BIS central bankers' speeches (IMF pages give no usable feed) |
 **Group D: teaching and sharing**
 
 | # | Idea | Why it matters | Source |

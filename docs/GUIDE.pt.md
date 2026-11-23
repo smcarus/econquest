@@ -251,6 +251,16 @@ dados. **Atualizar agora** busca de novo os números daquele país.
     de 2026 foi fixado de antemão um teste para saber se uma governança fraca vem antes de um calote;
     enquanto ele não rodar, o selo do painel diz Não validado.
 
+13. Mais ferramentas em Histórico e dados: **Como os choques se espalham entre economias** (um
+    pequeno VAR global: escolha onde a surpresa começa, crescimento ou inflação, e o tamanho; a
+    resposta de cada economia ao longo de cinco anos com uma faixa de 90% e o peso de comércio por
+    trás dela), o **Modelo de hiatos estimado** dentro do modelo de hiatos pequeno (só aparece se
+    passou no teste registrado de antemão), **Documentos oficiais** (relatórios do Banco Mundial e
+    discursos de banqueiros centrais do BIS sobre o país, cada um com link para a página do editor) e
+    o **Laboratório macro** para o ensino (demanda e oferta agregadas, e uma trajetória da dívida, com
+    controles que começam em zero). **Baixar relatório offline** salva um arquivo HTML de uma página
+    com os números do país, que abre sem o app.
+
 ![Hiato do produto do Brasil: o meio de três estimativas com uma faixa que mostra a dispersão, tracejado nos anos de projeção do FMI](images/07-output-gap.png)
 
 Exemplo: o **hiato do produto** mostra quanto a economia está rodando acima ou abaixo da sua capacidade
@@ -424,8 +434,13 @@ O **Menu** reúne tudo o que não é uma página. O que vale conhecer primeiro:
   falhou e por quê, as fontes que pedem uma chave ou um arquivo, e o que baixar à mão.
 - **Modelos e validação**: o registro de modelos, os resultados dos testes e **Seus testes**.
 - **Seus dados**: carregue suas próprias séries a partir de um arquivo CSV.
+- **Buscar dados**: uma busca nos catálogos gratuitos (DBnomics, o FMI, o Banco Mundial e o
+  Eurostat), cada resultado com seu provedor e um link.
+- **Configurações > Suas assinaturas > Preços da sua corretora**: preços ao vivo dos contratos que
+  você listar, da sua própria conta na Interactive Brokers, pelo IBKR Client Portal Gateway que você
+  executa e no qual entra no seu computador. Desligado por padrão; só na tela e nunca salvos.
 - **Modo prova**: desliga todos os passos de IA para uma prova.
-- **Exemplos resolvidos**: quatro casos, de uma pergunta a um memorando.
+- **Exemplos resolvidos**: cinco casos, de uma pergunta a um memorando.
 - **Quests**: em cinza, "Ainda não disponível" ([seção 12](#12-experimentar-as-quests)).
 
 ![Configurações > Ferramentas: ferramentas agrupadas por tarefa e depois Conexões de dados](images/14-data-connections.png)
@@ -483,7 +498,8 @@ um programador precisa para conectar está em [DATA_API.md](./DATA_API.md) e
    - **Especialista**: números, fontes e faixas de previsão, sem explicações em linguagem simples.
 
 Números e nomes de fontes e séries ficam como a fonte os escreve. Algumas frases que o app escreve sobre um
-país ainda estão em inglês, como mostra a captura; os agentes do conselho trabalham em inglês.
+país ainda estão em inglês, como mostra a captura; o Chat do conselho e o conselho
+respondem no idioma que você escolher; os agentes ainda entendem melhor perguntas em inglês.
 
 ## 11. Usar no celular
 

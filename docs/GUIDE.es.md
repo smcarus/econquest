@@ -256,6 +256,16 @@ indican lo recientes que son los datos. **Actualizar ahora** vuelve a traer las 
     El 13 de noviembre de 2026 se fijó de antemano una prueba de si una gobernanza débil precede a un
     impago; mientras no se ejecute, la insignia del panel dice No validada.
 
+13. Más herramientas en Historial y datos: **Cómo se propagan los choques entre economías** (un VAR
+    global pequeño: elija dónde empieza la sorpresa, crecimiento o inflación, y su tamaño; la
+    respuesta de cada economía durante cinco años con una banda del 90 % y la ponderación comercial
+    que la explica), el **Modelo de brechas estimado** dentro del modelo de brechas pequeño (solo se
+    muestra si superó su prueba registrada de antemano), **Documentos oficiales** (informes del Banco
+    Mundial y discursos de banqueros centrales del BPI sobre el país, cada uno enlazado a la página
+    del editor) y el **Laboratorio macro** para la enseñanza (demanda y oferta agregadas, y una
+    trayectoria de deuda, con controles que empiezan en cero). **Descargar informe sin conexión**
+    guarda un archivo HTML de una página con las cifras del país que se abre sin la aplicación.
+
 ![Brecha del producto de Brasil: el centro de tres estimaciones con una banda que muestra su dispersión, discontinua en los años de proyección del FMI](images/07-output-gap.png)
 
 Ejemplo: la **brecha del producto** muestra cuánto funciona la economía por encima o por debajo de su
@@ -430,8 +440,14 @@ El **Menú** reúne todo lo que no es una página. Lo primero que conviene conoc
   qué, las fuentes que necesitan una clave o un archivo, y qué descargar a mano.
 - **Modelos y validación**: el registro de modelos, los resultados de las pruebas y **Sus pruebas**.
 - **Sus datos**: cargue sus propias series desde un archivo CSV.
+- **Buscar datos**: una búsqueda en los catálogos gratuitos (DBnomics, el FMI, el Banco Mundial y
+  Eurostat), cada resultado con su proveedor y un enlace.
+- **Configuración > Sus suscripciones > Precios de su bróker**: precios en vivo de los contratos que
+  usted indique, de su propia cuenta de Interactive Brokers, a través del IBKR Client Portal Gateway
+  que usted ejecuta e inicia sesión en su equipo. Desactivado por defecto; solo en pantalla y nunca
+  se guarda.
 - **Modo examen**: desactiva todos los pasos de IA para un examen.
-- **Ejemplos resueltos**: cuatro casos de una pregunta a un memorando.
+- **Ejemplos resueltos**: cinco casos de una pregunta a un memorando.
 - **Retos**: en gris, «Aún no disponible» ([sección 12](#12-probar-los-retos)).
 
 ![Configuración > Herramientas: herramientas agrupadas por tarea y después Conexiones de datos](images/14-data-connections.png)
@@ -488,8 +504,8 @@ inicio de sesión muestra entonces **Iniciar sesión con** y el nombre del prove
    - **Experto**: cifras, fuentes y rangos de previsión, sin explicaciones en lenguaje sencillo.
 
 Las cifras y los nombres de fuentes y series quedan como los escribe la fuente. Algunas frases que la
-aplicación escribe sobre un país siguen en inglés, como muestra la captura; los agentes del consejo
-trabajan en inglés.
+aplicación escribe sobre un país siguen en inglés, como muestra la captura; el Chat del consejo y el consejo
+responden en el idioma que usted elija; sus agentes siguen entendiendo mejor las preguntas en inglés.
 
 ## 11. Usarla en el teléfono
 
