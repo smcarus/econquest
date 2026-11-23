@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Bayesian and structural VARs in the Chart Agent's lab: ask for a "Bayesian VAR" (Minnesota prior,
+  random-walk or white-noise prior mean chosen by each series' persistence, 90% posterior bands) or a
+  "structural VAR" (recursive order as on the chart, the reverse order for two series, and the
+  Blanchard-Quah long-run identification, each with the forecast-error variance decomposition and
+  bootstrap bands). Both use every series on the chart, up to four.
+
 - Translation review: CONTRIBUTING.md asks native speakers to check the Spanish, French and
   Portuguese text, with a checklist of every file in docs/TRANSLATION_REVIEW.md and a Translation
   review issue form. A language loses its "not yet reviewed" note only when every file is ticked.

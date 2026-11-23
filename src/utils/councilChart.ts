@@ -9,7 +9,8 @@
 import { isPaidSeriesId } from '../engine/paidData';
 import type { LiveWatchlistItem } from '../types/council';
 import { INFLATION_TARGETS } from './marketsMacro';
-import { breaksTest, hacRegression, JOHANSEN_CRIT, johansenTest, lpTest, SUPF_CRIT_5, varTest, type LabStep } from './econometricsLab';
+import { breaksTest, hacRegression, JOHANSEN_CRIT, johansenTest, lpTest, SUPF_CRIT_5, varHorizon, varMaxLag, varTest, type LabStep } from './econometricsLab';
+import { bvarFit, bvarResponses, svarFit, type IrfStep } from './bvarSvar';
 import { TAYLOR_R_STAR, TAYLOR_WEIGHTS } from './taylorRule';
 import {
   adf,
@@ -37,12 +38,12 @@ import {
   type Transform,
 } from './stats';
 
-export type ChartTest = 'summary' | 'correlation' | 'regression' | 'leadlag' | 'granger' | 'adf' | 'hp' | 'rolling' | 'hac' | 'var' | 'lp' | 'coint' | 'breaks';
+export type ChartTest = 'summary' | 'correlation' | 'regression' | 'leadlag' | 'granger' | 'adf' | 'hp' | 'rolling' | 'hac' | 'var' | 'bvar' | 'svar' | 'lp' | 'coint' | 'breaks';
 
 /** Tests that need two series (the econometrics lab's included). */
-export const PAIR_TESTS: ChartTest[] = ['correlation', 'regression', 'leadlag', 'granger', 'rolling', 'hac', 'var', 'lp', 'coint', 'breaks'];
+export const PAIR_TESTS: ChartTest[] = ['correlation', 'regression', 'leadlag', 'granger', 'rolling', 'hac', 'var', 'bvar', 'svar', 'lp', 'coint', 'breaks'];
 /** Every test, in the order they are run and shown. */
-export const TEST_ORDER: ChartTest[] = ['summary', 'correlation', 'regression', 'hac', 'leadlag', 'granger', 'rolling', 'var', 'lp', 'coint', 'breaks', 'adf', 'hp'];
+export const TEST_ORDER: ChartTest[] = ['summary', 'correlation', 'regression', 'hac', 'leadlag', 'granger', 'rolling', 'var', 'bvar', 'svar', 'lp', 'coint', 'breaks', 'adf', 'hp'];
 
 export const TEST_TITLE: Record<ChartTest, string> = {
   summary: 'Where it stands',
@@ -55,6 +56,8 @@ export const TEST_TITLE: Record<ChartTest, string> = {
   rolling: 'Is the relationship stable? (rolling correlation)',
   hac: 'Regression with Newey-West errors',
   var: 'VAR with impulse responses',
+  bvar: 'Bayesian VAR (Minnesota prior)',
+  svar: 'Structural VAR (recursive and long-run)',
   lp: 'Local projections',
   coint: 'Cointegration (Johansen)',
   breaks: 'Structural breaks (Chow and Bai-Perron)',
@@ -214,6 +217,8 @@ const TEST_WORDS: Array<[RegExp, ChartTest]> = [
   [/\bstable\b|rolling|still hold|over time/i, 'rolling'],
   [/newey|west errors|\bhac\b|robust (?:standard )?errors|autocorrelation[- ]robust/i, 'hac'],
   [/\bVAR\b|vector autoregress|impulse respons/, 'var'],
+  [/bayesian (?:var|vector)|\bbvar\b|minnesota/i, 'bvar'],
+  [/structural (?:var|vector)|\bsvar\b|blanchard|quah|long[- ]run restriction|variance decomposition/i, 'svar'],
   [/local projection|jord[aà]/i, 'lp'],
   [/cointegrat|johansen|long[- ]run relationship/i, 'coint'],
   [/structural break|\bchow\b|bai[- ]?perron|break ?points?|regime (?:change|shift)/i, 'breaks'],
@@ -812,6 +817,72 @@ export function computeChart(req: ChartRequest, fetched: Array<FetchedSeries | {
           caution: caution ?? 'A VAR in levels of series that wander (see the ADF test) can mislead; show the chart as changes to check.',
           irf: { label: `${b.label} after a surprise in ${a.label}`, steps: s },
         });
+      }
+    }
+    if (test === 'bvar' || test === 'svar') {
+      // Every line on the chart (up to four), on the periods where all have a value, in chart order.
+      const use = lines.slice(0, 4);
+      const maps = use.map((l) => new Map(toFreq(l.points, freq).map((p) => [p.date, p.value])));
+      const dates = [...maps[0].keys()].filter((d) => maps.every((m) => m.has(d))).sort();
+      const data = dates.map((d) => maps.map((m) => m.get(d)!));
+      const names = use.map((l) => l.label);
+      const H = varHorizon(freq);
+      const peakOf = (st: IrfStep[]) => st.reduce((x, y) => (Math.abs(y.value) > Math.abs(x.value) ? y : x));
+      const clearOf = (st: IrfStep[]) => st.filter((x) => x.lo > 0 || x.hi < 0).length;
+      const share = (v: number) => `${Math.round(v * 100)}%`;
+      if (test === 'bvar') {
+        const ppy = periodsPerYear(freq);
+        const lags = Math.max(1, Math.min(ppy >= 12 ? 12 : ppy >= 4 ? 4 : 2, Math.floor((data.length - 20) / (2 * use.length))));
+        const fit = data.length < 40 ? { error: `Only ${data.length} rows where all ${use.length} series have a value; the Bayesian VAR needs at least 40.` } : bvarFit(data, lags);
+        const r = 'error' in fit ? fit : bvarResponses(fit, use.map((_, i) => i), H);
+        if ('error' in fit) fail(test, fit.error);
+        else if ('error' in r) fail(test, r.error);
+        else {
+          const st = r.steps[1][0];
+          const pk = peakOf(st);
+          const walk = names.filter((_, i) => fit.prior.ownMean[i] === 1);
+          out.tests.push({
+            test,
+            title: TEST_TITLE[test],
+            reading: `Bayesian VAR in ${names.join(', ')} with ${lags} lag(s), ${fit.T} points, Minnesota prior (overall tightness 0.2, cross-series 0.5, lag decay 1). ${walk.length ? `${walk.join(' and ')} ${walk.length === 1 ? 'wanders' : 'wander'}, so ${walk.length === 1 ? 'its' : 'their'} own first lag is pulled towards 1 (a random walk); the others towards 0.` : 'No series wanders, so each own first lag is pulled towards 0.'} The prior pulls longer lags and other series' lags towards zero, which keeps a short sample from fitting noise. After a one-standard-deviation surprise in ${names[0]}, ${names[1]} moves ${fmt(st[0].value)} at once and most (${fmt(pk.value)}) after ${unitWord(freq, pk.h)}; the 90% posterior band leaves out zero at ${clearOf(st)} of ${st.length} horizons. Series earlier in the chart are ordered first. Reduced form with a recursive order: not identified policy shocks.`,
+            figures: [
+              { label: 'Lags', value: String(lags) },
+              { label: `${names[1]}, on impact`, value: fmt(st[0].value) },
+              { label: `${names[1]}, largest response`, value: `${fmt(pk.value)} at ${pk.h}` },
+              ...names.map((nm, i) => ({ label: `${nm}: share of its ${H}-period forecast error from its own surprise`, value: share(r.fevd[i][i]) })),
+              { label: 'Band', value: `90%, ${r.draws} posterior draws` },
+            ],
+            caution,
+            irf: { label: `${names[1]} after a surprise in ${names[0]} (Bayesian VAR)`, steps: st },
+          });
+        }
+      } else {
+        const maxLag = varMaxLag(freq, data.length);
+        const rec = svarFit(data, maxLag, { kind: 'recursive', order: use.map((_, i) => i) }, H);
+        const rev = use.length === 2 ? svarFit(data, maxLag, { kind: 'recursive', order: [1, 0] }, H, 0) : null;
+        const lr = svarFit(data, maxLag, { kind: 'longrun' }, H);
+        if ('error' in rec) fail(test, rec.error);
+        else {
+          const st = rec.steps[1][0];
+          const pk = peakOf(st);
+          const revSay = rev && !('error' in rev) ? ` With ${names[1]} ordered first instead, ${names[1]} moves ${fmt(rev.steps[1][0][0].value)} at once after a surprise in ${names[0]}: ${Math.abs(rev.steps[1][0][0].value - st[0].value) > Math.abs(st[0].value) * 0.25 ? 'the order matters here, so the answer rests on that assumption' : 'the order makes little difference here'}.` : '';
+          const lrSay = 'error' in lr ? ` Long-run identification not run: ${lr.error}` : ` Long-run identification (Blanchard and Quah 1989: only ${names[0]}'s own shock moves its level for good): ${names[1]} moves ${fmt(lr.steps[1][0][0].value)} at once after that shock and ${fmt(lr.steps[1][0][H].value)} after ${unitWord(freq, H)}. This assumes the series are in changes.`;
+          out.tests.push({
+            test,
+            title: TEST_TITLE[test],
+            reading: `Structural VAR in ${names.join(', ')}, ${rec.lags} lag(s) by AIC, ${rec.n} points. Recursive order as on the chart (${names.join(' first, then ')}): a series can move later ones in the same period, not earlier ones. After a one-standard-deviation shock to ${names[0]}, ${names[1]} moves ${fmt(st[0].value)} at once and most (${fmt(pk.value)}) after ${unitWord(freq, pk.h)}; the 90% band leaves out zero at ${clearOf(st)} of ${st.length} horizons. After ${unitWord(freq, H)}, ${share(rec.fevd[1][0])} of the forecast error in ${names[1]} comes from ${names[0]}'s shock.${revSay}${lrSay} The shocks are structural only as far as these assumptions hold.`,
+            figures: [
+              { label: 'Lags (AIC)', value: String(rec.lags) },
+              { label: `${names[1]}, on impact (recursive)`, value: fmt(st[0].value) },
+              { label: `${names[1]}, largest response`, value: `${fmt(pk.value)} at ${pk.h}` },
+              ...names.flatMap((nm, i) => names.map((src, k) => ({ label: `${nm}: forecast error from ${src} shock, ${H} periods`, value: share(rec.fevd[i][k]) }))),
+              ...('error' in lr ? [] : [{ label: `${names[1]}, on impact (long-run)`, value: fmt(lr.steps[1][0][0].value) }]),
+              { label: 'Band', value: `90%, bootstrap of ${rec.draws} draws` },
+            ],
+            caution: caution ?? 'Identification is an assumption: try the series in another order on the chart to see how much the answer depends on it.',
+            irf: { label: `${names[1]} after a shock to ${names[0]} (structural, recursive)`, steps: st },
+          });
+        }
       }
     }
     if (test === 'lp') {

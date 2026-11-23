@@ -75,6 +75,8 @@ export const CHAT_TEXT_ES: Record<string, string> = {
   "Regression with Newey-West errors": "Regresión con errores de Newey-West",
   "VAR with impulse responses": "VAR con funciones de respuesta al impulso",
   "Local projections": "Proyecciones locales",
+  "Bayesian VAR": "VAR bayesiano",
+  "Structural VAR": "VAR estructural",
   "Cointegration": "Cointegración",
   "Structural breaks": "Rupturas estructurales",
   "Which moves first": "Cuál se mueve primero",
