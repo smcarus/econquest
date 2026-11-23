@@ -1,12 +1,12 @@
-# Reading the app's data from R, Python or Stata
+# Reading the app's data from R, Python, Stata or Excel
 
 The figures and series you see in the app can be read straight into your own scripts. The addresses
 below are the same ones the app's own pages use, so a script gets exactly what the screens show:
 the same values, the same units, the same source and date on every value, and the same "Missing"
 with its reason where the app has no figure. Nothing is estimated or filled in for you.
 
-There are three small helper files in `scripts/data-api/`, one each for Python, R and Stata. None
-needs anything installed beyond the language itself. Copy the one you use next to your script.
+There are small helper files in `scripts/data-api/`, one each for Python, R, Stata and Excel. None
+needs anything installed beyond the program itself. Copy the one you use next to your script.
 
 ## Before you start
 
@@ -53,6 +53,26 @@ econquest_figures BRA 2026-06-30
 Each Stata command replaces the data in memory. Values arrive as text and the `value` column is
 turned into numbers; dates stay as text (`YYYY-MM`, `YYYY-Qn` or `YYYY`), so convert them with
 `monthly()`, `quarterly()` or `real()` to suit the series.
+
+## Excel
+
+`scripts/data-api/econquest.pq` brings the same tables into Excel through Power Query, so a workbook
+refreshes from the app with Data > Refresh All. It needs Excel for Windows, or Microsoft 365 for Mac
+with Power Query.
+
+1. Data > Get Data > From Other Sources > Blank Query, then Home > Advanced Editor.
+2. Paste the whole file, press Done, and name the query `EconQuest`.
+3. Make one more blank query for each table you want and type one line, for example
+   `= EconQuest[Series]("BRA", "policy_rate")`, `= EconQuest[Country]("BRA")`,
+   `= EconQuest[Panel]("BRA,MEX", "policy_rate,cpi_monthly", "history")` or
+   `= EconQuest[Figures]("BRA", "2026-06-30")`. Choose Close & Load.
+
+The `value` column arrives as a number and stays empty where the figure is Missing; the reason is in
+the same row. A series the app does not have stops the refresh with the app's own message. If the
+app runs somewhere other than `http://localhost:3000` (Docker: `http://localhost:3737`), change `Base`
+at the top of the query. For a copy with sign-in on, put the integration API key or an API token with
+the `read:data` scope in `Key`; it goes in a header, never in the address. Excel may ask how to
+connect the first time: choose Anonymous.
 
 ## What comes back
 

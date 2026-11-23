@@ -112,3 +112,17 @@ test('table downloads keep the byte order mark for Excel and leave it off for th
   assert.match(readFileSync(path.join(root, 'scripts/data-api/econquest.R'), 'utf8'), /"User-Agent" = "econquest-r-helper"/);
   assert.match(readFileSync(path.join(root, 'scripts/data-api/econquest.do'), 'utf8'), /bom=0/);
 });
+
+test('the Excel query reads only documented addresses, asks for no byte order mark and keeps the key in a header', () => {
+  const pq = readFileSync(path.join(root, 'scripts/data-api/econquest.pq'), 'utf8');
+  const paths = [...pq.matchAll(/"(api\/export\/[^"]*)"/g)].map((m) => m[1]);
+  assert.ok(paths.length >= 4, 'reads the export addresses');
+  const documented = DATA_API.map((a) => a.path.replace(/^\//, ''));
+  for (const p of ['api/export/world/series.csv', 'api/export/panel.csv']) assert.ok(paths.includes(p), p);
+  for (const p of paths) assert.ok(documented.some((d) => d.startsWith(p.replace(/\.csv$/, '')) || d.startsWith(p)), `${p} is a documented address`);
+  assert.match(pq, /\[bom = "0"\]/);
+  assert.match(pq, /#"X-SMCR-API-Key" = Key/);
+  assert.doesNotMatch(pq, /key\s*=\s*Key\]/i, 'the key is never put in the address');
+  assert.match(pq, /ManualStatusHandling = \{400, 404, 429\}/, 'a Missing series stops with the app\'s own message');
+  assert.match(readFileSync(path.join(root, 'docs/DATA_API.md'), 'utf8'), /scripts\/data-api\/econquest\.pq/);
+});
