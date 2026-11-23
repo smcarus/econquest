@@ -70,6 +70,7 @@ const UnitConverterPanel = lazyNamed(() => import('./UnitConverterPanel'), 'Unit
 const ExercisesPanel = lazyNamed(() => import('./ExercisesPanel'), 'ExercisesPanel');
 const ModelSandboxPanel = lazyNamed(() => import('./ModelSandboxPanel'), 'ModelSandboxPanel');
 const GapModelPanel = lazyNamed(() => import('./GapModelPanel'), 'GapModelPanel');
+const MacroLabPanel = lazyNamed(() => import('./MacroLabPanel'), 'MacroLabPanel');
 const OfficialDocsPanel = lazyNamed(() => import('./OfficialDocsPanel'), 'OfficialDocsPanel');
 const SanctionsPanel = lazyNamed(() => import('./SanctionsPanel'), 'SanctionsPanel');
 const ForecastPanel = lazyNamed(() => import('./ForecastPanel'), 'ForecastPanel');
@@ -329,6 +330,9 @@ export const CountryPage: React.FC<{
                   <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(run.iso3)}/figures.xlsx`} download>
                     {t('excel')}
                   </a>
+                  <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(run.iso3)}/report.html`} download data-offline-report>
+                    {t('offlineReport')}
+                  </a>
                   <button type="button" className="ui-btn ui-btn-ghost inline-flex" onClick={() => openDataLicences()} data-open-licences>
                     {t('licences')}
                   </button>
@@ -441,6 +445,13 @@ export const CountryPage: React.FC<{
             <PanelBoundary name="Exercises">
               <React.Suspense fallback={<DeskLoading />}>
                 <ExercisesPanel key={`ex-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+              </React.Suspense>
+            </PanelBoundary>
+          </ToolSlot>
+          <ToolSlot id="tool-macro-lab" pick={toolPick}>
+            <PanelBoundary name="Macro lab">
+              <React.Suspense fallback={<DeskLoading />}>
+                <MacroLabPanel key={`ml-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} snapshot={run.openData} />
               </React.Suspense>
             </PanelBoundary>
           </ToolSlot>

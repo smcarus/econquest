@@ -118,6 +118,7 @@ export const COUNTRY_TOOL_GROUPS: CountryToolGroup[] = [
     label: 'tg_learn',
     tools: [
       { id: 'tool-exercises', label: 'tl_exercises' },
+      { id: 'tool-macro-lab', label: 'tl_macro_lab' },
       { id: 'tool-unit-converters', label: 'tl_unit_converters' },
     ],
   },

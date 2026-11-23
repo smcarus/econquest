@@ -38,8 +38,8 @@ function snap(live: Record<string, [number, string?]>): OpenDataSnapshot {
 
 const byId = (id: string) => WORKED_EXAMPLES.find((e) => e.id === id)!;
 
-test('four worked examples, each ending with the memo step', () => {
-  assert.deepEqual(WORKED_EXAMPLES.map((e) => e.id), ['debt', 'inflation', 'currency', 'policy']);
+test('five worked examples, each ending with the memo step', () => {
+  assert.deepEqual(WORKED_EXAMPLES.map((e) => e.id), ['debt', 'inflation', 'currency', 'policy', 'commodity']);
   for (const e of WORKED_EXAMPLES) {
     assert.equal(e.steps.at(-1)!.title, 'Write the memo');
     assert.ok(e.steps.some((s) => s.target), `${e.id}: at least one step opens a screen`);
@@ -120,4 +120,15 @@ test('Menu > Worked examples is wired in the app', () => {
   const app = fs.readFileSync('src/App.tsx', 'utf8');
   assert.match(app, /key: 'worked'/);
   assert.match(app, /WorkedExamplesDialog/);
+});
+
+test('commodity example: the working sums the three export shares and takes a fifth', () => {
+  const e = WORKED_EXAMPLES.find((x) => x.id === 'commodity')!;
+  const s = snap({ 'wb.exportFuelPct': [50], 'wb.exportOresMetalsPct': [10], 'wb.exportFoodPct': [5] });
+  const lines = workedLines(e, workedFigures(e, s));
+  assert.equal(lines[0].value, 65);
+  assert.equal(lines[1].value, 13);
+  const none = workedLines(e, workedFigures(e, snap({})));
+  assert.equal(none.length, 1);
+  assert.ok(none[0].needs && none[0].needs.length === 3);
 });

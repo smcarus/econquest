@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Teaching (group D): an offline country report (one HTML file of the saved figures with sources,
+  Missing reasons and licences, no scripts, opens without the app; button beside the CSV download);
+  a Macro lab under Country Research > Learn (aggregate demand and supply, and the debt equation,
+  with sliders; the debt part can start from the country's saved figures); and a fifth worked
+  example, a commodity price fall, in all four languages.
+
 - Official documents: Country Research > People > Official documents lists the newest World Bank
   documents about the country (routine project filings left out and counted) and BIS central
   bankers' speeches that name it, each linked to the publisher's page.
