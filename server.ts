@@ -83,6 +83,7 @@ import { comtradeMissing } from './src/utils/comtradeTrade';
 import { ticHoldingFor } from './src/utils/ticHoldings';
 import { cliFor, cliTurns } from './src/utils/oecdCli';
 import { loadForecastValidation, runForecastEvaluations } from './src/utils/forecastEvalRun';
+import { loadOecdVintageInputs } from './src/utils/oecdRealTimeStore';
 import { loadSignalValidation, runSignalEvaluations } from './src/utils/fxFactorsRun';
 import { crashSentence } from './src/utils/fxFactors';
 import { loadWeoVintages } from './src/utils/weoVintagesStore';
@@ -2630,6 +2631,8 @@ async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: strin
         resultFile: FORECAST_RESULT_FILE,
         fetcher: defaultFetcher,
         weoStore: loadWeoVintages(DATA_DIR, { fresh: true }),
+        // OECD editions saved by npm run oecd:vintages (CG15); ALFRED and the ECB are read by npm run forecast:evaluate.
+        vintages: { gdp: [], cpi: [], missing: [], oecdGdp: loadOecdVintageInputs(DATA_DIR, 'gdp'), oecdCpi: loadOecdVintageInputs(DATA_DIR, 'cpi') },
         onResult: (r) =>
           appendAudit(AUDIT_FILES, {
             kind: 'validation',

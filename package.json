@@ -23,6 +23,7 @@
     "check:vintages": "tsx scripts/vintage-probe.ts",
     "check:success": "tsx scripts/success-measures.ts",
     "weo:vintages": "tsx scripts/weo-vintages.ts",
+    "oecd:vintages": "tsx scripts/oecd-vintages.ts",
     "weo:pull": "tsx scripts/weo-pull.ts",
     "sanctions:pull": "tsx scripts/sanctions-pull.ts",
     "gpr:pull": "tsx scripts/gpr-pull.ts",

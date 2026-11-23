@@ -10,6 +10,7 @@ import { judgeForecast, REALTIME_TARGETS, type ForecastResult, type ForecastSpec
 import { realTimeCases, weoRealTimeCases, type VintageSeriesInput } from './realTimeEval';
 import { judgeVol, volCases, type VolSpec } from './volEval';
 import { allQuarters, fxQuarterUrl, parseFxQuarter, FX_HISTORY_SOURCE, type FxHistoryFile } from './fxHistory';
+import { OECD_RT_SOURCE } from './oecdRealTime';
 import { estimateGapModel, type GapEstimate } from './gapModelEstimate';
 import { casesFor, forestRowModel, gdpNowcastOpen, gdpSeries, type CountryData } from './forecastCases';
 import { predictorNowcastOpen, rowModelFor } from './penalizedNowcast';
@@ -231,6 +232,9 @@ export async function runForecastEvaluations(opts: { specDir: string; resultFile
 export interface RealTimeVintages {
   gdp: VintageSeriesInput[];
   cpi: VintageSeriesInput[];
+  /** OECD members from the saved OECD editions (CG15), read by specs with params.oecd = 1. */
+  oecdGdp?: VintageSeriesInput[];
+  oecdCpi?: VintageSeriesInput[];
   /** Sources that did not answer, with the reason (shown as problems). */
   missing: string[];
 }
@@ -246,11 +250,13 @@ export function realTimeRun(s: ForecastSpec, weoStore: WeoVintageStore | undefin
     const eds = weoStore.editions.map((e) => e.vintage).sort();
     return { cases, data: `${WEO_VINTAGE_SOURCE}, ${code}: ${eds.length} editions (${eds[0]} to ${eds[eds.length - 1]}); each forecast made from the years an edition marks as actual, scored against the first edition that marks the target year as actual; countries only` };
   }
-  const inputs = s.target === 'gdp_realtime_q' ? vintages?.gdp : vintages?.cpi;
-  if (!inputs?.length) return { problem: `no vintages to read (${vintages?.missing.join('; ') || 'ALFRED and the ECB real-time database were not read'})` };
+  const oecd = s.params.oecd === 1;
+  const inputs = oecd ? (s.target === 'gdp_realtime_q' ? vintages?.oecdGdp : vintages?.oecdCpi) : s.target === 'gdp_realtime_q' ? vintages?.gdp : vintages?.cpi;
+  if (!inputs?.length) return { problem: oecd ? 'no OECD editions saved in data/local/oecd-vintages/ (npm run oecd:vintages)' : `no vintages to read (${vintages?.missing.join('; ') || 'ALFRED and the ECB real-time database were not read'})` };
   const cases = realTimeCases(inputs, s);
   const names = inputs.map((i) => `${i.where} ${i.def.id}`).join(', ');
   const empty = inputs.filter((i) => !cases.some((c) => c.where === i.where)).map((i) => `${i.where} ${i.def.id} (${i.rows.length} published values read, no case)`);
+  if (oecd) return { cases, empty, data: `Data as first published: ${inputs.length} OECD members (${OECD_RT_SOURCE}); each forecast made from the edition out on its origin day (an edition counts from the first day of its month), scored against the first edition that holds the target period` };
   return { cases, empty, data: `Data as first published: ${names} (ALFRED, Federal Reserve Bank of St. Louis; ECB Euro Area Real-Time Database); each forecast made from the vintage of its origin day, scored against the first published figure${vintages?.missing.length ? `; not read: ${vintages.missing.join('; ')}` : ''}` };
 }
 

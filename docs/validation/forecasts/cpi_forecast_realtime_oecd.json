@@ -1,0 +1,37 @@
+{
+  "id": "cpi_forecast_realtime_oecd",
+  "version": 1,
+  "registeredOn": "2026-11-23",
+  "registeredBy": "Sam (owner); registered on his instruction to close every closable gap, before any run of this test",
+  "hypothesis": "The app's inflation forecast rule (AR on monthly y/y inflation, lag 0-13 by BIC, last 120 months), fitted at each origin on the consumer price index as it stood in that month's OECD Main Economic Indicators edition, has a lower RMSE than carrying the newest published figure on, 3 and 12 months ahead, scored against each month's first published figure. Every OECD member with saved editions, pooled.",
+  "target": "cpi_realtime_m",
+  "params": {
+    "maxLag": 13,
+    "d": 0,
+    "intercept": 1,
+    "window": 120,
+    "minTrain": 60,
+    "oecd": 1
+  },
+  "benchmark": "naive",
+  "horizons": [
+    3,
+    12
+  ],
+  "sample": {
+    "from": "2008-01"
+  },
+  "passMark": {
+    "maxRelRmse": 0.95,
+    "maxPValue": 0.1,
+    "minSeriesShare": 0.5,
+    "minCasesPerHorizon": 3000,
+    "minYears": 10
+  },
+  "knownLimits": [
+    "Same model rule, benchmark, horizons and pass mark as cpi_forecast_realtime (US and euro area); this test widens the same question to the OECD members.",
+    "An edition is taken as out on the first day of its month: the OECD gives the month, not the day.",
+    "Inflation is worked out from the index in each edition (12-month change), as the app does with today's data.",
+    "Price indices are revised little, so this test is expected to differ little from the pseudo real-time one."
+  ]
+}

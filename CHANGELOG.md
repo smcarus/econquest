@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- OECD real-time data: `npm run oecd:vintages` saves the OECD's monthly Main Economic Indicators
+  editions since 1999 (GDP volume and consumer prices, all 38 members) in data/local/oecd-vintages/,
+  fetching only new editions on later runs. Two new pre-registered tests,
+  gdp_forecast_realtime_oecd and cpi_forecast_realtime_oecd, ask the same questions as the US and
+  euro area real-time tests across the OECD members. New check:data row `oecd_rtd`.
+
 - Find data: Menu > Find data searches DBnomics (about 90 statistical providers), the IMF DataMapper,
   the World Bank's World Development Indicators and Eurostat in one box, with each provider's
   licence note and a link to its own page. A catalogue that does not answer is named with the

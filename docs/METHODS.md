@@ -442,13 +442,13 @@ The grades follow the practice of model-validation teams: pre-registration and n
 ### Forecast tests on data as first published
 
 - **Says:** Whether the app's GDP and inflation forecast rules would have beaten simple benchmarks using only the figures as they were first published at the time, not today's revised numbers.
-- **Rule:** At each origin the series is rebuilt as published that day (US ALFRED, euro area ECB real-time database, past IMF WEO editions for every country), the same AR rule is fitted, and the forecast is scored against the first published figure. The IMF's own projection in the same edition is shown beside the verdict.
-- **Reads:** ALFRED (your FRED key), ECB Euro Area Real-Time Database, IMF WEO past editions saved in data/local/weo-vintages/
+- **Rule:** At each origin the series is rebuilt as published that day (US ALFRED, euro area ECB real-time database, the OECD's monthly Main Economic Indicators editions for every OECD member, past IMF WEO editions for every country), the same AR rule is fitted, and the forecast is scored against the first published figure. The IMF's own projection in the same edition is shown beside the verdict.
+- **Reads:** ALFRED (your FRED key), ECB Euro Area Real-Time Database, OECD editions saved in data/local/oecd-vintages/ (npm run oecd:vintages), IMF WEO past editions saved in data/local/weo-vintages/
 - **Shows in:** Menu > Models & validation
 - **Use:** Research
 - **Status:** Forecast evaluation failed (cpi_weo_realtime version 2, recorded 2026-11-23)
-- **How it is tested:** Pre-registered (docs/validation/forecasts/*_realtime.json): rolling origin on vintages, relative RMSE against the historical mean (GDP) or no change (inflation), year-block bootstrap, from 2008.
-- **Limits:** Two areas for the quarterly and monthly tests; the yearly tests read only the WEO editions you have saved. A test of the method, not a new forecast shown in the app.
+- **How it is tested:** Pre-registered (docs/validation/forecasts/*_realtime*.json): rolling origin on vintages, relative RMSE against the historical mean (GDP) or no change (inflation), year-block bootstrap, from 2008.
+- **Limits:** US and euro area, and separately the OECD members (editions dated to the first of their month); the yearly tests read only the WEO editions you have saved. A test of the method, not a new forecast shown in the app.
 - **Code:** `src/utils/realTimeEval.ts`
 
 **Recorded verdicts**
