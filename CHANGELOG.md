@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Council answers in your language: with Spanish, French or Portuguese picked (Menu language
+  button), Council chat, the Supreme Council, what-ifs and policy reviews write their text in that
+  language ("usted", "vous", "você"). Field names, stances, ratings, numbers, units and source names
+  stay as given so the app's checks read every answer the same way. English sends nothing extra, so
+  English prompts and the recorded council replay are unchanged.
 - Your broker prices: live prices for contracts you list, from your own Interactive Brokers
   account through the IBKR Client Portal Gateway you run and sign in to on your computer. Off by
   default (Menu > Settings > Your subscriptions); the app ships no contract ids and never sees your
