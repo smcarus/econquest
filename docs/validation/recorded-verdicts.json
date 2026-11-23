@@ -6,7 +6,8 @@
     {"ranAt": "2026-11-06T02:31Z", "where": "Sam's Mac, npm run backtest (8 tests, method 2 where registered)"},
     {"ranAt": "2026-11-07T00:24Z", "where": "Sam's Mac, npm run mac:validate on d3bae6b (backtest, forecast:evaluate, signals:evaluate). The six backtests recorded before gave the same verdicts; only the tests not recorded before are added. signals:evaluate noted that 112 quarters of ECB rates were downloaded during the run because they were not saved."},
     {"ranAt": "2026-11-17T17:57Z", "where": "Sam's Mac (Jahre), npm run mac:validate on aca9fa7 (17 November): imported with npm run track-record:import from data/local/validation/; added inflation_expectations_lead v1, yield_curve_recession v1, cpi_forecast v1, cpi_nowcast v1, debt_forecast v1; p filled in from this run for cli_turn_policy v1, cycle_clock v1, timing_agent v1, gdp_nowcast v1 (recorded before rows carried p; same test file and same verdict, which stays as recorded); forward record summarised (81 lines). Tests already on record keep their first recorded verdict."},
-    {"ranAt": "2026-11-23T02:23Z", "where": "Sam's Mac (Jahre), npm run backtest and forecast evaluations (22 November): imported with npm run track-record:import from data/local/validation/; added cpi_forecast_arma v1, cpi_forecast_realtime v1, cpi_weo_realtime v1, cpi_weo_realtime v2, fx_vol_garch v1, gdp_forecast_arma v1, gdp_forecast_quantile v1, gdp_forecast_realtime v1, gdp_nowcast_dfm v1, gdp_nowcast_forest v1, gdp_nowcast_lasso v1, gdp_nowcast_ridge v1, gdp_weo_realtime v1. Tests already on record keep their first recorded verdict."}
+    {"ranAt": "2026-11-23T02:23Z", "where": "Sam's Mac (Jahre), npm run backtest and forecast evaluations (22 November): imported with npm run track-record:import from data/local/validation/; added cpi_forecast_arma v1, cpi_forecast_realtime v1, cpi_weo_realtime v1, cpi_weo_realtime v2, fx_vol_garch v1, gdp_forecast_arma v1, gdp_forecast_quantile v1, gdp_forecast_realtime v1, gdp_nowcast_dfm v1, gdp_nowcast_forest v1, gdp_nowcast_lasso v1, gdp_nowcast_ridge v1, gdp_weo_realtime v1. Tests already on record keep their first recorded verdict."},
+    {"ranAt": "2026-11-23T03:29Z", "where": "Sam's Mac (Jahre), npm run backtest (23 November): imported with npm run track-record:import from data/local/validation/; added scorecard_default v1; forward record summarised (98 lines). Tests already on record keep their first recorded verdict."}
   ],
   "verdicts": [
     {"id": "cftc_crowding", "version": 1, "ranAt": "2026-11-05T22:36Z", "verdict": "passed", "method": 1, "summary": "195 of 228 crowded weeks unwound (85.5%) against 65.8% after any week; lift 19.8 points, p 1.3e-11 with cases counted as independent; 6 currency futures, 2007-06 to 2026-09."},
@@ -46,19 +47,21 @@
     {"id": "gdp_nowcast_forest", "registerId": "forest_nowcast", "kind": "forecast", "version": 1, "ranAt": "2026-11-23T02:23Z", "verdict": "failed", "p": 0, "summary": "Failed against the historical-mean benchmark. 1 ahead: relative RMSE 0.967 (90% range 0.872 to 0.989, p 0), beat the historical-mean benchmark in 28 of 35 series. Pass mark: relative RMSE at most 0.9, p at most 0.1, better in at least 50% of series."},
     {"id": "gdp_nowcast_lasso", "registerId": "penalized_nowcast", "kind": "forecast", "version": 1, "ranAt": "2026-11-23T02:23Z", "verdict": "passed", "p": 0.09, "summary": "Passed against the historical-mean benchmark. 1 ahead: relative RMSE 0.872 (90% range 0.836 to 1.025, p 0.09), beat the historical-mean benchmark in 25 of 35 series."},
     {"id": "gdp_nowcast_ridge", "registerId": "penalized_nowcast", "kind": "forecast", "version": 1, "ranAt": "2026-11-23T02:23Z", "verdict": "passed", "p": 0.044, "summary": "Passed against the historical-mean benchmark. 1 ahead: relative RMSE 0.889 (90% range 0.864 to 0.996, p 0.044), beat the historical-mean benchmark in 27 of 35 series."},
-    {"id": "gdp_weo_realtime", "registerId": "realtime_forecasts", "kind": "forecast", "version": 1, "ranAt": "2026-11-23T02:23Z", "verdict": "failed", "p": 0.575, "summary": "Failed against the historical-mean benchmark. 1 ahead: relative RMSE 0.981 (90% range 0.925 to 1.044, p 0.281), beat the historical-mean benchmark in 95 of 165 series; 2 ahead: relative RMSE 1.004 (90% range 0.96 to 1.032, p 0.575), beat the historical-mean benchmark in 78 of 160 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series."}
+    {"id": "gdp_weo_realtime", "registerId": "realtime_forecasts", "kind": "forecast", "version": 1, "ranAt": "2026-11-23T02:23Z", "verdict": "failed", "p": 0.575, "summary": "Failed against the historical-mean benchmark. 1 ahead: relative RMSE 0.981 (90% range 0.925 to 1.044, p 0.281), beat the historical-mean benchmark in 95 of 165 series; 2 ahead: relative RMSE 1.004 (90% range 0.96 to 1.032, p 0.575), beat the historical-mean benchmark in 78 of 160 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series."},
+    {"id": "scorecard_default", "version": 1, "ranAt": "2026-11-23T03:29Z", "verdict": "passed", "method": 2, "p": 0.00025, "summary": "Passes method 2 (the method this test was registered under). Lift 25.7 points, 90% range 20.2 to 31.4, p = 0.00025 with whole years resampled together (23 years). Positive in 8 of 10 series with 5 or more cases; dropping IRN leaves a lift of 24 points."}
   ],
   "forward": {
-    "importedAt": "2026-11-19T11:41:23.666Z",
-    "lastLineAt": "2026-11-17T16:37:22.727Z",
-    "lines": 81,
-    "chainHead": "c97301c6dbf74f0bd00732d150265f040432d4c11bfa13d7b561d5cd2bfce3b1",
+    "importedAt": "2026-11-23T03:30:18.241Z",
+    "lastLineAt": "2026-11-23T03:29:49.915Z",
+    "lines": 98,
+    "chainHead": "26128d22d5bb40cd30398c4c6324d3dfca2bcce6d9d5aafd82273ae3b2f97cb9",
     "tests": [
       {"test": "cftc_crowding v1", "since": "2026-11-07", "calls": 5, "scored": 2, "hits": 2, "hitRatePct": 100, "baseRatePct": 66.5, "pending": 3, "meanValue": null, "small": true},
       {"test": "cftc_crowding v2", "since": "2026-11-07", "calls": 5, "scored": 2, "hits": 2, "hitRatePct": 100, "baseRatePct": 66.5, "pending": 3, "meanValue": null, "small": true},
       {"test": "cycle_clock v1", "since": "2026-11-07", "calls": 7, "scored": 0, "hits": 0, "hitRatePct": null, "baseRatePct": null, "pending": 7, "meanValue": null, "small": true},
       {"test": "fx_carry v1", "since": "2026-11-07", "calls": 1, "scored": 0, "hits": 0, "hitRatePct": null, "baseRatePct": null, "pending": 1, "meanValue": null, "small": true},
-      {"test": "gdp_nowcast v1", "since": "2026-11-07", "calls": 59, "scored": 0, "hits": 0, "hitRatePct": null, "baseRatePct": null, "pending": 59, "meanValue": null, "small": true}
+      {"test": "gdp_nowcast v1", "since": "2026-11-07", "calls": 59, "scored": 0, "hits": 0, "hitRatePct": null, "baseRatePct": null, "pending": 59, "meanValue": null, "small": true},
+      {"test": "scorecard_default v1", "since": "2026-11-23", "calls": 17, "scored": 0, "hits": 0, "hitRatePct": null, "baseRatePct": null, "pending": 17, "meanValue": null, "small": true}
     ]
   }
 }
