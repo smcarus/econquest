@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Euro area figures as first published are read from the ECB in five-year parts with one retry
+  each; the whole GDP history in one request timed out. A series with a missing part is not used.
+
 - cpi_weo_realtime version 2 failed on its first run and stays failed (owner's decision, no retest).
   Known weakness: its pooled RMSE is dominated by hyperinflations (one year ahead, 367,474 against
   986 for the last year carried on); country by country the AR was better in 89 of 169 countries.
