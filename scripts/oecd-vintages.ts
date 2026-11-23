@@ -1,8 +1,11 @@
 /**
  * `npm run oecd:vintages` (CG15): downloads the OECD's monthly Main Economic Indicators editions
  * (GDP volume and consumer prices, every OECD member) and saves them as figures-as-published in
- * data/local/oecd-vintages/. Later runs fetch only the editions not yet saved. The first run reads
- * every edition since 1999 and takes a while (each country is one request per measure).
+ * data/local/oecd-vintages/. Later runs fetch only the editions not yet saved, so a run that stops
+ * part way is finished by running it again. The first run reads every edition since 1999 and takes
+ * a while: each country is one request per measure, sent 4 seconds apart because the OECD limits
+ * requests per minute; a "too many requests" or busy-server answer is retried after a wait
+ * (src/utils/oecdPacedGet.ts).
  *
  *   npm run oecd:vintages
  *   npm run oecd:vintages -- --country CAN --measure gdp
@@ -12,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { RESEARCH_USER_AGENT } from '../src/server/http.ts';
 import { editionsBetween, extendRows, lastEdition, OECD_MEMBERS, oecdRtUrl, parseOecdRevisionsCsv, type OecdRtMeasure } from '../src/utils/oecdRealTime.ts';
 import { readOecdVintages, writeOecdVintages } from '../src/utils/oecdRealTimeStore.ts';
+import { makeOecdPacer } from '../src/utils/oecdPacedGet.ts';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dataDir = process.env.DATA_DIR || path.join(root, 'data');
@@ -25,7 +29,16 @@ const now = new Date();
 const thisEdition = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
 const START: Record<OecdRtMeasure, string> = { gdp: '1990-Q1', cpi: '1990-01' };
 
+const get = makeOecdPacer({
+  get: async (url) => {
+    const r = await fetch(url, { headers: { 'User-Agent': RESEARCH_USER_AGENT }, signal: AbortSignal.timeout(300_000) });
+    return { status: r.status, text: await r.text(), retryAfter: r.headers.get('retry-after') };
+  },
+  log: (line) => console.log(`  ${line}`),
+});
+
 let failed = 0;
+let limited = 0;
 for (const m of measures) {
   for (const iso3 of countries) {
     const saved = readOecdVintages(dataDir, m, iso3);
@@ -36,13 +49,15 @@ for (const m of measures) {
       continue;
     }
     try {
-      const r = await fetch(oecdRtUrl(iso3, m, START[m], want), { headers: { 'User-Agent': RESEARCH_USER_AGENT }, signal: AbortSignal.timeout(300_000) });
+      const r = await get(oecdRtUrl(iso3, m, START[m], want), `${m} ${iso3}`);
       if (r.status === 404) {
-        console.log(`${m} ${iso3}: no new edition${after ? ` after ${after}` : ''} (the OECD says no records)`);
+        if (!saved && m === 'cpi') console.log(`${m} ${iso3}: no monthly consumer prices at the OECD (this country publishes them quarterly), so not in the monthly set`);
+        else console.log(`${m} ${iso3}: no new edition${after ? ` after ${after}` : ''} (the OECD says no records)`);
         continue;
       }
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const eds = parseOecdRevisionsCsv(await r.text(), iso3);
+      if (r.status === 429) limited++;
+      if (r.status < 200 || r.status >= 300) throw new Error(`HTTP ${r.status} after ${r.tries} tries`);
+      const eds = parseOecdRevisionsCsv(r.text, iso3);
       if (!eds.size) {
         console.log(`${m} ${iso3}: the reply held no figures`);
         continue;
@@ -54,6 +69,10 @@ for (const m of measures) {
     } catch (e: any) {
       failed++;
       console.log(`${m} ${iso3}: FAILED (${e?.message || e})`);
+      if (limited >= 3) {
+        console.log('The OECD keeps answering "too many requests". Stopping here; run again in an hour and it carries on from where it stopped.');
+        process.exit(1);
+      }
     }
   }
 }
