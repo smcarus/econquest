@@ -12,6 +12,7 @@ import { registerIdeaRoutes } from './src/server/routes/ideas';
 import { isWgiCode, wbReplyHasRows, wgiUrls } from './src/utils/wgiCodes';
 import { registerFeedbackRoutes } from './src/server/routes/feedback';
 import { registerCatalogueRoutes } from './src/server/routes/catalogue';
+import { offlineReportHtml } from './src/utils/offlineReport';
 import { registerOfficialDocsRoutes } from './src/server/routes/officialDocs';
 import { mountEngineRoutes } from './src/server/engineRoutes';
 import { ENGINE_ROUTES } from './src/engine/routeTable';
@@ -4641,6 +4642,15 @@ async function startServer() {
     sendTable(req, res, exportFileName('panel', 'latest'), PANEL_LATEST_HEADER, panelLatestRows(panelLatest(data, figures)));
   });
 
+  // Offline country report (PD1, CG14): one HTML file of the saved figures that opens without the app.
+  app.get('/api/export/:iso3/report.html', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const snap = await fetchLiveOpenDataSnapshot(iso3, undefined, { cacheOnly: true });
+    const html = offlineReportHtml({ iso3, countryName: snap.countryName || iso3, rows: figureRows(snap), pulledAt: snap.fetchedAt, madeAt: new Date().toISOString(), appUrl: 'https://github.com/e-conquest/econquest' });
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${iso3}-report-${new Date().toISOString().slice(0, 10)}.html"`);
+    res.send(html);
+  });
   app.get('/api/export/:iso3/figures.:fmt(csv|xlsx)', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (req.query.asOf !== undefined) {

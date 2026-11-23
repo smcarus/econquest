@@ -14,7 +14,7 @@ import { licenceLabelForSource } from './licenceLookup';
 
 export const CSV_BOM = '﻿';
 
-type Cell = string | number | null | undefined;
+export type Cell = string | number | null | undefined;
 
 /** One CSV cell: numbers as written, text quoted when it holds a comma, quote or line break. */
 export function csvCell(v: Cell): string {
