@@ -5,7 +5,7 @@ below are the same ones the app's own pages use, so a script gets exactly what t
 the same values, the same units, the same source and date on every value, and the same "Missing"
 with its reason where the app has no figure. Nothing is estimated or filled in for you.
 
-There are small helper files in `scripts/data-api/`, one each for Python, R, Stata and Excel. None
+There are small helper files in `scripts/data-api/`, one each for Python, R, Stata, Excel and Google Sheets. None
 needs anything installed beyond the program itself. Copy the one you use next to your script.
 
 ## Before you start
@@ -73,6 +73,25 @@ app runs somewhere other than `http://localhost:3000` (Docker: `http://localhost
 at the top of the query. For a copy with sign-in on, put the integration API key or an API token with
 the `read:data` scope in `Key`; it goes in a header, never in the address. Excel may ask how to
 connect the first time: choose Anonymous.
+
+## Google Sheets
+
+`scripts/data-api/econquest.gs` adds sheet functions: `=EQ_SERIES("BRA", "policy_rate")`,
+`=EQ_COUNTRY("BRA")`, `=EQ_WORLD()`, `=EQ_PANEL("BRA,MEX", "policy_rate,cpi_monthly", "history")` and
+`=EQ_FIGURES("BRA", "2026-06-30")`. Google Sheets fetches from Google's own computers, so it works only
+when your copy of the app is reachable on the internet at an `https` address (a home server,
+[HOME_SERVER.md](./HOME_SERVER.md)); it cannot reach a copy on `localhost`. For a copy on your own
+computer, use Excel.
+
+1. In the sheet: Extensions > Apps Script. Paste the whole file and save.
+2. Project Settings > Script properties: add `ECONQUEST_URL` (the app's https address) and, if sign-in
+   is on, `ECONQUEST_KEY` (an API token with the `read:data` scope). The key stays in the script's
+   settings, not in a cell, and goes in a header, never in the address.
+3. Type a function in a cell. Google asks once for permission to connect to an outside address.
+
+Values arrive as numbers and stay empty where the figure is Missing. Google re-runs a function when
+its inputs change and caches results for a while; to force a fresh read, change an input and change
+it back.
 
 ## What comes back
 
