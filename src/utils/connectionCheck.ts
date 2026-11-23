@@ -81,6 +81,7 @@ import {
 } from './officialYields';
 import { lsegSnapshotUrl, lsegTokenRequest, ownCdsSettings, parseLsegSnapshot, parseOwnCdsCsv } from './ownCds';
 import { paidVendorFromEnv, parsePaidMappings } from '../engine/paidData';
+import { brokerConfigFromEnv } from '../engine/brokerPrices';
 import { macrobondCredentials, macrobondFetchUrl, macrobondTokenBody, MACROBOND_AUTH_URL, readMacrobondSeries, readMacrobondToken } from '../engine/macrobond';
 import { parseWitsShare, witsUrl } from './scenarioExposure';
 import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, eiaSpotUrl, findPinkSheetUrl, moveSentence, parseEiaSpot, parsePinkSheet, priceMove } from './commodityPrices';
@@ -166,6 +167,8 @@ export interface CheckOptions {
   paidMappingsText?: () => string | null;
   /** Pause between the two OECD checks, ms (default 3000; tests set 0). */
   oecdGapMs?: number;
+  /** Sign-in state of your IBKR gateway (src/server/brokerGateway.ts brokerStatus); absent = not asked. */
+  brokerStatus?: () => Promise<{ state: 'off' | 'needs_setup' | 'no_answer' | 'connected'; note: string; gateway?: string; contracts?: number }>;
 }
 
 export const STATE_LABEL: Record<ConnectionState, string> = {
@@ -401,6 +404,7 @@ export const SOURCE_IDS = [
   'eia',
   'own_cds',
   'paid_data',
+  'broker_prices',
   'gemini',
   'ollama',
   'openai_compatible',
@@ -2293,6 +2297,26 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       ...setRow(def, 'connected', `Signed in to ${vendor.name}; ${series}. The figures stay on this computer.`, apiHost),
       sample: `${first.code}: ${read.points.length} values, ${read.points[0]!.date} to ${read.points[read.points.length - 1]!.date} (figures not shown)`,
     };
+  });
+
+  // Your broker prices (gap CG9, src/engine/brokerPrices.ts): only whether the gateway on this
+  // computer is signed in. Never a price, and never an IBKR sign-in detail (the app has none).
+  add('broker_prices', async () => {
+    const def: Def = {
+      id: 'broker_prices',
+      name: 'Your broker prices (Interactive Brokers)',
+      group: 'own_account',
+      feeds: 'Live prices for contracts you list, from your own IBKR account; shown on screen only',
+      setup: 'Menu > Settings > Your subscriptions > Your broker prices, with the IBKR Client Portal Gateway running and signed in on this computer.',
+    };
+    const cfg = brokerConfigFromEnv(env);
+    if ('off' in cfg) return setRow(def, 'off', 'Off. No broker prices are shown.', 'your broker');
+    if ('problem' in cfg) return setRow(def, 'needs_setup', cfg.problem, 'your broker');
+    const host = new URL(cfg.config.gateway).host;
+    if (!opts.brokerStatus) return setRow(def, 'needs_setup', `Switched on (${cfg.config.contracts.length} contracts); the gateway was not asked in this check.`, host);
+    const st = await opts.brokerStatus();
+    if (st.state === 'connected') return { ...setRow(def, 'connected', `${st.note} ${cfg.config.contracts.length} contracts listed. Prices are shown on screen only.`, host), sample: `${cfg.config.contracts.length} contracts (prices not shown)` };
+    return setRow(def, st.state === 'off' ? 'off' : st.state, st.note, host);
   });
 
   // ---- AI models ---------------------------------------------------------------------------------

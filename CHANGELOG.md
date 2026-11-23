@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Your broker prices: live prices for contracts you list, from your own Interactive Brokers
+  account through the IBKR Client Portal Gateway you run and sign in to on your computer. Off by
+  default (Menu > Settings > Your subscriptions); the app ships no contract ids and never sees your
+  IBKR password. Prices are held in memory for 10 seconds and shown on screen only: never saved,
+  put in downloads, backups or shared copies, answered to scripts or sent to the AI model. New
+  connection check row `broker_prices` (gateway sign-in state only).
 - Team work on a home server: comments under each policy review memo and saved report (any
   signed-in account, Viewers included; the author or an Admin marks one done) and read-only links
   to a memo or report (an Analyst or Admin makes one for 1 to 90 days; it opens without signing in,

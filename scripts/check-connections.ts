@@ -25,6 +25,7 @@ import { investorBaseData } from '../src/utils/investorBaseStore.ts';
 import { fiscalRulesData } from '../src/utils/fiscalRulesStore.ts';
 import { fxRegimeData } from '../src/utils/fxRegimeStore.ts';
 import { dpiData } from '../src/utils/dpiStore.ts';
+import { brokerStatus } from '../src/server/brokerGateway.ts';
 import { applyKeysToEnv, envKeySnapshot, keySources, loadSettings, settingsFilePath } from '../src/utils/userSettings.ts';
 
 dotenv.config();
@@ -44,6 +45,7 @@ const report = await checkConnections({
   fiscalRules: () => fiscalRulesData(dataDir),
   fxRegime: () => fxRegimeData(dataDir),
   dpi: () => dpiData(dataDir),
+  brokerStatus: () => brokerStatus(process.env),
   readFile: (p) => {
     try {
       return { text: fs.readFileSync(p, 'utf8'), modified: fs.statSync(p).mtime };

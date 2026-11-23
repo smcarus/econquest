@@ -56,6 +56,9 @@ test('off by default: no vendor unless the switch names one', () => {
     ['PAID_DATA_VENDOR', false],
     ['MACROBOND_CLIENT_ID', true],
     ['MACROBOND_CLIENT_SECRET', true],
+    ['BROKER_PRICES', false],
+    ['IBKR_GATEWAY_URL', false],
+    ['IBKR_CONIDS', false],
   ]);
 });
 
