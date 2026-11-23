@@ -12,6 +12,7 @@
  * Keys and passwords are never put in a row: only whether they are set.
  */
 import { CATALOGUE_URLS, parseDbnomicsSearch } from './catalogueSearch';
+import { oecdRtUrl, parseOecdRevisionsCsv } from './oecdRealTime';
 import { pullImfMonthly } from './imfMonthly';
 import { IMF_FX_SPEC } from './imfFx';
 import { IMF_POLICY_SPEC } from './imfPolicyRate';
@@ -340,6 +341,7 @@ export const SOURCE_IDS = [
   'ons_activity',
   'bcb_activity',
   'ecb_rtd',
+  'oecd_rtd',
   'ons_triangle',
   'worldbank_debt_structure',
   'imf',
@@ -629,6 +631,20 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
   // Figures as first published (G12, G13). The ECB row reads euro area GDP with its revision
   // history; the ONS row checks the GDP revision triangle's page lists a file (the file itself can be
   // refused to programs, in which case a copy saved by hand in data/local/ons-triangles is read).
+  add('oecd_rtd', () =>
+    httpCheck(
+      { id: 'oecd_rtd', name: 'OECD Main Economic Indicators editions (figures as first published)', group: 'free', feeds: 'Real-time forecast tests for OECD members (npm run oecd:vintages)' },
+      fetchFn,
+      oecdRtUrl('CAN', 'gdp', '2024-Q1', ['202501']),
+      T,
+      (r) => {
+        const eds = parseOecdRevisionsCsv(r.text || '', 'CAN');
+        const rows = eds.get('202501');
+        return rows?.size ? `Canada GDP, January 2025 edition: ${rows.size} quarters` : null;
+      }
+    )
+  );
+
   add('ecb_rtd', () =>
     httpCheck(
       { id: 'ecb_rtd', name: 'ECB Euro Area Real-Time Database (figures as first published)', group: 'free', feeds: 'Euro area figures as first published (History & data on euro members\' pages)' },

@@ -17,6 +17,7 @@ import { fetchEuroFirstPublished } from '../src/server/feeds/firstPublished';
 import { ALFRED_SERIES } from '../src/utils/alfredVintages';
 import { ECB_RTD_SERIES } from '../src/utils/ecbRealTime';
 import type { RealTimeVintages } from '../src/utils/forecastEvalRun';
+import { loadOecdVintageInputs } from '../src/utils/oecdRealTimeStore';
 import fs from 'fs';
 import { readFxHistoryFile, type FxHistoryFile } from '../src/utils/fxHistory';
 
@@ -40,6 +41,9 @@ for (const [kind, def] of [['gdp', ECB_RTD_SERIES[0]], ['cpi', ECB_RTD_SERIES[1]
 dotenv.config();
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dataDir = process.env.DATA_DIR || path.join(root, 'data');
+// OECD members as first published, from the editions saved by npm run oecd:vintages (CG15).
+vintages.oecdGdp = loadOecdVintageInputs(dataDir, 'gdp');
+vintages.oecdCpi = loadOecdVintageInputs(dataDir, 'cpi');
 let savedFx: FxHistoryFile | null = null;
 try {
   savedFx = readFxHistoryFile(JSON.parse(fs.readFileSync(path.join(dataDir, 'live', 'fx-history.json'), 'utf8')));

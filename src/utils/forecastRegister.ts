@@ -15,7 +15,7 @@ export const REGISTER_FORECAST_IDS: Record<string, string[]> = {
   forest_nowcast: ['gdp_nowcast_forest'],
   gap_model_estimated: ['cpi_gap_model'],
   quantile_bands: ['gdp_forecast_quantile'],
-  realtime_forecasts: ['gdp_forecast_realtime', 'cpi_forecast_realtime', 'gdp_weo_realtime', 'cpi_weo_realtime'],
+  realtime_forecasts: ['gdp_forecast_realtime', 'cpi_forecast_realtime', 'gdp_weo_realtime', 'cpi_weo_realtime', 'gdp_forecast_realtime_oecd', 'cpi_forecast_realtime_oecd'],
   // Currency factor tests (docs/validation/signals/, npm run signals:evaluate) use the same verdict shape.
   fx_carry: ['fx_carry'],
   fx_value: ['fx_value'],

@@ -15,7 +15,7 @@ const DIR = path.join(process.cwd(), 'docs', 'validation', 'forecasts');
 
 test('every registered nowcast/forecast evaluation matches its hash in manifest.json', () => {
   const specs = loadSpecs(DIR);
-  assert.equal(specs.length, 24);
+  assert.equal(specs.length, 26);
   for (const s of specs) assert.equal(s.problem, undefined, `${s.file}: ${s.problem}`);
 });
 
