@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Release days: on a day the official calendar lists a CPI or monthly activity release, the running
+  app re-reads that country's source about once an hour, up to 12 times, until a newer month
+  arrives, and marks it "New today" (US CPI from the BLS, other CPI from the IMF monthly series,
+  activity from FRED, Eurostat, the ONS and the BCB). GDP releases are listed but not re-read: the
+  app's quarterly GDP comes from OECD figures through DBnomics, months after the release. A Release
+  days card on Today and in Data health > Calendar shows yesterday to a week on. State in
+  data/local/release-watch.json; RELEASE_WATCH=off turns it off.
+
 - Official forecasts side by side (History & data > IMF forecasts by edition): growth and inflation
   forecasts for this year and the next two from the IMF World Economic Outlook, World Bank Global
   Economic Prospects and the OECD Economic Outlook, with the spread between them; for the United

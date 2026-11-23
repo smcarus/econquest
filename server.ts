@@ -193,6 +193,8 @@ import { checkConnections, describeNetworkError, isFailure, type ConnectionRepor
 import { notify, readLastAlert, testAlertRoute } from './src/server/alerts';
 import { backtestRegressionAlert, backtestRegressions, dataCheckAlert, jobFailedAlert } from './src/utils/alertEvents';
 import { calendarHealth, localDay } from './src/utils/calendarHealth';
+import { loadWatchState, startReleaseWatch } from './src/server/releaseWatch';
+import { releaseWatchView } from './src/utils/releaseWatch';
 import { inflationHealth } from './src/utils/inflationHealth';
 import { OFFICIAL_CALENDAR } from './src/data/officialCalendar';
 import { checkTime, clockIn, nightlyDue, recordFromReport, sourceHealth, TRIGGER_LABEL, type CheckTrigger } from './src/utils/dataHealth';
@@ -4942,6 +4944,11 @@ async function startServer() {
     });
   });
   // Data health: values the IMF or World Bank revised in the saved yearly history (data/history/).
+  // Release-day fetch (CG3, src/utils/releaseWatch.ts): releases from yesterday to a week on, and whether a newer month arrived.
+  app.get('/api/release-watch', (_req, res) => {
+    res.json({ rows: releaseWatchView(OFFICIAL_CALENDAR, loadWatchState(), new Date()), off: String(process.env.RELEASE_WATCH || '').toLowerCase() === 'off' });
+  });
+
   // The official calendar against today (src/utils/calendarHealth.ts): old checks, schedules running out.
   app.get('/api/data/health/calendar', (_req, res) => {
     res.json(calendarHealth(OFFICIAL_CALENDAR, SOVEREIGN_CATALOG.map((c) => c.iso3), localDay()));
@@ -7185,6 +7192,8 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
     // Scheduled jobs: the pre-registered tests weekly by default, Download all only when set; checked every minute.
     writeJobs(SCHEDULED_JOBS_FILE, closeInterrupted(readJobs(SCHEDULED_JOBS_FILE), new Date().toISOString()));
     if ((Object.keys(JOBS) as JobId[]).some((id) => jobSchedule(id).kind !== 'off')) setInterval(scheduledJobsTick, 60_000).unref();
+    // Release-day fetch: CPI and monthly activity releases on the official calendar re-read their source hourly that day.
+    startReleaseWatch();
     // GDELT raw files: weekly top-up once a first pull exists, checked hourly.
     setInterval(() => void (knownOffline() ? null : topUpGdeltRaw()), SNAPSHOT_RETRY_MS).unref();
   });

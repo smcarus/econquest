@@ -16,6 +16,8 @@ import { lazyNamed } from './LazyDesk';
 const ReviewWatchPanel = lazyNamed(() => import('./ReviewWatchPanel'), 'ReviewWatchPanel');
 // Inflation surprise index (R10), also on its own.
 const SurpriseIndexCard = lazyNamed(() => import('./SurpriseIndexCard'), 'SurpriseIndexCard');
+// Release days (CG3), also on its own.
+const ReleaseWatchCard = lazyNamed(() => import('./ReleaseWatchCard'), 'ReleaseWatchCard');
 import { AskCouncilPanel, CouncilAgentsPanel, useCouncilHasQuestion, type FullCouncilStep } from './AskCouncilPanel';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 import { MissingSources, WatchlistTable } from './WatchlistTable';
@@ -515,6 +517,13 @@ export const TodayPage: React.FC<{
           <PanelBoundary name="Policy review watch">
             <React.Suspense fallback={null}>
               <ReviewWatchPanel countryName={(iso3) => byIso.get(iso3)?.countryName || iso3} />
+            </React.Suspense>
+          </PanelBoundary>
+        </div>
+        <div id="tool-release-watch" className="scroll-mt-4">
+          <PanelBoundary name="Release days">
+            <React.Suspense fallback={null}>
+              <ReleaseWatchCard countryName={(iso3) => byIso.get(iso3)?.countryName || iso3} />
             </React.Suspense>
           </PanelBoundary>
         </div>
