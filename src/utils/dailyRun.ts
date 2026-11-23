@@ -19,6 +19,7 @@
 import fs from 'fs';
 import path from 'path';
 import { formatBytes } from './preload';
+import type { OfficialCalendarEvent } from '../data/officialCalendar';
 
 export const DAILY_MIN_GAP_MS = 20 * 60 * 60 * 1000;
 export const TESTS_EVERY_MS = 7 * 24 * 60 * 60 * 1000;
@@ -121,6 +122,29 @@ export function testsDue(lastStartedAt: string | undefined, now: Date): boolean 
   if (!lastStartedAt) return true;
   const t = Date.parse(lastStartedAt);
   return !Number.isFinite(t) || now.getTime() - t >= TESTS_EVERY_MS;
+}
+
+/** How many days ahead of a calendar GDP release the tests are run, so a passing nowcast's call is on record first. */
+export const PRE_RELEASE_DAYS = 3;
+
+/**
+ * CG5: the first GDP release on the official calendar within the next PRE_RELEASE_DAYS days (UTC)
+ * that the last tests run did not already come close enough before, or null. A run counts when it
+ * started inside that window, so each release brings at most one extra run between weekly runs.
+ */
+export function preReleaseTestsDue(events: Array<Pick<OfficialCalendarEvent, 'iso3' | 'category' | 'date' | 'title'>>, lastStartedAt: string | undefined, now: Date): Pick<OfficialCalendarEvent, 'iso3' | 'category' | 'date' | 'title'> | null {
+  const day = (offset: number) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + offset)).toISOString().slice(0, 10);
+  const from = day(0);
+  const to = day(PRE_RELEASE_DAYS);
+  const last = lastStartedAt ? lastStartedAt.slice(0, 10) : '';
+  const due = events
+    .filter((e) => e.category === 'GDP_RELEASE' && e.date >= from && e.date <= to)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.iso3.localeCompare(b.iso3))
+    .find((e) => {
+      const windowStart = new Date(Date.parse(`${e.date}T00:00:00Z`) - PRE_RELEASE_DAYS * 86400000).toISOString().slice(0, 10);
+      return !last || last < windowStart;
+    });
+  return due ?? null;
 }
 
 /** Lines of a script's output worth keeping: what it could not save, and what it did save. */

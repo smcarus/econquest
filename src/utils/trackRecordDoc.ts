@@ -231,5 +231,9 @@ export function forwardLines(f: ForwardRecordSummary | undefined): string[] {
     '',
   ];
   for (const t of f.tests) out.push(`- **${t.test}**: ${forwardSentence({ ...t, recent: [] })}`);
+  if (f.monthly?.length) {
+    out.push('', 'Month by month (calls written before their figure existed, and calls scored that month):', '', '| Month | Test | Calls written | Scored | Beat the benchmark | Average gain (points) |', '| --- | --- | --- | --- | --- | --- |');
+    for (const r of f.monthly) out.push(`| ${r.month} | ${r.test} | ${r.called} | ${r.scored} | ${r.scored ? `${r.hits} of ${r.scored}` : 'none scored'} | ${r.meanGain ?? 'none scored'} |`);
+  }
   return out;
 }

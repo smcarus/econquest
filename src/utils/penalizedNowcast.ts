@@ -155,3 +155,73 @@ export function penalizedNowcastCases(spec: ForecastSpec, data: CountryData[]): 
     return 'error' in fit ? null : { predict: (x) => predictPenalized(fit, x), sd: fit.sigma };
   });
 }
+
+/** A live call of a passing nowcast, written to the forward record before the quarter's GDP is out. */
+export interface NowcastOpenCall {
+  where: string;
+  when: string;
+  what: string;
+  due: string;
+  forecast: { model: number; bench: number };
+}
+
+/**
+ * Rule 7 for the nowcasts fitted on predictor rows (ridge, lasso, random forest): for each country,
+ * the last two quarters that have ended by `asOf` and whose GDP is not in hand yet, estimated with
+ * every figure in hand on `asOf` (what is in hand is published, so no release lag is applied), fitted
+ * on the earlier complete rows exactly as in the test, with the test's benchmark beside it. The same
+ * rules as the test: at least one indicator month of the quarter out, and `minTrain` rows to fit on.
+ */
+export function predictorNowcastOpen(spec: ForecastSpec, data: CountryData[], asOf: string, fitRows: (X: number[][], y: number[]) => RowModel | null): NowcastOpenCall[] {
+  const lag = spec.params.gdpLagDays ?? 60;
+  const minTrain = spec.params.minTrain ?? 32;
+  const none = { gdp: 0, activity: 0, cli: 0, cpi: 0, policy: 0 };
+  const thisQ = `${asOf.slice(0, 4)}-Q${Math.ceil(Number(asOf.slice(5, 7)) / 3)}`;
+  const ended = [prevQ(thisQ, 1), prevQ(thisQ, 2)].filter((q) => periodEnd(q) <= asOf);
+  const out: NowcastOpenCall[] = [];
+  for (const c of data) {
+    if (!c.gdpQoq?.length) continue;
+    const published = new Set(c.gdpQoq.map((g) => g.date));
+    for (const q of ended) {
+      if (published.has(q)) continue;
+      const pr = predictorRows(c, asOf, q, none);
+      if (!pr) continue;
+      const target = pr.rows.get(q);
+      if (!target) continue;
+      const ms = monthsOf(q);
+      if (![c.activity, c.cli].some((pts) => pts?.some((p) => ms.includes(p.date)))) continue;
+      const train = [...pr.rows.values()].filter((r) => r.quarter < q && r.complete && pr.gdp.has(r.quarter)).sort((a, b) => (a.quarter < b.quarter ? -1 : 1));
+      if (train.length < minTrain) continue;
+      const model = fitRows(
+        train.map((r) => r.x),
+        train.map((r) => pr.gdp.get(r.quarter)!),
+      );
+      if (!model) continue;
+      const known = c.gdpQoq.slice().sort((a, b) => (a.date < b.date ? -1 : 1)).map((g) => g.value);
+      const bench = spec.benchmark === 'mean' ? known.reduce((a, b) => a + b, 0) / known.length : known[known.length - 1];
+      const mean = model.predict(target.x);
+      if (!Number.isFinite(mean)) continue;
+      out.push({
+        where: c.iso3,
+        when: q,
+        what: `nowcast ${mean.toFixed(2)}% q/q against the benchmark ${bench.toFixed(2)}%: closer to the first published figure?`,
+        due: addDays(periodEnd(q), lag),
+        forecast: { model: Number(mean.toFixed(4)), bench: Number(bench.toFixed(4)) },
+      });
+    }
+  }
+  return out;
+}
+
+/** The row model behind a predictor nowcast spec, or null when the spec is not one. */
+export function rowModelFor(spec: ForecastSpec, forest?: (X: number[][], y: number[]) => RowModel | null): ((X: number[][], y: number[]) => RowModel | null) | null {
+  if (spec.target === 'gdp_penalized_nowcast_q') {
+    const kind: PenaltyKind = spec.params.penalty === 2 ? 'lasso' : 'ridge';
+    return (X, y) => {
+      const fit = fitPenalizedCv(X, y, kind);
+      return 'error' in fit ? null : { predict: (x) => predictPenalized(fit, x), sd: fit.sigma };
+    };
+  }
+  if (spec.target === 'gdp_forest_nowcast_q' && forest) return forest;
+  return null;
+}

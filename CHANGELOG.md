@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Forward record for release days: the ridge, lasso and random forest GDP nowcasts now write their
+  live calls to the forward record while their test passes, as the bridge nowcast already did (each
+  ended quarter whose GDP is not out yet, fitted exactly as in the test, with the benchmark beside
+  it), and each call is scored on the first published figure. When a GDP release on the official
+  calendar is three days off or less, the daily run starts the tests early (once per release) so the
+  call is on record before the figure. Models & validation > Track record and docs/TRACK_RECORD.md
+  gain a month-by-month table of calls written and scored.
+
 - Release days: on a day the official calendar lists a CPI or monthly activity release, the running
   app re-reads that country's source about once an hour, up to 12 times, until a newer month
   arrives, and marks it "New today" (US CPI from the BLS, other CPI from the IMF monthly series,

@@ -15,6 +15,7 @@ import { effectiveStatus, entryGrade, fromProjectRecord, projectVerdicts, runVal
 import { GRADE_POLICY } from '../utils/evidenceGrade';
 import { holmSentence } from '../utils/multipleTesting';
 import { forwardSentence } from '../utils/forwardRecord';
+import { ForwardMonthlyTable } from './ForwardMonthlyTable';
 import { EXPORT_NOTICE } from '../utils/disclaimer';
 import { alsoReported, forecastRegisterStatus, forecastVerdicts } from '../utils/forecastRegister';
 
@@ -143,6 +144,7 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
           {runError && <p className="text-rose-600 dark:text-rose-400">{runError}</p>}
           {v?.lastRun?.problems?.length ? <p className="text-amber-700 dark:text-amber-300">Last run: {v.lastRun.problems.join(' · ')}</p> : null}
           {view === 'record' && <TestLedgerTable v={v} holmMap={holmMap} />}
+          {view === 'record' && <ForwardMonthlyTable rows={v?.forwardMonthly} />}
           {view === 'record' && (
             <React.Suspense fallback={null}>
               <PolicyTrackRecord />
