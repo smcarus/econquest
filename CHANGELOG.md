@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Official documents: Country Research > People > Official documents lists the newest World Bank
+  documents about the country (routine project filings left out and counted) and BIS central
+  bankers' speeches that name it, each linked to the publisher's page.
+
 - OECD real-time data: `npm run oecd:vintages` saves the OECD's monthly Main Economic Indicators
   editions since 1999 (GDP volume and consumer prices, all 38 members) in data/local/oecd-vintages/,
   fetching only new editions on later runs. Two new pre-registered tests,

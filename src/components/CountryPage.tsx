@@ -70,6 +70,7 @@ const UnitConverterPanel = lazyNamed(() => import('./UnitConverterPanel'), 'Unit
 const ExercisesPanel = lazyNamed(() => import('./ExercisesPanel'), 'ExercisesPanel');
 const ModelSandboxPanel = lazyNamed(() => import('./ModelSandboxPanel'), 'ModelSandboxPanel');
 const GapModelPanel = lazyNamed(() => import('./GapModelPanel'), 'GapModelPanel');
+const OfficialDocsPanel = lazyNamed(() => import('./OfficialDocsPanel'), 'OfficialDocsPanel');
 const SanctionsPanel = lazyNamed(() => import('./SanctionsPanel'), 'SanctionsPanel');
 const ForecastPanel = lazyNamed(() => import('./ForecastPanel'), 'ForecastPanel');
 const FiscalMultiplierPanel = lazyNamed(() => import('./FiscalMultiplierPanel'), 'FiscalMultiplierPanel');
@@ -622,6 +623,13 @@ export const CountryPage: React.FC<{
             <PanelBoundary name="World Bank projects">
               <React.Suspense fallback={<DeskLoading />}>
                 <WbProjectsPanel key={`wp-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+              </React.Suspense>
+            </PanelBoundary>
+          </ToolSlot>
+          <ToolSlot id="tool-official-docs" pick={toolPick}>
+            <PanelBoundary name="Official documents">
+              <React.Suspense fallback={<DeskLoading />}>
+                <OfficialDocsPanel key={`od-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
               </React.Suspense>
             </PanelBoundary>
           </ToolSlot>

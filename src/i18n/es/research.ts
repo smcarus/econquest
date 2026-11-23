@@ -123,6 +123,7 @@ export const RESEARCH_ES: Messages<typeof RESEARCH> = {
   tl_remittances: "Remesas",
   tl_aid: "Ayuda recibida",
   tl_wb_projects: "Proyectos del Banco Mundial",
+  tl_official_docs: "Documentos oficiales",
   tl_regional: "Cifras regionales",
   tl_financial_inclusion: "Inclusión financiera",
   tl_food_prices: "Precios de los alimentos y seguridad alimentaria",
