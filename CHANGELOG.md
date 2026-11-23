@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Track record: scorecard_default v1 (governance reading and sovereign default) recorded from the
+  owner's run of 23 November. It passed method 2: lift 25.7 points, 90% range 20.2 to 31.4,
+  p = 0.00025 with whole years resampled (22 series, 1996 to 2021), and it still holds after the Holm
+  correction across all 39 tests (Holm p 0.00875). As registered, a pass does not turn the average
+  into a score shown in the app. Forward record summary updated to 98 lines (17 scorecard calls,
+  none scored yet).
+
 - World Bank governance figures (WGI): the World Bank API stopped serving the old codes (VA.EST,
   PV.EST, GE.EST, RQ.EST, RL.EST, CC.EST), answering "The indicator was not found", so the
   scorecard's six governance estimates, the political stability figure in the country snapshot and

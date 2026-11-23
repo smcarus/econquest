@@ -42,7 +42,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Fiscal reaction (Bohn test) | Research | Description, not a tested signal | None |
 | Gross financing need | Research | Description, not a tested signal | None |
 | Country risk scorecard | Research | Not validated | None |
-| Governance reading and sovereign default (scorecard test) | Research | Not validated | None |
+| Governance reading and sovereign default (scorecard test) | Research | Backtest passed | v1, 2026-11-23, method 2 |
 | Sanctions lists | Research | Description, not a tested signal | None |
 | Geopolitical risk VaR | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
@@ -599,7 +599,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Reads:** World Bank WGI estimates (VA, PV, GE, RQ, RL, CC), Bank of Canada and Bank of England Sovereign Default Database
 - **Shows in:** Menu > Models & validation (the test only; the scorecard shows no overall score)
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Backtest passed (version 1, recorded 2026-11-23)
 - **How it is tested:** Pre-registered on 13 November 2026 before any run (docs/validation/preregistered/scorecard_default.json; runner built 19 November 2026): at least 30 cases over 15 years, lift 3 points, p at or below 0.05 with whole years resampled. Passing would not turn the average into a score shown in the app.
 - **Limits:** WGI is today's vintage, revised when its method changes; WGI was published every two years until 2002; BoC-BoE counts small arrears as defaults; the pooled base rate mixes rich and poor countries, so a pass can partly reflect income, not governance alone.
 - **Code:** `src/utils/backtest.ts (scorecardDefaultCases), src/utils/backtestRun.ts`
@@ -610,7 +610,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 **Recorded verdicts**
 
-- None recorded yet. Run `npm run backtest` (or Menu > Models & validation > Run backtests).
+- Version 1, 2026-11-23T03:29Z: **Passed** (method 2). Passes method 2 (the method this test was registered under). Lift 25.7 points, 90% range 20.2 to 31.4, p = 0.00025 with whole years resampled together (23 years). Positive in 8 of 10 series with 5 or more cases; dropping IRN leaves a lift of 24 points.
 
 **Known limits, stated before the run**
 
