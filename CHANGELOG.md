@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Excel: `scripts/data-api/econquest.pq` is a Power Query that brings the app's series, panels and
+  figures into a workbook, refreshed with Data > Refresh All; values arrive as numbers, Missing stays
+  empty with its reason, and a key for a copy with sign-in on travels only in a header
+  (docs/DATA_API.md, "Excel").
+
 - Track record: scorecard_default v1 (governance reading and sovereign default) recorded from the
   owner's run of 23 November. It passed method 2: lift 25.7 points, 90% range 20.2 to 31.4,
   p = 0.00025 with whole years resampled (22 series, 1996 to 2021), and it still holds after the Holm
