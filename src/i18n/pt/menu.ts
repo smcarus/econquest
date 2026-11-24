@@ -275,6 +275,8 @@ export const MENU_PT: Messages<typeof MENU> = {
   ab_version: "Versão {v}. Cite esta versão, e o seu commit quando aparecer, para que os leitores encontrem o código exato.",
   ab_what: "Um espaço de pesquisa para questões soberanas e macroeconômicas. Os números vêm apenas de feeds públicos, séries oficiais ou dos seus próprios arquivos, cada um com sua fonte e data; um número que ninguém publicou aparece como Ausente.",
   ab_notice: "Pesquisa, não um conselho validado. Nenhum modelo do app foi validado de forma independente; cada sinal mostra o veredito do seu backtest pré-registrado em Menu > Modelos e validação. Nada aqui é uma recomendação de compra ou venda.",
+  ab_privacy: 'Privacidade',
+  ab_privacyNote: "O app não envia nada sobre você ao projeto: nem rastreamento, nem contagem de uso, nem relatórios de falha. O que você salva fica no computador onde o app roda. Os números são pedidos a fontes públicas; as perguntas vão a um provedor de IA só se você escolher um on-line, como o Google Gemini, e o seu navegador carrega as fontes da tela do Google Fonts. A lista completa está em docs/PRIVACY.md (em inglês).",
   ab_credits: "Créditos",
   ab_creditsNote: "Três fontes pedem um crédito visível onde quer que seus números apareçam. O app mostra cada um ao lado desses números, e aqui:",
   ab_licences: "Licenças de dados",

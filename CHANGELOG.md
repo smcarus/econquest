@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- A privacy page, docs/PRIVACY.md, says in one place what stays on your computer, what leaves it and
+  when: requests for figures to public sources, questions to an online AI provider only if you choose
+  one, screen fonts from Google Fonts, and alerts, audit copies or sign-in only if you set them up.
+  The app has no tracking, usage counts or crash reports. Menu > About & data licences has a short
+  Privacy section in all four languages, and the READMEs link the page.
 - While a source does not answer, five feeds that used to drop to Missing for an hour now show their
   last good answer, with its own dates: external debt falling due, the BIS credit cycle, World Bank
   creditors, BIS daily policy rates and the long BIS real exchange rate. The source is asked again

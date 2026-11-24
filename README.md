@@ -63,6 +63,8 @@ economy and why.
 ## Free, open and independent
 
 - **The app is free**, on every computer, and will stay free. There are no paid tiers and no adverts.
+- **No tracking.** The app sends nothing about you to the project: no usage counts, no crash reports,
+  no analytics. What leaves your computer, and when, is listed in [docs/PRIVACY.md](./docs/PRIVACY.md).
 - **Open source.** The code is under the Apache License 2.0 and the documentation, methods notes and
   learning content are under CC BY 4.0, so anyone may use, change and share them (see [Licence](#licence)).
 - **Donations, only through the project website.** Once the project has a fiscal host, gifts will be
@@ -570,6 +572,7 @@ Where things stand on 23 November 2026 (details and status in [docs/ROADMAP.md](
 | [docs/RISK_AND_COMPLIANCE.md](./docs/RISK_AND_COMPLIANCE.md) | Audit log, model register, report sign-off |
 | [docs/BACKUP_AND_RESTORE.md](./docs/BACKUP_AND_RESTORE.md) | Backups and moving to another computer |
 | [docs/HOME_SERVER.md](./docs/HOME_SERVER.md), [docs/KUBERNETES.md](./docs/KUBERNETES.md) | Running it for a household, team or class |
+| [docs/PRIVACY.md](./docs/PRIVACY.md) | What stays on your computer, what leaves it, and when |
 | [docs/SECURITY.md](./docs/SECURITY.md), [docs/SECURITY_REVIEW.md](./docs/SECURITY_REVIEW.md) | Accounts, sign-in (including OpenID Connect), sessions, the audit seal, and the security review |
 | [docs/DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md) | UI rules for contributors |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | How to contribute, the research rules, and signing off commits |

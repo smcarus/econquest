@@ -71,6 +71,9 @@ comprendre ce qui arrive à une économie et pourquoi.
 
 - **L'application est gratuite**, sur tous les ordinateurs, et le restera. Pas d'offre payante ni de
   publicité.
+- **Aucun suivi.** L'application n'envoie rien sur vous au projet : ni comptage d'usage, ni rapport
+  de plantage, ni outil d'analyse. Ce qui quitte votre ordinateur, et quand, est listé dans
+  [docs/PRIVACY.md](./docs/PRIVACY.md) (en anglais).
 - **Open source.** Le code est sous licence Apache 2.0 ; la documentation, les notes de méthode et le
   contenu pédagogique sous CC BY 4.0 : chacun peut les utiliser, les modifier et les partager.
 - **Dons, uniquement via le site du projet**, par GitHub Sponsors et Open Source Collective, une fois que
@@ -553,7 +556,7 @@ Où en est le projet au 23 novembre 2026 (détail dans [docs/ROADMAP.md](./docs/
   [DATA_LICENCES.md](./docs/DATA_LICENCES.md), [DATA_API.md](./docs/DATA_API.md), [DEPLOYMENT.md](./docs/DEPLOYMENT.md),
   [POLICY_REVIEW.md](./docs/POLICY_REVIEW.md), [QUESTS.md](./docs/QUESTS.md),
   [ROADMAP.md](./docs/ROADMAP.md), [HOME_SERVER.md](./docs/HOME_SERVER.md),
-  [SECURITY.md](./docs/SECURITY.md), [CONTRIBUTING.md](./CONTRIBUTING.md)
+  [PRIVACY.md](./docs/PRIVACY.md), [SECURITY.md](./docs/SECURITY.md), [CONTRIBUTING.md](./CONTRIBUTING.md)
 - Développeurs : [partie For developers du README anglais](./README.md#for-developers)
 
 ---

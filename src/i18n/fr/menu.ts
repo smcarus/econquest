@@ -275,6 +275,8 @@ export const MENU_FR: Messages<typeof MENU> = {
   ab_version: "Version {v}. Citez cette version, et son commit lorsqu'il est affiché, pour que les lecteurs retrouvent le code exact.",
   ab_what: "Un espace de recherche pour les questions souveraines et macroéconomiques. Les chiffres proviennent uniquement de flux publics, de séries officielles ou de vos propres fichiers, chacun avec sa source et sa date ; un chiffre que personne n'a publié indique Manquant.",
   ab_notice: "Recherche, pas un conseil validé. Aucun modèle de l'application n'a été validé de manière indépendante ; chaque signal affiche le verdict de son test rétrospectif préenregistré dans Menu > Modèles et validation. Rien ici n'est une recommandation d'achat ou de vente.",
+  ab_privacy: 'Confidentialité',
+  ab_privacyNote: "L'application n'envoie rien sur vous au projet : ni suivi, ni comptage d'usage, ni rapport de plantage. Ce que vous enregistrez reste sur l'ordinateur où tourne l'application. Les chiffres sont demandés à des sources publiques ; les questions vont à un fournisseur d'IA seulement si vous en choisissez un en ligne, comme Google Gemini, et votre navigateur charge les polices d'écran depuis Google Fonts. La liste complète est dans docs/PRIVACY.md (en anglais).",
   ab_credits: "Mentions",
   ab_creditsNote: "Trois sources demandent une mention visible partout où leurs chiffres apparaissent. L'application affiche chacune à côté de ces chiffres, et ici :",
   ab_licences: "Licences des données",

@@ -71,6 +71,9 @@ le pasa a una economía y por qué.
 
 - **La aplicación es gratuita** en todos los ordenadores y lo seguirá siendo. No hay planes de pago ni
   publicidad.
+- **Sin seguimiento.** La aplicación no envía nada sobre usted al proyecto: ni recuentos de uso, ni
+  informes de fallos, ni analítica. Qué sale de su computadora, y cuándo, está en
+  [docs/PRIVACY.md](./docs/PRIVACY.md) (en inglés).
 - **Código abierto.** El código está bajo la licencia Apache 2.0 y la documentación, las notas de método
   y el contenido didáctico bajo CC BY 4.0: cualquiera puede usarlos, modificarlos y compartirlos.
 - **Donaciones, solo a través del sitio web del proyecto**, mediante GitHub Sponsors y Open Source
@@ -550,7 +553,7 @@ Situación al 23 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./docs/ROADM
   [DATA_LICENCES.md](./docs/DATA_LICENCES.md), [DATA_API.md](./docs/DATA_API.md), [DEPLOYMENT.md](./docs/DEPLOYMENT.md),
   [POLICY_REVIEW.md](./docs/POLICY_REVIEW.md), [QUESTS.md](./docs/QUESTS.md),
   [ROADMAP.md](./docs/ROADMAP.md), [HOME_SERVER.md](./docs/HOME_SERVER.md),
-  [SECURITY.md](./docs/SECURITY.md), [CONTRIBUTING.md](./CONTRIBUTING.md)
+  [PRIVACY.md](./docs/PRIVACY.md), [SECURITY.md](./docs/SECURITY.md), [CONTRIBUTING.md](./CONTRIBUTING.md)
 - Desarrolladores: [sección For developers del README en inglés](./README.md#for-developers)
 
 ---
