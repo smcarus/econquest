@@ -197,6 +197,7 @@ import {
   withKey,
   withoutKey,
 } from './src/utils/userSettings';
+import { currentStandIns } from './src/server/lastGood';
 import { checkConnections, describeNetworkError, isFailure, type ConnectionReport, type ConnectionResult } from './src/utils/connectionCheck';
 import { notify, readLastAlert, testAlertRoute } from './src/server/alerts';
 import { backtestRegressionAlert, backtestRegressions, dataCheckAlert, jobFailedAlert } from './src/utils/alertEvents';
@@ -5015,6 +5016,8 @@ async function startServer() {
       lastCheckAt: last?.checkedAt || null,
       missingFigures: open.filter((o) => o.kind === 'missing').length,
       staleFigures: open.filter((o) => o.kind === 'stale').length,
+      // Feeds serving their last good answer while the source does not answer (src/server/lastGood.ts).
+      savedStandIns: currentStandIns(),
     });
   });
   // Data health: figure alerts (went missing, older than usual, jumps, out of range, revised).

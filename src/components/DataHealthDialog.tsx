@@ -105,6 +105,9 @@ function SourcesView() {
   const failing = data?.sources.filter((s) => FAILING.has(s.state)) || [];
   // Flags and answer ratings (roadmap P2, P3): counts only, from data/local/feedback.jsonl.
   const feedback = useJson<{ line: string }>('/api/feedback/summary');
+  // Feeds serving their last good answer while the source does not answer (src/server/lastGood.ts).
+  const summary = useJson<{ savedStandIns?: Array<{ feed: string; key: string; savedAt: string; failingSince: string; nextTryAt: string }> }>('/api/data/health/summary');
+  const standIns = summary.data?.savedStandIns || [];
   return (
     <div className="space-y-3">
       {error && <p className="text-rose-600 dark:text-rose-400">{error}</p>}
@@ -131,6 +134,18 @@ function SourcesView() {
         <p className="text-amber-700 dark:text-amber-400" data-health-licence-due="true">
           Licence check due (terms last read over 12 months ago): {licencesDue().map((r) => r.name).join('; ')}. Read each source&apos;s terms again and update src/data/dataLicences.ts (docs/MAINTENANCE.md).
         </p>
+      )}
+      {standIns.length > 0 && (
+        <div className="text-amber-700 dark:text-amber-400" data-health-standins="true">
+          <p>Showing saved figures because the source is not answering (each keeps its own dates; asked again automatically):</p>
+          <ul className="list-disc pl-5 text-xs">
+            {standIns.map((x) => (
+              <li key={`${x.feed}:${x.key}`}>
+                {x.feed.replace(/-/g, ' ')} {x.key}: saved {when(x.savedAt)}, failing since {when(x.failingSince)}, next try {when(x.nextTryAt)}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
       {feedback.data && (
         <p className="text-xs text-slate-500 dark:text-slate-400" data-health-feedback="true">

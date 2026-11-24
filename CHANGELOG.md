@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- While a source does not answer, five feeds that used to drop to Missing for an hour now show their
+  last good answer, with its own dates: external debt falling due, the BIS credit cycle, World Bank
+  creditors, BIS daily policy rates and the long BIS real exchange rate. The source is asked again
+  after 15 minutes, 1 hour, then every 4 hours. A saved answer older than its limit (14 days for
+  daily rates, up to 400 days for yearly data) is not served, so the figure reads Missing as before.
+  Menu > Data health > Sources lists which feeds are showing saved figures and when each is asked
+  again (saved in data/live/last-good/).
 - The daily data run gives download steps that failed (the feeds, wholly or in part, and the WEO,
   sanctions, GPR, Chinn-Ito, UCDP and replay files) a second try at the end of the run, 2 minutes
   later. One that still fails is tried again, alone, by the next start once 2 hours have passed (at
