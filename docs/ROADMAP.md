@@ -214,7 +214,7 @@ review.
 | Release downloads | How often files attached to a release are downloaded (downloads, not people) | GitHub (`npm run check:success`) |
 | Outcome-check hit rate (P1) | How often a saved policy review's goal was met after 12 and 24 months; fewer than 10 judged checks is too few to read a rate from | Policy track record, on the maintainer's computer |
 | Answer ratings (P3) | Thumbs up and down on council answers; other people's ratings count only when they choose to send them | Data health, on the maintainer's computer |
-| Expert review scores (P4) | What pilot economists and professors score policy review memos: clarity, use of evidence, whether the sources are correct, whether they would act on them | Reports > Policy reviews > Expert review on the computer where they fill it in; `npm run check:success` counts them; published only with consent in docs/validation/expert-reviews.md (`npm run reviews:summary`) |
+| Expert review scores (P4) | What pilot economists and professors score policy review memos: clarity, use of evidence, whether the sources are correct, whether they would act on them | Policy review > Expert review on the computer where they fill it in; `npm run check:success` counts them; published only with consent in docs/validation/expert-reviews.md (`npm run reviews:summary`) |
 
 No targets are set before the release: there is nothing yet to compare against. **Review date:**
 checkpoint 1, about four weeks after the public release. The release day and the review day are

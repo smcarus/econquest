@@ -19,5 +19,7 @@ test('no roles: Workspace leads the navigation, labels as Sam set them (2026-11-
   assert.equal(NAV_LABEL.today, 'Workspace');
   assert.equal(NAV_LABEL.research, 'Research');
   // Country Research, Compare and Portfolio are one Research page (Sam, 2026-11-05).
-  assert.deepEqual(NAV.slice(0, 3), ['today', 'research', 'reports']);
+  // Policy review has its own entry next to Reports (Sam, 2026-11-24).
+  assert.deepEqual(NAV.slice(0, 4), ['today', 'research', 'policy', 'reports']);
+  assert.equal(NAV_LABEL.policy, 'Policy review');
 });

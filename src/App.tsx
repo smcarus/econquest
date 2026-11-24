@@ -80,7 +80,7 @@ import { loadHoldings, saveHoldings,   type Holding } from './utils/holdings';
 import { HIDDEN_CHANGED_EVENT, fetchHiddenView, hiddenSets } from './utils/hiddenNamesClient';
 import type { HiddenView } from './utils/exclusions';
 
-type AppArea = 'today' | 'country' | 'compare' | 'portfolio' | 'reports' | 'desks';
+type AppArea = 'today' | 'country' | 'compare' | 'portfolio' | 'policy' | 'reports' | 'desks';
 import { EconQuestLogo } from './components/EconQuestLogo';
 import { lazyNamed, DeskLoading } from './components/LazyDesk';
 import { otherCountries } from './utils/countryChoices';
@@ -206,11 +206,10 @@ type NavSectionId =
 
 /** Reports in the core view: the note builder alone. */
 /** Reports: one tab per job, so each opens on its own instead of five panels stacked down one page. */
-type ReportsView = 'ic' | 'reviews' | 'docs' | 'notebooks' | 'teaching';
-const REPORTS_VIEWS: ReportsView[] = ['ic', 'reviews', 'docs', 'notebooks', 'teaching'];
+type ReportsView = 'ic' | 'docs' | 'notebooks' | 'teaching';
+const REPORTS_VIEWS: ReportsView[] = ['ic', 'docs', 'notebooks', 'teaching'];
 /** Which Reports tab holds each anchor that Tools, worked examples and the chat link to. */
 const REPORTS_VIEW_BY_ANCHOR: Record<string, ReportsView> = {
-  'tool-policy-reviews': 'reviews',
   'tool-council-docs': 'docs',
   'tool-notebooks': 'notebooks',
   'tool-episodes': 'teaching',
@@ -414,6 +413,11 @@ export default function App() {
     if (view) setReportsTab(view);
     setActiveNavSection('ic_memo_builder' as NavSectionId);
     setAppArea('reports');
+    window.scrollTo({ top: 0 });
+  };
+  /** Policy review: its own page, next to Reports. */
+  const openPolicyReview = () => {
+    setAppArea('policy');
     window.scrollTo({ top: 0 });
   };
   const openCountryPage = (tabId?: string) => {
@@ -1195,6 +1199,8 @@ export default function App() {
       setAppArea('portfolio');
       window.scrollTo({ top: 0 });
       if (t.anchor) scrollToAnchor(t.anchor);
+    } else if (t.anchor === 'tool-policy-reviews') {
+      openPolicyReview();
     } else {
       openWorkspace('reports', t.anchor ? REPORTS_VIEW_BY_ANCHOR[t.anchor] ?? 'ic' : undefined);
       if (t.anchor) scrollToAnchor(t.anchor);
@@ -1227,9 +1233,9 @@ export default function App() {
     setReportNonce((n) => n + 1);
     openWorkspace('reports', 'ic');
   };
-  // "Start a policy review" from a Council chat answer: open Reports, where the panel picks up the prefill.
+  // "Start a policy review" from a Council chat answer: open Policy review, where the panel picks up the prefill.
   useEffect(() => {
-    const go = () => openWorkspace('reports', 'reviews');
+    const go = () => openPolicyReview();
     window.addEventListener(START_REVIEW_EVENT, go);
     return () => window.removeEventListener(START_REVIEW_EVENT, go);
   });
@@ -1302,6 +1308,19 @@ export default function App() {
                   className="ui-pill inline-flex items-center whitespace-nowrap"
                 >
                   {t('research')}
+                </button>
+              ),
+              policy: (
+                <button
+                  type="button"
+                  onClick={openPolicyReview}
+                  aria-current={appArea === 'policy' ? 'page' : undefined}
+                  aria-pressed={appArea === 'policy'}
+                  title={t('policyReviewTitle')}
+                  className="ui-pill inline-flex items-center whitespace-nowrap"
+                  data-nav-policy="true"
+                >
+                  {t('policyReview')}
                 </button>
               ),
               reports: (
@@ -1665,6 +1684,18 @@ export default function App() {
                   {t('research')}
                 </button>
               ),
+              policy: (
+                <button
+                  type="button"
+                  onClick={openPolicyReview}
+                  aria-pressed={appArea === 'policy'}
+                  title={t('policyReviewTitle')}
+                  className="ui-pill whitespace-nowrap shrink-0"
+                  data-nav-policy="true"
+                >
+                  {t('policyReview')}
+                </button>
+              ),
               reports: (
                 <button
                   type="button"
@@ -1943,6 +1974,16 @@ export default function App() {
             </PanelBoundary>
           )}
 
+          {appArea === 'policy' && (
+            <PanelBoundary name="Policy reviews">
+              <Suspense fallback={<DeskLoading />}>
+                <div id="tool-policy-reviews" className="scroll-mt-4" data-area="policy">
+                  <PolicyReviews countries={liveWatchlistItems} otherCountries={liveOffListCountries} defaultIso3={run.iso3} />
+                </div>
+              </Suspense>
+            </PanelBoundary>
+          )}
+
           {appArea === 'reports' && (
             <PanelBoundary name="Reports">
             <WorkspacePage
@@ -1951,8 +1992,8 @@ export default function App() {
               subtitle={trp('rp_subtitle', { country: run.countryName })}
               tabs={REPORTS_VIEWS.map((id) => ({
                 id,
-                label: trp(id === 'ic' ? 'rp_tab_note' : id === 'reviews' ? 'rp_tab_reviews' : id === 'docs' ? 'rp_tab_docs' : id === 'notebooks' ? 'rp_tab_notebooks' : 'rp_tab_teaching'),
-                hint: trp(id === 'ic' ? 'rp_tab_note_hint' : id === 'reviews' ? 'rp_tab_reviews_hint' : id === 'docs' ? 'rp_tab_docs_hint' : id === 'notebooks' ? 'rp_tab_notebooks_hint' : 'rp_tab_teaching_hint'),
+                label: trp(id === 'ic' ? 'rp_tab_note' : id === 'docs' ? 'rp_tab_docs' : id === 'notebooks' ? 'rp_tab_notebooks' : 'rp_tab_teaching'),
+                hint: trp(id === 'ic' ? 'rp_tab_note_hint' : id === 'docs' ? 'rp_tab_docs_hint' : id === 'notebooks' ? 'rp_tab_notebooks_hint' : 'rp_tab_teaching_hint'),
                 desks: ['ic_memo_builder'],
               }))}
               activeTabId={reportsTab}
@@ -1961,13 +2002,6 @@ export default function App() {
               onChangeDesk={() => undefined}
               renderDesk={() => (
                 <Suspense fallback={<DeskLoading />}>
-                  {reportsTab === 'reviews' && (
-                  <div id="tool-policy-reviews" className="scroll-mt-4">
-                    <PanelBoundary name="Policy reviews">
-                      <PolicyReviews countries={liveWatchlistItems} otherCountries={liveOffListCountries} defaultIso3={run.iso3} />
-                    </PanelBoundary>
-                  </div>
-                  )}
                   {reportsTab === 'docs' && (
                   <div id="tool-council-docs" className="scroll-mt-4">
                     <PanelBoundary name="Council documents">

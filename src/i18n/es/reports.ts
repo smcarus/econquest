@@ -17,7 +17,7 @@ export const REPORTS_ES: Partial<Record<Keys, string>> = {
   rp_tab_teaching: 'Docencia',
   rp_tab_teaching_hint: 'Una decisión de tipos pasada como hoja para estudiantes y copia para el docente.',
   im_showText: 'Editar texto',
-  rp_subtitle: 'Documentos para entregar al comité de inversiones, a riesgos y a los clientes. País actual: {country}',
+  rp_subtitle: 'Notas, informes y material docente para descargar o compartir. País actual: {country}',
   rp_tools: 'Herramientas de {tab}',
   // Teaching episodes
   te_missing: 'Falta: {why}',

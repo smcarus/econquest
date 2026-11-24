@@ -26,7 +26,7 @@ import { PolicyCouncil } from './PolicyCouncil';
 import { councilChangedSince } from '../utils/policyCouncil';
 
 /**
- * Reports > Policy reviews: a guided, repeatable case file for one country and one problem.
+ * Policy review: a guided, repeatable case file for one country and one problem.
  * Frame > Diagnose > Options > Evidence > Memo > Outcomes; every step saved, hashed and audited.
  * See docs/POLICY_REVIEW.md. Kept on this computer in data/local/reviews.json.
  */
