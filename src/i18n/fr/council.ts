@@ -11,6 +11,12 @@ export const COUNCIL_FR: Messages<typeof COUNCIL> = {
   closeAria: 'Fermer le chat du conseil',
   welcome: "Que voulez-vous savoir sur l'économie ?",
   welcomeNote: "Les agents répondent à partir des chiffres de l'application, chacun avec sa source ; si un modèle d'IA est disponible, un agent de synthèse rédige une courte note à partir de leurs seules réponses.",
+  startTitle: 'Nouveau ici ? Trois étapes',
+  startAsk: 'Posez une question dans la zone ci-dessous ou appuyez sur un des exemples ci-dessus. Les agents répondent avec des chiffres officiels, chacun avec sa source.',
+  startCountry: 'Ouvrez Recherche, en haut, pour étudier un pays. Chaque chiffre a une ligne « Qu’est-ce que c’est ? » en mots simples.',
+  startAi: 'Facultatif : ajoutez un modèle d’IA pour un court résumé écrit. Ollama est gratuit et privé mais demande un ordinateur puissant ; Google Gemini demande une clé gratuite et envoie vos questions à Google. L’application fonctionne sans.',
+  startChooseAi: 'Choisir un modèle d’IA',
+  startDone: 'Compris',
   askInEnglish: "Pour l'instant, les agents comprennent les questions en anglais : posez-les en anglais pour obtenir la meilleure réponse. Les exemples de questions sont déjà en anglais.",
   chartsMenu: 'Graphiques et tests statistiques',
   chartsHelp:

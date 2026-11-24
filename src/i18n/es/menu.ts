@@ -167,6 +167,7 @@ export const MENU_ES: Partial<Record<Keys, string>> = {
   ai_place_bundled: 'Contenedor de Ollama incluido con la app',
   ai_serverHttp: 'el servidor de la app respondió HTTP {status}',
   ai_serverDown: 'el servidor de la app no respondió',
+  ai_noneYet: 'Aún no hay un modelo de IA configurado. La aplicación funciona sin él: los agentes responden con sus propias cifras. Elija uno arriba para obtener un breve resumen escrito.',
   ai_which: 'Qué modelo de IA escribe los resúmenes',
   ai_whichNote: 'Los agentes responden con las cifras propias de la app en cualquier caso. El modelo solo escribe el resumen, elige a los agentes y dirige el debate.',
   ai_aria: 'Modelo de IA',

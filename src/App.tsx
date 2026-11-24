@@ -622,6 +622,26 @@ export default function App() {
       });
   }, []);
 
+  // Whether a Gemini key is set (server keys reply), so the Menu says "AI: not set" rather than
+  // naming Gemini when no model can answer. Checked at start and when the window regains focus.
+  const [geminiKeySet, setGeminiKeySet] = useState<boolean | undefined>(undefined);
+  useEffect(() => {
+    let stop = false;
+    const load = () =>
+      fetch('/api/settings/keys')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (!stop && Array.isArray(d?.keys)) setGeminiKeySet(d.keys.some((k: { id?: string; source?: string }) => k.id === 'GEMINI_API_KEY' && k.source !== 'none'));
+        })
+        .catch(() => undefined);
+    void load();
+    window.addEventListener('focus', load);
+    return () => {
+      stop = true;
+      window.removeEventListener('focus', load);
+    };
+  }, []);
+
   // Persist AI Runtime config changes
   useEffect(() => {
     try {
@@ -1417,6 +1437,8 @@ export default function App() {
                             ? t('aiHybrid')
                             : runtimeConfig.providerMode === 'openai_compatible'
                             ? t('aiLocal')
+                            : geminiKeySet === false
+                            ? t('aiNotSet')
                             : t('aiGemini'),
                         title: t('settingsTitle', { shortcut: navigator.platform.toLowerCase().includes('mac') ? '⌘,' : 'Ctrl+,' }),
                         onClick: () => setIsSettingsOpen(true),
