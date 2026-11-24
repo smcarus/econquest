@@ -156,7 +156,7 @@ export const REPORTS_ES: Partial<Record<Keys, string>> = {
   pr_allIndicators: 'Los {n} indicadores',
   pr_readErr: 'No se pudieron leer las revisiones de políticas: {why}',
   pr_title: 'Revisiones de políticas',
-  pr_intro: 'Un expediente paso a paso para buscar formas de mejorar la política económica de un país: planteamiento, diagnóstico, opciones, evidencia, memorando de recomendación y seguimiento de resultados. Cada paso se guarda con su huella (hash), así que los mismos datos dan las mismas cifras. Es investigación, no un consejo validado.',
+  pr_intro: 'Un expediente paso a paso para buscar formas de mejorar la política económica de un país: planteamiento, diagnóstico, opciones, evidencia, memorando de recomendación y seguimiento de resultados. Cada paso se guarda con una huella de sus datos, así que quien lo repita obtiene las mismas cifras. Es investigación, no un consejo validado.',
   pr_new: 'Nueva revisión de políticas',
   pr_againNote: 'Revisar de nuevo: el planteamiento se copia de la revisión anterior con hoy como fecha de referencia. Cambie lo que sea distinto ahora.',
   pr_start: 'Empezar la revisión',

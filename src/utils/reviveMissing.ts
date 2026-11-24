@@ -31,6 +31,15 @@ export const WATCHLIST_ROW_NUMBERS = {
 };
 
 /** Watchlist groups read back from browser storage, with missing figures as NaN again. */
+// Country names saved by earlier releases that carried a theme label; shown by their plain name now.
+const OLD_NAMES: Record<string, string> = { 'Egypt (Red Sea Corridor)': 'Egypt' };
+
 export function reviveWatchlistGroups<G extends { items: object[] }>(groups: G[]): G[] {
-  return groups.map((g) => ({ ...g, items: g.items.map((it) => reviveMissing(it, WATCHLIST_ROW_NUMBERS)) }));
+  return groups.map((g) => ({
+    ...g,
+    items: g.items.map((it) => {
+      const row = reviveMissing(it, WATCHLIST_ROW_NUMBERS) as typeof it & { countryName?: string };
+      return row.countryName && OLD_NAMES[row.countryName] ? { ...row, countryName: OLD_NAMES[row.countryName] } : row;
+    }),
+  }));
 }

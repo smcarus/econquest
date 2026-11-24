@@ -92,6 +92,8 @@ export const SHELL_PT: Messages<typeof SHELL> = {
   helpFullNote: "Explica cada número e termo, e por que cada número ausente está ausente.",
   helpTitle: "{label}: {note} Pressione para {next}.",
   helpAria: "Explicações: {label}. Pressione para {next}.",
+  helpTitleMenu: "{label}: {note} Toque para escolher quanto é explicado.",
+  helpAriaMenu: "Explicações: {label}. Toque para escolher.",
   guideRead: "Como ler este gráfico: ",
   guideLife: "O que significa na vida real: ",
   langTitle: "Idioma: {name}. Pressione para {next}.",

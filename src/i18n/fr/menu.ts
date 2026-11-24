@@ -423,7 +423,7 @@ export const MENU_FR: Messages<typeof MENU> = {
   dc_cantRun: "La vérification n'a pas pu être effectuée : {detail}. Le serveur de l'application tourne-t-il ?",
   dc_noAnswer: "le serveur n'a pas répondu",
   dc_title: "Connexions de données",
-  dc_intro: "On demande à chaque source une petite réponse réelle, de la même manière que les outils. La même vérification s'exécute dans un terminal avec",
+  dc_intro: "On demande à chaque source une petite réponse réelle, de la même manière que les outils.",
   dc_summary: "{connected} connectées, {failed} en échec, {setup} à configurer, {off} désactivées, {optional} facultatives non définies",
   dc_checkedAt: " · vérifié à {time}",
   dc_hide: "Masquer les sources",

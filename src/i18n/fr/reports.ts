@@ -152,7 +152,7 @@ export const REPORTS_FR: Messages<typeof REPORTS> = {
   pr_allIndicators: "Les {n} indicateurs",
   pr_readErr: "Impossible de lire les revues de politique : {why}",
   pr_title: "Revues de politique",
-  pr_intro: "Un dossier pas à pas pour trouver des moyens d'améliorer la politique d'un pays : Cadrer, Diagnostiquer, Options, Éléments probants, Note de recommandation, Suivre les résultats. Chaque étape est enregistrée et hachée, de sorte que les mêmes entrées donnent les mêmes chiffres. Recherche, pas un conseil validé.",
+  pr_intro: "Un dossier pas à pas pour trouver des moyens d'améliorer la politique d'un pays : Cadrer, Diagnostiquer, Options, Éléments probants, Note de recommandation, Suivre les résultats. Chaque étape est enregistrée avec une empreinte de ses données, si bien que quiconque la refait obtient les mêmes chiffres. Recherche, pas un conseil validé.",
   pr_new: "Nouvelle revue de politique",
   pr_againNote: "Revoir : le cadre est copié de la revue précédente, avec aujourd'hui comme date « Au ». Modifiez ce qui a changé depuis.",
   pr_start: "Commencer la revue",

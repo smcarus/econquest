@@ -134,7 +134,7 @@ function SourcesView() {
       )}
       {feedback.data && (
         <p className="text-xs text-slate-500 dark:text-slate-400" data-health-feedback="true">
-          Feedback: {feedback.data.line} `npm run feedback:export` writes the rated questions for the council test set.
+          Feedback: {feedback.data.line}
         </p>
       )}
       {data && !data.sources.length && <p>The first check runs tonight after {data.nightly.time}, or press Check now.</p>}
