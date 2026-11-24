@@ -294,7 +294,7 @@ export const MENU = defineMessages('menu', {
   ab_updOff: 'The check for a newer version is off (UPDATE_CHECK=off).',
   ab_updAbout: 'The app asks GitHub for the newest release number at most once a day and sends nothing about you.',
   ab_privacy: 'Privacy',
-  ab_privacyNote: 'The app sends nothing about you to the project: no tracking, no usage counts, no crash reports. What you save stays on the computer running the app. Figures are asked for from public sources; questions go to an AI provider only if you choose an online one such as Google Gemini, and your browser loads the screen fonts from Google Fonts. The full list is in docs/PRIVACY.md.',
+  ab_privacyNote: 'The app sends nothing about you to the project: no tracking, no usage counts, no crash reports. What you save stays on the computer running the app. Figures are asked for from public sources; questions go to an AI provider only if you choose an online one such as Google Gemini. The screen fonts come with the app. The full list is in docs/PRIVACY.md.',
   ab_credits: 'Credits',
   ab_creditsNote: 'Three sources ask for a visible credit wherever their figures show. The app shows each one beside those figures, and here:',
   ab_licences: 'Data licences',

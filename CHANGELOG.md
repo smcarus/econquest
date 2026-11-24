@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- The three screen fonts (Public Sans, Plus Jakarta Sans, JetBrains Mono) now come with the app
+  instead of loading from Google Fonts, so opening a page asks no outside server for anything and
+  the fonts also show offline. About 380 KB of woff2 files, fetched only for the characters a page
+  shows (SIL Open Font License 1.1, credited in NOTICE).
 - Keyboard shortcuts: **/** jumps to the council question box, **Cmd/Ctrl+K** opens Tools with its
   search box, **Cmd/Ctrl+,** opens Settings (as before) and **?** shows the list. / and ? do nothing
   while typing in a box or while a window is open.

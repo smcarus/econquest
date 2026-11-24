@@ -283,7 +283,7 @@ export const MENU_PT: Messages<typeof MENU> = {
   ab_updOff: "A verificação de novas versões está desativada (UPDATE_CHECK=off).",
   ab_updAbout: "O app pergunta ao GitHub o número da versão mais nova no máximo uma vez por dia e não envia nada sobre você.",
   ab_privacy: 'Privacidade',
-  ab_privacyNote: "O app não envia nada sobre você ao projeto: nem rastreamento, nem contagem de uso, nem relatórios de falha. O que você salva fica no computador onde o app roda. Os números são pedidos a fontes públicas; as perguntas vão a um provedor de IA só se você escolher um on-line, como o Google Gemini, e o seu navegador carrega as fontes da tela do Google Fonts. A lista completa está em docs/PRIVACY.md (em inglês).",
+  ab_privacyNote: "O app não envia nada sobre você ao projeto: nem rastreamento, nem contagem de uso, nem relatórios de falha. O que você salva fica no computador onde o app roda. Os números são pedidos a fontes públicas; as perguntas vão a um provedor de IA só se você escolher um on-line, como o Google Gemini. As fontes da tela vêm com o app. A lista completa está em docs/PRIVACY.md (em inglês).",
   ab_credits: "Créditos",
   ab_creditsNote: "Três fontes pedem um crédito visível onde quer que seus números apareçam. O app mostra cada um ao lado desses números, e aqui:",
   ab_licences: "Licenças de dados",
