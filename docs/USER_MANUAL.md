@@ -1595,8 +1595,18 @@ use; a few could not be confirmed and are marked so.
   `docker compose up -d --build econquest`. After a pull that changed `package.json`, run
   `npm install` too (for `npm run dev` and the terminal commands). `npm run council:regress` warns when
   the running app is older than the folder.
-- **`git pull` stops on untracked files under `tests/fixtures/recorded`.** A local feed recording is in
-  the way of the committed one. Move it aside and pull again:
-  `mv tests/fixtures/recorded ~/recorded-backup && git pull`.
+- **`git pull` stops on files the app wrote itself** (`docs/METHODS.md`, `docs/TRACK_RECORD.md`,
+  `docs/validation/recorded-verdicts.json`, files under `tests/fixtures`). `npm run go` and
+  `npm run update` handle this by themselves: they copy those files to
+  `data/local/backups/before-pull-<time>/`, put them back to the repo version and pull. To do the same
+  on its own: `bash scripts/safe-pull.sh`. A file you changed by hand is never touched; if it blocks
+  the pull, the message names it.
+- **A script you run is older than the fixed one on GitHub.** `npm run check:data`,
+  `npm run oecd:vintages`, `npm run mac:validate` and `npm run council:record` check first: when this
+  folder is behind GitHub they update it (as `npm run go` does) and run again on the new code. Offline
+  they say so and run the code that is here. To skip the check once: `ECONQUEST_NO_UPDATE=1 npm run check:data`.
+- **Port 3000 is busy** (often another Docker container). `npm run go` starts the dev server on the next
+  free port, names what holds 3000, and lists the port under "Notes" at the end; this alone does not
+  make the command fail.
 - **Gemini stops working after Google renames a model.** Set `GEMINI_MODEL` in `.env` to the new name
   and restart.

@@ -5,6 +5,35 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- While a source does not answer, five feeds that used to drop to Missing for an hour now show their
+  last good answer, with its own dates: external debt falling due, the BIS credit cycle, World Bank
+  creditors, BIS daily policy rates and the long BIS real exchange rate. The source is asked again
+  after 15 minutes, 1 hour, then every 4 hours. A saved answer older than its limit (14 days for
+  daily rates, up to 400 days for yearly data) is not served, so the figure reads Missing as before.
+  Menu > Data health > Sources lists which feeds are showing saved figures and when each is asked
+  again (saved in data/live/last-good/).
+- The daily data run gives download steps that failed (the feeds, wholly or in part, and the WEO,
+  sanctions, GPR, Chinn-Ito, UCDP and replay files) a second try at the end of the run, 2 minutes
+  later. One that still fails is tried again, alone, by the next start once 2 hours have passed (at
+  most 3 times before the next daily run), so a source that was down in the morning is fetched when
+  it is back. `npm run go -- status` shows each later try and what now works. The weekly tests are
+  never re-run this way.
+- Slow or busy sources are asked again before they count as failed. The connection check
+  (`npm run check:data` and the nightly check) tries up to three times, 3 s then 10 s apart, after no
+  answer in time, a cut connection, 429 or 500-504, follows the server's Retry-After (up to 60 s),
+  and gives the World Bank, ECB and GDELT 30 s per try. A failure that stays says how many times it
+  was asked. Feed readers in the app try once more after 1.5 s. Refusals (401, 403, 404), bot-check
+  pages and "connection refused" are not retried.
+- When port 3000 is busy (often another Docker container), `npm run go` starts the dev server on the
+  next free port, names what holds 3000 and lists it under "Notes"; this alone no longer makes the
+  command fail. `npm run check:data`, `npm run oecd:vintages`, `npm run mac:validate` and
+  `npm run council:record` update the folder first when it is behind GitHub and run again on the new
+  code (`ECONQUEST_NO_UPDATE=1` skips this).
+- `npm run go` and `npm run update` no longer stop on files the app writes itself (generated docs
+  such as docs/METHODS.md and docs/TRACK_RECORD.md, docs/validation/recorded-verdicts.json, recorded
+  test data under tests/fixtures): they are copied to data/local/backups/before-pull-<time>/, put
+  back to the repo version, and the pull goes through. Files changed by hand are left alone and named
+  (`bash scripts/safe-pull.sh` does the same on its own).
 - `npm run oecd:vintages` no longer trips the OECD's request limit: requests go 4 seconds apart,
   a "too many requests" (429) or busy-server (500-504) answer is retried up to 4 times after a
   wait (the OECD's Retry-After when given), and the run stops after repeated 429s so the next run

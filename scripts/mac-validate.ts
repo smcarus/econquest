@@ -20,9 +20,11 @@ import dotenv from 'dotenv';
 import { codeHash } from '../src/utils/codeHash';
 import { parseValidateArgs, redact, renderReport, secretValues, stripAnsi, VALIDATE_STEPS, type StepResult, type ValidateEnv } from '../src/utils/macValidate';
 import { loadSettings, settingsFilePath } from '../src/utils/userSettings';
+import { ensureCurrentCode } from '../src/utils/codeUpdateNode.ts';
 
 dotenv.config();
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+ensureCurrentCode(root);
 const dataDir = process.env.DATA_DIR || path.join(root, 'data');
 
 const opts = parseValidateArgs(process.argv.slice(2));
@@ -51,7 +53,14 @@ const git = (args: string[]): string => {
 
 async function findApp(): Promise<ValidateEnv['app']> {
   const local = codeHash(root);
-  const urls = process.env.APP_URL ? [process.env.APP_URL] : ['http://127.0.0.1:3737', 'http://127.0.0.1:3000'];
+  // The dev server may be on another port when 3000 was busy (npm run go saves it in data/local/logs/dev.port).
+  let devPort = '3000';
+  try {
+    devPort = fs.readFileSync(path.join(dataDir, 'local', 'logs', 'dev.port'), 'utf8').trim() || devPort;
+  } catch {
+    /* started on 3000, or not by npm run go */
+  }
+  const urls = process.env.APP_URL ? [process.env.APP_URL] : ['http://127.0.0.1:3737', `http://127.0.0.1:${devPort}`];
   for (const url of urls) {
     try {
       const r = await fetch(`${url}/healthz`, { signal: AbortSignal.timeout(3000) });
