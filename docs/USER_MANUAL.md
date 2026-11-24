@@ -1595,8 +1595,11 @@ use; a few could not be confirmed and are marked so.
   `docker compose up -d --build econquest`. After a pull that changed `package.json`, run
   `npm install` too (for `npm run dev` and the terminal commands). `npm run council:regress` warns when
   the running app is older than the folder.
-- **`git pull` stops on untracked files under `tests/fixtures/recorded`.** A local feed recording is in
-  the way of the committed one. Move it aside and pull again:
-  `mv tests/fixtures/recorded ~/recorded-backup && git pull`.
+- **`git pull` stops on files the app wrote itself** (`docs/METHODS.md`, `docs/TRACK_RECORD.md`,
+  `docs/validation/recorded-verdicts.json`, files under `tests/fixtures`). `npm run go` and
+  `npm run update` handle this by themselves: they copy those files to
+  `data/local/backups/before-pull-<time>/`, put them back to the repo version and pull. To do the same
+  on its own: `bash scripts/safe-pull.sh`. A file you changed by hand is never touched; if it blocks
+  the pull, the message names it.
 - **Gemini stops working after Google renames a model.** Set `GEMINI_MODEL` in `.env` to the new name
   and restart.
