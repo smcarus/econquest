@@ -30,8 +30,10 @@ import { zipSync } from 'fflate';
 import type { RegressionBaseline, RegressionReport } from '../src/utils/councilRegression.ts';
 import { DEFAULT_REFEREE_MODEL, isSmallModel, refereeModelOrDefault } from '../src/utils/refereeModel.ts';
 import { loadWorkspace, workspaceFilePath } from '../src/utils/workspaceStore.ts';
+import { ensureCurrentCode } from '../src/utils/codeUpdateNode.ts';
 
 const root = process.cwd();
+ensureCurrentCode(root);
 const argModel = (() => {
   const i = process.argv.indexOf('--model');
   return i > 0 ? process.argv[i + 1] : undefined;

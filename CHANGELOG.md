@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- When port 3000 is busy (often another Docker container), `npm run go` starts the dev server on the
+  next free port, names what holds 3000 and lists it under "Notes"; this alone no longer makes the
+  command fail. `npm run check:data`, `npm run oecd:vintages`, `npm run mac:validate` and
+  `npm run council:record` update the folder first when it is behind GitHub and run again on the new
+  code (`ECONQUEST_NO_UPDATE=1` skips this).
 - `npm run go` and `npm run update` no longer stop on files the app writes itself (generated docs
   such as docs/METHODS.md and docs/TRACK_RECORD.md, docs/validation/recorded-verdicts.json, recorded
   test data under tests/fixtures): they are copied to data/local/backups/before-pull-<time>/, put

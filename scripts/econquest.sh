@@ -12,6 +12,7 @@
 # Every start also begins the daily data run in the background, at most once a day: every free
 # feed, IMF WEO editions, sanctions lists, GPR index, UCDP files, nowcasts and forecasts, the
 # weekly tests when a week has passed, and a connection check (log: data/local/logs/daily.log).
+# When another program holds port 3000, the dev server starts on the next free port and says so.
 # Double-click econquest-mac.command for the same as `npm run go`.
 set -uo pipefail
 
@@ -19,7 +20,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT}"
 
 DOCKER_PORT="${PORT:-3737}"
-DEV_PORT=3000
+DEV_PORT_WANTED=3000
+DEV_PORT=${DEV_PORT_WANTED}
 QUICK_MODEL="${OLLAMA_QUICK_MODEL:-qwen2.5:7b}"
 DEEP_MODEL="${OLLAMA_DEEP_MODEL:-qwen2.5:32b}"
 # Small referee (opt-in): OLLAMA_ALLOW_SMALL_REFEREE=on npm run go also downloads the 14B model.
@@ -31,7 +33,10 @@ DEV_LOG="${LOG_DIR}/dev.log"
 DEV_PID="${LOG_DIR}/dev.pid"
 DAILY_LOG="${LOG_DIR}/daily.log"
 DAILY_PID="${LOG_DIR}/daily.pid"
+DEV_PORT_FILE="${LOG_DIR}/dev.port"
 mkdir -p "${LOG_DIR}" data/archive
+# The port the dev server was last started on (3000, or the next free one when 3000 was busy).
+[ -f "${DEV_PORT_FILE}" ] && DEV_PORT="$(cat "${DEV_PORT_FILE}" 2>/dev/null || echo "${DEV_PORT_WANTED}")"
 
 cmd="start"; pull=1; run_tests=0; run_validate=0; run_daily=1
 for a in "$@"; do
@@ -42,16 +47,24 @@ for a in "$@"; do
     --validate) run_validate=1 ;;
     --all) run_tests=1; run_validate=1 ;;
     --no-pull) pull=0 ;;
-    -h|--help) sed -n '2,15p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown option: $a (see npm run go -- --help)"; exit 2 ;;
   esac
 done
 
 failed=()
+# Things worth knowing that did not stop anything (the exit code stays 0 for these).
+notes=()
 step() { echo; echo "== $*"; }
 http_ok() { [ "$(curl -s -o /dev/null -w '%{http_code}' -m 5 "http://127.0.0.1:$1/" 2>/dev/null)" = "200" ]; }
 port_pid() { lsof -nP -t -iTCP:"$1" -sTCP:LISTEN 2>/dev/null | head -1; }
 docker_up() { command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; }
+# Who holds a port, in words: the Docker container that publishes it, else the program.
+port_holder() {
+  local c=""
+  docker_up && c="$(docker ps --filter "publish=$1" --format '{{.Names}}' 2>/dev/null | head -1)"
+  if [ -n "${c}" ]; then echo "Docker container ${c}"; else ps -o command= -p "$2" 2>/dev/null | cut -c1-120; fi
+}
 
 stop_dev() {
   local pid=""
@@ -62,6 +75,7 @@ stop_dev() {
   fi
   rm -f "${DEV_PID}"
   pid="$(port_pid "${DEV_PORT}")"
+  [ -n "${pid}" ] || pid="$(port_pid "${DEV_PORT_WANTED}")"
   if [ -n "${pid}" ] && ps -o command= -p "${pid}" | grep -q "${ROOT}"; then kill "${pid}" 2>/dev/null; fi
 }
 
@@ -188,20 +202,32 @@ else
   failed+=("docker")
 fi
 
-step "4/6 Dev server (port ${DEV_PORT})"
+step "4/6 Dev server (port ${DEV_PORT_WANTED})"
 stop_dev
+DEV_PORT="${DEV_PORT_WANTED}"
 other="$(port_pid "${DEV_PORT}")"
 if [ -n "${other}" ]; then
-  echo "Port ${DEV_PORT} is held by another program: $(ps -o command= -p "${other}" | cut -c1-120)"
-  echo "Stop it (kill ${other}) and run this again to start the dev server."
-  failed+=("dev server: port ${DEV_PORT} busy")
+  # Another program has the port: use the next free one instead of giving up.
+  echo "Port ${DEV_PORT} is held by $(port_holder "${DEV_PORT}" "${other}")."
+  DEV_PORT=""
+  for p in $(seq $((DEV_PORT_WANTED + 1)) $((DEV_PORT_WANTED + 20))); do
+    [ "${p}" = "${DOCKER_PORT}" ] && continue
+    if [ -z "$(port_pid "${p}")" ]; then DEV_PORT="${p}"; break; fi
+  done
+fi
+if [ -z "${DEV_PORT}" ]; then
+  echo "No free port between $((DEV_PORT_WANTED + 1)) and $((DEV_PORT_WANTED + 20)); the dev server was not started."
+  failed+=("dev server: ports ${DEV_PORT_WANTED}-$((DEV_PORT_WANTED + 20)) busy")
+  DEV_PORT="${DEV_PORT_WANTED}"
 else
+  [ "${DEV_PORT}" != "${DEV_PORT_WANTED}" ] && notes+=("dev server on port ${DEV_PORT}, because port ${DEV_PORT_WANTED} is busy")
+  echo "${DEV_PORT}" >"${DEV_PORT_FILE}"
   # set -m gives the server its own process group so `stop` can end npm and tsx together.
   set -m
-  nohup npm run dev >"${DEV_LOG}" 2>&1 &
+  PORT="${DEV_PORT}" nohup npm run dev >"${DEV_LOG}" 2>&1 &
   echo $! >"${DEV_PID}"
   set +m
-  echo "Started (log: ${DEV_LOG})."
+  echo "Started on port ${DEV_PORT} (log: ${DEV_LOG})."
 fi
 
 step "5/6 Checking both"
@@ -240,6 +266,10 @@ fi
 
 show_status
 echo
+if [ "${#notes[@]}" -gt 0 ]; then
+  echo "Notes:"
+  for n in "${notes[@]}"; do echo "  - ${n}"; done
+fi
 if [ "${#failed[@]}" -eq 0 ]; then
   echo "All good."
   [ -t 1 ] && command -v open >/dev/null 2>&1 && open "http://localhost:${DOCKER_PORT}" >/dev/null 2>&1
