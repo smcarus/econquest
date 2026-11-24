@@ -107,3 +107,40 @@ test('other questions get each country’s calls and debt path in one line; none
   assert.deepEqual(d.short, [{ country: 'Brazil', text: 'Monetary policy looks tight; government debt is 93.3% of GDP and the IMF projects it rising to 2027.' }]);
   assert.deepEqual(noModelDigest('How is Ghana doing?', [{ ...fiscal, findings: [] }]).short, []);
 });
+
+test('Missing lines: repeats dropped, older figures and what no source publishes set apart (Ghana, 24 Nov)', () => {
+  const ghana = [
+    'Ghana: missing inflation (IMF did not answer) and policy rate (Not in BIS policy rates)',
+    'Ghana: no debt or fiscal figures (IMF WEO, World Bank QEDS/IDS and BIS did not answer)',
+    'Ghana: news tone missing (GDELT did not answer or is in its pause)',
+    'Ghana: political stability rank missing (World Bank did not answer)',
+    'Ghana: weekly event counts and economic news themes missing (GDELT raw files not pulled yet: Menu > Offline data)',
+    'Ghana: ACLED conflict events missing: add your ACLED account (email and password) in Menu > Settings > Free data keys',
+    'Ghana: 10Y yield missing (No source yet)',
+    'Ghana: USD bond spread missing (No free source)',
+    'Ghana: no carry reading',
+    'Ghana: futures positioning missing (No CFTC-reported future)',
+    'Ghana: no BIS real exchange rate, ECB rate, CFTC positioning or TIC holdings',
+    'Ghana: World Bank, WITS or UN Comtrade trade figures not loaded',
+    'Ghana: OECD leading indicator missing (OECD publishes no CLI)',
+    'No dated events on file in the next 120 days for Ghana',
+    'Ghana: no dated event on file in the next 60 days',
+    'Ghana: no BIS policy-rate history for the policy cycle',
+    'Ghana: no OECD leading indicator',
+    'Ghana: no GDELT pull',
+    'Ghana: no CFTC currency future, so no futures positioning',
+    'Ghana: no Polymarket contract names this country',
+    'Ghana: Kalshi odds are not saved per country, so only Polymarket contracts are read',
+    "Ghana: consumer confidence, economic sentiment and households' price expectations missing (the European Commission's household survey covers EU members only)",
+    'Ghana: no positioning, crowd odds or survey figures to describe',
+    'Brazil: older than usual, so read with their date: policy rate for 2026-11-03, 21 days old (usually 14 at most)',
+  ];
+  const d = noModelDigest('How is Ghana doing?', [{ ...fiscal, findings: [], missing: ghana }]);
+  assert.equal(d.gaps.length, 7);
+  assert.ok(d.gaps.every((g) => /did not answer|not pulled|add your|not loaded/.test(g)));
+  assert.deepEqual(d.older, [ghana[23]]);
+  assert.equal(d.notCovered.length, 9);
+  for (const gone of [8, 14, 15, 16, 17, 18, 22]) assert.ok(![...d.gaps, ...d.notCovered].includes(ghana[gone]!), ghana[gone]);
+  // A short line with nothing longer to repeat stays.
+  assert.deepEqual(noModelDigest('x', [{ ...fiscal, findings: [], missing: ['Kenya: no GDELT pull'] }]).gaps, ['Kenya: no GDELT pull']);
+});
