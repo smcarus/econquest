@@ -53,6 +53,7 @@ export const SHELL = defineMessages(
     examCannotChange: 'Only the computer running the app, or an admin when sign-in is on, can switch exam mode.',
     examTitle: 'On: no AI summaries or AI steps for anyone using this app; Council chat shows figures only, and questions asked and countries opened go to the audit log.',
     about: 'About & data licences',
+    updateOut: 'New version',
     manual: 'User manual',
     worked: 'Worked examples',
     menuSetUp: 'Set up',

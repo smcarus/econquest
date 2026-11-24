@@ -6,6 +6,7 @@ import { useT } from '../i18n/useLang';
 import { MENU } from '../i18n/messages/menu';
 import { APP_CITATION } from '../utils/citation';
 import { versionWithCommit } from '../utils/buildInfo';
+import { useUpdateStatus } from './updateStatus';
 import { licenceCheckDue, DATA_LICENCES, LICENCE_STATUS_LABEL, openLicenceQuestions, type LicenceStatus } from '../data/dataLicences';
 
 /**
@@ -26,6 +27,7 @@ const STATUS_CLASS: Record<LicenceStatus, string> = {
 
 export function AboutDialog({ focusId, onClose }: { focusId?: string | null; onClose: () => void }) {
   const t = useT(MENU);
+  const update = useUpdateStatus();
   const [open, setOpen] = useState<string | null>(focusId ?? null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
   useEffect(() => {
@@ -55,6 +57,25 @@ export function AboutDialog({ focusId, onClose }: { focusId?: string | null; onC
         <div className="p-4 space-y-3 overflow-y-auto ui-body">
           <p>{t('ab_what')}</p>
           <p className="text-slate-500 dark:text-slate-400" data-app-version>{t('ab_version', { v: versionWithCommit(APP_CITATION.version) })}</p>
+          {update && (
+            <div className={`text-sm ${update.newer ? 'border border-blue-200 dark:border-blue-800 p-2' : 'text-slate-500 dark:text-slate-400'}`} data-update={update.off ? 'off' : update.newer ? 'newer' : update.error ? 'unknown' : 'latest'}>
+              {update.off ? (
+                <p>{t('ab_updOff')}</p>
+              ) : update.newer && update.latest ? (
+                <>
+                  <p className="text-slate-900 dark:text-white">
+                    {t('ab_updNewer', { v: update.latest.version })}{' '}
+                    <a href={update.latest.url} target="_blank" rel="noopener noreferrer" className="underline inline-flex items-center gap-0.5">
+                      {t('ab_updNotes')} <ExternalLink className="w-3 h-3" aria-hidden />
+                    </a>
+                  </p>
+                  <p className="mt-1">{t('ab_updHow')}</p>
+                </>
+              ) : (
+                <p>{update.error ? t('ab_updUnknown', { why: update.error }) : t('ab_updLatest', { date: (update.checkedAt ?? '').slice(0, 10) })} {t('ab_updAbout')}</p>
+              )}
+            </div>
+          )}
           <p className="border border-amber-200 dark:border-amber-800 p-2 text-amber-800 dark:text-amber-300" data-research-notice>
             {t('ab_notice')}
           </p>

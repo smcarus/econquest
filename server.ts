@@ -11,6 +11,7 @@ import type { HistoryInput } from './src/utils/precedentFinder';
 import { registerIdeaRoutes } from './src/server/routes/ideas';
 import { isWgiCode, wbReplyHasRows, wgiUrls } from './src/utils/wgiCodes';
 import { registerFeedbackRoutes } from './src/server/routes/feedback';
+import { getUpdateStatus } from './src/server/updateCheck';
 import { registerCatalogueRoutes } from './src/server/routes/catalogue';
 import { offlineReportHtml } from './src/utils/offlineReport';
 import { registerOfficialDocsRoutes } from './src/server/routes/officialDocs';
@@ -4024,6 +4025,10 @@ async function startServer() {
 
   // Download all country data (Menu > Offline data; same run as npm run preload).
   app.get('/api/preload', (_req, res) => res.json(preloadReply()));
+  // Menu > About: is a newer release out? (GitHub, at most once a day; off with UPDATE_CHECK=off.)
+  app.get('/api/update', async (_req, res) => {
+    res.json(await getUpdateStatus());
+  });
   app.get('/api/online', async (req, res) => {
     const online = await checkFeedsOnline(req.query.recheck === '1');
     const sum = summarisePreload(preloadPlan(), preloadState);

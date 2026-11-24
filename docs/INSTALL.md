@@ -257,7 +257,7 @@ The full guide to every screen is in Menu > User manual.
 | --- | --- |
 | Stop the app | `docker compose down` (your saved data stays) |
 | Start it again | `docker compose up -d` (Docker Desktop must be running) |
-| Update to the newest release | `docker compose pull` then `docker compose up -d` |
+| Update to the newest release | `docker compose pull` then `docker compose up -d`. Menu > About says when a newer release is out (`UPDATE_CHECK=off` in `.env` turns that check off) |
 | See what it is doing | `docker compose logs -f econquest` (Ctrl+C to stop watching) |
 | Remove it and everything it saved | `docker compose down -v` (this deletes your saved data and keys; make a backup first) |
 | List, make or revoke API tokens | `docker compose exec econquest npm run tokens -- list` (or `create "<name>" <scopes>`, `revoke <id>`); the same tokens as Menu > Settings > API tokens |

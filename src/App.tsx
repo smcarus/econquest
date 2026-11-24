@@ -130,6 +130,7 @@ import { loadCouncilBrief } from './utils/askCouncil';
 import { loadShareMode, saveShareMode } from './utils/shareMode';
 import { dailyLine, dailyProgress } from './utils/dailyProgress';
 import type { DataHealthTab } from './components/DataHealthDialog';
+import { useUpdateStatus } from './components/updateStatus';
 
 // Desks load on first use, so the first screen does not download all 41 of them.
 // The menu dialogs load when first opened, keeping them out of the first download.
@@ -308,6 +309,8 @@ export default function App() {
   const [isIdeasOpen, setIsIdeasOpen] = useState(false);
   // The header and Menu in the chosen language (src/i18n; Spanish added 2026-11-08).
   const t = useT(SHELL);
+  // Menu > About says when a newer release is out (src/server/updateCheck.ts).
+  const updateStatus = useUpdateStatus();
   const tr = useT(RESEARCH);
   const trp = useT(REPORTS);
   // Menu > Your data: series loaded from your own CSV files.
@@ -1590,7 +1593,7 @@ export default function App() {
                         key: 'about',
                         icon: <Info className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
                         label: t('about'),
-                        hint: '',
+                        hint: updateStatus?.newer ? t('updateOut') : '',
                         onClick: () => setAboutFocus(null),
                         className: '',
                       },

@@ -51,6 +51,7 @@ export const SHELL_PT: Messages<typeof SHELL> = {
   sharingTitle: "Ativado: os downloads omitem os números cujas fontes não permitem repassá-los, ou não dizem se permitem (Menu > Sobre e licenças de dados).",
   examCannotChange: "Só o computador que executa o app, ou um administrador quando o login está ativado, pode mudar o modo prova.",
   examTitle: "Ativado: sem resumos nem etapas de IA para ninguém que use este app; o chat do conselho mostra só os números, e as perguntas feitas e os países abertos vão para o log de auditoria.",
+  updateOut: 'Nova versão',
   about: "Sobre e licenças de dados",
   manual: "Manual do usuário",
   worked: "Exemplos resolvidos",
