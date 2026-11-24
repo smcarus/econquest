@@ -13,6 +13,10 @@
  *      last run is more than 7 days old, so a missed Sunday is caught up; results are only added
  *      to the forward record, never changed;
  *   5. the connection check, which lists every source that needs a key or a file from you.
+ * A download step that fails (the feeds, or one of the files in 2.) gets a second try at the end of
+ * the run, after a short wait; one that still fails is tried again by the next start once 2 hours
+ * have passed (at most 3 times a day), with only those steps, so a source that was down in the
+ * morning is fetched when it is back without waiting a day. The tests are never re-run that way.
  * Nothing here makes a figure: a step that fails is reported with the reason, and the last good
  * figures stay. The result is kept in data/local/daily-run.json for `npm run go -- status`.
  */
@@ -23,6 +27,12 @@ import type { OfficialCalendarEvent } from '../data/officialCalendar';
 
 export const DAILY_MIN_GAP_MS = 20 * 60 * 60 * 1000;
 export const TESTS_EVERY_MS = 7 * 24 * 60 * 60 * 1000;
+/** Wait before the second try of failed download steps at the end of a run. */
+export const SECOND_TRY_WAIT_MS = 2 * 60 * 1000;
+/** A failed download step is tried again by a later start once this long has passed. */
+export const LATER_TRY_AFTER_MS = 2 * 60 * 60 * 1000;
+/** Later tries per daily run (after that, the next daily run). */
+export const MAX_LATER_TRIES = 3;
 
 export type DailyOutcome = 'done' | 'failed' | 'skipped';
 
@@ -36,6 +46,8 @@ export interface DailyStep {
   details?: string[];
   /** Bytes this step downloaded (src/utils/downloadCounter.ts); missing in runs before it was counted. */
   bytes?: number;
+  /** How many parts failed in a step that otherwise finished (feeds: countries or sources that did not answer). */
+  partsFailed?: number;
 }
 
 export interface DailyRun {
@@ -48,6 +60,8 @@ export interface DailyRun {
   downloadedBytes?: number;
   /** The feeds could not be reached: the next start tries again (after an hour) instead of waiting a day. */
   offline?: boolean;
+  /** Later tries of the steps that failed (a start 2 hours or more after the run): when, which, which now worked. */
+  laterTries?: Array<{ at: string; steps: string[]; fixed: string[] }>;
 }
 
 export interface DailyFile {
@@ -63,6 +77,33 @@ export const FILE_PULLS: Array<{ id: string; script: string; label: string; args
   { id: 'ucdp', script: 'ucdp-pull.ts', label: 'UCDP conflict data (newer yearly release, monthly candidate events)' },
   { id: 'replays', script: 'replays-pull.ts', label: 'Monthly history for the scenario replays (OECD 10Y yields and Fed H.10 exchange rates via FRED, BCRP EMBIG spreads)' },
 ];
+
+/** Steps that only download, so trying them again is safe: the feeds and the files above. */
+export const RETRYABLE_STEPS: string[] = ['feeds', ...FILE_PULLS.map((f) => f.id)];
+
+const stillFailing = (s: DailyStep): boolean => s.outcome === 'failed' || (s.partsFailed ?? 0) > 0;
+
+/** The download steps of a run that failed, wholly or in part (the ones worth another try). */
+export function failedDownloads(run: DailyRun | undefined): string[] {
+  return (run?.steps || []).filter((s) => RETRYABLE_STEPS.includes(s.id) && stillFailing(s)).map((s) => s.id);
+}
+
+/**
+ * Puts the result of another try in place of the step with the same id, saying which try it was.
+ * The bytes add up; a step that worked now is "done" with what it brought back.
+ */
+export function replaceStep(run: DailyRun, step: DailyStep, which: string): DailyStep & { fixed: boolean } {
+  const i = run.steps.findIndex((s) => s.id === step.id);
+  const before = i >= 0 ? run.steps[i] : undefined;
+  const merged: DailyStep = {
+    ...step,
+    note: `${step.note ? `${step.note}; ` : ''}${!stillFailing(step) ? `worked on the ${which}` : step.outcome === 'done' ? `${step.partsFailed} part${step.partsFailed === 1 ? '' : 's'} still failing after the ${which}` : `failed again on the ${which}`}`,
+    bytes: (before?.bytes ?? 0) + (step.bytes ?? 0),
+  };
+  if (i >= 0) run.steps[i] = merged;
+  else run.steps.push(merged);
+  return { ...merged, fixed: !stillFailing(step) };
+}
 
 /** Data that cannot be fetched automatically, said plainly instead of pretending. */
 export const BY_HAND: Array<{ label: string; why: string; how: string }> = [
@@ -102,7 +143,7 @@ export function writeDaily(file: string, d: DailyFile): void {
  * Whether the daily run should go now: never ran, the last one never finished, or it finished more
  * than 20 hours ago (so a start each morning always runs, a second start the same day does not).
  */
-export function dailyDue(d: DailyFile, now: Date, force = false): { due: boolean; reason: string } {
+export function dailyDue(d: DailyFile, now: Date, force = false): { due: boolean; reason: string; retryOnly?: string[] } {
   if (force) return { due: true, reason: 'asked to run again' };
   const last = d.last;
   if (!last) return { due: true, reason: 'first run' };
@@ -114,6 +155,13 @@ export function dailyDue(d: DailyFile, now: Date, force = false): { due: boolean
   const age = now.getTime() - Date.parse(last.finishedAt);
   if (last.offline && age >= 60 * 60 * 1000) return { due: true, reason: 'the last run found no connection' };
   if (age >= DAILY_MIN_GAP_MS) return { due: true, reason: 'last run was more than 20 hours ago' };
+  // Download steps that failed: tried again, alone, once 2 hours have passed since the run or the last try.
+  const failed = failedDownloads(last);
+  const tries = last.laterTries || [];
+  if (failed.length && tries.length < MAX_LATER_TRIES) {
+    const since = now.getTime() - Date.parse(tries.at(-1)?.at || last.finishedAt);
+    if (since >= LATER_TRY_AFTER_MS) return { due: true, reason: `trying again the ${failed.length} download step${failed.length === 1 ? '' : 's'} that failed`, retryOnly: failed };
+  }
   return { due: false, reason: `already ran today (finished ${last.finishedAt.slice(0, 16).replace('T', ' ')} UTC)` };
 }
 
@@ -179,6 +227,7 @@ export function formatDaily(run: DailyRun, opts: { full?: boolean } = {}): strin
   const out: string[] = [];
   const when = run.finishedAt ? `finished ${run.finishedAt.slice(0, 16).replace('T', ' ')} UTC` : `started ${run.startedAt.slice(0, 16).replace('T', ' ')} UTC, not finished`;
   out.push(`Daily data run (${when}${run.where ? `, ${run.where}` : ''}):`);
+  for (const t of run.laterTries || []) out.push(`  Tried again ${t.at.slice(0, 16).replace('T', ' ')} UTC: ${t.steps.join(', ')}${t.fixed.length ? `; now working: ${t.fixed.join(', ')}` : '; still failing'}`);
   for (const s of run.steps) {
     out.push(`  ${MARK[s.outcome]} ${s.label}${s.note ? `: ${s.note}` : ''}${s.bytes ? ` (${formatBytes(s.bytes)} downloaded)` : ''}`);
     if (opts.full) for (const d of s.details || []) out.push(`         - ${d}`);
