@@ -438,7 +438,7 @@ export const MENU = defineMessages('menu', {
   dc_cantRun: 'The check could not run: {detail}. Is the app server running?',
   dc_noAnswer: 'server did not answer',
   dc_title: 'Data connections',
-  dc_intro: 'Each source is asked for one small real answer, the same way the tools ask. The same check runs in a terminal with',
+  dc_intro: 'Each source is asked for one small real answer, the same way the tools ask.',
   dc_summary: '{connected} connected, {failed} failed, {setup} need setup, {off} off, {optional} optional not set',
   dc_checkedAt: ' · checked {time}',
   dc_hide: 'Hide sources',

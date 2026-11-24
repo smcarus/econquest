@@ -615,7 +615,13 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
       title: 'Growth and inflation',
       rows: [
         liveRow(status, 'Real GDP growth', 'imf.realGdpGrowthPct', (v) => pct(v), open),
-        liveRow(status, 'CPI inflation', 'imf.cpiInflationPct', (v) => pct(v), open),
+        // The same inflation figure the summary above uses (latest month where there is one), then the IMF yearly average beside it.
+        ...(infl?.monthly
+          ? [
+              { label: 'CPI inflation, y/y (latest month)', value: pct(infl.pct), source: infl.source, verified: true },
+              liveRow(status, 'CPI inflation, yearly average', 'imf.cpiInflationPct', (v) => pct(v), open),
+            ]
+          : [liveRow(status, 'CPI inflation', 'imf.cpiInflationPct', (v) => pct(v), open)]),
         liveRow(status, 'Unemployment rate', 'imf.unemploymentPct', (v) => pct(v), open),
         ...euSurveyRows(run.iso3, peers),
         ...wagesHousingRows(open),

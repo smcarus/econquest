@@ -64,6 +64,8 @@ export const SHELL_FR: Messages<typeof SHELL> = {
   helpFullNote: 'Explique chaque chiffre et chaque terme, et pourquoi chaque chiffre manquant est manquant.',
   helpTitle: '{label} : {note} Appuyez pour {next}.',
   helpAria: 'Explications : {label}. Appuyez pour {next}.',
+  helpTitleMenu: '{label} : {note} Appuyez pour choisir le niveau d’explication.',
+  helpAriaMenu: 'Explications : {label}. Appuyez pour choisir.',
   guideRead: 'Comment lire ce graphique : ',
   guideLife: 'Ce que cela signifie dans la vie réelle : ',
   langTitle: 'Langue : {name}. Appuyez pour {next}.',

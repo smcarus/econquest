@@ -63,7 +63,7 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
   },
   {
     iso3: 'EGY',
-    countryName: 'Egypt (Red Sea Corridor)',
+    countryName: 'Egypt',
     region: 'MENA / Chokepoint',
     currencyCode: 'EGP',
     focusTheme: 'Bab el-Mandeb Maritime Transit Revenue Shock, IMF EFF Tranche & Rollover Wall',

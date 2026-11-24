@@ -152,7 +152,7 @@ export const REPORTS_PT: Messages<typeof REPORTS> = {
   pr_allIndicators: "Todos os {n} indicadores",
   pr_readErr: "Não foi possível ler as revisões de política: {why}",
   pr_title: "Revisões de política",
-  pr_intro: "Um dossiê passo a passo para encontrar formas de melhorar a política em um país: Enquadrar, Diagnosticar, Opções, Evidências, Memorando de recomendação, Acompanhar resultados. Cada etapa é salva e recebe um hash, então as mesmas entradas dão os mesmos números. Pesquisa, não um conselho validado.",
+  pr_intro: "Um dossiê passo a passo para encontrar formas de melhorar a política em um país: Enquadrar, Diagnosticar, Opções, Evidências, Memorando de recomendação, Acompanhar resultados. Cada etapa é salva com uma impressão digital dos seus dados, então quem a repetir obtém os mesmos números. Pesquisa, não um conselho validado.",
   pr_new: "Nova revisão de política",
   pr_againNote: "Revisar novamente: o enquadramento é copiado da revisão anterior com hoje como data de referência. Mude o que estiver diferente agora.",
   pr_start: "Iniciar revisão",

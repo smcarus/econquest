@@ -35,6 +35,7 @@ export const BRIEF_TEXT_FR: Record<string, string> = {
   "FX Valuation Agent": "Agent d'évaluation du change",
   "Global Spillover Agent": "Agent des effets de contagion mondiaux",
   "Real GDP growth": "Croissance du PIB réel",
+  'CPI inflation, yearly average': 'Inflation (IPC), moyenne annuelle',
   "CPI inflation": "Inflation (IPC)",
   "Unemployment rate": "Taux de chômage",
   "Policy rate": "Taux directeur",

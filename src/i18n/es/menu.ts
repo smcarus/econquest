@@ -434,7 +434,7 @@ export const MENU_ES: Partial<Record<Keys, string>> = {
   dc_cantRun: 'No se pudo hacer la comprobación: {detail}. ¿Está en marcha el servidor de la app?',
   dc_noAnswer: 'el servidor no respondió',
   dc_title: 'Conexiones de datos',
-  dc_intro: 'A cada fuente se le pide una pequeña respuesta real, igual que lo hacen las herramientas. La misma comprobación se ejecuta en una terminal con',
+  dc_intro: 'A cada fuente se le pide una pequeña respuesta real, igual que lo hacen las herramientas.',
   dc_summary: '{connected} conectadas, {failed} con fallo, {setup} por configurar, {off} desactivadas, {optional} opcionales sin configurar',
   dc_checkedAt: ' · comprobado a las {time}',
   dc_hide: 'Ocultar las fuentes',

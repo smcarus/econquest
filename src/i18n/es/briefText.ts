@@ -47,6 +47,7 @@ export const BRIEF_TEXT_ES: Record<string, string> = {
 
   // Figure names.
   'Real GDP growth': 'Crecimiento real del PIB',
+  'CPI inflation, yearly average': 'Inflación del IPC, media anual',
   'CPI inflation': 'Inflación del IPC',
   'Unemployment rate': 'Tasa de desempleo',
   'Policy rate': 'Tasa de política',

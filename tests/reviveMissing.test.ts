@@ -28,3 +28,9 @@ test('the country list carries no built-in figures', () => {
     }
   }
 });
+
+test('a saved watchlist shows Egypt by its plain name, not the old theme label', async () => {
+  const { reviveWatchlistGroups } = await import('../src/utils/reviveMissing.ts');
+  const [g] = reviveWatchlistGroups([{ id: 'x', items: [{ iso3: 'EGY', countryName: 'Egypt (Red Sea Corridor)', yield10YPct: null }] }]);
+  assert.equal((g!.items[0] as { countryName: string }).countryName, 'Egypt');
+});

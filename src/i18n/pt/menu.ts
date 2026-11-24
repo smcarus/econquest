@@ -423,7 +423,7 @@ export const MENU_PT: Messages<typeof MENU> = {
   dc_cantRun: "A verificação não pôde rodar: {detail}. O servidor do app está rodando?",
   dc_noAnswer: "o servidor não respondeu",
   dc_title: "Conexões de dados",
-  dc_intro: "Cada fonte recebe um pedido de uma pequena resposta real, do mesmo jeito que as ferramentas pedem. A mesma verificação roda em um terminal com",
+  dc_intro: "Cada fonte recebe um pedido de uma pequena resposta real, do mesmo jeito que as ferramentas pedem.",
   dc_summary: "{connected} conectadas, {failed} com falha, {setup} precisam de configuração, {off} desligadas, {optional} opcionais não definidas",
   dc_checkedAt: " · verificado às {time}",
   dc_hide: "Ocultar fontes",
