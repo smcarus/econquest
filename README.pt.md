@@ -71,6 +71,9 @@ acontecendo com uma economia e por quê.
 
 - **O app é gratuito**, em todos os computadores, e vai continuar assim. Não há planos pagos nem
   anúncios.
+- **Sem rastreamento.** O app não envia nada sobre você ao projeto: nem contagem de uso, nem
+  relatórios de falha, nem análise de uso. O que sai do seu computador, e quando, está em
+  [docs/PRIVACY.md](./docs/PRIVACY.md) (em inglês).
 - **Código aberto.** O código está sob a licença Apache 2.0, e a documentação, as notas de método e o
   conteúdo didático sob CC BY 4.0: qualquer pessoa pode usar, alterar e compartilhar.
 - **Doações, só pelo site do projeto**, via GitHub Sponsors e Open Source Collective, quando o projeto
@@ -539,7 +542,7 @@ Situação em 23 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./docs/ROADM
   [DATA_LICENCES.md](./docs/DATA_LICENCES.md), [DATA_API.md](./docs/DATA_API.md), [DEPLOYMENT.md](./docs/DEPLOYMENT.md),
   [POLICY_REVIEW.md](./docs/POLICY_REVIEW.md), [QUESTS.md](./docs/QUESTS.md),
   [ROADMAP.md](./docs/ROADMAP.md), [HOME_SERVER.md](./docs/HOME_SERVER.md),
-  [SECURITY.md](./docs/SECURITY.md), [CONTRIBUTING.md](./CONTRIBUTING.md)
+  [PRIVACY.md](./docs/PRIVACY.md), [SECURITY.md](./docs/SECURITY.md), [CONTRIBUTING.md](./CONTRIBUTING.md)
 - Desenvolvedores: [parte For developers do README em inglês](./README.md#for-developers)
 
 ---

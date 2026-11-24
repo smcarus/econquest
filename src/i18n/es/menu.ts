@@ -282,6 +282,8 @@ export const MENU_ES: Partial<Record<Keys, string>> = {
   ab_version: 'Versión {v}. Cite esta versión, y su commit cuando aparezca, para que los lectores encuentren el código exacto.',
   ab_what: 'Un espacio de investigación para cuestiones soberanas y macroeconómicas. Las cifras vienen solo de fuentes públicas, series oficiales o sus propios archivos, cada una con su fuente y su fecha; una cifra que nadie publicó aparece como Falta.',
   ab_notice: 'Investigación, no asesoramiento validado. Ningún modelo de la app ha sido validado de forma independiente; cada señal muestra el veredicto de su backtest prerregistrado en Menú > Modelos y validación. Nada de lo que hay aquí es una recomendación de compra o venta.',
+  ab_privacy: 'Privacidad',
+  ab_privacyNote: 'La app no envía nada sobre usted al proyecto: ni seguimiento, ni recuentos de uso, ni informes de fallos. Lo que usted guarda se queda en la computadora donde corre la app. Las cifras se piden a fuentes públicas; las preguntas van a un proveedor de IA solo si usted elige uno en línea, como Google Gemini, y su navegador carga las fuentes tipográficas desde Google Fonts. La lista completa está en docs/PRIVACY.md (en inglés).',
   ab_credits: 'Créditos',
   ab_creditsNote: 'Tres fuentes piden un crédito visible allí donde aparecen sus cifras. La app muestra cada uno junto a esas cifras, y aquí:',
   ab_licences: 'Licencias de datos',

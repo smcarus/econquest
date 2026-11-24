@@ -9,7 +9,8 @@ import { versionWithCommit } from '../utils/buildInfo';
 import { licenceCheckDue, DATA_LICENCES, LICENCE_STATUS_LABEL, openLicenceQuestions, type LicenceStatus } from '../data/dataLicences';
 
 /**
- * Menu > About & data licences: what the app is, the standing research notice, and the licence
+ * Menu > About & data licences: what the app is, the standing research notice, privacy in short
+ * (docs/PRIVACY.md), and the licence
  * register (src/data/dataLicences.ts, the same rows as docs/DATA_LICENCES.md). Opened on a source
  * with `focusId` from the Sources panel.
  */
@@ -57,6 +58,8 @@ export function AboutDialog({ focusId, onClose }: { focusId?: string | null; onC
           <p className="border border-amber-200 dark:border-amber-800 p-2 text-amber-800 dark:text-amber-300" data-research-notice>
             {t('ab_notice')}
           </p>
+          <h3 className="ui-section-title">{t('ab_privacy')}</h3>
+          <p data-about-privacy>{t('ab_privacyNote')}</p>
           <h3 className="ui-section-title">{t('ab_credits')}</h3>
           <p>{t('ab_creditsNote')}</p>
           <ul className="space-y-1" data-about-credits>

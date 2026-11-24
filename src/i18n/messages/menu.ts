@@ -286,6 +286,8 @@ export const MENU = defineMessages('menu', {
   ab_version: 'Version {v}. Cite this version, and its commit when shown, so readers can find the exact code.',
   ab_what: 'A research workspace for sovereign and macro questions. Figures come only from public feeds, official series or your own files, each with its source and date; a figure nobody published reads Missing.',
   ab_notice: 'Research, not validated advice. No model in the app has been independently validated; each signal shows its pre-registered backtest verdict under Menu > Models & validation. Nothing here is a recommendation to buy or sell.',
+  ab_privacy: 'Privacy',
+  ab_privacyNote: 'The app sends nothing about you to the project: no tracking, no usage counts, no crash reports. What you save stays on the computer running the app. Figures are asked for from public sources; questions go to an AI provider only if you choose an online one such as Google Gemini, and your browser loads the screen fonts from Google Fonts. The full list is in docs/PRIVACY.md.',
   ab_credits: 'Credits',
   ab_creditsNote: 'Three sources ask for a visible credit wherever their figures show. The app shows each one beside those figures, and here:',
   ab_licences: 'Data licences',
