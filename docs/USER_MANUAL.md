@@ -1601,5 +1601,12 @@ use; a few could not be confirmed and are marked so.
   `data/local/backups/before-pull-<time>/`, put them back to the repo version and pull. To do the same
   on its own: `bash scripts/safe-pull.sh`. A file you changed by hand is never touched; if it blocks
   the pull, the message names it.
+- **A script you run is older than the fixed one on GitHub.** `npm run check:data`,
+  `npm run oecd:vintages`, `npm run mac:validate` and `npm run council:record` check first: when this
+  folder is behind GitHub they update it (as `npm run go` does) and run again on the new code. Offline
+  they say so and run the code that is here. To skip the check once: `ECONQUEST_NO_UPDATE=1 npm run check:data`.
+- **Port 3000 is busy** (often another Docker container). `npm run go` starts the dev server on the next
+  free port, names what holds 3000, and lists the port under "Notes" at the end; this alone does not
+  make the command fail.
 - **Gemini stops working after Google renames a model.** Set `GEMINI_MODEL` in `.env` to the new name
   and restart.
