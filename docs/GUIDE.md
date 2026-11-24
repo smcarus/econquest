@@ -424,6 +424,9 @@ Which model fits which computer, and the settings the app uses, are in the READM
 - **Report a problem**: opens a new GitHub issue with the app version filled in. You read it and
   send it yourself. If a screen fails to draw, its note has **Copy details** and **Report this
   problem** too.
+- **Keyboard shortcuts**: press **?** for the list. **/** jumps to the council question box,
+  **Cmd+K** (Ctrl+K on Windows) searches the tools, **Cmd+,** opens Settings and **Esc** closes a
+  window. / and ? do nothing while you type in a box.
 - **Quests**: greyed out, "Not yet available" ([section 12](#12-try-quests)).
 
 ![Settings > Tools: tools grouped by task, then Data connections with its source count](images/14-data-connections.png)

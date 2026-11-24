@@ -453,6 +453,9 @@ El **Menú** reúne todo lo que no es una página. Lo primero que conviene conoc
 - **Informar de un problema**: abre una nueva incidencia en GitHub con la versión de la app ya escrita.
   Usted la lee y la envía. Si una pantalla no se puede dibujar, su nota también tiene **Copiar los
   detalles** e **Informar de este problema**.
+- **Atajos de teclado**: pulse **?** para ver la lista. **/** va al cuadro de pregunta del consejo,
+  **Cmd+K** (Ctrl+K en Windows) busca en las herramientas, **Cmd+,** abre la configuración y **Esc**
+  cierra una ventana. / y ? no hacen nada mientras escribe en un cuadro.
 - **Retos**: en gris, «Aún no disponible» ([sección 12](#12-probar-los-retos)).
 
 ![Configuración > Herramientas: herramientas agrupadas por tarea y después Conexiones de datos](images/14-data-connections.png)

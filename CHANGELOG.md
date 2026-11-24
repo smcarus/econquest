@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Keyboard shortcuts: **/** jumps to the council question box, **Cmd/Ctrl+K** opens Tools with its
+  search box, **Cmd/Ctrl+,** opens Settings (as before) and **?** shows the list. / and ? do nothing
+  while typing in a box or while a window is open.
 - docs/INSTALL.md has a "Remove EconQuest" section: the steps for the ready-made Docker app and for
   the code copy (Mac and Windows scripts), removing the Ollama models (about 34 GB in all), clearing
   the browser's site data, and a note that nothing runs in the background or on a schedule.
