@@ -9,6 +9,30 @@ and versions follow [Semantic Versioning](https://semver.org/).
   instead of loading from Google Fonts, so opening a page asks no outside server for anything and
   the fonts also show offline. About 380 KB of woff2 files, fetched only for the characters a page
   shows (SIL Open Font License 1.1, credited in NOTICE).
+- Docs brought up to date with everything since 17 November: the README and walk-through guide in all
+  four languages (Policy review page, start-here card, short answer, menu groups, release days,
+  official forecasts side by side, track record, recovering on its own, standard app features),
+  HOW_IT_WORKS and METHODOLOGY (version 1.6), INSTALL, MAINTENANCE, CONTRIBUTING, DATA_API, the
+  roadmap and the user manual. 21 screenshots retaken on 24 November 2026.
+- Policy review has its own page in the header (Workspace, Research, Policy review, Reports). Start a
+  policy review under a Council chat answer and the policy review links in Tools open it there;
+  Reports keeps four tabs (Write a note, Council documents, Notebooks, Teaching) and is described as
+  notes, briefs and teaching material.
+- First start: a short **New here? Three steps** card under the chat welcome (ask a question, open
+  Research, optionally add an AI model) until Got it. Settings shows no AI option picked while no
+  model works, with a note that the app works without one, and the Menu says "AI: not set".
+- Council chat without an AI model starts with a **Short answer, by the app's stated rules (not
+  AI)**: a "behind the curve" question gets No, Possibly or Not clearly for each country from the
+  Central Bank Watcher's call and the gap to a simple Taylor rule; other questions get each country's
+  calls and debt path in one line.
+- Council chat leaves more room for the answer: the Agents panel stays closed until opened, a reason
+  shared by every agent is said once, "What changed" is one line when nothing moved, and follow-up
+  questions sit under the answer. The Missing list drops repeats, puts figures that are only older
+  than usual under their own heading and folds what no source the app reads publishes into one line.
+- Plain wording: the country page's Growth and inflation shows the same latest monthly inflation as
+  the summary, with the IMF yearly average beside it; Egypt is named without its old theme label;
+  Policy review says fingerprint instead of hashed; Data health and Data connections no longer show
+  terminal commands; the help button opens the four levels with one line each instead of cycling.
 - Keyboard shortcuts: **/** jumps to the council question box, **Cmd/Ctrl+K** opens Tools with its
   search box, **Cmd/Ctrl+,** opens Settings (as before) and **?** shows the list. / and ? do nothing
   while typing in a box or while a window is open.
