@@ -19,6 +19,7 @@ import { ExplainAnswer } from './ExplainAnswer';
 import { WhatIfAnswer } from './WhatIfAnswer';
 import { ScenarioReadNote } from './ScenarioReadNote';
 import { parseWhatIf } from '../utils/fiscalWhatIf';
+import { openSettings } from './SettingsDialog';
 import { noModelDigest } from '../utils/noModelDigest';
 import { DocumentCards, DocumentViewer, SaveToReportsButton } from './CouncilDocuments';
 import { toAgentDocuments, toSynthesisDocument, type CouncilDocument } from '../utils/agentDocument';
@@ -626,6 +627,7 @@ export const AskCouncilPanel: React.FC<{
                 </button>
               ))}
             </div>
+            {page && <StartHere />}
             <details className={`text-xs ${page ? 'mx-auto max-w-xl' : ''}`} data-council-chart-menu="true">
               <summary className="cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">{tr('chartsMenu')}</summary>
               <div className="mt-2 text-left space-y-1.5">
@@ -865,3 +867,44 @@ export const CouncilAgentsPanel: React.FC<{ fullCouncil?: FullCouncilStep }> = (
     </div>
   );
 };
+
+const START_HERE_KEY = 'econquest.startHere.v1';
+
+/** First run only: three plain steps under the welcome, until "Got it" is pressed. */
+function StartHere() {
+  const tr = useT(COUNCIL);
+  const [shown, setShown] = React.useState(() => {
+    try {
+      return localStorage.getItem(START_HERE_KEY) !== 'done';
+    } catch {
+      return true;
+    }
+  });
+  if (!shown) return null;
+  const done = () => {
+    setShown(false);
+    try {
+      localStorage.setItem(START_HERE_KEY, 'done');
+    } catch {
+      /* private window */
+    }
+  };
+  return (
+    <div className="mx-auto max-w-xl text-left border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 space-y-2" data-start-here="true">
+      <p className="text-sm font-semibold text-slate-900 dark:text-white">{tr('startTitle')}</p>
+      <ol className="list-decimal pl-5 text-sm text-slate-700 dark:text-slate-200 space-y-1">
+        <li>{tr('startAsk')}</li>
+        <li>{tr('startCountry')}</li>
+        <li>{tr('startAi')}</li>
+      </ol>
+      <div className="flex flex-wrap gap-2 pt-1">
+        <button type="button" className="ui-btn" onClick={() => openSettings('ai')} data-start-here-ai="true">
+          {tr('startChooseAi')}
+        </button>
+        <button type="button" className="ui-btn ui-btn-ghost" onClick={done} data-start-here-done="true">
+          {tr('startDone')}
+        </button>
+      </div>
+    </div>
+  );
+}

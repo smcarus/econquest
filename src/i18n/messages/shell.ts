@@ -25,6 +25,7 @@ export const SHELL = defineMessages(
     aiOllama: 'AI: Ollama ({model})',
     aiHybrid: 'AI: Ollama, then Gemini',
     aiLocal: 'AI: local server',
+    aiNotSet: 'AI: not set',
     aiGemini: 'AI: Gemini',
     tools: 'Tools',
     offlineData: 'Offline data',

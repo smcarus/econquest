@@ -14,6 +14,12 @@ export const COUNCIL = defineMessages('council', {
   closeAria: 'Close Council chat',
   welcome: 'What do you want to know about the economy?',
   welcomeNote: 'Agents answer from the app’s own figures, each with its source; with an AI model, a summary agent writes a short brief from their answers only.',
+  startTitle: 'New here? Three steps',
+  startAsk: 'Ask a question in the box below, or press one of the examples above. The agents answer from official figures, each with its source.',
+  startCountry: 'Open Research at the top to study one country. Every figure has a “What is this?” line in plain words.',
+  startAi: 'Optional: add an AI model for a short written summary. Ollama is free and private but needs a strong computer; Google Gemini needs a free key and sends your questions to Google. The app works without one.',
+  startChooseAi: 'Choose an AI model',
+  startDone: 'Got it',
   // Shown only in languages other than English, so it is empty here.
   askInEnglish: '',
   chartsMenu: 'Charts and statistical tests',

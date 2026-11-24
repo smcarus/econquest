@@ -170,6 +170,7 @@ export const MENU = defineMessages('menu', {
   ai_place_bundled: 'Ollama container bundled with the app',
   ai_serverHttp: 'the app server answered HTTP {status}',
   ai_serverDown: 'the app server did not answer',
+  ai_noneYet: 'No AI model is set up yet. The app works without one: the agents answer from its own figures. Pick one above for a short written summary.',
   ai_which: 'Which AI model writes the summaries',
   ai_whichNote: 'The agents answer from the app\'s own figures either way. The model only writes the summary, picks agents and runs the debate.',
   ai_aria: 'AI model',

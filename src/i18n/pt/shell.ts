@@ -24,6 +24,7 @@ export const SHELL_PT: Messages<typeof SHELL> = {
   aiOllama: "IA: Ollama ({model})",
   aiHybrid: "IA: Ollama, depois Gemini",
   aiLocal: "IA: servidor local",
+  aiNotSet: "IA: não configurada",
   aiGemini: "IA: Gemini",
   tools: "Ferramentas",
   offlineData: "Dados offline",

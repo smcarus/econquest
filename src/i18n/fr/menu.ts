@@ -163,6 +163,7 @@ export const MENU_FR: Messages<typeof MENU> = {
   ai_place_bundled: "Conteneur Ollama fourni avec l'application",
   ai_serverHttp: "le serveur de l'application a répondu HTTP {status}",
   ai_serverDown: "le serveur de l'application n'a pas répondu",
+  ai_noneYet: 'Aucun modèle d’IA n’est encore configuré. L’application fonctionne sans : les agents répondent avec ses propres chiffres. Choisissez-en un ci-dessus pour un court résumé écrit.',
   ai_which: "Quel modèle d'IA rédige les résumés",
   ai_whichNote: "Les agents répondent de toute façon à partir des propres chiffres de l'application. Le modèle ne fait que rédiger le résumé, choisir les agents et animer le débat.",
   ai_aria: "Modèle d'IA",
