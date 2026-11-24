@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Slow or busy sources are asked again before they count as failed. The connection check
+  (`npm run check:data` and the nightly check) tries up to three times, 3 s then 10 s apart, after no
+  answer in time, a cut connection, 429 or 500-504, follows the server's Retry-After (up to 60 s),
+  and gives the World Bank, ECB and GDELT 30 s per try. A failure that stays says how many times it
+  was asked. Feed readers in the app try once more after 1.5 s. Refusals (401, 403, 404), bot-check
+  pages and "connection refused" are not retried.
 - When port 3000 is busy (often another Docker container), `npm run go` starts the dev server on the
   next free port, names what holds 3000 and lists it under "Notes"; this alone no longer makes the
   command fail. `npm run check:data`, `npm run oecd:vintages`, `npm run mac:validate` and

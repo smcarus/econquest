@@ -57,6 +57,7 @@ import { EU_PRICE_EXPECTATIONS, EU_SURVEY_INDICATORS, euSurveyUrl, parseEuSurvey
 import { driversMinrUrl } from './inflationDrivers';
 import { PWT_EDITION, PWT_URL } from './growthAccounting';
 import { OECD_HEADERS, isBotCheck } from './oecdSdmx';
+import { CHECK_RETRY, NO_RETRY, pauseBefore, retryAfterMs, sleep, slowHostTimeout, worthRetrying, type RetryPlan } from './retryPolicy';
 import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
 import { ACLED_TOKEN_URL, acledReadUrl, acledTokenBody, parseAcledPage } from './acled';
 import { BANXICO_CPI_SERIES, banxicoHeaders, banxicoSeriesUrl, BCB_IPCA_12M, bcbSgsUrl, eurostatHicpUrl, EVDS_CPI_DEFAULT_SERIES, evdsCpiUrl, parseBanxicoMonthly, parseEvdsCpiYoy, parseBcbSgs, parseEurostatHicp } from './nationalCpi';
@@ -144,8 +145,8 @@ export interface CheckOptions {
   now?: Date;
   /** Per request, ms. The Brazil Treasury file gets at least 90 s because it is about 15 MB from a slow server. */
   timeoutMs?: number;
-  /** Pause before the one retry of an ECB Data Portal check that got no answer (default 5 s, none when a test supplies its own fetch). */
-  ecbRetryMs?: number;
+  /** When to ask a source again (src/utils/retryPolicy.ts). Default CHECK_RETRY; NO_RETRY when a test supplies its own fetch. */
+  retry?: RetryPlan;
   /** AI settings as the app uses them (the in-app settings win over .env). */
   ai?: { provider?: string; ollamaBaseUrl?: string; ollamaQuickModel?: string; ollamaDeepModel?: string; openAiBaseUrl?: string; geminiModel?: string };
   /** File reader for the own CDS file (injected in tests). */
@@ -195,7 +196,12 @@ interface ProbeReply {
   finalUrl?: string;
   /** Set when there was no HTTP answer at all. */
   networkError?: string;
+  /** How many times the source was asked (more than 1 when a timeout, 429 or 5xx was retried). */
+  tries?: number;
 }
+
+/** The retry plan of each check run, kept with its fetch function (set in checkConnections). */
+const retryPlans = new WeakMap<FetchFn, RetryPlan>();
 
 /** Turns a fetch failure into words: timeout, DNS, refused, TLS, proxy. */
 export function describeNetworkError(err: unknown, timeoutMs: number): string {
@@ -220,20 +226,53 @@ function hostOf(url: string): string {
   }
 }
 
-async function probe(fetchFn: FetchFn, url: string, timeoutMs: number, init: RequestInit = {}): Promise<ProbeReply> {
+async function probeOnce(fetchFn: FetchFn, url: string, timeoutMs: number, init: RequestInit): Promise<ProbeReply & { retryAfter?: string | null; retryable?: boolean }> {
   const t0 = Date.now();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetchFn(url, { ...init, signal: controller.signal });
     const text = await res.text();
-    return { ok: res.ok, status: res.status, latencyMs: Date.now() - t0, text, ...(res.url && res.url !== url ? { finalUrl: res.url } : {}) };
+    return { ok: res.ok, status: res.status, latencyMs: Date.now() - t0, text, retryAfter: res.headers?.get?.('retry-after') ?? null, ...(res.url && res.url !== url ? { finalUrl: res.url } : {}) };
   } catch (err) {
-    return { ok: false, latencyMs: Date.now() - t0, networkError: describeNetworkError(err, timeoutMs) };
+    return { ok: false, latencyMs: Date.now() - t0, networkError: describeNetworkError(err, timeoutMs), retryable: transientNetworkError(err) };
   } finally {
     clearTimeout(timer);
   }
 }
+
+/**
+ * True for a failure that may pass by waiting: no answer in time, a cut connection, a DNS server
+ * that did not answer. False for "address not found", "connection refused" (nothing listening, as
+ * with Ollama not started) and certificate errors, which a retry does not change.
+ */
+export function transientNetworkError(err: unknown): boolean {
+  const e = err as { name?: string; cause?: { code?: string } };
+  if (e?.name === 'AbortError' || e?.name === 'TimeoutError') return true;
+  return ['ECONNRESET', 'UND_ERR_SOCKET', 'ETIMEDOUT', 'UND_ERR_CONNECT_TIMEOUT', 'EAI_AGAIN', 'EPIPE'].includes(e?.cause?.code || '');
+}
+
+/**
+ * One request, asked again after a wait when there was no answer in time or the server was busy
+ * (429, 5xx; src/utils/retryPolicy.ts). Slow servers (World Bank, ECB, GDELT) get a longer limit.
+ */
+async function probe(fetchFn: FetchFn, url: string, timeoutMs: number, init: RequestInit = {}): Promise<ProbeReply> {
+  const plan = retryPlans.get(fetchFn) ?? NO_RETRY;
+  const limit = slowHostTimeout(url, timeoutMs);
+  let tries = 0;
+  for (;;) {
+    tries++;
+    const { retryAfter, retryable, ...r } = await probeOnce(fetchFn, url, limit, init);
+    const again = r.networkError ? !!retryable : worthRetrying(r.status, isBotCheck(r.status, r.text));
+    if (r.ok || !again) return { ...r, tries };
+    const wait = pauseBefore(tries + 1, plan, retryAfterMs(retryAfter));
+    if (wait === null) return { ...r, tries };
+    await sleep(wait);
+  }
+}
+
+/** " (asked 3 times)" after a failure that was retried; empty otherwise. */
+const askedNote = (r: ProbeReply): string => (r.tries && r.tries > 1 ? ` (asked ${r.tries} times)` : '');
 
 function httpRefusal(status: number | undefined, text: string | undefined): string {
   if (isBotCheck(status, text))
@@ -289,10 +328,10 @@ async function httpCheck(
   const { url: _u, ...rest } = def;
   const r = await probe(fetchFn, url, timeoutMs, init);
   const base = { ...rest, host: hostOf(url), latencyMs: r.latencyMs, ...(r.status ? { httpStatus: r.status } : {}) };
-  if (r.networkError) return { ...base, state: 'no_answer', detail: r.networkError };
+  if (r.networkError) return { ...base, state: 'no_answer', detail: `${r.networkError}${askedNote(r)}` };
   if (isErrorPageRedirect(r.finalUrl))
     return { ...base, state: 'refused', detail: `Site error: the source sent its own error page (redirected to ${r.finalUrl}). A problem on its side, usually temporary; not a format change.` };
-  if (!r.ok) return { ...base, state: 'refused', detail: httpRefusal(r.status, r.text) };
+  if (!r.ok) return { ...base, state: 'refused', detail: `${httpRefusal(r.status, r.text)}${askedNote(r)}` };
   let sample: string | null = null;
   try {
     sample = read(r);
@@ -413,7 +452,10 @@ export type SourceId = (typeof SOURCE_IDS)[number];
 
 export async function checkConnections(opts: CheckOptions): Promise<ConnectionReport> {
   const env = opts.env;
-  const fetchFn: FetchFn = opts.fetchFn || ((u, i) => fetch(u, i));
+  const fetchFn: FetchFn = opts.fetchFn ? (u, i) => opts.fetchFn!(u, i) : (u, i) => fetch(u, i);
+  // Real runs ask a slow or busy source up to three times; a test's own fetch is asked once
+  // unless it passes a plan.
+  retryPlans.set(fetchFn, opts.retry ?? (opts.fetchFn ? NO_RETRY : CHECK_RETRY));
   const now = opts.now || new Date();
   const T = opts.timeoutMs ?? 10000;
   const year = now.getUTCFullYear();
@@ -1779,8 +1821,8 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     const key = ECB_SPF_SERIES[2].key;
     // The ECB Data Portal cut this request on the Mac (17 November 2026) while the yield curve and
     // real-time database checks went to the same server at the same moment, and the same address
-    // opened in a browser. So it is asked a second time, after the others, before it counts as failed.
-    const once = () => httpCheck(
+    // opened in a browser. A cut connection is asked again after a wait (probe, retryPolicy.ts).
+    const res = await httpCheck(
       { id: 'ecb_spf', name: 'ECB Survey of Professional Forecasters', group: 'free', feeds: 'Euro-area HICP inflation expected one year, two years and longer term ahead (quarterly)' },
       fetchFn,
       ecbSpfUrl(key, 8),
@@ -1794,12 +1836,6 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       { headers: { Accept: 'text/csv' } },
       `The ECB answered, but not with TIME_PERIOD and OBS_VALUE columns for SPF.${key}.`
     );
-    let res = await once();
-    if (res.state === 'no_answer') {
-      await new Promise((r) => setTimeout(r, opts.ecbRetryMs ?? (opts.fetchFn ? 0 : 5000)));
-      const again = await once();
-      res = again.state === 'no_answer' ? { ...again, detail: `${again.detail} (asked twice, 5 s apart)` } : again;
-    }
     return res.state === 'bad_reply' || res.state === 'refused' ? { ...res, detail: `${res.detail}${replyStart(lastText)}` } : res;
   });
 
