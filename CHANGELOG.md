@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Deleting a watchlist, or taking a country off one, in the watchlist side panel now asks first
+  (Delete or Keep, Remove or Keep), as the watchlist table already did. Before, one click deleted a
+  whole list with no way back.
 - When a screen or panel fails to draw, its note now has Copy details (version, where, the error and
   the first lines of the component stack; no figures or saved data) and Report this problem, which
   opens a new GitHub issue with those details filled in. Menu > Report a problem opens a new issue

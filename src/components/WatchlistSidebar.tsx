@@ -9,6 +9,8 @@ export function fixedOrDash(v: number | null | undefined, digits: number, unit: 
 import { WatchlistGroup, WatchlistItem } from '../types/council';
 import { SOVEREIGN_CATALOG } from '../data/presetsAndBaselines';
 import { Plus, Trash2, ArrowUpRight, FolderPlus, Search } from 'lucide-react';
+import { useT } from '../i18n/useLang';
+import { WATCHLIST } from '../i18n/messages/watchlist';
 
 interface WatchlistSidebarProps {
   watchlists: WatchlistGroup[];
@@ -33,6 +35,10 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
   onAddSovereignToWatchlist,
   onRemoveSovereignFromWatchlist,
 }) => {
+  const t = useT(WATCHLIST);
+  // Deleting a list, or taking a country off one, asks first: there is no undo (standard features
+  // check, 24 November 2026). Holds the list id, or `${listId}:${iso3}` for a country.
+  const [confirm, setConfirm] = useState<string | null>(null);
   const [showNewListForm, setShowNewListForm] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [newListDesc, setNewListDesc] = useState('');
@@ -146,16 +152,28 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                   <span>{wl.name}</span>
                   <span className="ml-1.5 opacity-70 tabular-nums">({wl.items.length})</span>
                 </button>
-                {wl.isCustom && (
-                  <button
-                    type="button"
-                    onClick={() => onDeleteWatchlist(wl.id)}
-                    title="Delete custom watchlist"
-                    className="text-slate-400 hover:text-rose-500 p-0.5 shrink-0"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
+                {wl.isCustom &&
+                  (confirm === wl.id ? (
+                    <span className="inline-flex items-center gap-2 shrink-0" data-confirm-delete={wl.id}>
+                      <span>{t('deleteListAsk')}</span>
+                      <button type="button" className="text-rose-600 dark:text-rose-400 hover:underline" onClick={() => (onDeleteWatchlist(wl.id), setConfirm(null))}>
+                        {t('deleteList')}
+                      </button>
+                      <button type="button" className="hover:underline opacity-80" onClick={() => setConfirm(null)}>
+                        {t('keep')}
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirm(wl.id)}
+                      title={t('deleteListTitle', { name: wl.name })}
+                      aria-label={t('deleteListTitle', { name: wl.name })}
+                      className="text-slate-400 hover:text-rose-500 p-0.5 shrink-0"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  ))}
               </div>
             );
           })}
@@ -372,19 +390,34 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                     </span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {activeList.items.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onRemoveSovereignFromWatchlist(activeList.id, item.iso3);
-                        }}
-                        title="Remove from watchlist"
-                        className="text-slate-400 hover:text-rose-500 p-0.5"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    )}
+                    {activeList.items.length > 1 &&
+                      (confirm === `${activeList.id}:${item.iso3}` ? (
+                        <span className="inline-flex items-center gap-2 text-xs" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            className="text-rose-600 dark:text-rose-400 hover:underline"
+                            onClick={() => (onRemoveSovereignFromWatchlist(activeList.id, item.iso3), setConfirm(null))}
+                          >
+                            {t('remove')}
+                          </button>
+                          <button type="button" className="hover:underline opacity-80" onClick={() => setConfirm(null)}>
+                            {t('keep')}
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirm(`${activeList.id}:${item.iso3}`);
+                          }}
+                          title={t('removeFromList', { name: item.countryName })}
+                          aria-label={t('removeName', { name: item.countryName })}
+                          className="text-slate-400 hover:text-rose-500 p-0.5"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      ))}
                   </div>
                 </div>
 
