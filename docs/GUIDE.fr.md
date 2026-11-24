@@ -459,6 +459,12 @@ Le **Menu** rassemble tout ce qui n'est pas une page. À connaître d'abord :
   uniquement et jamais enregistrés.
 - **Mode examen** : désactive toutes les étapes d'IA pour un examen.
 - **Exemples guidés** : cinq cas, d'une question à une note.
+- **À propos et licences des données** : la version, une courte note sur la confidentialité
+  ([PRIVACY.md](PRIVACY.md), en anglais) et l'existence d'une version plus récente, avec les étapes de
+  mise à jour.
+- **Signaler un problème** : ouvre un nouveau ticket GitHub avec la version de l'application déjà
+  remplie. Vous le lisez et l'envoyez vous-même. Si un écran ne peut pas s'afficher, sa note propose
+  aussi **Copier les détails** et **Signaler ce problème**.
 - **Quêtes** : grisé, « Pas encore disponible » ([section 12](#12-essayer-les-quêtes)).
 
 ![Réglages > Outils : outils regroupés par tâche, puis Connexions de données](images/14-data-connections.png)

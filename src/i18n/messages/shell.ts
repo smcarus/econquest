@@ -54,6 +54,8 @@ export const SHELL = defineMessages(
     examTitle: 'On: no AI summaries or AI steps for anyone using this app; Council chat shows figures only, and questions asked and countries opened go to the audit log.',
     about: 'About & data licences',
     updateOut: 'New version',
+    reportProblem: 'Report a problem',
+    reportProblemTitle: 'Opens a new GitHub issue with the app version filled in. Nothing is sent until you send it yourself.',
     manual: 'User manual',
     worked: 'Worked examples',
     menuSetUp: 'Set up',

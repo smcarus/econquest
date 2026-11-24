@@ -418,6 +418,11 @@ Which model fits which computer, and the settings the app uses, are in the READM
   on your computer. Off by default; shown on screen only and never saved.
 - **Exam mode**: turns every AI step off for a class test.
 - **Worked examples**: five case studies from a question to a memo.
+- **About & data licences**: the version, a short note on privacy ([PRIVACY.md](PRIVACY.md)), and
+  whether a newer version is out, with the steps to update.
+- **Report a problem**: opens a new GitHub issue with the app version filled in. You read it and
+  send it yourself. If a screen fails to draw, its note has **Copy details** and **Report this
+  problem** too.
 - **Quests**: greyed out, "Not yet available" ([section 12](#12-try-quests)).
 
 ![Settings > Tools: tools grouped by task, then Data connections with its source count](images/14-data-connections.png)

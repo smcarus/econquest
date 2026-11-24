@@ -10,6 +10,10 @@ export const COMMON_PT: Messages<typeof COMMON> = {
   appFailed: "Algo deu errado ao desenhar o app",
   appFailedBody: "Seus dados salvos estão seguros. Recarregue para tentar de novo. Se continuar acontecendo, o erro abaixo ajuda a encontrar a causa.",
   reload: "Recarregar",
+  copyDetails: 'Copiar os detalhes',
+  copied: 'Copiado',
+  reportProblem: 'Relatar este problema',
+  reportNote: 'Relatar este problema abre um novo issue no GitHub com estes detalhes já preenchidos. Nada é enviado até que você mesmo envie.',
   badgeTitle: "{name}: {label}. {more} Clique para ver o registro.",
   stricterFail: "Aprovado, falha na verificação mais rigorosa",
 };

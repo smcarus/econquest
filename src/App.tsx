@@ -113,6 +113,7 @@ import {
   HardDriveDownload,
   UserRound,
   Users,
+  MessageSquareWarning,
 } from 'lucide-react';
 import { OfflineDataDialog, OfflinePill, useOnlineStatus } from './components/OfflineData';
 import { OPEN_ABOUT_EVENT } from './components/aboutOpen';
@@ -131,6 +132,18 @@ import { loadShareMode, saveShareMode } from './utils/shareMode';
 import { dailyLine, dailyProgress } from './utils/dailyProgress';
 import type { DataHealthTab } from './components/DataHealthDialog';
 import { useUpdateStatus } from './components/updateStatus';
+import { blankProblemUrl } from './utils/problemReport';
+
+/** Menu > Report a problem: a new GitHub issue with the version filled in; the person sends it. */
+async function openProblemReport(): Promise<void> {
+  // Opened before the version loads, so the browser counts it as a click and does not block it.
+  const tab = window.open('about:blank', '_blank');
+  if (tab) tab.opener = null;
+  const [{ APP_CITATION }, { versionWithCommit }] = await Promise.all([import('./utils/citation'), import('./utils/buildInfo')]);
+  const url = blankProblemUrl(versionWithCommit(APP_CITATION.version));
+  if (tab) tab.location.href = url;
+  else window.open(url, '_blank', 'noopener,noreferrer');
+}
 
 // Desks load on first use, so the first screen does not download all 41 of them.
 // The menu dialogs load when first opened, keeping them out of the first download.
@@ -1595,6 +1608,15 @@ export default function App() {
                         label: t('about'),
                         hint: updateStatus?.newer ? t('updateOut') : '',
                         onClick: () => setAboutFocus(null),
+                        className: '',
+                      },
+                      {
+                        key: 'report',
+                        icon: <MessageSquareWarning className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: t('reportProblem'),
+                        hint: '',
+                        title: t('reportProblemTitle'),
+                        onClick: () => void openProblemReport(),
                         className: '',
                       },
                       {

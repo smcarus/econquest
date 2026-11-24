@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- When a screen or panel fails to draw, its note now has Copy details (version, where, the error and
+  the first lines of the component stack; no figures or saved data) and Report this problem, which
+  opens a new GitHub issue with those details filled in. Menu > Report a problem opens a new issue
+  with the version filled in. Nothing is sent until the person sends it.
 - Menu > About says when a newer release is out, with a link to what changed and the update steps,
   and the Menu shows "New version" beside About. The server asks GitHub for the newest release
   number at most once a day (an hour after no answer), only while the app is open, and sends nothing

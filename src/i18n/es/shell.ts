@@ -52,6 +52,8 @@ export const SHELL_ES: Messages<typeof SHELL> = {
   examCannotChange: 'Solo el ordenador donde funciona la aplicación, o un administrador cuando el inicio de sesión está activado, puede cambiar el modo examen.',
   examTitle: 'Activado: sin resúmenes ni pasos de IA para nadie que use esta aplicación; el chat del consejo muestra solo cifras, y las preguntas hechas y los países abiertos van al registro de auditoría.',
   updateOut: 'Nueva versión',
+  reportProblem: "Informar de un problema",
+  reportProblemTitle: "Abre una nueva incidencia en GitHub con la versión de la app ya escrita. No se envía nada hasta que usted mismo lo envíe.",
   about: 'Acerca de y licencias de datos',
   manual: 'Manual de usuario',
   worked: 'Ejemplos resueltos',

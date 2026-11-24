@@ -15,9 +15,10 @@
 import { APP_CITATION } from './citation';
 import { versionWithCommit } from './buildInfo';
 import { redact } from './dataHealth';
+import { ISSUE_REPO } from './problemReport';
 
 export const FEEDBACK_VERSION = 'feedback-v1';
-export const ISSUE_REPO = 'e-conquest/econquest';
+export { ISSUE_REPO };
 export const PAID_PREFIX = 'Your subscription: ';
 const MAX_NOTE = 1000;
 
