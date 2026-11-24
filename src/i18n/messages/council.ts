@@ -51,6 +51,8 @@ export const COUNCIL = defineMessages('council', {
   councilLabel: 'Council',
   about: 'about {scope}',
   changedSince: 'What changed since your saved question of {when} UTC (“{question}”)',
+  changesOne: '1 change',
+  changesMany: '{n} changes',
   writing: 'The synthesis agent is writing the brief from the agents’ answers…',
   disagree: 'Where the agents disagree',
   noSummary: 'No AI summary.',

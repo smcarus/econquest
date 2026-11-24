@@ -25,6 +25,8 @@ export interface AgentNode {
 
 export interface AgentColumn {
   title: string;
+  /** Said once for the whole column, such as why every agent was asked. */
+  note?: string;
   nodes: AgentNode[];
 }
 
@@ -129,6 +131,7 @@ export const AgentNetwork: React.FC<{
             )}
             <div className="flex-1 min-w-0 space-y-1.5">
               <div className="text-xs text-slate-500 dark:text-slate-400">{tx(col.title)}</div>
+              {col.note && <div className="text-xs text-slate-600 dark:text-slate-400">{tx(col.note)}</div>}
               {col.nodes.map((n) => (
                 <div
                   key={n.id}
@@ -140,7 +143,7 @@ export const AgentNetwork: React.FC<{
                   <AgentBadge id={n.id} status={n.status} className="mt-0.5" />
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-slate-900 dark:text-white">{tx(n.label)}</div>
-                    <div className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{tx(n.task)}</div>
+                    {n.task && <div className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{tx(n.task)}</div>}
                     {n.members && n.members.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {n.members.map((m) => (

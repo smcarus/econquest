@@ -46,6 +46,8 @@ export const COUNCIL_PT: Messages<typeof COUNCIL> = {
   councilLabel: "Conselho",
   about: "sobre {scope}",
   changedSince: "O que mudou desde sua pergunta salva de {when} UTC (“{question}”)",
+  changesOne: "1 mudança",
+  changesMany: "{n} mudanças",
   writing: "O agente de síntese está escrevendo o resumo a partir das respostas dos agentes…",
   disagree: "Onde os agentes divergem",
   noSummary: "Sem resumo de IA.",

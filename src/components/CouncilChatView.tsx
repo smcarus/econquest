@@ -177,20 +177,32 @@ export const AskCouncilPanel: React.FC<{
           />
         )}
 
-        {t.changes && (
-          <div className="border border-slate-200 dark:border-slate-700 p-3 space-y-1" data-council-changes={t.changes.changes.length + t.changes.stanceChanges.length}>
-            <div className="ui-label">
-              {tr('changedSince', { when: t.changes.sinceAskedAt.slice(0, 16).replace('T', ' '), question: t.changes.sinceQuestion })}
-            </div>
-            <ul className="text-sm text-slate-800 dark:text-slate-200 space-y-0.5">
-              {changeLines(t.changes).map((l, i) => (
-                <li key={i} className={l.startsWith('- ') ? 'pl-3' : 'text-xs text-slate-500 dark:text-slate-400'}>
-                  {l.replace(/^- /, '• ')}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        {/* What changed since the same question was saved: one line when nothing moved, folded with its count when something did. */}
+        {t.changes &&
+          (() => {
+            const ch = t.changes;
+            const n = ch.changes.length + ch.stanceChanges.length;
+            const since = tr('changedSince', { when: ch.sinceAskedAt.slice(0, 16).replace('T', ' '), question: ch.sinceQuestion });
+            const lines = changeLines(ch);
+            return n === 0 ? (
+              <p className="text-xs text-slate-500 dark:text-slate-400" data-council-changes="0">
+                {since}: {tx(lines[0] || '')}
+              </p>
+            ) : (
+              <details className="border border-slate-200 dark:border-slate-700 px-3 py-2" data-council-changes={n}>
+                <summary className="ui-label cursor-pointer">
+                  {since}: {n === 1 ? tr('changesOne') : tr('changesMany', { n })}
+                </summary>
+                <ul className="mt-1 text-sm text-slate-800 dark:text-slate-200 space-y-0.5">
+                  {lines.map((l, i) => (
+                    <li key={i} className={l.startsWith('- ') ? 'pl-3' : 'text-xs text-slate-500 dark:text-slate-400'}>
+                      {l.replace(/^- /, '• ')}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            );
+          })()}
 
         <div className="space-y-2" data-council-summary="true">
           {writingNow ? (
@@ -612,6 +624,16 @@ export const AskCouncilPanel: React.FC<{
               <p className="text-xs text-slate-500 dark:text-slate-400">{tr('addedSession', { list: extra.map((e) => e.countryName).join(', ') })}</p>
             )}
             {councilReply(current, true)}
+            {/* Follow-up questions sit under the answer, not above the question box, so on a phone the answer keeps the screen. */}
+            {!busy && (
+              <div className="flex flex-wrap gap-1.5 pl-3" data-council-followup="true">
+                {suggestFollowUps(asked.plan, asked.answers).map((sug) => (
+                  <button key={sug} type="button" className="ui-pill" onClick={() => void ask(sug, 'followup')}>
+                    {sug}
+                  </button>
+                ))}
+              </div>
+            )}
           </>
         )}
 
@@ -678,15 +700,6 @@ export const AskCouncilPanel: React.FC<{
           submit();
         }}
       >
-        {asked && !busy && (
-          <div className="flex flex-wrap gap-1.5" data-council-followup="true">
-            {suggestFollowUps(asked.plan, asked.answers).map((sug) => (
-              <button key={sug} type="button" className="ui-pill" onClick={() => void ask(sug, 'followup')}>
-                {sug}
-              </button>
-            ))}
-          </div>
-        )}
         <label htmlFor="council-question" className="sr-only">
           {asked ? tr('followUpLabel') : tr('questionLabel')}
         </label>
