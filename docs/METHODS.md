@@ -699,7 +699,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Says:** Where a policy option depends on how people behave (take-up, response to a tax, trust in a target, defaults, losses, acting now for a gain later), with published studies from a fixed list.
 - **Rule:** Fixed word rules over each option saved in a policy review (title, how it works, effect, trade-offs, who bears the cost, what must be true, risks). Each flag cites studies from src/data/behaviouralEvidence.ts with full citations. Effect sizes only as entered by the user with a source.
 - **Reads:** The saved Options step of a policy review; effect sizes and sources typed by the user
-- **Shows in:** Reports > Policy reviews (Behavioural check, between Evidence and the memo)
+- **Shows in:** Policy review (Behavioural check, between Evidence and the memo)
 - **Use:** Research
 - **Status:** Description, not a tested signal
 - **How it is tested:** Description, not a tested signal: it points to published work and makes no forward call.
@@ -1120,7 +1120,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Says:** The review country's diagnosis figures beside the same figures for up to six peer countries, as each stood on the review's As of day.
 - **Rule:** Each peer's diagnosis is built from its saved pull on or before the As of day, the same way as the review's own; the peer median uses peers with the figure (two or more); rank counts how many countries with the figure have a higher value, plus one.
 - **Reads:** Your policy review; saved pulls of the peer countries you pick
-- **Shows in:** Reports > Policy reviews > Peers (after Diagnose)
+- **Shows in:** Policy review > Peers (after Diagnose)
 - **Use:** Research
 - **Status:** Description, not a tested signal
 - **How it is tested:** Description, not a tested signal: saved figures side by side.
@@ -1132,7 +1132,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Says:** What changed between a policy review and the review started from it with Review again: frame, recommended option, each diagnosis figure, and whether the goal indicator moved the way the goal wants.
 - **Rule:** Both saved reviews read side by side; change = later figure minus earlier figure, on the same standard indicator; the goal as the later review states it, judged on the same figure in both diagnoses, the same way as Track outcomes.
 - **Reads:** Your two saved policy reviews (data/local/reviews.json)
-- **Shows in:** Reports > Policy reviews (a review started with Review again)
+- **Shows in:** Policy review (a review started with Review again)
 - **Use:** Research
 - **Status:** Description, not a tested signal
 - **How it is tested:** Description, not a tested signal: two saved reviews side by side.
@@ -1156,7 +1156,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Says:** For one measure in a policy review: present values of the costs and benefits you enter, at official discount rates you tick or your own, with the year it pays back and how far figures would have to move to flip the answer; who gains and who loses, with sizes only as entered with a source and the by-fifth reading of Who pays for a policy; a chain of what follows, each link resting on a Diagnose figure, a named source or marked as an assumption; and cases scaled from the cost-benefit table with the odds you give. The Options step hands these entries to the AI-written council, which weighs the measure as option 1 against alternatives, using only numbers from the diagnosis and the entries. For a market (PK7): the app's market readings at the As of day, each with date and source or Missing, and cases as a change in value for a holder with the odds you give.
 - **Rule:** Discounted sums: the first year is not discounted, each later year divided by one plus that year's rate (schedules as published, e.g. the UK Green Book). The flat rate where the net is zero is found by bisection between -50% and 100%. Official rates from src/data/discountRates.ts, each with document, passage and the day checked.
 - **Reads:** Costs and benefits you enter by year, each with its source; official discount rates (HM Treasury Green Book, US OMB Circular A-4, European Commission, Asian Development Bank)
-- **Shows in:** Reports > Policy reviews (Policy council, beside the frame)
+- **Shows in:** Policy review (Policy council, beside the frame)
 - **Use:** Research
 - **Status:** Description, not a tested signal
 - **How it is tested:** Description, not a tested signal: arithmetic on the figures you enter, not a forecast or a recommendation.

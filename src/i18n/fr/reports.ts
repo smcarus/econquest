@@ -16,7 +16,7 @@ export const REPORTS_FR: Messages<typeof REPORTS> = {
   rp_tab_teaching: 'Enseignement',
   rp_tab_teaching_hint: "Une décision de taux passée sous forme de fiche étudiant et de copie enseignant.",
   im_showText: 'Modifier le texte',
-  rp_subtitle: "Documents à remettre au comité d'investissement, aux risques et aux clients. Pays actuel : {country}",
+  rp_subtitle: "Notes, synthèses et supports pédagogiques à télécharger ou partager. Pays actuel : {country}",
   rp_tools: "Outils {tab}",
   te_missing: "Manquant : {why}",
   te_view: "Vue enseignant de {country} au {date} :",

@@ -81,7 +81,7 @@ export const VALIDATION_FILE = validationFilePath(DATA_DIR);
 export const SPEC_DIR = path.join(APP_ROOT, 'docs', 'validation', 'preregistered');
 // Report sign-off (Reports > Saved research). See src/utils/signoff.ts.
 export const SIGNOFF_FILE = signOffFilePath(DATA_DIR);
-// Policy reviews (Reports > Policy reviews). See src/utils/policyReview.ts and docs/POLICY_REVIEW.md.
+// Policy reviews (Policy review). See src/utils/policyReview.ts and docs/POLICY_REVIEW.md.
 export const REVIEW_FILE = reviewFilePath(DATA_DIR);
 export const WATCH_RULES_FILE = watchRulesFilePath(DATA_DIR);
 export const WORKSPACE_FILE = workspaceFilePath(DATA_DIR);

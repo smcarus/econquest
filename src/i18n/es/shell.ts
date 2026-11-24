@@ -6,6 +6,8 @@ export const SHELL_ES: Messages<typeof SHELL> = {
   skip: 'Ir al contenido',
   workspace: 'Espacio de trabajo',
   research: 'Investigación',
+  policyReview: 'Revisión de políticas',
+  policyReviewTitle: 'Expedientes paso a paso para buscar formas de mejorar la política de un país',
   researchTitle: 'Un país, varios países lado a lado o sus posiciones',
   reports: 'Informes',
   councilChat: 'Chat del consejo',

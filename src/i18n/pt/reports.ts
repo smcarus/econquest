@@ -16,7 +16,7 @@ export const REPORTS_PT: Messages<typeof REPORTS> = {
   rp_tab_teaching: 'Ensino',
   rp_tab_teaching_hint: 'Uma decisão de juros passada como folha para alunos e cópia para o professor.',
   im_showText: 'Editar texto',
-  rp_subtitle: "Documentos para entregar ao comitê de investimentos, ao risco e aos clientes. País atual: {country}",
+  rp_subtitle: "Notas, resumos e material didático para baixar ou compartilhar. País atual: {country}",
   rp_tools: "Ferramentas de {tab}",
   te_missing: "Ausente: {why}",
   te_view: "Visão do professor de {country} em {date}:",

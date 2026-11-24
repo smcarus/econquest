@@ -3,7 +3,7 @@
 A guided, repeatable case file for a principal, economist or politician who uses the council to look
 for ways to improve policy and macroeconomic conditions in one country.
 
-It lives in **Reports > Policy reviews**. A review can also be started from a Council chat answer.
+It lives in **Policy review**. A review can also be started from a Council chat answer.
 
 > Everything a policy review produces is **research, not validated advice**. The memo says so until
 > the backtests behind the signals it relies on pass (Menu > Models & validation).

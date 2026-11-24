@@ -19,7 +19,7 @@ export const REPORTS = defineMessages('reports', {
   rp_tab_teaching: 'Teaching',
   rp_tab_teaching_hint: 'A past rate decision as a student handout and a teacher copy.',
   im_showText: 'Edit text',
-  rp_subtitle: 'Documents to hand to the investment committee, risk and clients. Current country: {country}',
+  rp_subtitle: 'Notes, briefs and teaching material to download or share. Current country: {country}',
   rp_tools: '{tab} tools',
   // Teaching episodes
   te_missing: 'Missing: {why}',

@@ -7,6 +7,8 @@ export const SHELL = defineMessages(
     skip: 'Skip to content',
     workspace: 'Workspace',
     research: 'Research',
+    policyReview: 'Policy review',
+    policyReviewTitle: 'Step-by-step case files for finding ways to improve policy in one country',
     researchTitle: 'One country, countries side by side, or your holdings',
     reports: 'Reports',
     councilChat: 'Council chat',
