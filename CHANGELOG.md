@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- `npm run go` and `npm run update` no longer stop on files the app writes itself (generated docs
+  such as docs/METHODS.md and docs/TRACK_RECORD.md, docs/validation/recorded-verdicts.json, recorded
+  test data under tests/fixtures): they are copied to data/local/backups/before-pull-<time>/, put
+  back to the repo version, and the pull goes through. Files changed by hand are left alone and named
+  (`bash scripts/safe-pull.sh` does the same on its own).
 - `npm run oecd:vintages` no longer trips the OECD's request limit: requests go 4 seconds apart,
   a "too many requests" (429) or busy-server (500-504) answer is retried up to 4 times after a
   wait (the OECD's Retry-After when given), and the run stops after repeated 429s so the next run

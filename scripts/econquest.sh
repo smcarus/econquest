@@ -129,7 +129,11 @@ fi
 step "1/6 Code and packages"
 if [ "${pull}" = 1 ] && git rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
   before="$(git rev-parse HEAD)"
-  if git pull --ff-only; then
+  # Files the app writes itself (docs it generates, recorded test data) are backed up and put back
+  # first so they cannot block the pull (scripts/safe-pull.sh).
+  # shellcheck source=scripts/safe-pull.sh
+  source "${ROOT}/scripts/safe-pull.sh"
+  if safe_pull; then
     after="$(git rev-parse HEAD)"
     [ "${before}" = "${after}" ] && echo "Already up to date (${after:0:7})." || echo "Updated ${before:0:7} -> ${after:0:7}."
   else
