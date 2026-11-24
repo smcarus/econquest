@@ -41,7 +41,7 @@ español.
   **Investigación** (países y posiciones) e **Informes**.
 - **Cabecera, a la derecha:** **Chat del consejo** (abre el chat junto a Investigación o Informes), el
   botón del **nivel de ayuda** (aquí *Ayuda clave*), el botón de **idioma** (*ES*), el cambio claro y
-  oscuro, y **Menú**.
+  oscuro (hasta que lo pulse, la app sigue el ajuste de su computadora), y **Menú**.
 - **Espacio de trabajo, arriba a la derecha:** **Agentes** muestra qué agentes trabajaron en la última
   respuesta; **Resumen** abre sus ajustes, la lista de seguimiento, qué se movió y lo que viene. «1 por
   configurar» cuenta los pasos de configuración pendientes.

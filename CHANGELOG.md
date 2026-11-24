@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- The app opens in dark or light to match the computer's own setting, and changes with it, until
+  you press the dark-mode switch; from then on your choice is kept in this browser. A choice saved by
+  an earlier version still counts, so no screen changes after updating. The pop-out watchlist follows
+  the same rule.
 - Deleting a watchlist, or taking a country off one, in the watchlist side panel now asks first
   (Delete or Keep, Remove or Keep), as the watchlist table already did. Before, one click deleted a
   whole list with no way back.
