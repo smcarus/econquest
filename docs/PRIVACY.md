@@ -44,8 +44,8 @@ server keeps, as with any server.
 ## Removing your data
 
 Menu > Backup downloads what you made, so you can keep it. To remove everything, follow
-"Remove EconQuest" in [INSTALL.md](./INSTALL.md). Clearing the site data in your browser removes the
-screen choices kept there.
+[Remove EconQuest](./INSTALL.md#remove-econquest) in INSTALL.md. Clearing the site data in your
+browser removes the screen choices kept there.
 
 ## Questions
 

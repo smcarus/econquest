@@ -259,7 +259,7 @@ The full guide to every screen is in Menu > User manual.
 | Start it again | `docker compose up -d` (Docker Desktop must be running) |
 | Update to the newest release | `docker compose pull` then `docker compose up -d`. Menu > About says when a newer release is out (`UPDATE_CHECK=off` in `.env` turns that check off) |
 | See what it is doing | `docker compose logs -f econquest` (Ctrl+C to stop watching) |
-| Remove it and everything it saved | `docker compose down -v` (this deletes your saved data and keys; make a backup first) |
+| Remove it and everything it saved | `docker compose down -v --rmi all` (this deletes your saved data and keys; make a backup first). All the steps, including AI models: [Remove EconQuest](#remove-econquest) |
 | List, make or revoke API tokens | `docker compose exec econquest npm run tokens -- list` (or `create "<name>" <scopes>`, `revoke <id>`); the same tokens as Menu > Settings > API tokens |
 
 **Your data.** Everything EconQuest saves (settings, keys, downloaded figures, saved research) is
@@ -391,6 +391,49 @@ names again; a full copy of the `data/` folder keeps them ([BACKUP_AND_RESTORE.m
 | Many figures say **Missing** | That is expected, not a fault: the app never invents a number. Each Missing figure says why (no free source, the source is down, or a key is needed). Data connections shows which sources answer. |
 | The council says it cannot reach the AI | Ollama is not running, or the models are not downloaded. Start the Ollama app and run the `ollama pull` lines above, or switch to Gemini or No AI in Settings. |
 | Answers are very slow | The large model on a computer without enough memory or a graphics chip can take 10 minutes or more per full council report. Use Gemini for the referee, or run Ollama on a bigger machine. |
+
+## Remove EconQuest
+
+EconQuest installs no background service and no scheduled task: the daily download runs only when
+the app starts. Removing it takes the steps below for the way you installed it. If you want to keep
+what you made, first download a backup in Menu > Backup (keys are never in it).
+
+**The ready-made app (Docker).** In a terminal, inside your `econquest` folder:
+
+```sh
+docker compose down -v --rmi all
+```
+
+This stops the app and deletes its saved data and keys, the AI models of the bundled Ollama if you
+used it, and the downloaded images. Then delete the folder.
+
+**From the code** (`npm run go`, `start-mac.command`, `econquest-mac.command` or `start-windows.bat`).
+In a terminal, inside the `econquest` folder:
+
+```sh
+npm run go -- stop                 # Mac: stops the app and the dev server
+docker compose down -v --rmi all   # deletes the app's Docker data and images
+```
+
+Then delete the `econquest` folder. That deletes `data/local/` (your keys, settings and saved
+research) and every downloaded figure.
+
+**AI models in the Ollama app.** The models stay in Ollama until you remove them. `ollama list` shows
+them; remove the ones EconQuest used:
+
+```sh
+ollama rm qwen2.5:32b   # about 20 GB
+ollama rm qwen2.5:7b    # about 5 GB
+ollama rm qwen2.5:14b   # about 9 GB, only if you turned on "Allow a 14B referee"
+```
+
+If you use Ollama for nothing else, uninstall it like any other program (on a Mac, quit it and move
+Ollama from Applications to the Bin; on Windows, Settings > Apps > Installed apps).
+
+**Your browser.** The language, dark mode and last session are kept in the browser. Clear the site
+data for `localhost:3737` (and `localhost:3000` if you ran the dev server) in the browser's settings.
+
+**Docker Desktop.** Uninstall it only if nothing else on the computer uses it.
 
 ## From the code (for developers)
 
