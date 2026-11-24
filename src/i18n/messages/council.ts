@@ -55,6 +55,7 @@ export const COUNCIL = defineMessages('council', {
   disagree: 'Where the agents disagree',
   noSummary: 'No AI summary.',
   noSummaryTail: 'Each agent’s document is under Sources below.',
+  digestShort: 'Short answer, by the app’s stated rules (not AI)',
   digestFound: 'What the agents found',
   digestNotAnswered: 'Not answered here',
   digestGaps: 'Missing for this question',
