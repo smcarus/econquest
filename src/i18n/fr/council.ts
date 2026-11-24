@@ -51,6 +51,7 @@ export const COUNCIL_FR: Messages<typeof COUNCIL> = {
   disagree: 'Les points de désaccord entre les agents',
   noSummary: "Pas de résumé par l'IA.",
   noSummaryTail: 'Le document de chaque agent se trouve sous Sources ci-dessous.',
+  digestShort: 'Réponse courte, selon les règles déclarées de l’application (pas d’IA)',
   digestFound: 'Ce que les agents ont trouvé',
   digestNotAnswered: 'Sans réponse ici',
   digestGaps: 'Manquant pour cette question',

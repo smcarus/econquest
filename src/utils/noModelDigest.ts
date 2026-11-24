@@ -23,7 +23,15 @@ export interface UnansweredPart {
   where: string;
 }
 
+/** A one-line answer for one country, built from the agents' fixed calls by stated rules (no AI). */
+export interface ShortAnswer {
+  country: string;
+  text: string;
+}
+
 export interface NoModelDigest {
+  /** The short answer at the top: a yes/no where the question asks one and the rules give one. */
+  short: ShortAnswer[];
   lines: DigestLine[];
   unanswered: UnansweredPart[];
   /** What the agents could not answer, in their own words. */
@@ -31,6 +39,73 @@ export interface NoModelDigest {
 }
 
 const MAX_LINES = 6;
+const MAX_SHORT = 3;
+
+const CURVE = /\b(behind|ahead of) the curve\b/i;
+const MONETARY = /central bank|monetary|policy rate|interest rates?|\brates?\b|\bhikes?\b|\bcuts?\b|\btight|\bloose|easing|tightening/i;
+const FX_WORDS: Record<string, string> = {
+  strong: 'the real exchange rate is strong for its history',
+  'near average': 'the real exchange rate is near its 10-year average',
+  weak: 'the real exchange rate is weak for its history',
+};
+
+const lowerFirst = (t: string) => (t ? t[0]!.toLowerCase() + t.slice(1) : t);
+const firstSentence = (t: string) => (/^.*?[.!?](?=\s|$)/.exec(t)?.[0] ?? t).trim();
+
+/**
+ * The short answer: for a question about monetary policy, the Central Bank Watcher's call (tight,
+ * neutral or loose) and how far the policy rate sits from a simple Taylor rule, with a plain "No" /
+ * "Possibly" / "Not clearly" when the question asks whether a bank is behind the curve. For other
+ * questions, each country's fixed calls (policy, real exchange rate) and its debt path in one line.
+ * Only the agents' own calls and figures are used; nothing here is new analysis.
+ */
+export function shortAnswer(question: string, answers: AgentAnswer[]): ShortAnswer[] {
+  const out: ShortAnswer[] = [];
+  const cb = answers.find((a) => a.id === 'cb');
+  const curve = CURVE.exec(question);
+  if (cb && (curve || MONETARY.test(question))) {
+    for (const f of [...cb.findings].sort((x, y) => y.weight - x.weight)) {
+      if (out.length >= MAX_SHORT) break;
+      const call = f.stance?.find((s) => s.dim === 'policy')?.call;
+      if (!call) continue;
+      const looks = /Policy looks [^.]*\./.exec(f.reading)?.[0] ?? `Policy looks ${call}.`;
+      const gap = f.figures.find((g) => g.label === 'Policy rate against the rule')?.value;
+      const n = gap ? Number.parseFloat(gap.replace(/[^\d.+-]/g, ' ').trim().split(/\s+/)[0] ?? '') : Number.NaN;
+      const rule = Number.isFinite(n) ? ` The policy rate is ${Math.abs(n).toFixed(2)} pts ${n >= 0 ? 'above' : 'below'} the rate a simple Taylor rule gives.` : '';
+      let lead = '';
+      if (curve) {
+        const ahead = curve[1]!.toLowerCase() !== 'behind';
+        // Behind the curve: tight = No, loose = Possibly. Ahead of the curve: tight = Yes, loose = No.
+        lead = call === 'neutral' ? 'Not clearly. ' : ahead ? (call === 'tight' ? 'Yes. ' : 'No. ') : call === 'tight' ? 'No. ' : 'Possibly. ';
+      }
+      out.push({ country: f.countryName, text: `${lead}${looks}${rule}` });
+    }
+    if (out.length) return out;
+  }
+  const order: string[] = [];
+  const parts = new Map<string, { country: string; bits: string[] }>();
+  const add = (iso3: string, country: string, bit: string) => {
+    if (!parts.has(iso3)) {
+      parts.set(iso3, { country, bits: [] });
+      order.push(iso3);
+    }
+    parts.get(iso3)!.bits.push(bit);
+  };
+  for (const a of answers) {
+    for (const f of a.findings) {
+      for (const s of f.stance || []) {
+        if (s.dim === 'policy') add(f.iso3, f.countryName, `monetary policy looks ${s.call}`);
+        else if (s.dim === 'fx' && FX_WORDS[s.call]) add(f.iso3, f.countryName, FX_WORDS[s.call]!);
+      }
+      if (a.id === 'fiscal' && /^Government debt is/.test(f.reading)) add(f.iso3, f.countryName, lowerFirst(firstSentence(f.reading)).replace(/\.$/, ''));
+    }
+  }
+  for (const iso3 of order.slice(0, MAX_SHORT)) {
+    const p = parts.get(iso3)!;
+    out.push({ country: p.country, text: `${p.bits.join('; ').replace(/^./, (c) => c.toUpperCase())}.` });
+  }
+  return out;
+}
 const MAX_FIGURES = 3;
 
 // "a 200bp rise in rates", "rates rise 2 points", "higher interest rates", "a rate hike of 100 basis points"
@@ -85,5 +160,5 @@ export function noModelDigest(question: string, answers: AgentAnswer[], whatIfSh
         : 'No agent found figures for this question. Try naming a country, or open Research for that country to see what the app holds.',
     });
   }
-  return { lines, unanswered, gaps };
+  return { short: shortAnswer(question, answers), lines, unanswered, gaps };
 }

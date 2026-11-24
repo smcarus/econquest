@@ -237,6 +237,19 @@ export const AskCouncilPanel: React.FC<{
                 const d = noModelDigest(t.asked.question, t.asked.answers, !!parseWhatIf(t.asked.question), t.asked.plan.countries.length > 0);
                 return (
                   <div className="space-y-2" data-council-digest="true">
+                    {d.short.length > 0 && (
+                      <div data-council-short="true">
+                        <div className="ui-label mt-1">{tr('digestShort')}</div>
+                        <ul className="pl-0 text-sm font-medium text-slate-900 dark:text-white space-y-1">
+                          {d.short.map((s) => (
+                            <li key={s.country}>
+                              {d.short.length > 1 || t.asked.plan.countries.length !== 1 ? `${s.country}: ` : ''}
+                              {tx(s.text)}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                     {d.lines.length > 0 && (
                       <div>
                         <div className="ui-label mt-1">{tr('digestFound')}</div>

@@ -74,3 +74,36 @@ test('a named country with no figures is not told to name a country', () => {
   assert.equal(d.unanswered.length, 1);
   assert.doesNotMatch(d.unanswered[0].where, /Try naming a country/);
 });
+
+const cb = (call: 'tight' | 'neutral' | 'loose', gap?: string): AgentAnswer => ({
+  id: 'cb' as never,
+  name: 'Central Bank Watcher',
+  why: 'you mentioned "central bank"',
+  findings: [
+    {
+      iso3: 'BRA',
+      countryName: 'Brazil',
+      reading: `Inflation 4.4% y/y (OECD via DBnomics, Apr 2026), -0.1 pts over 3 months: steady. Policy looks ${call}, with inflation still above target. The policy rate of 13.75% is 6.67 pts above a simple Taylor rule.`,
+      figures: gap ? [{ label: 'Policy rate against the rule', value: gap, source: 'rule', tag: 'model' as never }] : [],
+      weight: 0.5,
+      stance: [{ dim: 'policy', call }],
+    },
+  ],
+  missing: [],
+});
+
+test('a behind-the-curve question gets a plain short answer from the policy call and the Taylor rule', () => {
+  const d = noModelDigest("Is Brazil's central bank behind the curve?", [cb('tight', '+6.67 pts (tighter than the rule)')]);
+  assert.equal(d.short.length, 1);
+  assert.equal(d.short[0]!.text, 'No. Policy looks tight, with inflation still above target. The policy rate is 6.67 pts above the rate a simple Taylor rule gives.');
+  assert.match(noModelDigest('Is the central bank behind the curve in Brazil?', [cb('loose', '-2.10 pts (looser than the rule)')]).short[0]!.text, /^Possibly\. .* 2\.10 pts below the rate/);
+  assert.match(noModelDigest('Is Brazil behind the curve?', [cb('neutral')]).short[0]!.text, /^Not clearly\. Policy looks neutral/);
+  assert.match(noModelDigest('Is Brazil ahead of the curve?', [cb('tight')]).short[0]!.text, /^Yes\. /);
+  assert.match(noModelDigest('Is policy tight in Brazil?', [cb('tight')]).short[0]!.text, /^Policy looks tight/);
+});
+
+test('other questions get each country’s calls and debt path in one line; none without calls', () => {
+  const d = noModelDigest('How is Brazil doing?', [cb('tight'), fiscal]);
+  assert.deepEqual(d.short, [{ country: 'Brazil', text: 'Monetary policy looks tight; government debt is 93.3% of GDP and the IMF projects it rising to 2027.' }]);
+  assert.deepEqual(noModelDigest('How is Ghana doing?', [{ ...fiscal, findings: [] }]).short, []);
+});
