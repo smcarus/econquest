@@ -98,7 +98,7 @@ test('ECB curve asked one maturity at a time; Zenodo and the ECB told who is ask
   assert.match(fs.readFileSync('src/server/feeds/regional.ts', 'utf8'), /doseLatestUrl\(\), 'DOSE', \{ \.\.\.ZENODO_HEADERS/);
 });
 
-test('ECB SPF check asked a second time when the first try gets no answer', async () => {
+test('ECB SPF check asked again when the first try is cut (the connection check retry)', async () => {
   const { checkConnections } = await import('../src/utils/connectionCheck');
   let calls = 0;
   const csv = 'KEY,TIME_PERIOD,OBS_VALUE\nSPF.Q.U2.HICP.POINT.LT.Q.AVG,2026-Q4,2.02\n';
@@ -107,7 +107,7 @@ test('ECB SPF check asked a second time when the first try gets no answer', asyn
     if (calls === 1) throw Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNRESET' } });
     return new Response(csv, { status: 200 });
   }) as never;
-  const row = (await checkConnections({ env: {}, only: ['ecb_spf'], fetchFn })).results[0];
+  const row = (await checkConnections({ env: {}, only: ['ecb_spf'], fetchFn, retry: { tries: 3, pausesMs: [0], maxRetryAfterMs: 0 } })).results[0];
   assert.equal(calls, 2);
   assert.equal(row.state, 'connected');
   assert.match(fs.readFileSync('src/server/feeds/rates.ts', 'utf8'), /for \(const d of ECB_SPF_SERIES\)/);
