@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Menu > About says when a newer release is out, with a link to what changed and the update steps,
+  and the Menu shows "New version" beside About. The server asks GitHub for the newest release
+  number at most once a day (an hour after no answer), only while the app is open, and sends nothing
+  about you. `UPDATE_CHECK=off` turns it off.
 - A privacy page, docs/PRIVACY.md, says in one place what stays on your computer, what leaves it and
   when: requests for figures to public sources, questions to an online AI provider only if you choose
   one, screen fonts from Google Fonts, and alerts, audit copies or sign-in only if you set them up.

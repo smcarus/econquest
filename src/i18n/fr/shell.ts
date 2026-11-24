@@ -51,6 +51,7 @@ export const SHELL_FR: Messages<typeof SHELL> = {
   sharingTitle: 'Activé : les téléchargements retiennent les chiffres dont les conditions de la source ne permettent pas de les transmettre, ou ne le précisent pas (Menu > À propos et licences des données).',
   examCannotChange: "Seul l'ordinateur qui fait tourner l'application, ou un administrateur lorsque la connexion est activée, peut changer le mode examen.",
   examTitle: "Activé : pas de résumés ni d'étapes par IA pour personne dans cette application ; le chat du conseil n'affiche que des chiffres, et les questions posées et les pays ouverts vont au journal d'audit.",
+  updateOut: 'Nouvelle version',
   about: 'À propos et licences des données',
   manual: "Manuel d'utilisation",
   worked: 'Exemples guidés',
