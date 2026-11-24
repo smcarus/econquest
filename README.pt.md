@@ -101,16 +101,16 @@ repassados em downloads ou cópias compartilhadas.
 
 | Tarefa | Onde | O que você recebe |
 | --- | --- | --- |
-| Fazer uma pergunta com palavras simples | **Área de trabalho** (Chat do conselho) | Agentes especializados respondem com os números do app, cada um com sua fonte; com um modelo de IA, um agente de síntese escreve um breve resumo que só pode citar esses números, e uma checagem aponta qualquer número que não consiga rastrear |
+| Fazer uma pergunta com palavras simples | **Área de trabalho** (Chat do conselho) | Agentes especializados respondem com os números do app, cada um com sua fonte; sem modelo de IA, primeiro vem uma resposta curta pelas regras declaradas do aplicativo; com um modelo de IA, um agente de síntese escreve um breve resumo que só pode citar esses números, e uma checagem aponta qualquer número que não consiga rastrear |
 | Perguntar o que uma mudança faria | **Área de trabalho** (Chat do conselho) | Pergunte "o que aconteceria com a Turquia se o Fed subisse os juros em 1 ponto?". O app mostra a mudança que entendeu (você pode editar os tamanhos e perguntar de novo), o Scenario Agent coloca os números de hoje ao lado dos números depois da mudança, lista o que aconteceu em episódios passados do mesmo tipo e o que estudos publicados encontraram, e a resposta vem em oito partes, cada uma marcada com o tipo de evidência em que se apoia |
 | Estudar um país | **Pesquisa > Um país** | Resumo, Mercados e sinais, Histórico e dados, e Fontes. Histórico e dados mostra o gráfico do histórico e depois um menu de ferramentas em oito grupos que abrem uma de cada vez: gráficos de muitos anos, estimativas do presente e previsões com faixas, hiato do produto, sustentabilidade da dívida, adequação das reservas, regras de política monetária, alerta antecipado de crise, curva de juros, fatores da inflação, contabilidade do crescimento, previsões do FMI por edição e visões "em um dia passado". Para países de renda mais baixa: remessas, ajuda recebida, inclusão financeira, preços de commodities e termos de troca, preços dos alimentos e segurança alimentar, e desastres naturais. Clima na capital desde 1981 e no país inteiro desde 1901, preços de arroz, trigo, milho e soja desde 1960, um desenhador de seguro paramétrico (custo de sinistralidade, preço justo, períodos de retorno, risco de base), um modelo de perdas por desastres e trajetórias de ciclones tropicais. Como a moeda é administrada de fato, ativos do banco central e pressão no financiamento em dólares. Para a administração pública e para políticos: credibilidade do orçamento (quanto do orçamento aprovado foi gasto, com as faixas de nota do PEFA), um acompanhamento da execução do orçamento com seu próprio arquivo, os projetos do Banco Mundial e o ritmo dos desembolsos, e números regionais. Para economistas e operadores de mercado: faixas a partir de erros passados das previsões, curvas de juros completas dos EUA e da zona do euro, e surpresas nos dados com um índice de surpresas de inflação |
 | Comparar países | **Pesquisa > Comparar países** | Sua lista de acompanhamento lado a lado (os 19 países membros do G20 no início, ou os 15 maiores países de baixa renda por região), pautas e onde os preços de mercado e os dados discordam |
 | Acompanhar suas posições | **Pesquisa > Minhas posições** | Uma lista de títulos ou posições que você carrega, diante dos riscos e sinais |
-| Avaliar uma escolha de política | **Relatórios > Nova revisão de política** | Um dossiê passo a passo: definir o problema, diagnosticar, ordenar opções, checar evidências e precedentes, escrever um memorando de recomendação e um resumo de uma página para quem não é economista, e depois acompanhar o que aconteceu. Compare o diagnóstico com até seis países pares, receba um aviso na página inicial quando um número acompanhado cruzar seu gatilho, e veja o que mudou ao revisar de novo a mesma política. O conselho de políticas pesa uma medida (custos e benefícios a taxas de desconto oficiais, quem ganha e quem perde, o que vem depois, cenários) ou o que um evento significa para um mercado. **Para as pessoas** transforma uma revisão num resumo simples para a população: o que muda, o custo por pessoa, quem ganha e quem paga, e as regiões mais atrasadas |
+| Avaliar uma escolha de política | **Revisão de políticas** (página própria no cabeçalho) | Um dossiê passo a passo: definir o problema, diagnosticar, ordenar opções, checar evidências e precedentes, escrever um memorando de recomendação e um resumo de uma página para quem não é economista, e depois acompanhar o que aconteceu. Compare o diagnóstico com até seis países pares, receba um aviso na página inicial quando um número acompanhado cruzar seu gatilho, e veja o que mudou ao revisar de novo a mesma política. O conselho de políticas pesa uma medida (custos e benefícios a taxas de desconto oficiais, quem ganha e quem perde, o que vem depois, cenários) ou o que um evento significa para um mercado. **Para as pessoas** transforma uma revisão num resumo simples para a população: o que muda, o custo por pessoa, quem ganha e quem paga, e as regiões mais atrasadas |
 | Testar um "e se" fiscal | **Histórico e dados**, ou a partir do Chat do conselho | Mude os gastos do governo ou os impostos e veja o efeito provável no crescimento e na dívida, com multiplicadores e elasticidades publicados e uma faixa |
-| Escrever um relatório | **Relatórios** (abas: Escrever uma nota, Revisões de política, Documentos do conselho, Cadernos, Ensino) | Notas de país e de emissor, avaliações de sustentabilidade, revisões de carteira e resumos do conselho, em Markdown ou PDF com fontes e datas |
+| Escrever um relatório | **Relatórios** (abas: Escrever uma nota, Documentos do conselho, Cadernos, Ensino) | Notas de país e de emissor, avaliações de sustentabilidade, revisões de carteira e resumos do conselho, em Markdown ou PDF com fontes e datas |
 | Escrever um texto para discussão | Gráficos do **Chat do conselho**, **Relatórios > Cadernos** | Fixe um gráfico num caderno de pesquisa com a data até onde vão os números e uma impressão digital dos números; baixe o caderno como um único zip (rascunho, dados, scripts de Python, R e Stata, arquivo de citação); depois, *Verificar se ainda vale* diz se cada número continua igual, foi revisado ou sumiu |
-| Aprender pelo caminho | Botões do cabeçalho, **Menu > Manual do usuário**, **Menu > Exemplos resolvidos** | Três níveis de ajuda, um glossário em linguagem simples, cinco casos resolvidos, episódios didáticos e modo prova |
+| Aprender pelo caminho | Botões do cabeçalho, **Menu > Manual do usuário**, **Menu > Exemplos resolvidos** | Quatro níveis de ajuda (Ajuda desativada, Ajuda essencial, Ajuda completa, Especialista), um glossário em linguagem simples, cinco casos resolvidos, episódios didáticos e modo prova |
 | Usar seus próprios dados e testes | **Menu > Seus dados**, **Menu > Modelos e validação** | Carregue suas próprias séries em CSV; registre seu próprio teste de sinal ou modelo com as mesmas regras rígidas dos testes do app |
 | Usar os números em R, Python ou Stata | [docs/DATA_API.md](./docs/DATA_API.md) (em inglês) | As mesmas séries, painéis e tabelas das telas, com fonte e data em cada valor |
 | Conectar um sistema de carteira | **Menu > Configurações > Tokens de API**, [docs/DATA_API.md](./docs/DATA_API.md) (em inglês) | Outro programa lê resumos de país e eventos, envia suas posições e roda choques e repetições de crises passadas na carteira dele, cada um com um token limitado ao que você marcar. Os países e títulos da lista **Nomes ocultos** não aparecem em lugar nenhum |
@@ -144,12 +144,12 @@ níveis de ajuda, as ferramentas de clima e seguros, uso no celular e como exper
 
 | | |
 | --- | --- |
-| ![Chat do conselho com o painel de agentes aberto](docs/images/02-council-answer.png) **Pergunte ao conselho.** O painel de agentes mostra quem respondeu e por quê. | ![Histórico e dados: taxa básica de juros do Brasil com sua fonte e botões de download](docs/images/06-history.png) **Leia o histórico.** Cada gráfico diz o que mede, de quem é o número e como ler. |
-| ![Comparar países: pautas para a lista do G20](docs/images/10-compare.png) **Compare países.** Pautas e onde mercados e dados discordam. | ![Formulário de nova revisão de política](docs/images/12-policy-review.png) **Revise uma política.** Do problema ao memorando. |
+| ![Resposta do Chat do conselho com uma resposta curta pelas regras declaradas do aplicativo e o que os agentes encontraram](docs/images/02-council-answer.png) **Pergunte ao conselho.** A resposta vem primeiro, cada linha com seus números; o painel de agentes mostra quem respondeu e por quê. | ![Histórico e dados: taxa básica de juros do Brasil com sua fonte e botões de download](docs/images/06-history.png) **Leia o histórico.** Cada gráfico diz o que mede, de quem é o número e como ler. |
+| ![Comparar países: pautas para a lista do G20](docs/images/10-compare.png) **Compare países.** Pautas e onde mercados e dados discordam. | ![Página Revisão de políticas com o formulário de nova revisão](docs/images/12-policy-review.png) **Revise uma política.** Do problema ao memorando. |
 | ![Configurações > Modelo de IA com Ollama](docs/images/13-settings-ai.png) **Escolha um modelo de IA.** Modelo rápido para as mesas, modelo grande para o árbitro. | ![Página de Pesquisa em português](docs/images/17-research-pt.png) **Troque o idioma.** Botão EN / ES / FR / PT no cabeçalho. |
 
-As capturas foram feitas em 13 de novembro de 2026 (quatro refeitas ou acrescentadas em 17 de novembro)
-a partir de uma compilação local do branch principal,
+As capturas foram feitas em 24 de novembro de 2026 (duas do guia, Quests e Pares, são de 13 de
+novembro) a partir de uma compilação local do branch principal,
 reproduzindo respostas gravadas em 5 de novembro de 2026, apenas das fontes cujos termos permitem repassar
 os dados. Por isso muitos números aparecem como "Ausente"; num computador que alcança as fontes, mais
 números são preenchidos. A maioria está em inglês; a última mostra o app em português.
@@ -191,6 +191,10 @@ e começa o download diário de dados em segundo plano. No Mac você pode dar do
 
 ### Primeiro início
 
+Abaixo da mensagem de boas-vindas do chat, um cartão curto, **É novo aqui? Três passos**, mostra por
+onde começar (fazer uma pergunta, abrir Pesquisa e, se quiser, adicionar um modelo de IA) até você
+clicar em **Entendi**. Depois:
+
 1. **Veja quais fontes respondem:** Menu > Ferramentas > Conexões de dados (ou `npm run check:data`).
 2. **Adicione uma chave gratuita do FRED** em Menu > Configurações > Chaves de dados gratuitos. Ela
    preenche os rendimentos oficiais de 10 anos de vários países.
@@ -224,7 +228,7 @@ compilado e os arquivos de idioma foram medidos de novo em 17 de novembro de 202
 | Código-fonte (`git clone`) | 70 MB (29 MB de arquivos e 41 MB de histórico) | Medido, clone novo, 13 de novembro de 2026 |
 | App pronto (imagem Docker) | Cerca de 170 MB para baixar; 798 MB descompactada | Medido: imagem construída com o Dockerfile do repositório em 13 de novembro de 2026 (798 MB descompactada, 170 MB compactada com gzip). O download do registro é compactado da mesma forma, então o tamanho será parecido |
 | Pacotes instalados, a partir do código (`npm install`) | 465 MB | Medido, 13 de novembro de 2026 |
-| App web compilado | 7,5 MB no total; 460 KB compactados na inicialização | Medido com `npm run size:check`, 17 de novembro de 2026 (limites de 520 KB e 9 MB) |
+| App web compilado | 7,75 MB no total; 481 KB compactados na inicialização | Medido com `npm run size:check`, 24 de novembro de 2026, até o pull request #677 (limites de 520 KB e 9 MB) |
 | Cada idioma adicional | Cerca de 0,85 MB (cerca de 270 KB compactados), só quando escolhido | Medido na compilação, 17 de novembro de 2026 |
 | Primeiro download completo de dados | Cerca de 3,6 a 3,8 GB, quase tudo arquivos de notícias do GDELT | Estimativa: GDELT cerca de 3,4 GB para 8 semanas (pelos tamanhos publicados pelo GDELT), edições antigas do FMI cerca de 100 MB (medido), o resto como no download diário |
 | Primeiro download no modo leve | Meta: bem menos de 1 GB | Ainda não medido; pendente de um teste no Mac do desenvolvedor antes do lançamento |
@@ -240,7 +244,7 @@ compilado e os arquivos de idioma foram medidos de novo em 17 de novembro de 202
 | App pronto, sem IA local | Cerca de 1 GB, crescendo uns 40 MB por ano | Imagem 0,8 GB (medido) mais a pasta `data/`, cerca de 150 MB após os primeiros dias (medido no Mac do desenvolvedor em 9 de novembro de 2026, 22 países) |
 | Com um árbitro de 14B | Cerca de 15 GB | O anterior mais qwen2.5:7b e qwen2.5:14b |
 | Com toda a IA local | Cerca de 26 GB | O anterior mais qwen2.5:7b e qwen2.5:32b |
-| A partir do código em vez da imagem | Some cerca de 0,5 GB | Código e histórico 70 MB, pacotes 465 MB, compilação 7,5 MB (medido) |
+| A partir do código em vez da imagem | Some cerca de 0,5 GB | Código e histórico 70 MB, pacotes 465 MB, compilação 7,75 MB (medido) |
 
 O Docker Desktop precisa de mais alguns GB (veja docker.com). Para ver o tamanho real no seu computador,
 rode `du -sh data data/*` na pasta do EconQuest ou abra Menu > Dados offline.
@@ -430,7 +434,7 @@ O método completo está em [docs/METHODOLOGY.md](./docs/METHODOLOGY.md) (em ing
 
 ## Roteiro
 
-Situação em 23 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./docs/ROADMAP.md), em inglês):
+Situação em 24 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./docs/ROADMAP.md), em inglês):
 
 **Feito**
 
@@ -506,6 +510,25 @@ Situação em 23 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./docs/ROADM
     mais países de baixa renda; um processo de revisão das traduções por falantes nativos; e como os
     choques se espalham entre economias (um pequeno VAR global com pesos de comércio do FMI). O
     arcabouço de dívida dos países de baixa renda espera sua nota de orientação de 2027.
+18. **Métodos de previsão e o histórico de acertos** (19 a 23 de novembro): volatilidade cambial GARCH,
+    estimativas do trimestre corrente por ridge, lasso, floresta aleatória e fator dinâmico, ARIMA,
+    faixas de crescimento por quantis, o teste KPSS, testes com os números como foram publicados pela
+    primeira vez e o teste do quadro de risco país. Há 39 testes registrados: 11 aprovados, 8 deles
+    continuam de pé quando o número de testes é levado em conta. Os veredictos são copiados de
+    execuções reais com `npm run track-record:import`, nunca à mão.
+19. **Primeiro uso mais fácil** (24 de novembro): um cartão de início em três passos; uma resposta
+    curta no alto do Chat do conselho quando nenhum modelo de IA escreve uma; uma lista de Ausente mais
+    curta e mais espaço para a resposta; Revisão de políticas como página própria ao lado de
+    Relatórios; e o botão de ajuda como uma lista dos quatro níveis.
+20. **Recupera-se sozinho** (24 de novembro): atualizações que não param por causa de arquivos que o
+    próprio app escreve; fontes lentas ou ocupadas consultadas de novo antes de contarem como falha;
+    uma segunda tentativa para downloads que falharam no fim do download diário e outras tentativas
+    depois de duas horas; e a última resposta boa, com as próprias datas, enquanto uma fonte não
+    responde.
+21. **Recursos comuns de um aplicativo** (24 de novembro): uma página de privacidade
+    ([docs/PRIVACY.md](./docs/PRIVACY.md), em inglês), um aviso quando sai uma versão nova, Copiar os
+    detalhes e Relatar um problema, uma pergunta antes de apagar uma lista de acompanhamento, seguir o
+    modo claro ou escuro do computador, os passos para remover o app e atalhos de teclado.
 
 **Próximo**
 
@@ -525,8 +548,10 @@ Situação em 23 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./docs/ROADM
   ativos do banco central, financiamento em dólares, o arquivo de regime cambial) estão construídas e
   testadas com respostas salvas, mas não puderam ser alcançadas da máquina de compilação;
   `npm run check:data` num computador que chegue a elas confirma cada uma. As fontes dos cinco perfis de
-  usuário responderam lá em 17 de novembro. As taxas de câmbio e taxas básicas mensais do FMI
-  (linhas `imf_fx` e `imf_policy`) aguardam o primeiro teste lá. A mesa quantitativa espera um primeiro teste com um servidor
+  usuário responderam lá em 17 de novembro. As taxas de câmbio, taxas básicas e taxas do mercado
+  local mensais do FMI responderam lá em 18 e 19 de novembro. As previsões oficiais, as edições em
+  tempo real da OCDE e a busca nos catálogos (linhas `wb_gep`, `oecd_eo`, `oecd_rtd` e `catalogues`)
+  aguardam o primeiro teste lá. A mesa quantitativa espera um primeiro teste com um servidor
   real de ferramentas de pesquisa, e as surpresas nos dados precisam de algumas semanas de downloads
   diários para se acumular.
 

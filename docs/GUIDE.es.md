@@ -7,8 +7,8 @@ aplicación ya está instalada y abierta en su navegador (consulte [INSTALL.md](
 Para cada página y panel en detalle, vea el [manual de usuario](./USER_MANUAL.md) (en inglés); para
 cualquier término, el glosario dentro de la aplicación (Menú > Manual de usuario).
 
-Sobre las capturas: se tomaron el 13 de noviembre de 2026 (cuatro se rehicieron o se añadieron el 17 de
-noviembre) de una compilación local de la rama principal,
+Sobre las capturas: se tomaron el 24 de noviembre de 2026 (dos, Retos y Pares, son del 13 de noviembre)
+de una compilación local de la rama principal,
 que reproducía respuestas grabadas el 5 de noviembre de 2026 de las fuentes cuyos términos permiten
 transmitir los datos, sin ningún modelo de IA configurado. Por eso muchas cifras aparecen como **Falta**
 y el consejo no escribe un resumen en ellas. En su ordenador, con las fuentes accesibles y un modelo de
@@ -35,16 +35,22 @@ español.
 
 ## 1. La pantalla de un vistazo
 
-![Espacio de trabajo: Chat del consejo con preguntas de ejemplo, los botones de la cabecera y el enlace Resumen](images/01-workspace.png)
+![Espacio de trabajo en el primer inicio: Chat del consejo con preguntas de ejemplo, la tarjeta ¿Es nuevo aquí? Tres pasos, los cuatro botones de página y el enlace Resumen](images/01-workspace.png)
 
-- **Cabecera, en el centro:** las tres páginas. **Espacio de trabajo** (Chat del consejo),
-  **Investigación** (países y posiciones) e **Informes**.
+- **Cabecera, en el centro:** las cuatro páginas. **Espacio de trabajo** (Chat del consejo),
+  **Investigación** (países y posiciones), **Revisión de políticas** (expedientes paso a paso) e
+  **Informes** (notas, informes breves y material docente).
 - **Cabecera, a la derecha:** **Chat del consejo** (abre el chat junto a Investigación o Informes), el
   botón del **nivel de ayuda** (aquí *Ayuda clave*), el botón de **idioma** (*ES*), el cambio claro y
   oscuro (hasta que lo pulse, la app sigue el ajuste de su computadora), y **Menú**.
 - **Espacio de trabajo, arriba a la derecha:** **Agentes** muestra qué agentes trabajaron en la última
   respuesta; **Resumen** abre sus ajustes, la lista de seguimiento, qué se movió y lo que viene. «1 por
   configurar» cuenta los pasos de configuración pendientes.
+- **¿Es nuevo aquí? Tres pasos** (solo en el primer inicio): haga una pregunta, abra Investigación para
+  estudiar un país y, si lo desea, añada un modelo de IA. **Elegir un modelo de IA** abre la
+  configuración; **Entendido** oculta la tarjeta para siempre en este navegador. Mientras ningún modelo
+  de IA funcione, la configuración no muestra ninguno elegido y el Menú dice *IA: sin configurar*: la
+  aplicación funciona sin él.
 
 ## 2. Primer inicio: qué configurar
 
@@ -70,29 +76,43 @@ unos minutos.
 
 ## 3. Hacer una pregunta al consejo
 
-![Chat del consejo tras una pregunta: el bloque de respuesta, el panel de agentes con Planificador, agente de Banco Central y agente de síntesis, y sugerencias de seguimiento](images/02-council-answer.png)
+![Chat del consejo tras «Which central banks look behind the curve?» sin modelo de IA: la nota de que no se escribió resumen de IA, la respuesta breve según las reglas declaradas de la aplicación para Japón, Sudáfrica e Indonesia, y lo que encontraron los agentes](images/02-council-answer.png)
 
 1. En **Espacio de trabajo**, escriba una pregunta en el cuadro inferior o pulse una pregunta de
    ejemplo. Por ahora los agentes entienden mejor las preguntas en inglés, por ejemplo «Which central
    banks look behind the curve?».
-2. Pulse **Enviar**. El panel **Agentes** de la izquierda muestra el trabajo:
+2. Pulse **Enviar**. La respuesta aparece primero. Pulse **Agentes** (arriba a la derecha) para abrir el
+   panel que muestra el trabajo:
    - El **Planificador** elige los agentes que cubren su pregunta (con reglas escritas si no hay modelo
      de IA).
    - Los **agentes de mesa** responden con las cifras de la aplicación. Aquí el agente de Banco Central
      cubrió 6 países.
    - El **agente de síntesis** escribe un breve resumen que solo puede citar las cifras de los agentes.
      Sin modelo de IA se omite y dice por qué, como en la captura.
-3. Abra **Fuentes y acciones** bajo la respuesta para ver el documento de cada agente, con la fuente y la
+
+   Cuando a todos los agentes se les preguntó por el mismo motivo, el panel lo dice una sola vez.
+3. **Sin modelo de IA**, arriba aparece una **Respuesta breve, según las reglas declaradas de la
+   aplicación (no IA)**. A una pregunta sobre si un banco central va por detrás de la curva responde
+   *No*, *Posiblemente* o *No claramente* para cada país, según la postura que el agente de Banco
+   Central atribuye a la política y la distancia a una regla de Taylor sencilla. Las demás preguntas
+   reciben en una línea la postura y la trayectoria de la deuda de cada país. Debajo, **Lo que
+   encontraron los agentes** da las líneas de cada agente con sus cifras.
+4. La lista de **Falta** bajo la respuesta es corta: se quitan las repeticiones, las cifras que solo son
+   más antiguas de lo habitual tienen su propio título (*Más antiguas de lo habitual: léalas con su
+   fecha*), y lo que ninguna fuente que lee la aplicación publica para el país se agrupa en una línea.
+   El recuento muestra solo lo que se podría completar. Si ya hizo la misma pregunta, **Qué cambió** es
+   una línea cuando nada se movió, y se pliega con su recuento cuando algo cambió.
+5. Abra **Fuentes y acciones** bajo la respuesta para ver el documento de cada agente, con la fuente y la
    fecha de cada cifra, y guardarlo en Informes.
-4. Haga una pregunta de seguimiento en el mismo cuadro o pulse una de las sugeridas. Si no nombra ningún
-   país, la pregunta cubre toda su lista de seguimiento.
-5. **Opciones**, bajo el cuadro, permite elegir países, adjuntar un documento de política para el agente
+6. Haga una pregunta de seguimiento en el mismo cuadro o pulse una de las sugeridas bajo la respuesta.
+   Si no nombra ningún país, la pregunta cubre toda su lista de seguimiento.
+7. **Opciones**, bajo el cuadro, permite elegir países, adjuntar un documento de política para el agente
    de Documentos o **ejecutar el consejo completo**: nueve agentes en tres mesas debaten sobre un país, y
    la aplicación pide su aprobación antes del informe final.
 
 **Preguntar qué haría un cambio.** El Chat del consejo también responde preguntas del tipo «¿y si...?».
 
-![Chat del consejo tras una pregunta «¿y si...?»: el recuadro Escenario leído de su pregunta con el tipo de la Fed y el dólar y sus tamaños, los hallazgos de los agentes y el panel de agentes con el Scenario Agent primero](images/22-what-if.png)
+![Chat del consejo tras una pregunta «¿y si...?»: el recuadro Escenario leído de su pregunta con el tipo de la Fed y el dólar y sus tamaños, la respuesta breve y los hallazgos de los agentes, y el panel de agentes abierto con el Scenario Agent primero](images/22-what-if.png)
 
 1. Formule el cambio con sus palabras y con su tamaño: «What would happen to Brazil if the Fed raised
    rates by 1 point and the dollar strengthened 5%?». Puede nombrar el tipo de un banco central o de la
@@ -254,7 +274,9 @@ indican lo recientes que son los datos. **Actualizar ahora** vuelve a traer las 
     social, el riesgo geopolítico, la apertura de la cuenta de capital (el índice de Chinn e Ito, citado
     como Chinn e Ito 2006) y la economía, cada dato con su fuente y su año. No da una puntuación global.
     El 13 de noviembre de 2026 se fijó de antemano una prueba de si una gobernanza débil precede a un
-    impago; mientras no se ejecute, la insignia del panel dice No validada.
+    impago, y la superó en su primera ejecución (23 de noviembre de 2026). Tal como se registró la
+    prueba, superarla no convierte las lecturas en una puntuación, así que el cuadro sigue diciendo No
+    validada.
 
 13. Más herramientas en Historial y datos: **Cómo se propagan los choques entre economías** (un VAR
     global pequeño: elija dónde empieza la sorpresa, crecimiento o inflación, y su tamaño; la
@@ -295,6 +317,11 @@ años discontinuos se basan en proyecciones del FMI.
    del FMI sobre el país de una edición a otra, cuando las ediciones pasadas están guardadas. Bajo su
    tabla, **Rango según errores pasados del FMI** pone un rango del 70 % y del 90 % alrededor de las
    proyecciones de la última edición, según cuánto fallaron las ediciones pasadas para este país.
+   **Previsiones oficiales lado a lado** pone juntas las previsiones de crecimiento e inflación del
+   FMI, del Banco Mundial (Global Economic Prospects) y de la OCDE (Economic Outlook) para este año y
+   los dos siguientes, con la distancia entre ellas; para Estados Unidos añade la encuesta de
+   pronosticadores profesionales de la Reserva Federal de Filadelfia desde un archivo que usted guarda.
+   Son previsiones oficiales, no un consenso de mercado de pago.
 
 ## 6. Comparar países
 
@@ -325,11 +352,12 @@ desde un archivo CSV.
 
 ## 7. Revisar una política y escribir un informe
 
-![Página Informes: revisiones de políticas, documentos del consejo y el generador de informes con una vista previa de nota de país](images/11-reports.png)
+![Página Informes: la pestaña Escribir una nota con el generador de informes y una vista previa de nota de país, y las pestañas Documentos del consejo, Cuadernos y Docencia](images/11-reports.png)
 
-**Informes** tiene cinco pestañas, cada una por separado: **Escribir una nota** (el generador de
-informes), **Revisiones de política**, **Documentos del consejo** (los documentos guardados desde el Chat
-del consejo), **Cuadernos** y **Docencia**.
+**Informes** tiene cuatro pestañas, cada una por separado: **Escribir una nota** (el generador de
+informes), **Documentos del consejo** (los documentos guardados desde el Chat del consejo), **Cuadernos**
+y **Docencia**. Las revisiones de políticas tienen su propia página, **Revisión de políticas**, en la
+cabecera.
 
 Para escribir un informe:
 
@@ -341,9 +369,11 @@ Para escribir un informe:
 
 Para revisar una política:
 
-![Formulario de nueva revisión de políticas: país, fecha de referencia, el problema, el indicador objetivo, dirección, meta, restricciones y destinatario](images/12-policy-review.png)
+![Página Revisión de políticas con el formulario de nueva revisión: país, fecha de referencia, el problema, el indicador objetivo, dirección, meta, restricciones, destinatario y el interruptor de pregunta al consejo de políticas](images/12-policy-review.png)
 
-1. Abra la pestaña **Revisiones de política** y pulse **Nueva revisión de políticas**.
+1. Pulse **Revisión de políticas** en la cabecera y después **Nueva revisión de políticas**. **Iniciar
+   una revisión de política** bajo una respuesta del Chat del consejo, y los enlaces de revisión de
+   políticas en Herramientas, abren la misma página.
 2. Elija el país y la fecha de referencia (cada paso posterior lee los datos tal como estaban ese día).
 3. Describa el problema en una o dos frases, por ejemplo «La inflación está muy por encima del objetivo
    mientras el crecimiento se frena y la deuda sube».
@@ -424,9 +454,10 @@ Qué modelo conviene a cada ordenador y los ajustes que usa la aplicación está
 
 ## 9. Herramientas, comprobación de datos y el menú
 
-![Menú abierto: Configuración, Herramientas, Datos sin conexión, Estado de los datos, Cuenta, Registro de auditoría, Modelos y validación, Diario de ideas, Sus datos, Retos en gris, Modo para compartir, Modo examen, Acerca de y licencias de datos, Manual de usuario, Ejemplos resueltos](images/16-menu.png)
+![Menú abierto en tres grupos: Configurar (Configuración con IA: sin configurar, Cuenta, Datos sin conexión, Sus datos, Modo para compartir, Modo examen, Buscar datos), Revisar los datos (Estado de los datos, Modelos y validación, Registro de auditoría, Diario de ideas) y Aprender (Manual de usuario, Ejemplos resueltos, Acerca de y licencias de datos, Informar de un problema, Retos en gris)](images/16-menu.png)
 
-El **Menú** reúne todo lo que no es una página. Lo primero que conviene conocer:
+El **Menú** reúne todo lo que no es una página, en tres grupos después de **Herramientas**:
+*Configurar*, *Revisar los datos* y *Aprender*. Lo primero que conviene conocer:
 
 - **Herramientas**: todas las herramientas agrupadas por lo que quiere hacer, y **Conexiones de datos**.
 - **Datos sin conexión**: descargue los datos de todos los países para usarlos sin internet y vea cuánto
@@ -435,10 +466,21 @@ El **Menú** reúne todo lo que no es una página. Lo primero que conviene conoc
   herramientas de investigación propio, para la mesa cuantitativa del Chat del consejo. Apagado hasta que
   ambas están puestas; **Probar la conexión** enumera las herramientas que la clave puede ver, y cada
   llamada queda en el registro de auditoría, nunca la clave.
-- **Estado de los datos**: qué fuentes llegan, cuáles fallan y qué cifras se revisaron. Su pestaña
-  **Daily download** (en inglés) sigue la descarga diaria mientras corre: cada parte, qué falló y por
-  qué, las fuentes que necesitan una clave o un archivo, y qué descargar a mano.
-- **Modelos y validación**: el registro de modelos, los resultados de las pruebas y **Sus pruebas**.
+- **Estado de los datos**: qué fuentes llegan, cuáles fallan y qué cifras se revisaron. Mientras una
+  fuente no responde, algunas cifras muestran la última respuesta buena con sus propias fechas en vez
+  de Falta; la pestaña **Sources** (en inglés) indica qué fuentes muestran cifras guardadas y cuándo se
+  vuelve a consultar cada una. La pestaña **Calendar** tiene la tarjeta **Días de publicación**
+  (también en Hoy): las publicaciones oficiales de IPC y de actividad mensual desde ayer hasta dentro de
+  una semana, y «New today» cuando llega el nuevo mes (un día de publicación la aplicación vuelve a
+  consultar esa fuente más o menos cada hora). Su pestaña **Daily download** (en inglés) sigue la
+  descarga diaria mientras corre: cada parte, qué falló y por qué, el segundo intento al final de la
+  descarga y los intentos posteriores pasadas dos horas, las fuentes que necesitan una clave o un
+  archivo, y qué descargar a mano.
+- **Modelos y validación**: el registro de modelos, los resultados de las pruebas, el **Historial de
+  aciertos** (39 pruebas registradas el 23 de noviembre de 2026: 11 superadas, 25 no superadas y 3 con
+  pocos casos; cada una con su p y si sigue en pie al contar el número de pruebas, y una tabla mes a
+  mes de las previsiones anotadas antes de que saliera la cifra y calificadas después) y **Sus
+  pruebas**.
 - **Sus datos**: cargue sus propias series desde un archivo CSV.
 - **Buscar datos**: una búsqueda en los catálogos gratuitos (DBnomics, el FMI, el Banco Mundial y
   Eurostat), cada resultado con su proveedor y un enlace.
@@ -450,6 +492,7 @@ El **Menú** reúne todo lo que no es una página. Lo primero que conviene conoc
 - **Ejemplos resueltos**: cinco casos de una pregunta a un memorando.
 - **Acerca de y licencias de datos**: la versión, una nota breve sobre privacidad
   ([PRIVACY.md](PRIVACY.md), en inglés) y si hay una versión más reciente, con los pasos para actualizar.
+  Cuando la hay, el Menú muestra **Nueva versión** junto a Acerca de.
 - **Informar de un problema**: abre una nueva incidencia en GitHub con la versión de la app ya escrita.
   Usted la lee y la envía. Si una pantalla no se puede dibujar, su nota también tiene **Copiar los
   detalles** e **Informar de este problema**.
@@ -458,12 +501,12 @@ El **Menú** reúne todo lo que no es una página. Lo primero que conviene conoc
   cierra una ventana. / y ? no hacen nada mientras escribe en un cuadro.
 - **Retos**: en gris, «Aún no disponible» ([sección 12](#12-probar-los-retos)).
 
-![Configuración > Herramientas: herramientas agrupadas por tarea y después Conexiones de datos](images/14-data-connections.png)
+![Menú > Herramientas: herramientas agrupadas por tarea y después Configurar, con Conexiones de datos y su recuento de fuentes](images/14-data-connections.png)
 
 Para comprobar qué fuentes responden:
 
 1. Abra **Menú > Herramientas**.
-2. Baje hasta **Conexiones de datos** y pulse **Mostrar fuentes**, o **Comprobar de nuevo** para
+2. Baje hasta **Conexiones de datos** y pulse **Mostrar todas las fuentes**, o **Comprobar de nuevo** para
    consultar todas las fuentes ahora. Cada fuente aparece como conectada (con una cifra que devolvió),
    pendiente de configurar, desactivada, o con el motivo del fallo.
 3. La misma comprobación se hace en un terminal con `npm run check:data`.
@@ -504,7 +547,8 @@ inicio de sesión muestra entonces **Iniciar sesión con** y el nombre del prove
 
 1. Pulse el botón de **idioma** de la cabecera. Cada pulsación pasa al siguiente: English, Español,
    Français, Português. La elección se guarda en este navegador.
-2. Pulse el botón de **ayuda** de al lado para pasar entre:
+2. Pulse el botón de **ayuda** de al lado. Abre los cuatro niveles, cada uno con una línea sobre lo que
+   explica; pulse uno para elegirlo:
    - **Ayuda clave** (por defecto): cómo leer cada gráfico, qué significa en la vida real y *¿Qué es
      esto?* en las cifras principales;
    - **Ayuda completa**: *¿Qué es esto?* en cada cifra y término, y por qué falta cada cifra ausente;

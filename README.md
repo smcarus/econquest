@@ -94,16 +94,16 @@ in downloads or shared copies.
 
 | Task | Where | What you get |
 | --- | --- | --- |
-| Ask a question in plain words | **Workspace** (Council chat) | Specialist agents answer from the app's figures, each naming its source; with an AI model, a summary agent writes a short brief that may quote only their figures, and a number check flags any figure it cannot trace |
+| Ask a question in plain words | **Workspace** (Council chat) | Specialist agents answer from the app's figures, each naming its source; without an AI model a short answer by the app's stated rules comes first; with an AI model, a summary agent writes a short brief that may quote only their figures, and a number check flags any figure it cannot trace |
 | Ask what a change would do | **Workspace** (Council chat) | Ask "what would happen to Turkey if the Fed raised rates by 1 point?" The app reads the change back to you (you can edit the sizes and ask again), the Scenario Agent sets today's figures beside the figures after the change, lists what happened in past episodes of the same kind and what published studies found, and the answer comes in eight parts, each marked with the kind of evidence it rests on |
 | Study one country | **Research > One country** | Summary, Markets & signals, History & data and Sources. History & data shows the history chart, then a menu of tools in eight groups that open one at a time: charts going back years, nowcasts and forecasts with ranges, output gap, debt sustainability, reserve adequacy, policy rules, crisis early-warning, yield curve, inflation drivers, growth accounting, IMF forecasts by edition, and "as of" views of what was known on a past day. For lower-income countries: remittances, aid received, financial inclusion, commodity prices and terms of trade, food prices and food security, and natural disasters. Weather at the capital since 1981 and across the country since 1901, rice, wheat, maize and soybean prices since 1960, a parametric insurance designer (burn cost, fair price, return periods, basis risk), a disaster loss model and tropical cyclone tracks. How the currency is run in fact, central bank assets and dollar funding stress. For public administrators and politicians: budget credibility (how much of the approved budget was spent, with PEFA grade bands), a budget execution tracker from your own file, World Bank projects and how fast they pay out, and regional figures. For economists and traders: ranges from past forecast misses, full US and euro area yield curves, and data surprises with an inflation surprise index |
 | Compare countries | **Research > Compare countries** | Your watchlist side by side (the 19 G20 member countries to start with, or the 15 largest lower-income countries by region), story leads and where market prices and the data disagree |
 | Follow your holdings | **Research > My holdings** | A list of bonds or positions you load, against the risks and signals |
-| Test a policy choice | **Reports > New policy review** | A step-by-step case file: frame the problem, diagnose, rank options, check the evidence and precedents, write a recommendation memo and a one-page brief for non-economists, then track what happened. Compare the diagnosis with up to six peer countries, get a warning on the start page when a watched figure crosses its trigger, and see what changed when you review the same policy again. The policy council weighs one measure (costs and benefits at official discount rates, who gains and who loses, what follows, scenarios) or what an event means for one market. **For people** turns a review into a plain summary for constituents: what changes, the cost per person, who gains and who pays, and the regions furthest behind |
+| Test a policy choice | **Policy review** (its own page in the header) | A step-by-step case file: frame the problem, diagnose, rank options, check the evidence and precedents, write a recommendation memo and a one-page brief for non-economists, then track what happened. Compare the diagnosis with up to six peer countries, get a warning on the start page when a watched figure crosses its trigger, and see what changed when you review the same policy again. The policy council weighs one measure (costs and benefits at official discount rates, who gains and who loses, what follows, scenarios) or what an event means for one market. **For people** turns a review into a plain summary for constituents: what changes, the cost per person, who gains and who pays, and the regions furthest behind |
 | Try a fiscal what-if | **History & data**, or from Council chat | Change government spending or taxes and see the likely effect on growth and debt, using published multipliers and budget elasticities, with a range |
-| Write a report | **Reports** (tabs: Write a note, Policy reviews, Council documents, Notebooks, Teaching) | Country notes, issuer notes, debt sustainability assessments, portfolio and client reviews and council briefs, as Markdown or PDF with sources and dates |
+| Write a report | **Reports** (tabs: Write a note, Council documents, Notebooks, Teaching) | Country notes, issuer notes, debt sustainability assessments, portfolio and client reviews and council briefs, as Markdown or PDF with sources and dates |
 | Write a working paper | **Council chat** charts, **Reports > Notebooks** | Pin a chart to a research notebook with the date its figures run to and a fingerprint of the figures; download the notebook as one zip (draft, data, Python, R and Stata scripts, citation file); later, *Check it still holds* says whether each figure is the same, revised or gone |
-| Learn as you go | Header buttons, **Menu > User manual**, **Menu > Worked examples** | Three help levels, a plain-language glossary, five worked case studies, teaching episodes and exam mode |
+| Learn as you go | Header buttons, **Menu > User manual**, **Menu > Worked examples** | Four help levels (Help off, Key help, Full help, Expert), a plain-language glossary, five worked case studies, teaching episodes and exam mode |
 | Bring your own data and tests | **Menu > Your data**, **Menu > Models & validation** | Load your own CSV series; register your own signal or model test under the same strict rules as the app's own |
 | Use the figures in R, Python or Stata | [docs/DATA_API.md](./docs/DATA_API.md) | The same series, panels and tables the screens show, with source and date on every value |
 | Connect a portfolio system | **Menu > Settings > API tokens**, [docs/DATA_API.md](./docs/DATA_API.md) | Another program reads country snapshots and events, sends its positions in, and runs shocks and past-crisis replays on its portfolio, each with a token limited to what you tick ([details](#connecting-an-outside-system)) |
@@ -134,12 +134,12 @@ the weather and insurance tools, using it on a phone, and trying Quests.
 
 | | |
 | --- | --- |
-| ![Council chat with the Agents panel open](docs/images/02-council-answer.png) **Ask the council.** Type a question or pick an example; the Agents panel shows which agents answered and why. | ![History & data: policy rate chart for Brazil with its source and download buttons](docs/images/06-history.png) **Read the history.** Every chart says what it measures, whose figure it is and how to read it. |
-| ![Compare countries: story leads for the G20 watchlist](docs/images/10-compare.png) **Compare countries.** Story leads and where markets and the data disagree. | ![New policy review form](docs/images/12-policy-review.png) **Review a policy.** Frame a problem and work it through to a memo. |
+| ![Council chat answer with a short answer by the app's stated rules and what the agents found](docs/images/02-council-answer.png) **Ask the council.** Type a question or pick an example; the answer comes first, each line with its figures, and the Agents panel shows which agents answered and why. | ![History & data: policy rate chart for Brazil with its source and download buttons](docs/images/06-history.png) **Read the history.** Every chart says what it measures, whose figure it is and how to read it. |
+| ![Compare countries: story leads for the G20 watchlist](docs/images/10-compare.png) **Compare countries.** Story leads and where markets and the data disagree. | ![Policy review page with the new review form](docs/images/12-policy-review.png) **Review a policy.** Frame a problem and work it through to a memo. |
 | ![Settings > AI model with Ollama selected and the referee model fields](docs/images/13-settings-ai.png) **Choose an AI model.** Fast model for the desks, large model for the referee. | ![Research page in Spanish](docs/images/17-research-es.png) **Switch language.** The EN / ES / FR / PT button in the header. |
 
-The screenshots were taken on 13 November 2026 (four retaken or added on 17 November) from a local
-build of the main branch, replaying feed
+The screenshots were taken on 24 November 2026 (two in the guide, Quests and Peers, are from
+13 November) from a local build of the main branch, replaying feed
 replies recorded on 5 November 2026 from the sources whose terms allow passing data on. That is why
 many figures read Missing in them; on a computer that reaches the feeds, more fill in.
 
@@ -183,8 +183,10 @@ Kubernetes cluster, the Helm chart in `deploy/helm/econquest/` ([docs/KUBERNETES
 
 ### First run
 
-A new install shows dashes until the first download finishes. The **Briefing** panel on Workspace
-lists what is left to set up:
+A new install shows dashes until the first download finishes. Under the chat welcome, a short
+**New here? Three steps** card says where to start (ask a question, open Research, and optionally add
+an AI model) until you press **Got it**. The **Briefing** panel on Workspace lists what is left to set
+up:
 
 1. **See which sources answer.** Menu > Tools > Data connections (or `npm run check:data`) lists every
    source as connected (with a figure it returned), needs setup, off, or why it failed.
@@ -220,7 +222,7 @@ app and the language files were measured again on 17 November 2026, through pull
 | Source code (`git clone`) | 70 MB (29 MB of files and 41 MB of history) | Measured, fresh clone, 13 November 2026 |
 | Ready-made app (Docker image) | About 170 MB to download; 798 MB once unpacked | Measured: image built from the repository's Dockerfile on 13 November 2026 (798 MB unpacked, 170 MB compressed with gzip). The download from the registry is compressed the same way, so expect a similar size |
 | Installed packages, from the code (`npm install`) | 465 MB | Measured, 13 November 2026 |
-| Built web app (`npm run build`) | 7.5 MB in all; 460 KB compressed at start-up | Measured with `npm run size:check`, 17 November 2026 (limits 520 KB and 9 MB) |
+| Built web app (`npm run build`) | 7.75 MB in all; 481 KB compressed at start-up | Measured with `npm run size:check`, 24 November 2026, through pull request #677 (limits 520 KB and 9 MB) |
 | Each extra language (Spanish, French, Portuguese) | About 0.85 MB (about 270 KB compressed), downloaded only when picked | Measured from the build, 17 November 2026 |
 | First full data download | About 3.6 to 3.8 GB, mostly GDELT news files | Estimate: GDELT about 3.4 GB for 8 weeks (from GDELT's own file sizes), past IMF forecast editions about 100 MB (measured), the rest as in the daily run |
 | First data download in light mode | Target: well under 1 GB | Not yet measured; owed from a light-mode run on the developer's Mac before the public release |
@@ -236,7 +238,7 @@ app and the language files were measured again on 17 November 2026, through pull
 | Ready-made app, no local AI | About 1 GB, growing about 40 MB a year | App image 0.8 GB (measured) plus the `data/` folder, about 150 MB after the first few days (measured on the developer's Mac, 9 November 2026, 22 countries) |
 | Ready-made app with a 14B referee | About 15 GB | The above plus qwen2.5:7b and qwen2.5:14b (4.7 + 9 GB) |
 | Ready-made app with the full local AI | About 26 GB | The above plus qwen2.5:7b and qwen2.5:32b (4.7 + 20 GB) |
-| From the code instead of the image | Add about 0.5 GB | Source and history 70 MB, packages 465 MB, build 7.5 MB (measured) |
+| From the code instead of the image | Add about 0.5 GB | Source and history 70 MB, packages 465 MB, build 7.75 MB (measured) |
 
 Docker Desktop itself needs a few GB more (check docker.com). Every past IMF forecast edition since
 2007 would add roughly 300 MB (estimate: about 38 editions at an average of 7 MB). To see the real
@@ -444,10 +446,14 @@ The full method is in [docs/METHODOLOGY.md](./docs/METHODOLOGY.md); the same in 
 | `npm run go -- --test` | Start, then run the type check and tests |
 | `npm run go -- --validate` | Start, then re-run the signal tests and write the report |
 | `npm run go -- stop` | Stop the app |
+| `npm run update` | Update the code and the Docker app only (files the app writes itself are backed up and put back first, so they never block the update) |
 | `npm run dev` | Only the development app, on http://localhost:3000 |
 | `npm run check:data` | Live check of every source from this computer |
 | `npm run replays:pull` | Save the monthly history the past-crisis replays use (also part of the daily download) |
 | `npm run chinn-ito:pull` | Save the Chinn-Ito capital account openness file (also part of the daily download, at most once every 30 days) |
+| `npm run forecast:evaluate` | Re-run the pre-registered forecast tests (nowcasts, forecasts, GARCH, quantile bands, tests on figures as first published) |
+| `npm run track-record:import` | Copy verdicts and forward-record counts from a real run into docs/validation/ and rebuild the track record |
+| `npm run oecd:vintages` | Save the OECD's monthly real-time editions (only new ones on later runs) |
 | `npm run notebook:check` | Check every pinned figure in your research notebooks against today's figures (Same, Revised or no longer answers) |
 | `npm run tokens -- list` | List, make (`create "<name>" <scopes>`) or revoke (`revoke <id>`) API tokens from the command line |
 | `npm run check:success` | Print the public success measures (stars, issues, downloads) and keep each run |
@@ -456,7 +462,7 @@ The full method is in [docs/METHODOLOGY.md](./docs/METHODOLOGY.md); the same in 
 
 ## Roadmap
 
-Where things stand on 23 November 2026 (details and status in [docs/ROADMAP.md](./docs/ROADMAP.md)):
+Where things stand on 24 November 2026 (details and status in [docs/ROADMAP.md](./docs/ROADMAP.md)):
 
 **Done**
 
@@ -524,6 +530,22 @@ Where things stand on 23 November 2026 (details and status in [docs/ROADMAP.md](
     targets and decision dates for more lower-income countries; a native-speaker review process for
     the translations; and how shocks spread between economies (a small global VAR with IMF trade
     weights). The low-income debt framework waits for its 2027 guidance note.
+18. **Forecasting methods and the track record** (19 to 23 November): GARCH currency volatility,
+    ridge, lasso, random forest and dynamic factor nowcasts, ARIMA, quantile growth bands, the KPSS
+    test, tests on figures as first published, and the country risk scorecard test. 39 tests are now
+    on record: 11 passed, 8 of them still holding once the number of tests is counted. Verdicts are
+    copied from real runs with `npm run track-record:import`, never by hand.
+19. **Easier first use** (24 November): a three-step start-here card; a short answer at the top of
+    Council chat when no AI model writes one; a shorter Missing list and more room for the answer;
+    Policy review as its own page next to Reports; and the help button as a list of the four levels.
+20. **Recovering on its own** (24 November): updates that do not stop on files the app writes itself;
+    slow or busy sources asked again before they count as failed; a second try for failed downloads at
+    the end of the daily run and later tries after two hours; and the last good answer, with its own
+    dates, while a source does not answer.
+21. **Standard app features** (24 November): a privacy page ([docs/PRIVACY.md](./docs/PRIVACY.md)), a
+    notice when a newer version is out, Copy details and Report a problem, a question before deleting
+    a watchlist, following the computer's dark or light setting, steps to remove the app, and keyboard
+    shortcuts.
 
 **Next**
 
@@ -542,7 +564,9 @@ Where things stand on 23 November 2026 (details and status in [docs/ROADMAP.md](
   dollar funding, the exchange rate regime file) are built and tested on saved replies, but could not
   be reached from the build machine; `npm run check:data` on a computer that reaches them confirms
   each one. The sources for the five user roles answered there on 17 November. The IMF monthly exchange
-  rates and policy rates (rows `imf_fx` and `imf_policy`) wait for their first check there. The Quant desk waits
+  rates, policy rates and local market rates answered there on 18 and 19 November. The official
+  forecasts, the OECD real-time editions and the catalogue search (rows `wb_gep`, `oecd_eo`,
+  `oecd_rtd` and `catalogues`) wait for their first check there. The Quant desk waits
   for a first check against a real research-tools server, and data surprises need some weeks of daily
   downloads to build up.
 
