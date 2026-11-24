@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- docs/INSTALL.md has a "Remove EconQuest" section: the steps for the ready-made Docker app and for
+  the code copy (Mac and Windows scripts), removing the Ollama models (about 34 GB in all), clearing
+  the browser's site data, and a note that nothing runs in the background or on a schedule.
 - The app opens in dark or light to match the computer's own setting, and changes with it, until
   you press the dark-mode switch; from then on your choice is kept in this browser. A choice saved by
   an earlier version still counts, so no screen changes after updating. The pop-out watchlist follows
