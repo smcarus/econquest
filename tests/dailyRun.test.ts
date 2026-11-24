@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { dailyDue, formatDaily, interestingLines, readDaily, testsDue, writeDaily, type DailyRun } from '../src/utils/dailyRun.ts';
+import { dailyDue, failedDownloads, formatDaily, interestingLines, readDaily, replaceStep, testsDue, writeDaily, type DailyRun } from '../src/utils/dailyRun.ts';
 
 const at = (s: string) => new Date(s);
 
@@ -103,4 +103,50 @@ test('npm run daily: runs offline against fixtures, writes the report, and does 
   } finally {
     fs.rmSync(dataDir, { recursive: true, force: true });
   }
+});
+
+test('daily run: failed downloads are tried again, alone, 2 hours later, at most 3 times; tests never', () => {
+  const run: DailyRun = {
+    startedAt: '2026-11-08T08:00:00Z',
+    finishedAt: '2026-11-08T08:40:00Z',
+    steps: [
+      { id: 'feeds', label: 'Free feeds', outcome: 'done', partsFailed: 2 },
+      { id: 'gpr', label: 'GPR', outcome: 'failed', note: 'HTTP 503' },
+      { id: 'sanctions', label: 'Sanctions', outcome: 'done' },
+      { id: 'tests', label: 'Tests', outcome: 'failed' },
+      { id: 'check', label: 'Connection check', outcome: 'failed' },
+    ],
+  };
+  assert.deepEqual(failedDownloads(run), ['feeds', 'gpr']);
+  assert.equal(dailyDue({ last: run }, at('2026-11-08T10:00:00Z')).due, false);
+  const due = dailyDue({ last: run }, at('2026-11-08T10:41:00Z'));
+  assert.equal(due.due, true);
+  assert.deepEqual(due.retryOnly, ['feeds', 'gpr']);
+  assert.match(due.reason, /2 download steps that failed/);
+  // The next try waits 2 hours after the last one; after 3 tries it waits for the next daily run.
+  const tried = { ...run, laterTries: [{ at: '2026-11-08T10:41:00Z', steps: ['feeds', 'gpr'], fixed: [] }] };
+  assert.equal(dailyDue({ last: tried }, at('2026-11-08T11:30:00Z')).due, false);
+  assert.equal(dailyDue({ last: tried }, at('2026-11-08T12:42:00Z')).due, true);
+  const three = { ...run, laterTries: [1, 2, 3].map((h) => ({ at: `2026-11-08T1${h}:00:00Z`, steps: ['gpr'], fixed: [] })) };
+  assert.equal(dailyDue({ last: three }, at('2026-11-08T18:00:00Z')).due, false);
+  // A run with only a failed test or check is not tried again early.
+  const testsOnly = { ...run, steps: run.steps.filter((s) => s.id === 'tests' || s.id === 'check') };
+  assert.equal(dailyDue({ last: testsOnly }, at('2026-11-08T12:00:00Z')).due, false);
+});
+
+test('daily run: another try replaces the step, says which try, and adds the bytes', () => {
+  const run: DailyRun = { startedAt: '2026-11-08T08:00:00Z', steps: [{ id: 'gpr', label: 'GPR', outcome: 'failed', note: 'HTTP 503', bytes: 100 }] };
+  const ok = replaceStep(run, { id: 'gpr', label: 'GPR', outcome: 'done', note: '1 new file', bytes: 50 }, 'second try');
+  assert.equal(ok.fixed, true);
+  assert.equal(run.steps.length, 1);
+  assert.equal(run.steps[0].outcome, 'done');
+  assert.equal(run.steps[0].note, '1 new file; worked on the second try');
+  assert.equal(run.steps[0].bytes, 150);
+  assert.equal('fixed' in run.steps[0], false);
+  const still = replaceStep(run, { id: 'gpr', label: 'GPR', outcome: 'failed', note: 'HTTP 503' }, 'later try');
+  assert.equal(still.fixed, false);
+  assert.match(run.steps[0].note!, /failed again on the later try/);
+  replaceStep(run, { id: 'feeds', label: 'Feeds', outcome: 'done', partsFailed: 1 }, 'second try');
+  assert.match(run.steps[1].note!, /1 part still failing after the second try/);
+  assert.match(formatDaily({ ...run, laterTries: [{ at: '2026-11-08T11:00:00Z', steps: ['gpr'], fixed: ['gpr'] }] }), /Tried again 2026-11-08 11:00 UTC: gpr; now working: gpr/);
 });

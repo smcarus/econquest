@@ -16,8 +16,10 @@ import { RESEARCH_USER_AGENT } from '../src/server/http.ts';
 import { editionsBetween, extendRows, lastEdition, OECD_MEMBERS, oecdRtUrl, parseOecdRevisionsCsv, type OecdRtMeasure } from '../src/utils/oecdRealTime.ts';
 import { readOecdVintages, writeOecdVintages } from '../src/utils/oecdRealTimeStore.ts';
 import { makeOecdPacer } from '../src/utils/oecdPacedGet.ts';
+import { ensureCurrentCode } from '../src/utils/codeUpdateNode.ts';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+ensureCurrentCode(root);
 const dataDir = process.env.DATA_DIR || path.join(root, 'data');
 const arg = (name: string) => {
   const i = process.argv.indexOf(`--${name}`);

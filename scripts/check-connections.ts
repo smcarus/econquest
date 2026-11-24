@@ -27,8 +27,10 @@ import { fxRegimeData } from '../src/utils/fxRegimeStore.ts';
 import { dpiData } from '../src/utils/dpiStore.ts';
 import { brokerStatus } from '../src/server/brokerGateway.ts';
 import { applyKeysToEnv, envKeySnapshot, keySources, loadSettings, settingsFilePath } from '../src/utils/userSettings.ts';
+import { ensureCurrentCode } from '../src/utils/codeUpdateNode.ts';
 
 dotenv.config();
+ensureCurrentCode(process.cwd());
 
 const envFileKeys = envKeySnapshot(process.env);
 const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');

@@ -4,7 +4,7 @@ import { geminiModel } from './src/utils/geminiModel';
 import { loadModelHistoryCached } from './src/utils/modelHistory';
 import { withLongCli, withLongCpi, withLongPolicy } from './src/utils/longHistory';
 import { refreshModelHistory, registerAnalysisRoutes } from './src/server/routes/analysis';
-import { BY_HAND, FILE_PULLS, dailyDue, dailyFilePath, formatDaily, interestingLines, readDaily, preReleaseTestsDue, sweepNote, testsDue, writeDaily, type DailyRun, type DailyStep } from './src/utils/dailyRun';
+import { BY_HAND, FILE_PULLS, SECOND_TRY_WAIT_MS, dailyDue, failedDownloads, replaceStep, dailyFilePath, formatDaily, interestingLines, readDaily, preReleaseTestsDue, sweepNote, testsDue, writeDaily, type DailyRun, type DailyStep } from './src/utils/dailyRun';
 import { spawn } from 'child_process';
 import { registerReviewRoutes } from './src/server/routes/reviews';
 import type { HistoryInput } from './src/utils/precedentFinder';
@@ -1136,7 +1136,9 @@ async function runDailyCli(): Promise<void> {
     console.log(`[daily] Not run: ${due.reason}. (npm run daily -- --force runs it again.)`);
     process.exit(0);
   }
-  const run: DailyRun = { startedAt: new Date().toISOString(), where: process.env.ECONQUEST_WHERE || 'this computer', steps: [], downloadedBytes: 0 };
+  const last = readDaily(file).last;
+  // A later try updates the last run in place; otherwise a new run starts.
+  const run: DailyRun = due.retryOnly && last ? last : { startedAt: new Date().toISOString(), where: process.env.ECONQUEST_WHERE || 'this computer', steps: [], downloadedBytes: 0 };
   const save = () => writeDaily(file, { last: run });
   // What this process downloads (feeds, histories, tests); scripts report their own (runScript).
   const counter = installDownloadCounter();
@@ -1150,18 +1152,73 @@ async function runDailyCli(): Promise<void> {
     save();
     console.log(`[daily] ${step.outcome === 'done' ? 'OK' : step.outcome === 'failed' ? 'FAILED' : 'SKIPPED'}: ${step.label}${step.note ? `: ${step.note}` : ''}${step.bytes ? ` (${formatBytes(step.bytes)} downloaded)` : ''}`);
   };
-  save();
+  if (!due.retryOnly) save();
   console.log(`[daily] Starting (${due.reason}). Safe to stop: the next start carries on.`);
+
+  // The two download steps, also used for the second and later tries.
+  const feedsStep = async (): Promise<DailyStep> => {
+    const preloadFrom = new Date().toISOString();
+    await startPreload({ log: (line) => console.log(`  ${line}`) });
+    const sum = downloadSummary(preloadState, preloadFrom);
+    const problems = summarisePreload(preloadPlan(), preloadState).problems.map((p) => `${p.outcome === 'skipped' ? 'Needs setup' : 'Failed'}: ${p.label}${p.note ? `: ${p.note}` : ''}`);
+    const partsFailed = summarisePreload(preloadPlan(), preloadState).problems.filter((p) => p.outcome === 'failed').length;
+    return { id: 'feeds', label: 'Free feeds for every country', outcome: preloadState.endedEarly ? 'failed' : 'done', note: sum.summary, details: problems, ...(partsFailed ? { partsFailed } : {}) };
+  };
+  const fileStep = async (f: (typeof FILE_PULLS)[number]): Promise<{ step: DailyStep; bytes: number }> => {
+    console.log(`  -- ${f.label}`);
+    const r = await runScript(f.script, f.args);
+    const got = interestingLines(r.output);
+    return {
+      step: {
+        id: f.id,
+        label: f.label,
+        outcome: r.code === 0 ? 'done' : 'failed',
+        note: got.saved.length ? `${got.saved.length} new file${got.saved.length === 1 ? '' : 's'}${got.problems.length ? `, ${got.problems.length} not saved` : ''}` : got.problems.length ? `${got.problems.length} not saved` : 'up to date',
+        details: got.problems,
+      },
+      bytes: r.bytes ?? 0,
+    };
+  };
+  /** Runs the download steps named again and puts each result in place of the failed one. */
+  const tryAgain = async (ids: string[], which: string): Promise<string[]> => {
+    const fixed: string[] = [];
+    for (const id of ids) {
+      const before = counter.total();
+      let step: DailyStep;
+      let scriptBytes = 0;
+      if (id === 'feeds') step = await feedsStep();
+      else {
+        const f = FILE_PULLS.find((x) => x.id === id);
+        if (!f) continue;
+        ({ step, bytes: scriptBytes } = await fileStep(f));
+      }
+      step.bytes = counter.total() - before + scriptBytes;
+      countedSoFar = counter.total();
+      run.downloadedBytes = (run.downloadedBytes ?? 0) + step.bytes;
+      const merged = replaceStep(run, step, which);
+      const { fixed: nowWorks, ...kept } = merged;
+      if (nowWorks) fixed.push(id);
+      save();
+      console.log(`[daily] ${nowWorks ? 'OK' : 'FAILED'}: ${kept.label}: ${kept.note}`);
+    }
+    return fixed;
+  };
+
+  // A later start, 2 hours or more after a run with failed downloads: only those steps, again.
+  if (due.retryOnly) {
+    console.log(`[daily] Trying again: ${due.retryOnly.join(', ')} (failed in the run that finished ${last!.finishedAt!.slice(0, 16).replace('T', ' ')} UTC).`);
+    const at = new Date().toISOString();
+    const fixed = await tryAgain(due.retryOnly, 'later try');
+    run.laterTries = [...(run.laterTries || []), { at, steps: due.retryOnly, fixed }];
+    save();
+    console.log('');
+    console.log(formatDaily(run, { full: true }));
+    process.exit(0);
+  }
 
   // 1. Every free feed for every country.
   console.log('[daily] 1/5 Free feeds for every country (Download all)');
-  const preloadFrom = new Date().toISOString();
-  await startPreload({ log: (line) => console.log(`  ${line}`) });
-  {
-    const sum = downloadSummary(preloadState, preloadFrom);
-    const problems = summarisePreload(preloadPlan(), preloadState).problems.map((p) => `${p.outcome === 'skipped' ? 'Needs setup' : 'Failed'}: ${p.label}${p.note ? `: ${p.note}` : ''}`);
-    add({ id: 'feeds', label: 'Free feeds for every country', outcome: preloadState.endedEarly ? 'failed' : 'done', note: sum.summary, details: problems });
-  }
+  add(await feedsStep());
   const offline = !!preloadState.endedEarly && /cannot be reached/.test(preloadState.endedEarly);
   if (offline) run.offline = true;
 
@@ -1173,16 +1230,16 @@ async function runDailyCli(): Promise<void> {
       add({ id: f.id, label: f.label, outcome: 'skipped', note: 'offline' });
       continue;
     }
-    console.log(`  -- ${f.label}`);
-    const r = await runScript(f.script, f.args);
-    const got = interestingLines(r.output);
-    add({
-      id: f.id,
-      label: f.label,
-      outcome: r.code === 0 ? 'done' : 'failed',
-      note: got.saved.length ? `${got.saved.length} new file${got.saved.length === 1 ? '' : 's'}${got.problems.length ? `, ${got.problems.length} not saved` : ''}` : got.problems.length ? `${got.problems.length} not saved` : 'up to date',
-      details: got.problems,
-    }, r.bytes);
+    const { step, bytes } = await fileStep(f);
+    add(step, bytes);
+  }
+
+  // Second try, after a short wait, for the downloads that failed (a busy or briefly down source).
+  if (!offline && failedDownloads(run).length) {
+    const ids = failedDownloads(run);
+    console.log(`[daily] Second try in ${Math.round(SECOND_TRY_WAIT_MS / 60000)} min for: ${ids.join(', ')}`);
+    await new Promise((r) => setTimeout(r, SECOND_TRY_WAIT_MS));
+    await tryAgain(ids, 'second try');
   }
 
   emitEvents(EVENT_FILES, sanctionsChangeInputs(sanctionsBefore, sanctionsCounts(sanctionsData(DATA_DIR))));

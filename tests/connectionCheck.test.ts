@@ -321,3 +321,42 @@ test('a redirect to the source own error page reads as a site error, not a forma
   assert.ok(!isErrorPageRedirect('https://markets.newyorkfed.org/api/rates/unsecured/effr/last/1.json'));
   assert.ok(!isErrorPageRedirect(undefined));
 });
+
+test('a busy or slow source is asked again before it counts as failed; a refusal or refused connection is not', async () => {
+  const fast = { tries: 3, pausesMs: [0], maxRetryAfterMs: 1000 };
+  const calls: Record<string, number> = {};
+  const count = (k: string) => (calls[k] = (calls[k] || 0) + 1);
+  const timeout = () => {
+    const e = new Error('aborted');
+    e.name = 'AbortError';
+    throw e;
+  };
+  const flaky: FetchFn = async (url, init) => {
+    if (url.includes('FI.RES.TOTL.MO')) return count('wb') < 3 ? json({ message: 'busy' }, 503) : healthy(url, init);
+    if (url.includes('gdeltproject')) return count('gdelt') < 2 ? (timeout() as never) : healthy(url, init);
+    if (url.includes('newyorkfed')) {
+      count('nyfed');
+      return json({ message: 'nope' }, 404);
+    }
+    return healthy(url, init);
+  };
+  const r = await checkConnections({ env: {}, now: NOW, fetchFn: flaky, retry: fast, only: ['worldbank', 'gdelt', 'nyfed'] });
+  const row = (id: string) => r.results.find((x) => x.id === id)!;
+  assert.equal(row('worldbank').state, 'connected');
+  assert.equal(calls.wb, 3);
+  assert.equal(row('gdelt').state, 'connected');
+  assert.equal(calls.gdelt, 2);
+  assert.equal(calls.nyfed, 1, 'a 404 is not asked again');
+
+  // Still failing after every try: reported as failing, with how many times it was asked.
+  const down: FetchFn = async (url, init) => (url.includes('FI.RES.TOTL.MO') ? json({ message: 'busy' }, 503) : healthy(url, init));
+  const d = await checkConnections({ env: {}, now: NOW, fetchFn: down, retry: fast, only: ['worldbank'] });
+  assert.equal(d.results[0].state, 'refused');
+  assert.match(d.results[0].detail, /asked 3 times/);
+
+  // Without a plan, a test's own fetch is asked once.
+  let once = 0;
+  const one: FetchFn = async (url, init) => (url.includes('FI.RES.TOTL.MO') ? (once++, json({}, 503)) : healthy(url, init));
+  await checkConnections({ env: {}, now: NOW, fetchFn: one, only: ['worldbank'] });
+  assert.equal(once, 1);
+});
