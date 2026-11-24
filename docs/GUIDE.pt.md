@@ -441,6 +441,11 @@ O **Menu** reúne tudo o que não é uma página. O que vale conhecer primeiro:
   executa e no qual entra no seu computador. Desligado por padrão; só na tela e nunca salvos.
 - **Modo prova**: desliga todos os passos de IA para uma prova.
 - **Exemplos resolvidos**: cinco casos, de uma pergunta a um memorando.
+- **Sobre e licenças de dados**: a versão, uma nota curta sobre privacidade ([PRIVACY.md](PRIVACY.md),
+  em inglês) e se há uma versão mais nova, com os passos para atualizar.
+- **Relatar um problema**: abre um novo issue no GitHub com a versão do app já preenchida. Você lê e
+  envia. Se uma tela não puder ser desenhada, a nota dela também tem **Copiar os detalhes** e
+  **Relatar este problema**.
 - **Quests**: em cinza, "Ainda não disponível" ([seção 12](#12-experimentar-as-quests)).
 
 ![Configurações > Ferramentas: ferramentas agrupadas por tarefa e depois Conexões de dados](images/14-data-connections.png)

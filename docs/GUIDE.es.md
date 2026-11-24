@@ -448,6 +448,11 @@ El **Menú** reúne todo lo que no es una página. Lo primero que conviene conoc
   se guarda.
 - **Modo examen**: desactiva todos los pasos de IA para un examen.
 - **Ejemplos resueltos**: cinco casos de una pregunta a un memorando.
+- **Acerca de y licencias de datos**: la versión, una nota breve sobre privacidad
+  ([PRIVACY.md](PRIVACY.md), en inglés) y si hay una versión más reciente, con los pasos para actualizar.
+- **Informar de un problema**: abre una nueva incidencia en GitHub con la versión de la app ya escrita.
+  Usted la lee y la envía. Si una pantalla no se puede dibujar, su nota también tiene **Copiar los
+  detalles** e **Informar de este problema**.
 - **Retos**: en gris, «Aún no disponible» ([sección 12](#12-probar-los-retos)).
 
 ![Configuración > Herramientas: herramientas agrupadas por tarea y después Conexiones de datos](images/14-data-connections.png)

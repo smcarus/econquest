@@ -25,7 +25,7 @@ no adverts and no tracking. This page says what stays on your computer, what lea
 | Locked audit copies | The storage bucket you set in `AUDIT_BUCKET_URL` | Only if you set one | Each audit log entry |
 | Sign-in | The sign-in provider you set (`OIDC_ISSUER`) | Only if you set one, when someone signs in | What that provider needs to sign the person in |
 | Broker prices | Your own IBKR gateway on this computer | Only if you set one | Requests for the contracts you list; it never leaves the computer |
-| Flags and bug reports | GitHub | Only when you open the ready-made issue link and send it yourself | The text you see before sending. A figure from a paid subscription is left out |
+| Flags and problem reports | GitHub | Only when you open the ready-made issue link (the Flag button, Report this problem on an error note, or Menu > Report a problem) and send it yourself | The text you see before sending. A figure from a paid subscription is left out; error details hold the version, the screen, the error and the page path, never figures or saved data |
 
 ## What is kept, and where
 

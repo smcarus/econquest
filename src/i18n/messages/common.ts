@@ -13,6 +13,10 @@ export const COMMON = defineMessages('common', {
   appFailed: 'Something went wrong drawing the app',
   appFailedBody: 'Your saved data is safe. Reload to try again. If it keeps happening, the error below helps find the cause.',
   reload: 'Reload',
+  copyDetails: 'Copy details',
+  copied: 'Copied',
+  reportProblem: 'Report this problem',
+  reportNote: 'Report this problem opens a new GitHub issue with these details filled in. Nothing is sent until you send it yourself.',
   badgeTitle: '{name}: {label}. {more} Click for the register.',
   stricterFail: 'Passed, fails stricter check',
 });

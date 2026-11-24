@@ -10,6 +10,10 @@ export const COMMON_FR: Messages<typeof COMMON> = {
   appFailed: "Un problème est survenu lors de l'affichage de l'application",
   appFailedBody: "Vos données enregistrées sont en sécurité. Rechargez pour réessayer. Si cela se reproduit, l'erreur ci-dessous aide à en trouver la cause.",
   reload: 'Recharger',
+  copyDetails: 'Copier les détails',
+  copied: 'Copié',
+  reportProblem: 'Signaler ce problème',
+  reportNote: "Signaler ce problème ouvre un nouveau ticket GitHub avec ces détails déjà remplis. Rien n'est envoyé tant que vous ne l'envoyez pas vous-même.",
   badgeTitle: '{name} : {label}. {more} Cliquez pour voir le registre.',
   stricterFail: 'Réussi, échoue au contrôle plus strict',
 };

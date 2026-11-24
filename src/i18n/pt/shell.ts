@@ -52,6 +52,8 @@ export const SHELL_PT: Messages<typeof SHELL> = {
   examCannotChange: "Só o computador que executa o app, ou um administrador quando o login está ativado, pode mudar o modo prova.",
   examTitle: "Ativado: sem resumos nem etapas de IA para ninguém que use este app; o chat do conselho mostra só os números, e as perguntas feitas e os países abertos vão para o log de auditoria.",
   updateOut: 'Nova versão',
+  reportProblem: "Relatar um problema",
+  reportProblemTitle: "Abre um novo issue no GitHub com a versão do app já preenchida. Nada é enviado até que você mesmo envie.",
   about: "Sobre e licenças de dados",
   manual: "Manual do usuário",
   worked: "Exemplos resolvidos",
