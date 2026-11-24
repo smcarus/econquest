@@ -34,8 +34,12 @@ export interface NoModelDigest {
   short: ShortAnswer[];
   lines: DigestLine[];
   unanswered: UnansweredPart[];
-  /** What the agents could not answer, in their own words. */
+  /** What the agents could not answer and the app could fill (a source to connect, a file to add), in their own words. */
   gaps: string[];
+  /** Figures that are there but older than usual, to read with their date. */
+  older: string[];
+  /** What no source the app reads publishes for the country (an EU-only survey, no CFTC future): nothing to fill. */
+  notCovered: string[];
 }
 
 const MAX_LINES = 6;
@@ -133,6 +137,48 @@ export function plainGap(text: string): string {
     .trim();
 }
 
+// A gap the app can fill: a source that did not answer, a file not downloaded, a key or account to add.
+const FILLABLE = /did not answer|not downloaded|not pulled|not loaded|add your|Menu >|data\/local|user manual|one-off download|in its pause/i;
+// Nothing to fill: no source the app reads publishes this for the country.
+const NOT_COVERED =
+  /No free source|No source yet|publishes no|EU members only|No CFTC|no CFTC currency future|no Polymarket contract|Kalshi odds are not saved|No dated events? on file|no BIS real exchange rate, ECB rate|not in BIS policy rates/i;
+// Short lines that only repeat a longer line about the same country: [the short line, what the longer line mentions].
+const REPEATS: Array<[RegExp, RegExp]> = [
+  [/: no GDELT pull$/i, /GDELT/],
+  [/: no OECD leading indicator$/i, /OECD leading indicator|\bCLI\b/],
+  [/: no CFTC currency future(?:, so no futures positioning)?$/i, /CFTC/],
+  [/: no BIS policy-rate history for the policy cycle$/i, /policy rate/i],
+  [/: no carry reading$/i, /policy rate|FX volatility/i],
+  [/: no dated event on file in the next 60 days$/i, /No dated events on file in the next 120 days/i],
+  [/: no positioning, crowd odds or survey figures to describe$/i, /CFTC|Polymarket|survey/i],
+];
+
+const countryOf = (line: string) => /^([^:]+):/.exec(line)?.[1] ?? /\bfor ([A-Z][\w .'-]+)$/.exec(line)?.[1] ?? '';
+
+/**
+ * Sorts the agents' Missing lines: repeats dropped (a short line that a longer line about the same
+ * country already covers), figures that are only older than usual set apart, and what no source
+ * publishes for the country set apart from what the app could fill.
+ */
+export function sortGaps(lines: string[]): { gaps: string[]; older: string[]; notCovered: string[] } {
+  const all = [...new Set(lines)];
+  const kept = all.filter((line) => {
+    const rule = REPEATS.find(([short]) => short.test(line));
+    if (!rule) return true;
+    const c = countryOf(line);
+    return !all.some((o) => o !== line && !REPEATS.some(([short]) => short.test(o)) && countryOf(o) === c && rule[1].test(o));
+  });
+  const gaps: string[] = [];
+  const older: string[] = [];
+  const notCovered: string[] = [];
+  for (const line of kept) {
+    if (/older than usual/i.test(line)) older.push(line);
+    else if (!FILLABLE.test(line) && NOT_COVERED.test(line)) notCovered.push(line);
+    else gaps.push(line);
+  }
+  return { gaps, older, notCovered };
+}
+
 /** The digest for one answer; `whatIfShown` is true when the fiscal what-if card already answers part of it. */
 export function noModelDigest(question: string, answers: AgentAnswer[], whatIfShown = false, namedCountry = false): NoModelDigest {
   const lines: DigestLine[] = [];
@@ -142,7 +188,7 @@ export function noModelDigest(question: string, answers: AgentAnswer[], whatIfSh
       lines.push({ agent: a.name, country: f.countryName, reading: f.reading, figures: f.figures.slice(0, MAX_FIGURES).map((g) => `${g.label} ${g.value}`) });
     }
   }
-  const gaps = [...new Set(answers.flatMap((a) => a.missing).map(plainGap))];
+  const { gaps, older, notCovered } = sortGaps(answers.flatMap((a) => a.missing).map(plainGap));
   const unanswered: UnansweredPart[] = [];
   const shock = RATE_SHOCK.exec(question);
   if (shock && ASKS_EFFECT.test(question) && !whatIfShown) {
@@ -160,5 +206,5 @@ export function noModelDigest(question: string, answers: AgentAnswer[], whatIfSh
         : 'No agent found figures for this question. Try naming a country, or open Research for that country to see what the app holds.',
     });
   }
-  return { short: shortAnswer(question, answers), lines, unanswered, gaps };
+  return { short: shortAnswer(question, answers), lines, unanswered, gaps, older, notCovered };
 }

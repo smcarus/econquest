@@ -275,16 +275,40 @@ export const AskCouncilPanel: React.FC<{
                         </ul>
                       </div>
                     )}
-                    {d.gaps.length > 0 && (
+                    {d.older.length > 0 && (
+                      <div data-digest-older="true">
+                        <div className="ui-label mt-1">{tr('digestOlder')}</div>
+                        <ul className="list-disc pl-5 text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                          {d.older.map((g) => (
+                            <li key={g}>{tx(g)}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {d.gaps.length + d.notCovered.length > 0 && (
                       <details data-digest-gaps="true">
                         <summary className="ui-label mt-1 cursor-pointer">
                           {tr('digestGaps')} ({d.gaps.length})
                         </summary>
-                        <ul className="list-disc pl-5 mt-1 text-xs text-slate-600 dark:text-slate-300 space-y-1">
-                          {d.gaps.map((g) => (
-                            <li key={g}>{tx(g)}</li>
-                          ))}
-                        </ul>
+                        {d.gaps.length > 0 && (
+                          <ul className="list-disc pl-5 mt-1 text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                            {d.gaps.map((g) => (
+                              <li key={g}>{tx(g)}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {d.notCovered.length > 0 && (
+                          <details className="mt-1 pl-5" data-digest-not-covered={d.notCovered.length}>
+                            <summary className="text-xs text-slate-500 dark:text-slate-400 cursor-pointer">
+                              {tr('digestNotCovered', { n: d.notCovered.length })}
+                            </summary>
+                            <ul className="list-disc pl-5 mt-1 text-xs text-slate-500 dark:text-slate-400 space-y-1">
+                              {d.notCovered.map((g) => (
+                                <li key={g}>{tx(g)}</li>
+                              ))}
+                            </ul>
+                          </details>
+                        )}
                       </details>
                     )}
                   </div>

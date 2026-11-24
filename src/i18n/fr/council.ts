@@ -55,6 +55,8 @@ export const COUNCIL_FR: Messages<typeof COUNCIL> = {
   digestFound: 'Ce que les agents ont trouvé',
   digestNotAnswered: 'Sans réponse ici',
   digestGaps: 'Manquant pour cette question',
+  digestOlder: 'Plus anciennes que d’habitude : lisez-les avec leur date',
+  digestNotCovered: 'Aucune source lue par l’application ne le publie : rien à compléter ({n})',
   drawingChart: 'Tracé du graphique…',
   addFor: 'Ajouter {list} pour cette question',
   addForNote: 'Télécharge ses chiffres en direct et repose la question ; votre liste de suivi reste inchangée.',

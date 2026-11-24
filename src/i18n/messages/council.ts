@@ -59,6 +59,8 @@ export const COUNCIL = defineMessages('council', {
   digestFound: 'What the agents found',
   digestNotAnswered: 'Not answered here',
   digestGaps: 'Missing for this question',
+  digestOlder: 'Older than usual, so read with their date',
+  digestNotCovered: 'Not published by any source the app reads, so nothing to fill ({n})',
   drawingChart: 'Drawing the chart…',
   addFor: 'Add {list} for this question',
   addForNote: 'Pulls its live figures and asks again; your watchlist stays as it is.',
