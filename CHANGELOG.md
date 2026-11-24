@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- The daily data run gives download steps that failed (the feeds, wholly or in part, and the WEO,
+  sanctions, GPR, Chinn-Ito, UCDP and replay files) a second try at the end of the run, 2 minutes
+  later. One that still fails is tried again, alone, by the next start once 2 hours have passed (at
+  most 3 times before the next daily run), so a source that was down in the morning is fetched when
+  it is back. `npm run go -- status` shows each later try and what now works. The weekly tests are
+  never re-run this way.
 - Slow or busy sources are asked again before they count as failed. The connection check
   (`npm run check:data` and the nightly check) tries up to three times, 3 s then 10 s apart, after no
   answer in time, a cut connection, 429 or 500-504, follows the server's Retry-After (up to 60 s),
