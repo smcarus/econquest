@@ -249,6 +249,19 @@ export const AskCouncilPanel: React.FC<{
                 const d = noModelDigest(t.asked.question, t.asked.answers, !!parseWhatIf(t.asked.question), t.asked.plan.countries.length > 0);
                 return (
                   <div className="space-y-2" data-council-digest="true">
+                    {d.short.length > 0 && (
+                      <div data-council-short="true">
+                        <div className="ui-label mt-1">{tr('digestShort')}</div>
+                        <ul className="pl-0 text-sm font-medium text-slate-900 dark:text-white space-y-1">
+                          {d.short.map((s) => (
+                            <li key={s.country}>
+                              {d.short.length > 1 || t.asked.plan.countries.length !== 1 ? `${s.country}: ` : ''}
+                              {tx(s.text)}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                     {d.lines.length > 0 && (
                       <div>
                         <div className="ui-label mt-1">{tr('digestFound')}</div>
@@ -274,16 +287,40 @@ export const AskCouncilPanel: React.FC<{
                         </ul>
                       </div>
                     )}
-                    {d.gaps.length > 0 && (
+                    {d.older.length > 0 && (
+                      <div data-digest-older="true">
+                        <div className="ui-label mt-1">{tr('digestOlder')}</div>
+                        <ul className="list-disc pl-5 text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                          {d.older.map((g) => (
+                            <li key={g}>{tx(g)}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {d.gaps.length + d.notCovered.length > 0 && (
                       <details data-digest-gaps="true">
                         <summary className="ui-label mt-1 cursor-pointer">
                           {tr('digestGaps')} ({d.gaps.length})
                         </summary>
-                        <ul className="list-disc pl-5 mt-1 text-xs text-slate-600 dark:text-slate-300 space-y-1">
-                          {d.gaps.map((g) => (
-                            <li key={g}>{tx(g)}</li>
-                          ))}
-                        </ul>
+                        {d.gaps.length > 0 && (
+                          <ul className="list-disc pl-5 mt-1 text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                            {d.gaps.map((g) => (
+                              <li key={g}>{tx(g)}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {d.notCovered.length > 0 && (
+                          <details className="mt-1 pl-5" data-digest-not-covered={d.notCovered.length}>
+                            <summary className="text-xs text-slate-500 dark:text-slate-400 cursor-pointer">
+                              {tr('digestNotCovered', { n: d.notCovered.length })}
+                            </summary>
+                            <ul className="list-disc pl-5 mt-1 text-xs text-slate-500 dark:text-slate-400 space-y-1">
+                              {d.notCovered.map((g) => (
+                                <li key={g}>{tx(g)}</li>
+                              ))}
+                            </ul>
+                          </details>
+                        )}
                       </details>
                     )}
                   </div>
