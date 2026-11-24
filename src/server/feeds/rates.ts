@@ -8,6 +8,9 @@ import path from 'path';
 import { BIS_API, BIS_ISO2, bisAllMarketsUrl, bisIntlUrl, parseBisAllMarkets, parseBisIntl } from '../../utils/bisDebtSecurities';
 import { CDS_HIDDEN } from '../../utils/cdsHidden.ts';
 import { DATA_DIR } from '../config';
+import { DAY, lastGoodCache } from '../lastGood';
+
+const HOUR = 60 * 60 * 1000;
 import { EMPTY_FX_HISTORY, type FxHistoryFile, fxQuarterUrl, parseFxQuarter, quartersToPull, readFxHistoryFile } from '../../utils/fxHistory';
 import { EXTRA_FX, type ExtraFxCode, extraFxNeedsPull, extraFxUrl, extraFxWindows, type FxExtraFile, parseExtraFx, readFxExtraFile } from '../../utils/fxExtra';
 import { bcrpEmbigUrl, describeBcrpReply, type HcSpreadPull, parseBcrpEmbig } from '../../utils/hardCurrencySpread.ts';
@@ -101,13 +104,14 @@ export async function fetchOfficial10YYield(iso3: string): Promise<OfficialYield
 
 /**
  * Government external debt falling due (QEDS quarterly schedule, IDS yearly projections) from the
- * World Bank API, and government debt securities outstanding from the BIS API, all with no key. These change quarterly at most, so answers are kept for 12 hours
- * and misses for an hour. Each source is tried on its own; either can be missing.
+ * World Bank API, and government debt securities outstanding from the BIS API, all with no key. These change quarterly at most, so answers are kept for 12 hours;
+ * while the sources fail, the last good answer stands in (src/server/lastGood.ts). Each source is tried on its own; either can be missing.
  */
-const debtScheduleCache = new Map<string, { at: number; value: DebtSchedule | null }>();
-export async function fetchDebtSchedule(iso3: string): Promise<DebtSchedule | null> {
-  const hit = debtScheduleCache.get(iso3);
-  if (hit && Date.now() - hit.at < (hit.value ? 12 : 1) * 60 * 60 * 1000) return hit.value;
+const debtScheduleCache = lastGoodCache<DebtSchedule>({ name: 'debt-schedule', freshMs: 12 * HOUR, maxAgeMs: 120 * DAY, dataDir: () => DATA_DIR });
+export function fetchDebtSchedule(iso3: string): Promise<DebtSchedule | null> {
+  return debtScheduleCache.get(iso3, () => pullDebtSchedule(iso3));
+}
+async function pullDebtSchedule(iso3: string): Promise<DebtSchedule | null> {
   const iso2 = BIS_ISO2[iso3];
   const [qedsJson, idsJson, bisIntlCsv, bisAllCsv] = await Promise.all([
     fetchJsonWithTimeout(qedsUrl(iso3)),
@@ -124,20 +128,21 @@ export async function fetchDebtSchedule(iso3: string): Promise<DebtSchedule | nu
     qeds || ids || bis
       ? { ...(qeds ? { qeds } : {}), ...(ids ? { ids } : {}), ...(bis ? { bis } : {}), fetchedAt: new Date().toISOString() }
       : null;
-  debtScheduleCache.set(iso3, { at: Date.now(), value });
   return value;
 }
 
 /**
  * The credit cycle (src/utils/bisCreditCycle.ts): credit-to-GDP gap, debt service ratio and real
- * house prices from the BIS, full quarterly history, no key. Kept 12 hours, misses an hour.
+ * house prices from the BIS, full quarterly history, no key. Kept 12 hours; the last good answer
+ * stands in while the BIS does not answer (src/server/lastGood.ts).
  */
-const bisCreditCache = new Map<string, { at: number; value: BisCreditCycle | null }>();
+const bisCreditCache = lastGoodCache<BisCreditCycle>({ name: 'bis-credit-cycle', freshMs: 12 * HOUR, maxAgeMs: 120 * DAY, dataDir: () => DATA_DIR });
 export async function fetchBisCreditCycle(iso3: string): Promise<BisCreditCycle | null> {
   const iso2 = BIS_ISO2[iso3];
   if (!iso2) return null;
-  const hit = bisCreditCache.get(iso3);
-  if (hit && Date.now() - hit.at < (hit.value ? 12 : 1) * 60 * 60 * 1000) return hit.value;
+  return bisCreditCache.get(iso3, () => pullBisCreditCycle(iso2));
+}
+async function pullBisCreditCycle(iso2: string): Promise<BisCreditCycle | null> {
   const [gapCsv, dsrCsv, sppCsv, tcCsv, cbtaCsv, gliCsv] = await Promise.all([
     fetchTextWithTimeout(bisCreditGapUrl(iso2)),
     fetchTextWithTimeout(bisDsrUrl(iso2)),
@@ -158,22 +163,19 @@ export async function fetchBisCreditCycle(iso3: string): Promise<BisCreditCycle 
           ...parseBisUsdCredit(gliCsv),
         }
       : null;
-  bisCreditCache.set(iso3, { at: Date.now(), value });
   return value;
 }
 
 /**
  * Who holds public external debt and on what terms (src/utils/idsCreditors.ts), World Bank IDS,
- * yearly, no key. Kept 12 hours, misses an hour.
+ * yearly, no key. Kept 12 hours; the last good answer stands in while the World Bank does not answer.
  */
-const idsCreditorsCache = new Map<string, { at: number; value: IdsCreditors | null }>();
-export async function fetchIdsCreditors(iso3: string): Promise<IdsCreditors | null> {
-  const hit = idsCreditorsCache.get(iso3);
-  if (hit && Date.now() - hit.at < (hit.value ? 12 : 1) * 60 * 60 * 1000) return hit.value;
-  const [world, china] = await Promise.all([fetchJsonWithTimeout(idsCreditorsUrl(iso3), 15000), fetchJsonWithTimeout(idsChinaUrl(iso3), 15000)]);
-  const value = world ? parseIdsCreditors(world, china, new Date().toISOString()) : null;
-  idsCreditorsCache.set(iso3, { at: Date.now(), value });
-  return value;
+const idsCreditorsCache = lastGoodCache<IdsCreditors>({ name: 'ids-creditors', freshMs: 12 * HOUR, maxAgeMs: 400 * DAY, dataDir: () => DATA_DIR });
+export function fetchIdsCreditors(iso3: string): Promise<IdsCreditors | null> {
+  return idsCreditorsCache.get(iso3, async () => {
+    const [world, china] = await Promise.all([fetchJsonWithTimeout(idsCreditorsUrl(iso3), 15000), fetchJsonWithTimeout(idsChinaUrl(iso3), 15000)]);
+    return world ? parseIdsCreditors(world, china, new Date().toISOString()) : null;
+  });
 }
 
 /**
@@ -818,30 +820,26 @@ export async function fetchFedBalanceSheet(): Promise<FedBalanceSheet> {
 
 /**
  * BIS daily policy rate history for one area from 1999 (event study, src/utils/eventStudy.ts).
- * Kept 24 hours in memory (1 hour after a miss).
+ * Kept 24 hours; the last good answer (up to 14 days old) stands in while the BIS does not answer.
  */
-const policyDailyCache = new Map<string, { at: number; value: Array<{ period: string; pct: number }> | null }>();
-export async function fetchPolicyDaily(area: string): Promise<Array<{ period: string; pct: number }> | null> {
-  const hit = policyDailyCache.get(area);
-  if (hit && Date.now() - hit.at < (hit.value ? 24 : 1) * 60 * 60 * 1000) return hit.value;
-  const csv = await fetchTextWithTimeout(`${BIS_API}/${CBPOL_DATASET}/D.${area}/all?startPeriod=1999-01-01&format=csv`, 20000).catch(() => null);
-  const value = csv ? parseCbpolCsv(csv, 'D')[area]?.points ?? null : null;
-  policyDailyCache.set(area, { at: Date.now(), value });
-  return value;
+const policyDailyCache = lastGoodCache<Array<{ period: string; pct: number }>>({ name: 'bis-policy-daily', freshMs: 24 * HOUR, maxAgeMs: 14 * DAY, dataDir: () => DATA_DIR });
+export function fetchPolicyDaily(area: string): Promise<Array<{ period: string; pct: number }> | null> {
+  return policyDailyCache.get(area, async () => {
+    const csv = await fetchTextWithTimeout(`${BIS_API}/${CBPOL_DATASET}/D.${area}/all?startPeriod=1999-01-01&format=csv`, 20000).catch(() => null);
+    return csv ? parseCbpolCsv(csv, 'D')[area]?.points ?? null : null;
+  });
 }
 
-/** BIS real broad effective exchange rate from 1994 for one country (BEER). Kept 24 hours (1 hour after a miss). */
-const reerLongCache = new Map<string, { at: number; value: Array<{ period: string; value: number }> | null }>();
+/** BIS real broad effective exchange rate from 1994 for one country (BEER). Kept 24 hours; the last good answer (up to 60 days old) stands in while the BIS does not answer. */
+const reerLongCache = lastGoodCache<Array<{ period: string; value: number }>>({ name: 'bis-reer-long', freshMs: 24 * HOUR, maxAgeMs: 60 * DAY, dataDir: () => DATA_DIR });
 export async function fetchReerLong(iso3: string): Promise<Array<{ period: string; value: number }> | null> {
   const iso2 = BIS_ISO2[iso3];
   if (!iso2) return null;
-  const hit = reerLongCache.get(iso2);
-  if (hit && Date.now() - hit.at < (hit.value ? 24 : 1) * 60 * 60 * 1000) return hit.value;
-  const csv = await fetchTextWithTimeout(reerLongUrl(iso2), 15000).catch(() => null);
-  const pts = csv ? parseReerMonthly(csv) : [];
-  const value = pts.length ? pts : null;
-  reerLongCache.set(iso2, { at: Date.now(), value });
-  return value;
+  return reerLongCache.get(iso2, async () => {
+    const csv = await fetchTextWithTimeout(reerLongUrl(iso2), 15000).catch(() => null);
+    const pts = csv ? parseReerMonthly(csv) : [];
+    return pts.length ? pts : null;
+  });
 }
 
 /**
