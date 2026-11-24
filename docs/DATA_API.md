@@ -222,6 +222,24 @@ the series above, so they are not part of the addresses in this guide:
   working-paper bundle (Reports > Notebooks), and `npm run notebook:check` checks them again through
   the running app.
 
+## Added from 18 to 24 November
+
+No new addresses. What changed for scripts:
+
+- **Spreadsheets.** The Excel Power Query and Google Sheets helpers above read the same addresses.
+- **Official forecasts side by side** (IMF, World Bank GEP, OECD Economic Outlook) are saved by the
+  daily run in `data/live/official-forecasts.json` and shown through their own panel route, which may
+  change between versions; for research code, take them from the three publishers directly
+  ([DATA_SOURCES.md](./DATA_SOURCES.md)). The Philadelphia Fed survey is read only from your own file.
+- **OECD real-time editions** are saved by `npm run oecd:vintages` in `data/local/oecd-vintages/` as
+  the OECD published them; read those files, or the OECD's own original-release data, for research.
+- **The global VAR, the estimated gap model, Find data and official documents** are calculations or
+  searches the screens make on request; they are not series and are not served here.
+- **Your broker prices** (Interactive Brokers) are never served to scripts, tokens or downloads: they
+  are shown on screen only and held in memory for 10 seconds.
+- **While a source does not answer**, five feeds keep their last good answer, with its own dates, as
+  the screens do; past its limit the figure is Missing with the reason, as before.
+
 ## How fast, and how often
 
 The addresses answer from the app's saved copies first; a first download that is slow finishes in
