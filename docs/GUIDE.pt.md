@@ -446,6 +446,9 @@ O **Menu** reúne tudo o que não é uma página. O que vale conhecer primeiro:
 - **Relatar um problema**: abre um novo issue no GitHub com a versão do app já preenchida. Você lê e
   envia. Se uma tela não puder ser desenhada, a nota dela também tem **Copiar os detalhes** e
   **Relatar este problema**.
+- **Atalhos de teclado**: aperte **?** para ver a lista. **/** vai para a caixa de pergunta do
+  conselho, **Cmd+K** (Ctrl+K no Windows) busca nas ferramentas, **Cmd+,** abre as configurações e
+  **Esc** fecha uma janela. / e ? não fazem nada enquanto você digita numa caixa.
 - **Quests**: em cinza, "Ainda não disponível" ([seção 12](#12-experimentar-as-quests)).
 
 ![Configurações > Ferramentas: ferramentas agrupadas por tarefa e depois Conexões de dados](images/14-data-connections.png)

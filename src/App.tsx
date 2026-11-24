@@ -134,6 +134,16 @@ import type { DataHealthTab } from './components/DataHealthDialog';
 import { useUpdateStatus } from './components/updateStatus';
 import { THEME_STORAGE_KEY, initialDark, savedThemeChoice, systemPrefersDark } from './utils/theme';
 import { blankProblemUrl } from './utils/problemReport';
+import { shortcutFor } from './utils/shortcuts';
+
+/** Focus an element once its screen has drawn (lazy screens take a moment); gives up after 2 s. */
+function focusWhenReady(selector: string, tries = 20): void {
+  const el = document.querySelector<HTMLElement>(selector);
+  if (el) {
+    el.focus();
+    el.scrollIntoView({ block: 'center' });
+  } else if (tries > 0) window.setTimeout(() => focusWhenReady(selector, tries - 1), 100);
+}
 
 /** Menu > Report a problem: a new GitHub issue with the version filled in; the person sends it. */
 async function openProblemReport(): Promise<void> {
@@ -158,6 +168,7 @@ const CatalogueSearchDialog = lazyNamed(() => import('./components/CatalogueSear
 const IdeaJournalDialog = lazyNamed(() => import('./components/IdeaJournalDialog'), 'IdeaJournalDialog');
 const OwnSeriesDialog = lazyNamed(() => import('./components/OwnSeriesDialog'), 'OwnSeriesDialog');
 const AboutDialog = lazyNamed(() => import('./components/AboutDialog'), 'AboutDialog');
+const ShortcutsDialog = lazyNamed(() => import('./components/ShortcutsDialog'), 'ShortcutsDialog');
 const WorkedExamplesDialog = lazyNamed(() => import('./components/WorkedExamplesDialog'), 'WorkedExamplesDialog');
 const AddCountryDialog = lazyNamed(() => import('./components/AddCountryDialog'), 'AddCountryDialog');
 const QuestsDialog = lazyNamed(() => import('./components/QuestsDialog'), 'QuestsDialog');
@@ -512,6 +523,7 @@ export default function App() {
   const [isWorkedOpen, setIsWorkedOpen] = useState<boolean>(false);
   const [isRuntimeModalOpen, setIsRuntimeModalOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
   const [settingsTab, setSettingsTab] = useState<SettingsTab>('ai');
   // Settings opens from the Menu, from Cmd/Ctrl + comma (as in most desktop apps), or from any
   // panel that dispatches OPEN_SETTINGS_EVENT (Data connections does, next to a missing key).
@@ -527,10 +539,22 @@ export default function App() {
       if (tab) setSettingsTab(tab);
       setIsSettingsOpen(true);
     };
+    // Keyboard shortcuts (src/utils/shortcuts.ts); ? lists them.
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === ',') {
-        e.preventDefault();
-        open();
+      if (e.defaultPrevented) return;
+      const action = shortcutFor({ key: e.key, metaKey: e.metaKey, ctrlKey: e.ctrlKey, altKey: e.altKey, target: e.target as HTMLElement | null });
+      if (!action) return;
+      // Single keys wait while a window is open; Cmd/Ctrl shortcuts work anywhere.
+      if ((action === 'ask' || action === 'help') && document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+      e.preventDefault();
+      if (action === 'settings') open();
+      else if (action === 'help') setIsShortcutsOpen(true);
+      else if (action === 'tools') {
+        setAppArea('desks');
+        focusWhenReady('[data-tool-search]');
+      } else if (action === 'ask') {
+        if (!document.getElementById('council-question')) setAppArea('today');
+        focusWhenReady('#council-question');
       }
     };
     const openAbout = (e: Event) => setAboutFocus((e as CustomEvent<{ id?: string }>).detail?.id ?? null);
@@ -2119,6 +2143,7 @@ export default function App() {
       <Suspense fallback={null}>{registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}</Suspense>
       <Suspense fallback={null}>{isUsersOpen && me && <UsersDialog me={me} onClose={() => setIsUsersOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isAccountOpen && <AccountDialog onClose={() => setIsAccountOpen(false)} />}</Suspense>
+      <Suspense fallback={null}>{isShortcutsOpen && <ShortcutsDialog onClose={() => setIsShortcutsOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{aboutFocus !== undefined && <AboutDialog focusId={aboutFocus} onClose={() => setAboutFocus(undefined)} />}</Suspense>
       {isManualModalOpen && (
         <Suspense fallback={null}>

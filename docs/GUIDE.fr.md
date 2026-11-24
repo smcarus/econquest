@@ -466,6 +466,9 @@ Le **Menu** rassemble tout ce qui n'est pas une page. À connaître d'abord :
 - **Signaler un problème** : ouvre un nouveau ticket GitHub avec la version de l'application déjà
   remplie. Vous le lisez et l'envoyez vous-même. Si un écran ne peut pas s'afficher, sa note propose
   aussi **Copier les détails** et **Signaler ce problème**.
+- **Raccourcis clavier** : appuyez sur **?** pour la liste. **/** va à la zone de question du conseil,
+  **Cmd+K** (Ctrl+K sous Windows) cherche dans les outils, **Cmd+,** ouvre les réglages et **Échap**
+  ferme une fenêtre. / et ? ne font rien pendant que vous écrivez dans une zone.
 - **Quêtes** : grisé, « Pas encore disponible » ([section 12](#12-essayer-les-quêtes)).
 
 ![Réglages > Outils : outils regroupés par tâche, puis Connexions de données](images/14-data-connections.png)
