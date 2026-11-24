@@ -132,6 +132,7 @@ import { loadShareMode, saveShareMode } from './utils/shareMode';
 import { dailyLine, dailyProgress } from './utils/dailyProgress';
 import type { DataHealthTab } from './components/DataHealthDialog';
 import { useUpdateStatus } from './components/updateStatus';
+import { THEME_STORAGE_KEY, initialDark, savedThemeChoice, systemPrefersDark } from './utils/theme';
 import { blankProblemUrl } from './utils/problemReport';
 
 /** Menu > Report a problem: a new GitHub issue with the version filled in; the person sends it. */
@@ -167,7 +168,6 @@ const SelfHostAndOllamaRuntimeModal = lazyNamed(() => import('./components/Manua
 const SovereignManualAndGithubModal = lazyNamed(() => import('./components/ManualAndAiModelDialogs'), 'SovereignManualAndGithubModal');
 
 
-const THEME_STORAGE_KEY = 'econquest_theme_dark_v1';
 const AI_RUNTIME_STORAGE_KEY = 'econquest_ai_runtime_config_v1';
 
 type NavSectionId =
@@ -240,18 +240,24 @@ export default function App() {
   const savedSessionOnBoot = useMemo(() => loadWorkspaceSessionFromStorage(), []);
 
   // Default to Crisp Editorial Light Mode (false) unless user previously toggled Dark Mode
-  const [darkMode, setDarkMode] = useState<boolean>(() => {
-    if (savedSessionOnBoot && typeof savedSessionOnBoot.darkMode === 'boolean') {
-      return savedSessionOnBoot.darkMode;
-    }
-    try {
-      const saved = localStorage.getItem(THEME_STORAGE_KEY);
-      if (saved !== null) return saved === 'true';
-    } catch {
-      // Ignore storage error
-    }
-    return false;
-  });
+  // Follows the computer's dark/light setting until the switch is pressed (src/utils/theme.ts).
+  const themeChosen = useRef<boolean>(savedThemeChoice() !== null);
+  const [darkMode, setDarkMode] = useState<boolean>(() =>
+    initialDark(savedThemeChoice(), savedSessionOnBoot?.darkMode, systemPrefersDark())
+  );
+  const chooseDark = (on: boolean) => {
+    themeChosen.current = true;
+    setDarkMode(on);
+  };
+  useEffect(() => {
+    if (themeChosen.current || typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = (e: MediaQueryListEvent) => {
+      if (!themeChosen.current) setDarkMode(e.matches);
+    };
+    mq.addEventListener?.('change', onChange);
+    return () => mq.removeEventListener?.('change', onChange);
+  }, []);
 
   const [isWatchlistCollapsed, setIsWatchlistCollapsed] = useState<boolean>(true);
 
@@ -687,6 +693,8 @@ export default function App() {
     } else {
       root.classList.remove('dark');
     }
+    // Saved only once the person has chosen, so an unchosen theme keeps following the computer.
+    if (!themeChosen.current) return;
     try {
       localStorage.setItem(THEME_STORAGE_KEY, String(darkMode));
     } catch {
@@ -1384,7 +1392,7 @@ export default function App() {
 
           <button
             type="button"
-            onClick={() => setDarkMode(!darkMode)}
+            onClick={() => chooseDark(!darkMode)}
             title={darkMode ? t('lightMode') : t('darkMode')}
             aria-label={darkMode ? t('lightMode') : t('darkMode')}
             className="inline-flex items-center px-2 py-1.5 text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors"
@@ -1449,7 +1457,7 @@ export default function App() {
                   <LanguageButton labelled />
                   <button
                     type="button"
-                    onClick={() => setDarkMode(!darkMode)}
+                    onClick={() => chooseDark(!darkMode)}
                     className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap"
                   >
                     {darkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5" />}

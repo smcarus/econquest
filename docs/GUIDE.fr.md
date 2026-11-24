@@ -40,7 +40,8 @@ tels qu'ils apparaissent avec l'application en français.
   et positions) et **Rapports**.
 - **En-tête, à droite :** **Chat du conseil** (ouvre le chat à côté de Recherche ou Rapports), le bouton
   du **niveau d'aide** (ici *Aide essentielle*), le bouton de **langue** (*FR*), le passage clair et
-  sombre, et **Menu**.
+  sombre (tant que vous n'y touchez pas, l'application suit le réglage de votre ordinateur), et
+  **Menu**.
 - **Espace de travail, en haut à droite :** **Agents** montre quels agents ont travaillé sur la dernière
   réponse ; **Point du jour** ouvre vos données de départ, la liste de suivi, ce qui a bougé et ce qui
   arrive. « 1 à configurer » compte les étapes de configuration restantes.

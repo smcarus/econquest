@@ -39,7 +39,7 @@ exceto a da seção 10; os nomes dos botões aparecem aqui como no app em portug
   e posições) e **Relatórios**.
 - **Cabeçalho, à direita:** **Chat do conselho** (abre o chat ao lado de Pesquisa ou Relatórios), o botão
   do **nível de ajuda** (aqui *Ajuda essencial*), o botão de **idioma** (*PT*), a troca entre claro e
-  escuro, e **Menu**.
+  escuro (até você clicar nela, o app segue a configuração do seu computador), e **Menu**.
 - **Área de trabalho, no alto à direita:** **Agentes** mostra quais agentes trabalharam na última
   resposta; **Resumo** abre suas entradas, a lista de acompanhamento, o que mudou e o que vem por aí. "1 a
   configurar" conta os passos de configuração que faltam.

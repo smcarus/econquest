@@ -20,9 +20,10 @@ import {
 import { useT } from '../i18n/useLang';
 import { WATCHLIST } from '../i18n/messages/watchlist';
 import { ColumnPicker, ColumnsButton, MissingSources, WatchlistTable } from './WatchlistTable';
+import { THEME_STORAGE_KEY, effectiveDark } from '../utils/theme';
 
 const LAST_VISIT_KEY = 'econquest_today_last_visit_v1';
-const THEME_KEY = 'econquest_theme_dark_v1';
+const THEME_KEY = THEME_STORAGE_KEY;
 
 function loadLastLook(): { at?: string; rows?: LastLook } {
   try {
@@ -51,7 +52,7 @@ export const WatchlistWindow: React.FC = () => {
   useEffect(() => {
     document.title = 'Watchlist · econquest';
     try {
-      document.documentElement.classList.toggle('dark', localStorage.getItem(THEME_KEY) === 'true');
+      document.documentElement.classList.toggle('dark', effectiveDark());
     } catch {
       // keep the light theme
     }

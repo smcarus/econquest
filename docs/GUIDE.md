@@ -38,7 +38,8 @@ figures fill in and the council writes its summary.
 - **Header, centre:** the three pages. **Workspace** (Council chat), **Research** (countries and
   holdings) and **Reports**.
 - **Header, right:** **Council chat** (opens the chat beside Research or Reports), the **help level**
-  button (here *Key help*), the **language** button (*EN*), the light and dark switch, and **Menu**.
+  button (here *Key help*), the **language** button (*EN*), the light and dark switch (until you press it, the
+  app follows your computer's own setting), and **Menu**.
 - **Workspace, top right:** **Agents** shows which agents worked on the last answer; **Briefing**
   opens your inputs, watchlist, what moved and what is coming. "2 to set up" counts the setup steps
   still open.
