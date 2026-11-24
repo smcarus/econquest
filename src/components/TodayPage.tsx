@@ -18,7 +18,7 @@ const ReviewWatchPanel = lazyNamed(() => import('./ReviewWatchPanel'), 'ReviewWa
 const SurpriseIndexCard = lazyNamed(() => import('./SurpriseIndexCard'), 'SurpriseIndexCard');
 // Release days (CG3), also on its own.
 const ReleaseWatchCard = lazyNamed(() => import('./ReleaseWatchCard'), 'ReleaseWatchCard');
-import { AskCouncilPanel, CouncilAgentsPanel, useCouncilHasQuestion, type FullCouncilStep } from './AskCouncilPanel';
+import { AskCouncilPanel, CouncilAgentsPanel, type FullCouncilStep } from './AskCouncilPanel';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 import { MissingSources, WatchlistTable } from './WatchlistTable';
 import { useT } from '../i18n/useLang';
@@ -215,10 +215,8 @@ export const TodayPage: React.FC<{
       /* private window */
     }
   };
-  // The Agents side panel on the left. Until you open or close it yourself, it opens on a wide
-  // screen once a question is asked (before that it would only say "no question yet"); on a phone it
-  // stays closed. Your own choice is remembered.
-  const hasQuestion = useCouncilHasQuestion();
+  // The Agents side panel on the left. It stays closed until you open it, so the chat keeps the
+  // width (the answer names its agents and sources); your own choice is remembered.
   const [agentsPref, setAgentsPref] = useState<'open' | 'closed' | null>(() => {
     try {
       const v = localStorage.getItem(AGENTS_KEY);
@@ -228,8 +226,7 @@ export const TodayPage: React.FC<{
     }
     return null;
   });
-  const wide = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 1024px)').matches === true;
-  const agentsOpen = agentsPref ? agentsPref === 'open' : wide && hasQuestion;
+  const agentsOpen = agentsPref === 'open';
   const setAgentsOpen = (open: boolean) => {
     setAgentsPref(open ? 'open' : 'closed');
     try {

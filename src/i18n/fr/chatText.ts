@@ -133,6 +133,7 @@ export const CHAT_TEXT_FR: Record<string, string> = {
   "AI pick, checked against the agent list": "Choix de l'IA, vérifié par rapport à la liste des agents",
   "Picks agents from words in your question": "Choisit les agents d'après les mots de votre question",
   "stated rules, not AI": "règles explicites, pas d'IA",
+  "No specific topic in the question, so every agent answers": "Aucun sujet précis dans la question : tous les agents répondent",
   "2. Desk agents, on the app’s figures": "2. Agents de bureau, sur les chiffres de l'application",
   "Asked: you mentioned {list}": "Sollicité : vous avez mentionné {list}",
   "AI pick: {detail}": "Choix de l'IA : {detail}",
