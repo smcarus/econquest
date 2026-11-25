@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Globe, X } from 'lucide-react';
-import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
+import { pickableCountries } from '../utils/countryNames';
 import { SOVEREIGN_CATALOG } from '../data/presetsAndBaselines';
 import type { AddedCountry } from '../types/council';
 import { FIELD_CLASS } from './SignInPage';
-import { useT } from '../i18n/useLang';
+import { useLang, useT } from '../i18n/useLang';
 import { MENU } from '../i18n/messages/menu';
 
 /**
@@ -16,7 +16,8 @@ export function AddCountryDialog({ onClose, onAdd }: { onClose: () => void; onAd
   const t = useT(MENU);
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const [query, setQuery] = useState('');
-  const [picked, setPicked] = useState<{ iso3: string; name: string } | null>(null);
+  const [picked, setPicked] = useState<{ iso3: string; name: string; englishName: string } | null>(null);
+  const lang = useLang();
   const [currencyCode, setCurrencyCode] = useState('');
   const [region, setRegion] = useState('');
 
@@ -28,22 +29,19 @@ export function AddCountryDialog({ onClose, onAdd }: { onClose: () => void; onAd
   }, [onClose]);
 
   const known = useMemo(() => new Set(SOVEREIGN_CATALOG.map((c) => c.iso3)), []);
+  // Every country, not only those on the world map (src/utils/countryNames.ts).
+  const all = useMemo(() => pickableCountries(lang), [lang]);
   const countries = useMemo(() => {
-    const byIso = new Map<string, string>();
-    for (const c of Object.values(ISO_NUMERIC_TO_ISO3)) byIso.set(c.iso3, c.name);
     const q = query.trim().toLowerCase();
-    return [...byIso.entries()]
-      .map(([iso3, name]) => ({ iso3, name }))
-      .filter((c) => !q || c.name.toLowerCase().includes(q) || c.iso3.toLowerCase() === q)
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [query]);
+    return all.filter((c) => !q || c.name.toLowerCase().includes(q) || c.englishName.toLowerCase().includes(q) || c.iso3.toLowerCase() === q);
+  }, [query, all]);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!picked) return;
     onAdd({
       iso3: picked.iso3,
-      countryName: picked.name,
+      countryName: picked.englishName,
       currencyCode: currencyCode.trim().toUpperCase().slice(0, 3),
       region: region.trim(),
     });
