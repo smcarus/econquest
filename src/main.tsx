@@ -2,6 +2,7 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import { WatchlistWindow } from './components/WatchlistWindow';
 import { PanelBoundary } from './components/PanelBoundary';
+import './assets/fonts.css';
 import './index.css';
 import { forgetOtherAccount, mirrorSavesToDisk, startWorkspaceSync } from './utils/workspaceSync';
 import { fetchAuthStatus, needsSignIn, watchForSignedOut } from './utils/authClient';

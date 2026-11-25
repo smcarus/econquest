@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- The three screen fonts (Public Sans, Plus Jakarta Sans, JetBrains Mono) now come with the app
+  instead of loading from Google Fonts, so opening a page asks no outside server for anything and
+  the fonts also show offline. About 380 KB of woff2 files, fetched only for the characters a page
+  shows (SIL Open Font License 1.1, credited in NOTICE).
 - Docs brought up to date with everything since 17 November: the README and walk-through guide in all
   four languages (Policy review page, start-here card, short answer, menu groups, release days,
   official forecasts side by side, track record, recovering on its own, standard app features),

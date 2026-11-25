@@ -290,7 +290,7 @@ export const MENU_ES: Partial<Record<Keys, string>> = {
   ab_updOff: 'La comprobación de nuevas versiones está desactivada (UPDATE_CHECK=off).',
   ab_updAbout: 'La app pregunta a GitHub el número de la versión más reciente como máximo una vez al día y no envía nada sobre usted.',
   ab_privacy: 'Privacidad',
-  ab_privacyNote: 'La app no envía nada sobre usted al proyecto: ni seguimiento, ni recuentos de uso, ni informes de fallos. Lo que usted guarda se queda en la computadora donde corre la app. Las cifras se piden a fuentes públicas; las preguntas van a un proveedor de IA solo si usted elige uno en línea, como Google Gemini, y su navegador carga las fuentes tipográficas desde Google Fonts. La lista completa está en docs/PRIVACY.md (en inglés).',
+  ab_privacyNote: 'La app no envía nada sobre usted al proyecto: ni seguimiento, ni recuentos de uso, ni informes de fallos. Lo que usted guarda se queda en la computadora donde corre la app. Las cifras se piden a fuentes públicas; las preguntas van a un proveedor de IA solo si usted elige uno en línea, como Google Gemini. Las fuentes tipográficas vienen con la app. La lista completa está en docs/PRIVACY.md (en inglés).',
   ab_credits: 'Créditos',
   ab_creditsNote: 'Tres fuentes piden un crédito visible allí donde aparecen sus cifras. La app muestra cada uno junto a esas cifras, y aquí:',
   ab_licences: 'Licencias de datos',
