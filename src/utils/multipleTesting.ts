@@ -36,7 +36,7 @@ export interface HolmReading {
   p: number;
   adjusted: number;
   alpha: number;
-  /** Adjusted p at or below the test's own pass mark. */
+  /** A passed test whose adjusted p is at or below its own pass mark. A failed test never holds. */
   holds: boolean;
   /** Number of tests in the family. */
   tested: number;
@@ -63,7 +63,7 @@ export function holmReadings(tests: TestOnRecord[]): Map<string, HolmReading> {
   const out = new Map<string, HolmReading>();
   for (const t of tests) {
     const a = adj.get(t.key) ?? 1;
-    out.set(t.key, { key: t.key, p: t.p, adjusted: r3(a), alpha: t.alpha, holds: a <= t.alpha, tested: tests.length });
+    out.set(t.key, { key: t.key, p: t.p, adjusted: r3(a), alpha: t.alpha, holds: t.status === 'passed' && a <= t.alpha, tested: tests.length });
   }
   return out;
 }

@@ -53,6 +53,14 @@ describe('tests on record', () => {
     assert.match(holmSentence(h.get('cycle_clock v1')), /across 4 tests on record.*holds at its pass mark of 0.05/);
   });
 
+  it('a failed test never holds, even with a small p (it missed another part of its pass mark)', () => {
+    const t = testsOnRecord({}, () => undefined, [{ id: 'gdp_nowcast_forest', version: 1, p: 0.0001, alpha: 0.1, status: 'failed' }]);
+    const h = holmReadings(t).get('forecast gdp_nowcast_forest v1')!;
+    assert.ok(h.adjusted <= 0.1);
+    assert.equal(h.holds, false);
+    assert.match(holmSentence(h), /does not hold/);
+  });
+
   it('does not count the same version twice', () => {
     assert.equal(testsOnRecord({ a: backtests['taylor_gap v2'], b: backtests['taylor_gap v2'] }, () => undefined).length, 1);
   });
