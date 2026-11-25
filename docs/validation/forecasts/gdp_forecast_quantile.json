@@ -1,0 +1,36 @@
+{
+  "id": "gdp_forecast_quantile",
+  "version": 1,
+  "registeredOn": "2026-11-22",
+  "registeredBy": "Sam (owner); registered on his instruction to close the predictive econometrics gaps, before any run of this test",
+  "hypothesis": "Quantile regressions of quarterly real GDP growth one and four quarters ahead on this quarter's and last quarter's growth (5th, 25th, 50th, 75th and 95th percentiles, fitted at each origin on the pairs known by then, sorted if they cross) give a lower mean pinball loss than the same percentiles of the app's AR forecast with its normal band.",
+  "target": "gdp_quantile_q",
+  "params": {
+    "maxLag": 4,
+    "minTrain": 40,
+    "resamples": 4000,
+    "seed": 20261122
+  },
+  "benchmark": "ar_band",
+  "horizons": [
+    1,
+    4
+  ],
+  "sample": {
+    "from": "2008-Q1"
+  },
+  "passMark": {
+    "maxLossRatio": 0.95,
+    "maxPValue": 0.1,
+    "minSeriesShare": 0.5,
+    "minCasesPerSeries": 30,
+    "minCases": 300,
+    "minYears": 10
+  },
+  "knownLimits": [
+    "The benchmark is the band the app draws today (AR, lag 0-4 by BIC, normal errors), so a pass means the lopsided percentile band describes the risks better than the drawn band.",
+    "Two predictors only (growth now and a quarter ago); growth-at-risk studies add financial conditions, which the free data do not give for every country.",
+    "Values are today's vintage (pseudo real-time).",
+    "Pooled over every area the OECD quarterly accounts cover (countries only)."
+  ]
+}

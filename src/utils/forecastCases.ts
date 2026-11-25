@@ -6,6 +6,11 @@ import { addDays, periodEnd, type DatedPoint } from './forecastModels';
 import { arForecastCases, type ForecastCase, type ForecastSpec, type PlainSeries } from './forecastEval';
 import { unbrokenRun } from './forecasts';
 import { gdpNowcast } from './nowcast';
+import { penalizedNowcastCases, predictorNowcastCases, type RowModel } from './penalizedNowcast';
+import { fitForest, predictForest } from './randomForest';
+import { armaForecastCases } from './arimaEval';
+import { dfmNowcastCases } from './dynamicFactor';
+import { gapModelCases } from './gapModelEstimate';
 
 export interface CountryData {
   iso3: string;
@@ -35,7 +40,7 @@ export function forecastTargetCases(spec: ForecastSpec, data: CountryData[]): { 
   const get = pick[spec.target];
   if (!get) return { cases: [], series: [] };
   const all = data.map((c) => plain(c.iso3, get(c))).filter((s): s is PlainSeries => Boolean(s));
-  const cases = arForecastCases(all, spec);
+  const cases = spec.params.arma === 1 ? armaForecastCases(all, spec) : arForecastCases(all, spec);
   return { cases, series: [...new Set(cases.map((c) => c.where))].sort() };
 }
 
@@ -113,6 +118,24 @@ export function gdpNowcastOpen(spec: ForecastSpec, data: CountryData[], asOf: st
   return out;
 }
 
+/** The random forest nowcast's row model, with the spec's registered settings. */
+export function forestRowModel(spec: ForecastSpec): (X: number[][], y: number[]) => RowModel | null {
+  const fp = { trees: spec.params.trees ?? 300, maxDepth: spec.params.maxDepth ?? 6, minLeaf: spec.params.minLeaf ?? 5, seed: spec.params.seed ?? 1 };
+  return (X, y) => {
+    const f = fitForest(X, y, fp);
+    return 'error' in f ? null : { predict: (x) => predictForest(f, x), ...(f.oobRmse !== null ? { sd: f.oobRmse } : {}) };
+  };
+}
+
 export function casesFor(spec: ForecastSpec, data: CountryData[]): { cases: ForecastCase[]; series: string[] } {
+  if (spec.target === 'gdp_penalized_nowcast_q') return penalizedNowcastCases(spec, data);
+  if (spec.target === 'gdp_dfm_nowcast_q') return dfmNowcastCases(spec, data);
+  if (spec.target === 'cpi_gap_model_q') return gapModelCases(spec, data);
+  if (spec.target === 'gdp_forest_nowcast_q') return predictorNowcastCases(spec, data, forestRowModel(spec));
   return spec.target === 'gdp_nowcast_q' ? gdpNowcastCases(spec, data) : forecastTargetCases(spec, data);
+}
+
+/** The quarterly GDP growth series of every country, as plain unbroken runs (for the quantile test). */
+export function gdpSeries(data: CountryData[]): PlainSeries[] {
+  return data.map((c) => plain(c.iso3, c.gdpQoq)).filter((s): s is PlainSeries => Boolean(s));
 }

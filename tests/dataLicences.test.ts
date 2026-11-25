@@ -29,7 +29,7 @@ test('the sources the app reads each have a row', () => {
 
 test('open questions list the restricted and unconfirmed rows', () => {
   const open = openLicenceQuestions().map((r) => r.id);
-  assert.ok(open.includes('kalshi') && open.includes('oecd') && open.includes('erapi'));
+  assert.ok(open.includes('kalshi') && open.includes('philly_spf') && !open.includes('oecd') && open.includes('erapi'));
   assert.ok(!open.includes('gdelt'));
 });
 

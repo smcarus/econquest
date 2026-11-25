@@ -61,4 +61,13 @@ export const GAP_MODEL_PT: Messages<typeof GAP_MODEL> = {
   s_p0: "Inflação inicial, % ao ano",
   s_i0: "Taxa básica inicial, %",
   s_q0: "Hiato cambial inicial, %",
+  est_title: "Estimado com dados (testado)",
+  est_intro: "Uma versão à parte com três equações, sem câmbio, ajustada com os trimestres de {country}: hiato do produto, inflação e taxa básica. A projeção só aparece enquanto o teste registrado com antecedência estiver aprovado (inflação em um e dois anos contra a inflação atual mantida).",
+  est_passed: "Teste aprovado em {date}. Ajustado com {n} trimestres até {through}.",
+  est_notPassed: "Não exibido: o teste não foi aprovado (status {status}). {verdict}",
+  est_notRun: "Não exibido: o teste ainda não rodou. Ele roda com os testes semanais dos modelos.",
+  est_noCountry: "Não exibido para {country}: os dados do teste não têm trimestres suficientes de PIB, inflação e taxa básica.",
+  est_oddSigns: "Sinais contrários à teoria (informados, não alterados): {list}",
+  est_coef: "Coeficientes ajustados",
+  est_path: "Projeção sem choques",
 };

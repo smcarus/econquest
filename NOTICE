@@ -17,3 +17,12 @@ Bundled datasets
 datasets/ucdp/ contains unchanged UCDP datasets (release 26.1), licensed under
 CC BY 4.0 by the Uppsala Conflict Data Program. Citations are in
 datasets/ucdp/README.md.
+
+Bundled fonts
+-------------
+The screen fonts Public Sans, Plus Jakarta Sans and JetBrains Mono are bundled
+from the @fontsource packages (src/assets/fonts.css) and are licensed under the
+SIL Open Font License, Version 1.1. Public Sans: Copyright the Public Sans
+Project Authors (USWDS). Plus Jakarta Sans: Copyright the Plus Jakarta Sans
+Project Authors (Tokotype). JetBrains Mono: Copyright the JetBrains Mono Project
+Authors. Full licence texts: node_modules/@fontsource/<font>/LICENSE.

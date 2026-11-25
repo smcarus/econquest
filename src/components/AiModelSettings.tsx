@@ -51,6 +51,9 @@ export const AiModelSettings: React.FC<{
   const [tryReply, setTryReply] = useState<TryReply | null>(null);
   const [refereeReply, setRefereeReply] = useState<TryReply | null>(null);
   const [trying, setTrying] = useState(false);
+  // Gemini is the stored default, but with no Gemini key nothing works yet: show no choice made until one is picked here.
+  const [picked, setPicked] = useState(false);
+  const noneYet = !picked && config.providerMode === 'gemini' && geminiKeySet === false;
 
   const update = (patch: Partial<AIRuntimeConfig>) => {
     const next = { ...config, ...patch };
@@ -121,14 +124,17 @@ export const AiModelSettings: React.FC<{
         </p>
         <div className="mt-2 grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label={t('ai_aria')}>
           {PROVIDERS.map((p) => {
-            const on = config.providerMode === p;
+            const on = !noneYet && config.providerMode === p;
             return (
               <button
                 key={p}
                 type="button"
                 role="radio"
                 aria-checked={on}
-                onClick={() => update({ providerMode: p })}
+                onClick={() => {
+                  setPicked(true);
+                  update({ providerMode: p });
+                }}
                 className={`text-left border p-2.5 ${on ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/40 dark:border-blue-500' : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'}`}
               >
                 <div className="text-sm font-medium text-slate-900 dark:text-white">{p === 'gemini' ? 'Google Gemini' : t(`ai_p_${p}`)}</div>
@@ -137,6 +143,11 @@ export const AiModelSettings: React.FC<{
             );
           })}
         </div>
+        {noneYet && (
+          <p className="mt-2 text-xs text-slate-600 dark:text-slate-300" data-settings-ai-none="true">
+            {t('ai_noneYet')}
+          </p>
+        )}
         {config.providerMode === 'openai_compatible' && (
           <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">{t('ai_openaiNote')}</p>
         )}
@@ -246,11 +257,11 @@ export const AiModelSettings: React.FC<{
         </div>
       )}
 
-      {(config.providerMode === 'gemini' || config.providerMode === 'hybrid') && (
+      {!noneYet && (config.providerMode === 'gemini' || config.providerMode === 'hybrid') && (
         <div>
-          <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('ai_geminiKey')}</h4>
+          {/* The key field below carries its own heading ("Google Gemini API key"). */}
           {geminiKeySet === false && config.providerMode === 'gemini' && (
-            <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">{t('ai_noGemini')}</p>
+            <p className="mb-1 text-xs text-amber-800 dark:text-amber-300">{t('ai_noGemini')}</p>
           )}
           {geminiKey}
         </div>

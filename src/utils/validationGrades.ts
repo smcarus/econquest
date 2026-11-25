@@ -2,7 +2,7 @@
  * Validation badges from the server's /api/validation reply, shared by the screens
  * (src/components/useValidation.ts) and the server (events and the console API). Pure.
  */
-import type { ForwardSummary } from './forwardRecord';
+import type { ForwardMonthRow, ForwardSummary } from './forwardRecord';
 import type { BacktestResult } from './backtest';
 import type { ValidationStatus } from '../data/modelRegister';
 import { forecastRegisterStatus, forecastVerdicts, type ForecastVerdict } from './forecastRegister';
@@ -38,6 +38,8 @@ export interface ValidationReply {
   forecastTests?: Array<{ id: string; version: number; p: number; alpha: number; status: 'passed' | 'failed' | 'too_few_cases' }>;
   /** Rule 7: calls made after a test passed, by `${id} v${version}` (src/utils/forwardRecord.ts). */
   forward?: Record<string, ForwardSummary>;
+  /** CG5: the forward record month by month, newest first. */
+  forwardMonthly?: ForwardMonthRow[];
   forwardCheck?: { chainOk: boolean; badLines: number; lines: number; file: string };
   /**
    * The project's published track record (docs/validation/recorded-verdicts.json, the same rows as

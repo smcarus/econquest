@@ -144,3 +144,41 @@ export function forwardSentence(s: ForwardSummary | undefined): string {
   if (s.meanValue !== null) return `${head}, ${s.scored} scored: average net ${s.meanValue}% a period, positive in ${s.hits} (${s.hitRatePct}% against ${s.baseRatePct}% of months in the test), ${s.pending} still open${s.small ? '; too few to lean on' : ''}.`;
   return `${head}, ${s.scored} scored, ${s.hits} followed (${s.hitRatePct}% against a base rate of ${s.baseRatePct}%), ${s.pending} still open${s.small ? '; too few to lean on' : ''}.`;
 }
+
+/** One month of the forward record for one test: calls written that month and calls scored that month. */
+export interface ForwardMonthRow {
+  /** YYYY-MM, by the date each line was written. */
+  month: string;
+  test: string;
+  called: number;
+  scored: number;
+  hits: number;
+  /** Forecast tests: average gain over the benchmark of the calls scored that month, points. */
+  meanGain: number | null;
+}
+
+/**
+ * The monthly scorecard (CG5): for each month and test, how many calls were written down before
+ * their figure existed and how many were scored, with how many beat the benchmark. Newest month
+ * first. A month with nothing written or scored is left out.
+ */
+export function forwardByMonth(lines: ForwardBody[]): ForwardMonthRow[] {
+  const rows = new Map<string, ForwardMonthRow & { gains: number[] }>();
+  const row = (month: string, test: string) => {
+    const k = `${month}|${test}`;
+    if (!rows.has(k)) rows.set(k, { month, test, called: 0, scored: 0, hits: 0, meanGain: null, gains: [] });
+    return rows.get(k)!;
+  };
+  for (const l of lines) {
+    const r = row(l.at.slice(0, 7), l.test);
+    if (l.kind === 'call') r.called++;
+    else {
+      r.scored++;
+      if (l.hit) r.hits++;
+      if (l.value !== undefined) r.gains.push(l.value);
+    }
+  }
+  return [...rows.values()]
+    .map(({ gains, ...r }) => ({ ...r, meanGain: gains.length ? Number((gains.reduce((a, b) => a + b, 0) / gains.length).toFixed(3)) : null }))
+    .sort((a, b) => (a.month === b.month ? a.test.localeCompare(b.test) : a.month < b.month ? 1 : -1));
+}

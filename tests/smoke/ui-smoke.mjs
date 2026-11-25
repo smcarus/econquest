@@ -66,6 +66,8 @@ try {
     page.on('pageerror', (e) => failures.push(`${where}: page error: ${e.message}`));
     page.on('console', (m) => {
       if (m.type() === 'error' && m.text().startsWith('[panel-error]')) failures.push(`${where}: ${m.text().split('\n')[0]}`);
+      // The built app sends a strict Content-Security-Policy (src/utils/requestLimits.ts PRODUCTION_CSP).
+      if (m.type() === 'error' && /Content Security Policy/i.test(m.text())) failures.push(`${where}: blocked by the page's security policy: ${m.text().split('\n')[0]}`);
     });
 
     const settle = async (label) => {
@@ -93,13 +95,12 @@ try {
       ['Tools'],
     ];
     for (const [navName, scope] of stops) {
-      // Tools sits inside the Settings window (Menu > Tools), unless the full desk library is on.
+      // Tools is its own page (Menu > Tools), unless the full desk library is on.
       if (navName === 'Tools' && !allTools) {
         await page.getByRole('button', { name: 'Menu', exact: true }).click();
         await page.getByRole('menuitem', { name: /^Tools/ }).first().click();
-        await page.waitForSelector('[data-settings-tools] [data-ready-tools]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Menu > Tools did not open Tools in Settings`));
-        await settle('Settings > Tools');
-        await page.keyboard.press('Escape');
+        await page.waitForSelector('main [data-ready-tools]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Menu > Tools did not open the Tools page`));
+        await settle('Tools');
         // Menu > Settings > Backup says what is saved here.
         await page.getByRole('button', { name: 'Menu', exact: true }).click();
         await page.getByRole('menuitem', { name: /^Settings/ }).first().click();
@@ -131,11 +132,11 @@ try {
         await settle('About & data licences');
         if ((await page.locator('[data-about-credits] [data-source-credits]').count()) !== 4) failures.push(`${mode}: About does not list the four required source credits (ExchangeRate-API, GDELT, FRED, ACLED)`);
         await page.keyboard.press('Escape');
-        // Menu > Worked examples: four case studies; one opens with its figures (live or Missing) and a memo draft.
+        // Menu > Worked examples: five case studies; one opens with its figures (live or Missing) and a memo draft.
         await page.getByRole('button', { name: 'Menu', exact: true }).click();
         await page.getByRole('menuitem', { name: /^Worked examples/ }).first().click();
         await page.waitForSelector('[data-worked-examples]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Menu > Worked examples did not open`));
-        if ((await page.locator('[data-worked-open]').count()) !== 4) failures.push(`${mode}: Worked examples does not list four case studies`);
+        if ((await page.locator('[data-worked-open]').count()) !== 5) failures.push(`${mode}: Worked examples does not list five case studies`);
         await page.locator('[data-worked-open="debt"]').click();
         await page.waitForSelector('[data-worked-memo]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: the debt worked example shows no memo draft`));
         if ((await page.locator('[data-worked-figure]').count()) !== 7) failures.push(`${mode}: the debt worked example does not list its seven figures`);

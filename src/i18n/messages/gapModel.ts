@@ -60,4 +60,13 @@ export const GAP_MODEL = defineMessages('gapModel', {
   s_p0: 'Starting inflation, % a year',
   s_i0: 'Starting policy rate, %',
   s_q0: 'Starting exchange-rate gap, %',
+  est_title: "Estimated from data (tested)",
+  est_intro: "A separate three-equation version with no exchange rate, fitted on {country}'s own quarters of output gap, inflation and policy rate. Its projection is shown only while its pre-registered test passes (inflation one and two years ahead against today's inflation carried on).",
+  est_passed: "Test passed on {date}. Fitted on {n} quarters to {through}.",
+  est_notPassed: "Not shown: the test has not passed (status {status}). {verdict}",
+  est_notRun: "Not shown: the test has not run yet. It runs with the weekly model tests.",
+  est_noCountry: "Not shown for {country}: the test data do not hold enough quarters of GDP, inflation and policy rate.",
+  est_oddSigns: "Signs opposite to theory (reported, not changed): {list}",
+  est_coef: "Fitted coefficients",
+  est_path: "Projection with no shocks",
 });

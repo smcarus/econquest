@@ -457,6 +457,88 @@ export function adf(values: number[], maxLag?: number): AdfResult | Failed {
 }
 
 // ---------------------------------------------------------------------------------------------
+// KPSS (Kwiatkowski, Phillips, Schmidt and Shin 1992): the reverse question to ADF. Its starting
+// assumption is that the series IS stationary around its mean; a large statistic rejects that.
+// Read together: ADF rejects and KPSS does not -> stationary; ADF does not reject and KPSS rejects
+// -> a unit root (wanders); both reject or neither -> the evidence is mixed.
+// Long-run variance by Newey-West (Bartlett) with the lag picked by Hobijn, Franses and Ooms
+// (1998), as statsmodels kpss(regression='c', nlags='auto') does. Critical values from KPSS
+// (1992) Table 1; the p-value is read from that table and capped at 0.01 and 0.10.
+
+const KPSS_CRIT: [number, number][] = [
+  [0.347, 0.1],
+  [0.463, 0.05],
+  [0.574, 0.025],
+  [0.739, 0.01],
+];
+
+export interface KpssResult {
+  stat: number;
+  /** Read from the KPSS table: 0.10 means "0.10 or more", 0.01 "0.01 or less". */
+  p: number;
+  lags: number;
+  n: number;
+  critical: { '10%': number; '5%': number; '1%': number };
+  /** True when the 5% test does NOT reject stationarity. */
+  stationary: boolean;
+}
+
+export function kpss(values: number[]): KpssResult | Failed {
+  const n = values.length;
+  if (n < 20) return { error: `Only ${n} points; the KPSS test needs at least 20.` };
+  const m = mean(values);
+  const e = values.map((v) => v - m);
+  const ss = e.reduce((a, b) => a + b * b, 0);
+  if (ss <= 1e-12) return { error: 'The series does not vary, so the KPSS test has nothing to measure.' };
+  const dot = (i: number) => {
+    let s = 0;
+    for (let t = i; t < n; t++) s += e[t] * e[t - i];
+    return s;
+  };
+  // Hobijn et al. (1998) automatic lag.
+  const covLags = Math.floor(n ** (2 / 9));
+  let s0 = ss / n;
+  let s1 = 0;
+  for (let i = 1; i <= covLags; i++) {
+    const r = dot(i) / (n / 2);
+    s0 += r;
+    s1 += i * r;
+  }
+  const sHat = s1 / s0;
+  const lags = Math.min(Math.floor(1.1447 * Math.cbrt(sHat * sHat) * Math.cbrt(n)), n - 1);
+  let lrv = ss;
+  for (let i = 1; i <= lags; i++) lrv += 2 * dot(i) * (1 - i / (lags + 1));
+  lrv /= n;
+  let cum = 0;
+  let eta = 0;
+  for (const x of e) {
+    cum += x;
+    eta += cum * cum;
+  }
+  eta /= n * n;
+  const stat = eta / lrv;
+  let p: number;
+  if (stat <= KPSS_CRIT[0][0]) p = 0.1;
+  else if (stat >= KPSS_CRIT[3][0]) p = 0.01;
+  else {
+    let i = 0;
+    while (stat > KPSS_CRIT[i + 1][0]) i++;
+    const [x0, p0] = KPSS_CRIT[i];
+    const [x1, p1] = KPSS_CRIT[i + 1];
+    p = p0 + ((stat - x0) / (x1 - x0)) * (p1 - p0);
+  }
+  return { stat, p, lags, n, critical: { '10%': 0.347, '5%': 0.463, '1%': 0.739 }, stationary: stat < 0.463 };
+}
+
+/** One plain sentence reading ADF and KPSS together. */
+export function stationarityVerdict(adfStationary: boolean, kpssStationary: boolean): string {
+  if (adfStationary && kpssStationary) return 'Both tests agree: the series looks stationary.';
+  if (!adfStationary && !kpssStationary) return 'Both tests agree: the series looks like it wanders (a unit root), so use its change rather than its level.';
+  if (adfStationary) return 'The tests disagree (ADF says stationary, KPSS says not): the evidence is mixed, often a sign of a break or a slow-moving trend.';
+  return 'Neither test is decisive (ADF cannot reject a unit root, KPSS cannot reject stationarity): the sample may be too short to tell.';
+}
+
+// ---------------------------------------------------------------------------------------------
 // Granger causality (does x's past help predict y beyond y's own past?)
 
 export interface GrangerResult {

@@ -10,7 +10,23 @@
     "cpi_forecast.v2.json": "f4a9b65fc5b436bc899849512f52c23ebede6cda135a6490ada06090b79c38e8",
     "cpi_nowcast.v2.json": "d7adebf498bbae7f505c09f74815fea562eac0db0043e0349d5b7847792e13b4",
     "debt_forecast.v2.json": "d9df83a7b3f9aa72a653405b2fe58e3a85633fe52ca0e45c04c7f9b26549aba2",
-    "debt_fan_coverage.json": "bb5442c806fbe6037fe4728a38e4b028b053ec3387cf773b45ff339c7756c9b7"
+    "debt_fan_coverage.json": "bb5442c806fbe6037fe4728a38e4b028b053ec3387cf773b45ff339c7756c9b7",
+    "gdp_forecast_realtime.json": "9e6f29e5749764cda9ee2b25a1d4fdbeb036d3227b24e761cf5d04189c22423d",
+    "cpi_forecast_realtime.json": "17aaabd4ee7bae18f5c47926e245ca8d78ca0c0596fa4a2d6ad219dc3f75b7bb",
+    "gdp_weo_realtime.json": "8f2d7fab3997c7284c97b79e210ea4fe37572dff7d8e66662dddf2aad19ecca2",
+    "cpi_weo_realtime.json": "e2f3ade77454c751334792dcaff07d16d1027573919f85e996679f81ff14ce27",
+    "fx_vol_garch.json": "b599b8d3f71a49d6fed2ca2f73ee5a3ef07d7a7ec3f1b0270b9f6cfbdc81fca7",
+    "gdp_nowcast_ridge.json": "c3398a1e0019cc84d02175ed24d28921e3223db8d0289c4cfe071ad289305183",
+    "gdp_nowcast_lasso.json": "e7c221da7584836c27f5b84b906d40f3ba566df64a7ecac2a17091a06512000f",
+    "gdp_forecast_arma.json": "0d63b855270c69727e5d86b5331c2a5dc9083d099e41a40b7688d49151012f1c",
+    "cpi_forecast_arma.json": "6ddf34e3bd4dcd4b51002fe221fc66eec052c0af86c1ee12b81a719a18b01248",
+    "gdp_nowcast_dfm.json": "5611868ccf3f60fc09f6c9df989de612a156ecc36e88e7cb6a24397eaff5e1b3",
+    "gdp_nowcast_forest.json": "9b62ca940e5502e6ee8d7818cc825aeca4d5c1e14375f217038dd2a2b8282010",
+    "gdp_forecast_quantile.json": "07117613e25947c2a342343302f1e3204888878b289fbbb796d93456e84579a9",
+    "cpi_weo_realtime.v2.json": "df901953d907b3b3005093def27f7230c45569ddd1db0659f31be3089a4ac17a",
+    "cpi_gap_model.json": "2d918bc94d4697c153b63fdaf345cd87905746e1b88d39292635b4d9decc0d13",
+    "gdp_forecast_realtime_oecd.json": "40e66b081e05bae2e2ada29e6035fad9e3c77fe9f0ac8552ef85fa323044ea4c",
+    "cpi_forecast_realtime_oecd.json": "92efe7e680dd9ecb5105189b0a9e9f81ce4599c2c088cdcdc5125784b4c6093a"
   },
   "amended": {
     "cpi_forecast.json": {

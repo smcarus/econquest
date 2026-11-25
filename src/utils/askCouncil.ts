@@ -253,6 +253,18 @@ export function offWatchlistCodes(question: string, items: LiveWatchlistItem[]):
   return out.filter((o) => !all.some((m) => m !== o.name && m.toLowerCase().includes(o.name.toLowerCase())));
 }
 
+/**
+ * Countries the question names that are off the watchlist but already covered by the app (the
+ * built-in list, the lower-income countries, any the user added). Council chat pulls their figures
+ * before it asks, so "How is Kenya doing?" answers without a trip to the watchlist.
+ */
+export function coveredOffWatchlist(question: string, items: LiveWatchlistItem[], coveredIso3: Iterable<string>): string[] {
+  const covered = new Set(coveredIso3);
+  return offWatchlistCodes(question, items)
+    .filter((o) => covered.has(o.iso3))
+    .map((o) => o.iso3);
+}
+
 /** Countries named in the question that are not on the watchlist, so the agents hold no figures for them. */
 export function offWatchlistCountries(question: string, items: LiveWatchlistItem[]): string[] {
   return offWatchlistCodes(question, items).map((o) => o.name);
@@ -531,7 +543,7 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
     const figures: AgentFigure[] = [
       { label: 'CPI inflation', value: p1(it.cpiInflationPct), source: c.src, tag: c.q },
       ...(t ? [{ label: 'Inflation target', value: `${p1(t.pct)}${t.bandPts ? ` ± ${t.bandPts}` : ''}`, source: targetSource(t), tag: 'official' as const }] : []),
-      { label: 'Policy rate', value: p2(it.policyRatePct), source: pr.src, tag: it.policyRateSource === 'bis' ? 'official' : pr.q },
+      { label: 'Policy rate', value: p2(it.policyRatePct), source: pr.src, tag: it.policyRateSource === 'bis' || it.policyRateSource === 'imf' ? 'official' : pr.q },
       ...(it.policyRateSource === 'bis' && it.policyRateChange12mPts !== undefined
         ? [{ label: 'Policy rate change over 12 months', value: `${sgn(it.policyRateChange12mPts, 2)} pts`, source: 'BIS, month-end figures', tag: 'official' as const }]
         : []),

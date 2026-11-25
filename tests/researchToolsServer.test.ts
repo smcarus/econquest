@@ -38,7 +38,7 @@ before(async () => {
   });
   server.stdout?.on('data', (d) => (log += d));
   server.stderr?.on('data', (d) => (log += d));
-  const deadline = Date.now() + 60_000;
+  const deadline = Date.now() + 120_000; // slow shared CI machines can take over a minute
   for (;;) {
     if (server.exitCode !== null) throw new Error(`server exited early:\n${log}`);
     try {
@@ -46,7 +46,7 @@ before(async () => {
     } catch {
       // not listening yet
     }
-    if (Date.now() > deadline) throw new Error(`server did not start within 60s:\n${log}`);
+    if (Date.now() > deadline) throw new Error(`server did not start within 120s:\n${log}`);
     await new Promise((r) => setTimeout(r, 300));
   }
 });

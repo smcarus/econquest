@@ -183,4 +183,18 @@ export const KEY_FIELDS_ES: Record<string, string> = {
   "the result had no cite block with a label, so none of its figures are used": "el resultado no traía un bloque de cita con etiqueta, así que no se usa ninguna de sus cifras",
   "Set the server address and the token first.": "Indique primero la dirección del servidor y el token.",
   "{n} tools this token can see.": "{n} herramientas que ve este token.",
+  // Your broker prices (gap CG9)
+  "Your broker prices": "Precios de su bróker",
+  "Live prices for contracts you list, from your own Interactive Brokers account through the IBKR Client Portal Gateway you run and sign in to on this computer. Shown on screen only: never saved, put in downloads, backups or shared copies, or sent to the AI model.": "Precios en vivo de los contratos que usted indique, de su propia cuenta de Interactive Brokers, a través del IBKR Client Portal Gateway que usted ejecuta e inicia sesión en este equipo. Solo se muestran en pantalla: nunca se guardan, ni se incluyen en descargas, copias de seguridad o copias compartidas, ni se envían al modelo de IA.",
+  "Off: no broker prices are shown.": "Desactivado: no se muestran precios del bróker.",
+  "Download the Client Portal Gateway from IBKR, start it on this computer, open its address in your browser and sign in. Then pick Interactive Brokers here and list your contracts below.": "Descargue el Client Portal Gateway de IBKR, inícielo en este equipo, abra su dirección en el navegador e inicie sesión. Luego elija Interactive Brokers aquí e indique sus contratos abajo.",
+  "Interactive Brokers (Client Portal Gateway)": "Interactive Brokers (gateway Client Portal)",
+  "IBKR gateway address": "Dirección del gateway de IBKR",
+  "Where the Client Portal Gateway runs on this computer. The app asks only this address and never sees your IBKR password.": "Dónde se ejecuta el Client Portal Gateway en este equipo. La aplicación solo consulta esta dirección y nunca ve su contraseña de IBKR.",
+  "Empty: https://localhost:5000, the gateway default.": "Vacío: https://localhost:5000, el valor por defecto del gateway.",
+  "Under Docker use https://host.docker.internal:5000 so the app can reach the gateway on your computer.": "Con Docker use https://host.docker.internal:5000 para que la aplicación llegue al gateway de su equipo.",
+  "IBKR contracts": "Contratos de IBKR",
+  "The contracts to price, as IBKR contract id = your label, separated by commas. The app ships no contract ids; your market data subscriptions decide what you see.": "Los contratos a cotizar, como id de contrato de IBKR = su etiqueta, separados por comas. La aplicación no incluye ids de contrato; sus suscripciones de datos de mercado deciden lo que ve.",
+  "Needed when your broker prices are switched on.": "Necesario cuando los precios de su bróker están activados.",
+  "Find each contract id (conid) in Trader Workstation under Contract Description, or in the Client Portal contract search, then list them with your own label.": "Busque cada id de contrato (conid) en Trader Workstation, en Contract Description, o en la búsqueda de contratos del Client Portal, y luego indíquelos con su propia etiqueta.",
 };

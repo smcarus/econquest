@@ -5,6 +5,420 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- The 59 countries on the IMF and World Bank low-income debt list that were not built in (Malawi,
+  Sierra Leone, Haiti, Rwanda, Burundi, Chad, Niger, Mali, Mozambique, Zambia, Zimbabwe, Nepal,
+  Cambodia, Laos, Tajikistan, Kyrgyzstan, Moldova, Honduras, Nicaragua, Yemen, Afghanistan and the
+  island states on the list, among others) now show in every country list. The daily download saves
+  one once it is on a watchlist or added; the others are fetched when opened, so the daily run stays
+  short. Names, regions and currencies only; every figure reads Missing until a feed fills it.
+- Add a country lists every country. It used to draw on the world map, which leaves out small
+  countries, so Malawi, Sierra Leone, Haiti, Rwanda and most island states could not be added at all.
+  Names show in the page's language.
+- The built app sends a full security policy with its pages: only its own scripts, connections only to
+  this server, no plugins, no framing. A second security review covers everything added since 12
+  November (docs/SECURITY_REVIEW.md).
+
+- The three screen fonts (Public Sans, Plus Jakarta Sans, JetBrains Mono) now come with the app
+  instead of loading from Google Fonts, so opening a page asks no outside server for anything and
+  the fonts also show offline. About 380 KB of woff2 files, fetched only for the characters a page
+  shows (SIL Open Font License 1.1, credited in NOTICE).
+- Docs brought up to date with everything since 17 November: the README and walk-through guide in all
+  four languages (Policy review page, start-here card, short answer, menu groups, release days,
+  official forecasts side by side, track record, recovering on its own, standard app features),
+  HOW_IT_WORKS and METHODOLOGY (version 1.6), INSTALL, MAINTENANCE, CONTRIBUTING, DATA_API, the
+  roadmap and the user manual. 21 screenshots retaken on 24 November 2026.
+- Policy review has its own page in the header (Workspace, Research, Policy review, Reports). Start a
+  policy review under a Council chat answer and the policy review links in Tools open it there;
+  Reports keeps four tabs (Write a note, Council documents, Notebooks, Teaching) and is described as
+  notes, briefs and teaching material.
+- First start: a short **New here? Three steps** card under the chat welcome (ask a question, open
+  Research, optionally add an AI model) until Got it. Settings shows no AI option picked while no
+  model works, with a note that the app works without one, and the Menu says "AI: not set".
+- Council chat without an AI model starts with a **Short answer, by the app's stated rules (not
+  AI)**: a "behind the curve" question gets No, Possibly or Not clearly for each country from the
+  Central Bank Watcher's call and the gap to a simple Taylor rule; other questions get each country's
+  calls and debt path in one line.
+- Council chat leaves more room for the answer: the Agents panel stays closed until opened, a reason
+  shared by every agent is said once, "What changed" is one line when nothing moved, and follow-up
+  questions sit under the answer. The Missing list drops repeats, puts figures that are only older
+  than usual under their own heading and folds what no source the app reads publishes into one line.
+- Plain wording: the country page's Growth and inflation shows the same latest monthly inflation as
+  the summary, with the IMF yearly average beside it; Egypt is named without its old theme label;
+  Policy review says fingerprint instead of hashed; Data health and Data connections no longer show
+  terminal commands; the help button opens the four levels with one line each instead of cycling.
+- Keyboard shortcuts: **/** jumps to the council question box, **Cmd/Ctrl+K** opens Tools with its
+  search box, **Cmd/Ctrl+,** opens Settings (as before) and **?** shows the list. / and ? do nothing
+  while typing in a box or while a window is open.
+- docs/INSTALL.md has a "Remove EconQuest" section: the steps for the ready-made Docker app and for
+  the code copy (Mac and Windows scripts), removing the Ollama models (about 34 GB in all), clearing
+  the browser's site data, and a note that nothing runs in the background or on a schedule.
+- The app opens in dark or light to match the computer's own setting, and changes with it, until
+  you press the dark-mode switch; from then on your choice is kept in this browser. A choice saved by
+  an earlier version still counts, so no screen changes after updating. The pop-out watchlist follows
+  the same rule.
+- Deleting a watchlist, or taking a country off one, in the watchlist side panel now asks first
+  (Delete or Keep, Remove or Keep), as the watchlist table already did. Before, one click deleted a
+  whole list with no way back.
+- When a screen or panel fails to draw, its note now has Copy details (version, where, the error and
+  the first lines of the component stack; no figures or saved data) and Report this problem, which
+  opens a new GitHub issue with those details filled in. Menu > Report a problem opens a new issue
+  with the version filled in. Nothing is sent until the person sends it.
+- Menu > About says when a newer release is out, with a link to what changed and the update steps,
+  and the Menu shows "New version" beside About. The server asks GitHub for the newest release
+  number at most once a day (an hour after no answer), only while the app is open, and sends nothing
+  about you. `UPDATE_CHECK=off` turns it off.
+- A privacy page, docs/PRIVACY.md, says in one place what stays on your computer, what leaves it and
+  when: requests for figures to public sources, questions to an online AI provider only if you choose
+  one, screen fonts from Google Fonts, and alerts, audit copies or sign-in only if you set them up.
+  The app has no tracking, usage counts or crash reports. Menu > About & data licences has a short
+  Privacy section in all four languages, and the READMEs link the page.
+- While a source does not answer, five feeds that used to drop to Missing for an hour now show their
+  last good answer, with its own dates: external debt falling due, the BIS credit cycle, World Bank
+  creditors, BIS daily policy rates and the long BIS real exchange rate. The source is asked again
+  after 15 minutes, 1 hour, then every 4 hours. A saved answer older than its limit (14 days for
+  daily rates, up to 400 days for yearly data) is not served, so the figure reads Missing as before.
+  Menu > Data health > Sources lists which feeds are showing saved figures and when each is asked
+  again (saved in data/live/last-good/).
+- The daily data run gives download steps that failed (the feeds, wholly or in part, and the WEO,
+  sanctions, GPR, Chinn-Ito, UCDP and replay files) a second try at the end of the run, 2 minutes
+  later. One that still fails is tried again, alone, by the next start once 2 hours have passed (at
+  most 3 times before the next daily run), so a source that was down in the morning is fetched when
+  it is back. `npm run go -- status` shows each later try and what now works. The weekly tests are
+  never re-run this way.
+- Slow or busy sources are asked again before they count as failed. The connection check
+  (`npm run check:data` and the nightly check) tries up to three times, 3 s then 10 s apart, after no
+  answer in time, a cut connection, 429 or 500-504, follows the server's Retry-After (up to 60 s),
+  and gives the World Bank, ECB and GDELT 30 s per try. A failure that stays says how many times it
+  was asked. Feed readers in the app try once more after 1.5 s. Refusals (401, 403, 404), bot-check
+  pages and "connection refused" are not retried.
+- When port 3000 is busy (often another Docker container), `npm run go` starts the dev server on the
+  next free port, names what holds 3000 and lists it under "Notes"; this alone no longer makes the
+  command fail. `npm run check:data`, `npm run oecd:vintages`, `npm run mac:validate` and
+  `npm run council:record` update the folder first when it is behind GitHub and run again on the new
+  code (`ECONQUEST_NO_UPDATE=1` skips this).
+- `npm run go` and `npm run update` no longer stop on files the app writes itself (generated docs
+  such as docs/METHODS.md and docs/TRACK_RECORD.md, docs/validation/recorded-verdicts.json, recorded
+  test data under tests/fixtures): they are copied to data/local/backups/before-pull-<time>/, put
+  back to the repo version, and the pull goes through. Files changed by hand are left alone and named
+  (`bash scripts/safe-pull.sh` does the same on its own).
+- `npm run oecd:vintages` no longer trips the OECD's request limit: requests go 4 seconds apart,
+  a "too many requests" (429) or busy-server (500-504) answer is retried up to 4 times after a
+  wait (the OECD's Retry-After when given), and the run stops after repeated 429s so the next run
+  carries on from the files already saved. Countries with only quarterly consumer prices (for
+  example Australia and New Zealand) are now named as such instead of "no new edition".
+- How shocks spread between economies (History & data tool): a small global VAR of 16 main
+  economies plus the country being looked at. Each country's growth and inflation read its trading
+  partners' through IMF trade weights (International Trade in Goods by partner, latest three years);
+  the models are joined, checked for stability and a surprise of your size is traced over five
+  years with generalised impulse responses and 90% bootstrap bands. Annual IMF World Economic
+  Outlook figures from 1996; the United States sees the others with a one-year lag. A source that
+  does not answer reads Missing with the reason.
+- Council answers in your language: with Spanish, French or Portuguese picked (Menu language
+  button), Council chat, the Supreme Council, what-ifs and policy reviews write their text in that
+  language ("usted", "vous", "você"). Field names, stances, ratings, numbers, units and source names
+  stay as given so the app's checks read every answer the same way. English sends nothing extra, so
+  English prompts and the recorded council replay are unchanged.
+- Your broker prices: live prices for contracts you list, from your own Interactive Brokers
+  account through the IBKR Client Portal Gateway you run and sign in to on your computer. Off by
+  default (Menu > Settings > Your subscriptions); the app ships no contract ids and never sees your
+  IBKR password. Prices are held in memory for 10 seconds and shown on screen only: never saved,
+  put in downloads, backups or shared copies, answered to scripts or sent to the AI model. New
+  connection check row `broker_prices` (gateway sign-in state only).
+- Team work on a home server: comments under each policy review memo and saved report (any
+  signed-in account, Viewers included; the author or an Admin marks one done) and read-only links
+  to a memo or report (an Analyst or Admin makes one for 1 to 90 days; it opens without signing in,
+  shows the saved text with no scripts, and can be withdrawn; only the link's hash is saved). The
+  second approver was already in place through sign-off. Every comment and link goes in the audit log.
+
+- Teaching (group D): an offline country report (one HTML file of the saved figures with sources,
+  Missing reasons and licences, no scripts, opens without the app; button beside the CSV download);
+  a Macro lab under Country Research > Learn (aggregate demand and supply, and the debt equation,
+  with sliders; the debt part can start from the country's saved figures); and a fifth worked
+  example, a commodity price fall, in all four languages.
+
+- Official documents: Country Research > People > Official documents lists the newest World Bank
+  documents about the country (routine project filings left out and counted) and BIS central
+  bankers' speeches that name it, each linked to the publisher's page.
+
+- OECD real-time data: `npm run oecd:vintages` saves the OECD's monthly Main Economic Indicators
+  editions since 1999 (GDP volume and consumer prices, all 38 members) in data/local/oecd-vintages/,
+  fetching only new editions on later runs. Two new pre-registered tests,
+  gdp_forecast_realtime_oecd and cpi_forecast_realtime_oecd, ask the same questions as the US and
+  euro area real-time tests across the OECD members. New check:data row `oecd_rtd`.
+
+- Find data: Menu > Find data searches DBnomics (about 90 statistical providers), the IMF DataMapper,
+  the World Bank's World Development Indicators and Eurostat in one box, with each provider's
+  licence note and a link to its own page. A catalogue that does not answer is named with the
+  reason. New check:data row `catalogues`.
+
+- Gap model estimated from data: an IS curve, a Phillips curve and a policy rule (after Berg, Karam
+  and Laxton 2006), each fitted on the country's last 60 quarters with a real-time output gap
+  (one-sided HP filter). A new pre-registered test (docs/validation/forecasts/cpi_gap_model.json)
+  compares its inflation projection one and two years ahead with today's inflation carried on.
+  Country Research > Small gap model shows the fitted coefficients and projection only while the
+  test passes, and says why otherwise. Models & validation lists it.
+
+- Bayesian and structural VARs in the Chart Agent's lab: ask for a "Bayesian VAR" (Minnesota prior,
+  random-walk or white-noise prior mean chosen by each series' persistence, 90% posterior bands) or a
+  "structural VAR" (recursive order as on the chart, the reverse order for two series, and the
+  Blanchard-Quah long-run identification, each with the forecast-error variance decomposition and
+  bootstrap bands). Both use every series on the chart, up to four.
+
+- Translation review: CONTRIBUTING.md asks native speakers to check the Spanish, French and
+  Portuguese text, with a checklist of every file in docs/TRANSLATION_REVIEW.md and a Translation
+  review issue form. A language loses its "not yet reviewed" note only when every file is ticked.
+
+- Lower-income central banks: inflation targets for the Philippines (3% ±1), Egypt (7% ±2 for
+  Q4 2026), Uganda (5%) and Pakistan (5-7%, filed as 6% ±1), and decision dates for Pakistan
+  (FY27 calendar), the Philippines and Nigeria, all read on each bank's own page on 23 November
+  2026. Kenya, Ethiopia, Bangladesh, Viet Nam, DR Congo, Myanmar and Bolivia stay Missing: their
+  pages state no target or could not be read.
+
+- Forward record for release days: the ridge, lasso and random forest GDP nowcasts now write their
+  live calls to the forward record while their test passes, as the bridge nowcast already did (each
+  ended quarter whose GDP is not out yet, fitted exactly as in the test, with the benchmark beside
+  it), and each call is scored on the first published figure. When a GDP release on the official
+  calendar is three days off or less, the daily run starts the tests early (once per release) so the
+  call is on record before the figure. Models & validation > Track record and docs/TRACK_RECORD.md
+  gain a month-by-month table of calls written and scored.
+
+- Release days: on a day the official calendar lists a CPI or monthly activity release, the running
+  app re-reads that country's source about once an hour, up to 12 times, until a newer month
+  arrives, and marks it "New today" (US CPI from the BLS, other CPI from the IMF monthly series,
+  activity from FRED, Eurostat, the ONS and the BCB). GDP releases are listed but not re-read: the
+  app's quarterly GDP comes from OECD figures through DBnomics, months after the release. A Release
+  days card on Today and in Data health > Calendar shows yesterday to a week on. State in
+  data/local/release-watch.json; RELEASE_WATCH=off turns it off.
+
+- Official forecasts side by side (History & data > IMF forecasts by edition): growth and inflation
+  forecasts for this year and the next two from the IMF World Economic Outlook, World Bank Global
+  Economic Prospects and the OECD Economic Outlook, with the spread between them; for the United
+  States, the Philadelphia Fed Survey of Professional Forecasters from medianLevel.xlsx you save in
+  data/local/philly-spf/ (no terms of use found, so never downloaded). A free stand-in for paid
+  consensus forecasts, labelled as official forecasts. Daily step world:official_forecasts; Data
+  health rows wb_gep and oecd_eo. The OECD terms were read: data may be used for any purpose with
+  credit, so the OECD licence row is now open.
+
+- Google Sheets: `scripts/data-api/econquest.gs` adds EQ_SERIES, EQ_COUNTRY, EQ_WORLD, EQ_PANEL and
+  EQ_FIGURES for a copy of the app on a home server at an https address; the key stays in the
+  script's settings and travels only in a header (docs/DATA_API.md, "Google Sheets").
+
+- Excel: `scripts/data-api/econquest.pq` is a Power Query that brings the app's series, panels and
+  figures into a workbook, refreshed with Data > Refresh All; values arrive as numbers, Missing stays
+  empty with its reason, and a key for a copy with sign-in on travels only in a header
+  (docs/DATA_API.md, "Excel").
+
+- Track record: scorecard_default v1 (governance reading and sovereign default) recorded from the
+  owner's run of 23 November. It passed method 2: lift 25.7 points, 90% range 20.2 to 31.4,
+  p = 0.00025 with whole years resampled (22 series, 1996 to 2021), and it still holds after the Holm
+  correction across all 39 tests (Holm p 0.00875). As registered, a pass does not turn the average
+  into a score shown in the app. Forward record summary updated to 98 lines (17 scorecard calls,
+  none scored yet).
+
+- World Bank governance figures (WGI): the World Bank API stopped serving the old codes (VA.EST,
+  PV.EST, GE.EST, RQ.EST, RL.EST, CC.EST), answering "The indicator was not found", so the
+  scorecard's six governance estimates, the political stability figure in the country snapshot and
+  the scorecard_default test (owner's run, 22 November) all came back empty. The same estimates are
+  now read as GOV_WGI_<code> in the WGI source (source 3), with the old forms tried after it
+  (src/utils/wgiCodes.ts).
+
+- Track record: 13 tests added from the owner's run of 22 November (`npm run track-record:import`),
+  the new forecast evaluations registered on 22 November. 38 tests are now on record: 10 passed, 25
+  failed, 3 too few cases. fx_vol_garch v1 and gdp_forecast_quantile v1 pass and still hold after the
+  Holm correction across all 38; gdp_nowcast_lasso v1 and gdp_nowcast_ridge v1 pass on their own but
+  do not hold after it.
+
+- Euro area figures as first published are read from the ECB in five-year parts with one retry
+  each; the whole GDP history in one request timed out. A series with a missing part is not used.
+
+- cpi_weo_realtime version 2 failed on its first run and stays failed (owner's decision, no retest).
+  Known weakness: its pooled RMSE is dominated by hyperinflations (one year ahead, 367,474 against
+  986 for the last year carried on); country by country the AR was better in 89 of 169 countries.
+- Euro area figures as first published: the app now asks the ECB Data Portal for CSV. It had sent
+  its default Accept header (JSON), so the reply could not be read and the euro area was left out
+  of the real-time tests. Real-time Problem lines name the test version, and the run says when the
+  ECB answers with nothing readable.
+
+- cpi_weo_realtime version 2: an 18-year window instead of 15. With 15 years and 2 lags the AR had
+  13 rows, below the 16 it needs, so version 1 produced no case and no verdict. `npm run
+  forecast:evaluate` now names any real-time series it could not read or score, and labels QLIKE and
+  pinball losses as such.
+
+- Random forest GDP nowcast (tree ensemble on the ridge and lasso predictors, fixed settings) and
+  quantile-regression growth bands (matching statsmodels QuantReg), with two pre-registered tests
+  (gdp_nowcast_forest; gdp_forecast_quantile, scored by pinball loss against the AR's normal band).
+- Dynamic factor GDP nowcast: one common factor of each country's monthly indicators read with a
+  Kalman filter and smoother (two-step method), and a pre-registered test (gdp_nowcast_dfm) with the
+  bridge nowcast's lags, countries and pass mark.
+- ARIMA with moving-average and seasonal terms and outside predictors, by exact maximum likelihood
+  through a Kalman filter (matching statsmodels' ARIMA in the tests), and two pre-registered tests
+  (gdp_forecast_arma, cpi_forecast_arma) on the AR tests' data and pass marks.
+- Ridge and lasso GDP nowcasts: up to ten published predictors with the penalty chosen in time
+  order (never random folds), fits matching scikit-learn, and two pre-registered tests
+  (gdp_nowcast_ridge, gdp_nowcast_lasso) with the bridge nowcast's lags, countries and pass mark.
+- GARCH(1,1) currency volatility: a maximum-likelihood fit that matches the Python arch package,
+  and a pre-registered test (fx_vol_garch) of whether it forecasts next month's swings in 23
+  currencies better than the three-month volatility the app shows (QLIKE loss, years resampled).
+  The app shows no GARCH figure unless the test passes. Runs with `npm run forecast:evaluate`.
+- Forecast tests on data as first published: four pre-registered tests (gdp_forecast_realtime,
+  cpi_forecast_realtime, gdp_weo_realtime, cpi_weo_realtime) rebuild each series as it was
+  published on the forecast day, from ALFRED (US, your FRED key), the ECB Real-Time Database (euro
+  area) and the IMF WEO editions you have saved (every country), and score forecasts on the first
+  published figure. The IMF's own projection from the same edition is reported beside the verdict.
+  `npm run forecast:evaluate` runs them; Models & validation has a new entry. No verdict yet: they
+  run on the Mac.
+- Forecast checks: the Chart Agent's stationarity test now runs KPSS beside ADF and reads the two
+  together (statsmodels kpss with the automatic lag, matched to 1e-9 in tests); the Python
+  replication file includes it. Forecast evaluations also report, beside the verdict and without
+  changing it, the relative RMSE against the random walk with drift and the seasonal naive as well as
+  the last value and the historical mean, and how good the whole band is (CRPS ratio, 90% interval
+  score, pinball loss). Models & validation and `npm run forecast:evaluate` show the extra line.
+- Track record brought up to date from the owner's 17 November run (npm run mac:validate on
+  aca9fa7): five tests that had run but were missing from docs/TRACK_RECORD.md are added
+  (inflation_expectations_lead v1 and yield_curve_recession v1, both failed; the first versions of
+  cpi_forecast, cpi_nowcast and debt_forecast, all failed, which had been left out when their second
+  versions were recorded). The record now holds 25 tests, and the Holm correction counts all of
+  them. timing_agent, cycle_clock, gdp_nowcast and cli_turn_policy, recorded before rows carried a
+  p, take the p of the 17 November run on the same test file with the same verdict (owner's choice,
+  19 November); their verdicts are unchanged. With those p values, timing_agent, cycle_clock and
+  gdp_nowcast are shown to hold after the correction, as cftc_crowding does; fx_carry still does not. The forward record section now shows each passing test's calls and scored outcomes (4 calls
+  scored so far, too few to read anything into).
+- `npm run track-record:import` copies verdicts and the forward record from a real run
+  (data/local/validation/) into docs/validation/recorded-verdicts.json and rebuilds the track record
+  and methods pages, so no figure is copied by hand. It never changes a row already on record, leaves
+  out results run from a test file whose hash differs from the registered one, adds a run's p to a
+  passed or failed row that has none only when the file and verdict match, and refuses a forward
+  record whose hash chain is broken. The forward lines stay on the computer; only per-test counts and
+  the chain's last hash are published.
+
+- Country risk scorecard test (C12): the runner for scorecard_default, registered and hashed on
+  13 November before any run, is built. The test file moved unchanged (same hash) to
+  docs/validation/preregistered/, and `npm run backtest` now reads the six World Bank WGI estimates
+  for every country and the BoC-BoE Sovereign Default Database to judge it. It has its own register
+  entry (Governance reading and sovereign default); the scorecard itself still shows no overall
+  score. The first verdict comes from a run on a computer that reaches the World Bank and the Bank
+  of Canada.
+- IMF local market rates, after the first live check (19 November): the Treasury bill rate now
+  comes from "Government securities: Treasury bills yields" (the IMF's "Treasury bills, Rate" code
+  holds no series), which covers Kenya, Nigeria, Ghana, Bangladesh, Bolivia, the Philippines and
+  Egypt among others. A latest month more than two years old reads Missing with that month
+  instead of an old number; its history stays in History & data. The `imf_rates` check row tests
+  Ghana, which reports all three rates.
+
+## [0.3.0] - 2026-11-19
+
+Fixes to features added in 0.2.0, nowcasts, forecasts and local market rates for the lower-income
+countries, and a clearer Menu, Tools page and watchlist screen. Numbered 0.3.0 rather than 0.2.1 because these
+are new features.
+
+- Local market rates for countries with no official 10-year yield (#617; most of the lower-income
+  watchlist): the Treasury bill rate, government bond yield and money market rate from the IMF's
+  free monthly interest-rate data (MFS_IR), found by the IMF's code names (`IMF_TBILL_KEY`,
+  `IMF_GOVBOND_KEY`, `IMF_MONEY_KEY` in `.env` override). They show in Research (brief, Markets &
+  signals, data sources), History & data, the market council and the council's figures, each with
+  its month and a "may be out of date" note after four months. The government bond yield's maturity
+  differs by country, so it never fills the 10-year yield. The daily run has a new step and
+  `npm run check:data` a new row, `imf_rates`. Stock index levels read Missing with the reason (no
+  free source with terms that allow reuse).
+- Package updates (#618 to #620): minor and patch updates, lucide-react 1.76, and newer GitHub
+  Actions steps; they replace the matching Dependabot pull requests.
+- Phone layout (#616): the header controls move into the Menu with their names, Settings has a page
+  picker, the Research tabs wrap onto a second line, and the starter question is shorter.
+- Menu in three groups (#615): Tools on its own at the top, then Set up (Settings, Account, Offline
+  data, Your data, Sharing and Exam mode), Check the data (Data health, Models and validation, Audit
+  log, Idea journal) and Learn (User manual, Worked examples, About, Quests), with headings in four
+  languages. Tools > Study one country now lists Policy review.
+- Tools on one page (#614): Menu > Tools opens the Tools page and is no longer also a tab in
+  Settings. "Look back" held 28 of 49 tools; it now holds only the look-back tools, and four new
+  groups take the rest (Debt and the budget; Rates, prices and trade; Growth, people and aid;
+  Disasters and climate). "Find a tool" searches every tool's name, description and group, in
+  English and the reader's language, ignoring case and accents.
+- Plain wording (#613): plain labels on the watchlist screen, plain default watchlist names for new
+  installs (saved watchlists keep theirs), and small wording fixes in four languages. A what-if
+  answer is now compared only with the same question asked before; before, it could show changes
+  from an unrelated earlier question.
+- Council chat (#612): "Missing for this question" is folded under its count (the agents' documents
+  under Sources keep the full text), terminal commands are taken out of the chat, a question that
+  names a country with no figures is no longer told to name a country, and a long answer opens at
+  its question and findings.
+- Every country the app covers can be reached from any watchlist (#611): Research > One country and
+  Policy review list the open watchlist, then "Other countries in the app"; Compare countries has a
+  watchlist picker; Council chat pulls the figures of a covered country named in a question. Before,
+  the 15 lower-income countries were out of reach unless their watchlist was open.
+- The watchlist screen no longer crashes on a Missing figure (#610): a 10Y yield, debt or reserves
+  figure no source filled now reads as a dash, and the 10Y tooltip says Missing.
+
+- Documentation for the lower-income nowcasts and forecasts (#608): README and walk-through guide in
+  English, Spanish, French and Portuguese, the user manual and How EconQuest works 1.5.
+- Nowcasts and forecasts for the lower-income countries: the inflation nowcast and forecast now use
+  the IMF monthly consumer prices when neither the OECD nor a national series covers the country
+  (until now the 13 new countries read "No monthly inflation series"), and the policy rate forecast
+  uses the IMF monthly policy rate for countries the BIS does not cover, when its latest month is
+  four months old or less; otherwise it says why. Each path names the IMF series it came from. The
+  registered forecast evaluations keep their OECD and BIS inputs, so their verdicts do not change.
+
+- IMF monthly exchange rates and policy rates: the first live check (17 November) found the right
+  IMF codes for every country but took no series, because the live replies leave the code names out.
+  Names now come from the IMF structure where the reply leaves them out, a series returned under the
+  exact key asked for is taken on its key, months dated to the day are read, and the reason in
+  `check:data` says why a series was not taken.
+
+## [0.2.0] - 2026-11-17
+
+The first tagged release since 0.1.0. In short: data and tools for lower-income countries
+(remittances, aid, financial inclusion, food prices, disasters, weather and parametric insurance, a
+Lower-income countries watchlist, IMF monthly exchange rates and policy rates, countries you add saved
+by the daily download); policy review tools and the policy council; markets and financing data
+(exchange rate regime, central bank assets, dollar funding); what-if questions with the Scenario
+Agent; tools for five kinds of users; connecting other systems (API tokens, webhooks, OpenID Connect);
+the whole app in Portuguese; and outside research tools through the Quant desk. Every change is listed
+below.
+
+- Documentation for the lower-income work (#601-#605): README and walk-through guide in English,
+  Spanish, French and Portuguese (the Lower-income countries watchlist, adding a country, IMF monthly
+  figures and where targets and decision dates come from), INSTALL (the two new IMF files and
+  `check:data` rows) and METHODOLOGY 1.5.
+- Reference facts for the lower-income watchlist, read on each bank's own page on 2026-11-17:
+  Ghana's inflation target (8%, band 2 points) and India's target now linked to the RBI page that
+  states it; next central bank decision dates for Kenya, Ghana, Tanzania and India. Countries whose
+  pages state no target or date, or could not be read, are listed with the reason in
+  `src/data/officialCalendar.ts` and show "no date on file".
+- IMF monthly policy rates (LI4): countries the app does not take from the BIS policy-rate
+  collection (for example Egypt, Nigeria, Kenya, Ghana, Pakistan, Bangladesh, Australia and Canada)
+  now show the central bank policy rate from the IMF MFS_IR dataset on api.imf.org, monthly, with
+  its source and month, in the watchlist, the country page, the history chart and the council's
+  figures. It is found by the IMF's code names (`IMF_POLICY_KEY` in `.env` overrides). The BIS
+  figure wins wherever the app pulls it, and the pre-registered rate tests and the tools built on
+  BIS rate moves (cycle clock, Taylor gap, rate-move signals, alerts) still use BIS rates only. The
+  daily run saves it to `data/live/imf-policy.json` (new step after the BIS step). New
+  `npm run check:data` row imf_policy (Egypt as the sample); the dataset's codes could not be
+  checked from the build machine.
+
+- IMF monthly exchange rates (LI3): the exchange rate history of currencies with no ECB reference
+  rate and no central bank daily feed in the app (for example the naira, Kenyan shilling, cedi,
+  Egyptian pound and taka) now comes from the IMF ER dataset on api.imf.org, monthly average per US
+  dollar, found by the IMF's code names (`IMF_FX_KEY` in `.env` overrides). The daily run saves it
+  to `data/live/imf-fx.json` (new step after the ECB run); daily rates still win where they exist.
+  New `npm run check:data` row imf_fx (Nigeria as the sample); the dataset's codes could not be
+  checked from the build machine.
+
+- Lower-income countries watchlist (LI2): a new ready-made list of fifteen of the most populous
+  countries the World Bank classes as low or lower-middle income (India, Pakistan, Nigeria,
+  Bangladesh, Ethiopia, Egypt, the Philippines, DR Congo, Viet Nam, Tanzania, Kenya, Myanmar,
+  Uganda, Ghana, Bolivia), offered once to existing users. The thirteen not already in the app join
+  its country list (names and plain-language topics only; every figure comes from a feed), so the
+  start-up download and the daily run cover them. Their UN Comtrade reporter codes are the standard
+  M49 codes, not yet checked against a live reply. No central bank inflation targets are filed for
+  them yet.
+
+- Countries you add in the daily download (LI1): the server now reads the countries you added
+  (Menu > Add a country) from the shared workspace and each account's own, and puts them in its
+  country list. The start-up download and the daily run save them like the built-in countries, so
+  they get saved history, the As-of day and alerts; a country you remove leaves the list again.
+  Before, the server dropped them as unknown, in light mode too, although the install guide said
+  light mode fetched them. At most 25 added countries are taken; any beyond that are named on the
+  Offline data page (English, Spanish, French, Portuguese).
+
 - Documentation brought up to date with Ask Council chat (`ask:council`), the Research and Reports
   layout, the deep what-if work, the five user roles, the feed check fixes, the outside research
   tools and the Quant desk: README and walk-through guide in English, Spanish, French and Portuguese

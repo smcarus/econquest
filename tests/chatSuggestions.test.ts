@@ -64,3 +64,11 @@ test('your latest saved question comes back once, not duplicating an example', (
   assert.equal(s.filter((x) => x.text === EXAMPLES[0]).length, 1);
   assert.equal(s.length, 4);
 });
+
+test('suggestions read naturally for names that take "the" or end in s', async () => {
+  const { possessive } = await import('../src/utils/chatSuggestions.ts');
+  assert.equal(possessive('Brazil'), "Brazil's");
+  assert.equal(possessive('United States'), "the United States'");
+  assert.equal(possessive('United Kingdom'), "the United Kingdom's");
+  assert.equal(possessive('Philippines'), "the Philippines'");
+});

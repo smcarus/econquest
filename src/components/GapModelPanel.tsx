@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Waypoints } from 'lucide-react';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { OpenDataSnapshot } from '../types/council';
@@ -10,6 +10,7 @@ import { gapStartFromSnapshot, type StartMissing } from '../utils/gapModelStart'
 import { gapRunFocus } from '../utils/gapModelFocus';
 import { explainInChat } from '../utils/explainHandoff';
 import { RangeNote } from './HelpLevel';
+import type { GapEstimate } from '../utils/gapModelEstimate';
 
 /**
  * Country Research > History & data > Small gap model (plan item L2b). Four quarterly equations
@@ -283,6 +284,8 @@ export const GapModelPanel: React.FC<{ iso3: string; countryName: string; snapsh
           </div>
         )}
 
+        <EstimatedGapModel iso3={iso3} countryName={countryName} />
+
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
           <span>{t('notForecast')}</span>
           <button type="button" className="ui-pill" onClick={clear} data-gap-clear="true">
@@ -291,5 +294,71 @@ export const GapModelPanel: React.FC<{ iso3: string; countryName: string; snapsh
         </div>
       </div>
     </section>
+  );
+};
+
+type EstimateReply = { status: 'passed' | 'failed' | 'too_few_cases' | 'not_run'; verdict?: string; ranAt?: string; estimate?: GapEstimate };
+
+/** CG7: the gap model fitted on the country's own data, shown only while its registered test passes. */
+const EstimatedGapModel: React.FC<{ iso3: string; countryName: string }> = ({ iso3, countryName }) => {
+  const t = useT(GAP_MODEL);
+  const [reply, setReply] = useState<EstimateReply | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetch(`/api/gap-model/estimate?iso3=${encodeURIComponent(iso3)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => live && setReply(j))
+      .catch(() => live && setReply(null));
+    return () => {
+      live = false;
+    };
+  }, [iso3]);
+  if (!reply) return null;
+  const e = reply.estimate;
+  const note =
+    reply.status === 'not_run'
+      ? t('est_notRun')
+      : reply.status !== 'passed'
+        ? t('est_notPassed', { status: reply.status, verdict: reply.verdict || '' })
+        : !e
+          ? t('est_noCountry', { country: countryName })
+          : t('est_passed', { date: (reply.ranAt || '').slice(0, 10), n: String(e.quarters), through: e.through });
+  return (
+    <div className="border-t border-slate-200 dark:border-slate-800 pt-3 space-y-2" data-gap-estimated={reply.status}>
+      <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('est_title')}</h4>
+      <p className="text-xs text-slate-500 dark:text-slate-400">{t('est_intro', { country: countryName })}</p>
+      <p className="text-xs text-slate-700 dark:text-slate-300">{note}</p>
+      {e && reply.status === 'passed' && (
+        <>
+          <p className="text-xs text-slate-600 dark:text-slate-400 tabular-nums">
+            {t('est_coef')}: {Object.entries(e.coef).map(([k, v]) => `${k} ${r2(v)}`).join(', ')}
+          </p>
+          {e.oddSigns.length > 0 && <p className="text-xs text-amber-700 dark:text-amber-400">{t('est_oddSigns', { list: e.oddSigns.join('; ') })}</p>}
+          <div className="overflow-x-auto">
+            <table className="text-xs tabular-nums">
+              <caption className="text-left text-slate-500 dark:text-slate-400">{t('est_path')}</caption>
+              <thead>
+                <tr>
+                  <th className="pr-3 text-left">{t('colQuarter')}</th>
+                  <th className="pr-3 text-right">{t('var_y')}</th>
+                  <th className="pr-3 text-right">{t('var_p')}</th>
+                  <th className="pr-3 text-right">{t('var_i')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[{ period: e.last.period, y: e.last.y, p: e.last.p, i: e.last.i }, ...e.path].map((r) => (
+                  <tr key={r.period}>
+                    <td className="pr-3">{r.period}</td>
+                    <td className="pr-3 text-right">{r2(r.y)}</td>
+                    <td className="pr-3 text-right">{r2(r.p)}</td>
+                    <td className="pr-3 text-right">{r2(r.i)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
   );
 };

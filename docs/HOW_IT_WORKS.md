@@ -1,6 +1,6 @@
 # How EconQuest works, in plain words
 
-**Version 1.4, 17 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
+**Version 1.6, 24 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
 validated advice.
 
 This guide explains, without jargon, where EconQuest's figures come from, what its AI does and does
@@ -30,9 +30,11 @@ Any term you don't know is explained in the [Glossary](./GLOSSARY.md).
 13. [Weather, disasters and insurance, explained](#13-weather-disasters-and-insurance-explained)
 14. [Asking "what if?"](#14-asking-what-if)
 15. [Tools for the people who run and judge policy](#15-tools-for-the-people-who-run-and-judge-policy)
-16. [Quests: coming later](#16-quests-coming-later)
-17. [How much the app explains](#17-how-much-the-app-explains)
-18. [What it cannot do](#18-what-it-cannot-do)
+16. [Newer forecasting methods, and how they did](#16-newer-forecasting-methods-and-how-they-did)
+17. [When a source does not answer, and what leaves your computer](#17-when-a-source-does-not-answer-and-what-leaves-your-computer)
+18. [Quests: coming later](#18-quests-coming-later)
+19. [How much the app explains](#19-how-much-the-app-explains)
+20. [What it cannot do](#20-what-it-cannot-do)
 
 ---
 
@@ -116,6 +118,10 @@ read figures but not change anything) and which you can cancel at any time. Ever
 the app's log. You can also keep a list of **hidden names**, countries or securities that must never
 appear on any screen or in anything sent out; the app then shows only how many are hidden.
 
+On a shared server, people can leave comments under a policy review memo or a saved report, and an
+analyst can make a read-only link to one, valid for 1 to 90 days, which opens without signing in and
+can be withdrawn. Every comment and link is written in the log.
+
 ## 3. Where the numbers come from
 
 - **Every number has a source.** Each figure names where it came from and which period it describes:
@@ -130,7 +136,14 @@ appear on any screen or in anything sent out; the app then shows only how many a
   switch it on, but it is off unless you do.
 - **Old figures are labelled with their date.** If a source fails one week, the last good figure from that same
   source is kept and labelled with the date it came from. Every download is saved by day, so you can
-  see exactly what the app showed on any past date.
+  see exactly what the app showed on any past date. A saved answer older than its limit (two weeks
+  for daily rates, about a year for yearly figures) is not shown; the figure reads Missing instead
+  ([section 17](#17-when-a-source-does-not-answer-and-what-leaves-your-computer)).
+- **Official forecasts side by side.** Paid "consensus" forecasts are out of reach, so the app sets
+  the growth and inflation forecasts of the IMF, the World Bank and the OECD for this year and the
+  next two next to each other, with the gap between them, and calls them official forecasts. On the
+  day a country publishes its inflation or monthly activity figures, the app looks for the new month
+  about once an hour and marks it "New today".
 - **Figures for poorer countries too.** Money sent home by workers abroad (remittances), aid received,
   who has a bank account, commodity prices and what they mean for the country, food prices and
   natural disasters all come from the World Bank and other public sources, as do the weather series
@@ -138,6 +151,17 @@ appear on any screen or in anything sent out; the app then shows only how many a
   the app to download or pass on their files; for those, you download the file yourself and put it in
   a folder the [install guide](./INSTALL.md#files-you-save-yourself) names, and until then the parts
   that need it read Missing.
+- **Fifteen lower-income countries on one list.** The *Lower-income countries* watchlist holds the 15
+  largest by region, from India and Nigeria to Ghana and Bolivia, and any country you add is saved by
+  the daily download like the built-in ones. Where the usual sources skip these countries, the IMF
+  fills in, once a month: the exchange rate per US dollar, the central bank policy rate and consumer
+  prices. The app's inflation nowcast and forecast and its policy rate forecast use these monthly IMF
+  figures too, each labelled as the IMF's. A policy rate more than four months old reads Missing
+  rather than being treated as today's. Where the IMF has them, local Treasury bill, government bond
+  and money market rates are shown too; a latest month more than two years old reads Missing. Central
+  bank targets and meeting dates appear only where the bank's own website states them (on 23 November
+  2026 that added the Philippines, Egypt, Uganda and Pakistan), so many of these countries have none
+  yet.
 - **Figures for the people who run a budget or judge one.** How much of the approved budget each
   government really spent (from PEFA assessments, published by the World Bank), the World Bank
   projects under way in the country and how fast they pay out, and how far apart a country's regions
@@ -147,6 +171,11 @@ appear on any screen or in anything sent out; the app then shows only how many a
 - **Figures for markets.** Every maturity of the US and euro area government bond curves each day, and
   each inflation release set against what forecasters or a prediction market expected just before it
   came out.
+- **Finding more.** *Find data* searches the free catalogues of DBnomics (about 90 statistics
+  providers), the IMF, the World Bank and Eurostat in one box, each result with its licence and a link.
+- **Your own broker, on screen only.** If you have an Interactive Brokers account, the app can show
+  live prices for contracts you list, through the program Interactive Brokers gives you to run on your
+  own computer. These prices are never saved, downloaded, shared or given to the AI model.
 - **Credit where it is due.** Some figures come from researchers' own files, such as the Chinn-Ito
   index of how open a country is to money moving in and out. Those are shown with the authors' names
   and never passed on to others.
@@ -175,6 +204,14 @@ works out (backtests, volatility, option prices), each with a link to where it c
 server's label "hypothetical, past performance; not a recommendation". The app's own figures, tests
 and badges never use them.
 
+**Without any AI model**, the answer still opens with a short answer, worked out by stated rules
+and labelled "not AI". Asked whether a central bank is behind the curve, it says *No*, *Possibly* or
+*Not clearly* for each country, from the Central Bank agent's call and the gap to a simple rule of
+thumb for interest rates (the Taylor rule). Under it come each agent's findings with their figures.
+
+If you choose Spanish, French or Portuguese, the AI writes its answers in that language; the figures,
+source names and the checks stay the same.
+
 The AI never supplies figures, and every AI-written answer is labelled as written by an AI model,
 with the name of the model. The checks catch made-up numbers and contradicted calls; they cannot catch
 poor emphasis or something important left out. Treat an AI answer as one interpretation.
@@ -202,7 +239,7 @@ this:
 
 If you flip twenty coins, one may well come up heads five times in a row by pure chance. Testing rules
 is the same: try enough of them and one will "pass" by luck. EconQuest counts every test it has ever
-run (twenty so far, failures included) and applies a standard correction for luck (the Holm method).
+run (39 so far, failures included) and applies a standard correction for luck (the Holm method).
 A pass that still holds after the correction is much stronger evidence than one that only passed on
 its own.
 
@@ -226,17 +263,25 @@ or regulator would do.
 
 ## 8. What has been found so far
 
-Of twenty tests, six passed, twelve failed and two had too few cases. The full list is the
-[Track record](./TRACK_RECORD.md).
+Of 39 tests on record on 23 November 2026, eleven passed, twenty-five failed and three had too few
+cases. Eight of the eleven passes still hold once luck is counted across all 39. The full list is the
+[Track record](./TRACK_RECORD.md); each verdict is copied from a real run by a script, never typed in.
 
 - **The strongest finding:** when speculators' bets on a currency future are at an extreme, those bets
   usually shrink within eight weeks (in 85.5% of cases, against 65.8% normally). This holds after
   counting luck. It was tested twice, in two ways, on the same data, so it is one finding, not two.
   Note that it is about the bets shrinking, not about which way the currency then moves.
-- **Promising but not proven:** the currency carry rule (section 9 below), a timing rule for those
-  same currency bets, and a model that estimates this quarter's economic growth before the official
-  figure is out. These passed their own tests but are Provisional until the luck correction can be
-  read or calls written down in advance confirm them.
+- **Also holding after counting luck:** a timing rule for those same currency bets; a model that
+  estimates this quarter's economic growth before the official figure is out; a volatility model
+  (GARCH) that forecast next month's currency swings better than the recent three-month swing in 19
+  of 23 currencies; growth ranges from quantile regression that fitted outcomes better than the usual
+  bell-shaped range; and the governance test: countries whose World Bank governance scores were in
+  the weakest quarter went on to default on government debt much more often (25.7 percentage points
+  above the base rate). As it was registered, that pass does not turn the governance scores into an
+  overall country score.
+- **Promising but not proven:** the currency carry rule (section 9 below) and two newer ways of
+  estimating this quarter's growth (ridge and lasso). They passed their own tests but not once luck is
+  counted, so they are Provisional until calls written down in advance confirm them.
 - **Passed, but no edge:** the "cycle clock" shows that central banks that have just raised rates tend
   to raise them again. That's true, but every forecaster already expects it, so it is not counted as
   a discovery.
@@ -244,16 +289,14 @@ Of twenty tests, six passed, twelve failed and two had too few cases. The full l
   generally find. Rules based on the Taylor rule, leading indicators, growth-and-inflation phases,
   unrest in the news, and currency value and momentum all failed. They stay on the record.
 - **Locked, waiting to run:** some tests are written down and locked before the tool that runs them
-  exists, so building the tool cannot bend the test. Two wait like this: whether a fast rise in
-  borrowing comes before a banking crisis (it waits for permission to use a list of past crisis dates),
-  and whether weak government, as measured by the World Bank's governance scores, comes before a
-  country stops paying its debts (locked on 13 November 2026). Until they run, the panels that use
-  them say Not validated.
+  exists, so building the tool cannot bend the test. Whether a fast rise in borrowing comes before a
+  banking crisis waits like this, for permission to use a list of past crisis dates. Until it runs,
+  the panel that uses it says Not validated.
 
 ## 9. Reading one result, step by step
 
 Take the currency carry line: *3.34% a year net of costs (3.65% gross), 90% range 0.58% to 6.04%,
-Sharpe 0.45, p 0.026, Holm-adjusted p 0.46, Provisional pass.*
+Sharpe 0.45, p 0.026, Holm-adjusted p 0.77, Provisional pass.*
 
 - **The rule.** Each month, imagine borrowing in the currencies that pay the lowest interest and
   holding the currencies that pay the highest (the top third against the bottom third of 25
@@ -268,9 +311,9 @@ Sharpe 0.45, p 0.026, Holm-adjusted p 0.46, Provisional pass.*
   twice the average return, so an ordinary bad year could wipe out more than a year of average gains.
 - **p 0.026.** If carry really earned nothing, a result at least this good would come up by luck about
   2.6 times in 100. The pass mark was 5 in 100, so on its own the test passed.
-- **Holm-adjusted p 0.46.** But twenty tests have been run, and with that many tries, one result this
-  good is quite likely to appear by luck somewhere. After allowing for all twenty, the chance rises to
-  about 46 in 100, far above the pass mark.
+- **Holm-adjusted p 0.77.** But 39 tests have been run, and with that many tries, one result this
+  good is quite likely to appear by luck somewhere. After allowing for all 39, the chance rises to
+  about 77 in 100, far above the pass mark.
 - **So: Provisional pass.** The recorded verdict stays "passed", because it met its own locked pass
   mark. Its grade is Provisional until either at least two years of calls written down in advance
   confirm it, or a new locked version passes with luck counted. Until then it is a lead worth watching,
@@ -454,7 +497,61 @@ all under Research > One country > History & data unless noted:
 
 All of these describe; none is a tested forecast, and each says where its figures come from.
 
-## 16. Quests: coming later
+On 23 November more tools were added in the same spirit: how a surprise in one big economy spreads to
+others through trade (a small "global VAR" of 16 economies), a small model of the output gap,
+inflation and interest rates estimated from each country's own figures (shown only while its locked
+test passes), the newest World Bank documents and central bankers' speeches about each country, a
+macro lab with sliders for teaching, and a one-file offline country report that opens without the app.
+
+## 16. Newer forecasting methods, and how they did
+
+On 22 November the app gained the forecasting methods economists most often use, each with its test
+written down and locked before it ran:
+
+- **Currency volatility (GARCH).** A model of how calm and stormy spells in a currency follow each
+  other. It **passed**: it forecast next month's swings better than the recent three-month swing the
+  app already shows, in 19 of 23 currencies.
+- **Growth ranges (quantile regression).** Instead of a bell-shaped range around one forecast, it
+  estimates the low and high ends directly. It **passed**, one quarter and one year ahead.
+- **This quarter's growth (ridge, lasso, random forest, dynamic factor).** Four ways of reading many
+  monthly figures at once. Ridge and lasso passed on their own but not once luck is counted; the random
+  forest and the dynamic factor model failed.
+- **ARIMA**, the classic time-series model, failed for both growth and inflation.
+- **Tests on figures as first published.** Most history today has been revised since it came out.
+  These tests rebuild each figure as it stood on the forecast day (from the US, euro area and IMF
+  archives) and score the forecast on the first published figure. All failed so far, which says the
+  simple models did not beat simple guesses even before revisions.
+
+The extra measures the tests now report (how good the whole range was, and how a forecast did against
+the latest value with its usual trend or season) are shown beside each verdict without changing it.
+
+Passing models also **write down their calls before the figure comes out**. When a growth release is
+three days away or less, the daily run starts these models early so the call is on record first. Each
+call is scored when the figure appears, and Models & validation shows a month-by-month table. Only
+this forward record rules out hindsight completely.
+
+## 17. When a source does not answer, and what leaves your computer
+
+Free public sources are sometimes slow, busy or down. The app tries to recover on its own:
+
+- A slow or busy source is asked again, up to three times, before it counts as failed. A refusal
+  (wrong key, page gone) is not retried.
+- Downloads that failed in the morning get a second try at the end of the daily run, and later tries,
+  once two hours have passed, when the app is next started.
+- While a source does not answer, some figures show the **last good answer with its own dates**
+  instead of Missing, and *Data health* lists which ones. An answer older than its limit is never
+  shown.
+- Updating the app never stops on files the app wrote itself; they are backed up and put back first.
+
+**What leaves your computer**, in one place ([PRIVACY.md](./PRIVACY.md)): requests for figures to
+the public sources; your questions to an online AI provider, only if you choose one; screen fonts
+from Google Fonts; and alerts, outside audit copies or sign-in, only if you set them up. Once a day,
+while the app is open, it asks GitHub for the newest release number so *About* can say when a newer
+version is out; it sends nothing about you, and `UPDATE_CHECK=off` turns it off. The app has no
+tracking, usage counts or crash reports. When a screen fails, *Report a problem* fills in a GitHub
+issue for you to read and send yourself.
+
+## 18. Quests: coming later
 
 Quests are built but **switched off**: you can't use them yet. When they go live, a Quest will be an
 open question that anyone can answer, for example "Will Brazil's policy rate be above 14% on 31
@@ -468,9 +565,9 @@ reserves?"). These are **Debate Quests**: people argue a position, the app check
 quote against its own, and nobody is ever scored or declared right. An AI model writes a short opening
 brief on each side; it is labelled as AI-written and is not allowed to state any figure of its own.
 
-## 17. How much the app explains
+## 19. How much the app explains
 
-The help button at the top of the page sets how much the app explains:
+The help button at the top of the page opens the four levels, each with one line on what it explains:
 
 - **Key help** (the default): a guide on every chart, a short introduction on each panel, a "What it
   means" line under each observation, and *What is this?* on the main figures.
@@ -483,15 +580,16 @@ contain no figures of their own. The one exception is the **Explain** button on 
 the council: that answer is written by the AI model, labelled as such, and number-checked like any
 other.
 
-## 18. What it cannot do
+## 20. What it cannot do
 
 - **The past is not the future.** A rule that worked on past data may stop working. That is why
   passing rules keep writing down their calls in advance and are scored as the results come in.
 - **Not everything is free.** Ratings, business surveys, auction results and consensus forecasts read
-  Missing.
+  Missing; official forecasts from the IMF, the World Bank and the OECD are shown side by side instead.
 - **Figures get revised.** Most countries' history is available only as revised today, not as first
-  published, which can make a rule look better than it was. Only some US and IMF figures are
-  available as first published.
+  published, which can make a rule look better than it was. Figures as first published are
+  available for the United States, the euro area, the 38 OECD members and the IMF's past editions,
+  not for every country.
 - **Some countries are missing from the tests.** Tests use the countries with long enough free
   history. Countries that stopped reporting or had a crisis can drop out, leaving calmer cases behind.
 - **AI models differ and change.** A different model, or a new version of the same one, can lean
@@ -510,5 +608,5 @@ other.
 
 ---
 
-*How EconQuest works, version 1.4 (17 November 2026). Text licensed under CC BY 4.0: you may share and
+*How EconQuest works, version 1.6 (24 November 2026). Text licensed under CC BY 4.0: you may share and
 adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*

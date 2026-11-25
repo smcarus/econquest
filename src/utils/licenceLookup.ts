@@ -70,6 +70,7 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['wb_projects', /World Bank Projects|Projects & Operations|IDA Statement of Credits/i],
   ['dose', /\bDOSE\b|subnational economic output/i],
   ['gdl', /Global Data Lab/i],
+  ['philly_spf', /Philadelphia Fed|Federal Reserve Bank of Philadelphia/i],
   ['worldbank', /World Bank|\bWGI\b|\bWDI\b|\bIDS\b|\bQEDS\b/],
 ];
 

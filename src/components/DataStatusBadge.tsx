@@ -44,7 +44,7 @@ export const DataStatusBadge: React.FC<{ snapshot: OpenDataSnapshot }> = ({ snap
         <span className={`w-1.5 h-1.5 rounded-full ${text.saved ? DOT_CLASS.sample : DOT_CLASS[status.mode]}`} />
         <span>{text.label}</span>
         {status.mode !== 'unverified' && asOf && (
-          <span className="font-normal opacity-80">· as of {asOf}</span>
+          <span className="font-normal opacity-90">· as of {asOf}</span>
         )}
       </span>
       {status.officialYield && (

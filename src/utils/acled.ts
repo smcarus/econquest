@@ -1,6 +1,6 @@
 /**
  * ACLED (Armed Conflict Location & Event Data) for the Politics & Events Agent, with the user's own
- * ACLED account (Menu > Settings > Data API keys: ACLED_EMAIL and ACLED_PASSWORD). Without an
+ * ACLED account (Menu > Settings > Free data keys: ACLED_EMAIL and ACLED_PASSWORD). Without an
  * account the conflict figures read Missing with that reason; nothing is built in.
  *
  * API contract (read 2026-11-06 from acleddata.com/api-documentation/getting-started and the
@@ -186,6 +186,6 @@ export function acledMonthLabel(ym: string): string {
 }
 
 /** Reason shown when the conflict figures are missing. */
-export const ACLED_NO_ACCOUNT = 'Missing: add your ACLED account (email and password) in Menu > Settings > Data API keys, or put an aggregated file downloaded from myACLED in data/local/acled/';
+export const ACLED_NO_ACCOUNT = 'Missing: add your ACLED account (email and password) in Menu > Settings > Free data keys, or put an aggregated file downloaded from myACLED in data/local/acled/';
 /** Reason when ACLED refuses the account's API access (Open level). */
 export const ACLED_NO_API = 'Missing: ACLED did not allow API access for this account. Open accounts (public email such as gmail.com) get aggregated downloads only; the API needs the Research level, granted by ACLED\'s access team. An aggregated file downloaded from myACLED into data/local/acled/ works instead';

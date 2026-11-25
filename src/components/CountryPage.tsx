@@ -70,6 +70,9 @@ const UnitConverterPanel = lazyNamed(() => import('./UnitConverterPanel'), 'Unit
 const ExercisesPanel = lazyNamed(() => import('./ExercisesPanel'), 'ExercisesPanel');
 const ModelSandboxPanel = lazyNamed(() => import('./ModelSandboxPanel'), 'ModelSandboxPanel');
 const GapModelPanel = lazyNamed(() => import('./GapModelPanel'), 'GapModelPanel');
+const GvarPanel = lazyNamed(() => import('./GvarPanel'), 'GvarPanel');
+const MacroLabPanel = lazyNamed(() => import('./MacroLabPanel'), 'MacroLabPanel');
+const OfficialDocsPanel = lazyNamed(() => import('./OfficialDocsPanel'), 'OfficialDocsPanel');
 const SanctionsPanel = lazyNamed(() => import('./SanctionsPanel'), 'SanctionsPanel');
 const ForecastPanel = lazyNamed(() => import('./ForecastPanel'), 'ForecastPanel');
 const FiscalMultiplierPanel = lazyNamed(() => import('./FiscalMultiplierPanel'), 'FiscalMultiplierPanel');
@@ -144,6 +147,8 @@ const FIG_KEY: Record<string, 'fig_debt' | 'fig_spread' | 'fig_yield' | 'fig_pol
 export const CountryPage: React.FC<{
   run: CouncilAssessmentRun;
   watchlistItems: WatchlistItem[];
+  /** Countries the app covers that are not on the open watchlist (src/utils/countryChoices.ts). */
+  otherCountries?: WatchlistItem[];
   activeTab: CountryTabId;
   onChangeTab: (tab: CountryTabId) => void;
   onSelectCountry: (item: WatchlistItem) => void;
@@ -157,6 +162,7 @@ export const CountryPage: React.FC<{
 }> = ({
   run,
   watchlistItems,
+  otherCountries = [],
   activeTab,
   onChangeTab,
   onSelectCountry,
@@ -214,17 +220,36 @@ export const CountryPage: React.FC<{
                   onAddCountry();
                   return;
                 }
-                const next = watchlistItems.find((w) => w.iso3 === e.target.value);
+                const next = watchlistItems.find((w) => w.iso3 === e.target.value) || otherCountries.find((w) => w.iso3 === e.target.value);
                 if (next) onSelectCountry(next);
               }}
               className="text-lg font-semibold text-slate-900 dark:text-white bg-transparent border border-slate-200 dark:border-slate-700 px-2 py-1 pr-7"
             >
-              {!item && <option value={run.iso3}>{run.countryName}</option>}
-              {watchlistItems.map((w) => (
-                <option key={w.iso3} value={w.iso3}>
-                  {w.countryName}
-                </option>
-              ))}
+              {!item && !otherCountries.some((w) => w.iso3 === run.iso3) && <option value={run.iso3}>{run.countryName}</option>}
+              {otherCountries.length ? (
+                <>
+                  <optgroup label={t('onWatchlist')}>
+                    {watchlistItems.map((w) => (
+                      <option key={w.iso3} value={w.iso3}>
+                        {w.countryName}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label={t('otherCountries')}>
+                    {otherCountries.map((w) => (
+                      <option key={w.iso3} value={w.iso3}>
+                        {w.countryName}
+                      </option>
+                    ))}
+                  </optgroup>
+                </>
+              ) : (
+                watchlistItems.map((w) => (
+                  <option key={w.iso3} value={w.iso3}>
+                    {w.countryName}
+                  </option>
+                ))
+              )}
               <option value="__add">{t('addCountry')}</option>
             </select>
             {/* On a phone, Refresh sits beside the country as an icon. */}
@@ -305,6 +330,9 @@ export const CountryPage: React.FC<{
                   </a>
                   <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(run.iso3)}/figures.xlsx`} download>
                     {t('excel')}
+                  </a>
+                  <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(run.iso3)}/report.html`} download data-offline-report>
+                    {t('offlineReport')}
                   </a>
                   <button type="button" className="ui-btn ui-btn-ghost inline-flex" onClick={() => openDataLicences()} data-open-licences>
                     {t('licences')}
@@ -421,6 +449,13 @@ export const CountryPage: React.FC<{
               </React.Suspense>
             </PanelBoundary>
           </ToolSlot>
+          <ToolSlot id="tool-macro-lab" pick={toolPick}>
+            <PanelBoundary name="Macro lab">
+              <React.Suspense fallback={<DeskLoading />}>
+                <MacroLabPanel key={`ml-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} snapshot={run.openData} />
+              </React.Suspense>
+            </PanelBoundary>
+          </ToolSlot>
           <ToolSlot id="tool-sandboxes" pick={toolPick}>
             <PanelBoundary name="Model sandboxes">
               <React.Suspense fallback={<DeskLoading />}>
@@ -439,6 +474,13 @@ export const CountryPage: React.FC<{
             <PanelBoundary name="Small gap model">
               <React.Suspense fallback={<DeskLoading />}>
                 <GapModelPanel key={`gm-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} snapshot={run.openData} />
+              </React.Suspense>
+            </PanelBoundary>
+          </ToolSlot>
+          <ToolSlot id="tool-gvar" pick={toolPick}>
+            <PanelBoundary name="How shocks spread between economies">
+              <React.Suspense fallback={<DeskLoading />}>
+                <GvarPanel key={`gv-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
               </React.Suspense>
             </PanelBoundary>
           </ToolSlot>
@@ -600,6 +642,13 @@ export const CountryPage: React.FC<{
             <PanelBoundary name="World Bank projects">
               <React.Suspense fallback={<DeskLoading />}>
                 <WbProjectsPanel key={`wp-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+              </React.Suspense>
+            </PanelBoundary>
+          </ToolSlot>
+          <ToolSlot id="tool-official-docs" pick={toolPick}>
+            <PanelBoundary name="Official documents">
+              <React.Suspense fallback={<DeskLoading />}>
+                <OfficialDocsPanel key={`od-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
               </React.Suspense>
             </PanelBoundary>
           </ToolSlot>

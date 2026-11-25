@@ -57,6 +57,7 @@ export function askCouncilColumns(answers: AgentAnswer[], writing: boolean, synt
       : synthesis
         ? { status: 'skipped', note: synthesis.reason ? `no summary: ${synthesis.reason}` : 'no summary' }
         : { status: 'waiting' };
+  const sameWhy = answers.length > 1 && answers.every((a) => a.why === answers[0]!.why) ? answers[0]!.why : '';
   return [
     {
       title: '1. Planner',
@@ -67,11 +68,13 @@ export function askCouncilColumns(answers: AgentAnswer[], writing: boolean, synt
       ],
     },
     {
+      // When every agent was asked for the same reason ("no specific topic..."), say it once in the title.
       title: '2. Desk agents, on the app’s figures',
+      ...(sameWhy ? { note: sameWhy.replace(/^./, (c) => c.toUpperCase()) } : {}),
       nodes: answers.map((a) => ({
         id: a.id,
         label: `${a.name} Agent`,
-        task: a.why.replace(/^the question mentions/, 'Asked: you mentioned').replace(/^the AI model judged:/, 'AI pick:').replace(/^you added/, 'Asked: you added'),
+        task: sameWhy ? '' : a.why.replace(/^the question mentions/, 'Asked: you mentioned').replace(/^the AI model judged:/, 'AI pick:').replace(/^you added/, 'Asked: you added'),
         status: 'done' as const,
         note: a.findings.length
           ? `${a.findings.length} ${a.id === 'doc' ? (a.findings.length === 1 ? 'passage' : 'passages') : a.id === 'quant' ? (a.findings.length === 1 ? 'result' : 'results') : a.findings.length === 1 ? 'country' : 'countries'}`

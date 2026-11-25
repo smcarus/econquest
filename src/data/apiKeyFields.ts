@@ -1,8 +1,9 @@
 import { isValidEvdsSeriesCode } from '../utils/officialYields';
 import { parseRicMap } from '../utils/ownCds';
+import { checkGatewayUrl, parseConids } from '../engine/brokerPrices';
 
 /**
- * The keys you can enter in Menu > Settings > Data API keys. Browser-safe (no Node imports): the
+ * The keys you can enter in Menu > Settings > Free data keys. Browser-safe (no Node imports): the
  * server's storage lives in src/utils/userSettings.ts. Add an entry here to add a key to Settings.
  */
 export interface ApiKeyField {
@@ -278,6 +279,60 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     checkId: 'paid_data',
     section: 'subscription',
     validate: (v) => (/^\S{8,400}$/.test(v) ? null : 'A client secret has no spaces. Check it was copied in full.'),
+  },
+  // ---- Your broker prices (gap CG9, src/engine/brokerPrices.ts): off unless you switch it on ----
+  {
+    id: 'BROKER_PRICES',
+    label: 'Your broker prices',
+    provider: 'Your own broker account',
+    feeds:
+      'Live prices for contracts you list, from your own Interactive Brokers account through the IBKR Client Portal Gateway you run and sign in to on this computer. Shown on screen only: never saved, put in downloads, backups or shared copies, or sent to the AI model.',
+    withoutIt: 'Off: no broker prices are shown.',
+    getKeyUrl: 'https://www.interactivebrokers.com/campus/ibkr-api-page/cpapi-v1/',
+    getKeySteps: 'Download the Client Portal Gateway from IBKR, start it on this computer, open its address in your browser and sign in. Then pick Interactive Brokers here and list your contracts below.',
+    checkId: 'broker_prices',
+    secret: false,
+    section: 'subscription',
+    choices: [
+      { value: 'off', label: 'Off' },
+      { value: 'ibkr', label: 'Interactive Brokers (Client Portal Gateway)' },
+    ],
+    validate: (v) => (['off', 'ibkr'].includes(v) ? null : 'Pick Off or Interactive Brokers.'),
+  },
+  {
+    id: 'IBKR_GATEWAY_URL',
+    placeholder: 'https://localhost:5000',
+    label: 'IBKR gateway address',
+    provider: 'Interactive Brokers (your account)',
+    feeds: 'Where the Client Portal Gateway runs on this computer. The app asks only this address and never sees your IBKR password.',
+    withoutIt: 'Empty: https://localhost:5000, the gateway default.',
+    getKeyUrl: 'https://www.interactivebrokers.com/campus/ibkr-api-page/cpapi-v1/',
+    getKeySteps: 'Under Docker use https://host.docker.internal:5000 so the app can reach the gateway on your computer.',
+    checkId: 'broker_prices',
+    secret: false,
+    section: 'subscription',
+    validate: (v) => {
+      const r = checkGatewayUrl(v);
+      return 'error' in r ? r.error : null;
+    },
+  },
+  {
+    id: 'IBKR_CONIDS',
+    placeholder: '<conid>=<your label>, <conid>=<your label>',
+    label: 'IBKR contracts',
+    provider: 'Interactive Brokers (your account)',
+    feeds: 'The contracts to price, as IBKR contract id = your label, separated by commas. The app ships no contract ids; your market data subscriptions decide what you see.',
+    withoutIt: 'Needed when your broker prices are switched on.',
+    getKeyUrl: 'https://www.interactivebrokers.com/campus/ibkr-api-page/cpapi-v1/',
+    getKeySteps: 'Find each contract id (conid) in Trader Workstation under Contract Description, or in the Client Portal contract search, then list them with your own label.',
+    checkId: 'broker_prices',
+    secret: false,
+    section: 'subscription',
+    validate: (v) => {
+      const r = parseConids(v);
+      if (r.problems.length) return `Could not read: ${r.problems.slice(0, 3).join(', ')}. Write each as contract id = label.`;
+      return r.contracts.length ? null : 'List at least one contract as contract id = label.';
+    },
   },
   // ---- AI model -------------------------------------------------------------------------------
   {

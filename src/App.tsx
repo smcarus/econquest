@@ -80,9 +80,11 @@ import { loadHoldings, saveHoldings,   type Holding } from './utils/holdings';
 import { HIDDEN_CHANGED_EVENT, fetchHiddenView, hiddenSets } from './utils/hiddenNamesClient';
 import type { HiddenView } from './utils/exclusions';
 
-type AppArea = 'today' | 'country' | 'compare' | 'portfolio' | 'reports' | 'desks';
+type AppArea = 'today' | 'country' | 'compare' | 'portfolio' | 'policy' | 'reports' | 'desks';
 import { EconQuestLogo } from './components/EconQuestLogo';
 import { lazyNamed, DeskLoading } from './components/LazyDesk';
+import { otherCountries } from './utils/countryChoices';
+import { MENU_GROUP_LABEL, menuGroupOf, menuRank, type MenuGroup } from './utils/menuGroups';
 import { SavedCouncilDocuments } from './components/CouncilDocuments';
 import { describeSnapshotSync } from './utils/syncMessages';
 import { watchlistYieldFields } from './utils/watchlistYield';
@@ -96,6 +98,7 @@ import {
   ListChecks,
   ScrollText,
   Activity,
+  Search,
   ShieldQuestion,
   NotebookPen,
   FileUp,
@@ -110,6 +113,7 @@ import {
   HardDriveDownload,
   UserRound,
   Users,
+  MessageSquareWarning,
 } from 'lucide-react';
 import { OfflineDataDialog, OfflinePill, useOnlineStatus } from './components/OfflineData';
 import { OPEN_ABOUT_EVENT } from './components/aboutOpen';
@@ -127,6 +131,30 @@ import { loadCouncilBrief } from './utils/askCouncil';
 import { loadShareMode, saveShareMode } from './utils/shareMode';
 import { dailyLine, dailyProgress } from './utils/dailyProgress';
 import type { DataHealthTab } from './components/DataHealthDialog';
+import { useUpdateStatus } from './components/updateStatus';
+import { THEME_STORAGE_KEY, initialDark, savedThemeChoice, systemPrefersDark } from './utils/theme';
+import { blankProblemUrl } from './utils/problemReport';
+import { shortcutFor } from './utils/shortcuts';
+
+/** Focus an element once its screen has drawn (lazy screens take a moment); gives up after 2 s. */
+function focusWhenReady(selector: string, tries = 20): void {
+  const el = document.querySelector<HTMLElement>(selector);
+  if (el) {
+    el.focus();
+    el.scrollIntoView({ block: 'center' });
+  } else if (tries > 0) window.setTimeout(() => focusWhenReady(selector, tries - 1), 100);
+}
+
+/** Menu > Report a problem: a new GitHub issue with the version filled in; the person sends it. */
+async function openProblemReport(): Promise<void> {
+  // Opened before the version loads, so the browser counts it as a click and does not block it.
+  const tab = window.open('about:blank', '_blank');
+  if (tab) tab.opener = null;
+  const [{ APP_CITATION }, { versionWithCommit }] = await Promise.all([import('./utils/citation'), import('./utils/buildInfo')]);
+  const url = blankProblemUrl(versionWithCommit(APP_CITATION.version));
+  if (tab) tab.location.href = url;
+  else window.open(url, '_blank', 'noopener,noreferrer');
+}
 
 // Desks load on first use, so the first screen does not download all 41 of them.
 // The menu dialogs load when first opened, keeping them out of the first download.
@@ -136,9 +164,11 @@ const PolicyReviews = lazyNamed(() => import('./components/PolicyReviews'), 'Pol
 const TeachingEpisodes = lazyNamed(() => import('./components/TeachingEpisodes'), 'TeachingEpisodes');
 const AuditLogDialog = lazyNamed(() => import('./components/AuditLogDialog'), 'AuditLogDialog');
 const DataHealthDialog = lazyNamed(() => import('./components/DataHealthDialog'), 'DataHealthDialog');
+const CatalogueSearchDialog = lazyNamed(() => import('./components/CatalogueSearchDialog'), 'CatalogueSearchDialog');
 const IdeaJournalDialog = lazyNamed(() => import('./components/IdeaJournalDialog'), 'IdeaJournalDialog');
 const OwnSeriesDialog = lazyNamed(() => import('./components/OwnSeriesDialog'), 'OwnSeriesDialog');
 const AboutDialog = lazyNamed(() => import('./components/AboutDialog'), 'AboutDialog');
+const ShortcutsDialog = lazyNamed(() => import('./components/ShortcutsDialog'), 'ShortcutsDialog');
 const WorkedExamplesDialog = lazyNamed(() => import('./components/WorkedExamplesDialog'), 'WorkedExamplesDialog');
 const AddCountryDialog = lazyNamed(() => import('./components/AddCountryDialog'), 'AddCountryDialog');
 const QuestsDialog = lazyNamed(() => import('./components/QuestsDialog'), 'QuestsDialog');
@@ -149,7 +179,6 @@ const SelfHostAndOllamaRuntimeModal = lazyNamed(() => import('./components/Manua
 const SovereignManualAndGithubModal = lazyNamed(() => import('./components/ManualAndAiModelDialogs'), 'SovereignManualAndGithubModal');
 
 
-const THEME_STORAGE_KEY = 'econquest_theme_dark_v1';
 const AI_RUNTIME_STORAGE_KEY = 'econquest_ai_runtime_config_v1';
 
 type NavSectionId =
@@ -202,11 +231,10 @@ type NavSectionId =
 
 /** Reports in the core view: the note builder alone. */
 /** Reports: one tab per job, so each opens on its own instead of five panels stacked down one page. */
-type ReportsView = 'ic' | 'reviews' | 'docs' | 'notebooks' | 'teaching';
-const REPORTS_VIEWS: ReportsView[] = ['ic', 'reviews', 'docs', 'notebooks', 'teaching'];
+type ReportsView = 'ic' | 'docs' | 'notebooks' | 'teaching';
+const REPORTS_VIEWS: ReportsView[] = ['ic', 'docs', 'notebooks', 'teaching'];
 /** Which Reports tab holds each anchor that Tools, worked examples and the chat link to. */
 const REPORTS_VIEW_BY_ANCHOR: Record<string, ReportsView> = {
-  'tool-policy-reviews': 'reviews',
   'tool-council-docs': 'docs',
   'tool-notebooks': 'notebooks',
   'tool-episodes': 'teaching',
@@ -223,18 +251,24 @@ export default function App() {
   const savedSessionOnBoot = useMemo(() => loadWorkspaceSessionFromStorage(), []);
 
   // Default to Crisp Editorial Light Mode (false) unless user previously toggled Dark Mode
-  const [darkMode, setDarkMode] = useState<boolean>(() => {
-    if (savedSessionOnBoot && typeof savedSessionOnBoot.darkMode === 'boolean') {
-      return savedSessionOnBoot.darkMode;
-    }
-    try {
-      const saved = localStorage.getItem(THEME_STORAGE_KEY);
-      if (saved !== null) return saved === 'true';
-    } catch {
-      // Ignore storage error
-    }
-    return false;
-  });
+  // Follows the computer's dark/light setting until the switch is pressed (src/utils/theme.ts).
+  const themeChosen = useRef<boolean>(savedThemeChoice() !== null);
+  const [darkMode, setDarkMode] = useState<boolean>(() =>
+    initialDark(savedThemeChoice(), savedSessionOnBoot?.darkMode, systemPrefersDark())
+  );
+  const chooseDark = (on: boolean) => {
+    themeChosen.current = true;
+    setDarkMode(on);
+  };
+  useEffect(() => {
+    if (themeChosen.current || typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = (e: MediaQueryListEvent) => {
+      if (!themeChosen.current) setDarkMode(e.matches);
+    };
+    mq.addEventListener?.('change', onChange);
+    return () => mq.removeEventListener?.('change', onChange);
+  }, []);
 
   const [isWatchlistCollapsed, setIsWatchlistCollapsed] = useState<boolean>(true);
 
@@ -259,6 +293,7 @@ export default function App() {
   const [isAuditLogOpen, setIsAuditLogOpen] = useState<boolean>(false);
   // Menu > Data health, and the counts shown beside it (refreshed every 5 minutes).
   const [isDataHealthOpen, setIsDataHealthOpen] = useState<boolean>(false);
+  const [isFindDataOpen, setIsFindDataOpen] = useState<boolean>(false);
   const [dataHealthSummary, setDataHealthSummary] = useState<{ failingSources: number; missingFigures: number; staleFigures: number } | null>(null);
   useEffect(() => {
     let alive = true;
@@ -304,6 +339,8 @@ export default function App() {
   const [isIdeasOpen, setIsIdeasOpen] = useState(false);
   // The header and Menu in the chosen language (src/i18n; Spanish added 2026-11-08).
   const t = useT(SHELL);
+  // Menu > About says when a newer release is out (src/server/updateCheck.ts).
+  const updateStatus = useUpdateStatus();
   const tr = useT(RESEARCH);
   const trp = useT(REPORTS);
   // Menu > Your data: series loaded from your own CSV files.
@@ -411,6 +448,11 @@ export default function App() {
     setAppArea('reports');
     window.scrollTo({ top: 0 });
   };
+  /** Policy review: its own page, next to Reports. */
+  const openPolicyReview = () => {
+    setAppArea('policy');
+    window.scrollTo({ top: 0 });
+  };
   const openCountryPage = (tabId?: string) => {
     // A Country section asked for by its id (e.g. 'macro' from the MarketEdge screen on Today);
     // anything else opens on the Summary.
@@ -481,19 +523,38 @@ export default function App() {
   const [isWorkedOpen, setIsWorkedOpen] = useState<boolean>(false);
   const [isRuntimeModalOpen, setIsRuntimeModalOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
   const [settingsTab, setSettingsTab] = useState<SettingsTab>('ai');
   // Settings opens from the Menu, from Cmd/Ctrl + comma (as in most desktop apps), or from any
   // panel that dispatches OPEN_SETTINGS_EVENT (Data connections does, next to a missing key).
   useEffect(() => {
     const open = (e?: Event) => {
       const tab = (e as CustomEvent<{ tab?: SettingsTab }> | undefined)?.detail?.tab;
+      // Tools has one home, its own page; a link to "Settings > Tools" opens that page.
+      if (tab === 'tools') {
+        setAppArea('desks');
+        window.scrollTo({ top: 0 });
+        return;
+      }
       if (tab) setSettingsTab(tab);
       setIsSettingsOpen(true);
     };
+    // Keyboard shortcuts (src/utils/shortcuts.ts); ? lists them.
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === ',') {
-        e.preventDefault();
-        open();
+      if (e.defaultPrevented) return;
+      const action = shortcutFor({ key: e.key, metaKey: e.metaKey, ctrlKey: e.ctrlKey, altKey: e.altKey, target: e.target as HTMLElement | null });
+      if (!action) return;
+      // Single keys wait while a window is open; Cmd/Ctrl shortcuts work anywhere.
+      if ((action === 'ask' || action === 'help') && document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+      e.preventDefault();
+      if (action === 'settings') open();
+      else if (action === 'help') setIsShortcutsOpen(true);
+      else if (action === 'tools') {
+        setAppArea('desks');
+        focusWhenReady('[data-tool-search]');
+      } else if (action === 'ask') {
+        if (!document.getElementById('council-question')) setAppArea('today');
+        focusWhenReady('#council-question');
       }
     };
     const openAbout = (e: Event) => setAboutFocus((e as CustomEvent<{ id?: string }>).detail?.id ?? null);
@@ -611,6 +672,26 @@ export default function App() {
       });
   }, []);
 
+  // Whether a Gemini key is set (server keys reply), so the Menu says "AI: not set" rather than
+  // naming Gemini when no model can answer. Checked at start and when the window regains focus.
+  const [geminiKeySet, setGeminiKeySet] = useState<boolean | undefined>(undefined);
+  useEffect(() => {
+    let stop = false;
+    const load = () =>
+      fetch('/api/settings/keys')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (!stop && Array.isArray(d?.keys)) setGeminiKeySet(d.keys.some((k: { id?: string; source?: string }) => k.id === 'GEMINI_API_KEY' && k.source !== 'none'));
+        })
+        .catch(() => undefined);
+    void load();
+    window.addEventListener('focus', load);
+    return () => {
+      stop = true;
+      window.removeEventListener('focus', load);
+    };
+  }, []);
+
   // Persist AI Runtime config changes
   useEffect(() => {
     try {
@@ -636,6 +717,8 @@ export default function App() {
     } else {
       root.classList.remove('dark');
     }
+    // Saved only once the person has chosen, so an unchosen theme keeps following the computer.
+    if (!themeChosen.current) return;
     try {
       localStorage.setItem(THEME_STORAGE_KEY, String(darkMode));
     } catch {
@@ -1059,6 +1142,9 @@ export default function App() {
   }, [hiddenView, allHoldings, watchlists]);
   // The core view never shows a built-in figure: only what a real source filled (utils/liveFigures.ts).
   const liveWatchlistItems = useMemo(() => activeWatchlistItems.map(toLive), [activeWatchlistItems]);
+  // Every other country the app covers, so pickers can reach the lower-income list and the rest from any watchlist.
+  const offListCountries = useMemo(() => otherCountries(activeWatchlistItems, [...watchlists.flatMap((w) => w.items), ...SOVEREIGN_CATALOG], hidden.iso3), [activeWatchlistItems, watchlists, hidden]);
+  const liveOffListCountries = useMemo(() => offListCountries.map(toLive), [offListCountries]);
   // Council chat: one conversation for the whole app, on Workspace and in the side panel elsewhere.
   const councilAnchors = useMarketEdgeAnchors();
   const councilItems = useMemo(() => marketEdgePeers(liveWatchlistItems, councilAnchors?.peers || []), [liveWatchlistItems, councilAnchors]);
@@ -1161,6 +1247,8 @@ export default function App() {
       setAppArea('portfolio');
       window.scrollTo({ top: 0 });
       if (t.anchor) scrollToAnchor(t.anchor);
+    } else if (t.anchor === 'tool-policy-reviews') {
+      openPolicyReview();
     } else {
       openWorkspace('reports', t.anchor ? REPORTS_VIEW_BY_ANCHOR[t.anchor] ?? 'ic' : undefined);
       if (t.anchor) scrollToAnchor(t.anchor);
@@ -1193,9 +1281,9 @@ export default function App() {
     setReportNonce((n) => n + 1);
     openWorkspace('reports', 'ic');
   };
-  // "Start a policy review" from a Council chat answer: open Reports, where the panel picks up the prefill.
+  // "Start a policy review" from a Council chat answer: open Policy review, where the panel picks up the prefill.
   useEffect(() => {
-    const go = () => openWorkspace('reports', 'reviews');
+    const go = () => openPolicyReview();
     window.addEventListener(START_REVIEW_EVENT, go);
     return () => window.removeEventListener(START_REVIEW_EVENT, go);
   });
@@ -1270,6 +1358,19 @@ export default function App() {
                   {t('research')}
                 </button>
               ),
+              policy: (
+                <button
+                  type="button"
+                  onClick={openPolicyReview}
+                  aria-current={appArea === 'policy' ? 'page' : undefined}
+                  aria-pressed={appArea === 'policy'}
+                  title={t('policyReviewTitle')}
+                  className="ui-pill inline-flex items-center whitespace-nowrap"
+                  data-nav-policy="true"
+                >
+                  {t('policyReview')}
+                </button>
+              ),
               reports: (
                 <button
                   type="button"
@@ -1307,13 +1408,15 @@ export default function App() {
           </button>
           )}
 
+          {/* On a phone these three move into the Menu, with their names, so the header is not a row of bare icons. */}
+          <div className="hidden sm:flex items-center gap-1.5">
           <HelpLevelButton />
 
           <LanguageButton />
 
           <button
             type="button"
-            onClick={() => setDarkMode(!darkMode)}
+            onClick={() => chooseDark(!darkMode)}
             title={darkMode ? t('lightMode') : t('darkMode')}
             aria-label={darkMode ? t('lightMode') : t('darkMode')}
             className="inline-flex items-center px-2 py-1.5 text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors"
@@ -1324,6 +1427,7 @@ export default function App() {
               <Moon className="w-3.5 h-3.5 text-slate-700" />
             )}
           </button>
+          </div>
 
           <OfflinePill status={onlineStatus} onOpen={() => setIsOfflineDataOpen(true)} />
 
@@ -1362,7 +1466,7 @@ export default function App() {
               className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap"
             >
               <Settings2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{t('menu')}</span>
+              <span>{t('menu')}</span>
               <ChevronDown className="w-3 h-3 opacity-70" />
             </button>
 
@@ -1371,6 +1475,19 @@ export default function App() {
                 role="menu"
                 className="absolute right-0 top-full mt-1 w-72 max-w-[calc(100vw-2rem)] z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-3 space-y-3 text-xs"
               >
+                {/* Phone only: explanations, language and light or dark, which sit in the header on wider screens. */}
+                <div className="sm:hidden flex flex-wrap items-center gap-1.5 pb-3 border-b border-slate-200 dark:border-slate-800" data-menu-display="true">
+                  <HelpLevelButton labelled />
+                  <LanguageButton labelled />
+                  <button
+                    type="button"
+                    onClick={() => chooseDark(!darkMode)}
+                    className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap"
+                  >
+                    {darkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5" />}
+                    <span>{darkMode ? t('lightMode') : t('darkMode')}</span>
+                  </button>
+                </div>
                 <div className="flex flex-col">
                   {(
                     [
@@ -1387,6 +1504,8 @@ export default function App() {
                             ? t('aiHybrid')
                             : runtimeConfig.providerMode === 'openai_compatible'
                             ? t('aiLocal')
+                            : geminiKeySet === false
+                            ? t('aiNotSet')
                             : t('aiGemini'),
                         title: t('settingsTitle', { shortcut: navigator.platform.toLowerCase().includes('mac') ? '⌘,' : 'Ctrl+,' }),
                         onClick: () => setIsSettingsOpen(true),
@@ -1398,8 +1517,8 @@ export default function App() {
                         label: t('tools'),
                         hint: '',
                         onClick: () => {
-                          setSettingsTab('tools');
-                          setIsSettingsOpen(true);
+                          setAppArea('desks');
+                          window.scrollTo({ top: 0 });
                         },
                         className: '',
                       },
@@ -1424,6 +1543,14 @@ export default function App() {
                               .join(' · ')
                           : '',
                         onClick: () => setIsDataHealthOpen(true),
+                        className: '',
+                      },
+                      {
+                        key: 'findData',
+                        icon: <Search className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: t('findData'),
+                        hint: '',
+                        onClick: () => setIsFindDataOpen(true),
                         className: '',
                       },
                       {
@@ -1511,8 +1638,17 @@ export default function App() {
                         key: 'about',
                         icon: <Info className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
                         label: t('about'),
-                        hint: '',
+                        hint: updateStatus?.newer ? t('updateOut') : '',
                         onClick: () => setAboutFocus(null),
+                        className: '',
+                      },
+                      {
+                        key: 'report',
+                        icon: <MessageSquareWarning className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: t('reportProblem'),
+                        hint: '',
+                        title: t('reportProblemTitle'),
+                        onClick: () => void openProblemReport(),
                         className: '',
                       },
                       {
@@ -1535,7 +1671,16 @@ export default function App() {
                   )
                     // The audit log is for admins once accounts exist (src/utils/permissions.ts).
                     .filter((item) => item.key !== 'audit' || !me || me.role === 'admin')
-                    .map((item) => (
+                    // Tools on its own at the top, then three short groups (src/utils/menuGroups.ts).
+                    .map((item) => ({ ...item, group: menuGroupOf(item.key) }))
+                    .sort((a, b) => menuRank(a.key) - menuRank(b.key))
+                    .map((item, i, all) => (
+                    <React.Fragment key={item.key}>
+                    {item.group !== 'top' && item.group !== all[i - 1]?.group && (
+                      <div role="presentation" className={`px-2 pb-0.5 ui-label ${i > 0 ? 'mt-2 pt-2 border-t border-slate-200 dark:border-slate-800' : ''}`} data-menu-group={item.group}>
+                        {t(MENU_GROUP_LABEL[item.group as Exclude<MenuGroup, 'top'>])}
+                      </div>
+                    )}
                     <button
                       key={item.key}
                       type="button"
@@ -1557,6 +1702,7 @@ export default function App() {
                         </span>
                       )}
                     </button>
+                    </React.Fragment>
                   ))}
                 </div>
               </div>
@@ -1593,6 +1739,18 @@ export default function App() {
                   className="ui-pill whitespace-nowrap shrink-0"
                 >
                   {t('research')}
+                </button>
+              ),
+              policy: (
+                <button
+                  type="button"
+                  onClick={openPolicyReview}
+                  aria-pressed={appArea === 'policy'}
+                  title={t('policyReviewTitle')}
+                  className="ui-pill whitespace-nowrap shrink-0"
+                  data-nav-policy="true"
+                >
+                  {t('policyReview')}
                 </button>
               ),
               reports: (
@@ -1708,6 +1866,9 @@ export default function App() {
                 run={run}
                 watchlistName={watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}
                 watchlistItems={liveWatchlistItems}
+                watchlists={visibleWatchlists}
+                activeWatchlistId={activeWatchlistId}
+                onSelectWatchlist={setActiveWatchlistId}
                 section={researchSection}
                 onSection={setResearchSection}
                 onOpenCountry={(item, tab) => {
@@ -1762,6 +1923,7 @@ export default function App() {
             <CountryPage
               run={run}
               watchlistItems={activeWatchlistItems}
+              otherCountries={offListCountries}
               activeTab={countryTab}
               onChangeTab={setCountryTab}
               onSelectCountry={handleSelectSovereign}
@@ -1869,6 +2031,16 @@ export default function App() {
             </PanelBoundary>
           )}
 
+          {appArea === 'policy' && (
+            <PanelBoundary name="Policy reviews">
+              <Suspense fallback={<DeskLoading />}>
+                <div id="tool-policy-reviews" className="scroll-mt-4" data-area="policy">
+                  <PolicyReviews countries={liveWatchlistItems} otherCountries={liveOffListCountries} defaultIso3={run.iso3} />
+                </div>
+              </Suspense>
+            </PanelBoundary>
+          )}
+
           {appArea === 'reports' && (
             <PanelBoundary name="Reports">
             <WorkspacePage
@@ -1877,8 +2049,8 @@ export default function App() {
               subtitle={trp('rp_subtitle', { country: run.countryName })}
               tabs={REPORTS_VIEWS.map((id) => ({
                 id,
-                label: trp(id === 'ic' ? 'rp_tab_note' : id === 'reviews' ? 'rp_tab_reviews' : id === 'docs' ? 'rp_tab_docs' : id === 'notebooks' ? 'rp_tab_notebooks' : 'rp_tab_teaching'),
-                hint: trp(id === 'ic' ? 'rp_tab_note_hint' : id === 'reviews' ? 'rp_tab_reviews_hint' : id === 'docs' ? 'rp_tab_docs_hint' : id === 'notebooks' ? 'rp_tab_notebooks_hint' : 'rp_tab_teaching_hint'),
+                label: trp(id === 'ic' ? 'rp_tab_note' : id === 'docs' ? 'rp_tab_docs' : id === 'notebooks' ? 'rp_tab_notebooks' : 'rp_tab_teaching'),
+                hint: trp(id === 'ic' ? 'rp_tab_note_hint' : id === 'docs' ? 'rp_tab_docs_hint' : id === 'notebooks' ? 'rp_tab_notebooks_hint' : 'rp_tab_teaching_hint'),
                 desks: ['ic_memo_builder'],
               }))}
               activeTabId={reportsTab}
@@ -1887,13 +2059,6 @@ export default function App() {
               onChangeDesk={() => undefined}
               renderDesk={() => (
                 <Suspense fallback={<DeskLoading />}>
-                  {reportsTab === 'reviews' && (
-                  <div id="tool-policy-reviews" className="scroll-mt-4">
-                    <PanelBoundary name="Policy reviews">
-                      <PolicyReviews countries={liveWatchlistItems} defaultIso3={run.iso3} />
-                    </PanelBoundary>
-                  </div>
-                  )}
                   {reportsTab === 'docs' && (
                   <div id="tool-council-docs" className="scroll-mt-4">
                     <PanelBoundary name="Council documents">
@@ -1957,6 +2122,7 @@ export default function App() {
 
       {isOfflineDataOpen && <OfflineDataDialog onClose={() => setIsOfflineDataOpen(false)} />}
       <Suspense fallback={null}>{isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}</Suspense>
+      <Suspense fallback={null}>{isFindDataOpen && <CatalogueSearchDialog onClose={() => setIsFindDataOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isDataHealthOpen && <DataHealthDialog initialTab={dataHealthTab} onClose={() => (setIsDataHealthOpen(false), setDataHealthTab(undefined))} />}</Suspense>
       <Suspense fallback={null}>{isIdeasOpen && <IdeaJournalDialog onClose={() => setIsIdeasOpen(false)} />}</Suspense>
       <Suspense fallback={null}>
@@ -1977,6 +2143,7 @@ export default function App() {
       <Suspense fallback={null}>{registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}</Suspense>
       <Suspense fallback={null}>{isUsersOpen && me && <UsersDialog me={me} onClose={() => setIsUsersOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isAccountOpen && <AccountDialog onClose={() => setIsAccountOpen(false)} />}</Suspense>
+      <Suspense fallback={null}>{isShortcutsOpen && <ShortcutsDialog onClose={() => setIsShortcutsOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{aboutFocus !== undefined && <AboutDialog focusId={aboutFocus} onClose={() => setAboutFocus(undefined)} />}</Suspense>
       {isManualModalOpen && (
         <Suspense fallback={null}>
@@ -1995,18 +2162,6 @@ export default function App() {
         onTabChange={setSettingsTab}
         aiConfig={runtimeConfig}
         onAiConfigChange={setRuntimeConfig}
-        tools={
-          <ToolsPage
-            run={run}
-            items={liveWatchlistItems}
-            watchlistName={watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}
-            onOpen={(t) => {
-              setIsSettingsOpen(false);
-              openTool(t);
-            }}
-            inDialog
-          />
-        }
       />
 
       {isRuntimeModalOpen && (

@@ -2,6 +2,7 @@ import { netInterestPct } from './imfFiscal';
 import { latestInflation } from './latestInflation';
 import { ucdpFigures, ucdpMissing } from './ucdpConflict';
 import { HC_SPREAD_LABEL, hcSpreadMissing, hcSpreadWhen } from './hardCurrencySpread';
+import { LOCAL_RATE_ABOUT, LOCAL_RATE_KINDS, LOCAL_RATE_LABEL, STOCK_INDEX_MISSING, imfLocalRatesWanted, localRateMissing, localRateSource, localRateValue } from './imfLocalRates';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import { EU_SURVEY_SOURCE, euSurveyGeo, euSurveyReading, euSurveyValue, NOT_A_PMI } from './euSurveys';
 import { getSnapshotDataStatus, DATA_MODE_LABEL, formatAsOf, type SnapshotDataStatus } from './dataStatus';
@@ -442,6 +443,22 @@ export function modelRow(status: SnapshotDataStatus, label: string, inputs: stri
 }
 
 /** A built-in figure with no connected source (debt maturity profile, rollover figures). */
+/**
+ * IMF monthly local market rates (LP1) and the stock index, for countries with no official 10Y
+ * yield in the app; nothing for the others.
+ */
+export function localRateRows(open: CouncilAssessmentRun['openData']): BriefRow[] {
+  if (!open || (!open.localRates && !imfLocalRatesWanted(open.iso3))) return [];
+  const lr = open.localRates;
+  const rows: BriefRow[] = LOCAL_RATE_KINDS.map((k) => {
+    const r = lr?.[k];
+    if (!r) return missingRow(LOCAL_RATE_LABEL[k], localRateMissing(k, open.iso3, Boolean(lr), lr?.old?.[k]));
+    return { label: LOCAL_RATE_LABEL[k], value: localRateValue(r), source: localRateSource(r), verified: !r.stale, help: LOCAL_RATE_ABOUT[k] };
+  });
+  rows.push(missingRow('Stock index', STOCK_INDEX_MISSING));
+  return rows;
+}
+
 export const noSourceRow = (label: string, help = 'No free live or official source for this figure is connected yet. The app shows Missing rather than an estimate or a sample number.'): BriefRow =>
   missingRow(label, { kind: 'setup', short: 'No source yet', help });
 
@@ -598,7 +615,13 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
       title: 'Growth and inflation',
       rows: [
         liveRow(status, 'Real GDP growth', 'imf.realGdpGrowthPct', (v) => pct(v), open),
-        liveRow(status, 'CPI inflation', 'imf.cpiInflationPct', (v) => pct(v), open),
+        // The same inflation figure the summary above uses (latest month where there is one), then the IMF yearly average beside it.
+        ...(infl?.monthly
+          ? [
+              { label: 'CPI inflation, y/y (latest month)', value: pct(infl.pct), source: infl.source, verified: true },
+              liveRow(status, 'CPI inflation, yearly average', 'imf.cpiInflationPct', (v) => pct(v), open),
+            ]
+          : [liveRow(status, 'CPI inflation', 'imf.cpiInflationPct', (v) => pct(v), open)]),
         liveRow(status, 'Unemployment rate', 'imf.unemploymentPct', (v) => pct(v), open),
         ...euSurveyRows(run.iso3, peers),
         ...wagesHousingRows(open),
@@ -625,6 +648,7 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
         releaseRow('Next GDP release', 'GDP_RELEASE'),
       ],
     },
+    ...(localRateRows(open).length ? [{ title: 'Local market rates', rows: localRateRows(open) }] : []),
     {
       title: 'Fiscal and debt',
       rows: [
@@ -709,6 +733,7 @@ export function countryDataSources(run: CouncilAssessmentRun): BriefGroup[] {
         r(`${HC_SPREAD_LABEL} over Treasuries (not CDS)`, 'market.hcBondSpreadBps', (v) => `${Math.round(v)} bps`),
         r('Policy rate', 'market.policyRatePct', (v) => pct(v, 2)),
         r(`Spot FX (${open.currencyCode} per USD)`, 'market.exchangeRatePerUsd', (v) => (v >= 100 ? v.toFixed(0) : v.toFixed(v >= 10 ? 2 : 4))),
+        ...localRateRows(open),
         noSourceRow('Credit rating', 'Credit ratings (grades such as BBB or B from S&P, Moody\'s and Fitch) are licensed data with no free feed. The app does not guess them or ask an AI model for them.'),
       ],
     },

@@ -4,12 +4,19 @@ import { geminiModel } from './src/utils/geminiModel';
 import { loadModelHistoryCached } from './src/utils/modelHistory';
 import { withLongCli, withLongCpi, withLongPolicy } from './src/utils/longHistory';
 import { refreshModelHistory, registerAnalysisRoutes } from './src/server/routes/analysis';
-import { BY_HAND, FILE_PULLS, dailyDue, dailyFilePath, formatDaily, interestingLines, readDaily, sweepNote, testsDue, writeDaily, type DailyRun, type DailyStep } from './src/utils/dailyRun';
+import { BY_HAND, FILE_PULLS, SECOND_TRY_WAIT_MS, dailyDue, failedDownloads, replaceStep, dailyFilePath, formatDaily, interestingLines, readDaily, preReleaseTestsDue, sweepNote, testsDue, writeDaily, type DailyRun, type DailyStep } from './src/utils/dailyRun';
 import { spawn } from 'child_process';
 import { registerReviewRoutes } from './src/server/routes/reviews';
 import type { HistoryInput } from './src/utils/precedentFinder';
 import { registerIdeaRoutes } from './src/server/routes/ideas';
+import { isWgiCode, wbReplyHasRows, wgiUrls } from './src/utils/wgiCodes';
 import { registerFeedbackRoutes } from './src/server/routes/feedback';
+import { getUpdateStatus } from './src/server/updateCheck';
+import { registerCatalogueRoutes } from './src/server/routes/catalogue';
+import { offlineReportHtml } from './src/utils/offlineReport';
+import { registerOfficialDocsRoutes } from './src/server/routes/officialDocs';
+import { registerGvarRoutes } from './src/server/routes/gvar';
+import { registerTeamRoutes } from './src/server/routes/team';
 import { mountEngineRoutes } from './src/server/engineRoutes';
 import { ENGINE_ROUTES } from './src/engine/routeTable';
 import { createNodePlatform } from './src/platform/node';
@@ -19,7 +26,7 @@ import { registerOwnSeriesRoutes } from './src/server/routes/ownSeries';
 import { registerBudgetExecutionRoutes } from './src/server/routes/budgetExecution';
 import { ownSeriesViewsFor, OWN_NO_COUNTRY } from './src/engine/ownSeries';
 import { registerQuestRoutes } from './src/server/routes/quests';
-import { forwardSummary } from './src/utils/forwardRecord';
+import { forwardByMonth, forwardSummary } from './src/utils/forwardRecord';
 import { SPIKE_METHOD, spikeMonths, spikeSentence } from './src/utils/unrestSpikes';
 import { forwardFilePath, loadForward } from './src/utils/forwardRecordStore';
 import { fetchWithTimeout } from './src/server/http';
@@ -35,8 +42,10 @@ import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from '.
 import { dataDirProblem, ollamaBaseUrlDefault, readiness, shutdownTimeoutMs } from './src/utils/serverRuntime';
 import { AuthStore } from './src/utils/authStore';
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { ANSWER_LANG_HEADER, parseAnswerLang, setAnswerLanguageSource } from './src/utils/answerLanguage';
+import type { Lang } from './src/i18n/lang';
 import { refusal, requiredRole, roleAtLeast } from './src/utils/permissions';
-import { CSRF_HEADER, csrfMatches, csrfToken, isAiCall, isWrite, LIMITS, RateLimiter, SECURITY_HEADERS } from './src/utils/requestLimits';
+import { CSRF_HEADER, csrfMatches, csrfToken, isAiCall, isWrite, LIMITS, RateLimiter, PRODUCTION_CSP, SECURITY_HEADERS } from './src/utils/requestLimits';
 import { apiKeyFrom, DATA_API_LIMIT, isDataApiRead, keyMatches } from './src/server/dataApi';
 import { countryInPath, normaliseCountryQuery, normaliseCountryUrl, withoutHiddenCountries } from './src/server/countryCodes';
 import { ExclusionStore } from './src/server/exclusionStore';
@@ -55,7 +64,7 @@ import { registerExclusionRoutes } from './src/server/routes/consoleExclusions';
 import { registerConsoleScenarioRoutes } from './src/server/routes/consoleScenarios';
 import { deadlineInputs, parseDeadline } from './src/utils/dailyDeadline';
 import { monthlyAverages, readReplayFile, type ReplayFile } from './src/utils/scenarioReplay';
-import { fxDailySeries, fxHistoryPulledAt } from './src/utils/fxHistory';
+import { fxDailySeries, fxHistoryCurrencies, fxHistoryPulledAt } from './src/utils/fxHistory';
 import { loadWatchRules as loadWatchRuleFile } from './src/utils/watchRulesStore';
 import { registerConsoleEventRoutes } from './src/server/routes/consoleEvents';
 import { LEGACY_SCOPES, TOKEN_PREFIX, publicToken, scopeFor, scopeRefusal, tokenOnly, type Scope } from './src/utils/apiTokens';
@@ -81,6 +90,7 @@ import { comtradeMissing } from './src/utils/comtradeTrade';
 import { ticHoldingFor } from './src/utils/ticHoldings';
 import { cliFor, cliTurns } from './src/utils/oecdCli';
 import { loadForecastValidation, runForecastEvaluations } from './src/utils/forecastEvalRun';
+import { loadOecdVintageInputs } from './src/utils/oecdRealTimeStore';
 import { loadSignalValidation, runSignalEvaluations } from './src/utils/fxFactorsRun';
 import { crashSentence } from './src/utils/fxFactors';
 import { loadWeoVintages } from './src/utils/weoVintagesStore';
@@ -111,6 +121,7 @@ import { loadOwidEnergy, fetchOwidEnergyPull } from './src/server/feeds/owidEner
 import { loadFedSwaps, fetchFedSwaps } from './src/server/feeds/fedSwaps';
 import { fetchWbProjects } from './src/server/feeds/wbProjects';
 import { fetchRegional } from './src/server/feeds/regional';
+import { fetchOfficialForecasts } from './src/server/feeds/officialForecasts';
 import { fetchCurves } from './src/server/feeds/fullCurves';
 import { fetchSurpriseInputs } from './src/server/feeds/dataSurprises';
 import { loadWeather, fetchWeather } from './src/server/feeds/nasaPower';
@@ -157,6 +168,8 @@ import { toLive } from './src/utils/liveFigures';
 import { EVENT_LABEL, openIssues, watchFigures, type FigureEventKind } from './src/utils/figureWatch';
 import { readEvents, readLedger, saveWatch } from './src/utils/figureWatchStore';
 import { DEFAULT_WATCHLISTS } from './src/data/presetsAndBaselines';
+import { ADDED_COUNTRIES_KEY, ADDED_COUNTRIES_MAX, pickAddedCountries, watchedCountries, WATCHLISTS_KEY } from './src/utils/addedCountries';
+import { LOW_INCOME_DEBT_ADDED_ISO3, lowIncomeCatalogItems } from './src/data/lowIncomeCatalog';
 import { defaultProvider, isLightMode, LIGHT_GDELT_NOTE, lightModeCountries, skipGdeltRaw } from './src/utils/lightMode';
 import { isModelPlaceholder, MODEL_FIELD_MISSING } from './src/utils/councilResult';
 import { FIGURE_LIST, FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
@@ -186,10 +199,13 @@ import {
   withKey,
   withoutKey,
 } from './src/utils/userSettings';
+import { currentStandIns } from './src/server/lastGood';
 import { checkConnections, describeNetworkError, isFailure, type ConnectionReport, type ConnectionResult } from './src/utils/connectionCheck';
 import { notify, readLastAlert, testAlertRoute } from './src/server/alerts';
 import { backtestRegressionAlert, backtestRegressions, dataCheckAlert, jobFailedAlert } from './src/utils/alertEvents';
 import { calendarHealth, localDay } from './src/utils/calendarHealth';
+import { loadWatchState, startReleaseWatch } from './src/server/releaseWatch';
+import { releaseWatchView } from './src/utils/releaseWatch';
 import { inflationHealth } from './src/utils/inflationHealth';
 import { OFFICIAL_CALENDAR } from './src/data/officialCalendar';
 import { checkTime, clockIn, nightlyDue, recordFromReport, sourceHealth, TRIGGER_LABEL, type CheckTrigger } from './src/utils/dataHealth';
@@ -205,7 +221,8 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { ThinkingLevel, Type } from '@google/genai';
 import {
-  SOVEREIGN_CATALOG,
+  SOVEREIGN_CATALOG, catalogEntry,
+  registerCustomSovereignInCatalog,
   buildBaselineOpenData,
   buildDefaultAssessmentRun,
   buildOfficialCatalystCalendar,
@@ -251,7 +268,9 @@ import { US_10Y_SERIES } from './src/utils/officialYields.ts';
 import { fetchCftcPull, fetchTicPull, fetchCbpolPull, fetchUstAuctionPull, loadUstAuctions } from './src/server/feeds/positioning';
 import { fetchGovSpendingPull } from './src/server/feeds/govSpending';
 import { gdeltPausedUntil, gdeltFetch, GDELT_REFRESH_MS } from './src/server/feeds/gdelt';
-import { fetchImfPull, fetchCoferPull, fetchImfCpiPull, loadImfCpi } from './src/server/feeds/imf';
+import { fetchImfPull, fetchCoferPull, fetchImfCpiPull, loadImfCpi, fetchImfFxPull, loadImfFx, fetchImfPolicyPull, loadImfPolicy, fetchImfLocalRatePulls, loadImfLocalRates } from './src/server/feeds/imf';
+import { imfPolicyRateFor } from './src/utils/imfPolicyRate';
+import { localRatesFor } from './src/utils/imfLocalRates';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
 import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, nationalCpiOrSaved, forgetNationalCpi, fetchMonthlyActivity, fetchEuSurveyPull, loadEuSurveys } from './src/server/feeds/oecd';
 import { commodityMemory, fetchCommodities, forgetCommodityPulls } from './src/server/feeds/commodities';
@@ -431,14 +450,22 @@ async function downloadOfficialHistory(iso3: string): Promise<OfficialHistoryFil
   // A few requests at a time (about 100 figures per country; one after another took more than the
   // 3-minute preload limit on a slow line), each worker keeping a polite gap between its requests.
   const one = async (fig: (typeof OFFICIAL_FIGURES)[number]) => {
-    const url =
+    const wbQuery = `format=json&per_page=200&date=1960:${lastYear}`;
+    // WGI estimates moved to GOV_WGI_<code> (src/utils/wgiCodes.ts): try each address form in turn.
+    const urls =
       fig.source === 'wb'
-        ? `https://api.worldbank.org/v2/country/${iso3}/indicator/${fig.code}?format=json&per_page=200&date=1960:${lastYear}`
-        : `https://www.imf.org/external/datamapper/api/v1/${fig.code}/${iso3}`;
+        ? isWgiCode(fig.code)
+          ? wgiUrls(iso3, fig.code, wbQuery)
+          : [`https://api.worldbank.org/v2/country/${iso3}/indicator/${fig.code}?${wbQuery}`]
+        : [`https://www.imf.org/external/datamapper/api/v1/${fig.code}/${iso3}`];
     try {
-      const res = await fetchWithTimeout(url, 15000);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const body = await res.json();
+      let body: any = null;
+      for (const url of urls) {
+        const res = await fetchWithTimeout(url, 15000);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        body = await res.json();
+        if (fig.source !== 'wb' || wbReplyHasRows(body)) break;
+      }
       const years = fig.source === 'wb' ? parseWorldBankYears(body) : parseImfYears(body, fig.code, iso3);
       if (!years) throw new Error('unexpected answer');
       answered++;
@@ -590,10 +617,44 @@ function savePreloadState(): void {
  * the watchlist (src/utils/lightMode.ts).
  */
 function preloadCountries(): Array<{ iso3: string; countryName: string }> {
+  syncAddedCountries();
   const arg = process.argv.find((a) => a.startsWith('--countries='))?.slice('--countries='.length) || process.env.PRELOAD_COUNTRIES || '';
   const only = new Set(arg.split(',').map((x) => x.trim().toUpperCase()).filter(Boolean));
   if (!only.size && isLightMode(process.env)) for (const iso3 of lightModeCountries(workspaceValuesOnDisk(), DEFAULT_WATCHLISTS, new Set(SOVEREIGN_CATALOG.map((c) => c.iso3)))) only.add(iso3);
   return SOVEREIGN_CATALOG.filter((c) => !only.size || only.has(c.iso3)).map((c) => ({ iso3: c.iso3, countryName: c.countryName }));
+}
+/** The built-in countries, before any added country joins the list. */
+const BUILT_IN_ISO3 = new Set(SOVEREIGN_CATALOG.map((c) => c.iso3));
+/**
+ * The countries on the IMF low-income debt list (src/data/lowIncomeCatalog.ts): built in and shown in
+ * every list, but the server downloads and refreshes only those on a saved watchlist or added list
+ * (Sam, 25 November 2026), so the daily run stays short. The others are fetched live when opened.
+ */
+const FOLLOW_ONLY_ISO3 = new Set(LOW_INCOME_DEBT_ADDED_ISO3);
+const FOLLOW_ONLY_ITEMS = new Map(lowIncomeCatalogItems().map((c) => [c.iso3, c]));
+/** Countries the server always keeps: the built-in ones less the follow-only ones. */
+const ALWAYS_ISO3 = new Set([...BUILT_IN_ISO3].filter((iso3) => !FOLLOW_ONLY_ISO3.has(iso3)));
+/** Added countries left out of the daily download because the limit was reached (LI1). */
+let addedOverLimit: string[] = [];
+/**
+ * Countries you added (Menu > Add a country) join the server's country list, so the start-up
+ * download, the daily run and the data API cover them like the built-in ones; a country you
+ * removed leaves it again (src/utils/addedCountries.ts).
+ */
+function syncAddedCountries(): void {
+  const values = workspaceValuesOnDisk();
+  const pick = pickAddedCountries(values, BUILT_IN_ISO3);
+  const followed = watchedCountries(values, FOLLOW_ONLY_ISO3);
+  const want = new Set([...pick.countries.map((c) => c.iso3), ...followed]);
+  for (let i = SOVEREIGN_CATALOG.length - 1; i >= 0; i--) {
+    const iso3 = SOVEREIGN_CATALOG[i].iso3;
+    if (!ALWAYS_ISO3.has(iso3) && !want.has(iso3)) SOVEREIGN_CATALOG.splice(i, 1);
+  }
+  for (const iso3 of LOW_INCOME_DEBT_ADDED_ISO3) {
+    if (followed.has(iso3) && !SOVEREIGN_CATALOG.some((c) => c.iso3 === iso3)) SOVEREIGN_CATALOG.push(FOLLOW_ONLY_ITEMS.get(iso3)!);
+  }
+  for (const c of pick.countries) registerCustomSovereignInCatalog(c);
+  addedOverLimit = pick.overLimit;
 }
 /** The shared workspace and every account's own, for the light-mode country list. */
 function workspaceValuesOnDisk(): Array<Record<string, string | undefined>> {
@@ -630,7 +691,7 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
     }
     // GDELT's 15-minute pause is not waited out here (it can refuse every country in turn);
     // its figures fill in on a later hourly refresh.
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === step.iso3)?.countryName;
+    const name = catalogEntry(step.iso3)?.countryName;
     const pausedBefore = gdeltPausedUntil;
     const snap = await refreshStoredSnapshot(step.iso3, name);
     if (!snap) return { outcome: 'failed', note: 'The pull failed; see the server log' };
@@ -662,6 +723,30 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       // Your data subscription (src/engine/paidData.ts): off, or no adapter yet, counts as done with nothing to fetch.
       const got = await fetchSubscription(enginePlatform, process.env);
       return { outcome: got.ok ? 'done' : 'failed', note: got.note };
+    }
+    case 'world:imf_policy': {
+      const got = await fetchImfPolicyPull({ force: true });
+      if (!got) return { outcome: 'failed', note: 'No IMF monthly policy rate was saved (npm run check:data, row imf_policy, shows why)' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const months = Object.values(got.series).map((s) => s.points[s.points.length - 1]?.period || '');
+      const note = `${Object.keys(got.series).length} countries to ${months.sort().pop() || '?'}`;
+      return fresh ? { outcome: 'done', note } : { outcome: 'failed', note: `The IMF did not answer; kept the copy from ${got.pulledAt.slice(0, 10)} (${note})` };
+    }
+    case 'world:imf_rates': {
+      const got = await fetchImfLocalRatePulls({ force: true });
+      const pulls = Object.values(got).filter((p): p is NonNullable<typeof p> => Boolean(p));
+      if (!pulls.length) return { outcome: 'failed', note: 'No IMF monthly local market rate was saved (npm run check:data, row imf_rates, shows why)' };
+      const fresh = pulls.some((p) => Date.now() - Date.parse(p.pulledAt) < 60 * 60 * 1000);
+      const note = (['tbill', 'govbond', 'money'] as const).map((k) => `${k === 'tbill' ? 'T-bill' : k === 'govbond' ? 'gov bond' : 'money market'} ${Object.keys(got[k]?.series || {}).length}`).join(', ') + ' countries';
+      return fresh ? { outcome: 'done', note } : { outcome: 'failed', note: `The IMF did not answer; kept the saved copies (${note})` };
+    }
+    case 'world:imf_fx': {
+      const got = await fetchImfFxPull(fxHistoryCurrencies(loadFxHistory()), { force: true });
+      if (!got) return { outcome: 'failed', note: 'No IMF monthly exchange rate was saved (npm run check:data, row imf_fx, shows why)' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const months = Object.values(got.series).map((s) => s.points[s.points.length - 1]?.period || '');
+      const note = `${Object.keys(got.series).length} countries to ${months.sort().pop() || '?'}`;
+      return fresh ? { outcome: 'done', note } : { outcome: 'failed', note: `The IMF did not answer; kept the copy from ${got.pulledAt.slice(0, 10)} (${note})` };
     }
     case 'world:imf_cpi': {
       const got = await fetchImfCpiPull({ force: true });
@@ -726,6 +811,18 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       if (!got) return { outcome: 'failed', note: 'Neither the US Treasury nor the ECB answered for the yield curves' };
       const last = (d?: { days: Array<{ date: string }> }) => d?.days[d.days.length - 1]?.date;
       return { outcome: 'done', note: `US Treasury ${last(got.us) ? `to ${last(got.us)}` : 'not read'}; ECB euro area ${last(got.ea) ? `to ${last(got.ea)}` : 'not read'} (copy of ${got.pulledAt.slice(0, 16).replace('T', ' ')} UTC)` };
+    }
+    case 'world:official_forecasts': {
+      const got = await fetchOfficialForecasts();
+      if (!got) return { outcome: 'failed', note: 'None of the IMF, the World Bank or the OECD answered for the official forecasts' };
+      const n = (x?: Record<string, unknown>) => (x ? Object.keys(x).length : 0);
+      const parts = [
+        got.weo ? `IMF WEO ${n(got.weo.gdp)} countries` : 'IMF WEO not read',
+        got.gep ? `World Bank GEP ${n(got.gep.byIso)} countries${got.gep.edition ? ` (${got.gep.edition})` : ''}` : 'World Bank GEP not read',
+        got.oecd ? `OECD ${n(got.oecd.byIso)} countries${got.oecd.edition ? ` (${got.oecd.edition})` : ''}` : 'OECD Economic Outlook not read',
+      ];
+      const problems = Object.values(got.problems || {});
+      return { outcome: 'done', note: `${parts.join('; ')} (copy of ${got.pulledAt.slice(0, 10)})${problems.length ? `; ${problems.join('; ')}` : ''}` };
     }
     case 'world:regional': {
       const got = await fetchRegional();
@@ -917,7 +1014,7 @@ function preloadDisk() {
 }
 function preloadReply() {
   const plan = preloadPlan();
-  return { state: preloadState, summary: summarisePreload(plan, preloadState), disk: preloadDisk(), file: 'data/local/preload.json' };
+  return { state: preloadState, summary: summarisePreload(plan, preloadState), disk: preloadDisk(), file: 'data/local/preload.json', added: { overLimit: addedOverLimit, max: ADDED_COUNTRIES_MAX } };
 }
 
 /** Starts a run (or returns the one going). log gets one line per step. */
@@ -1056,7 +1153,9 @@ async function runDailyCli(): Promise<void> {
     console.log(`[daily] Not run: ${due.reason}. (npm run daily -- --force runs it again.)`);
     process.exit(0);
   }
-  const run: DailyRun = { startedAt: new Date().toISOString(), where: process.env.ECONQUEST_WHERE || 'this computer', steps: [], downloadedBytes: 0 };
+  const last = readDaily(file).last;
+  // A later try updates the last run in place; otherwise a new run starts.
+  const run: DailyRun = due.retryOnly && last ? last : { startedAt: new Date().toISOString(), where: process.env.ECONQUEST_WHERE || 'this computer', steps: [], downloadedBytes: 0 };
   const save = () => writeDaily(file, { last: run });
   // What this process downloads (feeds, histories, tests); scripts report their own (runScript).
   const counter = installDownloadCounter();
@@ -1070,18 +1169,73 @@ async function runDailyCli(): Promise<void> {
     save();
     console.log(`[daily] ${step.outcome === 'done' ? 'OK' : step.outcome === 'failed' ? 'FAILED' : 'SKIPPED'}: ${step.label}${step.note ? `: ${step.note}` : ''}${step.bytes ? ` (${formatBytes(step.bytes)} downloaded)` : ''}`);
   };
-  save();
+  if (!due.retryOnly) save();
   console.log(`[daily] Starting (${due.reason}). Safe to stop: the next start carries on.`);
+
+  // The two download steps, also used for the second and later tries.
+  const feedsStep = async (): Promise<DailyStep> => {
+    const preloadFrom = new Date().toISOString();
+    await startPreload({ log: (line) => console.log(`  ${line}`) });
+    const sum = downloadSummary(preloadState, preloadFrom);
+    const problems = summarisePreload(preloadPlan(), preloadState).problems.map((p) => `${p.outcome === 'skipped' ? 'Needs setup' : 'Failed'}: ${p.label}${p.note ? `: ${p.note}` : ''}`);
+    const partsFailed = summarisePreload(preloadPlan(), preloadState).problems.filter((p) => p.outcome === 'failed').length;
+    return { id: 'feeds', label: 'Free feeds for every country', outcome: preloadState.endedEarly ? 'failed' : 'done', note: sum.summary, details: problems, ...(partsFailed ? { partsFailed } : {}) };
+  };
+  const fileStep = async (f: (typeof FILE_PULLS)[number]): Promise<{ step: DailyStep; bytes: number }> => {
+    console.log(`  -- ${f.label}`);
+    const r = await runScript(f.script, f.args);
+    const got = interestingLines(r.output);
+    return {
+      step: {
+        id: f.id,
+        label: f.label,
+        outcome: r.code === 0 ? 'done' : 'failed',
+        note: got.saved.length ? `${got.saved.length} new file${got.saved.length === 1 ? '' : 's'}${got.problems.length ? `, ${got.problems.length} not saved` : ''}` : got.problems.length ? `${got.problems.length} not saved` : 'up to date',
+        details: got.problems,
+      },
+      bytes: r.bytes ?? 0,
+    };
+  };
+  /** Runs the download steps named again and puts each result in place of the failed one. */
+  const tryAgain = async (ids: string[], which: string): Promise<string[]> => {
+    const fixed: string[] = [];
+    for (const id of ids) {
+      const before = counter.total();
+      let step: DailyStep;
+      let scriptBytes = 0;
+      if (id === 'feeds') step = await feedsStep();
+      else {
+        const f = FILE_PULLS.find((x) => x.id === id);
+        if (!f) continue;
+        ({ step, bytes: scriptBytes } = await fileStep(f));
+      }
+      step.bytes = counter.total() - before + scriptBytes;
+      countedSoFar = counter.total();
+      run.downloadedBytes = (run.downloadedBytes ?? 0) + step.bytes;
+      const merged = replaceStep(run, step, which);
+      const { fixed: nowWorks, ...kept } = merged;
+      if (nowWorks) fixed.push(id);
+      save();
+      console.log(`[daily] ${nowWorks ? 'OK' : 'FAILED'}: ${kept.label}: ${kept.note}`);
+    }
+    return fixed;
+  };
+
+  // A later start, 2 hours or more after a run with failed downloads: only those steps, again.
+  if (due.retryOnly) {
+    console.log(`[daily] Trying again: ${due.retryOnly.join(', ')} (failed in the run that finished ${last!.finishedAt!.slice(0, 16).replace('T', ' ')} UTC).`);
+    const at = new Date().toISOString();
+    const fixed = await tryAgain(due.retryOnly, 'later try');
+    run.laterTries = [...(run.laterTries || []), { at, steps: due.retryOnly, fixed }];
+    save();
+    console.log('');
+    console.log(formatDaily(run, { full: true }));
+    process.exit(0);
+  }
 
   // 1. Every free feed for every country.
   console.log('[daily] 1/5 Free feeds for every country (Download all)');
-  const preloadFrom = new Date().toISOString();
-  await startPreload({ log: (line) => console.log(`  ${line}`) });
-  {
-    const sum = downloadSummary(preloadState, preloadFrom);
-    const problems = summarisePreload(preloadPlan(), preloadState).problems.map((p) => `${p.outcome === 'skipped' ? 'Needs setup' : 'Failed'}: ${p.label}${p.note ? `: ${p.note}` : ''}`);
-    add({ id: 'feeds', label: 'Free feeds for every country', outcome: preloadState.endedEarly ? 'failed' : 'done', note: sum.summary, details: problems });
-  }
+  add(await feedsStep());
   const offline = !!preloadState.endedEarly && /cannot be reached/.test(preloadState.endedEarly);
   if (offline) run.offline = true;
 
@@ -1093,16 +1247,16 @@ async function runDailyCli(): Promise<void> {
       add({ id: f.id, label: f.label, outcome: 'skipped', note: 'offline' });
       continue;
     }
-    console.log(`  -- ${f.label}`);
-    const r = await runScript(f.script, f.args);
-    const got = interestingLines(r.output);
-    add({
-      id: f.id,
-      label: f.label,
-      outcome: r.code === 0 ? 'done' : 'failed',
-      note: got.saved.length ? `${got.saved.length} new file${got.saved.length === 1 ? '' : 's'}${got.problems.length ? `, ${got.problems.length} not saved` : ''}` : got.problems.length ? `${got.problems.length} not saved` : 'up to date',
-      details: got.problems,
-    }, r.bytes);
+    const { step, bytes } = await fileStep(f);
+    add(step, bytes);
+  }
+
+  // Second try, after a short wait, for the downloads that failed (a busy or briefly down source).
+  if (!offline && failedDownloads(run).length) {
+    const ids = failedDownloads(run);
+    console.log(`[daily] Second try in ${Math.round(SECOND_TRY_WAIT_MS / 60000)} min for: ${ids.join(', ')}`);
+    await new Promise((r) => setTimeout(r, SECOND_TRY_WAIT_MS));
+    await tryAgain(ids, 'second try');
   }
 
   emitEvents(EVENT_FILES, sanctionsChangeInputs(sanctionsBefore, sanctionsCounts(sanctionsData(DATA_DIR))));
@@ -1168,14 +1322,15 @@ async function runDailyCli(): Promise<void> {
       add({ id: 'tests', label: 'Pre-registered tests', outcome: 'skipped', note: 'switched off (SCHEDULE_BACKTESTS=off)' });
     } else if (offline) {
       add({ id: 'tests', label: 'Pre-registered tests', outcome: 'skipped', note: 'offline' });
-    } else if (!testsDue(last?.startedAt, new Date())) {
+    } else if (!testsDue(last?.startedAt, new Date()) && !preReleaseTestsDue(OFFICIAL_CALENDAR, last?.startedAt, new Date())) {
       add({ id: 'tests', label: 'Pre-registered tests', outcome: 'skipped', note: `last run ${last!.startedAt.slice(0, 10)}, less than 7 days ago${last?.summary ? ` (${last.summary})` : ''}` });
     } else {
       const now = new Date();
       writeJobs(SCHEDULED_JOBS_FILE, markStarted(jobs, 'backtests', clockIn(now, SCHEDULE_TZ).day, now.toISOString()));
       const r = await runScheduledJob('backtests').catch((e: any) => ({ ok: false, summary: `Failed: ${e?.message || String(e)}` }));
       writeJobs(SCHEDULED_JOBS_FILE, markFinished(readJobs(SCHEDULED_JOBS_FILE), 'backtests', new Date().toISOString(), r.ok, `${r.summary} (daily start-up run)`));
-      add({ id: 'tests', label: 'Pre-registered tests (backtests, forecast evaluations, currency signal tests)', outcome: r.ok ? 'done' : 'failed', note: r.summary });
+      const release = testsDue(last?.startedAt, now) ? null : preReleaseTestsDue(OFFICIAL_CALENDAR, last?.startedAt, now);
+      add({ id: 'tests', label: 'Pre-registered tests (backtests, forecast evaluations, currency signal tests)', outcome: r.ok ? 'done' : 'failed', note: `${r.summary}${release ? ` (run early: ${release.iso3} ${release.title} on ${release.date}, so the nowcast is on record first)` : ''}` });
     }
   }
 
@@ -1300,7 +1455,14 @@ function topUpGdeltRaw(): void {
 }
 
 function withGdeltRaw(snapshot: OpenDataSnapshot): OpenDataSnapshot {
-  return withUcdp(withGdeltRawOnly(snapshot));
+  return withLocalRates(withUcdp(withGdeltRawOnly(snapshot)));
+}
+
+/** IMF monthly local market rates (LP1) from the saved copies; never waits on the network. */
+function withLocalRates(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  const { localRates: _drop, ...rest } = snapshot;
+  const reading = localRatesFor(loadImfLocalRates(), snapshot.iso3);
+  return reading ? { ...(rest as OpenDataSnapshot), localRates: reading } : (rest as OpenDataSnapshot);
 }
 function withGdeltRawOnly(snapshot: OpenDataSnapshot): OpenDataSnapshot {
   const reading = gdeltRawReadingFor(snapshot.iso3);
@@ -1418,9 +1580,22 @@ async function withBisPolicyRateOnly(snapshot: OpenDataSnapshot): Promise<OpenDa
   const liveFields = { ...(snapshot.liveFields || {}) };
   // Only an own-data connector may also fill it; nothing else counts.
   if (!rate) {
-    if (liveFields['market.policyRatePct']?.startsWith('BIS')) delete liveFields['market.policyRatePct'];
+    if (liveFields['market.policyRatePct']?.startsWith('BIS') || liveFields['market.policyRatePct']?.startsWith('IMF')) delete liveFields['market.policyRatePct'];
     const { bisPolicyRate: _drop, ...rest } = snapshot;
-    return { ...rest, liveFields };
+    // Where the app does not take the BIS rate, the IMF monthly policy rate (LI4).
+    const imf = imfPolicyRateFor(loadImfPolicy(), snapshot.iso3);
+    if (!imf || liveFields['market.policyRatePct']) return { ...rest, liveFields };
+    liveFields['market.policyRatePct'] = `IMF, monthly, ${imf.date}${imf.stale ? ', may be out of date' : ''}`;
+    const cpiNow = snapshot.imfIndicators.cpiInflationPct;
+    return {
+      ...rest,
+      liveFields,
+      monetaryAndMarket: {
+        ...snapshot.monetaryAndMarket,
+        policyRatePct: imf.ratePct,
+        realPolicyRatePct: Number((imf.ratePct - cpiNow).toFixed(2)),
+      },
+    };
   }
   if (liveFields['market.policyRatePct'] && !liveFields['market.policyRatePct'].startsWith('BIS')) return snapshot;
   liveFields['market.policyRatePct'] = `BIS, ${rate.freq === 'monthly' ? 'end of ' : ''}${rate.date}${rate.bank ? ` (${rate.bank})` : ''}`;
@@ -1527,6 +1702,7 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
   ]);
   // IMF monthly CPI: the copy the daily run saved (no page waits on the IMF).
   const imfCpi = loadImfCpi();
+  const imfPolicy = loadImfPolicy();
   const cftcWeeks = new Map<string, CftcWeek[]>(Object.entries(cftc?.weeks || {}));
   const items = await Promise.all(
     [...(extra.length ? [] : SOVEREIGN_CATALOG), ...extra].map(async (catItem) => {
@@ -1553,6 +1729,7 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
         const pos = positioningFor(catItem.iso3, cftcWeeks);
         const ust = ticHoldingFor(catItem.iso3, tic?.table);
         const bisRate = policyRateFor(catItem.iso3, cbpol);
+        const imfRate = bisRate ? null : imfPolicyRateFor(imfPolicy, catItem.iso3);
         const lead = cliFor(catItem.iso3, cli?.series);
         // Monthly inflation: the freshest of national or Eurostat, IMF monthly CPI and the OECD copy.
         const prices = cpiFor(catItem.iso3, mergeNationalCpi(cpi?.series, nationalCpi?.series || {}, imfCpi?.series || {}));
@@ -1638,7 +1815,15 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
                 ...(bisRate.lastMove ? { policyRateLastMove: bisRate.lastMove } : {}),
                 ...(bisRate.moves ? { policyRateMoves: bisRate.moves, policyRateHistoryFrom: bisRate.historyFrom } : {}),
               }
-            : { policyRateSource: 'sample' }),
+            : imfRate
+              ? {
+                  policyRatePct: imfRate.ratePct,
+                  policyRateSource: 'imf',
+                  policyRateDate: imfRate.date,
+                  policyRateStale: imfRate.stale,
+                  ...(imfRate.change12mPts !== undefined ? { policyRateChange12mPts: imfRate.change12mPts } : {}),
+                }
+              : { policyRateSource: 'sample' }),
           debtSource: lf['imf.debtToGdpPct'] ? 'live' : 'sample',
           reservesSource: lf['wb.fxReservesMonthsImport'] ? 'live' : 'sample',
           ...(snap.debtSchedule?.bis?.intl
@@ -2526,6 +2711,8 @@ async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: strin
         resultFile: FORECAST_RESULT_FILE,
         fetcher: defaultFetcher,
         weoStore: loadWeoVintages(DATA_DIR, { fresh: true }),
+        // OECD editions saved by npm run oecd:vintages (CG15); ALFRED and the ECB are read by npm run forecast:evaluate.
+        vintages: { gdp: [], cpi: [], missing: [], oecdGdp: loadOecdVintageInputs(DATA_DIR, 'gdp'), oecdCpi: loadOecdVintageInputs(DATA_DIR, 'cpi') },
         onResult: (r) =>
           appendAudit(AUDIT_FILES, {
             kind: 'validation',
@@ -2614,7 +2801,7 @@ function validationReplyNow() {
     forecastTests.push({ id: r.id, version: r.specVersion, status: r.status, p: r.pValue, alpha: Number((sSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.05 });
   }
   const fwd = loadForward(forwardFilePath(DATA_DIR));
-  return { ...v, specs, projectRecord: projectRecordNow(), running: validationRunning, file: 'data/local/validation/results.json', forecasts, forecastTests, forward: forwardSummary(fwd.lines), forwardCheck: { chainOk: fwd.chainOk, badLines: fwd.badLines, lines: fwd.lines.length, file: 'data/local/validation/forward.jsonl' } };
+  return { ...v, specs, projectRecord: projectRecordNow(), running: validationRunning, file: 'data/local/validation/results.json', forecasts, forecastTests, forward: forwardSummary(fwd.lines), forwardMonthly: forwardByMonth(fwd.lines), forwardCheck: { chainOk: fwd.chainOk, badLines: fwd.badLines, lines: fwd.lines.length, file: 'data/local/validation/forward.jsonl' } };
 }
 
 /** The badge of every registered model and signal now (src/utils/validationGrades.ts). */
@@ -3109,6 +3296,11 @@ async function supremeRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
 
 async function startServer() {
   const app = express();
+  try {
+    syncAddedCountries();
+  } catch (err: any) {
+    console.warn(`[countries] could not read the countries you added: ${err?.message || err}`);
+  }
   const PORT = Number(process.env.PORT) || 3000;
   app.disable('x-powered-by');
   // Behind a reverse proxy (the Caddy "https" profile): trust its X-Forwarded-* headers, so the
@@ -3116,9 +3308,11 @@ async function startServer() {
   // TRUST_PROXY=1 trusts one proxy hop; it can also list addresses, as Express accepts.
   const trustProxy = String(process.env.TRUST_PROXY || '').trim();
   if (trustProxy) app.set('trust proxy', /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy === 'true' ? true : trustProxy);
+  const IS_PRODUCTION_BUILD = process.env.NODE_ENV === 'production';
   // Security headers on every reply (src/utils/requestLimits.ts): no framing, no sniffing.
   app.use((_req, res, next) => {
     for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v);
+    if (IS_PRODUCTION_BUILD) res.setHeader('Content-Security-Policy', PRODUCTION_CSP);
     if (_req.secure) res.setHeader('Strict-Transport-Security', 'max-age=31536000');
     next();
   });
@@ -3129,6 +3323,15 @@ async function startServer() {
   // for the reply only (and the audit entry stays without).
   const correlationStore = new AsyncLocalStorage<string>();
   setAuditCorrelation(() => correlationStore.getStore());
+  // Council answers in the page's language (gap CG11, src/utils/answerLanguage.ts): kept for the
+  // request being handled only. English, or no header, changes nothing.
+  const answerLangStore = new AsyncLocalStorage<Lang>();
+  setAnswerLanguageSource(() => answerLangStore.getStore());
+  app.use((req, _res, next) => {
+    const lang = parseAnswerLang(req.headers[ANSWER_LANG_HEADER]);
+    if (lang === 'en') return next();
+    answerLangStore.run(lang, next);
+  });
   // Audit seal and locked bucket copies (item 10). Keys come from the environment only.
   {
     const problem = sealKeyProblem(process.env.AUDIT_SEAL_KEY);
@@ -3839,6 +4042,10 @@ async function startServer() {
 
   // Download all country data (Menu > Offline data; same run as npm run preload).
   app.get('/api/preload', (_req, res) => res.json(preloadReply()));
+  // Menu > About: is a newer release out? (GitHub, at most once a day; off with UPDATE_CHECK=off.)
+  app.get('/api/update', async (_req, res) => {
+    res.json(await getUpdateStatus());
+  });
   app.get('/api/online', async (req, res) => {
     const online = await checkFeedsOnline(req.query.recheck === '1');
     const sum = summarisePreload(preloadPlan(), preloadState);
@@ -4014,6 +4221,7 @@ async function startServer() {
       const file = workspaceFor(res);
       const before = loadWorkspace(file).values[req.params.key] ?? null;
       const w = setWorkspaceValue(file, req.params.key, value);
+      if (req.params.key === ADDED_COUNTRIES_KEY || req.params.key === WATCHLISTS_KEY) syncAddedCountries();
       // The page re-sends these on every load; only a real change goes in the audit log.
       if (before !== value) appendAudit(AUDIT_FILES, { kind: req.params.key === 'econquest_ai_runtime_config_v1' ? 'model' : 'workspace', summary: `Changed ${WORKSPACE_KEYS[req.params.key] || req.params.key}` });
       res.json({ ok: true, updatedAt: w.updatedAt[req.params.key] || null });
@@ -4277,6 +4485,9 @@ async function startServer() {
       hcSpread: hcSpreadPull,
       fxHistory,
       fxExtra,
+      imfFx: loadImfFx(),
+      imfPolicy: loadImfPolicy(),
+      localRates: loadImfLocalRates(),
       bisCredit,
       idsCreditors,
       sovereignDefaults,
@@ -4297,7 +4508,7 @@ async function startServer() {
       ustAuctions: iso3.toUpperCase() === 'USA' ? loadUstAuctions() : null,
       euSurveys: loadEuSurveys(),
       monthlyIndicators: loadMonthlyIndicators(),
-      currency: SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3.toUpperCase())?.currencyCode,
+      currency: catalogEntry(iso3.toUpperCase())?.currencyCode,
     });
     // Your own series for this country, after the feeds' and labelled "Your file" (Menu > Your data).
     const own = await ownSeriesViewsFor(enginePlatform, iso3).catch(() => []);
@@ -4367,6 +4578,10 @@ async function startServer() {
   });
   registerIdeaRoutes(app, { quick, seriesFor, refuseRemoteChange, signedIn });
   registerFeedbackRoutes(app, { refuseRemoteChange });
+  registerCatalogueRoutes(app);
+  registerOfficialDocsRoutes(app);
+  registerGvarRoutes(app);
+  registerTeamRoutes(app, { signedIn, refuseRemoteChange });
   registerOwnSeriesRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
   registerBudgetExecutionRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
   // Your paid data subscription (src/engine/paidData.ts): its figures show only on this computer's
@@ -4471,7 +4686,7 @@ async function startServer() {
     return Promise.all(
       iso3s.map(async (iso3) => ({
         iso3,
-        snapshot: await fetchLiveOpenDataSnapshot(iso3, SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName, { cacheOnly: true }),
+        snapshot: await fetchLiveOpenDataSnapshot(iso3, catalogEntry(iso3)?.countryName, { cacheOnly: true }),
         series: await seriesFor(iso3),
       }))
     );
@@ -4492,7 +4707,7 @@ async function startServer() {
     if (!iso2For(iso3)) return res.status(404).json({ error: 'NO_COUNTRY', message: `${req.params.iso3} is not an ISO alpha-2 or alpha-3 country code.` });
     const [data] = await panelData(iso3);
     if (!data) return res.status(404).json({ error: 'NO_COUNTRY', message: `No country ${iso3}.` });
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || data.snapshot.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || data.snapshot.countryName || iso3;
     res.json(
       buildCountrySnapshot({
         iso3,
@@ -4522,6 +4737,15 @@ async function startServer() {
     sendTable(req, res, exportFileName('panel', 'latest'), PANEL_LATEST_HEADER, panelLatestRows(panelLatest(data, figures)));
   });
 
+  // Offline country report (PD1, CG14): one HTML file of the saved figures that opens without the app.
+  app.get('/api/export/:iso3/report.html', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const snap = await fetchLiveOpenDataSnapshot(iso3, undefined, { cacheOnly: true });
+    const html = offlineReportHtml({ iso3, countryName: snap.countryName || iso3, rows: figureRows(snap), pulledAt: snap.fetchedAt, madeAt: new Date().toISOString(), appUrl: 'https://github.com/e-conquest/econquest' });
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${iso3}-report-${new Date().toISOString().slice(0, 10)}.html"`);
+    res.send(html);
+  });
   app.get('/api/export/:iso3/figures.:fmt(csv|xlsx)', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (req.query.asOf !== undefined) {
@@ -4561,7 +4785,7 @@ async function startServer() {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const series = gdeltDailySeries(DATA_DIR, iso3);
     const spikes = spikeMonths(series);
-    res.json({ series, reading: v1Reading(series), spikes: spikes.slice(-36), spikeSentence: series ? spikeSentence(SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3, spikes) : null, spikeMethod: SPIKE_METHOD, pull: loadDailyState(gdeltDailyDir(DATA_DIR)), from: v1FromMonth(process.env) });
+    res.json({ series, reading: v1Reading(series), spikes: spikes.slice(-36), spikeSentence: series ? spikeSentence(catalogEntry(iso3)?.countryName || iso3, spikes) : null, spikeMethod: SPIKE_METHOD, pull: loadDailyState(gdeltDailyDir(DATA_DIR)), from: v1FromMonth(process.env) });
   });
   // Country risk scorecard (src/utils/countryRiskScorecard.ts): governance, conflict, unrest, geopolitical, capital account, economy; no overall score.
   app.get('/api/risk-scorecard/:iso3', async (req, res) => {
@@ -4590,7 +4814,7 @@ async function startServer() {
       capital: ciReading && !('missing' in ciReading) ? ciReading : null,
       capitalMissing: !ci.ok ? ci.reason : ciReading && 'missing' in ciReading ? ciReading.missing : undefined,
     });
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...sc, sentence: scorecardSentence(name, sc), method: SCORECARD_METHOD });
   });
   // Sanctions lists (src/utils/sanctionsLists.ts): OFAC and UN files in data/local/sanctions/, by country.
@@ -4603,7 +4827,7 @@ async function startServer() {
     const d = sanctionsData(DATA_DIR);
     if (!d || !d.files.length) return res.json({ iso3, ok: false, reason: `No sanctions list files read from ${sanctionsDir(DATA_DIR)} (run npm run sanctions:pull, or download them by hand)`, ...(d ? { skipped: d.skipped } : {}), method: SANCTIONS_METHOD });
     const c = countrySanctions(d, iso3);
-    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ ok: true, ...c, sentence: sanctionsSentence(name, c, d), ...sanctionsFiles(), method: SANCTIONS_METHOD });
   });
   app.get('/api/sanctions-search', (req, res) => {
@@ -4814,6 +5038,8 @@ async function startServer() {
       lastCheckAt: last?.checkedAt || null,
       missingFigures: open.filter((o) => o.kind === 'missing').length,
       staleFigures: open.filter((o) => o.kind === 'stale').length,
+      // Feeds serving their last good answer while the source does not answer (src/server/lastGood.ts).
+      savedStandIns: currentStandIns(),
     });
   });
   // Data health: figure alerts (went missing, older than usual, jumps, out of range, revised).
@@ -4833,6 +5059,11 @@ async function startServer() {
     });
   });
   // Data health: values the IMF or World Bank revised in the saved yearly history (data/history/).
+  // Release-day fetch (CG3, src/utils/releaseWatch.ts): releases from yesterday to a week on, and whether a newer month arrived.
+  app.get('/api/release-watch', (_req, res) => {
+    res.json({ rows: releaseWatchView(OFFICIAL_CALENDAR, loadWatchState(), new Date()), off: String(process.env.RELEASE_WATCH || '').toLowerCase() === 'off' });
+  });
+
   // The official calendar against today (src/utils/calendarHealth.ts): old checks, schedules running out.
   app.get('/api/data/health/calendar', (_req, res) => {
     res.json(calendarHealth(OFFICIAL_CALENDAR, SOVEREIGN_CATALOG.map((c) => c.iso3), localDay()));
@@ -7076,6 +7307,8 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
     // Scheduled jobs: the pre-registered tests weekly by default, Download all only when set; checked every minute.
     writeJobs(SCHEDULED_JOBS_FILE, closeInterrupted(readJobs(SCHEDULED_JOBS_FILE), new Date().toISOString()));
     if ((Object.keys(JOBS) as JobId[]).some((id) => jobSchedule(id).kind !== 'off')) setInterval(scheduledJobsTick, 60_000).unref();
+    // Release-day fetch: CPI and monthly activity releases on the official calendar re-read their source hourly that day.
+    startReleaseWatch();
     // GDELT raw files: weekly top-up once a first pull exists, checked hourly.
     setInterval(() => void (knownOffline() ? null : topUpGdeltRaw()), SNAPSHOT_RETRY_MS).unref();
   });

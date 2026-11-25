@@ -1,12 +1,12 @@
-# Reading the app's data from R, Python or Stata
+# Reading the app's data from R, Python, Stata or Excel
 
 The figures and series you see in the app can be read straight into your own scripts. The addresses
 below are the same ones the app's own pages use, so a script gets exactly what the screens show:
 the same values, the same units, the same source and date on every value, and the same "Missing"
 with its reason where the app has no figure. Nothing is estimated or filled in for you.
 
-There are three small helper files in `scripts/data-api/`, one each for Python, R and Stata. None
-needs anything installed beyond the language itself. Copy the one you use next to your script.
+There are small helper files in `scripts/data-api/`, one each for Python, R, Stata, Excel and Google Sheets. None
+needs anything installed beyond the program itself. Copy the one you use next to your script.
 
 ## Before you start
 
@@ -53,6 +53,45 @@ econquest_figures BRA 2026-06-30
 Each Stata command replaces the data in memory. Values arrive as text and the `value` column is
 turned into numbers; dates stay as text (`YYYY-MM`, `YYYY-Qn` or `YYYY`), so convert them with
 `monthly()`, `quarterly()` or `real()` to suit the series.
+
+## Excel
+
+`scripts/data-api/econquest.pq` brings the same tables into Excel through Power Query, so a workbook
+refreshes from the app with Data > Refresh All. It needs Excel for Windows, or Microsoft 365 for Mac
+with Power Query.
+
+1. Data > Get Data > From Other Sources > Blank Query, then Home > Advanced Editor.
+2. Paste the whole file, press Done, and name the query `EconQuest`.
+3. Make one more blank query for each table you want and type one line, for example
+   `= EconQuest[Series]("BRA", "policy_rate")`, `= EconQuest[Country]("BRA")`,
+   `= EconQuest[Panel]("BRA,MEX", "policy_rate,cpi_monthly", "history")` or
+   `= EconQuest[Figures]("BRA", "2026-06-30")`. Choose Close & Load.
+
+The `value` column arrives as a number and stays empty where the figure is Missing; the reason is in
+the same row. A series the app does not have stops the refresh with the app's own message. If the
+app runs somewhere other than `http://localhost:3000` (Docker: `http://localhost:3737`), change `Base`
+at the top of the query. For a copy with sign-in on, put the integration API key or an API token with
+the `read:data` scope in `Key`; it goes in a header, never in the address. Excel may ask how to
+connect the first time: choose Anonymous.
+
+## Google Sheets
+
+`scripts/data-api/econquest.gs` adds sheet functions: `=EQ_SERIES("BRA", "policy_rate")`,
+`=EQ_COUNTRY("BRA")`, `=EQ_WORLD()`, `=EQ_PANEL("BRA,MEX", "policy_rate,cpi_monthly", "history")` and
+`=EQ_FIGURES("BRA", "2026-06-30")`. Google Sheets fetches from Google's own computers, so it works only
+when your copy of the app is reachable on the internet at an `https` address (a home server,
+[HOME_SERVER.md](./HOME_SERVER.md)); it cannot reach a copy on `localhost`. For a copy on your own
+computer, use Excel.
+
+1. In the sheet: Extensions > Apps Script. Paste the whole file and save.
+2. Project Settings > Script properties: add `ECONQUEST_URL` (the app's https address) and, if sign-in
+   is on, `ECONQUEST_KEY` (an API token with the `read:data` scope). The key stays in the script's
+   settings, not in a cell, and goes in a header, never in the address.
+3. Type a function in a cell. Google asks once for permission to connect to an outside address.
+
+Values arrive as numbers and stay empty where the figure is Missing. Google re-runs a function when
+its inputs change and caches results for a while; to force a fresh read, change an input and change
+it back.
 
 ## What comes back
 
@@ -182,6 +221,24 @@ the series above, so they are not part of the addresses in this guide:
 - **Pinned figures in a research notebook** export with their data, scripts and fingerprints in the
   working-paper bundle (Reports > Notebooks), and `npm run notebook:check` checks them again through
   the running app.
+
+## Added from 18 to 24 November
+
+No new addresses. What changed for scripts:
+
+- **Spreadsheets.** The Excel Power Query and Google Sheets helpers above read the same addresses.
+- **Official forecasts side by side** (IMF, World Bank GEP, OECD Economic Outlook) are saved by the
+  daily run in `data/live/official-forecasts.json` and shown through their own panel route, which may
+  change between versions; for research code, take them from the three publishers directly
+  ([DATA_SOURCES.md](./DATA_SOURCES.md)). The Philadelphia Fed survey is read only from your own file.
+- **OECD real-time editions** are saved by `npm run oecd:vintages` in `data/local/oecd-vintages/` as
+  the OECD published them; read those files, or the OECD's own original-release data, for research.
+- **The global VAR, the estimated gap model, Find data and official documents** are calculations or
+  searches the screens make on request; they are not series and are not served here.
+- **Your broker prices** (Interactive Brokers) are never served to scripts, tokens or downloads: they
+  are shown on screen only and held in memory for 10 seconds.
+- **While a source does not answer**, five feeds keep their last good answer, with its own dates, as
+  the screens do; past its limit the figure is Missing with the reason, as before.
 
 ## How fast, and how often
 

@@ -17,7 +17,7 @@ import { appCommit, versionWithCommit } from './buildInfo';
 export const APP_CITATION = {
   title: 'EconQuest Terminal',
   authors: 'EconQuest Terminal contributors',
-  version: '0.1.0',
+  version: '0.3.0',
   licence: 'Apache-2.0',
 } as const;
 

@@ -28,13 +28,22 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Cycle clock | Research | Backtest passed | v1, 2026-11-06, method 2 |
 | Timing Agent | Research | Backtest passed | v1, 2026-11-06, method 2 |
 | Behavioural Finance Agent | Research | Not validated | None |
-| Household price expectations before inflation | Research | Not validated | None |
+| Household price expectations before inflation | Research | Backtest failed | v1, 2026-11-17, method 2 |
 | Council summary (AI synthesis) | Decision input | Model-assisted, not validated | None |
 | GDP nowcast (bridge equation) | Research | Forecast evaluation passed | v1, 2026-11-07 |
 | Forecasts with fan charts (AR models) | Research | Forecast evaluation failed | debt_forecast v2, 2026-11-07 |
+| Forecast tests on data as first published | Research | Forecast evaluation failed | cpi_weo_realtime v2, 2026-11-23 |
+| Currency volatility forecast (GARCH) | Research | Forecast evaluation passed | v1, 2026-11-23 |
+| GDP nowcast with many predictors (ridge and lasso) | Research | Forecast evaluation passed | gdp_nowcast_ridge v1, 2026-11-23 |
+| Forecasts with moving-average terms (ARMA) | Research | Forecast evaluation failed | gdp_forecast_arma v1, 2026-11-23 |
+| GDP nowcast from a common factor (Kalman filter) | Research | Forecast evaluation failed | gdp_nowcast_dfm v1, 2026-11-23 |
+| GDP nowcast from a random forest (tree ensemble) | Research | Forecast evaluation failed | gdp_nowcast_forest v1, 2026-11-23 |
+| Small gap model estimated from data (inflation projection) | Research | Not validated | None |
+| Lopsided forecast bands (quantile regression) | Research | Forecast evaluation passed | gdp_forecast_quantile v1, 2026-11-23 |
 | Fiscal reaction (Bohn test) | Research | Description, not a tested signal | None |
 | Gross financing need | Research | Description, not a tested signal | None |
 | Country risk scorecard | Research | Not validated | None |
+| Governance reading and sovereign default (scorecard test) | Research | Backtest passed | v1, 2026-11-23, method 2 |
 | Sanctions lists | Research | Description, not a tested signal | None |
 | Geopolitical risk VaR | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
@@ -51,7 +60,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Banks and the government | Research | Description, not a tested signal | None |
 | Growth accounting | Research | Description, not a tested signal | None |
 | Inflation drivers | Research | Description, not a tested signal | None |
-| Yield curve and financial conditions | Research | Not validated | None |
+| Yield curve and financial conditions | Research | Backtest failed | v1, 2026-11-17, method 2 |
 | Crisis early-warning (credit gap) | Research | Not validated | None |
 | Inflation after rate changes (local projections) | Research | Description, not a tested signal | None |
 | Policy rule family | Research | Backtest too few cases | v1, 2026-11-07, method 2 |
@@ -358,7 +367,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Reads:** European Commission consumer survey (ei_bsco_m, BS-PT-NY) and Eurostat HICP annual rate, via Eurostat
 - **Shows in:** Behavioural Finance Agent (only once the test passes)
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Backtest failed (version 1, recorded 2026-11-17)
 - **How it is tested:** Pre-registered on 11 November 2026 before the runner existed (docs/validation/preregistered/inflation_expectations_lead.json): at least 100 cases in 15 years, hit rate 55% or more, p at or below 0.05 with whole years resampled.
 - **Limits:** Direction only, not size; EU members only; common energy and food shocks move countries together.
 - **Code:** `src/utils/backtest.ts (expectationsDirectionCases), src/utils/backtestRun.ts`
@@ -369,7 +378,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 **Recorded verdicts**
 
-- None recorded yet. Run `npm run backtest` (or Menu > Models & validation > Run backtests).
+- Version 1, 2026-11-17T17:57Z: **Failed** (method 2). Fails method 2 (the method this test was registered under): p is above 0.05 once cases in the same year are not counted as independent. Lift 5.7 points, 90% range -0.3 to 11.9, p = 0.063 with whole years resampled together (25 years). Positive in 16 of 27 series with 5 or more cases; dropping NLD leaves a lift of 4.7 points.
 
 **Known limits, stated before the run**
 
@@ -423,9 +432,142 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 - gdp_forecast, version 1, 2026-11-07T00:24Z: **Failed** (forecast evaluation). Against the historical mean: 1 quarter ahead relative RMSE 1.178 (p 0.97), better in 9 of 46 series; 4 quarters ahead 1.117 (p 0.98), better in 11 of 46. 2008-Q1 to 2025-Q4.
 - policy_rate_forecast, version 1, 2026-11-07T00:24Z: **Failed** (forecast evaluation). Against the last value carried on: 3 months ahead relative RMSE 0.99 (p 0.318), better in 19 of 24 series; 12 months ahead 1.092 (p 0.994), better in 12 of 24. 2008-01 to 2026-07.
+- cpi_forecast, version 1, 2026-11-17T17:57Z: **Failed** (forecast evaluation). Failed against the naive benchmark (last value carried on). 3 ahead: relative RMSE 3.417 (90% range 2.635 to 6.605, p 1), beat the naive benchmark in 32 of 46 series; 12 ahead: relative RMSE 6.236 (90% range 5.409 to 11.107, p 1), beat the naive benchmark in 28 of 46 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
+- cpi_nowcast, version 1, 2026-11-17T17:57Z: **Failed** (forecast evaluation). Failed against the naive benchmark (last value carried on). 1 ahead: relative RMSE 1.837 (90% range 1.404 to 3.136, p 1), beat the naive benchmark in 38 of 46 series; 2 ahead: relative RMSE 2.724 (90% range 2.108 to 4.941, p 1), beat the naive benchmark in 35 of 46 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
+- debt_forecast, version 1, 2026-11-17T17:57Z: **Failed** (forecast evaluation). Failed against the naive benchmark (last value carried on). 1 ahead: relative RMSE 1.913 (90% range 1.182 to 2.713, p 0.995), beat the naive benchmark in 30 of 128 series; 2 ahead: relative RMSE 2.44 (90% range 1.127 to 3.55, p 1), beat the naive benchmark in 21 of 115 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
 - cpi_nowcast, version 2, 2026-11-07T00:24Z: **Failed** (forecast evaluation). Against the last value carried on: 1 month ahead relative RMSE 0.83 (p 0.001) but better in only 23 of 46 series; 2 months ahead 1.201 (p 0.719), better in 17 of 46. 2008-01 to 2026-04.
 - cpi_forecast, version 2, 2026-11-07T00:24Z: **Failed** (forecast evaluation). Against the last value carried on: 3 months ahead relative RMSE 1.5 (p 0.999), better in 15 of 46 series; 12 months ahead 4.321 (p 1), better in 11 of 46. 2008-01 to 2026-02.
 - debt_forecast, version 2, 2026-11-07T00:24Z: **Failed** (forecast evaluation). Against the last value carried on: 1 year ahead relative RMSE 1.903 (p 0.975), better in 21 of 128 series; 2 years ahead 2.477 (p 0.971), better in 18 of 115. 184 series, 2008 to 2024.
+
+### Forecast tests on data as first published
+
+- **Says:** Whether the app's GDP and inflation forecast rules would have beaten simple benchmarks using only the figures as they were first published at the time, not today's revised numbers.
+- **Rule:** At each origin the series is rebuilt as published that day (US ALFRED, euro area ECB real-time database, the OECD's monthly Main Economic Indicators editions for every OECD member, past IMF WEO editions for every country), the same AR rule is fitted, and the forecast is scored against the first published figure. The IMF's own projection in the same edition is shown beside the verdict.
+- **Reads:** ALFRED (your FRED key), ECB Euro Area Real-Time Database, OECD editions saved in data/local/oecd-vintages/ (npm run oecd:vintages), IMF WEO past editions saved in data/local/weo-vintages/
+- **Shows in:** Menu > Models & validation
+- **Use:** Research
+- **Status:** Forecast evaluation failed (cpi_weo_realtime version 2, recorded 2026-11-23)
+- **How it is tested:** Pre-registered (docs/validation/forecasts/*_realtime*.json): rolling origin on vintages, relative RMSE against the historical mean (GDP) or no change (inflation), year-block bootstrap, from 2008.
+- **Limits:** US and euro area, and separately the OECD members (editions dated to the first of their month); the yearly tests read only the WEO editions you have saved. A test of the method, not a new forecast shown in the app.
+- **Code:** `src/utils/realTimeEval.ts`
+
+**Recorded verdicts**
+
+- cpi_forecast_realtime, version 1, 2026-11-23T02:23Z: **Failed** (forecast evaluation). Failed against the naive benchmark (last value carried on). 3 ahead: relative RMSE 1.079 (90% range 0.935 to 1.277, p 0.786), beat the naive benchmark in 0 of 2 series; 12 ahead: relative RMSE 1.391 (90% range 1.053 to 1.729, p 0.972), beat the naive benchmark in 0 of 2 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
+- cpi_weo_realtime, version 1, 2026-11-23T02:23Z: **Too few cases** (forecast evaluation). Too few cases to judge: 1 ahead has 0 cases over 0 years; 2 ahead has 0 cases over 0 years (needs 500 cases over 8 years).
+- gdp_forecast_realtime, version 1, 2026-11-23T02:23Z: **Failed** (forecast evaluation). Failed against the historical-mean benchmark. 1 ahead: relative RMSE 1.5 (90% range 1.074 to 1.516, p 0.997), beat the historical-mean benchmark in 0 of 2 series; 4 ahead: relative RMSE 1.343 (90% range 1 to 4.482, p 0.915), beat the historical-mean benchmark in 0 of 2 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
+- gdp_weo_realtime, version 1, 2026-11-23T02:23Z: **Failed** (forecast evaluation). Failed against the historical-mean benchmark. 1 ahead: relative RMSE 0.981 (90% range 0.925 to 1.044, p 0.281), beat the historical-mean benchmark in 95 of 165 series; 2 ahead: relative RMSE 1.004 (90% range 0.96 to 1.032, p 0.575), beat the historical-mean benchmark in 78 of 160 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
+- cpi_weo_realtime, version 2, 2026-11-23T02:23Z: **Failed** (forecast evaluation). Failed against the naive benchmark (last value carried on). 1 ahead: relative RMSE 372.804 (90% range 4.014 to 372.818, p 0.991), beat the naive benchmark in 89 of 169 series; 2 ahead: relative RMSE 0.985 (90% range 0.984 to 11.38, p 0.344), beat the naive benchmark in 107 of 167 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
+
+### Currency volatility forecast (GARCH)
+
+- **Says:** Whether a GARCH model, which lets a burst of big moves raise the expected swings for the next days and then fade, forecasts next month's currency swings better than the plain three-month volatility.
+- **Rule:** GARCH(1,1) by maximum likelihood on the last 1,000 daily returns at each month-end, next 21 trading days' variance, against the last 63 days' realised variance; QLIKE loss, years resampled.
+- **Reads:** ECB euro reference rates per US dollar (via Frankfurter), daily from 1999
+- **Shows in:** Menu > Models & validation (shown in the app only if it passes)
+- **Use:** Research
+- **Status:** Forecast evaluation passed (version 1, recorded 2026-11-23)
+- **How it is tested:** Pre-registered (docs/validation/forecasts/fx_vol_garch.json): mean QLIKE loss ratio at most 0.95, p at most 0.10, better in half the currencies, from 2005.
+- **Limits:** One ECB fixing a day, not market closes; managed currencies left out; normal errors in the likelihood.
+- **Code:** `src/utils/garch.ts`
+
+**Recorded verdicts**
+
+- Version 1, 2026-11-23T02:23Z: **Passed** (forecast evaluation). Passed against the three-month realised volatility: QLIKE loss ratio 0.846 (90% range 0.769 to 0.933, p 0.001) over 6003 month-ends, better in 19 of 23 currencies.
+
+### GDP nowcast with many predictors (ridge and lasso)
+
+- **Says:** Whether a nowcast that weighs up to ten published indicators at once, shrinking the weak ones towards zero, estimates the latest quarter's GDP growth better than the historical average.
+- **Rule:** Ridge and lasso regression on standardised predictors (GDP growth lags, activity index, OECD leading indicator, inflation and policy-rate changes), penalty chosen in time order (first 80% fit, last 20% scored), refitted each quarter.
+- **Reads:** OECD quarterly national accounts, BCB IBC-Br, Eurostat industrial production, OECD leading indicator and inflation (via DBnomics), BIS policy rates
+- **Shows in:** Menu > Models & validation (shown in the app only if it passes)
+- **Use:** Research
+- **Status:** Forecast evaluation passed (gdp_nowcast_ridge version 1, recorded 2026-11-23)
+- **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_nowcast_ridge.json, gdp_nowcast_lasso.json): same lags, countries and pass mark as the bridge nowcast, against the historical mean, from 2008.
+- **Limits:** Today's data vintage with release-lag rules; the penalty is chosen on one time-ordered split.
+- **Code:** `src/utils/penalizedNowcast.ts`
+
+**Recorded verdicts**
+
+- gdp_nowcast_lasso, version 1, 2026-11-23T02:23Z: **Passed** (forecast evaluation). Passed against the historical-mean benchmark. 1 ahead: relative RMSE 0.872 (90% range 0.836 to 1.025, p 0.09), beat the historical-mean benchmark in 25 of 35 series.
+- gdp_nowcast_ridge, version 1, 2026-11-23T02:23Z: **Passed** (forecast evaluation). Passed against the historical-mean benchmark. 1 ahead: relative RMSE 0.889 (90% range 0.864 to 0.996, p 0.044), beat the historical-mean benchmark in 27 of 35 series.
+
+### Forecasts with moving-average terms (ARMA)
+
+- **Says:** Whether adding moving-average terms (yesterday's surprises) to the forecast of GDP growth and inflation beats the simple benchmarks where the plain autoregression did not.
+- **Rule:** ARMA(p, q), p and q 0 to 2 by BIC once a year, exact maximum likelihood through the Kalman filter at every origin, as statsmodels ARIMA; outside predictors and seasonal terms supported in the code.
+- **Reads:** OECD quarterly national accounts and consumer price inflation (via DBnomics)
+- **Shows in:** Menu > Models & validation (shown in the app only if it passes)
+- **Use:** Research
+- **Status:** Forecast evaluation failed (gdp_forecast_arma version 1, recorded 2026-11-23)
+- **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_forecast_arma.json, cpi_forecast_arma.json): same data, sample, benchmark and pass mark as the AR tests.
+- **Limits:** Today's data vintage; order re-chosen once a year.
+- **Code:** `src/utils/arima.ts`
+
+**Recorded verdicts**
+
+- cpi_forecast_arma, version 1, 2026-11-23T02:23Z: **Failed** (forecast evaluation). Failed against the naive benchmark (last value carried on). 3 ahead: relative RMSE 0.807 (90% range 0.739 to 0.923, p 0.017), beat the naive benchmark in 28 of 46 series; 12 ahead: relative RMSE 1.084 (90% range 0.892 to 1.364, p 0.739), beat the naive benchmark in 30 of 46 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
+- gdp_forecast_arma, version 1, 2026-11-23T02:23Z: **Failed** (forecast evaluation). Failed against the historical-mean benchmark. 1 ahead: relative RMSE 1.095 (90% range 0.978 to 1.131, p 0.665), beat the historical-mean benchmark in 3 of 46 series; 4 ahead: relative RMSE 1.013 (90% range 0.997 to 1.07, p 0.849), beat the historical-mean benchmark in 8 of 46 series. Pass mark: relative RMSE at most 0.95, p at most 0.1, better in at least 50% of series.
+
+### GDP nowcast from a common factor (Kalman filter)
+
+- **Says:** Whether the common movement of a country's monthly indicators, read with a Kalman filter that copes with each indicator ending in a different month, estimates the latest quarter's GDP growth better than the historical average.
+- **Rule:** One dynamic factor (principal component, AR(1)) through a Kalman filter and smoother, two-step method of Doz, Giannone and Reichlin (2011); GDP growth bridged on the quarterly average factor and last quarter's growth.
+- **Reads:** OECD quarterly national accounts, BCB IBC-Br, Eurostat industrial production, OECD leading indicator and inflation (via DBnomics), BIS policy rates
+- **Shows in:** Menu > Models & validation (shown in the app only if it passes)
+- **Use:** Research
+- **Status:** Forecast evaluation failed (gdp_nowcast_dfm version 1, recorded 2026-11-23)
+- **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_nowcast_dfm.json): same lags, countries and pass mark as the bridge nowcast, against the historical mean, from 2008.
+- **Limits:** Two to four monthly series per country in the free data; two-step estimates, not full maximum likelihood.
+- **Code:** `src/utils/dynamicFactor.ts`
+
+**Recorded verdicts**
+
+- gdp_nowcast_dfm, version 1, 2026-11-23T02:23Z: **Failed** (forecast evaluation). Failed against the historical-mean benchmark. 1 ahead: relative RMSE 1.082 (90% range 0.945 to 1.121, p 0.646), beat the historical-mean benchmark in 17 of 35 series. Pass mark: relative RMSE at most 0.9, p at most 0.1, better in at least 50% of series.
+
+### GDP nowcast from a random forest (tree ensemble)
+
+- **Says:** Whether hundreds of decision trees, each grown on a resample of past quarters and averaged, estimate the latest quarter's GDP growth from the published indicators better than the historical average.
+- **Rule:** Random forest (Breiman 2001): 300 regression trees, depth at most 6, leaves of at least 5 quarters, a third of the predictors per split, fixed seed; same predictors as the ridge and lasso nowcasts.
+- **Reads:** OECD quarterly national accounts, BCB IBC-Br, Eurostat industrial production, OECD leading indicator and inflation (via DBnomics), BIS policy rates
+- **Shows in:** Menu > Models & validation (shown in the app only if it passes)
+- **Use:** Research
+- **Status:** Forecast evaluation failed (gdp_nowcast_forest version 1, recorded 2026-11-23)
+- **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_nowcast_forest.json): same predictors, lags, countries and pass mark as the ridge and lasso nowcasts, against the historical mean, from 2008.
+- **Limits:** Settings fixed, not tuned (too few quarters to tune); today's data vintage.
+- **Code:** `src/utils/randomForest.ts`
+
+**Recorded verdicts**
+
+- gdp_nowcast_forest, version 1, 2026-11-23T02:23Z: **Failed** (forecast evaluation). Failed against the historical-mean benchmark. 1 ahead: relative RMSE 0.967 (90% range 0.872 to 0.989, p 0), beat the historical-mean benchmark in 28 of 35 series. Pass mark: relative RMSE at most 0.9, p at most 0.1, better in at least 50% of series.
+
+### Small gap model estimated from data (inflation projection)
+
+- **Says:** Whether an IS curve, a Phillips curve and a policy rule, each fitted on the country's own quarters, project inflation one and two years ahead better than today's inflation carried on.
+- **Rule:** Three quarterly equations after Berg, Karam and Laxton (2006), each by OLS on the last 60 quarters; real-time output gap from a one-sided HP filter (lambda 1600) on log GDP; projection with no shocks.
+- **Reads:** OECD quarterly national accounts and consumer prices (via DBnomics), BIS policy rates
+- **Shows in:** Country Research > History & data > Small gap model (estimates and projection shown only if it passes)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered (docs/validation/forecasts/cpi_gap_model.json): inflation 4 and 8 quarters ahead against the last quarter carried on, from 2005, pass mark relative RMSE 0.95.
+- **Limits:** Today's data vintage; the gap is a filter, not estimated inside the model; no exchange-rate equation.
+- **Code:** `src/utils/gapModelEstimate.ts`
+
+### Lopsided forecast bands (quantile regression)
+
+- **Says:** Whether a band built percentile by percentile, which can lean towards the downside when growth risks are lopsided, describes where GDP growth ends up better than the even normal band the app draws.
+- **Rule:** Linear quantile regression (Koenker and Bassett 1978) of growth 1 and 4 quarters ahead on growth now and a quarter ago, 5th to 95th percentiles; mean pinball loss against the AR forecast's normal band.
+- **Reads:** OECD quarterly national accounts
+- **Shows in:** Menu > Models & validation (shown in the app only if it passes)
+- **Use:** Research
+- **Status:** Forecast evaluation passed (gdp_forecast_quantile version 1, recorded 2026-11-23)
+- **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_forecast_quantile.json): mean pinball loss ratio at most 0.95, p at most 0.10, better in half the countries, from 2008.
+- **Limits:** Two predictors; no financial conditions index in the free data for every country.
+- **Code:** `src/utils/quantileForecast.ts`
+
+**Recorded verdicts**
+
+- gdp_forecast_quantile, version 1, 2026-11-23T02:23Z: **Passed** (forecast evaluation). Passed against the AR forecast's normal band (the live forecast rule). 1 quarter(s) ahead: mean pinball loss ratio 0.923 (90% range 0.907 to 0.947, p 0) over 3119 cases, better in 35 of 44 series; 4 quarter(s) ahead: mean pinball loss ratio 0.945 (90% range 0.888 to 0.98, p 0) over 2981 cases, better in 29 of 44 series.
 
 ### Fiscal reaction (Bohn test)
 
@@ -459,9 +601,38 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Shows in:** Country Research > History & data (Country risk scorecard)
 - **Use:** Research
 - **Status:** Not validated
-- **How it is tested:** Pre-registered on 13 November 2026 before any run (docs/validation/pending/scorecard_default.json): a governance reading in the bottom quarter of countries that year (plain average of the six WGI estimates, used a year after) followed by the start of a sovereign default (BoC-BoE) within 3 years more often than usual; at least 30 cases over 15 years, lift 3 points, p at or below 0.05 with whole years resampled. Not validated until the runner is built and the test passes. The average is fixed for the test only; the scorecard still shows no overall score.
+- **How it is tested:** The scorecard shows figures side by side and makes no call. The one rule drawn from it, a governance reading in the bottom quarter followed by a sovereign default, is tested on its own (Governance reading and sovereign default, scorecard_default). The scorecard still shows no overall score.
 - **Limits:** WGI and UCDP are yearly and lag a year or more; WGI estimates have wide margins of error; GDELT counts news reports, not events on the ground.
 - **Code:** `src/utils/countryRiskScorecard.ts`
+
+### Governance reading and sovereign default (scorecard test)
+
+- **Says:** Whether countries whose governance figures on the risk scorecard are among the weakest quarter that year have gone on to default on government debt more often than countries in general.
+- **Rule:** Governance reading = plain average of the six WGI estimates for year t, all six needed; the bottom quarter of countries that year are the calls; a call counts as followed when government debt in default goes from zero to above zero (BoC-BoE) in t+2 to t+4. Countries already in default at the end of t+1 are left out. Whole calendar years resampled.
+- **Reads:** World Bank WGI estimates (VA, PV, GE, RQ, RL, CC), Bank of Canada and Bank of England Sovereign Default Database
+- **Shows in:** Menu > Models & validation (the test only; the scorecard shows no overall score)
+- **Use:** Research
+- **Status:** Backtest passed (version 1, recorded 2026-11-23)
+- **How it is tested:** Pre-registered on 13 November 2026 before any run (docs/validation/preregistered/scorecard_default.json; runner built 19 November 2026): at least 30 cases over 15 years, lift 3 points, p at or below 0.05 with whole years resampled. Passing would not turn the average into a score shown in the app.
+- **Limits:** WGI is today's vintage, revised when its method changes; WGI was published every two years until 2002; BoC-BoE counts small arrears as defaults; the pooled base rate mixes rich and poor countries, so a pass can partly reflect income, not governance alone.
+- **Code:** `src/utils/backtest.ts (scorecardDefaultCases), src/utils/backtestRun.ts`
+
+**Pre-registered tests**
+
+- Version 1 (`docs/validation/preregistered/scorecard_default.json`, registered 2026-11-13, method 2, whole years resampled, sample from WGI year 1996). A country-year whose governance reading on the scorecard is in the bottom quarter of all countries that year (the plain average of the six World Bank WGI estimates) is followed by the start of a sovereign default in that country within the next three calendar years more often than country-years in general. Pass mark: at least 30 cases, a lift of 3 points or more over the base rate, p at or below 0.05, at least 15 years. SHA-256 11eb76b62362a6a6…
+
+**Recorded verdicts**
+
+- Version 1, 2026-11-23T03:29Z: **Passed** (method 2). Passes method 2 (the method this test was registered under). Lift 25.7 points, 90% range 20.2 to 31.4, p = 0.00025 with whole years resampled together (23 years). Positive in 8 of 10 series with 5 or more cases; dropping IRN leaves a lift of 24 points.
+
+**Known limits, stated before the run**
+
+- v1: The scorecard itself shows no overall score. The plain average of the six WGI estimates is a rule fixed here only to have something testable; it is not shown as a score in the app, and passing would not make it one.
+- v1: WGI was published every two years until 2002 (1996, 1998, 2000, 2002), so the early years are thinner; whole years are resampled, so this counts as fewer blocks rather than more cases.
+- v1: WGI estimates are revised when the method or sources change; the series on file is today's vintage, not the figures available at the time. The one-year release lag is applied on top.
+- v1: Defaults cluster in time (the early 2000s, the 2020s) and in countries; resampling whole years treats each cluster as one block. The base rate is pooled over every country-year, so a pass can partly reflect which countries are poorer, not governance alone.
+- v1: BoC-BoE counts any arrears, including small ones to official creditors; a default start can be a small arrear rather than a bond default. A country that leaves default and falls back in counts again.
+- v1: Licence: WGI is CC BY 4.0. BoC-BoE is under the Bank of Canada terms (free use with attribution); the database draws on third-party published sources, which the licence row records as an open question. The result is shown in the app only; the outcome file is not re-published.
 
 ### Sanctions lists
 
@@ -528,7 +699,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Says:** Where a policy option depends on how people behave (take-up, response to a tax, trust in a target, defaults, losses, acting now for a gain later), with published studies from a fixed list.
 - **Rule:** Fixed word rules over each option saved in a policy review (title, how it works, effect, trade-offs, who bears the cost, what must be true, risks). Each flag cites studies from src/data/behaviouralEvidence.ts with full citations. Effect sizes only as entered by the user with a source.
 - **Reads:** The saved Options step of a policy review; effect sizes and sources typed by the user
-- **Shows in:** Reports > Policy reviews (Behavioural check, between Evidence and the memo)
+- **Shows in:** Policy review (Behavioural check, between Evidence and the memo)
 - **Use:** Research
 - **Status:** Description, not a tested signal
 - **How it is tested:** Description, not a tested signal: it points to published work and makes no forward call.
@@ -662,7 +833,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Reads:** FRED / OECD 10-year government bond yields (IRLTLT01), BIS policy rates and real effective exchange rates, IMF WEO real GDP growth (outturns only, for the test)
 - **Shows in:** Country Research > History & data (Yield curve and financial conditions)
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Backtest failed (version 1, recorded 2026-11-17)
 - **How it is tested:** Pre-registered on 11 November 2026 before the tool existed (docs/validation/preregistered/yield_curve_recession.json): at least 30 cases over 15 years, lift 10 points, p at or below 0.05 with whole years resampled. Until it passes no recession figure is shown; after, only its historical hit rate. The conditions index is description only (fixed weights, no forward call).
 - **Limits:** The policy rate stands in for a 3-month bill rate; annual GDP misses short recessions; growth is today's WEO vintage; FRED covers OECD members and India only.
 - **Code:** `src/utils/yieldCurve.ts, src/utils/backtest.ts (yieldCurveCases), src/utils/backtestRun.ts`
@@ -673,7 +844,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 **Recorded verdicts**
 
-- None recorded yet. Run `npm run backtest` (or Menu > Models & validation > Run backtests).
+- Version 1, 2026-11-17T17:57Z: **Failed** (method 2). Fails method 2 (the method this test was registered under): the lift is below 10 points; p is above 0.05 once cases in the same year are not counted as independent. Lift 4.3 points, 90% range -7.4 to 20.7, p = 0.311 with whole years resampled together (22 years). Positive in 4 of 5 series with 5 or more cases; dropping ZAF leaves a lift of 1.4 points.
 
 **Known limits, stated before the run**
 
@@ -949,7 +1120,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Says:** The review country's diagnosis figures beside the same figures for up to six peer countries, as each stood on the review's As of day.
 - **Rule:** Each peer's diagnosis is built from its saved pull on or before the As of day, the same way as the review's own; the peer median uses peers with the figure (two or more); rank counts how many countries with the figure have a higher value, plus one.
 - **Reads:** Your policy review; saved pulls of the peer countries you pick
-- **Shows in:** Reports > Policy reviews > Peers (after Diagnose)
+- **Shows in:** Policy review > Peers (after Diagnose)
 - **Use:** Research
 - **Status:** Description, not a tested signal
 - **How it is tested:** Description, not a tested signal: saved figures side by side.
@@ -961,7 +1132,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Says:** What changed between a policy review and the review started from it with Review again: frame, recommended option, each diagnosis figure, and whether the goal indicator moved the way the goal wants.
 - **Rule:** Both saved reviews read side by side; change = later figure minus earlier figure, on the same standard indicator; the goal as the later review states it, judged on the same figure in both diagnoses, the same way as Track outcomes.
 - **Reads:** Your two saved policy reviews (data/local/reviews.json)
-- **Shows in:** Reports > Policy reviews (a review started with Review again)
+- **Shows in:** Policy review (a review started with Review again)
 - **Use:** Research
 - **Status:** Description, not a tested signal
 - **How it is tested:** Description, not a tested signal: two saved reviews side by side.
@@ -985,7 +1156,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Says:** For one measure in a policy review: present values of the costs and benefits you enter, at official discount rates you tick or your own, with the year it pays back and how far figures would have to move to flip the answer; who gains and who loses, with sizes only as entered with a source and the by-fifth reading of Who pays for a policy; a chain of what follows, each link resting on a Diagnose figure, a named source or marked as an assumption; and cases scaled from the cost-benefit table with the odds you give. The Options step hands these entries to the AI-written council, which weighs the measure as option 1 against alternatives, using only numbers from the diagnosis and the entries. For a market (PK7): the app's market readings at the As of day, each with date and source or Missing, and cases as a change in value for a holder with the odds you give.
 - **Rule:** Discounted sums: the first year is not discounted, each later year divided by one plus that year's rate (schedules as published, e.g. the UK Green Book). The flat rate where the net is zero is found by bisection between -50% and 100%. Official rates from src/data/discountRates.ts, each with document, passage and the day checked.
 - **Reads:** Costs and benefits you enter by year, each with its source; official discount rates (HM Treasury Green Book, US OMB Circular A-4, European Commission, Asian Development Bank)
-- **Shows in:** Reports > Policy reviews (Policy council, beside the frame)
+- **Shows in:** Policy review (Policy council, beside the frame)
 - **Use:** Research
 - **Status:** Description, not a tested signal
 - **How it is tested:** Description, not a tested signal: arithmetic on the figures you enter, not a forecast or a recommendation.
@@ -1156,7 +1327,7 @@ These show where things stand on a stated method and make no call a backtest cou
 - Capital account: the Chinn-Ito index (Chinn and Ito 2006, Journal of Development Economics 81(1)), openness in law from the IMF AREAER, read from the authors' file in data/local/chinn-ito/ (fetched by the daily start-up run or npm run chinn-ito:pull). The latest year on file, scaled 0 (least open) to 1 (most open), where it sits among all countries that year, the change over five years, and the index as published.
 - Economy: government debt, real growth, inflation (IMF WEO, latest outturn year, projections left out), current account, reserves in months of imports and external debt (World Bank), against five years earlier.
 - No overall score: any weighting of the pillars would be a guess, and one number would look more certain than the figures are.
-- Pre-registered test (scorecard_default v1, registered 13 November 2026, runner not built yet): a country-year whose plain average of the six WGI estimates is in the bottom quarter of countries that year, used from the end of the next year (WGI is published a year late), is a call that a sovereign default starts (BoC-BoE: debt in default goes from zero to above zero) in the following three years. Base rate: all country-years not already in default, pooled. Method 2: whole years resampled, p at most 0.05, a lift of at least 3 points, 30 cases over 15 years. The average is fixed for the test only and is not shown as a score.
+- Pre-registered test (scorecard_default v1, registered 13 November 2026, runner built 19 November 2026; no verdict until its first run): a country-year whose plain average of the six WGI estimates is in the bottom quarter of countries that year, used from the end of the next year (WGI is published a year late), is a call that a sovereign default starts (BoC-BoE: debt in default goes from zero to above zero) in the following three years. Base rate: all country-years not already in default, pooled. Method 2: whole years resampled, p at most 0.05, a lift of at least 3 points, 30 cases over 15 years. The average is fixed for the test only and is not shown as a score.
 - **Limits:** WGI and UCDP are yearly and lag a year or more. WGI estimates are built from surveys and expert ratings and carry wide margins of error; small changes are within them. GDELT counts news reports, which rise with media attention. Figures not on file are listed as missing with the reason.
 - **Code:** `src/utils/countryRiskScorecard.ts`
 
@@ -1257,7 +1428,7 @@ These show where things stand on a stated method and make no call a backtest cou
 
 - **Shows in:** Council chat > a Chart Agent chart > Replication pack
 - data.csv holds the lines the chart drew, one row per date (or country, x, y for a chart across countries); trend lines the HP test adds are left out and recomputed.
-- replicate.py, replicate.R and replicate.do run the tests the chart ran on the first two columns, on the rows where both have a value: correlation, OLS regression, lead/lag (up to 1.5 years of rows either way), Granger F test, rolling correlation (3 years of rows, at least 8), ADF with a constant, its lag chosen by AIC on one common sample and the test refitted at that lag on every usable row, as statsmodels adfuller does (MacKinnon 2010 critical values), the HP filter as a linear solve with the app's lambda, and where the first line stands.
+- replicate.py, replicate.R and replicate.do run the tests the chart ran on the first two columns, on the rows where both have a value: correlation, OLS regression, lead/lag (up to 1.5 years of rows either way), Granger F test, rolling correlation (3 years of rows, at least 8), ADF with a constant, its lag chosen by AIC on one common sample and the test refitted at that lag on every usable row, as statsmodels adfuller does (MacKinnon 2010 critical values), KPSS with a constant and the Hobijn et al. (1998) lag (Python file only), the HP filter as a linear solve with the app's lambda, and where the first line stands.
 - The README lists each column with its label, unit, source and credit, the settings, and the app's readings and figures to check against.
 - **Limits:** A saved chart keeps its latest 600 points per line; the app ran its tests on every point, so a longer sample can give slightly different figures (the README says so when it applies). The Python and R scripts were checked against the app's figures; the Stata script follows the same steps.
 - **Code:** `src/utils/replicationPack.ts`

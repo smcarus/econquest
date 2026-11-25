@@ -471,6 +471,8 @@ export interface OpenDataSnapshot {
   gdeltRaw?: import('../utils/gdeltRaw').GdeltRawReading;
   /** UCDP conflict figures from the downloaded CSV files in data/local/ucdp/; laid over when served (utils/ucdpConflict.ts). */
   ucdp?: import('../utils/ucdpConflict').UcdpReading;
+  /** IMF monthly local market rates (LP1): Treasury bill, government bond and money market rates; laid over when served (utils/imfLocalRates.ts). */
+  localRates?: import('../utils/imfLocalRates').LocalRatesReading;
   /** Low-income country debt (U1): debt-distress rating, DSSI, Common Framework, lending from China (AidData file); laid over when served (utils/lowIncomeDebt.ts). */
   licDebt?: import('../utils/lowIncomeDebt').LicDebtReading;
   /** GDELT 1.0 monthly history: latest complete month against all months on disk; laid over when served (utils/gdeltDaily.ts). */
@@ -610,8 +612,12 @@ export interface WatchlistItem {
   debtSustainability?: DsaSummary;
   /** Government spending by purpose, % of GDP, latest published year per COFOG code (Eurostat or IMF); absent = Missing. */
   govSpending?: Record<string, import('../utils/govSpending').SectorValue>;
-  /** 'bis' when the BIS central bank policy rates feed filled policyRatePct; anything else does not count. */
-  policyRateSource?: 'bis' | 'ai_estimate' | 'sample';
+  /**
+   * 'bis' when the BIS central bank policy rates feed filled policyRatePct; 'imf' when the IMF
+   * monthly policy rate did, for a country the app does not take from the BIS (LI4). Tools built on
+   * BIS rate moves read 'bis' only. Anything else does not count.
+   */
+  policyRateSource?: 'bis' | 'imf' | 'ai_estimate' | 'sample';
   /** BIS figures only: the date (YYYY-MM-DD, or YYYY-MM for an end-of-month figure), the central bank, and the history read from the BIS. */
   policyRateDate?: string;
   policyRateBank?: string;

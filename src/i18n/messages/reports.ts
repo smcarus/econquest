@@ -19,7 +19,7 @@ export const REPORTS = defineMessages('reports', {
   rp_tab_teaching: 'Teaching',
   rp_tab_teaching_hint: 'A past rate decision as a student handout and a teacher copy.',
   im_showText: 'Edit text',
-  rp_subtitle: 'Documents to hand to the investment committee, risk and clients. Current country: {country}',
+  rp_subtitle: 'Notes, briefs and teaching material to download or share. Current country: {country}',
   rp_tools: '{tab} tools',
   // Teaching episodes
   te_missing: 'Missing: {why}',
@@ -158,7 +158,7 @@ export const REPORTS = defineMessages('reports', {
   pr_allIndicators: 'All {n} indicators',
   pr_readErr: 'Could not read the policy reviews: {why}',
   pr_title: 'Policy reviews',
-  pr_intro: 'A step-by-step case file for finding ways to improve policy in one country: Frame, Diagnose, Options, Evidence, Recommendation memo, Track outcomes. Every step is saved and hashed, so the same inputs give the same figures. Research, not validated advice.',
+  pr_intro: 'A step-by-step case file for finding ways to improve policy in one country: Frame, Diagnose, Options, Evidence, Recommendation memo, Track outcomes. Every step is saved with a fingerprint of its inputs, so anyone who repeats it gets the same figures. Research, not validated advice.',
   pr_new: 'New policy review',
   pr_againNote: 'Review again: the frame is copied from the earlier review with today as the As of day. Change anything that is different now.',
   pr_start: 'Start review',

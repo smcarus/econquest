@@ -4,6 +4,7 @@ import { useT, useTx } from '../i18n/useLang';
 import { PANELS } from '../i18n/messages/panels';
 import { WEO_VINTAGE_CODES, WEO_VINTAGE_LABELS, vintageLabel, type WeoVintageReply } from '../utils/weoVintages';
 import type { WeoMissReply } from '../utils/missBands';
+import { OfficialForecastsPanel } from './OfficialForecastsPanel';
 
 /**
  * Country Research > History & data > IMF forecasts by edition: every saved WEO edition's figure for
@@ -52,6 +53,8 @@ export const WeoVintagesPanel: React.FC<{ iso3: string; countryName: string }> =
   const MISS_WHY = { none_saved: 'weo_missNoneSaved', no_series: 'weo_missNoSeries', no_years: 'weo_missNoYears' } as const;
 
   return (
+    <>
+    <OfficialForecastsPanel iso3={iso3} countryName={countryName} />
     <section className="ui-panel" data-weo-vintages="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
@@ -171,5 +174,6 @@ export const WeoVintagesPanel: React.FC<{ iso3: string; countryName: string }> =
         )}
       </div>
     </section>
+    </>
   );
 };

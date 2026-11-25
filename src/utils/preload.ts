@@ -53,6 +53,8 @@ export const EMPTY_PRELOAD_STATE: PreloadState = { running: false, steps: {} };
 /** World-wide pulls: one each, shared by every country. */
 export const WORLD_STEPS: PreloadStep[] = [
   { id: 'world:bis', kind: 'world', label: 'BIS central bank policy rates (daily and monthly history)' },
+  { id: 'world:imf_policy', kind: 'world', label: 'IMF monthly policy rates (countries the BIS rates do not cover)' },
+  { id: 'world:imf_rates', kind: 'world', label: 'IMF monthly local market rates: Treasury bill, government bond, money market (countries with no official 10Y yield)' },
   { id: 'world:oecd_cli', kind: 'world', label: 'OECD leading indicators (via DBnomics)' },
   { id: 'world:oecd_qna', kind: 'world', label: 'OECD quarterly GDP growth (via DBnomics)' },
   { id: 'world:oecd_cpi', kind: 'world', label: 'OECD monthly inflation (via DBnomics)' },
@@ -76,6 +78,7 @@ export const WORLD_STEPS: PreloadStep[] = [
   { id: 'world:wb_projects', kind: 'world', label: 'World Bank active projects and IDA amounts paid out (weekly)' },
   { id: 'world:surprises', kind: 'world', label: 'Data surprises: Focus and Kalshi expectations, IPCA, euro area HICP and US CPI outturns' },
   { id: 'world:curves', kind: 'world', label: 'Full yield curves: US Treasury par curve and ECB euro area curve, every maturity' },
+  { id: 'world:official_forecasts', kind: 'world', label: 'Official forecasts: IMF WEO, World Bank Global Economic Prospects and OECD Economic Outlook (daily)' },
   { id: 'world:regional', kind: 'world', label: 'Regional output (DOSE) and EU regional GDP and unemployment (Eurostat), weekly' },
   { id: 'world:monthly_activity', kind: 'world', label: 'Industrial production, retail sales and monthly unemployment' },
   { id: 'world:gov_levels', kind: 'world', label: 'Revenue and spending by level of government (Eurostat, IMF GFS)' },
@@ -84,6 +87,7 @@ export const WORLD_STEPS: PreloadStep[] = [
   { id: 'world:gov_spending', kind: 'world', label: 'Government spending by sector (Eurostat and IMF COFOG via DBnomics)' },
   { id: 'world:hc_spread', kind: 'world', label: 'USD bond spreads over Treasuries (central bank of Peru, J.P. Morgan EMBI Global, monthly)' },
   { id: 'world:fx_history', kind: 'world', label: 'Daily exchange rates since 1999 (ECB reference rates via Frankfurter)' },
+  { id: 'world:imf_fx', kind: 'world', label: 'IMF monthly exchange rates (currencies without a daily official rate)' },
   { id: 'world:market_extras', kind: 'world', label: 'US 10Y, fed funds and FX valuation (FRED, NY Fed, BIS, ECB)' },
 ];
 

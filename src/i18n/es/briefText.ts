@@ -13,6 +13,7 @@
  */
 export const BRIEF_TEXT_ES: Record<string, string> = {
   "No agent works out the effect of a rate change. Research > History & data > Debt sustainability runs a stated interest rate shock (the effective rate up to 2 points higher, phased in as debt rolls over) on the debt path; Research > Markets & signals shows the policy rate and its history.": "Ningún agente calcula el efecto de un cambio de tasas. Investigación > Historia y datos > Sostenibilidad de la deuda aplica un choque de tasa de interés declarado (la tasa efectiva hasta 2 puntos más alta, introducida a medida que se renueva la deuda) a la trayectoria de la deuda; Investigación > Mercados y señales muestra la tasa de política y su historia.",
+  "No agent found figures for this question: the country's sources have not answered yet. Research for that country shows what the app holds and why each figure is missing.": "Ningún agente encontró cifras para esta pregunta: las fuentes de ese país todavía no han respondido. Investigación para ese país muestra qué tiene la aplicación y por qué falta cada cifra.",
   "No agent found figures for this question. Try naming a country, or open Research for that country to see what the app holds.": "Ningún agente encontró cifras para esta pregunta. Pruebe a nombrar un país, o abra Investigación para ese país y vea qué tiene la aplicación.",
   // Panel titles.
   'Growth and inflation': 'Crecimiento e inflación',
@@ -46,6 +47,7 @@ export const BRIEF_TEXT_ES: Record<string, string> = {
 
   // Figure names.
   'Real GDP growth': 'Crecimiento real del PIB',
+  'CPI inflation, yearly average': 'Inflación del IPC, media anual',
   'CPI inflation': 'Inflación del IPC',
   'Unemployment rate': 'Tasa de desempleo',
   'Policy rate': 'Tasa de política',
@@ -136,6 +138,8 @@ export const BRIEF_TEXT_ES: Record<string, string> = {
   'FX feed did not answer': 'La fuente cambiaria no respondió',
   'CFTC did not answer': 'La CFTC no respondió',
   'Comtrade did not answer': 'Comtrade no respondió',
+  'Not in the app’s Comtrade list': 'No está en la lista de Comtrade de la aplicación',
+  'This country has no Comtrade reporter code in the app yet.': 'Este país aún no tiene un código de declarante de Comtrade en la aplicación.',
   'GDELT did not answer': 'GDELT no respondió',
   'Trade figures did not answer': 'Las cifras de comercio no respondieron',
   'No ECB rate': 'Sin tipo del BCE',
@@ -518,4 +522,27 @@ export const BRIEF_TEXT_ES: Record<string, string> = {
   "The figures published for this country cover central government and social security only, with no state or local government figures, so the share of spending or revenue below central government cannot be shown. Many countries publish only central government figures to the IMF. The app shows Missing rather than an estimate.": "Las cifras publicadas para este país solo abarcan el gobierno central y la seguridad social, sin cifras de gobiernos estatales ni locales, así que no se puede mostrar la parte del gasto o de los ingresos por debajo del gobierno central. Muchos países solo comunican al FMI las cifras del gobierno central. La aplicación muestra Falta en lugar de una estimación.",
   "model: policy rate less the latest monthly inflation": "modelo: tasa de política menos la inflación mensual más reciente",
   "model: policy rate less IMF yearly average inflation": "modelo: tasa de política menos la inflación media anual del FMI",
+  // LP1: IMF monthly local market rates and the stock index.
+  "Local market rates": "Tasas del mercado local",
+  "Treasury bill rate": "Tasa de letras del Tesoro",
+  "Government bond yield": "Rendimiento de bonos del gobierno",
+  "Money market rate": "Tasa del mercado monetario",
+  "Stock index": "Índice bursátil",
+  "Not downloaded yet": "Aún no descargado",
+  "Not asked for": "No solicitado",
+  "The Treasury bill rate comes from the IMF's free monthly interest-rate data, saved by the daily download (npm run go -- daily). It has not been saved yet, the IMF did not answer, or the country reports none of these rates to the IMF. npm run check:data, row imf_rates, says why.": "La tasa de letras del Tesoro proviene de los datos mensuales gratuitos de tasas de interés del FMI, guardados por la descarga diaria (npm run go -- daily). Todavía no se ha guardado, el FMI no respondió o el país no comunica al FMI ninguna de estas tasas. npm run check:data, fila imf_rates, indica el motivo.",
+  "The government bond yield comes from the IMF's free monthly interest-rate data, saved by the daily download (npm run go -- daily). It has not been saved yet, the IMF did not answer, or the country reports none of these rates to the IMF. npm run check:data, row imf_rates, says why.": "El rendimiento de los bonos del gobierno proviene de los datos mensuales gratuitos de tasas de interés del FMI, guardados por la descarga diaria (npm run go -- daily). Todavía no se ha guardado, el FMI no respondió o el país no comunica al FMI ninguna de estas tasas. npm run check:data, fila imf_rates, indica el motivo.",
+  "The money market rate comes from the IMF's free monthly interest-rate data, saved by the daily download (npm run go -- daily). It has not been saved yet, the IMF did not answer, or the country reports none of these rates to the IMF. npm run check:data, row imf_rates, says why.": "La tasa del mercado monetario proviene de los datos mensuales gratuitos de tasas de interés del FMI, guardados por la descarga diaria (npm run go -- daily). Todavía no se ha guardado, el FMI no respondió o el país no comunica al FMI ninguna de estas tasas. npm run check:data, fila imf_rates, indica el motivo.",
+  "The IMF answered, but this country reports no monthly Treasury bill rate to it. The app leaves it Missing rather than fill the gap.": "El FMI respondió, pero este país no le comunica una tasa de letras del Tesoro mensual. La aplicación lo deja como Falta en lugar de rellenar el hueco.",
+  "The IMF answered, but this country reports no monthly government bond yield to it. The app leaves it Missing rather than fill the gap.": "El FMI respondió, pero este país no le comunica un rendimiento de bonos del gobierno mensual. La aplicación lo deja como Falta en lugar de rellenar el hueco.",
+  "The IMF answered, but this country reports no monthly money market rate to it. The app leaves it Missing rather than fill the gap.": "El FMI respondió, pero este país no le comunica una tasa del mercado monetario mensual. La aplicación lo deja como Falta en lugar de rellenar el hueco.",
+  "The interest rate the government pays when it borrows for a few months by selling Treasury bills in its own currency, as the country reports it to the IMF each month. It is the most widely quoted local market rate in many lower-income countries.": "La tasa de interés que paga el gobierno cuando se endeuda por unos meses vendiendo letras del Tesoro en su propia moneda, tal como el país la comunica al FMI cada mes. Es la tasa de mercado local más citada en muchos países de menores ingresos.",
+  "The yield on government bonds in the local currency, as the country reports it to the IMF each month. The maturity differs by country (often 2 to 10 years), so it is not a 10-year yield and is not compared with US 10-year Treasuries.": "El rendimiento de los bonos del gobierno en moneda local, tal como el país lo comunica al FMI cada mes. El plazo varía según el país (a menudo de 2 a 10 años), así que no es un rendimiento a 10 años y no se compara con los bonos del Tesoro de EE. UU. a 10 años.",
+  "The rate banks charge each other for short loans (the money market or interbank rate), as the country reports it to the IMF each month. It shows how tight local cash is, often close to the policy rate.": "La tasa que se cobran los bancos entre sí por préstamos cortos (la tasa del mercado monetario o interbancaria), tal como el país la comunica al FMI cada mes. Muestra qué tan escaso está el efectivo local; suele estar cerca de la tasa de política.",
+  "This country has an official 10-year government bond yield in the app, so the IMF monthly local rates are not downloaded for it.": "Este país tiene en la aplicación un rendimiento oficial de bonos del gobierno a 10 años, así que no se descargan para él las tasas locales mensuales del FMI.",
+  "Stock exchange index levels for these countries are sold by the exchanges and data vendors; no free source with terms that allow reuse was found. The app shows Missing rather than an estimate.": "Los niveles de los índices bursátiles de estos países los venden las bolsas y los proveedores de datos; no se encontró ninguna fuente gratuita con condiciones que permitan reutilizarlos. La aplicación muestra Falta en lugar de una estimación.",
+  "IMF figure too old": "Cifra del FMI demasiado antigua",
+  "The IMF's latest monthly Treasury bill rate for this country is from {when}, more than two years ago, so it is not shown as a current figure. Its history is in History & data.": "La última cifra mensual del FMI de la tasa de letras del Tesoro de este país es de {when}, hace más de dos años, así que no se muestra como cifra actual. Su historia está en Historia y datos.",
+  "The IMF's latest monthly government bond yield for this country is from {when}, more than two years ago, so it is not shown as a current figure. Its history is in History & data.": "La última cifra mensual del FMI de el rendimiento de los bonos del gobierno de este país es de {when}, hace más de dos años, así que no se muestra como cifra actual. Su historia está en Historia y datos.",
+  "The IMF's latest monthly money market rate for this country is from {when}, more than two years ago, so it is not shown as a current figure. Its history is in History & data.": "La última cifra mensual del FMI de la tasa del mercado monetario de este país es de {when}, hace más de dos años, así que no se muestra como cifra actual. Su historia está en Historia y datos.",
 };

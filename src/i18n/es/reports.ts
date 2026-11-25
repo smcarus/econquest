@@ -17,7 +17,7 @@ export const REPORTS_ES: Partial<Record<Keys, string>> = {
   rp_tab_teaching: 'Docencia',
   rp_tab_teaching_hint: 'Una decisión de tipos pasada como hoja para estudiantes y copia para el docente.',
   im_showText: 'Editar texto',
-  rp_subtitle: 'Documentos para entregar al comité de inversiones, a riesgos y a los clientes. País actual: {country}',
+  rp_subtitle: 'Notas, informes y material docente para descargar o compartir. País actual: {country}',
   rp_tools: 'Herramientas de {tab}',
   // Teaching episodes
   te_missing: 'Falta: {why}',
@@ -156,7 +156,7 @@ export const REPORTS_ES: Partial<Record<Keys, string>> = {
   pr_allIndicators: 'Los {n} indicadores',
   pr_readErr: 'No se pudieron leer las revisiones de políticas: {why}',
   pr_title: 'Revisiones de políticas',
-  pr_intro: 'Un expediente paso a paso para buscar formas de mejorar la política económica de un país: planteamiento, diagnóstico, opciones, evidencia, memorando de recomendación y seguimiento de resultados. Cada paso se guarda con su huella (hash), así que los mismos datos dan las mismas cifras. Es investigación, no un consejo validado.',
+  pr_intro: 'Un expediente paso a paso para buscar formas de mejorar la política económica de un país: planteamiento, diagnóstico, opciones, evidencia, memorando de recomendación y seguimiento de resultados. Cada paso se guarda con una huella de sus datos, así que quien lo repita obtiene las mismas cifras. Es investigación, no un consejo validado.',
   pr_new: 'Nueva revisión de políticas',
   pr_againNote: 'Revisar de nuevo: el planteamiento se copia de la revisión anterior con hoy como fecha de referencia. Cambie lo que sea distinto ahora.',
   pr_start: 'Empezar la revisión',

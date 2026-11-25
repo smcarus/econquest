@@ -11,6 +11,12 @@
  * Used by GET /api/data/connections (the Tools page) and by `npm run check:data` in a terminal.
  * Keys and passwords are never put in a row: only whether they are set.
  */
+import { CATALOGUE_URLS, parseDbnomicsSearch } from './catalogueSearch';
+import { oecdRtUrl, parseOecdRevisionsCsv } from './oecdRealTime';
+import { pullImfMonthly } from './imfMonthly';
+import { IMF_FX_SPEC } from './imfFx';
+import { IMF_POLICY_SPEC } from './imfPolicyRate';
+import { IMF_LOCAL_RATE_SPECS, LOCAL_RATE_KINDS, LOCAL_RATE_LABEL } from './imfLocalRates';
 import { CHINN_ITO_PAGE, chinnItoLinks } from './chinnIto';
 import { FX_REGIME_SETUP_HELP, fxRegimeReading, fxRegimeValue } from './fxRegime';
 import { parseFredCsvSeries } from './fedBalanceSheet';
@@ -24,6 +30,7 @@ import { BIS_CB_ASSETS_SAMPLE_URL, BIS_USD_CREDIT_SAMPLE_URL, parseBisCbAssets, 
 import { NYFED_SWAPS_SAMPLE_URL, parseNyfedSwaps } from './fedSwapLines';
 import { idaByProject, idaCreditsPageUrl, parseIdaPage, parseProjectsPage, projectsCountryUrl } from './wbProjects';
 import { ZENODO_HEADERS, doseCsvLink, doseLatestUrl, eurostatRegionUnempUrl, latestByGeo } from './regional';
+import { gepCountryUrl, oecdEoCountryUrl, parseGepAll, parseOecdEoCsv } from './officialForecasts';
 import { ECB_CURVE_TENORS, ecbCurveUrl, parseEcbCurveCsv, parseUstCsv, ustCurveUrl } from './fullCurves';
 import { BLS_CPI_URL, FOCUS_MONTHLY_URL, parseBlsCpi, parseFocusMonthly } from './dataSurprises';
 import { NASA_POWER_SAMPLE_URL, parseNasaPower } from './weatherPower';
@@ -50,6 +57,7 @@ import { EU_PRICE_EXPECTATIONS, EU_SURVEY_INDICATORS, euSurveyUrl, parseEuSurvey
 import { driversMinrUrl } from './inflationDrivers';
 import { PWT_EDITION, PWT_URL } from './growthAccounting';
 import { OECD_HEADERS, isBotCheck } from './oecdSdmx';
+import { CHECK_RETRY, NO_RETRY, pauseBefore, retryAfterMs, sleep, slowHostTimeout, worthRetrying, type RetryPlan } from './retryPolicy';
 import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
 import { ACLED_TOKEN_URL, acledReadUrl, acledTokenBody, parseAcledPage } from './acled';
 import { BANXICO_CPI_SERIES, banxicoHeaders, banxicoSeriesUrl, BCB_IPCA_12M, bcbSgsUrl, eurostatHicpUrl, EVDS_CPI_DEFAULT_SERIES, evdsCpiUrl, parseBanxicoMonthly, parseEvdsCpiYoy, parseBcbSgs, parseEurostatHicp } from './nationalCpi';
@@ -74,6 +82,7 @@ import {
 } from './officialYields';
 import { lsegSnapshotUrl, lsegTokenRequest, ownCdsSettings, parseLsegSnapshot, parseOwnCdsCsv } from './ownCds';
 import { paidVendorFromEnv, parsePaidMappings } from '../engine/paidData';
+import { brokerConfigFromEnv } from '../engine/brokerPrices';
 import { macrobondCredentials, macrobondFetchUrl, macrobondTokenBody, MACROBOND_AUTH_URL, readMacrobondSeries, readMacrobondToken } from '../engine/macrobond';
 import { parseWitsShare, witsUrl } from './scenarioExposure';
 import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, eiaSpotUrl, findPinkSheetUrl, moveSentence, parseEiaSpot, parsePinkSheet, priceMove } from './commodityPrices';
@@ -136,8 +145,8 @@ export interface CheckOptions {
   now?: Date;
   /** Per request, ms. The Brazil Treasury file gets at least 90 s because it is about 15 MB from a slow server. */
   timeoutMs?: number;
-  /** Pause before the one retry of an ECB Data Portal check that got no answer (default 5 s, none when a test supplies its own fetch). */
-  ecbRetryMs?: number;
+  /** When to ask a source again (src/utils/retryPolicy.ts). Default CHECK_RETRY; NO_RETRY when a test supplies its own fetch. */
+  retry?: RetryPlan;
   /** AI settings as the app uses them (the in-app settings win over .env). */
   ai?: { provider?: string; ollamaBaseUrl?: string; ollamaQuickModel?: string; ollamaDeepModel?: string; openAiBaseUrl?: string; geminiModel?: string };
   /** File reader for the own CDS file (injected in tests). */
@@ -159,6 +168,8 @@ export interface CheckOptions {
   paidMappingsText?: () => string | null;
   /** Pause between the two OECD checks, ms (default 3000; tests set 0). */
   oecdGapMs?: number;
+  /** Sign-in state of your IBKR gateway (src/server/brokerGateway.ts brokerStatus); absent = not asked. */
+  brokerStatus?: () => Promise<{ state: 'off' | 'needs_setup' | 'no_answer' | 'connected'; note: string; gateway?: string; contracts?: number }>;
 }
 
 export const STATE_LABEL: Record<ConnectionState, string> = {
@@ -185,7 +196,12 @@ interface ProbeReply {
   finalUrl?: string;
   /** Set when there was no HTTP answer at all. */
   networkError?: string;
+  /** How many times the source was asked (more than 1 when a timeout, 429 or 5xx was retried). */
+  tries?: number;
 }
+
+/** The retry plan of each check run, kept with its fetch function (set in checkConnections). */
+const retryPlans = new WeakMap<FetchFn, RetryPlan>();
 
 /** Turns a fetch failure into words: timeout, DNS, refused, TLS, proxy. */
 export function describeNetworkError(err: unknown, timeoutMs: number): string {
@@ -210,20 +226,53 @@ function hostOf(url: string): string {
   }
 }
 
-async function probe(fetchFn: FetchFn, url: string, timeoutMs: number, init: RequestInit = {}): Promise<ProbeReply> {
+async function probeOnce(fetchFn: FetchFn, url: string, timeoutMs: number, init: RequestInit): Promise<ProbeReply & { retryAfter?: string | null; retryable?: boolean }> {
   const t0 = Date.now();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetchFn(url, { ...init, signal: controller.signal });
     const text = await res.text();
-    return { ok: res.ok, status: res.status, latencyMs: Date.now() - t0, text, ...(res.url && res.url !== url ? { finalUrl: res.url } : {}) };
+    return { ok: res.ok, status: res.status, latencyMs: Date.now() - t0, text, retryAfter: res.headers?.get?.('retry-after') ?? null, ...(res.url && res.url !== url ? { finalUrl: res.url } : {}) };
   } catch (err) {
-    return { ok: false, latencyMs: Date.now() - t0, networkError: describeNetworkError(err, timeoutMs) };
+    return { ok: false, latencyMs: Date.now() - t0, networkError: describeNetworkError(err, timeoutMs), retryable: transientNetworkError(err) };
   } finally {
     clearTimeout(timer);
   }
 }
+
+/**
+ * True for a failure that may pass by waiting: no answer in time, a cut connection, a DNS server
+ * that did not answer. False for "address not found", "connection refused" (nothing listening, as
+ * with Ollama not started) and certificate errors, which a retry does not change.
+ */
+export function transientNetworkError(err: unknown): boolean {
+  const e = err as { name?: string; cause?: { code?: string } };
+  if (e?.name === 'AbortError' || e?.name === 'TimeoutError') return true;
+  return ['ECONNRESET', 'UND_ERR_SOCKET', 'ETIMEDOUT', 'UND_ERR_CONNECT_TIMEOUT', 'EAI_AGAIN', 'EPIPE'].includes(e?.cause?.code || '');
+}
+
+/**
+ * One request, asked again after a wait when there was no answer in time or the server was busy
+ * (429, 5xx; src/utils/retryPolicy.ts). Slow servers (World Bank, ECB, GDELT) get a longer limit.
+ */
+async function probe(fetchFn: FetchFn, url: string, timeoutMs: number, init: RequestInit = {}): Promise<ProbeReply> {
+  const plan = retryPlans.get(fetchFn) ?? NO_RETRY;
+  const limit = slowHostTimeout(url, timeoutMs);
+  let tries = 0;
+  for (;;) {
+    tries++;
+    const { retryAfter, retryable, ...r } = await probeOnce(fetchFn, url, limit, init);
+    const again = r.networkError ? !!retryable : worthRetrying(r.status, isBotCheck(r.status, r.text));
+    if (r.ok || !again) return { ...r, tries };
+    const wait = pauseBefore(tries + 1, plan, retryAfterMs(retryAfter));
+    if (wait === null) return { ...r, tries };
+    await sleep(wait);
+  }
+}
+
+/** " (asked 3 times)" after a failure that was retried; empty otherwise. */
+const askedNote = (r: ProbeReply): string => (r.tries && r.tries > 1 ? ` (asked ${r.tries} times)` : '');
 
 function httpRefusal(status: number | undefined, text: string | undefined): string {
   if (isBotCheck(status, text))
@@ -279,10 +328,10 @@ async function httpCheck(
   const { url: _u, ...rest } = def;
   const r = await probe(fetchFn, url, timeoutMs, init);
   const base = { ...rest, host: hostOf(url), latencyMs: r.latencyMs, ...(r.status ? { httpStatus: r.status } : {}) };
-  if (r.networkError) return { ...base, state: 'no_answer', detail: r.networkError };
+  if (r.networkError) return { ...base, state: 'no_answer', detail: `${r.networkError}${askedNote(r)}` };
   if (isErrorPageRedirect(r.finalUrl))
     return { ...base, state: 'refused', detail: `Site error: the source sent its own error page (redirected to ${r.finalUrl}). A problem on its side, usually temporary; not a format change.` };
-  if (!r.ok) return { ...base, state: 'refused', detail: httpRefusal(r.status, r.text) };
+  if (!r.ok) return { ...base, state: 'refused', detail: `${httpRefusal(r.status, r.text)}${askedNote(r)}` };
   let sample: string | null = null;
   try {
     sample = read(r);
@@ -310,6 +359,9 @@ export const SOURCE_IDS = [
   'wb_ida_credits',
   'dose',
   'eurostat_regions',
+  'wb_gep',
+  'oecd_eo',
+  'catalogues',
   'ust_curve',
   'ecb_curve',
   'focus_monthly',
@@ -331,12 +383,16 @@ export const SOURCE_IDS = [
   'ons_activity',
   'bcb_activity',
   'ecb_rtd',
+  'oecd_rtd',
   'ons_triangle',
   'worldbank_debt_structure',
   'imf',
   'imf_reserves',
   'imf_cofer',
   'imf_cpi',
+  'imf_fx',
+  'imf_policy',
+  'imf_rates',
   'gdelt',
   'gdelt_v1',
   'polymarket',
@@ -387,6 +443,7 @@ export const SOURCE_IDS = [
   'eia',
   'own_cds',
   'paid_data',
+  'broker_prices',
   'gemini',
   'ollama',
   'openai_compatible',
@@ -395,7 +452,10 @@ export type SourceId = (typeof SOURCE_IDS)[number];
 
 export async function checkConnections(opts: CheckOptions): Promise<ConnectionReport> {
   const env = opts.env;
-  const fetchFn: FetchFn = opts.fetchFn || ((u, i) => fetch(u, i));
+  const fetchFn: FetchFn = opts.fetchFn ? (u, i) => opts.fetchFn!(u, i) : (u, i) => fetch(u, i);
+  // Real runs ask a slow or busy source up to three times; a test's own fetch is asked once
+  // unless it passes a plan.
+  retryPlans.set(fetchFn, opts.retry ?? (opts.fetchFn ? NO_RETRY : CHECK_RETRY));
   const now = opts.now || new Date();
   const T = opts.timeoutMs ?? 10000;
   const year = now.getUTCFullYear();
@@ -617,6 +677,20 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
   // Figures as first published (G12, G13). The ECB row reads euro area GDP with its revision
   // history; the ONS row checks the GDP revision triangle's page lists a file (the file itself can be
   // refused to programs, in which case a copy saved by hand in data/local/ons-triangles is read).
+  add('oecd_rtd', () =>
+    httpCheck(
+      { id: 'oecd_rtd', name: 'OECD Main Economic Indicators editions (figures as first published)', group: 'free', feeds: 'Real-time forecast tests for OECD members (npm run oecd:vintages)' },
+      fetchFn,
+      oecdRtUrl('CAN', 'gdp', '2024-Q1', ['202501']),
+      T,
+      (r) => {
+        const eds = parseOecdRevisionsCsv(r.text || '', 'CAN');
+        const rows = eds.get('202501');
+        return rows?.size ? `Canada GDP, January 2025 edition: ${rows.size} quarters` : null;
+      }
+    )
+  );
+
   add('ecb_rtd', () =>
     httpCheck(
       { id: 'ecb_rtd', name: 'ECB Euro Area Real-Time Database (figures as first published)', group: 'free', feeds: 'Euro area figures as first published (History & data on euro members\' pages)' },
@@ -936,6 +1010,50 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
   );
 
 
+  add('wb_gep', () =>
+    httpCheck(
+      { id: 'wb_gep', name: 'World Bank Global Economic Prospects', group: 'free', feeds: 'Growth forecasts for this year and the next two (Official forecasts side by side)' },
+      fetchFn,
+      gepCountryUrl(SAMPLE_ISO3, new Date().getUTCFullYear()),
+      T,
+      (r) => {
+        const got = parseGepAll(parseJson(r.text));
+        const row = got.byIso[SAMPLE_ISO3];
+        if (!row) return null;
+        const y = String(new Date().getUTCFullYear() + 1);
+        return `${SAMPLE_NAME}${typeof row[y] === 'number' ? `: growth ${row[y]}% in ${y}` : `: years ${Object.keys(row).join(', ')}`}${got.edition ? ` (${got.edition})` : ''}`;
+      }
+    )
+  );
+
+  add('catalogues', () =>
+    httpCheck(
+      { id: 'catalogues', name: 'DBnomics catalogue search', group: 'free', feeds: 'Menu > Find data (the IMF, World Bank and Eurostat lists are fetched by the same screen)' },
+      fetchFn,
+      CATALOGUE_URLS.dbnomics('inflation', 3),
+      T,
+      (r) => {
+        const got = parseDbnomicsSearch(parseJson(r.text));
+        return got.length ? `${got.length} datasets for "inflation", first ${got[0].code}` : null;
+      }
+    )
+  );
+
+  add('oecd_eo', () =>
+    httpCheck(
+      { id: 'oecd_eo', name: 'OECD Economic Outlook', group: 'free', feeds: 'Growth and inflation forecasts for OECD members and partners (Official forecasts side by side)' },
+      fetchFn,
+      oecdEoCountryUrl(SAMPLE_ISO3, new Date().getUTCFullYear()),
+      T,
+      (r) => {
+        const got = parseOecdEoCsv(r.text || '')[SAMPLE_ISO3];
+        if (!got?.gdp && !got?.cpi) return null;
+        const y = String(new Date().getUTCFullYear() + 1);
+        return `${SAMPLE_NAME}: growth ${got.gdp?.[y] ?? 'not given'}%, inflation ${got.cpi?.[y] ?? 'not given'}% in ${y}`;
+      }
+    )
+  );
+
   add('worldbank_debt_structure', () =>
     httpCheck(
       { id: 'worldbank_debt_structure', name: 'World Bank debt structure (IDS currency mix, interest burden)', group: 'free', feeds: 'Currency mix and maturity of new loans of public external debt, interest as % of revenue (country brief, Fiscal & Debt Agent)' },
@@ -1070,6 +1188,68 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     const status = Number(/HTTP (\d{3})/.exec(r.step.note)?.[1] ?? 0) || undefined;
     const state: ConnectionState = status ? 'refused' : /no answer within|fetch failed|request failed/i.test(r.step.note) ? 'no_answer' : 'bad_reply';
     return { ...setRow(def, state, r.step.note, IMF_SDMX_HOST), latencyMs, ...(status ? { httpStatus: status } : {}), setup };
+  });
+
+  add('imf_fx', async () => {
+    const def: Def = { id: 'imf_fx', name: 'IMF monthly exchange rates (api.imf.org)', group: 'free', feeds: 'Monthly exchange rate history for currencies with no ECB or central bank daily rate in the app (for example NGN, KES, GHS, EGP, BDT)' };
+    const t0 = Date.now();
+    let r: Awaited<ReturnType<typeof pullImfMonthly>>;
+    try {
+      r = await pullImfMonthly(IMF_FX_SPEC, { fetchFn, env, timeoutMs: Math.max(T, 30000) }, 'NGA');
+    } catch (err) {
+      return { ...setRow(def, 'no_answer', describeNetworkError(err, Math.max(T, 30000)), IMF_SDMX_HOST), latencyMs: Date.now() - t0 };
+    }
+    const latencyMs = Date.now() - t0;
+    const setup = `If the IMF codes are not matched by name, set ${IMF_FX_SPEC.env} in .env to the series key ({ISO3} for the country); the note says which dimensions the dataset has.`;
+    const last = r.series?.points[r.series.points.length - 1];
+    if (last) return { ...setRow(def, 'connected', `Answered in ${latencyMs} ms. ${r.step.note}.`, IMF_SDMX_HOST), latencyMs, sample: `Nigeria ${fmt(last.value, 1)} naira per US dollar, monthly average (${formatMonth(last.period)})`, setup };
+    const status = Number(/HTTP (\d{3})/.exec(r.step.note)?.[1] ?? 0) || undefined;
+    const state: ConnectionState = status ? 'refused' : /no answer within|fetch failed|request failed/i.test(r.step.note) ? 'no_answer' : 'bad_reply';
+    return { ...setRow(def, state, r.step.note, IMF_SDMX_HOST), latencyMs, ...(status ? { httpStatus: status } : {}), setup };
+  });
+
+  add('imf_policy', async () => {
+    const def: Def = { id: 'imf_policy', name: 'IMF monthly policy rates (api.imf.org)', group: 'free', feeds: 'Central bank policy rate, monthly, for countries the app does not take from the BIS (for example Egypt, Nigeria, Kenya, Pakistan)' };
+    const t0 = Date.now();
+    let r: Awaited<ReturnType<typeof pullImfMonthly>>;
+    try {
+      r = await pullImfMonthly(IMF_POLICY_SPEC, { fetchFn, env, timeoutMs: Math.max(T, 30000) }, 'EGY');
+    } catch (err) {
+      return { ...setRow(def, 'no_answer', describeNetworkError(err, Math.max(T, 30000)), IMF_SDMX_HOST), latencyMs: Date.now() - t0 };
+    }
+    const latencyMs = Date.now() - t0;
+    const setup = `If the IMF codes are not matched by name, set ${IMF_POLICY_SPEC.env} in .env to the series key ({ISO3} for the country); the note says which dimensions the dataset has.`;
+    const last = r.series?.points[r.series.points.length - 1];
+    if (last) return { ...setRow(def, 'connected', `Answered in ${latencyMs} ms. ${r.step.note}.`, IMF_SDMX_HOST), latencyMs, sample: `Egypt policy rate ${fmt(last.value, 2)}% (${formatMonth(last.period)})`, setup };
+    const status = Number(/HTTP (\d{3})/.exec(r.step.note)?.[1] ?? 0) || undefined;
+    const state: ConnectionState = status ? 'refused' : /no answer within|fetch failed|request failed/i.test(r.step.note) ? 'no_answer' : 'bad_reply';
+    return { ...setRow(def, state, r.step.note, IMF_SDMX_HOST), latencyMs, ...(status ? { httpStatus: status } : {}), setup };
+  });
+
+  add('imf_rates', async () => {
+    const def: Def = { id: 'imf_rates', name: 'IMF monthly local market rates (api.imf.org)', group: 'free', feeds: 'Treasury bill rate, government bond yield and money market rate, monthly, for countries with no official 10-year yield in the app (for example Ghana, Bangladesh, Nigeria, Kenya)' };
+    const t0 = Date.now();
+    const got: string[] = [];
+    const notes: string[] = [];
+    let structure: Awaited<ReturnType<typeof pullImfMonthly>>['structure'] = null;
+    for (const k of LOCAL_RATE_KINDS) {
+      try {
+        const r = await pullImfMonthly(IMF_LOCAL_RATE_SPECS[k], { fetchFn, env, timeoutMs: Math.max(T, 30000), structure }, 'GHA');
+        structure = r.structure ?? structure;
+        const last = r.series?.points[r.series.points.length - 1];
+        if (last) got.push(`${LOCAL_RATE_LABEL[k]} ${fmt(last.value, 2)}% (${formatMonth(last.period)})`);
+        notes.push(`${LOCAL_RATE_LABEL[k]}: ${r.step.note}`);
+      } catch (err) {
+        notes.push(`${LOCAL_RATE_LABEL[k]}: ${describeNetworkError(err, Math.max(T, 30000))}`);
+      }
+    }
+    const latencyMs = Date.now() - t0;
+    const setup = `If the IMF codes are not matched by name, set ${LOCAL_RATE_KINDS.map((k) => IMF_LOCAL_RATE_SPECS[k].env).join(', ')} in .env to the series key ({ISO3} for the country); the note says which dimensions the dataset has.`;
+    const note = notes.join(' | ');
+    if (got.length) return { ...setRow(def, 'connected', `Answered in ${latencyMs} ms. ${note}.`, IMF_SDMX_HOST), latencyMs, sample: `Ghana: ${got.join('; ')}`, setup };
+    const status = Number(/HTTP (\d{3})/.exec(note)?.[1] ?? 0) || undefined;
+    const state: ConnectionState = status ? 'refused' : /no answer within|fetch failed|request failed/i.test(note) ? 'no_answer' : 'bad_reply';
+    return { ...setRow(def, state, note, IMF_SDMX_HOST), latencyMs, ...(status ? { httpStatus: status } : {}), setup };
   });
 
   add('gdelt', () =>
@@ -1641,8 +1821,8 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     const key = ECB_SPF_SERIES[2].key;
     // The ECB Data Portal cut this request on the Mac (17 November 2026) while the yield curve and
     // real-time database checks went to the same server at the same moment, and the same address
-    // opened in a browser. So it is asked a second time, after the others, before it counts as failed.
-    const once = () => httpCheck(
+    // opened in a browser. A cut connection is asked again after a wait (probe, retryPolicy.ts).
+    const res = await httpCheck(
       { id: 'ecb_spf', name: 'ECB Survey of Professional Forecasters', group: 'free', feeds: 'Euro-area HICP inflation expected one year, two years and longer term ahead (quarterly)' },
       fetchFn,
       ecbSpfUrl(key, 8),
@@ -1656,12 +1836,6 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       { headers: { Accept: 'text/csv' } },
       `The ECB answered, but not with TIME_PERIOD and OBS_VALUE columns for SPF.${key}.`
     );
-    let res = await once();
-    if (res.state === 'no_answer') {
-      await new Promise((r) => setTimeout(r, opts.ecbRetryMs ?? (opts.fetchFn ? 0 : 5000)));
-      const again = await once();
-      res = again.state === 'no_answer' ? { ...again, detail: `${again.detail} (asked twice, 5 s apart)` } : again;
-    }
     return res.state === 'bad_reply' || res.state === 'refused' ? { ...res, detail: `${res.detail}${replyStart(lastText)}` } : res;
   });
 
@@ -1747,7 +1921,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       name: 'Turkey central bank (EVDS)',
       group: 'free_key',
       feeds: 'Turkey monthly CPI inflation; Turkey 10Y yield once its series code is set',
-      setup: 'Menu > Settings > Data API keys, or in .env: EVDS_API_KEY="..." (free: evds3.tcmb.gov.tr > profile > API key). For the 10Y yield also EVDS_TR10Y_SERIES="TP...." (the 10Y bond series code in EVDS).',
+      setup: 'Menu > Settings > Free data keys, or in .env: EVDS_API_KEY="..." (free: evds3.tcmb.gov.tr > profile > API key). For the 10Y yield also EVDS_TR10Y_SERIES="TP...." (the 10Y bond series code in EVDS).',
     };
     const key = (env.EVDS_API_KEY || '').trim();
     const series = (env.EVDS_TR10Y_SERIES || '').trim();
@@ -1787,7 +1961,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       name: 'Banco de México (SIE)',
       group: 'free_key',
       feeds: "Mexico's monthly INPC inflation over 12 months, fresher than the OECD mirror",
-      setup: 'Menu > Settings > Data API keys, or BANXICO_TOKEN="..." in .env (free: banxico.org.mx/SieAPIRest/service/v1/token). Without it Mexico keeps the OECD inflation series.',
+      setup: 'Menu > Settings > Free data keys, or BANXICO_TOKEN="..." in .env (free: banxico.org.mx/SieAPIRest/service/v1/token). Without it Mexico keeps the OECD inflation series.',
     };
     const token = (env.BANXICO_TOKEN || '').trim();
     if (!token) return setRow(def, 'optional', 'No token set. Mexico keeps the OECD inflation series, which lags five to six months.', 'www.banxico.org.mx');
@@ -1808,7 +1982,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       name: 'ACLED (conflict events)',
       group: 'free_key',
       feeds: 'Conflict events per country over twelve months, for the Politics & Events Agent',
-      setup: 'Menu > Settings > Data API keys, or in .env: ACLED_EMAIL="..." and ACLED_PASSWORD="..." (free for non-commercial use; the API needs a myACLED Research-level account).',
+      setup: 'Menu > Settings > Free data keys, or in .env: ACLED_EMAIL="..." and ACLED_PASSWORD="..." (free for non-commercial use; the API needs a myACLED Research-level account).',
     };
     const email = (env.ACLED_EMAIL || '').trim();
     const password = env.ACLED_PASSWORD || '';
@@ -2007,7 +2181,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       name: 'US EIA oil prices (free key)',
       group: 'free_key',
       feeds: 'Daily Brent and WTI spot prices (spillover scenarios)',
-      setup: 'Menu > Settings > Data API keys, or EIA_API_KEY="..." in .env (free: eia.gov/opendata > Register). Without it oil comes monthly from the World Bank Pink Sheet.',
+      setup: 'Menu > Settings > Free data keys, or EIA_API_KEY="..." in .env (free: eia.gov/opendata > Register). Without it oil comes monthly from the World Bank Pink Sheet.',
     };
     const key = (env.EIA_API_KEY || '').trim();
     if (!key) return setRow(def, 'optional', 'No key set. Oil comes monthly from the World Bank Pink Sheet instead.', 'api.eia.gov');
@@ -2159,6 +2333,26 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       ...setRow(def, 'connected', `Signed in to ${vendor.name}; ${series}. The figures stay on this computer.`, apiHost),
       sample: `${first.code}: ${read.points.length} values, ${read.points[0]!.date} to ${read.points[read.points.length - 1]!.date} (figures not shown)`,
     };
+  });
+
+  // Your broker prices (gap CG9, src/engine/brokerPrices.ts): only whether the gateway on this
+  // computer is signed in. Never a price, and never an IBKR sign-in detail (the app has none).
+  add('broker_prices', async () => {
+    const def: Def = {
+      id: 'broker_prices',
+      name: 'Your broker prices (Interactive Brokers)',
+      group: 'own_account',
+      feeds: 'Live prices for contracts you list, from your own IBKR account; shown on screen only',
+      setup: 'Menu > Settings > Your subscriptions > Your broker prices, with the IBKR Client Portal Gateway running and signed in on this computer.',
+    };
+    const cfg = brokerConfigFromEnv(env);
+    if ('off' in cfg) return setRow(def, 'off', 'Off. No broker prices are shown.', 'your broker');
+    if ('problem' in cfg) return setRow(def, 'needs_setup', cfg.problem, 'your broker');
+    const host = new URL(cfg.config.gateway).host;
+    if (!opts.brokerStatus) return setRow(def, 'needs_setup', `Switched on (${cfg.config.contracts.length} contracts); the gateway was not asked in this check.`, host);
+    const st = await opts.brokerStatus();
+    if (st.state === 'connected') return { ...setRow(def, 'connected', `${st.note} ${cfg.config.contracts.length} contracts listed. Prices are shown on screen only.`, host), sample: `${cfg.config.contracts.length} contracts (prices not shown)` };
+    return setRow(def, st.state === 'off' ? 'off' : st.state, st.note, host);
   });
 
   // ---- AI models ---------------------------------------------------------------------------------

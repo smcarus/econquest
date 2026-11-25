@@ -65,6 +65,7 @@ own-data switch in Settings).
 | World Bank projects (Projects API) and IDA statement of credits (Finances One DS00001) | Active projects with amount committed, board approval and closing dates; IDA original principal, cancelled, disbursed and undisbursed amounts by project, for the World Bank projects panel | search.worldbank.org, datacatalogapi.worldbank.org | 1 week (daily download step world:wb_projects) |
 | BCB Focus monthly IPCA medians and SGS 433, Eurostat euro area HICP, BLS CPI-U (CUSR0000SA0), Kalshi CPI market (KXCPI) | Expectations and outturns for Data surprises; Kalshi snapshots kept on this computer only (personal, non-commercial use) | olinda.bcb.gov.br, api.bcb.gov.br, ec.europa.eu, api.bls.gov, api.elections.kalshi.com | 6 hours (daily download step world:surprises) |
 | US Treasury Daily Par Yield Curve Rates and ECB euro area yield curves (dataset YC) | Every maturity of the US Treasury par curve and the euro area government spot curve (all issuers) each day, for Full yield curves; fitted curve, factor moves, carry and roll-down are app calculations | home.treasury.gov, data-api.ecb.europa.eu | 6 hours (daily download step world:curves) |
+| Official forecasts: IMF WEO (DataMapper), World Bank Global Economic Prospects, OECD Economic Outlook | Growth and inflation forecasts for this year and the next two, side by side with the spread between them (History & data > IMF forecasts by edition). IMF NGDP_RPCH and PCPIPCH; World Bank source 27, NYGDPMKTPKDZ (CC BY 4.0); OECD dataflow DSD_EO@DF_EO, GDPV_ANNPCT and CPI_YTYPCT (OECD terms: any use with credit). The Philadelphia Fed Survey of Professional Forecasters (United States) only from medianLevel.xlsx in data/local/philly-spf/, because no terms of use were found | imf.org, api.worldbank.org, sdmx.oecd.org | 1 day (daily download step world:official_forecasts; five requests for every country) |
 | DOSE regional output (Zenodo) and Eurostat NUTS 2 regional accounts and unemployment | Output per person by first-level region, 83 countries (DOSE, CC BY 4.0); GDP per person in PPS and unemployment rate by EU/EFTA NUTS 2 region (nama_10r_2gdp, lfst_r_lfu3rt), for the Regional figures panel. Global Data Lab subnational HDI only from your file in data/local/gdl/ | zenodo.org, ec.europa.eu | 1 week (daily download step world:regional; DOSE re-downloaded only for a new version) |
 | World Bank food security (WDI, from FAO) | Prevalence of undernourishment (SN.ITK.DEFC.ZS), moderate or severe and severe food insecurity (SN.ITK.MSFI.ZS, SN.ITK.SVFI.ZS), three-year averages | api.worldbank.org | 1 week (country history) |
 | IMF Sovereign Debt Investor Base (Arslanalp and Tsuda) | Who holds general government debt: foreign official, foreign banks, foreign other investors, domestic central bank, domestic banks, domestic other investors (shares), about 136 emerging and developing economies, yearly | your file in data/local/imf-investor-base/ (wp1439.zip from imf.org) | when you replace the file (the IMF updates it end-April and end-October) |
@@ -82,6 +83,8 @@ own-data switch in Settings).
 | IMF reserves and balance of payments | Monthly official reserves (International Liquidity, IL); quarterly current account and imports of goods and services (BOP); import cover and current account % of GDP | api.imf.org | 1 day, on disk (structures 1 week) |
 | IMF COFER | World shares of official FX reserves by currency (US dollar, euro, renminbi, yen, sterling and others), quarterly | api.imf.org | 1 day, on disk |
 | IMF monthly consumer prices (CPI) | Monthly inflation, all items, year on year, for catalog countries outside the EU; used when its month is at least as new as the OECD copy's (national and Eurostat series win a tie) | api.imf.org | Daily run, on disk (data/live/imf-cpi.json); pages read the saved copy |
+| IMF monthly policy rates (MFS_IR) | Central bank policy rate, monthly, for catalog countries the app does not take from the BIS (not in the BIS collection, or not pulled because the pre-registered rate tests are fixed on that list): for example Egypt, Nigeria, Kenya, Ghana, Pakistan, Bangladesh, Australia and Canada. Shown with its source and month; the tools built on BIS rate moves (cycle clock, Taylor gap, rate-move signals and alerts) still use BIS rates only | api.imf.org | Daily run, on disk (data/live/imf-policy.json); pages read the saved copy |
+| IMF monthly exchange rates (ER) | Units of the currency per US dollar, monthly average, for catalog countries whose currency has no ECB reference rate and no central bank daily feed in the app (for example the naira, Kenyan shilling, cedi, Egyptian pound and taka); the exchange rate history uses it only where no daily rate exists | api.imf.org | Daily run, on disk (data/live/imf-fx.json); pages read the saved copy |
 | GDELT | Headlines and news tone (a risk score input) | api.gdeltproject.org | 7 days, on disk (`GDELT_REFRESH_DAYS`) |
 | GDELT 2.0 raw files (events and Global Knowledge Graph) | Weekly event counts per country (protests, sanctions, violence, Goldstein and tone) and economic-theme shares of news (inflation, central bank, debt, currency, fiscal, lenders and more) with tone and the people and organisations named | data.gdeltproject.org/gdeltv2/ | Per day on disk (`data/live/gdelt-raw/`), look-back `GDELT_RAW_WEEKS` (default 8) |
 | GDELT 1.0 event files | Monthly event history per country (events, protests, sanctions, violence, Goldstein, tone; share of all events GDELT coded), back to 1979 if wanted. Alongside the 2.0 files, not instead | data.gdeltproject.org/events/ | Per month on disk (`data/live/gdelt-daily/`), from `GDELT_DAILY_FROM` (default 2016-01) |
@@ -261,6 +264,32 @@ Notes from the first check on Sam's Mac (2026-11-05):
   saves the IMF copy (`data/live/imf-cpi.json`). Menu > Data health > Inflation lists each
   country's source and age, flags any figure more than 90 days old, and says when an old OECD copy
   is in use.
+- **IMF monthly policy rates** come from the MFS_IR dataset on api.imf.org, found by name: the
+  code named "Monetary policy-related interest rate" or "policy rate", monthly, other dimensions
+  open (`IMF_POLICY_KEY` in `.env` overrides it; `npm run check:data`, row imf_policy, shows what
+  matched). They are asked for only for countries the app does not take from the BIS; the BIS figure
+  wins wherever the app pulls it. A figure more than four months old is marked "may be out of date".
+- **IMF monthly local market rates** (Treasury bill rate, government bond yield, money market rate)
+  come from the same MFS_IR dataset, found by name: the code named "Treasury bills yields" (the
+  "Treasury bills, Rate" code holds no series), "Government bonds" or "Money market", monthly, other dimensions open (`IMF_TBILL_KEY`,
+  `IMF_GOVBOND_KEY` and `IMF_MONEY_KEY` in `.env` override them; `npm run check:data`, row
+  imf_rates, shows what matched). They are asked for only for countries with no official 10-year
+  yield in the app (most lower-income countries, plus Turkey, Argentina, China, Indonesia, Russia
+  and Saudi Arabia) and saved to `data/live/imf-tbill.json`, `imf-govbond.json` and
+  `imf-money.json`. The government bond yield is the one each country reports, whose maturity
+  differs by country, so it is never shown as a 10-year yield or used for the spread over US
+  Treasuries. A figure more than four months old is marked "may be out of date"; one more than two years old
+  reads Missing with its month (the history keeps it). The first live check (19 November) found no
+  figures at all for Ethiopia or Vietnam; Treasury bill rates for Kenya, Nigeria, Egypt, Ghana,
+  Bangladesh, Bolivia and the Philippines (Tanzania, Uganda and Pakistan only more than two years old). Stock index levels
+  for these countries have no free source with terms that allow reuse, and US dollar bond spreads
+  are free only for eight Latin American countries (BCRP), so both read Missing with the reason.
+- **IMF monthly exchange rates** come from the ER dataset on api.imf.org, found by name in the
+  same way: the code named "Domestic currency per US Dollar" and "Period average", monthly, other
+  dimensions open (`IMF_FX_KEY` in `.env` overrides it; `npm run check:data`, row imf_fx, shows
+  what matched). They are asked for only for currencies the ECB file and the central bank daily
+  feeds (PEN, COP, ARS) do not have. The exchange rate history takes the ECB or central bank daily
+  run first, then this monthly average, then the app's own saved pulls; the chart says monthly.
 - **IMF reserves and balance of payments** come from the IMF data portal's SDMX 3.0 API
   (api.imf.org, no key). IFS was retired in 2025 and split into topic datasets: monthly reserves
   are in **IL** (International Liquidity) and the balance of payments in **BOP**. The IMF also

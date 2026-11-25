@@ -8,7 +8,7 @@ import type { CouncilAssessmentRun, LiveWatchlistItem, OpenDataSnapshot, Watchli
 import { missingReason } from './liveFigures';
 import { getSnapshotDataStatus } from './dataStatus';
 import { formatPeriod } from './officialYields';
-import { liveRow, missingNote, missingRow, noSourceRow, pct, pts, type BriefRow, type CountryBrief } from './countryNotes';
+import { liveRow, localRateRows, missingNote, missingRow, noSourceRow, pct, pts, type BriefRow, type CountryBrief } from './countryNotes';
 import { cdsSourceNote, yieldSourceNote } from './watchlistYield';
 import { carryToVol, reerLabel } from './fxValuation';
 import { formatMonth, ticMissing, ticTrend } from './ticHoldings';
@@ -49,8 +49,8 @@ export const INFLATION_TARGETS: Record<string, InflationTarget> = {
   JPN: { pct: 2, bank: 'Bank of Japan', url: 'https://www.boj.or.jp/en/mopo/outline/qqe.htm', checked: true },
   BRA: { pct: 3, bandPts: 1.5, bank: 'BCB', url: 'https://www.bcb.gov.br/en/monetarypolicy/inflationtargeting', checked: false },
   MEX: { pct: 3, bandPts: 1, bank: 'Banxico', url: 'https://www.banxico.org.mx/monetary-policy/inflation-target.html', checked: false },
-  // The rest of the G20, read on each bank's own page on 2026-11-07. India's page could not be
-  // found that day, so it carries the published 4% (2-6%) target and says so. Argentina, China
+  // The rest of the G20, read on each bank's own page on 2026-11-07. India's page was read
+  // 2026-11-17 (below). Argentina, China
   // and Saudi Arabia have no stated central bank inflation target, so none is filed for them.
   USA: { pct: 2, bank: 'Federal Reserve (PCE prices)', url: 'https://www.federalreserve.gov/faqs/economy_14400.htm', checked: true },
   CAN: { pct: 2, bandPts: 1, bank: 'Bank of Canada', url: 'https://www.bankofcanada.ca/rates/indicators/key-variables/inflation-control-target/', checked: true },
@@ -60,7 +60,22 @@ export const INFLATION_TARGETS: Record<string, InflationTarget> = {
   DEU: { pct: 2, bank: 'ECB', url: 'https://www.ecb.europa.eu/mopo/strategy/html/index.en.html', checked: true },
   FRA: { pct: 2, bank: 'ECB', url: 'https://www.ecb.europa.eu/mopo/strategy/html/index.en.html', checked: true },
   ITA: { pct: 2, bank: 'ECB', url: 'https://www.ecb.europa.eu/mopo/strategy/html/index.en.html', checked: true },
-  IND: { pct: 4, bandPts: 2, bank: 'Reserve Bank of India', url: 'https://www.rbi.org.in/', checked: false },
+  // Read 2026-11-17: India's government-notified target, retained on 2026-03-25 for April 2026 to
+  // March 2031; Ghana's target from the Bank of Ghana's framework page. Kenya (set each year by the
+  // Treasury, no figure on the pages read), Tanzania ("within a 5 percent range" over 3-5 years, not
+  // a point target) and DR Congo (7% in a page summary, not a formal target) are not filed; nor are
+  // the other lower-income countries whose pages state no target or could not be read.
+  IND: { pct: 4, bandPts: 2, bank: 'Reserve Bank of India', url: 'https://www.rbi.org.in/scripts/FS_Overview.aspx?fn=2752', checked: true },
+  GHA: { pct: 8, bandPts: 2, bank: 'Bank of Ghana', url: 'https://www.bog.gov.gh/monetary-policy/our-monetary-policy-framework/', checked: true },
+  // Read 2026-11-23 on each bank's own page. Egypt's target is the one for Q4 2026 (the CBE sets
+  // a path of dated targets). Pakistan's "medium-term inflation target of 5 - 7 percent" is filed
+  // as its midpoint with a 1-point band. Kenya's page says the target comes from the National
+  // Treasury and gives no figure; Ethiopia, Bangladesh, Viet Nam, DR Congo, Myanmar and Bolivia are
+  // not filed (no stated target on the pages read, or the page could not be read).
+  PHL: { pct: 3, bandPts: 1, bank: 'Bangko Sentral ng Pilipinas', url: 'https://www.bsp.gov.ph/Price%20Stability/MonetaryPolicyReport/FullReport-Aug2026.pdf', checked: true },
+  EGY: { pct: 7, bandPts: 2, bank: 'Central Bank of Egypt (Q4 2026 target)', url: 'https://www.cbe.org.eg/en/monetary-policy/inflation-target', checked: true },
+  UGA: { pct: 5, bank: 'Bank of Uganda', url: 'https://bou.or.ug/monetary_policy', checked: true },
+  PAK: { pct: 6, bandPts: 1, bank: 'State Bank of Pakistan (medium-term 5-7%)', url: 'https://www.sbp.org.pk/our-operations/monetary-policy', checked: true },
 };
 
 /**
@@ -214,6 +229,8 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
       title: 'Market pricing',
       rows: [
         liveRow(status, '10Y government yield', 'market.sovereign10YBondYieldPct', (v) => pct(v, 2), open),
+        // IMF monthly local market rates (LP1) and the stock index, for countries with no official 10Y yield.
+        ...localRateRows(open),
         us
           ? { label: 'US 10Y Treasury', value: pct(us.valuePct, 2), source: `official, OECD via FRED, ${formatPeriod(us.period)} avg`, verified: true }
           : missingRow('US 10Y Treasury', { kind: 'unreachable', short: 'FRED did not answer', help: 'The free FRED feed did not answer. Press Refresh now under Research > One country, or add a free FRED key under Menu > Settings.' }),

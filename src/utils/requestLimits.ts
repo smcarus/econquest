@@ -76,3 +76,23 @@ export const SECURITY_HEADERS: Record<string, string> = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
   'Cross-Origin-Opener-Policy': 'same-origin',
 };
+
+/**
+ * The fuller Content-Security-Policy sent with the built app (NODE_ENV=production). Pages may run
+ * only the app's own scripts, connect only to this server, and never be framed. Styles allow inline
+ * rules because the chart library writes them. The development server (Vite) needs inline scripts
+ * for live reload, so it keeps only frame-ancestors from SECURITY_HEADERS.
+ */
+export const PRODUCTION_CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  "connect-src 'self'",
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join('; ');

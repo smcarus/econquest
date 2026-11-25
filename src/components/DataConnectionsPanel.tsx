@@ -122,7 +122,7 @@ export const DataConnectionsPanel: React.FC<{ startCollapsed?: boolean }> = ({ s
             {t('dc_title')}
           </h2>
           <p className="ui-label">
-            {t('dc_intro')} <code>npm run check:data</code>.{lang !== 'en' && ` ${t('dc_englishNote')}`}
+            {t('dc_intro')}{lang !== 'en' && ` ${t('dc_englishNote')}`}
           </p>
           {c && (
             <p className="mt-1 text-xs text-slate-600 dark:text-slate-300" data-connection-summary="true">

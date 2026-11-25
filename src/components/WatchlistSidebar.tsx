@@ -1,9 +1,16 @@
 import { CDS_HIDDEN } from '../utils/cdsHidden';
 import React, { useState } from 'react';
 import { yieldSourceHelp, yieldSourceNote } from '../utils/watchlistYield';
+
+/** A figure with its unit, or a dash when no source filled it (saved rows carry null, not a number). */
+export function fixedOrDash(v: number | null | undefined, digits: number, unit: string): string {
+  return typeof v === 'number' && Number.isFinite(v) ? `${v.toFixed(digits)}${unit}` : '–';
+}
 import { WatchlistGroup, WatchlistItem } from '../types/council';
 import { SOVEREIGN_CATALOG } from '../data/presetsAndBaselines';
 import { Plus, Trash2, ArrowUpRight, FolderPlus, Search } from 'lucide-react';
+import { useT } from '../i18n/useLang';
+import { WATCHLIST } from '../i18n/messages/watchlist';
 
 interface WatchlistSidebarProps {
   watchlists: WatchlistGroup[];
@@ -28,6 +35,10 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
   onAddSovereignToWatchlist,
   onRemoveSovereignFromWatchlist,
 }) => {
+  const t = useT(WATCHLIST);
+  // Deleting a list, or taking a country off one, asks first: there is no undo (standard features
+  // check, 24 November 2026). Holds the list id, or `${listId}:${iso3}` for a country.
+  const [confirm, setConfirm] = useState<string | null>(null);
   const [showNewListForm, setShowNewListForm] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [newListDesc, setNewListDesc] = useState('');
@@ -104,10 +115,10 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
         <div className="flex items-center justify-between gap-2">
           <div>
             <div className="text-xs text-slate-500 dark:text-slate-400">
-              Institutional Watchlist Manager
+              Your watchlists
             </div>
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              Sovereign &amp; Macro Watchlists
+              Watchlists
             </h2>
           </div>
           <button
@@ -116,7 +127,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors whitespace-nowrap shrink-0"
           >
             <FolderPlus className="w-3.5 h-3.5" />
-            <span>New Watchlist</span>
+            <span>New watchlist</span>
           </button>
         </div>
 
@@ -141,16 +152,28 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                   <span>{wl.name}</span>
                   <span className="ml-1.5 opacity-70 tabular-nums">({wl.items.length})</span>
                 </button>
-                {wl.isCustom && (
-                  <button
-                    type="button"
-                    onClick={() => onDeleteWatchlist(wl.id)}
-                    title="Delete custom watchlist"
-                    className="text-slate-400 hover:text-rose-500 p-0.5 shrink-0"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
+                {wl.isCustom &&
+                  (confirm === wl.id ? (
+                    <span className="inline-flex items-center gap-2 shrink-0" data-confirm-delete={wl.id}>
+                      <span>{t('deleteListAsk')}</span>
+                      <button type="button" className="text-rose-600 dark:text-rose-400 hover:underline" onClick={() => (onDeleteWatchlist(wl.id), setConfirm(null))}>
+                        {t('deleteList')}
+                      </button>
+                      <button type="button" className="hover:underline opacity-80" onClick={() => setConfirm(null)}>
+                        {t('keep')}
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirm(wl.id)}
+                      title={t('deleteListTitle', { name: wl.name })}
+                      aria-label={t('deleteListTitle', { name: wl.name })}
+                      className="text-slate-400 hover:text-rose-500 p-0.5 shrink-0"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  ))}
               </div>
             );
           })}
@@ -163,13 +186,13 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
             className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2.5"
           >
             <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-              Create Custom Institutional Watchlist
+              New watchlist
             </div>
             <input
               type="text"
               value={newListName}
               onChange={(e) => setNewListName(e.target.value)}
-              placeholder="e.g., LatAm Fiscal & Carry Desk"
+              placeholder="For example: East Africa"
               required
               className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
             />
@@ -177,7 +200,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
               type="text"
               value={newListDesc}
               onChange={(e) => setNewListDesc(e.target.value)}
-              placeholder="Optional mandate or desk focus note..."
+              placeholder="What this list is for (optional)"
               className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
             />
             <div className="flex items-center justify-end gap-2">
@@ -192,7 +215,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                 type="submit"
                 className="ui-btn ui-btn-primary"
               >
-                Save Watchlist
+                Save watchlist
               </button>
             </div>
           </form>
@@ -210,7 +233,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
               type="text"
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              placeholder="Filter by ISO, country, theme..."
+              placeholder="Find a country"
               className="w-full pl-8 pr-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
             />
           </div>
@@ -220,7 +243,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
             className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 whitespace-nowrap shrink-0"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Add Country</span>
+            <span>Add a country</span>
           </button>
         </div>
 
@@ -230,7 +253,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
             {availableCatalogToQuickAdd.length > 0 && (
               <div className="space-y-1.5">
                 <div className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                  Quick-Add from Institutional Catalog:
+                  Countries the app covers:
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {availableCatalogToQuickAdd.map((cat) => (
@@ -249,7 +272,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
 
             <form onSubmit={handleAddCustomSovereignSubmit} className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
               <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Or Add Any Custom ISO-3 Sovereign / Macro Flashpoint:
+                Or add another country by its three-letter code:
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <input
@@ -265,14 +288,14 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                   type="text"
                   value={customCountry}
                   onChange={(e) => setCustomCountry(e.target.value)}
-                  placeholder="Country Name"
+                  placeholder="Country name"
                   required
                   className="col-span-2 px-2 py-1 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
                 />
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="text-xs text-slate-500 block">10Y Yield %</label>
+                  <label className="text-xs text-slate-500 block">10Y yield %</label>
                   <input
                     type="number"
                     step="0.1"
@@ -306,7 +329,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                 type="text"
                 value={customTheme}
                 onChange={(e) => setCustomTheme(e.target.value)}
-                placeholder="Key risk thesis / policy theme..."
+                placeholder="What to watch (optional)"
                 className="w-full px-2 py-1 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
               />
               <div className="flex justify-end gap-2">
@@ -321,7 +344,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                   type="submit"
                   className="ui-btn ui-btn-primary"
                 >
-                  Add to Watchlist
+                  Add to watchlist
                 </button>
               </div>
             </form>
@@ -334,14 +357,14 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
         {filteredItems.length === 0 ? (
           <div className="p-6 text-center space-y-2">
             <div className="text-xs text-slate-500 dark:text-slate-400">
-              No sovereigns match your filter in this watchlist.
+              No country on this watchlist matches.
             </div>
             <button
               type="button"
               onClick={() => setShowAddSovereignForm(true)}
               className="ui-btn ui-btn-primary"
             >
-              Add First Sovereign Entry
+              Add the first country
             </button>
           </div>
         ) : (
@@ -367,19 +390,34 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                     </span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {activeList.items.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onRemoveSovereignFromWatchlist(activeList.id, item.iso3);
-                        }}
-                        title="Remove from watchlist"
-                        className="text-slate-400 hover:text-rose-500 p-0.5"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    )}
+                    {activeList.items.length > 1 &&
+                      (confirm === `${activeList.id}:${item.iso3}` ? (
+                        <span className="inline-flex items-center gap-2 text-xs" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            className="text-rose-600 dark:text-rose-400 hover:underline"
+                            onClick={() => (onRemoveSovereignFromWatchlist(activeList.id, item.iso3), setConfirm(null))}
+                          >
+                            {t('remove')}
+                          </button>
+                          <button type="button" className="hover:underline opacity-80" onClick={() => setConfirm(null)}>
+                            {t('keep')}
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirm(`${activeList.id}:${item.iso3}`);
+                          }}
+                          title={t('removeFromList', { name: item.countryName })}
+                          aria-label={t('removeName', { name: item.countryName })}
+                          className="text-slate-400 hover:text-rose-500 p-0.5"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      ))}
                   </div>
                 </div>
 
@@ -388,7 +426,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                 </p>
 
                 <div className={`grid ${CDS_HIDDEN ? 'grid-cols-3' : 'grid-cols-4'} gap-2 mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/70 text-xs tabular-nums`}>
-                  <div title={`${yieldSourceNote(item)}. ${yieldSourceHelp(item)}`}>
+                  <div title={typeof item.yield10YPct === 'number' ? `${yieldSourceNote(item)}. ${yieldSourceHelp(item)}` : 'Missing: no source has filled the 10Y yield yet'}>
                     <span className="text-slate-400 block">
                       10Y yield
                     </span>
@@ -399,7 +437,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                           : 'text-slate-800 dark:text-slate-200'
                       }`}
                     >
-                      {item.yield10YPct.toFixed(1)}%
+                      {fixedOrDash(item.yield10YPct, 1, '%')}
                     </span>
                   </div>
                   {/* CDS hidden for now (src/utils/cdsHidden.ts). */}
@@ -414,13 +452,13 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                   <div>
                     <span className="text-slate-400 block">Debt/GDP</span>
                     <span className="text-slate-800 dark:text-slate-200 font-semibold">
-                      {item.debtToGdpPct.toFixed(0)}%
+                      {fixedOrDash(item.debtToGdpPct, 0, '%')}
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block">FX Res</span>
+                    <span className="text-slate-400 block">Reserves</span>
                     <span className="text-slate-800 dark:text-slate-200 font-semibold">
-                      {item.fxReservesMonths.toFixed(1)}m
+                      {fixedOrDash(item.fxReservesMonths, 1, 'm')}
                     </span>
                   </div>
                 </div>

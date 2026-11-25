@@ -35,7 +35,8 @@ test('the starting review and report carry no built-in shocks, notes, calls or t
   assert.equal(sc.policyResearcherReport.policyRecommendations.length, 3);
   for (const r of sc.policyResearcherReport.policyRecommendations) assert.equal(r.action, MODEL_FIELD_MISSING);
   // The old template's tell-tale figures.
-  const text = JSON.stringify(run);
+  // Time stamps are cut out first: a time such as 13:52:24.512Z would match '24.5'.
+  const text = JSON.stringify(run).replace(/\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?Z/g, '');
   for (const s of ['15%', '+15.0%', '0.68', '0.62', '24.5', 'Article IV', 'Taper Tantrum']) assert.ok(!text.includes(s), s);
 });
 

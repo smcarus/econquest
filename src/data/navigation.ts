@@ -8,15 +8,17 @@
  * holdings (Sam, 2026-11-05). The old areas 'country', 'compare' and 'portfolio' are still the
  * page's internal scopes, so every link that opened them lands on the right part of Research.
  */
-export type WorkflowArea = 'today' | 'research' | 'reports' | 'desks';
+export type WorkflowArea = 'today' | 'research' | 'policy' | 'reports' | 'desks';
 /** Which report template opens first on Reports > Memos and notes. */
 export type ReportTemplate = 'ic' | 'client' | 'economist' | 'banker' | 'official' | 'book' | 'client_review' | 'council';
 
-export const NAV: WorkflowArea[] = ['today', 'research', 'reports', 'desks'];
+/** Policy review has its own entry, next to Reports (Sam, 2026-11-24). */
+export const NAV: WorkflowArea[] = ['today', 'research', 'policy', 'reports', 'desks'];
 
 export const NAV_LABEL: Record<WorkflowArea, string> = {
   today: 'Workspace',
   research: 'Research',
+  policy: 'Policy review',
   reports: 'Reports',
   desks: 'Tools',
 };

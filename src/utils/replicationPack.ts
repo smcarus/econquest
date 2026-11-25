@@ -226,7 +226,19 @@ function python(result: ChartResult, tests: ChartTest[], s: PackSettings | null,
       "    T = m['n']",
       '    crit5 = -2.86154 - 2.8903 / T - 4.234 / T ** 2',
       "    return m['t'][1], crit5, p, T",
-      ...cols.slice(0, 2).map((c) => [`stat, crit, p, n = adf(df[${q(c)}].dropna().to_numpy(float), ${s.adfTop[c] ?? 0})`, `print(f'ADF, ${c}: statistic {stat:.2f}, 5% critical value {crit:.2f}, {p} lag(s), {n} points')`].join('\n'))
+      ...cols.slice(0, 2).map((c) => [`stat, crit, p, n = adf(df[${q(c)}].dropna().to_numpy(float), ${s.adfTop[c] ?? 0})`, `print(f'ADF, ${c}: statistic {stat:.2f}, 5% critical value {crit:.2f}, {p} lag(s), {n} points')`].join('\n')),
+      '',
+      'def kpss(v):',
+      '    # KPSS with a constant; Newey-West lag by Hobijn et al. (1998), as statsmodels kpss with nlags auto; 5% critical value 0.463',
+      '    e = v - v.mean(); n = len(e)',
+      '    ac = lambda i: float(np.dot(e[i:], e[:n - i]))',
+      '    s0 = ac(0) / n; s1 = 0.0',
+      '    for i in range(1, int(n ** (2 / 9)) + 1):',
+      '        r = ac(i) / (n / 2); s0 += r; s1 += i * r',
+      '    lags = min(int(1.1447 * ((s1 / s0) ** 2) ** (1 / 3) * n ** (1 / 3)), n - 1)',
+      '    lrv = (ac(0) + sum(2 * ac(i) * (1 - i / (lags + 1)) for i in range(1, lags + 1))) / n',
+      '    return float((np.cumsum(e) ** 2).sum() / n ** 2 / lrv), lags',
+      ...cols.slice(0, 2).map((c) => [`stat, lags = kpss(df[${q(c)}].dropna().to_numpy(float))`, `print(f'KPSS, ${c}: statistic {stat:.3f}, 5% critical value 0.463, {lags} lag(s)')`].join('\n'))
     );
   if (has('hp'))
     out.push(

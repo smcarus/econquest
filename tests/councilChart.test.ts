@@ -121,7 +121,7 @@ test('Taylor rule gap: uses the stated target, leaves out the output gap when th
   const gap = res.lines.find((l) => l.label === 'Policy rate minus Taylor rule')!;
   assert.ok(Math.abs(gap.points[gap.points.length - 1].value - (rate[i].value - (2 + 1.5 * infl[i].value - 1.5))) < 1e-9);
   assert.ok(res.notes.some((n) => /output gap term left out/.test(n)));
-  const noTarget = chartRequest('chart the Taylor rule for Egypt', [it('EGY', 'Egypt')], true)!;
+  const noTarget = chartRequest('chart the Taylor rule for Argentina', [it('ARG', 'Argentina')], true)!;
   assert.equal(noTarget.derived, undefined);
   assert.ok(noTarget.notes.some((n) => /Missing the central bank's inflation target/.test(n)));
 });

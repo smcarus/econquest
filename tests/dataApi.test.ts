@@ -112,3 +112,56 @@ test('table downloads keep the byte order mark for Excel and leave it off for th
   assert.match(readFileSync(path.join(root, 'scripts/data-api/econquest.R'), 'utf8'), /"User-Agent" = "econquest-r-helper"/);
   assert.match(readFileSync(path.join(root, 'scripts/data-api/econquest.do'), 'utf8'), /bom=0/);
 });
+
+test('the Excel query reads only documented addresses, asks for no byte order mark and keeps the key in a header', () => {
+  const pq = readFileSync(path.join(root, 'scripts/data-api/econquest.pq'), 'utf8');
+  const paths = [...pq.matchAll(/"(api\/export\/[^"]*)"/g)].map((m) => m[1]);
+  assert.ok(paths.length >= 4, 'reads the export addresses');
+  const documented = DATA_API.map((a) => a.path.replace(/^\//, ''));
+  for (const p of ['api/export/world/series.csv', 'api/export/panel.csv']) assert.ok(paths.includes(p), p);
+  for (const p of paths) assert.ok(documented.some((d) => d.startsWith(p.replace(/\.csv$/, '')) || d.startsWith(p)), `${p} is a documented address`);
+  assert.match(pq, /\[bom = "0"\]/);
+  assert.match(pq, /#"X-SMCR-API-Key" = Key/);
+  assert.doesNotMatch(pq, /key\s*=\s*Key\]/i, 'the key is never put in the address');
+  assert.match(pq, /ManualStatusHandling = \{400, 404, 429\}/, 'a Missing series stops with the app\'s own message');
+  assert.match(readFileSync(path.join(root, 'docs/DATA_API.md'), 'utf8'), /scripts\/data-api\/econquest\.pq/);
+});
+
+test('the Google Sheets script reads the export addresses, keeps the key in a header and returns numbers', async () => {
+  const vm = await import('node:vm');
+  const src = readFileSync(path.join(root, 'scripts/data-api/econquest.gs'), 'utf8');
+  const calls: Array<{ url: string; headers: Record<string, string> }> = [];
+  const props: Record<string, string> = { ECONQUEST_URL: 'https://econ.example.org/', ECONQUEST_KEY: 'eqt_test' };
+  const csv = '﻿iso3,series_id,series,unit,frequency,date,value,source\nBRA,policy_rate,"Policy rate, Selic",%,monthly,2026-09,15,BIS\nBRA,policy_rate,"Policy rate, Selic",%,monthly,2026-10,,BIS\n';
+  const ctx: Record<string, unknown> = {
+    PropertiesService: { getScriptProperties: () => ({ getProperty: (k: string) => props[k] ?? null }) },
+    UrlFetchApp: {
+      fetch: (url: string, opts: { headers: Record<string, string> }) => {
+        calls.push({ url, headers: opts.headers });
+        const missing = url.includes('/EGY/');
+        return {
+          getResponseCode: () => (missing ? 404 : 200),
+          getContentText: () => (missing ? JSON.stringify({ error: 'NO_SERIES', message: 'Policy rate: Missing. Not in BIS.' }) : csv),
+        };
+      },
+    },
+  };
+  vm.createContext(ctx);
+  vm.runInContext(src, ctx);
+  const rows = vm.runInContext('EQ_SERIES("bra", "policy_rate")', ctx) as unknown[][];
+  assert.equal(rows[0][0], 'iso3', 'no byte order mark in the first column');
+  assert.equal(rows[1][2], 'Policy rate, Selic', 'quoted commas kept');
+  assert.equal(rows[1][6], 15);
+  assert.equal(rows[2][6], '', 'Missing stays empty, never 0');
+  assert.equal(calls[0].url, 'https://econ.example.org/api/export/BRA/series/policy_rate.csv?bom=0');
+  assert.equal(calls[0].headers['X-SMCR-API-Key'], 'eqt_test');
+  assert.throws(() => vm.runInContext('EQ_SERIES("EGY", "policy_rate")', ctx), /404: Policy rate: Missing\. Not in BIS\./);
+  vm.runInContext('EQ_PANEL("BRA,MEX", "policy_rate", "history"); EQ_FIGURES("BRA", "2026-06-30"); EQ_FIGURES("BRA")', ctx);
+  assert.equal(calls[2].url, 'https://econ.example.org/api/export/panel.csv?bom=0&countries=BRA%2CMEX&figures=policy_rate&mode=history');
+  assert.equal(calls[3].url, 'https://econ.example.org/api/export/BRA/figures.csv?bom=0&asOf=2026-06-30');
+  assert.equal(calls[4].url, 'https://econ.example.org/api/export/BRA/figures.csv?bom=0');
+  assert.ok(calls.every((c) => !c.url.includes('eqt_test')), 'never in the address');
+  props.ECONQUEST_URL = 'http://localhost:3000';
+  assert.throws(() => vm.runInContext('EQ_COUNTRY("BRA")', ctx), /https address/);
+  for (const a of ['/api/export/panel.csv', '/api/export/world/series.csv']) assert.ok(DATA_API.some((d) => d.path === a), a);
+});

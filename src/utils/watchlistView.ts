@@ -118,9 +118,9 @@ export const COLUMNS: ColumnDef[] = [
     value: (it) => it.policyRatePct,
     text: (it) => num(it.policyRatePct, 2, '%'),
     note: (it) =>
-      it.policyRatePct === undefined || it.policyRateSource !== 'bis'
+      it.policyRatePct === undefined || (it.policyRateSource !== 'bis' && it.policyRateSource !== 'imf')
         ? undefined
-        : `BIS, ${it.policyRateDate || 'date not given'}${it.policyRateStale ? ', may be out of date' : ''}`,
+        : `${it.policyRateSource === 'imf' ? 'IMF, monthly, ' : 'BIS, '}${it.policyRateDate || 'date not given'}${it.policyRateStale ? ', may be out of date' : ''}`,
   },
   {
     id: 'reer',

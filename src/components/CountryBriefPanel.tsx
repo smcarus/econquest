@@ -272,7 +272,7 @@ export const BriefGroups: React.FC<{
                 onClick={() => setPicked(g.title)}
                 data-group-pick={g.title}
               >
-                {tx(g.title)} <span className="opacity-70 [font-variant-numeric:tabular-nums]">{tr('gp_count', { live, total: g.rows.length })}</span>
+                {tx(g.title)} <span className="opacity-80 [font-variant-numeric:tabular-nums]">{tr('gp_count', { live, total: g.rows.length })}</span>
               </button>
             );
           })}

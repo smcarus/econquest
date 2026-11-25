@@ -19,6 +19,7 @@ import { ExplainAnswer } from './ExplainAnswer';
 import { WhatIfAnswer } from './WhatIfAnswer';
 import { ScenarioReadNote } from './ScenarioReadNote';
 import { parseWhatIf } from '../utils/fiscalWhatIf';
+import { openSettings } from './SettingsDialog';
 import { noModelDigest } from '../utils/noModelDigest';
 import { DocumentCards, DocumentViewer, SaveToReportsButton } from './CouncilDocuments';
 import { toAgentDocuments, toSynthesisDocument, type CouncilDocument } from '../utils/agentDocument';
@@ -81,11 +82,20 @@ export const AskCouncilPanel: React.FC<{
   const closeDoc = React.useCallback(() => setOpenDoc(null), []);
   const savedDocIds = useMemo(() => new Set(lib.councilDocs.map((d) => d.id)), [lib.councilDocs]);
 
-  // Keep the newest message in view as the conversation grows.
+  // Keep the newest message in view as the conversation grows. When the newest answer is taller than
+  // the chat, show it from the top (the question, then the findings), not from its last lines.
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    if (!el) return;
+    const questions = el.querySelectorAll<HTMLElement>('[data-chat-user="true"]');
+    const last = questions[questions.length - 1];
+    if (!last) {
+      el.scrollTop = el.scrollHeight;
+      return;
+    }
+    const top = last.getBoundingClientRect().top - el.getBoundingClientRect().top + el.scrollTop - 8;
+    el.scrollTop = el.scrollHeight - top > el.clientHeight ? top : el.scrollHeight;
   }, [asked?.askedAt, past.length, choosing, writing, synthesis, debate, debating, phase]);
 
   const submit = () => void ask(question, asked ? 'followup' : 'new');
@@ -168,20 +178,32 @@ export const AskCouncilPanel: React.FC<{
           />
         )}
 
-        {t.changes && (
-          <div className="border border-slate-200 dark:border-slate-700 p-3 space-y-1" data-council-changes={t.changes.changes.length + t.changes.stanceChanges.length}>
-            <div className="ui-label">
-              {tr('changedSince', { when: t.changes.sinceAskedAt.slice(0, 16).replace('T', ' '), question: t.changes.sinceQuestion })}
-            </div>
-            <ul className="text-sm text-slate-800 dark:text-slate-200 space-y-0.5">
-              {changeLines(t.changes).map((l, i) => (
-                <li key={i} className={l.startsWith('- ') ? 'pl-3' : 'text-xs text-slate-500 dark:text-slate-400'}>
-                  {l.replace(/^- /, '• ')}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        {/* What changed since the same question was saved: one line when nothing moved, folded with its count when something did. */}
+        {t.changes &&
+          (() => {
+            const ch = t.changes;
+            const n = ch.changes.length + ch.stanceChanges.length;
+            const since = tr('changedSince', { when: ch.sinceAskedAt.slice(0, 16).replace('T', ' '), question: ch.sinceQuestion });
+            const lines = changeLines(ch);
+            return n === 0 ? (
+              <p className="text-xs text-slate-500 dark:text-slate-400" data-council-changes="0">
+                {since}: {tx(lines[0] || '')}
+              </p>
+            ) : (
+              <details className="border border-slate-200 dark:border-slate-700 px-3 py-2" data-council-changes={n}>
+                <summary className="ui-label cursor-pointer">
+                  {since}: {n === 1 ? tr('changesOne') : tr('changesMany', { n })}
+                </summary>
+                <ul className="mt-1 text-sm text-slate-800 dark:text-slate-200 space-y-0.5">
+                  {lines.map((l, i) => (
+                    <li key={i} className={l.startsWith('- ') ? 'pl-3' : 'text-xs text-slate-500 dark:text-slate-400'}>
+                      {l.replace(/^- /, '• ')}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            );
+          })()}
 
         <div className="space-y-2" data-council-summary="true">
           {writingNow ? (
@@ -225,9 +247,22 @@ export const AskCouncilPanel: React.FC<{
               </p>
               {/* No model: the agents' own readings and key figures here, and what nothing answered (src/utils/noModelDigest.ts). */}
               {(() => {
-                const d = noModelDigest(t.asked.question, t.asked.answers, !!parseWhatIf(t.asked.question));
+                const d = noModelDigest(t.asked.question, t.asked.answers, !!parseWhatIf(t.asked.question), t.asked.plan.countries.length > 0);
                 return (
                   <div className="space-y-2" data-council-digest="true">
+                    {d.short.length > 0 && (
+                      <div data-council-short="true">
+                        <div className="ui-label mt-1">{tr('digestShort')}</div>
+                        <ul className="pl-0 text-sm font-medium text-slate-900 dark:text-white space-y-1">
+                          {d.short.map((s) => (
+                            <li key={s.country}>
+                              {d.short.length > 1 || t.asked.plan.countries.length !== 1 ? `${s.country}: ` : ''}
+                              {tx(s.text)}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                     {d.lines.length > 0 && (
                       <div>
                         <div className="ui-label mt-1">{tr('digestFound')}</div>
@@ -253,15 +288,41 @@ export const AskCouncilPanel: React.FC<{
                         </ul>
                       </div>
                     )}
-                    {d.gaps.length > 0 && (
-                      <div data-digest-gaps="true">
-                        <div className="ui-label mt-1">{tr('digestGaps')}</div>
+                    {d.older.length > 0 && (
+                      <div data-digest-older="true">
+                        <div className="ui-label mt-1">{tr('digestOlder')}</div>
                         <ul className="list-disc pl-5 text-xs text-slate-600 dark:text-slate-300 space-y-1">
-                          {d.gaps.map((g) => (
+                          {d.older.map((g) => (
                             <li key={g}>{tx(g)}</li>
                           ))}
                         </ul>
                       </div>
+                    )}
+                    {d.gaps.length + d.notCovered.length > 0 && (
+                      <details data-digest-gaps="true">
+                        <summary className="ui-label mt-1 cursor-pointer">
+                          {tr('digestGaps')} ({d.gaps.length})
+                        </summary>
+                        {d.gaps.length > 0 && (
+                          <ul className="list-disc pl-5 mt-1 text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                            {d.gaps.map((g) => (
+                              <li key={g}>{tx(g)}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {d.notCovered.length > 0 && (
+                          <details className="mt-1 pl-5" data-digest-not-covered={d.notCovered.length}>
+                            <summary className="text-xs text-slate-500 dark:text-slate-400 cursor-pointer">
+                              {tr('digestNotCovered', { n: d.notCovered.length })}
+                            </summary>
+                            <ul className="list-disc pl-5 mt-1 text-xs text-slate-500 dark:text-slate-400 space-y-1">
+                              {d.notCovered.map((g) => (
+                                <li key={g}>{tx(g)}</li>
+                              ))}
+                            </ul>
+                          </details>
+                        )}
+                      </details>
                     )}
                   </div>
                 );
@@ -566,6 +627,7 @@ export const AskCouncilPanel: React.FC<{
                 </button>
               ))}
             </div>
+            {page && <StartHere />}
             <details className={`text-xs ${page ? 'mx-auto max-w-xl' : ''}`} data-council-chart-menu="true">
               <summary className="cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">{tr('chartsMenu')}</summary>
               <div className="mt-2 text-left space-y-1.5">
@@ -601,6 +663,16 @@ export const AskCouncilPanel: React.FC<{
               <p className="text-xs text-slate-500 dark:text-slate-400">{tr('addedSession', { list: extra.map((e) => e.countryName).join(', ') })}</p>
             )}
             {councilReply(current, true)}
+            {/* Follow-up questions sit under the answer, not above the question box, so on a phone the answer keeps the screen. */}
+            {!busy && (
+              <div className="flex flex-wrap gap-1.5 pl-3" data-council-followup="true">
+                {suggestFollowUps(asked.plan, asked.answers).map((sug) => (
+                  <button key={sug} type="button" className="ui-pill" onClick={() => void ask(sug, 'followup')}>
+                    {sug}
+                  </button>
+                ))}
+              </div>
+            )}
           </>
         )}
 
@@ -667,15 +739,6 @@ export const AskCouncilPanel: React.FC<{
           submit();
         }}
       >
-        {asked && !busy && (
-          <div className="flex flex-wrap gap-1.5" data-council-followup="true">
-            {suggestFollowUps(asked.plan, asked.answers).map((sug) => (
-              <button key={sug} type="button" className="ui-pill" onClick={() => void ask(sug, 'followup')}>
-                {sug}
-              </button>
-            ))}
-          </div>
-        )}
         <label htmlFor="council-question" className="sr-only">
           {asked ? tr('followUpLabel') : tr('questionLabel')}
         </label>
@@ -804,3 +867,44 @@ export const CouncilAgentsPanel: React.FC<{ fullCouncil?: FullCouncilStep }> = (
     </div>
   );
 };
+
+const START_HERE_KEY = 'econquest.startHere.v1';
+
+/** First run only: three plain steps under the welcome, until "Got it" is pressed. */
+function StartHere() {
+  const tr = useT(COUNCIL);
+  const [shown, setShown] = React.useState(() => {
+    try {
+      return localStorage.getItem(START_HERE_KEY) !== 'done';
+    } catch {
+      return true;
+    }
+  });
+  if (!shown) return null;
+  const done = () => {
+    setShown(false);
+    try {
+      localStorage.setItem(START_HERE_KEY, 'done');
+    } catch {
+      /* private window */
+    }
+  };
+  return (
+    <div className="mx-auto max-w-xl text-left border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 space-y-2" data-start-here="true">
+      <p className="text-sm font-semibold text-slate-900 dark:text-white">{tr('startTitle')}</p>
+      <ol className="list-decimal pl-5 text-sm text-slate-700 dark:text-slate-200 space-y-1">
+        <li>{tr('startAsk')}</li>
+        <li>{tr('startCountry')}</li>
+        <li>{tr('startAi')}</li>
+      </ol>
+      <div className="flex flex-wrap gap-2 pt-1">
+        <button type="button" className="ui-btn" onClick={() => openSettings('ai')} data-start-here-ai="true">
+          {tr('startChooseAi')}
+        </button>
+        <button type="button" className="ui-btn ui-btn-ghost" onClick={done} data-start-here-done="true">
+          {tr('startDone')}
+        </button>
+      </div>
+    </div>
+  );
+}

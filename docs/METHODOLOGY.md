@@ -1,6 +1,6 @@
 # EconQuest Terminal: Methodology
 
-**Version 1.4, 17 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of release 0.1.0.
+**Version 1.6, 24 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of the main branch on 24 November 2026 (after release 0.3.0, through pull request #677).
 Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not validated advice.
 
 This document sets out how the EconQuest Terminal sources its data, how its council of agents
@@ -38,7 +38,8 @@ tests whether simple rules built on them say anything useful about what comes ne
   possible guess.
 - **Luck is counted.** When many rules are tested, some pass by chance. The app applies a standard
   correction (the Holm method) across every test on record and says which passes survive it.
-- **Failures are kept.** Most rules tested so far failed. Their results stay on the record,
+- **Failures are kept.** Most rules tested so far failed (25 of 39 on 23 November 2026; 11 passed
+  and 3 had too few cases). Their results stay on the record,
   unchanged, beside the few that passed, in the [Track record](./TRACK_RECORD.md).
 - **Labels say how much weight a reading can bear:** Validated, Provisional, Under review,
   Withdrawn and Review due (section 9).
@@ -143,6 +144,14 @@ This is a deliberate choice, for three reasons:
 The consequence for this document: every verdict in section 11 came from a run on the maintainer's
 computer, and anyone can rerun the same tests on theirs (section 13).
 
+What leaves the user's computer is stated in one place, [PRIVACY.md](./PRIVACY.md): requests for
+figures to public sources, questions to an online AI provider only if the user picks one, screen
+fonts from Google Fonts, and alerts, outside audit copies or sign-in only if set up. Once a day, while
+the app is open, the server asks GitHub for the newest release number of the public repository so
+Menu > About can say when a newer version is out (`src/server/updateCheck.ts`; nothing about the user
+is sent; `UPDATE_CHECK=off` turns it off). There is no tracking, usage counting or crash reporting; a
+problem report is a GitHub issue the user fills in and sends themselves (`src/utils/problemReport.ts`).
+
 ## 2. Principles
 
 Seven rules govern everything below. They are enforced in code and in tests, not only stated.
@@ -176,10 +185,10 @@ what each fills, its address, how long it is cached and how to set it up is in
 
 | Group | Examples |
 | --- | --- |
-| Free feeds, no key | World Bank (indicators, governance, debt statistics, Pink Sheet commodity prices, remittances and remittance prices, Global Findex, aid received as republished from the OECD DAC, food security), IMF (World Economic Outlook, reserves and balance of payments, COFER), BIS (policy rates, real exchange rates, debt securities, credit gap, central bank total assets, US dollar credit to non-banks), OECD (via DBnomics), ECB reference rates, Eurostat, CFTC Commitments of Traders, US Treasury, New York Fed (rates and dollar swap lines), NASA POWER (weather at each capital since 1981), World Bank Climate Change Knowledge Portal (CRU TS country weather since 1901), UN Comtrade, WITS, national central banks (for example BCB, BCRP), GDELT, Polymarket and Kalshi odds (Kalshi CPI market snapshots saved before each US CPI release for the data surprises), World Bank Projects and Operations API and the IDA statement of credits, World Bank budget outturn from PEFA assessments (GF.XPD.BUDG.ZS), the DOSE regional output dataset (Zenodo, CC BY 4.0), Eurostat regional accounts and labour force survey (NUTS 2), the US Treasury daily par yield curve, the ECB euro area government yield curve, BLS consumer prices |
+| Free feeds, no key | World Bank (indicators, governance, debt statistics, Pink Sheet commodity prices, remittances and remittance prices, Global Findex, aid received as republished from the OECD DAC, food security), IMF (World Economic Outlook, reserves and balance of payments, COFER, monthly exchange rates and monthly policy rates where no daily or BIS figure exists), BIS (policy rates, real exchange rates, debt securities, credit gap, central bank total assets, US dollar credit to non-banks), OECD (via DBnomics), ECB reference rates, Eurostat, CFTC Commitments of Traders, US Treasury, New York Fed (rates and dollar swap lines), NASA POWER (weather at each capital since 1981), World Bank Climate Change Knowledge Portal (CRU TS country weather since 1901), UN Comtrade, WITS, national central banks (for example BCB, BCRP), GDELT, Polymarket and Kalshi odds (Kalshi CPI market snapshots saved before each US CPI release for the data surprises), World Bank Projects and Operations API and the IDA statement of credits, World Bank budget outturn from PEFA assessments (GF.XPD.BUDG.ZS), the DOSE regional output dataset (Zenodo, CC BY 4.0), Eurostat regional accounts and labour force survey (NUTS 2), the US Treasury daily par yield curve, the ECB euro area government yield curve, BLS consumer prices, IMF Monetary and Financial Statistics market rates (Treasury bill, government bond and money market rates), IMF International Trade in Goods by partner (trade weights for the global VAR), World Bank Global Economic Prospects, OECD Economic Outlook, OECD Main Economic Indicators original-release editions since 1999, the ECB Real-Time Database, the World Bank Documents and Reports API and BIS central bankers' speeches (titles and links only), and the DBnomics, IMF DataMapper, World Development Indicators and Eurostat catalogues (search only, each with its licence note) |
 | Free with the user's own key | FRED and ALFRED (St. Louis Fed), US EIA |
-| Free files the user downloads | IMF WEO past editions, Caldara-Iacoviello Geopolitical Risk index, Chinn-Ito capital account openness index, OFAC and UN sanctions lists, UCDP conflict data (one release ships with the code under CC BY 4.0), ACLED aggregated files, NOAA IBTrACS tropical cyclone tracks (downloaded only when the user presses the button, or read from a file the user saves). Read from `data/local/` and never shipped, because their terms are unconfirmed or forbid passing them on: FAOSTAT Consumer Price Indices, EM-DAT disasters (each user's own account), IMF Fiscal Rules Dataset, Database of Political Institutions 2020, IMF investor base workbook, the Ilzetzki-Reinhart-Rogoff exchange rate regime workbook, the Global Data Lab subnational Human Development Index (non-commercial terms), central bank statements the user saves, and the user's own budget execution file. The full table is in [INSTALL.md](./INSTALL.md#files-you-save-yourself) |
-| The user's own paid data (off by default) | Their own CDS file or their own LSEG account |
+| Free files the user downloads | IMF WEO past editions, Caldara-Iacoviello Geopolitical Risk index, Chinn-Ito capital account openness index, OFAC and UN sanctions lists, UCDP conflict data (one release ships with the code under CC BY 4.0), ACLED aggregated files, NOAA IBTrACS tropical cyclone tracks (downloaded only when the user presses the button, or read from a file the user saves). Read from `data/local/` and never shipped, because their terms are unconfirmed or forbid passing them on: FAOSTAT Consumer Price Indices, EM-DAT disasters (each user's own account), IMF Fiscal Rules Dataset, Database of Political Institutions 2020, IMF investor base workbook, the Ilzetzki-Reinhart-Rogoff exchange rate regime workbook, the Global Data Lab subnational Human Development Index (non-commercial terms), central bank statements the user saves, the Philadelphia Fed Survey of Professional Forecasters (medianLevel.xlsx in `data/local/philly-spf/`; no terms of use found, so never downloaded), and the user's own budget execution file. The full table is in [INSTALL.md](./INSTALL.md#files-you-save-yourself) |
+| The user's own paid data (off by default) | Their own CDS file, their own LSEG account, or live prices from their own Interactive Brokers account through the IBKR Client Portal Gateway they run (held in memory for 10 seconds, shown on screen only, never saved, downloaded, backed up, shared, served to scripts or sent to the AI model) |
 
 Prediction-market odds (Polymarket, Kalshi) are shown as market prices, labelled as such, and are
 never treated as official statistics.
@@ -196,6 +205,18 @@ The daily download runs in the background at most once every 20 hours and refres
 that same source is kept, with "kept from the *date* pull" on its label, and the pull is retried
 within the hour. A built-in value is never kept in its place.
 
+Several feeds that would otherwise drop to Missing while a source does not answer (external debt
+falling due, the BIS credit cycle, World Bank creditors, BIS daily policy rates and the long BIS real
+exchange rate) serve their last good answer with its own dates from `data/live/last-good/`, asking
+the source again after 15 minutes, 1 hour and then every 4 hours. A saved answer older than its limit
+(14 days for daily rates, up to 400 days for yearly data) is not served. The connection check tries a
+source up to three times after a timeout, a cut connection, 429 or 500-504, following the server's
+Retry-After; refusals (401, 403, 404) and bot-check pages are not retried. Download steps that fail
+in the daily run get a second try at the end of the run and, once 2 hours have passed, up to three
+later tries at start-up before the next daily run. On a day the official calendar lists a CPI or
+monthly activity release, the running app re-reads that country's source about once an hour, up to 12
+times, until a newer month arrives (`RELEASE_WATCH=off` turns it off).
+
 Every pull is archived by day (`data/archive/`), so the terminal can show what it held on any past
 date (**As of a past day**), and a nightly source check records which sources answered, which need
 setup and which failed, with failure streaks (`data/local/data-health/`).
@@ -209,8 +230,25 @@ The rule is applied without exception. Examples of what reads Missing today, and
   published by BCRP) stands in, and is labelled "a bond spread, not CDS".
 - **Credit ratings, PMIs, government bond auction results outside the United States and consensus
   forecasts** have no free source that the terminal can use, so they read Missing. (US Treasury
-  auction results come from the Treasury's Fiscal Data API.)
-- **Egypt's policy rate** is not in the BIS dataset, so it reads Missing.
+  auction results come from the Treasury's Fiscal Data API.) Official forecasts from the IMF, the
+  World Bank and the OECD are shown side by side as a free stand-in, labelled as official forecasts,
+  never as a market consensus.
+- **Local market rates for lower-income countries** come from the IMF's monthly Monetary and
+  Financial Statistics (Treasury bill, government bond and money market rates). A latest month more
+  than two years old reads Missing with that month; the history stays in History & data. Stock
+  indices and USD bond spreads for these countries have no free source and read Missing.
+- **Policy rates outside the BIS dataset** (for example Egypt, Nigeria, Kenya) come from the IMF's
+  monthly Monetary and Financial Statistics, labelled "IMF, monthly" with the month. The series is
+  found by the IMF's code names and every figure carries its IMF series key. When the IMF has no
+  figure, or the latest is more than four months old, the rate reads Missing. Signals and tests
+  registered on BIS policy rates keep reading the BIS only, so their registered inputs do not change.
+  The policy rate forecast uses the IMF monthly rate for these countries when its latest month is
+  four months old or less, and the inflation nowcast and forecast use the IMF monthly consumer
+  prices where no OECD or national series exists. The registered forecast evaluations score only
+  the OECD and BIS series, so these paths are not part of any recorded verdict.
+- **Inflation targets and central bank decision dates** are filed only where the bank's own page
+  states them, with the page and the date it was read. A range stated over several years or a figure
+  in a summary is not filed as a target.
 
 Where an AI model writes the council's final report and leaves a field empty, the field reads
 Missing; template text is never shown as a result (`src/utils/councilResult.ts`).
@@ -237,7 +275,10 @@ reduces this in three ways:
 - **Release lags.** Every pre-registered test states how long after the period each input could be
   used (for example, monthly inflation lagged two months; an annual output gap usable only from April
   of the following year). These lags are part of the hashed specification.
-- **Real-time vintages where they exist.** IMF World Economic Outlook figures can be read edition by
+- **Real-time vintages where they exist.** The OECD's Main Economic Indicators original-release
+  editions since 1999 (GDP volume and consumer prices for all 38 members) are saved by
+  `npm run oecd:vintages` in `data/local/oecd-vintages/`, fetching only new editions on later runs.
+  IMF World Economic Outlook figures can be read edition by
   edition from the IMF's published past databases (`src/utils/weoVintages.ts`), each edition counted
   as published at the end of its month so a backtest never sees it early. US GDP, CPI and
   unemployment can be read as first published, or as known on any date, from ALFRED
@@ -327,6 +368,18 @@ and the register's rules and returns findings, each with its source and tag. A s
 is a language model (a local model through Ollama, Google Gemini, or any OpenAI-compatible server the
 user chooses), then writes a short brief from the agents' findings alone. Every AI-written answer is
 labelled as such in the terminal, with the model that wrote it.
+
+When no AI model answers, the chat opens with a **short answer by the app's stated rules**, labelled
+"not AI" (`src/utils/noModelDigest.ts`): a question about a central bank being behind the curve gets
+No, Possibly or Not clearly per country from the Central Bank agent's policy call and the gap to a
+simple Taylor rule; other questions get each country's fixed calls and debt path in one line. The
+Missing list under the answer drops repeats, puts figures that are only older than usual under their
+own heading and folds what no source the app reads publishes for the country into one line.
+
+With Spanish, French or Portuguese picked, the summary agent, the Supreme Council, what-if answers and
+policy reviews write their text in that language; field names, stances, ratings, numbers, units and
+source names stay as given, so the checks in 4.3 read every answer the same way. English sends
+nothing extra, so the English prompts and the recorded council replay are unchanged.
 
 For a what-if question the summary agent follows a separate instruction and writes eight sections in
 a fixed order: where things stand now, the change, first effects, how it spreads, what history shows,
@@ -644,6 +697,75 @@ Diebold-Mariano test with the Harvey-Leybourne-Newbold small-sample correction i
 for reference, and the coverage of the 70% and 90% bands is reported beside the verdict
 (`src/utils/forecastEval.ts`). A forecast that fails is not drawn by default in the terminal.
 
+Two further sets of figures are reported beside the verdict and never change it. First, the relative
+RMSE against every simple benchmark, not only the registered one: the last value carried on (random
+walk), the historical mean, the random walk with drift, and, for monthly and quarterly targets, the
+seasonal naive (the same period a year earlier), following Hyndman and Athanasopoulos, *Forecasting:
+Principles and Practice*, section 5.2. Second, how good the whole band is, not only its middle
+(Gneiting and Raftery 2007): the mean continuous ranked probability score (CRPS) of the model's normal
+band, divided by the registered benchmark's mean absolute error (a single number's CRPS), so below 1
+means the band beats the benchmark; the 90% interval score (band width plus 20 times any miss outside
+it); and the mean pinball loss over the 5th, 25th, 50th, 75th and 95th percentiles. A new benchmark
+can be made the registered one only in a new spec version.
+
+**Real-time tests (data as first published).** The tests above use today's figures with each
+series' release lag, so the model never sees a period early but does see it as later revised. Four
+further tests (`docs/validation/forecasts/*_realtime.json`, `src/utils/realTimeEval.ts`) rebuild the
+series as it was published on each origin day, fit the same rule on it, and score the forecast
+against the target period's first published figure (Croushore and Stark 2001). Quarterly GDP and
+monthly inflation use the US vintages in ALFRED (the user's FRED key) and the euro area vintages in
+the ECB Real-Time Database; the origins are the days a new period was first published. Yearly GDP
+growth and inflation use the past IMF WEO editions saved in `data/local/weo-vintages/`, for every
+country they cover: at each edition the series is the years it marks as actual data, and the target
+year's figure is taken from the first edition that marks it as actual. The IMF's own projection in
+the origin edition is reported beside the verdict, not used for it.
+
+**Currency volatility (GARCH).** `docs/validation/forecasts/fx_vol_garch.json` tests a GARCH(1,1)
+(Bollerslev 1986, `src/utils/garch.ts`), fitted by Gaussian maximum likelihood on the last 1,000 daily
+returns of each currency against the US dollar at each month-end, against the three-month realised
+volatility the app shows. The outcome is the realised variance of the next 21 trading days, and the
+loss is QLIKE (Patton 2011), which still ranks forecasts correctly when realised variance is a noisy
+stand-in for the true variance. The fit uses the same variance start as the Python `arch` package and
+matches its estimates in the tests. The app shows a GARCH forecast only if this test passes.
+
+**Many predictors (ridge and lasso).** `gdp_nowcast_ridge.json` and `gdp_nowcast_lasso.json` test a
+GDP nowcast that uses up to ten published predictors at once (GDP growth in the four quarters before,
+the activity index and OECD leading indicator in the quarter and the one before, and the changes in
+average inflation and the average policy rate in the quarter), with ridge (Hoerl and Kennard 1970) or
+lasso (Tibshirani 1996) shrinkage on standardised predictors (`src/utils/penalized.ts`,
+`src/utils/penalizedNowcast.ts`). The penalty is chosen in time order only: the first 80% of past
+quarters are fitted, the last 20% scored, and the chosen penalty is refitted on all of them. Release
+lags, countries, quarters, benchmark and pass mark are those of the bridge nowcast, so the three
+compare like for like. The fits match scikit-learn's in the tests.
+
+**Moving-average terms (ARMA, SARIMAX-style).** `src/utils/arima.ts` fits ARIMA models with
+moving-average and seasonal terms and outside predictors (regression with ARIMA errors) by exact
+Gaussian maximum likelihood through the Kalman filter (`src/utils/kalman.ts`, Durbin and Koopman
+2012), with the stationary start and the stationarity and invertibility transform statsmodels uses
+(Monahan 1984); estimates, log-likelihoods and forecasts match statsmodels' ARIMA in the tests.
+`gdp_forecast_arma.json` and `cpi_forecast_arma.json` test ARMA(p, q) forecasts, p and q 0 to 2 by
+BIC chosen once a year, on the data, samples, benchmarks and pass marks of the AR tests. They are
+separate tests of a different model class, not versions of the failed AR tests, whose verdicts stand.
+
+**Dynamic factor nowcast (Kalman filter).** `gdp_nowcast_dfm.json` tests a nowcast built on one
+common factor of the monthly indicators a country publishes (activity index, leading indicator,
+inflation and policy-rate changes), with the two-step method of Doz, Giannone and Reichlin (2011):
+principal components on the months where every indicator is published give the loadings and the
+factor's AR(1), and a Kalman filter and smoother then read the factor in every month, skipping the
+figures not out yet (`src/utils/dynamicFactor.ts`). GDP growth is bridged on the quarter's average
+factor and last quarter's growth. The free data give two to four monthly series per country, far
+fewer than central bank factor models use; the test has the bridge nowcast's lags and pass mark.
+
+**Tree ensemble and quantile bands.** `gdp_nowcast_forest.json` tests a random forest (Breiman 2001,
+`src/utils/randomForest.ts`) on the ridge and lasso nowcasts' predictors, with settings fixed before
+the run (300 trees, depth at most 6, leaves of at least 5 quarters, a third of the predictors per
+split, fixed seed), because 30 to 70 past quarters per country are too few to tune a forest.
+`gdp_forecast_quantile.json` tests lopsided bands: linear quantile regressions (Koenker and Bassett
+1978; the algorithm of statsmodels QuantReg, matched in the tests) of growth one and four quarters
+ahead on growth now and a quarter ago, for the 5th to 95th percentiles, sorted if they cross
+(Chernozhukov, Fernandez-Val and Galichon 2010). It is scored by mean pinball loss against the same
+percentiles of the AR forecast's normal band (`src/utils/lossEval.ts`, years resampled).
+
 ### 7.4 Conventions in the charts and tables
 
 These settings apply wherever the terminal computes a statistic (`src/utils/stats.ts`), and the
@@ -652,6 +774,11 @@ replication packs use the same ones.
 - **Unit-root test (ADF).** The lag is chosen by AIC, with every candidate lag fitted on one common
   sample; the test statistic is then refitted at the chosen lag on every usable row, as statsmodels
   `adfuller` does.
+- **Stationarity test (KPSS).** Shown beside ADF. KPSS starts from the opposite assumption (the
+  series is stationary around its mean), with the Newey-West long-run variance and the lag picked by
+  Hobijn, Franses and Ooms (1998), as statsmodels `kpss(regression='c', nlags='auto')` does; critical
+  values from Kwiatkowski et al. (1992). The two are read together: both say stationary, both say a
+  unit root, or mixed.
 - **Year-on-year change of a daily series.** Each point is compared with the last observation on or
   before the same date a year earlier, at most 7 days older; 29 February compares with 28 February.
   With no observation in that window the change is left out.
@@ -733,11 +860,15 @@ grades.
 ## 11. Results on record
 
 The verdicts below were recorded from runs of the open code on the maintainer's computer between
-5 and 7 November 2026 ([recorded-verdicts.json](./validation/recorded-verdicts.json)). Live verdicts
-on any computer that reruns the tests are shown in the terminal and take precedence. Results are
-hypothetical and, for trading signals, net of the registered costs.
+5 and 23 November 2026 and copied by `npm run track-record:import`, never by hand
+([recorded-verdicts.json](./validation/recorded-verdicts.json); every row, with its p and Holm p, is
+in the [Track record](./TRACK_RECORD.md)). Live verdicts on any computer that reruns the tests are
+shown in the terminal and take precedence. Results are hypothetical and, for trading signals, net of
+the registered costs.
 
-**Passed (4 backtests or signal tests, 1 forecast evaluation)**
+**39 tests on record: 11 passed, 25 failed, 3 too few cases.**
+
+**Passed (6 backtests or signal tests, 5 forecast evaluations)**
 
 | Test | Result |
 | --- | --- |
@@ -746,18 +877,30 @@ hypothetical and, for trading signals, net of the registered costs.
 | Cycle clock, method 2 | Lift 35.8 points, positive in 24 of 24 countries. It confirms that rate moves come in runs; it is not an edge over a forecaster who already expects the next move |
 | Currency carry (25 currencies, 2000 to 2026) | 3.34% a year net of costs (3.65% gross), 90% range 0.58% to 6.04%, Sharpe 0.45, p 0.026. Carry is known for crash risk, which the average does not show |
 | GDP nowcast (bridge equation), 1 quarter ahead | Relative RMSE 0.896 against the historical mean (90% range 0.876 to 0.924), better in 28 of 35 series |
+| Governance reading and sovereign default (scorecard_default), method 2 | Lift 25.7 points (90% range 20.2 to 31.4), p 0.00025 with whole years resampled, positive in 8 of 10 series with 5 or more cases. As registered, a pass does not turn the scorecard into an overall score |
+| GARCH(1,1) currency volatility (fx_vol_garch) | QLIKE loss ratio 0.846 against the three-month realised volatility (90% range 0.769 to 0.933), p 0.001, over 6,003 month ends, better in 19 of 23 currencies |
+| Quantile-regression growth bands (gdp_forecast_quantile) | Mean pinball loss ratio 0.923 one quarter ahead (90% range 0.907 to 0.947) and 0.945 four quarters ahead, against the AR forecast's normal band; better in 35 and 29 of 44 series |
+| Ridge GDP nowcast (gdp_nowcast_ridge) | Relative RMSE 0.889 (90% range 0.864 to 0.996), p 0.044, better in 27 of 35 series |
+| Lasso GDP nowcast (gdp_nowcast_lasso) | Relative RMSE 0.872 (90% range 0.836 to 1.025), p 0.09, better in 25 of 35 series |
 
 **Failed**: Taylor-rule gap (v1, and v2 with a real-time output gap), leading-indicator turn to policy
-move, growth and inflation quadrant, unrest spikes to conflict onset, currency value, currency
-momentum, CPI nowcast and forecast, GDP forecast (AR), policy rate forecast and debt forecast.
+move, growth and inflation quadrant, unrest spikes to conflict onset, inflation expectations lead, yield
+curve and recession, currency value, currency momentum, CPI nowcast and forecast (both versions), GDP
+forecast (AR), policy rate forecast, debt forecast (both versions), ARIMA growth and inflation
+forecasts, the random forest and dynamic factor nowcasts, and the four tests on data as first
+published (GDP and CPI from ALFRED and the ECB, and the IMF WEO editions; cpi_weo_realtime v2 failed on
+its first run and stays failed).
 
 **Too few cases**: policy rule family; debt fan chart coverage (its bands held the outcome less often
 than their nominal 80%, with misses mostly above the band, but the registered minimum sample was not
-reached).
+reached); cpi_weo_realtime v1 (15 years with 2 lags left the AR with too few rows; version 2 widened
+the window).
 
-**After the multiple-testing correction.** Not every pass survives. Currency carry's p-value of 0.026
-cannot hold once it is one of some twenty tests, so its grade is Provisional pass, and the terminal shows its
-adjusted p-value beside the verdict. The CFTC positioning test, at the smallest p-value the method can report, holds.
+**After the multiple-testing correction.** Not every pass survives. Across all 39 tests, eight passes
+hold at their own pass mark: the CFTC positioning test (both versions), the Timing Agent, the cycle
+clock, the bridge GDP nowcast, GARCH volatility, the quantile growth bands and the governance default
+test. Currency carry (Holm p 0.771) and the ridge and lasso nowcasts do not, so their grade is
+Provisional pass, and the terminal shows the adjusted p-value beside the verdict.
 The grade shown in the terminal is computed from all tests on record at the time it is read.
 
 A failed result is a result. Most of the forecasting models fail to beat naive benchmarks, which is
@@ -857,7 +1000,8 @@ The terminal states what it cannot do. In particular:
 
 - **No free source, so Missing:** sovereign CDS (hidden; a USD bond spread stands in, labelled as
   such), credit ratings, PMIs, government bond auction results outside the United States, consensus
-  forecasts, and some countries' series (for example Egypt's policy rate).
+  forecasts, and some countries' series (for example inflation targets and decision dates for many
+  lower-income countries; policy rates for these countries are monthly, from the IMF).
 - **Revised data.** Where real-time vintages are not available, tests use today's revised data and
   say so. OECD figures obtained through DBnomics can lag the official release by about five months.
 - **Small samples.** Many emerging-market series are short and stress episodes cluster. Results from a
@@ -868,7 +1012,15 @@ The terminal states what it cannot do. In particular:
   emphasis, omission or poor reasoning. A different model can lean differently on the same figures.
 - **Descriptive tools make no forward claim.** Geopolitical risk VaR, gross financing need, reserve
   adequacy and similar panels describe; they are not tested signals. The country risk scorecard also
-  gives no overall score; its registered default test has no runner yet, so it reads Not validated.
+  gives no overall score; its registered default test passed on 23 November 2026, but as registered a
+  pass does not turn the readings into a score, so the scorecard reads Not validated.
+- **The forward record is young.** Calls written down before the figure exists started in November
+  2026; too few are scored to read anything into them.
+- **The global VAR is small.** Sixteen economies plus the country, annual IMF figures from 1996 and
+  trade weights from the latest three years; it shows past co-movement through trade, not a
+  structural model of the world economy.
+- **Official forecasts are not a consensus.** The IMF, World Bank and OECD publish on their own
+  calendars, so the three can be months apart in vintage.
 - **Scenario estimates are first order.** Shock and replay results on a portfolio leave out carry,
   convexity and the path inside the window, and replays use monthly averages; they understate the
   worst day and are labelled hypothetical.
@@ -909,18 +1061,31 @@ version number.
   International Settlements.
 - Board of Governors of the Federal Reserve System and Office of the Comptroller of the Currency
   (2011). *Supervisory Guidance on Model Risk Management* (SR 11-7 / OCC 2011-12).
+- Bollerslev, T. (1986). Generalized autoregressive conditional heteroskedasticity. *Journal of
+  Econometrics*, 31(3), 307-327.
+- Breiman, L. (2001). Random forests. *Machine Learning*, 45(1), 5-32.
 - Caldara, D. and Iacoviello, M. (2022). Measuring geopolitical risk. *American Economic Review*,
   112(4), 1194-1225.
 - Chinn, M. D. and Ito, H. (2006). What matters for financial development? Capital controls,
   institutions, and interactions. *Journal of Development Economics*, 81(1), 163-192.
 - Cerra, V. and Saxena, S. C. (2008). Growth dynamics: the myth of economic recovery. *American
   Economic Review*, 98(1), 439-457. doi:10.1257/aer.98.1.439.
+- Chernozhukov, V., Fernandez-Val, I. and Galichon, A. (2010). Quantile and probability curves
+  without crossing. *Econometrica*, 78(3), 1093-1125.
 - CFA Institute. *Global Investment Performance Standards (GIPS)*, 2020 edition.
+- Croushore, D. and Stark, T. (2001). A real-time data set for macroeconomists. *Journal of
+  Econometrics*, 105(1), 111-130.
 - Diebold, F. X. and Mariano, R. S. (1995). Comparing predictive accuracy. *Journal of Business &
   Economic Statistics*, 13(3), 253-263.
+- Doz, C., Giannone, D. and Reichlin, L. (2011). A two-step estimator for large approximate dynamic
+  factor models based on Kalman filtering. *Journal of Econometrics*, 164(1), 188-205.
+- Durbin, J. and Koopman, S. J. (2012). *Time Series Analysis by State Space Methods*, 2nd ed.
+  Oxford University Press.
 - Gahtan, J., Knapp, K. R., Schreck, C. J., Diamond, H. J., Kossin, J. P. and Kruk, M. C. (2024).
   International Best Track Archive for Climate Stewardship (IBTrACS) Project, Version 4r01. NOAA
   National Centers for Environmental Information. doi:10.25921/82ty-9e16.
+- Gneiting, T. and Raftery, A. E. (2007). Strictly proper scoring rules, prediction, and estimation.
+  *Journal of the American Statistical Association*, 102(477), 359-378.
 - Ha, J., Stocker, M. and Yilmazkuday, H. (2020). Inflation and exchange rate pass-through. *Journal of
   International Money and Finance*, 105, 102187. doi:10.1016/j.jimonfin.2020.102187.
 - Harvey, C. R., Liu, Y. and Zhu, H. (2016). ... and the cross-section of expected returns. *Review of
@@ -929,19 +1094,32 @@ version number.
   errors. *International Journal of Forecasting*, 13(2), 281-291.
 - HM Treasury. *The Green Book: Central Government Guidance on Appraisal and Evaluation* (edition
   and discount rate schedule as cited in the app).
+- Hobijn, B., Franses, P. H. and Ooms, M. (1998). Generalisations of the KPSS-test for stationarity.
+  Econometric Institute Report 9802, Erasmus University Rotterdam.
+- Hoerl, A. E. and Kennard, R. W. (1970). Ridge regression: biased estimation for nonorthogonal
+  problems. *Technometrics*, 12(1), 55-67.
 - Holm, S. (1979). A simple sequentially rejective multiple test procedure. *Scandinavian Journal of
   Statistics*, 6(2), 65-70.
 - Hosking, J. R. M. (1990). L-moments: analysis and estimation of distributions using linear
   combinations of order statistics. *Journal of the Royal Statistical Society, Series B*, 52(1),
   105-124.
+- Hyndman, R. J. and Athanasopoulos, G. (2021). *Forecasting: Principles and Practice*, 3rd ed.
+  OTexts. https://otexts.com/fpp3/
 - Iacoviello, M. and Navarro, G. (2019). Foreign effects of higher U.S. interest rates. *Journal of
   International Money and Finance*, 95, 232-250. doi:10.1016/j.jimonfin.2018.06.012.
 - Ilzetzki, E., Reinhart, C. M. and Rogoff, K. S. (2019). Exchange arrangements entering the
   twenty-first century: which anchor will hold? *Quarterly Journal of Economics*, 134(2), 599-646.
 - Kilian, L. (2009). Not all oil price shocks are alike: disentangling demand and supply shocks in the
   crude oil market. *American Economic Review*, 99(3), 1053-1069. doi:10.1257/aer.99.3.1053.
+- Koenker, R. and Bassett, G. (1978). Regression quantiles. *Econometrica*, 46(1), 33-50.
+- Kwiatkowski, D., Phillips, P. C. B., Schmidt, P. and Shin, Y. (1992). Testing the null hypothesis of
+  stationarity against the alternative of a unit root. *Journal of Econometrics*, 54(1-3), 159-178.
+- Monahan, J. F. (1984). A note on enforcing stationarity in autoregressive-moving average models.
+  *Biometrika*, 71(2), 403-404.
 - Nelson, C. R. and Siegel, A. F. (1987). Parsimonious modeling of yield curves. *Journal of
   Business*, 60(4), 473-489.
+- Patton, A. J. (2011). Volatility forecast comparison using imperfect volatility proxies. *Journal
+  of Econometrics*, 160(1), 246-256.
 - PEFA Secretariat (2016). *Framework for assessing public financial management* (PI-1, aggregate
   expenditure outturn). Washington, DC.
 - Reinhart, C. M. and Rogoff, K. S. (2009). The aftermath of financial crises. *American Economic
@@ -950,6 +1128,8 @@ version number.
   NBER Working Paper 4871.
 - Taylor, J. B. (1993). Discretion versus policy rules in practice. *Carnegie-Rochester Conference
   Series on Public Policy*, 39, 195-214.
+- Tibshirani, R. (1996). Regression shrinkage and selection via the lasso. *Journal of the Royal
+  Statistical Society, Series B*, 58(1), 267-288.
 - US Office of Management and Budget (2003). *Circular A-4: Regulatory Analysis.*
 - US Securities and Exchange Commission (2020). *Investment Adviser Marketing* (Rule 206(4)-1, the
   Marketing Rule). Release No. IA-5653.
@@ -969,8 +1149,10 @@ Per-model references are given in the [Methods note](./METHODS.md).
 | 1.2 | 13 November 2026 | Sources and the files you save (3.1), statistics conventions in the charts and tables (7.4), figures served to outside systems and hypothetical scenario estimates (3.8), the audit seal and locked copies (4.5), the country risk scorecard listed as Not validated with its registered default test (5, 14), scenario limits (14). The short version corrected: the council's chat agents are fixed code, and only the summary writer is an AI model |
 | 1.3 | 14 November 2026 | New sources in 3.1 (BIS central bank assets and dollar credit, New York Fed swap lines, NASA POWER, the World Bank climate portal, IBTrACS, the exchange rate regime workbook); the policy council (5.2); weather, disasters and parametric insurance (5.3); short-record limits of those tools (14); references for L-moments, IBTrACS, the exchange rate regime classification and the official discount rates |
 | 1.4 | 17 November 2026 | New sources in 3.1 (World Bank projects and IDA credits, PEFA budget outturn, DOSE and Eurostat regional figures, the Global Data Lab file, US Treasury and ECB yield curves, BLS prices, Kalshi CPI snapshots, the user's budget file); Council chat questions over the API and figures from an outside research-tools server (3.8, 3.9); the Chart Agent, Scenario Agent and Quant desk in 4.1, with the eight-section what-if answer; the Scenario Agent (5.4); the tools for five kinds of users (5.5); limits of what-if answers, the new tools and outside figures (14); references for the shock studies, DOSE, PEFA and the Nelson-Siegel-Svensson curve |
+| 1.6 | 24 November 2026 | New sources in 3.1 (IMF market rates and trade by partner, World Bank GEP, OECD Economic Outlook and original-release editions, official documents and speeches, catalogue search, the Philadelphia Fed survey file, the user's own Interactive Brokers prices); last good answers, retries and release-day re-reads (3.2); official forecasts as a labelled stand-in and local market rates (3.3); OECD editions (3.6); what leaves the computer and the update check (1.1); the short answer without an AI model and answers in the chosen language (4.1); results on record brought to 39 tests, 11 passed (11); limits of the forward record, the global VAR and official forecasts (14). The forecasting methods added on 22 November (KPSS, tests on data as first published, GARCH, ridge and lasso, ARIMA, the dynamic factor model, quantile bands and the random forest) were written into 7.3 with each change |
+| 1.5 | 17 November 2026 | Release 0.2.0. IMF monthly exchange rates and policy rates where no daily or BIS figure exists (3.1, 3.3); inflation targets and decision dates filed only from banks' own pages (3.3); countries the user adds are part of the daily download; limits for lower-income countries (14) |
 
 ---
 
-*EconQuest Terminal methodology, version 1.4 (17 November 2026). Text licensed under CC BY 4.0: you may
+*EconQuest Terminal methodology, version 1.6 (24 November 2026). Text licensed under CC BY 4.0: you may
 share and adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*

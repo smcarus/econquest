@@ -1,0 +1,37 @@
+{
+  "id": "gdp_forecast_realtime_oecd",
+  "version": 1,
+  "registeredOn": "2026-11-23",
+  "registeredBy": "Sam (owner); registered on his instruction to close every closable gap, before any run of this test",
+  "hypothesis": "The app's GDP forecast rule (AR on quarterly real GDP growth, lag 0-4 by BIC, all data to then), fitted at each origin on the series as it stood in that month's OECD Main Economic Indicators edition, has a lower RMSE than the historical mean computed on the same edition, one and four quarters ahead, scored against each quarter's first published figure. Every OECD member with saved editions, pooled.",
+  "target": "gdp_realtime_q",
+  "params": {
+    "maxLag": 4,
+    "d": 0,
+    "intercept": 1,
+    "window": 0,
+    "minTrain": 40,
+    "oecd": 1
+  },
+  "benchmark": "mean",
+  "horizons": [
+    1,
+    4
+  ],
+  "sample": {
+    "from": "2008-Q1"
+  },
+  "passMark": {
+    "maxRelRmse": 0.95,
+    "maxPValue": 0.1,
+    "minSeriesShare": 0.5,
+    "minCasesPerHorizon": 1000,
+    "minYears": 10
+  },
+  "knownLimits": [
+    "Same model rule, benchmark, horizons and pass mark as gdp_forecast_realtime (US and euro area); this test widens the same question to the OECD members.",
+    "An edition is taken as out on the first day of its month: the OECD gives the month, not the day.",
+    "The OECD editions start in February 1999, so the early origins have fewer past editions behind them; origins start in 2008.",
+    "Euro area members count separately (each has its own GDP), unlike the shared policy rate in other tests."
+  ]
+}

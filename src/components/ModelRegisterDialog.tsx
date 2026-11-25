@@ -15,8 +15,9 @@ import { effectiveStatus, entryGrade, fromProjectRecord, projectVerdicts, runVal
 import { GRADE_POLICY } from '../utils/evidenceGrade';
 import { holmSentence } from '../utils/multipleTesting';
 import { forwardSentence } from '../utils/forwardRecord';
+import { ForwardMonthlyTable } from './ForwardMonthlyTable';
 import { EXPORT_NOTICE } from '../utils/disclaimer';
-import { forecastRegisterStatus, forecastVerdicts } from '../utils/forecastRegister';
+import { alsoReported, forecastRegisterStatus, forecastVerdicts } from '../utils/forecastRegister';
 
 // Your own registered tests: downloaded the first time the view is opened.
 const YourTests = lazyNamed(() => import('./YourTests'), 'YourTests');
@@ -143,6 +144,7 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
           {runError && <p className="text-rose-600 dark:text-rose-400">{runError}</p>}
           {v?.lastRun?.problems?.length ? <p className="text-amber-700 dark:text-amber-300">Last run: {v.lastRun.problems.join(' · ')}</p> : null}
           {view === 'record' && <TestLedgerTable v={v} holmMap={holmMap} />}
+          {view === 'record' && <ForwardMonthlyTable rows={v?.forwardMonthly} />}
           {view === 'record' && (
             <React.Suspense fallback={null}>
               <PolicyTrackRecord />
@@ -219,7 +221,7 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
                               <dd data-forecast-verdicts={e.id}>
                                 {fv.map((x) => (
                                   <span key={x.id} className="block" data-forecast-verdict={x.id} data-status={x.status}>
-                                    <span className="font-medium">{x.id.replace(/_/g, ' ')}</span> (test v{x.specVersion}, run {when(x.ranAt)}): {x.verdict} <span data-holm={`forecast ${x.id} v${x.specVersion}`}>{holmSentence(holmMap.get(`forecast ${x.id} v${x.specVersion}`))}</span>
+                                    <span className="font-medium">{x.id.replace(/_/g, ' ')}</span> (test v{x.specVersion}, run {when(x.ranAt)}): {x.verdict} {alsoReported(x) && <span className="text-slate-500 dark:text-slate-400" data-also-reported={x.id}>{alsoReported(x)} </span>}<span data-holm={`forecast ${x.id} v${x.specVersion}`}>{holmSentence(holmMap.get(`forecast ${x.id} v${x.specVersion}`))}</span>
                                     {x.crash && (
                                       <span className="block text-slate-500 dark:text-slate-400" data-crash-stats={x.id}>
                                         {x.crash}

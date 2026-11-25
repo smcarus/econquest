@@ -20,6 +20,8 @@
 import { holm } from './multipleTesting';
 import { VERDICT_FOLDER, type RecordedVerdict, type VerdictKind } from './methodsDoc';
 import type { QuestTestVerdict } from './questSignal';
+import { forwardSentence } from './forwardRecord';
+import type { ForwardRecordSummary } from './trackRecordImport';
 
 /** A row's kind: one of the app's own test folders, or a test entered to a Signal Quest. */
 export type TrackKind = VerdictKind | 'quest';
@@ -51,6 +53,7 @@ export interface TrackRow {
   p?: number;
   adjusted?: number;
   alpha: number;
+  /** Passed, and the Holm-adjusted p is at or below its pass mark. */
   holds?: boolean;
 }
 
@@ -65,7 +68,7 @@ export function pFromSummary(summary: string): number | undefined {
 
 const fileName = (id: string, version: number) => (version === 1 ? `${id}.json` : `${id}.v${version}.json`);
 const r3 = (v: number) => Number(v.toPrecision(3));
-const fmtP = (p: number) => (p < 0.001 ? p.toExponential(1) : String(r3(p)));
+const fmtP = (p: number) => (p === 0 ? '< 0.001' : p < 0.001 ? p.toExponential(1) : String(r3(p)));
 
 /** One row per recorded verdict (each version of each test counts), with the Holm reading across them all. */
 export function trackRows(verdicts: RecordedVerdict[], files: TestFile[], questVerdicts: QuestTestVerdict[] = []): TrackRow[] {
@@ -89,7 +92,7 @@ export function trackRows(verdicts: RecordedVerdict[], files: TestFile[], questV
   return base.map((r) => {
     if (r.p === undefined) return r;
     const a = adj.get(r.key) ?? 1;
-    return { ...r, adjusted: r3(a), holds: a <= r.alpha };
+    return { ...r, adjusted: r3(a), holds: r.verdict.verdict === 'passed' && a <= r.alpha };
   });
 }
 
@@ -116,7 +119,7 @@ function sameDayLine(rows: TrackRow[]): string {
   return parts.join(' ');
 }
 
-export function trackRecordMarkdown(verdicts: RecordedVerdict[], files: TestFile[], runs: RecordedRun[], questVerdicts: QuestTestVerdict[] = []): string {
+export function trackRecordMarkdown(verdicts: RecordedVerdict[], files: TestFile[], runs: RecordedRun[], questVerdicts: QuestTestVerdict[] = [], forward?: ForwardRecordSummary): string {
   const rows = trackRows(verdicts, files, questVerdicts);
   const n = rows.length;
   const count = (k: RecordedVerdict['verdict']) => rows.filter((r) => r.verdict.verdict === k).length;
@@ -196,7 +199,7 @@ export function trackRecordMarkdown(verdicts: RecordedVerdict[], files: TestFile
     }
     const folder = VERDICT_FOLDER[r.kind as VerdictKind];
     const file = r.file?.file ?? fileName(v.id, v.version);
-    out.push(`- **${name(r)}** (${VERDICT_LABEL[v.verdict].toLowerCase()}; test file [docs/validation/${folder}/${file}](./validation/${folder}/${file})${hash}): ${v.summary}`);
+    out.push(`- **${name(r)}** (${VERDICT_LABEL[v.verdict].toLowerCase()}; test file [docs/validation/${folder}/${file}](./validation/${folder}/${file})${hash}): ${v.summary}${v.pRanAt ? ` The p (${fmtP(v.p!)}) is from the run of ${v.pRanAt.slice(0, 10)}, on the same test file with the same verdict; this row was recorded before rows carried p.` : ''}`);
   }
   out.push(
     '',
@@ -209,8 +212,7 @@ export function trackRecordMarkdown(verdicts: RecordedVerdict[], files: TestFile
     'by default (Menu > Data health > Scheduled; `SCHEDULE_BACKTESTS=off` stops it), so this record grows',
     'without anyone pressing a button. Menu > Models & validation > Track record shows it, with a CSV.',
     '',
-    'No forward results are copied into this page yet: the first scored calls come once each pass\'s',
-    'window has ended. They will be added here from a real run, never by hand.',
+    ...forwardLines(forward),
     '',
     '## Runs',
     '',
@@ -218,4 +220,21 @@ export function trackRecordMarkdown(verdicts: RecordedVerdict[], files: TestFile
     '',
   );
   return out.join('\n');
+}
+
+/** The forward record section: one line per test from the summary imported from a real run (npm run track-record:import). */
+export function forwardLines(f: ForwardRecordSummary | undefined): string[] {
+  if (!f || !f.tests.length) return ['No forward results are copied into this page yet: the first scored calls come once each pass\'s', 'window has ended. They will be added here from a real run (npm run track-record:import), never by hand.'];
+  const scored = f.tests.reduce((a, t) => a + t.scored, 0);
+  const out = [
+    `Imported from a real run on ${f.importedAt.slice(0, 10)}: ${f.lines} lines of data/local/validation/forward.jsonl, written up to ${f.lastLineAt.slice(0, 10)}, hash chain checked, last hash \`${f.chainHead.slice(0, 12)}\`. ${scored} ${scored === 1 ? 'call has' : 'calls have'} been scored so far.`,
+    `${scored < 20 ? 'Too few calls have been scored to say anything yet; a handful of hits or misses is what luck alone gives. ' : ''}The lines themselves stay on the computer that made them, because they hold figures from feeds whose terms do not allow re-publishing.`,
+    '',
+  ];
+  for (const t of f.tests) out.push(`- **${t.test}**: ${forwardSentence({ ...t, recent: [] })}`);
+  if (f.monthly?.length) {
+    out.push('', 'Month by month (calls written before their figure existed, and calls scored that month):', '', '| Month | Test | Calls written | Scored | Beat the benchmark | Average gain (points) |', '| --- | --- | --- | --- | --- | --- |');
+    for (const r of f.monthly) out.push(`| ${r.month} | ${r.test} | ${r.called} | ${r.scored} | ${r.scored ? `${r.hits} of ${r.scored}` : 'none scored'} | ${r.meanGain ?? 'none scored'} |`);
+  }
+  return out;
 }

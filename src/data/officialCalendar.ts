@@ -19,6 +19,17 @@
  *   - Argentina (BCRA) and Saudi Arabia (SAMA): no decision calendar found (BCRA announces by
  *     communiqué; SAMA's site gave no text). China: the LPR is published on the 20th of each month,
  *     moved for holidays, so dates are not listed until the holiday calendar is read.
+ * Added 2026-11-17 for the lower-income watchlist, each from the bank's own page or PDF: Kenya
+ * (CBK next-meeting notice), Ghana (BoG 2026 MPC dates; no 2027 calendar yet), Tanzania (BoT
+ * 2026/27 MPC calendar, statement dates; the bank says dates may change) and India (RBI MPC
+ * meetings; the page gives the meeting days, not the announcement day, so the last day is listed
+ * and says so). Not added that day:
+ *   - Nigeria (CBN): the monetary policy page gave no text and no future MPC date was listed.
+ *   - Ethiopia (NBE), DR Congo (BCC), Bolivia (BCB): no meeting calendar published.
+ *   - Uganda (BoU): the page builds its text in the browser, so it could not be read.
+ *   - Pakistan (SBP), Bangladesh (BB), Egypt (CBE), Viet Nam (SBV): the pages refused an automated
+ *     reader. Philippines (BSP) and Myanmar (CBM) ask automated readers to stay away (robots.txt).
+ *   - Argentina (BCRA) and Saudi Arabia (SAMA): still no decision calendar found.
  * Menu > Data health > Calendar flags sources read long ago and schedules running out.
  */
 
@@ -95,6 +106,15 @@ const ECB_SRC = { sourceName: 'ECB Governing Council meeting calendar (monetary 
 const BOC_SRC = { sourceName: 'Bank of Canada schedule of interest rate announcements', sourceUrl: 'https://www.bankofcanada.ca/core-functions/monetary-policy/key-interest-rate/', primarySource: true, retrieved: R8 };
 const RBA_SRC = { sourceName: 'RBA Monetary Policy Board meeting schedule (decision on day 2)', sourceUrl: 'https://www.rba.gov.au/schedules-events/board-meeting-schedules.html', primarySource: true, retrieved: R8 };
 const BOK_SRC = { sourceName: 'Bank of Korea Monetary Policy Board meeting dates (2027 not yet published)', sourceUrl: 'https://www.bok.or.kr/eng/main/contents.do?menuNo=400020', primarySource: true, retrieved: R8 };
+const R17 = '2026-11-17';
+const CBK_SRC = { sourceName: 'Central Bank of Kenya, next MPC meeting notice', sourceUrl: 'https://www.centralbank.go.ke/2026/11/09/next-mpc-meeting-6/', primarySource: true, retrieved: R17 };
+const BOG_SRC = { sourceName: 'Bank of Ghana MPC meeting dates 2026 (press release date)', sourceUrl: 'https://www.bog.gov.gh/wp-content/uploads/2025/12/MPC-Meeting-Dates-2026.pdf', primarySource: true, retrieved: R17 };
+const BOT_SRC = { sourceName: 'Bank of Tanzania MPC calendar 2026/27 (statement date; the bank says dates may change)', sourceUrl: 'https://www.bot.go.tz/webdocs/Other/MPC_Calendar.pdf', primarySource: true, retrieved: R17 };
+const RBI_SRC = { sourceName: 'Reserve Bank of India MPC meeting schedule (meeting days; announcement day not stated)', sourceUrl: 'https://www.rbi.org.in/', primarySource: true, retrieved: R17 };
+const R23 = '2026-11-23';
+const SBP_SRC = { sourceName: 'State Bank of Pakistan MPC calendar FY27 (the bank says dates may change)', sourceUrl: 'https://www.sbp.org.pk/our-operations/monetary-policy', primarySource: true, retrieved: R23 };
+const BSP_SRC = { sourceName: 'Bangko Sentral ng Pilipinas Monetary Board meeting schedule', sourceUrl: 'https://www.bsp.gov.ph/', primarySource: true, retrieved: R23 };
+const CBN_SRC = { sourceName: 'Central Bank of Nigeria MPC calendar', sourceUrl: 'https://www.cbn.gov.ng/MonetaryPolicy/calendar.html', primarySource: true, retrieved: R23 };
 const CBR_SRC = { sourceName: 'Bank of Russia calendar of key rate meetings', sourceUrl: 'https://www.cbr.ru/eng/dkp/cal_mp/', primarySource: true, retrieved: R8 };
 
 /*
@@ -317,6 +337,25 @@ export const OFFICIAL_CALENDAR: OfficialCalendarEvent[] = [
   ]),
   ...rows(BOK_SRC, [
     ['KOR', 'MPC_DECISION', BOK, '2026-11-26'],
+  ]),
+  ...rows(CBK_SRC, [['KEN', 'MPC_DECISION', 'CBK MPC Central Bank Rate decision', '2026-12-09']]),
+  ...rows(BOG_SRC, [['GHA', 'MPC_DECISION', 'BoG MPC policy rate announcement', '2026-11-18']]),
+  ...rows(BOT_SRC, [
+    ['TZA', 'MPC_DECISION', 'BoT MPC statement (Central Bank Rate)', '2027-01-07'],
+    ['TZA', 'MPC_DECISION', 'BoT MPC statement (Central Bank Rate)', '2027-04-01'],
+  ]),
+  ...rows(SBP_SRC, [
+    ['PAK', 'MPC_DECISION', 'SBP MPC meeting and policy statement', '2026-12-14'],
+    ['PAK', 'MPC_DECISION', 'SBP MPC meeting and policy statement', '2027-01-25'],
+    ['PAK', 'MPC_DECISION', 'SBP MPC meeting and policy statement', '2027-03-08'],
+    ['PAK', 'MPC_DECISION', 'SBP MPC meeting and policy statement', '2027-04-26'],
+    ['PAK', 'MPC_DECISION', 'SBP MPC meeting and policy statement', '2027-06-17'],
+  ]),
+  ...rows(BSP_SRC, [['PHL', 'MPC_DECISION', 'BSP Monetary Board policy meeting', '2026-12-17']]),
+  ...rows(CBN_SRC, [['NGA', 'MPC_DECISION', 'CBN MPC meeting, last day', '2026-11-24']]),
+  ...rows(RBI_SRC, [
+    ['IND', 'MPC_DECISION', 'RBI MPC meeting, last day (2-4 Dec; announcement day not stated)', '2026-12-04'],
+    ['IND', 'MPC_DECISION', 'RBI MPC meeting, last day (3-5 Feb; announcement day not stated)', '2027-02-05'],
   ]),
   ...rows(CBR_SRC, [
     ['RUS', 'MPC_DECISION', CBR, '2026-12-18'],

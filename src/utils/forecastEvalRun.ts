@@ -6,8 +6,16 @@
  */
 import fs from 'fs';
 import { loadSpecs } from './backtestRun';
-import { judgeForecast, type ForecastResult, type ForecastSpec } from './forecastEval';
-import { casesFor, gdpNowcastOpen, type CountryData } from './forecastCases';
+import { judgeForecast, REALTIME_TARGETS, type ForecastResult, type ForecastSpec, type RealTimeTarget } from './forecastEval';
+import { realTimeCases, weoRealTimeCases, type VintageSeriesInput } from './realTimeEval';
+import { judgeVol, volCases, type VolSpec } from './volEval';
+import { allQuarters, fxQuarterUrl, parseFxQuarter, FX_HISTORY_SOURCE, type FxHistoryFile } from './fxHistory';
+import { OECD_RT_SOURCE } from './oecdRealTime';
+import { estimateGapModel, type GapEstimate } from './gapModelEstimate';
+import { casesFor, forestRowModel, gdpNowcastOpen, gdpSeries, type CountryData } from './forecastCases';
+import { predictorNowcastOpen, rowModelFor } from './penalizedNowcast';
+import { judgeLoss, type LossPassMark } from './lossEval';
+import { quantileForecastCases } from './quantileForecast';
 import path from 'path';
 import { forwardStep, type ForwardBody, type ForwardCallLine } from './forwardRecord';
 import { appendForward, loadForward } from './forwardRecordStore';
@@ -80,6 +88,11 @@ export async function pullEvaluationData(fetcher: TextFetcher, problems: string[
     sources: {
       gdp_growth_q: QNA_LABEL,
       gdp_nowcast_q: `${QNA_LABEL}; ${IBCBR_LONG}; ${EUROSTAT_IP_LONG}; OECD composite leading indicator via DBnomics (full history)`,
+      gdp_penalized_nowcast_q: `${QNA_LABEL}; ${IBCBR_LONG}; ${EUROSTAT_IP_LONG}; OECD composite leading indicator, OECD consumer price inflation via DBnomics; BIS policy rates`,
+      gdp_dfm_nowcast_q: `${QNA_LABEL}; ${IBCBR_LONG}; ${EUROSTAT_IP_LONG}; OECD composite leading indicator, OECD consumer price inflation via DBnomics; BIS policy rates`,
+      gdp_forest_nowcast_q: `${QNA_LABEL}; ${IBCBR_LONG}; ${EUROSTAT_IP_LONG}; OECD composite leading indicator, OECD consumer price inflation via DBnomics; BIS policy rates`,
+      gdp_quantile_q: QNA_LABEL,
+      cpi_gap_model_q: `${QNA_LABEL}; OECD consumer price inflation via DBnomics (y/y, quarter means); BIS central bank policy rates (quarter means)`,
       cpi_yoy_m: 'OECD consumer price inflation via DBnomics (full history, y/y)',
       cpi_nowcast_m: 'OECD consumer price inflation via DBnomics (full history, y/y)',
       policy_rate_m: 'BIS central bank policy rates (monthly, from 1990)',
@@ -88,7 +101,7 @@ export async function pullEvaluationData(fetcher: TextFetcher, problems: string[
   };
 }
 
-export async function runForecastEvaluations(opts: { specDir: string; resultFile: string; fetcher: TextFetcher; now?: Date; onResult?: (r: ForecastResult) => void; /** Past WEO editions, for the debt fan coverage test. */ weoStore?: WeoVintageStore; forwardFile?: string }): Promise<ForecastValidationFile & { problems: string[] }> {
+export async function runForecastEvaluations(opts: { specDir: string; resultFile: string; fetcher: TextFetcher; now?: Date; onResult?: (r: ForecastResult) => void; /** Past WEO editions, for the debt fan coverage test and the WEO real-time tests. */ weoStore?: WeoVintageStore; forwardFile?: string; /** Vintages for the real-time tests: US (ALFRED) and euro area (ECB RTD) GDP and inflation. */ vintages?: RealTimeVintages; /** Saved daily FX history (data/live/fx-history.json), for the volatility test. */ savedFx?: FxHistoryFile | null }): Promise<ForecastValidationFile & { problems: string[] }> {
   const problems: string[] = [];
   const specs = loadSpecs(opts.specDir);
   for (const s of specs) if (s.problem) problems.push(`${s.file}: ${s.problem}; not run`);
@@ -127,7 +140,35 @@ export async function runForecastEvaluations(opts: { specDir: string; resultFile
     file.results[s.id] = result;
     opts.onResult?.(result);
   }
-  const rest = runnable.filter((x) => !isFan(x));
+  // Real-time tests read vintages handed in (ALFRED, ECB RTD) or the saved WEO editions; no other download.
+  const isRt = (x: { spec?: unknown }) => REALTIME_TARGETS.includes((x.spec as { target?: string } | undefined)?.target as RealTimeTarget);
+  for (const { spec, hash } of runnable.filter(isRt)) {
+    const s = spec as unknown as ForecastSpec;
+    const got = realTimeRun(s, opts.weoStore, opts.vintages);
+    if ('problem' in got) {
+      problems.push(`${s.id}: ${got.problem}; not run`);
+      continue;
+    }
+    for (const e of ('empty' in got && got.empty) || []) problems.push(`${s.id} v${s.version}: ${e}`);
+    if (!got.cases.length) problems.push(`${s.id} v${s.version}: no case could be computed from the data read (${got.data})`);
+    const result = judgeForecast(s, hash, got.cases, got.data, at);
+    file.versions[`${s.id} v${s.version}`] = result;
+    file.results[s.id] = result;
+    opts.onResult?.(result);
+  }
+  if (runnable.some(isRt)) for (const m of opts.vintages?.missing || []) problems.push(`real-time data not read: ${m}`);
+  // The GARCH volatility test reads daily ECB reference rates: the saved history plus any quarter not saved.
+  const isVol = (x: { spec?: unknown }) => (x.spec as { target?: string } | undefined)?.target === 'fx_vol_d';
+  for (const { spec, hash } of runnable.filter(isVol)) {
+    const s = spec as unknown as VolSpec;
+    const daily = await pullDailyFx(opts.fetcher, s.universe, problems, opts.savedFx, opts.now);
+    const cases = volCases(daily, s);
+    const result = judgeVol(s, hash, cases, `${FX_HISTORY_SOURCE}, daily from 1999; GARCH(1,1) on the last ${s.params.window} returns at each month-end`, at);
+    file.versions[`${s.id} v${s.version}`] = result;
+    file.results[s.id] = result;
+    opts.onResult?.(result);
+  }
+  const rest = runnable.filter((x) => !isFan(x) && !isRt(x) && !isVol(x));
   if (rest.length) {
     const { data, sources } = await pullEvaluationData(opts.fetcher, problems, opts.now);
     const forwardFile = opts.forwardFile ?? path.join(path.dirname(opts.resultFile), 'forward.jsonl');
@@ -135,9 +176,20 @@ export async function runForecastEvaluations(opts: { specDir: string; resultFile
     const forwardNew: ForwardBody[] = [];
     for (const { spec, hash } of rest) {
       const s = spec as unknown as ForecastSpec;
+      if (s.target === 'gdp_quantile_q') {
+        // Quantile bands: scored by pinball loss against the AR's normal band (src/utils/quantileForecast.ts).
+        const qs = spec as unknown as ForecastSpec & { passMark: LossPassMark & ForecastSpec['passMark'] };
+        const lc = quantileForecastCases(gdpSeries(data), qs);
+        const result = judgeLoss(qs, hash, lc, `${sources.gdp_growth_q}; countries only; today's vintage`, { loss: 'pinball', lossLabel: 'mean pinball loss', benchLabel: "the AR forecast's normal band (the live forecast rule)", unit: 'quarter(s)', resamples: qs.params.resamples ?? 4000, seed: qs.params.seed ?? 20261122 }, at);
+        file.versions[`${s.id} v${s.version}`] = result;
+        file.results[s.id] = result;
+        opts.onResult?.(result);
+        continue;
+      }
       const { cases } = casesFor(s, data);
       const result = judgeForecast(s, hash, cases, `${sources[s.target] || s.target}; countries only (ISO 3166, regional groups and the euro-area aggregate left out); today's vintage, release lags as registered`, at);
-      if (s.target === 'gdp_nowcast_q') {
+      const rowModel = rowModelFor(s, forestRowModel(s));
+      if (s.target === 'gdp_nowcast_q' || rowModel) {
         // Rule 7: a passing nowcast's calls for quarters not yet published go on the forward record;
         // recorded calls are scored on the first published figure (closer than the benchmark = hit).
         const key = `${s.id} v${s.version}`;
@@ -150,10 +202,16 @@ export async function runForecastEvaluations(opts: { specDir: string; resultFile
             const gain = Math.abs(l.forecast!.bench - a) - Math.abs(l.forecast!.model - a);
             return { where: l.where, when: l.when, what: l.what, hit: gain > 0, base: beat, value: gain };
           });
-        const open = result.status === 'passed' ? gdpNowcastOpen(s, data, at.slice(0, 10)) : [];
+        const asOf = at.slice(0, 10);
+        const open = result.status !== 'passed' ? [] : rowModel ? predictorNowcastOpen(s, data, asOf, rowModel) : gdpNowcastOpen(s, data, asOf);
         const step = forwardStep(forward, { key, specHash: hash, passing: result.status === 'passed' }, scored, open, at);
         forward.push(...step);
         forwardNew.push(...step);
+      }
+      if (s.target === 'cpi_gap_model_q' && result.status === 'passed') {
+        // A passing gap model: each country's estimate and projection, shown on its gap model screen.
+        const est = Object.fromEntries(data.map((c) => [c.iso3, estimateGapModel(c, { window: s.params.window, minTrain: s.params.minTrain, horizon: Math.max(...s.horizons) })]).filter((e): e is [string, GapEstimate] => Boolean(e[1])));
+        if (Object.keys(est).length) result.gapEstimates = est;
       }
       file.versions[`${s.id} v${s.version}`] = result;
       file.results[s.id] = result;
@@ -169,4 +227,60 @@ export async function runForecastEvaluations(opts: { specDir: string; resultFile
   fs.mkdirSync(opts.resultFile.replace(/[/\\][^/\\]+$/, ''), { recursive: true });
   writeFileAtomic(opts.resultFile, JSON.stringify(out, null, 1), 0o600);
   return { ...out, problems };
+}
+
+export interface RealTimeVintages {
+  gdp: VintageSeriesInput[];
+  cpi: VintageSeriesInput[];
+  /** OECD members from the saved OECD editions (CG15), read by specs with params.oecd = 1. */
+  oecdGdp?: VintageSeriesInput[];
+  oecdCpi?: VintageSeriesInput[];
+  /** Sources that did not answer, with the reason (shown as problems). */
+  missing: string[];
+}
+
+const WEO_RT_CODE: Partial<Record<RealTimeTarget, string>> = { gdp_weo_realtime_a: 'NGDP_RPCH', cpi_weo_realtime_a: 'PCPIPCH' };
+
+/** Cases for one real-time spec, or the reason it cannot run. */
+export function realTimeRun(s: ForecastSpec, weoStore: WeoVintageStore | undefined, vintages: RealTimeVintages | undefined): { cases: import('./forecastEval').ForecastCase[]; data: string; empty?: string[] } | { problem: string } {
+  const code = WEO_RT_CODE[s.target as RealTimeTarget];
+  if (code) {
+    if (!weoStore?.editions.length) return { problem: 'no past WEO editions saved in data/local/weo-vintages/ (npm run weo:vintages)' };
+    const cases = weoRealTimeCases(weoStore, code, s, isCountryIso3);
+    const eds = weoStore.editions.map((e) => e.vintage).sort();
+    return { cases, data: `${WEO_VINTAGE_SOURCE}, ${code}: ${eds.length} editions (${eds[0]} to ${eds[eds.length - 1]}); each forecast made from the years an edition marks as actual, scored against the first edition that marks the target year as actual; countries only` };
+  }
+  const oecd = s.params.oecd === 1;
+  const inputs = oecd ? (s.target === 'gdp_realtime_q' ? vintages?.oecdGdp : vintages?.oecdCpi) : s.target === 'gdp_realtime_q' ? vintages?.gdp : vintages?.cpi;
+  if (!inputs?.length) return { problem: oecd ? 'no OECD editions saved in data/local/oecd-vintages/ (npm run oecd:vintages)' : `no vintages to read (${vintages?.missing.join('; ') || 'ALFRED and the ECB real-time database were not read'})` };
+  const cases = realTimeCases(inputs, s);
+  const names = inputs.map((i) => `${i.where} ${i.def.id}`).join(', ');
+  const empty = inputs.filter((i) => !cases.some((c) => c.where === i.where)).map((i) => `${i.where} ${i.def.id} (${i.rows.length} published values read, no case)`);
+  if (oecd) return { cases, empty, data: `Data as first published: ${inputs.length} OECD members (${OECD_RT_SOURCE}); each forecast made from the edition out on its origin day (an edition counts from the first day of its month), scored against the first edition that holds the target period` };
+  return { cases, empty, data: `Data as first published: ${names} (ALFRED, Federal Reserve Bank of St. Louis; ECB Euro Area Real-Time Database); each forecast made from the vintage of its origin day, scored against the first published figure${vintages?.missing.length ? `; not read: ${vintages.missing.join('; ')}` : ''}` };
+}
+
+/** Daily units per US dollar for the currencies asked, from the saved history and any quarter not saved. */
+export async function pullDailyFx(fetcher: TextFetcher, ccys: string[], problems: string[], saved?: FxHistoryFile | null, now = new Date()): Promise<Record<string, Array<{ date: string; value: number }>>> {
+  const out: Record<string, Array<{ date: string; value: number }>> = {};
+  const add = (rates: Record<string, Record<string, number>>) => {
+    for (const [day, row] of Object.entries(rates)) for (const c of ccys) if (row[c] > 0) (out[c] ||= []).push({ date: day, value: row[c] });
+  };
+  for (const q of allQuarters(now)) {
+    const chunk = saved?.chunks?.[q];
+    if (chunk) {
+      add(chunk.rates);
+      continue;
+    }
+    const url = fxQuarterUrl(q, now);
+    if (!url) continue;
+    try {
+      const r = parseFxQuarter(JSON.parse(await fetcher(url)));
+      if (r) add(r);
+    } catch (e: any) {
+      problems.push(`ECB reference rates for ${q} did not answer (${e?.message || e})`);
+    }
+  }
+  for (const c of Object.keys(out)) out[c].sort((a, b) => (a.date < b.date ? -1 : 1));
+  return out;
 }

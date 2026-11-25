@@ -14,7 +14,7 @@ export type ToolTarget =
   | { area: 'reports'; anchor?: string }
   | { area: 'portfolio'; anchor?: string };
 
-export type ToolCategoryId = 'council' | 'monitor' | 'screen' | 'country' | 'history' | 'portfolio' | 'write';
+export type ToolCategoryId = 'council' | 'monitor' | 'screen' | 'country' | 'debt' | 'markets' | 'people' | 'climate' | 'history' | 'portfolio' | 'write';
 
 export interface ToolCategory {
   id: ToolCategoryId;
@@ -29,6 +29,10 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
   { id: 'monitor', title: 'Keep up', purpose: 'What changed since you last looked, and what is coming up.' },
   { id: 'screen', title: 'Screen and compare countries', purpose: 'Line countries up side by side to find the outliers.' },
   { id: 'country', title: 'Study one country', purpose: 'Briefs and checks for the country you have open.' },
+  { id: 'debt', title: 'Debt and the budget', purpose: 'Whether the government can keep paying, its budget rules and how well it sticks to its budget.' },
+  { id: 'markets', title: 'Rates, prices and trade', purpose: 'Yield curves, what drives inflation, and the prices of what a country buys and sells.' },
+  { id: 'people', title: 'Growth, people and aid', purpose: 'Where growth comes from, money sent home, access to banks, aid and who pays for a policy.' },
+  { id: 'climate', title: 'Disasters and climate', purpose: 'Storms and disasters, and insurance that pays out when one strikes.' },
   { id: 'history', title: 'Look back', purpose: 'Past figures, past decisions and how the rule calls held up.' },
   { id: 'portfolio', title: 'Your portfolio', purpose: 'Your holdings against the risks and signals.' },
   { id: 'write', title: 'Write and share', purpose: 'Notes, briefs and handouts to download as Markdown or PDF.' },
@@ -173,6 +177,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'overview' },
   },
   {
+    id: 'policy_review',
+    category: 'country',
+    title: 'Policy review',
+    what: 'A step-by-step case file for improving policy in one country: frame the problem, diagnose it, weigh options and evidence, write the recommendation and track what happened. It lives under Reports.',
+    sources: 'Saved figures for the country on the As of day; the policy council',
+    target: { area: 'reports', anchor: 'tool-policy-reviews' },
+  },
+  {
     id: 'history',
     category: 'history',
     title: 'History',
@@ -206,7 +218,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'external_sustainability',
-    category: 'history',
+    category: 'debt',
     title: 'External sustainability',
     what: "Whether the open country can keep paying what it owes abroad: external debt as % of GDP, a year of debt service against reserves and exports, and the non-interest current account that would hold external debt steady. The current account norm and the investment position read Missing with the reason.",
     sources: 'World Bank International Debt Statistics, World Bank reserves and exports, IMF WEO',
@@ -214,7 +226,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'crisis_warning',
-    category: 'history',
+    category: 'debt',
     title: 'Crisis early-warning',
     what: "Where the open country stands on the measures that have often come before banking crises: the credit-to-GDP gap against the Basel III lines, past spells above 10 points, three-year credit growth, the debt service ratio and real house prices. Not validated: its test waits for the crisis-dates licence.",
     sources: 'BIS credit-to-GDP gaps, debt service ratios and property prices',
@@ -222,7 +234,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'yield_curve',
-    category: 'history',
+    category: 'markets',
     title: 'Yield curve and financial conditions',
     what: "The open country's 10-year government bond yield minus its policy rate, past spells with the curve inverted, and a financial conditions index from the policy rate, the 10-year yield, the spread over US Treasuries and the real exchange rate with fixed equal weights. No recession figure until its pre-registered test passes.",
     sources: 'FRED / OECD 10-year yields, BIS policy rates and real effective exchange rates',
@@ -230,7 +242,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'full_curves',
-    category: 'history',
+    category: 'markets',
     title: "Full yield curves",
     what: "Every maturity of the US Treasury par yield curve and the ECB euro area government curve each day, a fitted Nelson-Siegel-Svensson curve, moves in level, slope and curvature over a day and a month, and carry and roll-down over three months for each maturity.",
     sources: "US Treasury Daily Par Yield Curve Rates; ECB euro area yield curves",
@@ -246,7 +258,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'inflation_drivers',
-    category: 'history',
+    category: 'markets',
     title: 'Inflation drivers',
     what: "Headline against core inflation (prices without food and energy) for the open country, how food and energy prices moved, and for EU members how many points each adds to headline. From Eurostat, BLS or OECD consumer price sub-indices; where none is published the row reads Missing.",
     sources: 'Eurostat HICP, BLS CPI via FRED, OECD consumer prices',
@@ -254,7 +266,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'growth_accounting',
-    category: 'history',
+    category: 'people',
     title: 'Growth accounting',
     what: "Where the open country's growth came from over each ten-year period: capital, hours worked, human capital and productivity (TFP), as a stacked chart and a table you can download as CSV. From the Penn World Table, read once per edition.",
     sources: 'Penn World Table (Groningen Growth and Development Centre)',
@@ -262,7 +274,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'bank_sovereign',
-    category: 'history',
+    category: 'debt',
     title: 'Banks and the government',
     what: "Where the open country's banks and government are tied to each other: bank assets, bank claims on the central government, domestic banks' share of government debt, and bank capital and bad loans, each with its source and year. State-owned banks and contingent liabilities read Missing with the reason.",
     sources: 'World Bank WDI and GFDD (IMF Financial Soundness Indicators, IMF monetary statistics), IMF Sovereign Debt Investor Base',
@@ -270,7 +282,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'restructuring_calc',
-    category: 'history',
+    category: 'debt',
     title: 'Debt restructuring calculator',
     what: "Type an old bond and the new bond offered for it (face value, coupon, years, grace years) and one to three discount rates: what each bond is worth today, the NPV haircut (Sturzenegger-Zettelmeyer) and the market haircut, the payments year by year, and a CSV. Every field starts blank; nothing comes from data.",
     sources: 'Terms and discount rates you type; no data',
@@ -278,7 +290,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'fiscal_rules',
-    category: 'history',
+    category: 'debt',
     title: "Fiscal rules check",
     what: "Which fiscal rules bind the open country: EU, WAEMU or CEMAC treaty limits checked against the latest saved IMF debt and balance, with the room left, and the national rules (expenditure, revenue, budget balance, debt) and since when, from the IMF Fiscal Rules Dataset you save in data/local/imf-fiscal-rules/.",
     sources: "Treaty texts (TFEU Protocol 12, WAEMU, CEMAC); IMF WEO and Fiscal Monitor; your IMF Fiscal Rules Dataset file",
@@ -286,7 +298,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'budget_credibility',
-    category: 'history',
+    category: 'debt',
     title: "Budget credibility",
     what: "How much of the approved budget the government actually spent each year (World Bank, from PEFA assessments, UN goal 16.6.1), how far it was from the budget, the PEFA band of each year, and a grade on the PEFA rule worked out by the app.",
     sources: "World Bank WDI (PEFA assessments)",
@@ -294,7 +306,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'budget_execution',
-    category: 'history',
+    category: 'debt',
     title: "Budget execution (your file)",
     what: "Load your approved budget and monthly spending by ministry or programme from a CSV file and see spending against the share of the fiscal year gone, lines behind or ahead, and a same-pace year-end figure. Kept on this computer only.",
     sources: "Your own file",
@@ -302,7 +314,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'remittances',
-    category: 'history',
+    category: 'people',
     title: 'Remittances',
     what: 'Money people working abroad send home: the latest World Bank year in US dollars and % of GDP, beside exports, foreign direct investment and aid in the same year, how it moved in years exports fell, and the cost of sending US$200 against the UN goal of below 3%.',
     sources: 'World Bank WDI (IMF balance of payments, OECD DAC, Remittance Prices Worldwide)',
@@ -310,7 +322,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'financial_inclusion',
-    category: 'history',
+    category: 'people',
     title: "Financial inclusion",
     what: "Who has a bank or mobile money account (World Bank Global Findex, latest survey), the gaps between women and men and between poorer and richer households in the same survey, bank branches and cash machines per 100,000 adults, and credit to households and firms as % of GDP.",
     sources: "World Bank Global Findex and WDI (IMF Financial Access Survey, IMF IFS)",
@@ -318,7 +330,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'commodity_terms',
-    category: 'history',
+    category: 'markets',
     title: "Commodity prices and terms of trade",
     what: "What the country sells and buys in fuel, ores and metals and food, how World Bank monthly prices of those moved over 1 and 12 months, the rough effect on income as % of GDP if prices hold for a year, whether it is commodity-dependent by UNCTAD's 60% line, and its terms of trade index.",
     sources: "World Bank Pink Sheet and WDI (UN Comtrade, WTO); IMF WEO",
@@ -326,7 +338,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'aid_received',
-    category: 'history',
+    category: 'people',
     title: "Aid received",
     what: "Net development aid the country receives (World Bank, from OECD DAC): latest year in US dollars, as % of GNI, of central government spending, of imports and of investment, per person, from six large donors with their share, and the last ten years.",
     sources: "World Bank WDI (OECD DAC)",
@@ -334,7 +346,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'wb_projects',
-    category: 'history',
+    category: 'people',
     title: "World Bank projects",
     what: "Active World Bank projects in the country (roads, schools, clinics, power, budget support): amount committed, approval and closing dates, share of each project's planned time gone, and for IDA credits and grants the share paid out, with projects paying out slowly for the time gone flagged.",
     sources: "World Bank Projects & Operations; Finances One IDA statement of credits",
@@ -342,7 +354,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'regional',
-    category: 'history',
+    category: 'people',
     title: "Regional figures",
     what: "How far apart the regions of the country are: output per person in each region against the national figure, the gap between the richest and poorest regions and whether it has narrowed; GDP per person and unemployment for EU regions; and the Human Development Index by region from your own Global Data Lab file.",
     sources: "DOSE (Zenodo); Eurostat regional accounts; Global Data Lab (your file)",
@@ -350,7 +362,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'food_prices',
-    category: 'history',
+    category: 'markets',
     title: "Food prices and food security",
     what: "Food price inflation against all prices (FAOSTAT, from the file you save in data/local/fao-cpi/), undernourishment and food insecurity (World Bank, from FAO), net food imports as % of GDP, and world prices of rice, wheat, maize, soybeans, palm oil and sugar.",
     sources: "FAOSTAT (your file); World Bank WDI and Pink Sheet; IMF WEO",
@@ -358,7 +370,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'disasters',
-    category: 'history',
+    category: 'climate',
     title: "Natural disasters",
     what: "Floods, storms, droughts, earthquakes and other natural disasters since 2000 from the EM-DAT file you save in data/local/emdat/: events, deaths and people affected by type, the last ten years with damage as % of GDP, and the largest events.",
     sources: "EM-DAT (your file); IMF WEO; World Bank WDI",
@@ -366,7 +378,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'parametric_trigger',
-    category: 'history',
+    category: 'climate',
     title: "Parametric insurance trigger designer",
     what: "Design a parametric cover on season rainfall, temperature or a world food price: pick the season, trigger, exit and cover, and see what it would have paid in every past season, how often, and the average yearly payout (burn cost).",
     sources: "World Bank climate portal (CRU TS); NASA POWER; World Bank Pink Sheet",
@@ -374,7 +386,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'storm_tracks',
-    category: 'history',
+    category: 'climate',
     title: "Tropical cyclones",
     what: "Hurricanes, typhoons and cyclones since 1980 whose centre passed within 50, 100 or 200 km of the country: how many by strength, each season, the share of seasons with a hurricane or a major hurricane, and the strongest storms. From NOAA's IBTrACS tracks, downloaded when you ask or from a copy in data/local/ibtracs/.",
     sources: "NOAA IBTrACS v04r01; Natural Earth country outlines",
@@ -382,7 +394,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'policy_incidence',
-    category: 'history',
+    category: 'people',
     title: 'Who pays for a policy',
     what: "Who carries a tax or spending change in the open country, by fifth of people from poorest to richest: you type the change and the share each fifth carries from a published incidence study you name, and the panel sets it beside each fifth's share of income, the Gini index, the tax split and poverty rates. Starts empty; no built-in incidence shares.",
     sources: 'Your incidence shares and their source; World Bank WDI (household surveys, IMF Government Finance Statistics)',

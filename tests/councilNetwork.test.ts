@@ -43,3 +43,14 @@ test('ask network: the planner says when the AI model picked the agents', () => 
   assert.match(ai[0].nodes[0].task, /AI model picked/);
   assert.equal(ai[1].nodes[0].task, 'AI pick: the lira drives it');
 });
+
+test('ask network: when every agent was asked for the same reason, it is said once for the column', () => {
+  const why = 'no specific topic in the question, so every agent answers';
+  const answers = (['cb', 'fiscal', 'politics'] as const).map((id) => ({ id, name: id, why, findings: [], missing: [] }));
+  const desk = askCouncilColumns(answers as never, false, null)[1]!;
+  assert.equal(desk.note, 'No specific topic in the question, so every agent answers');
+  assert.ok(desk.nodes.every((n) => n.task === ''));
+  const mixed = askCouncilColumns([answers[0]!, { ...answers[1]!, why: 'the question mentions "debt"' }] as never, false, null)[1]!;
+  assert.equal(mixed.note, undefined);
+  assert.equal(mixed.nodes[1]!.task, 'Asked: you mentioned "debt"');
+});

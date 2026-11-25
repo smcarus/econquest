@@ -72,6 +72,7 @@ export const COUNTRY_TOOL_GROUPS: CountryToolGroup[] = [
       { id: 'tool-output-gap', label: 'tl_output_gap' },
       { id: 'tool-growth-accounting', label: 'tl_growth_accounting' },
       { id: 'tool-gap-model', label: 'tl_gap_model' },
+      { id: 'tool-gvar', label: 'tl_gvar' },
       { id: 'tool-sandboxes', label: 'tl_sandboxes' },
     ],
   },
@@ -82,6 +83,7 @@ export const COUNTRY_TOOL_GROUPS: CountryToolGroup[] = [
       { id: 'tool-remittances', label: 'tl_remittances' },
       { id: 'tool-aid', label: 'tl_aid' },
       { id: 'tool-wb-projects', label: 'tl_wb_projects' },
+      { id: 'tool-official-docs', label: 'tl_official_docs' },
       { id: 'tool-regional', label: 'tl_regional' },
       { id: 'tool-financial-inclusion', label: 'tl_financial_inclusion' },
       { id: 'tool-food-prices', label: 'tl_food_prices' },
@@ -117,6 +119,7 @@ export const COUNTRY_TOOL_GROUPS: CountryToolGroup[] = [
     label: 'tg_learn',
     tools: [
       { id: 'tool-exercises', label: 'tl_exercises' },
+      { id: 'tool-macro-lab', label: 'tl_macro_lab' },
       { id: 'tool-unit-converters', label: 'tl_unit_converters' },
     ],
   },

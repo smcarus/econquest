@@ -47,7 +47,7 @@ export function missingReason(key: FigureKey, iso3: string): MissingReason {
       return hcSpreadMissing(iso3);
     case 'yield':
       if (iso3 === 'TUR')
-        return { kind: 'setup', short: 'Needs EVDS key', help: 'Turkey\'s 10-year government bond yield comes from EVDS, the central bank of Turkey\'s free data service, which needs a free key. Add the key and the 10Y series code under Menu > Settings > Data API keys, or in .env.' };
+        return { kind: 'setup', short: 'Needs EVDS key', help: 'Turkey\'s 10-year government bond yield comes from EVDS, the central bank of Turkey\'s free data service, which needs a free key. Add the key and the 10Y series code under Menu > Settings > Free data keys, or in .env.' };
       if (hasFreeOfficialYield(iso3))
         return { kind: 'unreachable', short: 'Feed did not answer', help: 'The 10-year government bond yield comes from an official source (FRED, the US Federal Reserve\'s free data service, which republishes OECD figures), and it did not answer this time. This is usually temporary. Press Refresh now under Research > One country to try again. A free FRED key under Menu > Settings gives a steadier connection.' };
       return { kind: 'setup', short: 'No source yet', help: 'No free official source of this country\'s 10-year government bond yield is connected yet, and the app does not estimate one. If you have the official figures (for example from the central bank or finance ministry website), upload them as a yields file.' };
@@ -81,8 +81,8 @@ export function hasFigure(it: WatchlistItem | LiveWatchlistItem, key: FigureKey)
     case 'cpi':
       return it.cpiSource === 'live' || it.cpiSource === 'oecd';
     case 'policy':
-      // Only the BIS feed counts; an AI estimate or the sample does not.
-      return it.policyRateSource === 'bis';
+      // The BIS feed, or the IMF monthly rate where the app does not take the BIS one (LI4); an AI estimate or the sample does not.
+      return it.policyRateSource === 'bis' || it.policyRateSource === 'imf';
   }
 }
 

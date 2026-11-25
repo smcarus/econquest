@@ -14,7 +14,7 @@ import type { OpenDataSnapshot } from '../types/council';
 import type { ToolTarget } from '../data/toolsCatalog';
 import { getSnapshotDataStatus } from './dataStatus';
 
-export type WorkedExampleId = 'debt' | 'inflation' | 'currency' | 'policy';
+export type WorkedExampleId = 'debt' | 'inflation' | 'currency' | 'policy' | 'commodity';
 
 /** A figure a step reads, by its snapshot path ('imf.debtToGdpPct'). */
 export interface WorkedFigureDef {
@@ -208,6 +208,44 @@ export const WORKED_EXAMPLES: WorkedExample[] = [
       },
     ],
   },
+  {
+    id: 'commodity',
+    title: 'A commodity price fall',
+    question: 'What happens if the price of the main export falls by a fifth?',
+    learn: 'How dependence on fuel, metals or food exports turns a world price fall into a shock to export earnings, the current account and the reserves that cushion it.',
+    figures: [
+      { path: 'wb.exportFuelPct', label: 'Fuel exports', unit: '% of goods exports' },
+      { path: 'wb.exportOresMetalsPct', label: 'Ores and metals exports', unit: '% of goods exports' },
+      { path: 'wb.exportFoodPct', label: 'Food exports', unit: '% of goods exports' },
+      { path: 'imf.currentAccountImfPct', label: 'Current account balance', unit: '% of GDP' },
+      { path: 'wb.fxReservesMonthsImport', label: 'Reserves', unit: 'months of imports' },
+    ],
+    steps: [
+      {
+        title: 'Read the starting figures',
+        text: 'The three export shares show how much of what the country sells abroad is fuel, metals or food, whose prices are set on world markets. The larger the share, the more a world price fall cuts export earnings.',
+        ask: 'Which commodity matters most for this country, and how large is its share?',
+      },
+      {
+        title: 'Size the shock',
+        text: 'The working below multiplies the commodity share by a 20% price fall: the share of goods export earnings that would be lost if volumes stayed the same. The Commodity prices and terms of trade panel shows how the country\u2019s export and import prices have actually moved.',
+        where: 'Research > History & data > Commodity prices and terms of trade',
+        target: { area: 'country', tab: 'history', anchor: 'tool-commodity-terms' },
+        ask: 'Would the loss turn the current account from surplus to deficit, or widen a deficit?',
+      },
+      {
+        title: 'Check the cushion',
+        text: 'Reserves pay for imports while earnings recover. Compare them with the three-month rule of thumb, and see the Reserve adequacy panel for the IMF\u2019s fuller measure.',
+        where: 'Research > History & data > Reserve adequacy',
+        target: { area: 'country', tab: 'history', anchor: 'tool-reserve-adequacy' },
+        ask: 'How long could reserves cover imports if earnings fell this much?',
+      },
+      {
+        title: 'Write the memo',
+        text: 'The draft below holds the question, the figures with their sources and years, the working, and space for your own answers. Copy or download it, then write your conclusion in your own words.',
+      },
+    ],
+  },
 ];
 
 export const WORKED_MISSING = 'Missing: no live figure is saved for this country yet (Menu > Data health shows why).';
@@ -289,6 +327,16 @@ export function workedLines(example: WorkedExample, figures: WorkedFigure[]): Wo
     const [m] = v;
     return [{ label: 'Reserves against the three-month line', value: r1(m - 3), unit: 'months', working: `${fmt(m)} − 3 = ${fmt(m - 3)}`, note: m >= 3 ? 'Above the rule-of-thumb minimum.' : 'Below the rule-of-thumb minimum.' }];
   }
+  if (example.id === 'commodity') {
+    const v = need(['wb.exportFuelPct', 'wb.exportOresMetalsPct', 'wb.exportFoodPct']);
+    if (missed(v)) return [{ label: 'Goods export earnings lost to a 20% price fall', unit: '% of goods exports', needs: v }];
+    const [fu, me, fo] = v;
+    const share = fu + me + fo;
+    return [
+      { label: 'Commodity share of goods exports', value: r1(share), unit: '% of goods exports', working: `${fmt(fu)} + ${fmt(me)} + ${fmt(fo)} = ${fmt(share)}` },
+      { label: 'Goods export earnings lost to a 20% price fall', value: r1(share * 0.2), unit: '% of goods exports', working: `${fmt(share)} × 0.2 = ${fmt(share * 0.2)}`, note: 'If volumes stay the same and every commodity price falls by a fifth; in practice prices move by different amounts.' },
+    ];
+  }
   const v = need(['imf.overallBalancePct', 'imf.debtToGdpPct']);
   if (missed(v)) return [{ label: 'Overall balance with the plan', unit: '% of GDP', needs: v }];
   const [bal, d] = v;
@@ -363,7 +411,7 @@ export function workedTexts(): string[] {
     for (const f of e.figures) [f.label, f.unit].forEach((s) => out.add(s));
     for (const s of e.steps) [s.title, s.text, s.where, s.ask].forEach((x) => x && out.add(x));
   }
-  for (const l of ['Nominal growth', 'Primary balance that holds debt steady', 'Gap to the actual primary balance', 'Real policy rate', 'Reserves against the three-month line', 'Overall balance with the plan', 'Debt after one year, if borrowed', 'points of GDP', 'months', 'Positive means the budget would need to improve by this much to hold debt steady.', 'The inflation figure is for its IMF year, so the real rate today may differ.', 'Above the rule-of-thumb minimum.', 'Below the rule-of-thumb minimum.', 'Before the effect of growth and inflation.'])
+  for (const l of ['Nominal growth', 'Primary balance that holds debt steady', 'Gap to the actual primary balance', 'Real policy rate', 'Reserves against the three-month line', 'Overall balance with the plan', 'Debt after one year, if borrowed', 'points of GDP', 'months', 'Positive means the budget would need to improve by this much to hold debt steady.', 'The inflation figure is for its IMF year, so the real rate today may differ.', 'Above the rule-of-thumb minimum.', 'Below the rule-of-thumb minimum.', 'Before the effect of growth and inflation.', 'Commodity share of goods exports', 'Goods export earnings lost to a 20% price fall', 'If volumes stay the same and every commodity price falls by a fifth; in practice prices move by different amounts.'])
     out.add(l);
   return [...out];
 }

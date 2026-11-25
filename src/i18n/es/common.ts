@@ -8,6 +8,10 @@ export const COMMON_ES: Partial<Record<keyof typeof COMMON.en, string>> = {
   appFailed: 'Algo falló al dibujar la app',
   appFailedBody: 'Sus datos guardados están a salvo. Recargue para intentarlo de nuevo. Si sigue pasando, el error de abajo ayuda a encontrar la causa.',
   reload: 'Recargar',
+  copyDetails: 'Copiar los detalles',
+  copied: 'Copiado',
+  reportProblem: 'Informar de este problema',
+  reportNote: 'Informar de este problema abre una nueva incidencia en GitHub con estos detalles ya escritos. No se envía nada hasta que usted mismo lo envíe.',
   badgeTitle: '{name}: {label}. {more} Haga clic para ver el registro.',
   stricterFail: 'Superada, no supera la comprobación más estricta',
 };

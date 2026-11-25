@@ -6,7 +6,7 @@ import { AUDIT_FILES, DATA_DIR } from '../config';
 import type { Platform } from '../../platform/types';
 import { createNodePlatform } from '../../platform/node';
 import { isCountryIso3 } from '../../data/iso3166';
-import { SOVEREIGN_CATALOG } from '../../data/presetsAndBaselines';
+import { SOVEREIGN_CATALOG, catalogEntry } from '../../data/presetsAndBaselines';
 import { BUDGET_EXEC_FOLDER, BUDGET_TEMPLATE, budgetSentence, budgetView, deleteBudget, loadBudget, saveBudget } from '../../engine/budgetExecution';
 
 /**
@@ -47,7 +47,7 @@ export function registerBudgetExecutionRoutes(app: express.Express, deps: Budget
     const f = await loadBudget(platform, iso3);
     if (!f) return res.json({ iso3, loaded: false, folder: `data/${BUDGET_EXEC_FOLDER}` });
     const v = budgetView(f);
-    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ loaded: true, ...v, sentence: budgetSentence(v, name), folder: `data/${BUDGET_EXEC_FOLDER}` });
   });
 

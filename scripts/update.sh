@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Brings this folder and the running app up to date in one step:
-#   1. git pull (fast-forward only; stops and says why if it cannot)
+#   1. git pull (fast-forward only; files the app wrote itself are backed up and put back first;
+#      stops and says why if a file you changed is in the way)
 #   2. npm install, only when package.json or package-lock.json changed
 #   3. rebuilds and restarts the Docker app (port 3737) when Docker runs it; `git pull` alone does
 #      not update the Docker image
@@ -13,12 +14,11 @@ cd "${ROOT}"
 
 before="$(git rev-parse HEAD)"
 echo "[1/3] Pulling the latest code..."
-if ! git pull --ff-only; then
-  echo
-  echo "git pull stopped. Common causes:"
-  echo "  - Untracked files under tests/fixtures/recorded:"
-  echo "      mv tests/fixtures/recorded ~/recorded-backup && npm run update"
-  echo "  - Files you changed in this folder: see 'git status'; keep a copy, then 'git checkout -- <file>'."
+# Files the app writes itself (generated docs, recorded test data) are backed up to
+# data/local/backups/ and put back first, so they cannot block the pull (scripts/safe-pull.sh).
+# shellcheck source=scripts/safe-pull.sh
+source "${ROOT}/scripts/safe-pull.sh"
+if ! safe_pull; then
   exit 1
 fi
 after="$(git rev-parse HEAD)"

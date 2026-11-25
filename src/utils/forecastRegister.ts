@@ -8,6 +8,14 @@ export const REGISTER_FORECAST_IDS: Record<string, string[]> = {
   gdp_nowcast: ['gdp_nowcast'],
   app_forecasts: ['cpi_nowcast', 'gdp_forecast', 'cpi_forecast', 'policy_rate_forecast', 'debt_forecast'],
   debt_fan: ['debt_fan_coverage'],
+  fx_vol_garch: ['fx_vol_garch'],
+  penalized_nowcast: ['gdp_nowcast_ridge', 'gdp_nowcast_lasso'],
+  arma_forecasts: ['gdp_forecast_arma', 'cpi_forecast_arma'],
+  dfm_nowcast: ['gdp_nowcast_dfm'],
+  forest_nowcast: ['gdp_nowcast_forest'],
+  gap_model_estimated: ['cpi_gap_model'],
+  quantile_bands: ['gdp_forecast_quantile'],
+  realtime_forecasts: ['gdp_forecast_realtime', 'cpi_forecast_realtime', 'gdp_weo_realtime', 'cpi_weo_realtime', 'gdp_forecast_realtime_oecd', 'cpi_forecast_realtime_oecd'],
   // Currency factor tests (docs/validation/signals/, npm run signals:evaluate) use the same verdict shape.
   fx_carry: ['fx_carry'],
   fx_value: ['fx_value'],
@@ -23,6 +31,27 @@ export interface ForecastVerdict {
   ranAt: string;
   /** Currency factor tests: how the strategy lost when it lost (src/utils/fxFactors.ts crashSentence). */
   crash?: string;
+  /** Forecast evaluations: per-horizon scores, read for the "also reported" line. */
+  horizons?: Array<{ h: number; alsoAgainst?: Array<{ benchmark: string; relRmse: number; cases?: number }>; distribution?: { crps: number; crpsRatio: number; intervalScore90: number; pinball: number } | null }>;
+}
+
+const OTHER_BENCH: Record<string, string> = { naive: 'last value', mean: 'historical mean', drift: 'random walk with drift', seasonal_naive: 'seasonal naive', imf: "the IMF's projection in the same edition" };
+
+/**
+ * One plain line of what the evaluation also reports beside its verdict (never part of it): the
+ * relative RMSE against the other simple benchmarks and how good the model's band is (CRPS ratio:
+ * below 1 means the band beats the benchmark's single number). Empty for older result files.
+ */
+export function alsoReported(v: ForecastVerdict): string {
+  const parts: string[] = [];
+  for (const h of v.horizons || []) {
+    const bits: string[] = [];
+    const also = (h.alsoAgainst || []).map((a) => `${OTHER_BENCH[a.benchmark] || a.benchmark} ${a.relRmse}${a.cases ? ` (${a.cases} cases)` : ''}`);
+    if (also.length) bits.push(`relative RMSE against ${also.join(', ')}`);
+    if (h.distribution) bits.push(`band CRPS ratio ${h.distribution.crpsRatio}, 90% interval score ${h.distribution.intervalScore90}`);
+    if (bits.length) parts.push(`${h.h} ahead: ${bits.join('; ')}`);
+  }
+  return parts.length ? `Also reported (not part of the verdict): ${parts.join('. ')}.` : '';
 }
 
 /** Passed only when every evaluation behind the entry passed; failed when any failed; else none. */

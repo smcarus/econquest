@@ -12,7 +12,7 @@
  *
  * Nothing here changes a figure: it says what to check.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { Activity, RefreshCw, X } from 'lucide-react';
 import type { ConnectionState } from '../utils/connectionCheck';
 import { ENDED_NOTE, possiblyEnded, type SourceHealth } from '../utils/dataHealth';
@@ -105,6 +105,9 @@ function SourcesView() {
   const failing = data?.sources.filter((s) => FAILING.has(s.state)) || [];
   // Flags and answer ratings (roadmap P2, P3): counts only, from data/local/feedback.jsonl.
   const feedback = useJson<{ line: string }>('/api/feedback/summary');
+  // Feeds serving their last good answer while the source does not answer (src/server/lastGood.ts).
+  const summary = useJson<{ savedStandIns?: Array<{ feed: string; key: string; savedAt: string; failingSince: string; nextTryAt: string }> }>('/api/data/health/summary');
+  const standIns = summary.data?.savedStandIns || [];
   return (
     <div className="space-y-3">
       {error && <p className="text-rose-600 dark:text-rose-400">{error}</p>}
@@ -132,9 +135,21 @@ function SourcesView() {
           Licence check due (terms last read over 12 months ago): {licencesDue().map((r) => r.name).join('; ')}. Read each source&apos;s terms again and update src/data/dataLicences.ts (docs/MAINTENANCE.md).
         </p>
       )}
+      {standIns.length > 0 && (
+        <div className="text-amber-700 dark:text-amber-400" data-health-standins="true">
+          <p>Showing saved figures because the source is not answering (each keeps its own dates; asked again automatically):</p>
+          <ul className="list-disc pl-5 text-xs">
+            {standIns.map((x) => (
+              <li key={`${x.feed}:${x.key}`}>
+                {x.feed.replace(/-/g, ' ')} {x.key}: saved {when(x.savedAt)}, failing since {when(x.failingSince)}, next try {when(x.nextTryAt)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {feedback.data && (
         <p className="text-xs text-slate-500 dark:text-slate-400" data-health-feedback="true">
-          Feedback: {feedback.data.line} `npm run feedback:export` writes the rated questions for the council test set.
+          Feedback: {feedback.data.line}
         </p>
       )}
       {data && !data.sources.length && <p>The first check runs tonight after {data.nightly.time}, or press Check now.</p>}
@@ -438,6 +453,8 @@ function ScheduledView() {
   );
 }
 
+const ReleaseWatchCard = lazy(() => import('./ReleaseWatchCard').then((m) => ({ default: m.ReleaseWatchCard })));
+
 function CalendarView() {
   const { data, error } = useJson<CalendarHealth>('/api/data/health/calendar');
   const short = (d: string | null) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '');
@@ -447,6 +464,9 @@ function CalendarView() {
       <p className="text-sm text-slate-600 dark:text-slate-300">
         Central bank, release, election and budget dates are typed in by hand from each source page (src/data/officialCalendar.ts), so they go out of date unless someone reads the pages again. This lists what to check; it never adds or moves a date.
       </p>
+      <Suspense fallback={null}>
+        <ReleaseWatchCard />
+      </Suspense>
       {data && (
         <p className="text-sm">
           {data.needsLook ? `${data.needsLook} item${data.needsLook === 1 ? '' : 's'} to check.` : 'Nothing to check: every schedule runs beyond the next two months and was read recently.'}

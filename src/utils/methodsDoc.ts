@@ -39,6 +39,8 @@ export interface RecordedVerdict {
   method?: number;
   /** The p the verdict was judged on, copied from the run (older rows state it only in the summary). */
   p?: number;
+  /** When `p` came from a later run of the same test file with the same verdict (rows recorded before rows carried p). */
+  pRanAt?: string;
   summary: string;
 }
 
@@ -103,7 +105,7 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
       'Capital account: the Chinn-Ito index (Chinn and Ito 2006, Journal of Development Economics 81(1)), openness in law from the IMF AREAER, read from the authors\' file in data/local/chinn-ito/ (fetched by the daily start-up run or npm run chinn-ito:pull). The latest year on file, scaled 0 (least open) to 1 (most open), where it sits among all countries that year, the change over five years, and the index as published.',
       'Economy: government debt, real growth, inflation (IMF WEO, latest outturn year, projections left out), current account, reserves in months of imports and external debt (World Bank), against five years earlier.',
       'No overall score: any weighting of the pillars would be a guess, and one number would look more certain than the figures are.',
-      'Pre-registered test (scorecard_default v1, registered 13 November 2026, runner not built yet): a country-year whose plain average of the six WGI estimates is in the bottom quarter of countries that year, used from the end of the next year (WGI is published a year late), is a call that a sovereign default starts (BoC-BoE: debt in default goes from zero to above zero) in the following three years. Base rate: all country-years not already in default, pooled. Method 2: whole years resampled, p at most 0.05, a lift of at least 3 points, 30 cases over 15 years. The average is fixed for the test only and is not shown as a score.',
+      'Pre-registered test (scorecard_default v1, registered 13 November 2026, runner built 19 November 2026; no verdict until its first run): a country-year whose plain average of the six WGI estimates is in the bottom quarter of countries that year, used from the end of the next year (WGI is published a year late), is a call that a sovereign default starts (BoC-BoE: debt in default goes from zero to above zero) in the following three years. Base rate: all country-years not already in default, pooled. Method 2: whole years resampled, p at most 0.05, a lift of at least 3 points, 30 cases over 15 years. The average is fixed for the test only and is not shown as a score.',
     ],
     limits: 'WGI and UCDP are yearly and lag a year or more. WGI estimates are built from surveys and expert ratings and carry wide margins of error; small changes are within them. GDELT counts news reports, which rise with media attention. Figures not on file are listed as missing with the reason.',
     code: 'src/utils/countryRiskScorecard.ts',
@@ -237,7 +239,7 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     where: 'Council chat > a Chart Agent chart > Replication pack',
     method: [
       'data.csv holds the lines the chart drew, one row per date (or country, x, y for a chart across countries); trend lines the HP test adds are left out and recomputed.',
-      'replicate.py, replicate.R and replicate.do run the tests the chart ran on the first two columns, on the rows where both have a value: correlation, OLS regression, lead/lag (up to 1.5 years of rows either way), Granger F test, rolling correlation (3 years of rows, at least 8), ADF with a constant, its lag chosen by AIC on one common sample and the test refitted at that lag on every usable row, as statsmodels adfuller does (MacKinnon 2010 critical values), the HP filter as a linear solve with the app\'s lambda, and where the first line stands.',
+      'replicate.py, replicate.R and replicate.do run the tests the chart ran on the first two columns, on the rows where both have a value: correlation, OLS regression, lead/lag (up to 1.5 years of rows either way), Granger F test, rolling correlation (3 years of rows, at least 8), ADF with a constant, its lag chosen by AIC on one common sample and the test refitted at that lag on every usable row, as statsmodels adfuller does (MacKinnon 2010 critical values), KPSS with a constant and the Hobijn et al. (1998) lag (Python file only), the HP filter as a linear solve with the app\'s lambda, and where the first line stands.',
       'The README lists each column with its label, unit, source and credit, the settings, and the app\'s readings and figures to check against.',
     ],
     limits: 'A saved chart keeps its latest 600 points per line; the app ran its tests on every point, so a longer sample can give slightly different figures (the README says so when it applies). The Python and R scripts were checked against the app\'s figures; the Stata script follows the same steps.',

@@ -16,7 +16,9 @@ import { lazyNamed } from './LazyDesk';
 const ReviewWatchPanel = lazyNamed(() => import('./ReviewWatchPanel'), 'ReviewWatchPanel');
 // Inflation surprise index (R10), also on its own.
 const SurpriseIndexCard = lazyNamed(() => import('./SurpriseIndexCard'), 'SurpriseIndexCard');
-import { AskCouncilPanel, CouncilAgentsPanel, useCouncilHasQuestion, type FullCouncilStep } from './AskCouncilPanel';
+// Release days (CG3), also on its own.
+const ReleaseWatchCard = lazyNamed(() => import('./ReleaseWatchCard'), 'ReleaseWatchCard');
+import { AskCouncilPanel, CouncilAgentsPanel, type FullCouncilStep } from './AskCouncilPanel';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 import { MissingSources, WatchlistTable } from './WatchlistTable';
 import { useT } from '../i18n/useLang';
@@ -213,10 +215,8 @@ export const TodayPage: React.FC<{
       /* private window */
     }
   };
-  // The Agents side panel on the left. Until you open or close it yourself, it opens on a wide
-  // screen once a question is asked (before that it would only say "no question yet"); on a phone it
-  // stays closed. Your own choice is remembered.
-  const hasQuestion = useCouncilHasQuestion();
+  // The Agents side panel on the left. It stays closed until you open it, so the chat keeps the
+  // width (the answer names its agents and sources); your own choice is remembered.
   const [agentsPref, setAgentsPref] = useState<'open' | 'closed' | null>(() => {
     try {
       const v = localStorage.getItem(AGENTS_KEY);
@@ -226,8 +226,7 @@ export const TodayPage: React.FC<{
     }
     return null;
   });
-  const wide = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 1024px)').matches === true;
-  const agentsOpen = agentsPref ? agentsPref === 'open' : wide && hasQuestion;
+  const agentsOpen = agentsPref === 'open';
   const setAgentsOpen = (open: boolean) => {
     setAgentsPref(open ? 'open' : 'closed');
     try {
@@ -266,10 +265,10 @@ export const TodayPage: React.FC<{
       aria-expanded={briefing}
       aria-controls="ws-briefing"
       data-briefing-toggle="true"
-      aria-label={t('briefing')}
       title={`${t('briefingTitle')}${toFix > 0 ? (toFix === 1 ? t('briefingNeedsOne') : t('briefingNeedsMany', { n: toFix })) : ''}`}
     >
-      <PanelRight className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{t('briefing')}</span>
+      <PanelRight className="w-3.5 h-3.5" aria-hidden /> {/* Named by its own text, so the spoken name matches what is shown; on a phone the word is read but not shown. */}
+      <span className="sr-only sm:not-sr-only">{t('briefing')}</span>
       {toFix > 0 && (
         <span className="ml-0.5 inline-flex items-center gap-1" data-briefing-setup={toFix}>
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" aria-hidden />
@@ -515,6 +514,13 @@ export const TodayPage: React.FC<{
           <PanelBoundary name="Policy review watch">
             <React.Suspense fallback={null}>
               <ReviewWatchPanel countryName={(iso3) => byIso.get(iso3)?.countryName || iso3} />
+            </React.Suspense>
+          </PanelBoundary>
+        </div>
+        <div id="tool-release-watch" className="scroll-mt-4">
+          <PanelBoundary name="Release days">
+            <React.Suspense fallback={null}>
+              <ReleaseWatchCard countryName={(iso3) => byIso.get(iso3)?.countryName || iso3} />
             </React.Suspense>
           </PanelBoundary>
         </div>

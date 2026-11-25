@@ -44,8 +44,8 @@ test('with an IMF output gap the term counts and is named with its year', () => 
 test('no reading without live inputs: sample rates, sample inflation or no target each say what is missing', () => {
   const sample = taylorCheck({ iso3: 'BRA', policyRatePct: 10, policyRateSource: 'sample', cpiInflationPct: 4, cpiSource: 'sample' });
   assert.deepEqual(sample.ok ? [] : sample.missing, ['the BIS policy rate', 'live inflation']);
-  const egypt = taylorCheck({ iso3: 'EGY', policyRatePct: 20, policyRateSource: 'bis', cpiInflationPct: 12, cpiSource: 'live' });
-  assert.deepEqual(egypt.ok ? [] : egypt.missing, ["the central bank's inflation target"]);
+  const noTarget = taylorCheck({ iso3: 'ARG', policyRatePct: 20, policyRateSource: 'bis', cpiInflationPct: 12, cpiSource: 'live' });
+  assert.deepEqual(noTarget.ok ? [] : noTarget.missing, ["the central bank's inflation target"]);
   assert.equal(taylorCheck(undefined).ok, false);
 });
 

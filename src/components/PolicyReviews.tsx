@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { TeamControl } from './TeamControl';
 import type { PeopleExtras } from '../utils/peopleSummary';
 import { ClipboardList, Download, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 import { COUNCIL_MAX_YEARS, COUNCIL_SIZE_LABEL, COUNCIL_SIZE_UNITS, MARKET_KINDS, MARKET_LABEL, type MarketKind, REVIEW_STEPS, STEP_HINT, STEP_LABEL, STEP_STATE_LABEL, type CouncilSizeUnit, type PolicyReview, type ReviewFrame, type ReviewStep, type ReviewSummary, type StepState } from '../utils/policyReview';
@@ -14,6 +15,7 @@ import { LENSES, LENS_LABEL, LEVER_LABEL, MAX_USER_OPTIONS, type OptionsStep, ty
 import { withNotice } from '../utils/disclaimer';
 import { useLang, useT, useTx } from '../i18n/useLang';
 import { REPORTS } from '../i18n/messages/reports';
+import { RESEARCH } from '../i18n/messages/research';
 import { BehaviouralCheck } from './BehaviouralCheck';
 import { PrecedentFinder } from './PrecedentFinder';
 import { ReviewPeers } from './ReviewPeers';
@@ -24,7 +26,7 @@ import { PolicyCouncil } from './PolicyCouncil';
 import { councilChangedSince } from '../utils/policyCouncil';
 
 /**
- * Reports > Policy reviews: a guided, repeatable case file for one country and one problem.
+ * Policy review: a guided, repeatable case file for one country and one problem.
  * Frame > Diagnose > Options > Evidence > Memo > Outcomes; every step saved, hashed and audited.
  * See docs/POLICY_REVIEW.md. Kept on this computer in data/local/reviews.json.
  */
@@ -60,13 +62,14 @@ function runtimeConfig(): Record<string, unknown> {
 
 const emptyFrame = (iso3: string): ReviewFrame => ({ iso3, problem: '', goal: { indicator: '', direction: 'lower' }, constraints: [], asOf: today() });
 
-const FrameForm: React.FC<{ countries: Country[]; initial: ReviewFrame; submitLabel: string; onSubmit: (f: ReviewFrame) => Promise<void>; onCancel: () => void }> = ({ countries, initial, submitLabel, onSubmit, onCancel }) => {
+const FrameForm: React.FC<{ countries: Country[]; others?: Country[]; initial: ReviewFrame; submitLabel: string; onSubmit: (f: ReviewFrame) => Promise<void>; onCancel: () => void }> = ({ countries, others = [], initial, submitLabel, onSubmit, onCancel }) => {
   const [f, setF] = useState<ReviewFrame>(initial);
   const [constraints, setConstraints] = useState(initial.constraints.join('\n'));
   const [busy, setBusy] = useState(false);
   const goal = (patch: Partial<ReviewFrame['goal']>) => setF((x) => ({ ...x, goal: { ...x.goal, ...patch } }));
-  const known = countries.some((c) => c.iso3 === f.iso3);
+  const known = countries.some((c) => c.iso3 === f.iso3) || others.some((c) => c.iso3 === f.iso3);
   const t = useT(REPORTS);
+  const tr = useT(RESEARCH);
   const tx = useTx();
   return (
     <form
@@ -87,11 +90,30 @@ const FrameForm: React.FC<{ countries: Country[]; initial: ReviewFrame; submitLa
         <select className={INPUT} value={f.iso3} onChange={(e) => setF({ ...f, iso3: e.target.value })} required>
           <option value="">{t('pr_pick')}</option>
           {!known && f.iso3 && <option value={f.iso3}>{f.iso3}</option>}
-          {countries.map((c) => (
-            <option key={c.iso3} value={c.iso3}>
-              {c.countryName}
-            </option>
-          ))}
+          {others.length ? (
+            <>
+              <optgroup label={tr('onWatchlist')}>
+                {countries.map((c) => (
+                  <option key={c.iso3} value={c.iso3}>
+                    {c.countryName}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label={tr('otherCountries')}>
+                {others.map((c) => (
+                  <option key={c.iso3} value={c.iso3}>
+                    {c.countryName}
+                  </option>
+                ))}
+              </optgroup>
+            </>
+          ) : (
+            countries.map((c) => (
+              <option key={c.iso3} value={c.iso3}>
+                {c.countryName}
+              </option>
+            ))
+          )}
         </select>
       </label>
       <label className="block">
@@ -662,7 +684,8 @@ const OutcomesView: React.FC<{ o: OutcomesStep }> = ({ o }) => {
   );
 };
 
-export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: string }> = ({ countries = [], defaultIso3 = '' }) => {
+export const PolicyReviews: React.FC<{ countries?: Country[]; otherCountries?: Country[]; defaultIso3?: string }> = ({ countries = [], otherCountries: others = [], defaultIso3 = '' }) => {
+  const everyCountry = React.useMemo(() => [...countries, ...others], [countries, others]);
   const [list, setList] = useState<ReviewSummary[]>([]);
   const [error, setError] = useState('');
   const [creating, setCreating] = useState(false);
@@ -759,7 +782,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
     run(ownOnly ? 'own' : 'options', async () =>
       apply(await api(`/api/reviews/${encodeURIComponent(r!.id)}/options`, { method: 'POST', body: JSON.stringify({ userOptions: own.filter((o) => o.title.trim()), ownOnly, runtimeConfig: runtimeConfig() }) }))
     );
-  const name = (iso3: string) => countries.find((c) => c.iso3 === iso3)?.countryName || iso3;
+  const name = (iso3: string) => everyCountry.find((c) => c.iso3 === iso3)?.countryName || iso3;
 
   return (
     <section className="ui-panel" data-policy-reviews="true">
@@ -790,6 +813,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
           <FrameForm
             key={JSON.stringify(prefill)}
             countries={countries}
+            others={others}
             initial={prefill?.frame ?? emptyFrame(defaultIso3)}
             submitLabel={t('pr_start')}
             onCancel={() => {
@@ -884,6 +908,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                   <p className="ui-label">{t('pr_frameChangeNote')}</p>
                   <FrameForm
                     countries={countries}
+                    others={others}
                     initial={frame}
                     submitLabel={t('pr_saveFrame')}
                     onCancel={() => setEditingFrame(false)}
@@ -979,7 +1004,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
               <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="peers">
                 <h4 className="ui-section-title">2c. {t('pe_title')}</h4>
                 <p className="ui-label">{t('pe_hint')}</p>
-                <ReviewPeers review={r} iso3={frame.iso3} countries={countries} countryName={name} />
+                <ReviewPeers review={r} iso3={frame.iso3} countries={everyCountry} countryName={name} />
               </section>
             )}
 
@@ -1149,6 +1174,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
               {memo && opened!.states.memo === 'done' && (
                 <>
                   <SignOffControl briefId={r.id} kind="review" />
+                  <TeamControl kind="review" id={r.id} />
                   {lang !== 'en' && <p className="text-xs text-slate-500 dark:text-slate-400">{t('pr_memoEnglish')}</p>}
                   <MemoView m={memo} />
                   <p className="text-xs text-slate-500 dark:text-slate-400">

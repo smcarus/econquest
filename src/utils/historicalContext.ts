@@ -70,7 +70,7 @@ export function contextSentence(label: string, unit: string | undefined, c: Hist
   const u = unit?.startsWith('%') ? unit : unit ? ` ${unit}` : '';
   const pts = unit?.startsWith('%') ? ' points' : u;
   const rec = c.record ? (c.record.since ? `the ${c.record.kind} since ${c.record.since}` : `the ${c.record.kind} on record (since ${c.first})`) : null;
-  const parts = [`${label} was ${r2(c.value)}${u} in ${c.date}`];
+  const parts = [`${label} was ${r2(c.value)}${u} ${/^\d{4}-\d{2}-\d{2}$/.test(c.date) ? 'on' : 'in'} ${c.date}`];
   if (rec) parts.push(rec);
   parts.push(`higher than or equal to ${c.percentile}% of the ${c.observations} observations since ${c.first}`);
   if (c.yearAgo) parts.push(`${c.yearAgo.change >= 0 ? 'up' : 'down'} ${Math.abs(c.yearAgo.change)}${pts} on ${c.yearAgo.date}`);

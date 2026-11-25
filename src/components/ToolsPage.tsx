@@ -6,6 +6,7 @@ import { HIDDEN_GROUPS, READY_BY_ID, READY_TOOLS, TOOL_CATEGORIES, type ReadyToo
 import { getSnapshotDataStatus } from '../utils/dataStatus';
 import { DSA_INPUTS } from '../utils/officialNote';
 import { DataConnectionsPanel } from './DataConnectionsPanel';
+import { searchTools } from '../utils/toolSearch';
 import { useT, useTx } from '../i18n/useLang';
 import { TOOLS, type ToolsT } from '../i18n/messages/tools';
 
@@ -117,6 +118,12 @@ export const ToolsPage: React.FC<{
   const statuses = useMemo(() => Object.fromEntries(READY_TOOLS.map((tool) => [tool.id, toolStatus(tool, items, run, t)])), [items, run, t]);
   const hiddenCount = HIDDEN_GROUPS.reduce((a, g) => a + g.desks.length, 0);
   const [showSources, setShowSources] = useState(false);
+  const [query, setQuery] = useState('');
+  const catTitle = useMemo(() => Object.fromEntries(TOOL_CATEGORIES.map((c) => [c.id, c.title])), []);
+  const found = useMemo(
+    () => searchTools(READY_TOOLS, query, (tool) => `${tx(tool.title)} ${tx(tool.what)} ${catTitle[tool.category]} ${tx(catTitle[tool.category])}`),
+    [query, tx, catTitle]
+  );
   const [open, setOpen] = useState<Set<string>>(loadOpenGroups);
   const toggle = (id: string) =>
     setOpen((prev) => {
@@ -156,7 +163,33 @@ export const ToolsPage: React.FC<{
         </div>
       </div>
 
-      <div className="ui-panel divide-y divide-slate-200 dark:divide-slate-800" data-ready-tools="true">
+      <label className="block">
+        <span className="sr-only">{t('tl_search')}</span>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t('tl_searchPh')}
+          aria-label={t('tl_search')}
+          className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+          data-tool-search="true"
+        />
+      </label>
+
+      {query.trim() && (
+        <div className="ui-panel" data-tool-search-results="true">
+          <p className="px-4 pt-3 ui-label">{found.length ? t('tl_matches', { n: found.length }) : t('tl_noMatch', { q: query.trim() })}</p>
+          {found.length > 0 && (
+            <ul className="px-4 pb-2 divide-y divide-slate-100 dark:divide-slate-800">
+              {found.map((tool) => (
+                <ToolRow key={tool.id} t={tool} s={statuses[tool.id]} showSources={showSources} onOpen={onOpen} />
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      <div className={`ui-panel divide-y divide-slate-200 dark:divide-slate-800 ${query.trim() ? 'hidden' : ''}`} data-ready-tools="true">
         {TOOL_CATEGORIES.map((c) => {
           const tools = READY_TOOLS.filter((tool) => tool.category === c.id);
           const isOpen = open.has(c.id);

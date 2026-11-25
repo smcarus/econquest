@@ -1,0 +1,58 @@
+/**
+ * "Report a problem" (standard features check, 24 November 2026): the text a person can copy when a
+ * screen fails to draw, and a link that opens a new GitHub issue with that text filled in. Nothing is
+ * sent by the app; the person reads the issue and sends it themselves, as with the Flag button
+ * (src/utils/feedback.ts). Browser-safe and small: the crash screen loads with the first page.
+ */
+
+/** Where flags and problem reports go (the project's public home). */
+export const ISSUE_REPO = 'e-conquest/econquest';
+
+export interface ProblemDetails {
+  /** App version, with its commit when known. */
+  version: string;
+  /** Which screen or panel failed ("The app" for the whole page). */
+  where: string;
+  message: string;
+  /** React's component stack, if any; trimmed. */
+  stack?: string;
+  /** The page path, without its query (which can hold a search). */
+  path?: string;
+  /** The browser's language setting in the app (en, es, fr, pt). */
+  lang?: string;
+}
+
+const STACK_LINES = 8;
+
+/** Plain text for the clipboard and the issue body. No figures, keys or saved data are included. */
+export function problemText(d: ProblemDetails): string {
+  const stack = (d.stack ?? '')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .slice(0, STACK_LINES);
+  return [
+    `EconQuest ${d.version}`,
+    `Where: ${d.where}`,
+    `Error: ${String(d.message).slice(0, 300)}`,
+    ...(d.path ? [`Page: ${d.path}`] : []),
+    ...(d.lang ? [`Language: ${d.lang}`] : []),
+    ...(stack.length ? ['Component stack:', ...stack.map((l) => `  ${l}`)] : []),
+  ].join('\n');
+}
+
+function issueLink(title: string, body: string): string {
+  return `https://github.com/${ISSUE_REPO}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+}
+
+/** A new issue for a screen that failed, with the details filled in. */
+export function problemIssueUrl(d: ProblemDetails): string {
+  const body = ['**What I was doing:** ', '', '```', problemText(d), '```', '', "_Details copied by the app's error screen and sent by the person who opened this issue._"].join('\n');
+  return issueLink(`Problem: ${d.where} could not be drawn`.slice(0, 120), body);
+}
+
+/** Menu > Report a problem: a new issue with only the version filled in. */
+export function blankProblemUrl(version: string): string {
+  const body = ['**What happened:** ', '', '**What I expected:** ', '', '**Steps to see it:** ', '', `- App version: ${version}`].join('\n');
+  return issueLink('Problem: ', body);
+}

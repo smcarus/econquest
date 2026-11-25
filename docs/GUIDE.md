@@ -7,8 +7,8 @@ app is installed and open in your browser (see [INSTALL.md](./INSTALL.md)). For 
 in detail, see the [user manual](./USER_MANUAL.md); for any term you do not know, the
 [glossary](./GLOSSARY.md).
 
-About the screenshots: they were taken on 13 November 2026 (four retaken or added on 17 November)
-from a local build of the main branch,
+About the screenshots: they were taken on 24 November 2026 (two, Quests and Peers, are from
+13 November) from a local build of the main branch,
 replaying feed replies recorded on 5 November 2026 from the sources whose terms allow passing data
 on, with no AI model set up. That is why many figures read **Missing** and the council shows no
 written summary in them. On your computer, with the feeds reachable and an AI model chosen, more
@@ -33,15 +33,21 @@ figures fill in and the council writes its summary.
 
 ## 1. The screen at a glance
 
-![Workspace: Council chat with example questions, the header buttons and the Briefing link](images/01-workspace.png)
+![Workspace on a first start: Council chat with example questions, the New here? Three steps card, the four page buttons and the Briefing link](images/01-workspace.png)
 
-- **Header, centre:** the three pages. **Workspace** (Council chat), **Research** (countries and
-  holdings) and **Reports**.
+- **Header, centre:** the four pages. **Workspace** (Council chat), **Research** (countries and
+  holdings), **Policy review** (step-by-step case files) and **Reports** (notes, briefs and
+  teaching material).
 - **Header, right:** **Council chat** (opens the chat beside Research or Reports), the **help level**
-  button (here *Key help*), the **language** button (*EN*), the light and dark switch, and **Menu**.
+  button (here *Key help*), the **language** button (*EN*), the light and dark switch (until you press it, the
+  app follows your computer's own setting), and **Menu**.
 - **Workspace, top right:** **Agents** shows which agents worked on the last answer; **Briefing**
   opens your inputs, watchlist, what moved and what is coming. "2 to set up" counts the setup steps
   still open.
+- **New here? Three steps** (first start only): ask a question, open Research to study one country,
+  and, if you like, add an AI model. **Choose an AI model** opens the settings; **Got it** hides the
+  card for good in this browser. Until an AI model works, Settings shows none picked and the Menu
+  says *AI: not set*: the app works without one.
 
 ## 2. First start: what to set up
 
@@ -53,7 +59,11 @@ figures fill in and the council writes its summary.
    your holdings and saved research. Press a line to change it.
 3. Add the free **FRED** key first (Menu > Settings > Free data keys). It fills official 10-year
    government bond yields for several countries.
-4. Press **Edit** on the watchlist card to add or remove countries.
+4. Press **Edit** on the watchlist card to add or remove countries. To follow poorer economies,
+   pick the **Lower-income countries** list: the 15 largest by region, from India and Nigeria to
+   Ghana and Bolivia. A country not in the app's list can be added with **Add a country** (in **Research > One country**, or in the watchlist editor); from
+   the next daily download it is saved like the others, so it gets history, "as of" views and alerts
+   (up to 25 added countries; any more are named on **Menu > Offline data** with the reason).
 5. Choose an AI model if you want written summaries ([section 8](#8-choose-an-ai-model)). Everything
    else works without one.
 
@@ -61,26 +71,39 @@ A new install shows dashes until the first data download finishes, which can tak
 
 ## 3. Ask the council a question
 
-![Council chat after a question: the answer block, the Agents panel showing Planner, Central Bank Watcher Agent and Synthesis agent, and follow-up suggestions](images/02-council-answer.png)
+![Council chat after "Which central banks look behind the curve?" with no AI model: the note that no AI summary was written, the Short answer by the app's stated rules for Japan, South Africa and Indonesia, then what the agents found](images/02-council-answer.png)
 
 1. On **Workspace**, type a question in plain words in the box at the bottom, for example "Which
    central banks look behind the curve?", or press one of the example questions.
-2. Press **Send**. The **Agents** panel on the left shows the work as it happens:
+2. Press **Send**. The answer comes first. Press **Agents** (top right) to open the panel that shows
+   the work:
    - **Planner** picks the agents that cover your question (by stated rules if no AI model is set).
    - **Desk agents** answer from the app's figures. Here the Central Bank Watcher covered 6 countries.
    - **Synthesis agent** writes a short brief that may quote only the agents' figures. Without an AI
      model it is skipped and says why, as in the screenshot.
-3. Open **Sources & actions** under the answer to see each agent's document, with every figure's
+
+   When every agent was asked for the same reason, the panel says it once.
+3. **Without an AI model**, a **Short answer, by the app's stated rules (not AI)** comes at the top.
+   For a "behind the curve" question it answers *No*, *Possibly* or *Not clearly* for each country,
+   from the Central Bank Watcher's call on policy and the gap to a simple Taylor rule. Other
+   questions get each country's calls and debt path in one line. Under it, **What the agents found**
+   gives each agent's lines with their figures.
+4. The **Missing** list under the answer is kept short: repeats are dropped, figures that are only
+   older than usual have their own heading (*Older than usual, so read with their date*), and what no
+   source the app reads publishes for the country is folded into one line. The count shows only what
+   could be filled. If you asked the same question before, **What changed** is one line when nothing
+   moved, and folded with its count when something did.
+5. Open **Sources & actions** under the answer to see each agent's document, with every figure's
    source and date, and to save it to Reports.
-4. Ask a follow-up in the same box, or press one of the suggested follow-ups. If you name no country,
-   the question covers your whole watchlist.
-5. **Options** under the box lets you pick countries, attach a policy document for the Document agent,
+6. Ask a follow-up in the same box, or press one of the suggested follow-ups under the answer. If you
+   name no country, the question covers your whole watchlist.
+7. **Options** under the box lets you pick countries, attach a policy document for the Document agent,
    or **Run the full council**: nine agents on three desks debate one country, and the app asks for
    your approval before the final report.
 
 **Ask what a change would do.** Council chat also answers what-if questions.
 
-![Council chat after a what-if question: the Scenario read from your question box with the Fed rate and the dollar and their sizes, the agents' findings, and the Agents panel with the Scenario Agent first](images/22-what-if.png)
+![Council chat after a what-if question: the Scenario read from your question box with the Fed rate and the dollar and their sizes, the short answer and the agents' findings, and the Agents panel opened with the Scenario Agent first](images/22-what-if.png)
 
 1. Ask the change in your own words, with its size: "What would happen to Brazil if the Fed raised
    rates by 1 point and the dollar strengthened 5%?" You can name a central bank or Fed rate,
@@ -230,8 +253,18 @@ now** pulls that country's figures again.
 12. The **Country risk scorecard** sets governance, armed conflict, unrest, geopolitical risk,
     capital account openness (the Chinn-Ito index, credited to Chinn and Ito 2006) and the economy
     side by side, each with its source and year. It gives no overall score. A test of whether weak
-    governance comes before a default was fixed in advance on 13 November 2026; until it is run the
-    panel's badge reads Not validated.
+    governance comes before a default was fixed in advance on 13 November 2026 and passed on its
+    first run (23 November 2026); as the test was registered, a pass does not turn the readings into
+    a score, so the scorecard itself still reads Not validated.
+
+13. More tools in History & data: **How shocks spread between economies** (a small global VAR:
+    pick where a surprise starts, growth or inflation, and its size; each economy's response over
+    five years with a 90% band, and the trade weight behind it), the **Estimated gap model** inside
+    the small gap model (shown only when its pre-registered test passed), **Official documents**
+    (World Bank reports and BIS central bankers' speeches for the country, each linked to the
+    publisher's page), and the **Macro lab** for teaching (aggregate demand and supply, and a debt
+    path, with sliders that start at zero). **Download offline report** saves a one-page HTML file
+    of the country's figures that opens without the app.
 
 ![Output gap chart for Brazil: the middle of three estimates with a band showing their spread, dashed for IMF projection years](images/07-output-gap.png)
 
@@ -261,6 +294,11 @@ projections. The sentence above the chart states the latest reading and where it
    changed from one World Economic Outlook to the next, once past editions are saved (see the panel's
    own note). Under its table, **Range from past IMF misses** puts a 70% and 90% range around the
    latest edition's projections, from how far past editions missed for this country.
+   **Official forecasts side by side** sets the growth and inflation forecasts of the IMF, the World
+   Bank (Global Economic Prospects) and the OECD (Economic Outlook) for this year and the next two
+   next to each other, with the spread between them; for the United States it adds the Philadelphia
+   Fed's Survey of Professional Forecasters from a file you save. These are official forecasts, not
+   a paid market consensus.
 
 ## 6. Compare countries
 
@@ -275,15 +313,26 @@ projections. The sentence above the chart states the latest reading and where it
    disagree** shows four countries until you press **Show all**.
 5. Press a country's name to open it on its own.
 
+For lower-income countries, some figures come from slower sources and say so on their label. Where no
+central bank or ECB daily exchange rate exists (for example the naira, the Kenyan shilling or the
+cedi), the history chart shows the IMF's monthly average rate per US dollar. Where the BIS does not
+publish a country's policy rate (for example Egypt, Nigeria, Kenya or Pakistan), the watchlist and
+country page show the IMF's monthly figure, labelled "IMF, monthly" with its month; it reads Missing
+when it is more than four months old. The inflation nowcast and forecast and the policy rate
+forecast (History & data) use the same IMF monthly figures for these countries and say they are the
+IMF's; a policy rate more than four months old gives no forecast. Inflation targets and central bank decision dates appear only
+where the bank's own page states them, so many of these countries show "no date on file".
+
 **My holdings**, the third view, does the same for a list of bonds or positions you load from a CSV
 file (Menu > Your data, or the template in the holdings screen).
 
 ## 7. Review a policy and write a report
 
-![Reports page: Policy reviews, Council documents and the report builder with a country note preview](images/11-reports.png)
+![Reports page: the Write a note tab with the report builder and a country note preview, and the Council documents, Notebooks and Teaching tabs](images/11-reports.png)
 
-**Reports** has five tabs, each on its own: **Write a note** (the report builder), **Policy reviews**,
-**Council documents** (documents you saved from Council chat), **Notebooks** and **Teaching**.
+**Reports** has four tabs, each on its own: **Write a note** (the report builder), **Council
+documents** (documents you saved from Council chat), **Notebooks** and **Teaching**. Policy reviews
+have their own page, **Policy review**, in the header.
 
 To write a report:
 
@@ -295,9 +344,10 @@ To write a report:
 
 To review a policy:
 
-![New policy review form: country, as-of date, the problem, the goal indicator, direction, target, constraints and who it is for](images/12-policy-review.png)
+![Policy review page with the New policy review form: country, as-of date, the problem, the goal indicator, direction, target, constraints, who it is for and the Policy council question switch](images/12-policy-review.png)
 
-1. Open the **Policy reviews** tab and press **New policy review**.
+1. Press **Policy review** in the header and then **New policy review**. **Start a policy review**
+   under a Council chat answer, and the policy review links in Tools, open the same page.
 2. Choose the country and the **As of** date (every later step reads the data as it stood on that day).
 3. Describe the problem in a sentence or two, for example "Inflation is well above target while
    growth is slowing and debt is rising".
@@ -372,9 +422,10 @@ Which model fits which computer, and the settings the app uses, are in the READM
 
 ## 9. Tools, data checks and the menu
 
-![Menu open: Settings, Tools, Offline data, Data health, Account, Audit log, Models & validation, Idea journal, Your data, Quests greyed out, Sharing mode, Exam mode, About & data licences, User manual, Worked examples](images/16-menu.png)
+![Menu open in three groups: Set up (Settings with AI: not set, Account, Offline data, Your data, Sharing mode, Exam mode, Find data), Check the data (Data health, Models & validation, Audit log, Idea journal) and Learn (User manual, Worked examples, About & data licences, Report a problem, Quests greyed out)](images/16-menu.png)
 
-**Menu** holds everything that is not a page. Items worth knowing first:
+**Menu** holds everything that is not a page, in three groups after **Tools**: *Set up*, *Check the
+data* and *Learn*. Items worth knowing first:
 
 - **Tools**: every tool grouped by what you want to do (keep up, screen and compare, study one
   country, look back, your portfolio, write and share), and **Data connections**.
@@ -383,21 +434,43 @@ Which model fits which computer, and the settings the app uses, are in the READM
 - **Settings > Research tools**: the address and token of a research-tools server you run yourself,
   for the Quant desk in Council chat. Off until both are set; **Test connection** lists the tools the
   token can see, and every call goes in the audit log, never the token.
-- **Data health**: which sources arrive, which fail, and which figures were revised. Its **Daily
-  download** tab follows the daily download as it runs: each part, what failed and why, sources that
-  need a key or a file, and what to download by hand.
-- **Models & validation**: the model register, test results and **Your tests**.
+- **Data health**: which sources arrive, which fail, and which figures were revised. While a source
+  does not answer, some figures show the last good answer with its own dates instead of Missing;
+  **Sources** lists which feeds are showing saved figures and when each is asked again. **Calendar**
+  has the **Release days** card (also on Today): official CPI and monthly activity releases from
+  yesterday to a week on, and "New today" once the new month has arrived (on a release day the app
+  asks that source again about once an hour). Its **Daily download** tab follows the daily download
+  as it runs: each part, what failed and why, the second try at the end of the run and later tries
+  after two hours, sources that need a key or a file, and what to download by hand.
+- **Models & validation**: the model register, test results, the **Track record** (39 tests on
+  record on 23 November 2026: 11 passed, 25 failed, 3 too few cases; each with its p and whether it
+  still holds once the number of tests is counted, and a month-by-month table of forecast calls
+  written down before the figure came out and scored after) and **Your tests**.
 - **Your data**: load your own series from a CSV file.
+- **Find data**: one search across the free catalogues (DBnomics, the IMF, the World Bank and
+  Eurostat), each result with its provider and a link to it.
+- **Settings > Your subscriptions > Your broker prices**: live prices for contracts you list from
+  your own Interactive Brokers account, through the IBKR Client Portal Gateway you run and sign in to
+  on your computer. Off by default; shown on screen only and never saved.
 - **Exam mode**: turns every AI step off for a class test.
-- **Worked examples**: four case studies from a question to a memo.
+- **Worked examples**: five case studies from a question to a memo.
+- **About & data licences**: the version, a short note on privacy ([PRIVACY.md](PRIVACY.md)), and
+  whether a newer version is out, with the steps to update. When one is, the Menu shows **New
+  version** beside About.
+- **Report a problem**: opens a new GitHub issue with the app version filled in. You read it and
+  send it yourself. If a screen fails to draw, its note has **Copy details** and **Report this
+  problem** too.
+- **Keyboard shortcuts**: press **?** for the list. **/** jumps to the council question box,
+  **Cmd+K** (Ctrl+K on Windows) searches the tools, **Cmd+,** opens Settings and **Esc** closes a
+  window. / and ? do nothing while you type in a box.
 - **Quests**: greyed out, "Not yet available" ([section 12](#12-try-quests)).
 
-![Settings > Tools: tools grouped by task, then Data connections with its source count](images/14-data-connections.png)
+![Menu > Tools: tools grouped by task, then Set up with Data connections and its source count](images/14-data-connections.png)
 
 To check which sources answer:
 
 1. Open **Menu > Tools**.
-2. Scroll to **Data connections** and press **Show sources**, or **Check again** to ask every source
+2. Scroll to **Data connections** and press **Show every source**, or **Check again** to ask every source
    now. Each source reads connected (with a figure it returned), needs setup, off, or why it failed.
 3. The same check runs in a terminal with `npm run check:data`.
 
@@ -435,7 +508,8 @@ connect is in [DATA_API.md](./DATA_API.md) and [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 1. Press the **language** button in the header (*EN*). Each press moves to the next language:
    English, Español, Français, Português. The choice is kept in this browser.
-2. Press the **help** button beside it to move between:
+2. Press the **help** button beside it. It opens the four levels, each with one line on what it
+   explains; press one to choose it:
    - **Key help** (the default): how to read each chart, what it means in real life, and *What is
      this?* on the main figures;
    - **Full help**: *What is this?* on every figure and term, and why each missing figure is missing;
@@ -443,7 +517,8 @@ connect is in [DATA_API.md](./DATA_API.md) and [DEPLOYMENT.md](./DEPLOYMENT.md).
    - **Expert**: figures, sources and forecast ranges, with no plain-language explanations.
 
 Figures, source names and series names stay as the source wrote them. Some lines the app writes about
-a country are still in English, as the screenshot shows; the council agents work in English.
+a country are still in English, as the screenshot shows; Council chat and the council answer in the language
+you pick; their agents still read questions best in English.
 
 | French | Portuguese |
 | --- | --- |

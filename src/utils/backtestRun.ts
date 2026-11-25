@@ -20,7 +20,7 @@ import { markImfProjections, parseImfYears } from './officialHistory';
 import { realTimeOutputGap } from './outputGap';
 import { areaSeries } from './oecdSdmx';
 import { CFTC_CURRENCY_CODES, CFTC_LABEL, cftcUrl, parseCftcRows } from './cftcPositioning';
-import { expectationsDirectionCases, hitRateSpec, yieldCurveCases, type CurveCountry, cftcCrowdingCases, cliTurnPolicyCases, cycleClockCases, regimeQuadrantCases, taylorGapCases, ruleFamilyCases, timingUnwindCases, unrestOnsetCases, judgeWithRobustness, sampleCases, spanOf, type BacktestCase, type BacktestResult, type BacktestSpec, type OpenCall } from './backtest';
+import { expectationsDirectionCases, hitRateSpec, yieldCurveCases, scorecardDefaultCases, WGI_CODES, type WgiTable, type CurveCountry, cftcCrowdingCases, cliTurnPolicyCases, cycleClockCases, regimeQuadrantCases, taylorGapCases, ruleFamilyCases, timingUnwindCases, unrestOnsetCases, judgeWithRobustness, sampleCases, spanOf, type BacktestCase, type BacktestResult, type BacktestSpec, type OpenCall } from './backtest';
 import { forwardStep, type ForwardBody } from './forwardRecord';
 import { onsetYears } from './unrestOnset';
 import type { V1Month } from './gdeltDaily';
@@ -31,6 +31,8 @@ import { EUROSTAT_GEO, parseEurostatHicp } from './nationalCpi';
 import { EU_PRICE_EXPECTATIONS, euSurveyUrl } from './euSurveys';
 import { FRED_10Y_SERIES } from './officialYields';
 import { parseFredCsvSeries } from './fedBalanceSheet';
+import { wbReplyHasRows, wgiUrls } from './wgiCodes';
+import { bocBoeEditions, bocBoeUrl, parseBocBoeCsv, type SovereignDefaults } from './sovereignDefaults';
 
 const EUROSTAT_API = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data';
 /** HICP annual rate, all items: prc_hicp_manr as registered (it stopped at December 2025), then its successor prc_hicp_minr for later months. */
@@ -153,7 +155,7 @@ async function pullHistory(fetcher: Fetcher, problems: string[], methods: Set<st
     fetcher(cftcUrl(new Date(), undefined, { since: '2006-06-01', limit: 50_000 })).then((t) => parseCftcRows(JSON.parse(t))).catch((e) => (problems.push(`CFTC did not answer (${e.message})`), null)),
     methods.has('taylor_gap') || methods.has('regime_quadrant') || methods.has('rule_family') ? fetcher(cpiUrl()).then((t) => parseCpi(t, 100_000)).catch((e) => (problems.push(`OECD consumer prices did not answer (${e.message})`), null)) : Promise.resolve(null),
   ]);
-  return { bis, cli, cftc, cpi, ...(methods.has('expectations_direction') ? await pullExpectations(fetcher, problems) : {}), ...(methods.has('yield_curve_recession') ? await pullCurve(fetcher, problems) : {}) };
+  return { bis, cli, cftc, cpi, ...(methods.has('expectations_direction') ? await pullExpectations(fetcher, problems) : {}), ...(methods.has('yield_curve_recession') ? await pullCurve(fetcher, problems) : {}), ...(methods.has('scorecard_default') ? await pullScorecard(fetcher, problems) : {}) };
 }
 
 /** FRED no-key CSV of a monthly series from 1990 (the long history the yield-curve test reads). */
@@ -184,6 +186,60 @@ async function pullCurve(fetcher: Fetcher, problems: string[]) {
   if (noYield.length) problems.push(`FRED 10-year yields did not answer for ${noYield.sort().join(', ')}`);
   if (noGrowth.length) problems.push(`IMF real GDP growth did not answer for ${noGrowth.sort().join(', ')}`);
   return { curveYields: Object.keys(yields).length ? yields : null, curveGrowth: Object.keys(growth).length ? growth : null };
+}
+
+/** World Bank WGI estimate for every country and year from 1996, one indicator, every page of the reply. */
+/** Addresses for one WGI estimate for every country and year from 1996, newest API form first (src/utils/wgiCodes.ts). */
+export const wgiAllUrls = (code: string, page = 1, toYear = new Date().getUTCFullYear()) => wgiUrls('all', code, `format=json&per_page=20000&date=1996:${toYear}&page=${page}`);
+
+/** Parses one page of a World Bank API v2 reply into the table; returns the number of pages. */
+export function parseWbPage(json: unknown, code: (typeof WGI_CODES)[number], into: WgiTable): number {
+  if (!Array.isArray(json) || json.length < 2 || !Array.isArray(json[1])) throw new Error('not a World Bank indicator reply');
+  for (const r of json[1] as Array<{ countryiso3code?: string; date?: string; value?: number | null }>) {
+    const iso3 = String(r?.countryiso3code || '').toUpperCase();
+    if (!/^[A-Z]{3}$/.test(iso3) || !/^\d{4}$/.test(String(r?.date)) || typeof r.value !== 'number' || !Number.isFinite(r.value)) continue;
+    ((into[iso3] ||= {})[String(r.date)] ||= {})[code] = r.value;
+  }
+  return Math.max(1, Number((json[0] as { pages?: number })?.pages) || 1);
+}
+
+/** The six WGI estimates for every country, and the newest BoC-BoE Sovereign Default Database edition (scorecard_default). */
+async function pullScorecard(fetcher: Fetcher, problems: string[]) {
+  const wgi: WgiTable = {};
+  const missing: string[] = [];
+  for (const code of WGI_CODES) {
+    try {
+      // The first address form whose first page holds data is used for every page.
+      let form = -1;
+      let pages = 1;
+      for (let i = 0; i < 3 && form < 0; i++) {
+        try {
+          const json = JSON.parse(await fetcher(wgiAllUrls(code, 1)[i]));
+          if (!wbReplyHasRows(json)) continue;
+          pages = parseWbPage(json, code, wgi);
+          form = i;
+        } catch {
+          // try the next form
+        }
+      }
+      if (form < 0) throw new Error('no address form answered with data');
+      for (let page = 2; page <= pages && page <= 20; page++) parseWbPage(JSON.parse(await fetcher(wgiAllUrls(code, page)[form])), code, wgi);
+    } catch {
+      missing.push(code);
+    }
+  }
+  if (missing.length) problems.push(`World Bank WGI estimates did not answer with data for ${missing.join(', ')} (tried GOV_WGI_<code> in source 3, the same without the source, and the old code)`);
+  let defaults: SovereignDefaults | null = null;
+  for (const edition of bocBoeEditions()) {
+    try {
+      defaults = parseBocBoeCsv(await fetcher(bocBoeUrl(edition)), edition, new Date().toISOString());
+    } catch {
+      defaults = null;
+    }
+    if (defaults) break;
+  }
+  if (!defaults) problems.push('The BoC-BoE Sovereign Default Database (Bank of Canada Valet) did not answer');
+  return { wgi: missing.length ? null : wgi, sovereignDefaults: defaults };
 }
 
 /** EC consumer survey price expectations and HICP inflation for every EU member, from 1999 (G32 test). */
@@ -352,6 +408,12 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
           countries.push({ where: iso3, yields: y, policy: pol.map((x) => ({ period: x.period, value: x.pct })), growth: g.map((x) => ({ year: Number(x.year), value: x.value })).filter((x) => Number.isFinite(x.year)) });
         }
         cases.push(...yieldCurveCases(s, countries, lastOutturnYear, open));
+        series = [...new Set(cases.map((c) => c.where))];
+      } else if (s.method === 'scorecard_default') {
+        if (!h.wgi || !h.sovereignDefaults) continue;
+        const d = h.sovereignDefaults;
+        data = `World Bank Worldwide Governance Indicators, estimates (${WGI_CODES.join(', ')}), today's vintage; Bank of Canada and Bank of England Sovereign Default Database, ${d.edition} edition (${d.span.from} to ${d.span.to}), total in default`;
+        cases.push(...scorecardDefaultCases(s, h.wgi, d, open));
         series = [...new Set(cases.map((c) => c.where))];
       } else {
         problems.push(`${s.id}: unknown method ${String(s.method)}`);
