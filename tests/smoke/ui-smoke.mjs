@@ -66,6 +66,8 @@ try {
     page.on('pageerror', (e) => failures.push(`${where}: page error: ${e.message}`));
     page.on('console', (m) => {
       if (m.type() === 'error' && m.text().startsWith('[panel-error]')) failures.push(`${where}: ${m.text().split('\n')[0]}`);
+      // The built app sends a strict Content-Security-Policy (src/utils/requestLimits.ts PRODUCTION_CSP).
+      if (m.type() === 'error' && /Content Security Policy/i.test(m.text())) failures.push(`${where}: blocked by the page's security policy: ${m.text().split('\n')[0]}`);
     });
 
     const settle = async (label) => {
