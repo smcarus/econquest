@@ -9,7 +9,7 @@
  * keys), the same history as the nightly check, and the end of the table says which sources
  * broke or came back since the last saved run.
  *
- * Reads the same .env as the app, and the keys saved in the app (Menu > Settings > API keys),
+ * Reads the same .env as the app, and the keys saved in the app (Menu > Settings > Free data keys),
  * which win over .env just as they do in the app. Keys are never printed. Needs no running server.
  */
 import dotenv from 'dotenv';

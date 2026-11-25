@@ -147,6 +147,10 @@ many figures read Missing in them; on a computer that reaches the feeds, more fi
 
 ## Quick start
 
+> **Not public yet.** The public copy at github.com/e-conquest/econquest and the ready-made app at
+> `ghcr.io/e-conquest/econquest` have not been published yet, so the download links and the
+> `git clone` address below do not work until they are. This note comes out on the day they go live.
+
 **New to this?** [docs/INSTALL.md](docs/INSTALL.md) is a plain-language, step-by-step guide: install
 Docker Desktop, download one file, and run the ready-made app. No building and no programming needed.
 
@@ -604,6 +608,7 @@ Where things stand on 24 November 2026 (details and status in [docs/ROADMAP.md](
 | [docs/HOME_SERVER.md](./docs/HOME_SERVER.md), [docs/KUBERNETES.md](./docs/KUBERNETES.md) | Running it for a household, team or class |
 | [docs/PRIVACY.md](./docs/PRIVACY.md) | What stays on your computer, what leaves it, and when |
 | [docs/SECURITY.md](./docs/SECURITY.md), [docs/SECURITY_REVIEW.md](./docs/SECURITY_REVIEW.md) | Accounts, sign-in (including OpenID Connect), sessions, the audit seal, and the security review |
+| [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | How the code fits together: how a figure travels from a source to the screen and the council, and where to start for common changes |
 | [docs/DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md) | UI rules for contributors |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | How to contribute, the research rules, and signing off commits |
 
@@ -628,7 +633,7 @@ npm run preload      # downloads every free feed for every country, for fast off
 page, TypeScript throughout. AI calls go through `src/server/ai.ts` to Ollama, Google Gemini or an
 OpenAI-compatible local server.
 
-**Layout.** `src/utils/` (one module per source or calculation, each with a test in `tests/`),
+**Layout.** The full map is [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). In short: `src/utils/` (one module per source or calculation, each with a test in `tests/`),
 `src/components/` (React pages and panels), `src/data/` (navigation, official calendar, country list),
 `src/i18n/` (English message files, with Spanish in `es/`, French in `fr/` and Portuguese in `pt/`),
 `quests/` (Quest files), `docs/validation/` (pre-registered tests and verdicts). Each panel sits inside

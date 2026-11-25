@@ -74,7 +74,11 @@ a reader can find the exact code. The version only changes when someone changes 
    release there once a day (`src/server/updateCheck.ts`) to tell people a newer version is out; a tag
    without a Release is not seen. Until the public repository has a release, About says "No public
    release yet".
-5. Once the repository is public, archive the tag on Zenodo so the release gets a DOI, and add the
+5. On the day the public repository and the image are first published, take out the "Not public
+   yet" note at the top of Quick start in the four READMEs and of "The ready-made app, step by step"
+   in `docs/INSTALL.md`, then follow INSTALL steps 1 to 4 on a computer that has never run EconQuest
+   (one Mac and one Windows PC) to check every link and command works.
+6. Once the repository is public, archive the tag on Zenodo so the release gets a DOI, and add the
    DOI to `CITATION.cff`.
 
 Docker builds pass the commit in (`APP_COMMIT`; `npm run go`, `start-mac.sh` and `update.sh` set it

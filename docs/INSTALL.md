@@ -102,6 +102,11 @@ the council chat, summaries, debates and plain-language explanations ("Choose yo
 
 ## The ready-made app, step by step
 
+> **Not public yet.** The public copy at github.com/e-conquest/econquest and the ready-made app at
+> `ghcr.io/e-conquest/econquest` have not been published yet, so the `compose.yml` link in step 2,
+> the app download in step 3 and the `git clone` address under "From the code" do not work until
+> they are. This note comes out on the day they go live.
+
 ### Step 1: Install Docker Desktop
 
 1. Go to [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/) and
@@ -154,15 +159,17 @@ curl -fsSLO https://raw.githubusercontent.com/e-conquest/econquest/main/deploy/q
 Open **http://localhost:3737** in your web browser. "localhost" means "this computer": the app is
 not on the internet, only on your machine.
 
-The first screen shows a **Getting started** card that ticks itself off as you go. A new install
-shows dashes until each source has answered, which can take a minute.
+The first screen shows Council chat with a short **New here? Three steps** card under the welcome:
+ask a question, open Research to study one country, and, if you like, add an AI model. **Got it**
+hides the card. The **Briefing** button lists what is still left to set up. A new install shows
+dashes until each source has answered, which can take a minute.
 
 ## On a modest laptop
 
 Light mode is a lighter way to run EconQuest, chosen when you install it:
 
 - **No AI model on your computer.** The council uses your own Google Gemini key if you add one
-  (free up to Google's daily limits; Menu > Settings > API keys). Without a key it stays off and
+  (free up to Google's daily limits; Menu > Settings > AI model). Without a key it stays off and
   says so. Every figure, chart and signal works without it. The council never falls back to a
   smaller, less reliable model: a step that needs the large referee says so instead.
 - **A smaller first download.** The GDELT 15-minute news files, about 3.4 GB of the 3.6 to 3.8 GB
@@ -198,7 +205,7 @@ Pick one in Menu > Settings > AI model. You can change your mind at any time.
 | Choice | What it costs | What it needs | Privacy |
 | --- | --- | --- | --- |
 | **No AI** | Nothing | Nothing | Nothing leaves your computer except requests for public figures |
-| **Google Gemini** | Free up to Google's daily limits, then Google bills your own key | A Gemini API key from [Google's Gemini API key page](https://ai.google.dev/gemini-api/docs/api-key), pasted into Menu > Settings > API keys | Your questions and the figures they use are sent to Google |
+| **Google Gemini** | Free up to Google's daily limits, then Google bills your own key | A Gemini API key from [Google's Gemini API key page](https://ai.google.dev/gemini-api/docs/api-key), pasted into Menu > Settings > AI model | Your questions and the figures they use are sent to Google |
 | **Ollama** (an AI model on your own computer) | Nothing | The free [Ollama app](https://ollama.com/download) and enough memory (below) | Everything stays on your computer |
 
 EconQuest uses two Ollama models. A small one (qwen2.5:7b) answers for each desk; a large one
@@ -241,7 +248,7 @@ docker compose exec ollama ollama pull qwen2.5:32b
    is working.
 2. **Add a free FRED key** (from the US Federal Reserve Bank of St. Louis,
    [request one here](https://fred.stlouisfed.org/docs/api/api_key.html)) in Menu > Settings >
-   API keys. It fills official 10-year government bond yields for several countries.
+   Free data keys. It fills official 10-year government bond yields for several countries.
 3. **Pick your countries:** Edit on the watchlist card. The G20 countries are there to start with.
 4. **Save the data for offline use** (optional): Menu > Offline data > Download all country data.
 5. **Set the help level** with the help button next to the dark-mode switch: Key help (the
@@ -413,7 +420,7 @@ names again; a full copy of the `data/` folder keeps them ([BACKUP_AND_RESTORE.m
 
 EconQuest installs no background service and no scheduled task: the daily download runs only when
 the app starts. Removing it takes the steps below for the way you installed it. If you want to keep
-what you made, first download a backup in Menu > Backup (keys are never in it).
+what you made, first download a backup in Menu > Settings > Backup (keys are never in it).
 
 **The ready-made app (Docker).** In a terminal, inside your `econquest` folder:
 

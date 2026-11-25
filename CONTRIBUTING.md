@@ -28,12 +28,21 @@ Every change has to keep these. Pull requests that break them are not merged, ho
 
 ## Set up
 
-You need Node.js 20.19 or later, or 22.12 or later.
+You need Node.js 20.19 or later, or 22.12 or later, and git.
 
 ```bash
+git clone https://github.com/e-conquest/econquest.git   # the public copy, once it is published
+cd econquest
 npm install
 npm run dev          # http://localhost:3000
 ```
+
+Settings go in a `.env` file in the repository folder; [.env.example](.env.example) lists every one
+with a line on what it does. None is needed to start.
+
+Before changing anything, read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the parts fit
+together, how one figure travels from a source to the screen and into a council answer, and where to
+start for common changes.
 
 Every figure works without an AI model. For the council, choose Ollama on your computer or a Gemini
 key in Menu > Settings > AI model. A free FRED key fills most 10-year yields. See
@@ -98,6 +107,8 @@ it, test it, and say in the pull request that a tool helped.
 
 ## Where things are
 
+The short table is below; [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) has the full map.
+
 | Path | What |
 | --- | --- |
 | `server.ts` | Express app start-up: routes, data pulls, caches and the archive |
@@ -109,6 +120,75 @@ it, test it, and say in the pull request that a tool helped.
 | `docs/validation/` | Pre-registered specs and recorded verdicts |
 | `scripts/` | Command-line jobs (`npm run check:data`, the daily run, backtests, evaluations, safe updates) |
 | `tests/smoke/` | Browser checks of the built app: every page, the main journeys, accessibility |
+
+## Add a data source, step by step
+
+A new source touches several places, because of the research rules above. Each step names the file
+to change; [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) section 2 explains how the parts connect. The
+official forecasts source (`src/server/feeds/officialForecasts.ts` and `src/utils/officialForecasts.ts`)
+is a complete recent example to copy from.
+
+1. **Read the terms first.** Add a row to `src/data/dataLicences.ts`: quote what the source's own
+   terms page says about showing the figures to others and about commercial use, with the date you
+   read it. If the page cannot be read or does not say, mark the row `not_verified`; never fill it in
+   from memory. Run `npm run docs:licences`. Then add a pattern for the source's name to
+   `SOURCE_PATTERNS` in `src/utils/licenceLookup.ts`, so sharing mode can hold back its figures when
+   the terms do not allow passing them on.
+2. **Write the parser as a plain function** in `src/utils/<source>.ts`: text or JSON in, figures out,
+   no network and no files. Every figure keeps its source label and date. When the reply has nothing
+   usable, return the reason, not a guess.
+3. **Test the parser on a real reply.** Save a small cut of a real reply in
+   `tests/fixtures/<source>/`, named with the date you saved it, and write `tests/<source>.test.ts`.
+   Never make up a reply by hand to stand in for a real one.
+4. **Fetch it.** Put the download in `src/server/feeds/<source>.ts`. Use `fetchWithTimeout` or
+   `fetchRetrying` from `src/server/http.ts`, send the app's own user agent (`RESEARCH_USER_AGENT` there,
+   never a fake browser one), and keep keys out of anything that is logged.
+   - A figure for one country goes into the country snapshot in
+     `src/server/snapshot/network.ts`, with an entry in `snapshot.liveFields` naming the source.
+   - A world-wide file is saved by the daily download: add a `world:` step to `preloadPlan` in
+     `src/utils/preload.ts` and a `case` for it in `runPreloadStep` in `server.ts` that saves the file
+     under `data/live/` and returns `done` or `failed` with a note.
+   - A file the user must download themselves is read by a store module (`src/utils/<source>Store.ts`)
+     from its own folder under `data/local/`, and never shipped.
+5. **Serve it from what is saved.** A route the page opens reads the saved copy and answers at once;
+   it never waits on the source. Put new routes in a file under `src/server/routes/` and register it
+   from `startServer` in `server.ts`.
+6. **Say why it is missing.** Every place that shows the figure shows **Missing** with a reason when
+   it is not there: needs setup (and where to set it up), the source did not answer, or no source yet.
+7. **Add a row to the source check.** Add the id to `SOURCE_IDS` and an `add('<id>', ...)` check in
+   `src/utils/connectionCheck.ts` that asks the source once and prints one figure it returned. This
+   is what `npm run check:data` and Menu > Data health show.
+8. **Show it.** A new panel loads only when opened (`lazyNamed`), sits inside a `PanelBoundary`,
+   and says what it measures, whose figure it is and how old it is. For a History & data tool, add an
+   entry to `COUNTRY_TOOL_GROUPS` in `src/utils/countryTools.ts`.
+9. **Screen text in four languages.** Add every new string to the English catalog in
+   `src/i18n/messages/` and to the Spanish, French and Portuguese files beside it.
+10. **Write it down.** Add the source to `docs/DATA_SOURCES.md` (what it fills and how to set it
+    up), a line to `CHANGELOG.md` under Unreleased, and, for a file the user saves, a row in the
+    "Files you save yourself" table in `docs/INSTALL.md`.
+11. **Check it live.** The tests never reach the network, so run `npm run check:data` on a computer
+    that reaches the source and say in the pull request what the new row printed. If you cannot reach
+    the source, say so; the maintainer will check it.
+
+## Changing what a model is asked
+
+Most of the app needs no AI model, and the Council chat agents are code, so changing what an agent
+says needs only its unit test. Changing anything a **model** is sent is different: a prompt, an
+instruction, a template, the inputs a step passes or its settings.
+
+`tests/councilRecorded.test.ts` replays real replies from the referee model, recorded in
+`tests/fixtures/council-recorded/`. When a change alters what the model would be asked, that test
+fails and names the first line that changed. That is expected, and the fix is a new recording, not a
+change to the test:
+
+- **If you have Ollama and a 32B model** (about 20 GB, best with 32 GB of memory), run
+  `npm run council:record -- --model qwen2.5:32b`. It uses an empty data folder and takes several
+  minutes. Read the answers it prints; if they are right, commit `tests/fixtures/council-recorded/`
+  with your change.
+- **If you do not,** open the pull request anyway and say in it that the council recording needs to
+  be made again. The maintainer records it on a computer that can, and the pull request waits for that.
+
+Never edit the files in `tests/fixtures/council-recorded/` by hand.
 
 ## Good first contributions
 

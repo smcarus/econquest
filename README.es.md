@@ -161,6 +161,11 @@ español.
 
 ## Inicio rápido
 
+> **Aún no es público.** La copia pública en github.com/e-conquest/econquest y la aplicación lista
+> para usar en `ghcr.io/e-conquest/econquest` todavía no se han publicado, así que los enlaces de
+> descarga y la dirección de `git clone` de abajo no funcionan hasta entonces. Esta nota se quitará el
+> día en que se publiquen.
+
 **¿Es nuevo en esto?** [docs/INSTALL.md](docs/INSTALL.md) (en inglés) es una guía paso a paso: instale
 Docker Desktop, descargue un archivo y ejecute la aplicación lista para usar. No hay que compilar ni
 programar.
