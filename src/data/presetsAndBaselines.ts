@@ -13,6 +13,7 @@ import {
   WatchlistGroup,
   WatchlistItem,
 } from '../types/council';
+import { lowIncomeCatalogItems } from './lowIncomeCatalog';
 
 /**
  * Puts a country the user added into the catalog. Names only: every figure is NaN (Missing) until a
@@ -425,7 +426,20 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     debtToGdpPct: N,
     fxReservesMonths: N,
   },
+  // Every other country on the IMF low-income debt list (src/data/lowIncomeCatalog.ts).
+  ...lowIncomeCatalogItems(),
 ];
+
+const LOW_INCOME_BY_ISO3 = new Map(lowIncomeCatalogItems().map((c) => [c.iso3, c]));
+
+/**
+ * A country's catalog entry. On the server the follow-only countries on the IMF low-income debt list
+ * leave SOVEREIGN_CATALOG until someone follows them (server.ts syncAddedCountries), so their name and
+ * currency are still found here.
+ */
+export function catalogEntry(iso3: string): WatchlistItem | undefined {
+  return SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3) ?? LOW_INCOME_BY_ISO3.get(iso3);
+}
 
 /**
  * The G20's 19 member countries, in the alphabetical order the G20 itself uses. The EU and the

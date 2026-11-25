@@ -10,33 +10,36 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { ADDED_COUNTRIES_KEY, ADDED_COUNTRIES_MAX, pickAddedCountries } from '../src/utils/addedCountries';
+import { LOW_INCOME_DEBT_ADDED_ISO3 } from '../src/data/lowIncomeCatalog.ts';
 import { SOVEREIGN_CATALOG } from '../src/data/presetsAndBaselines';
 
 const builtIn = new Set(SOVEREIGN_CATALOG.map((c) => c.iso3));
+/** What the server downloads with nothing followed: the built-in countries less the follow-only ones on the IMF low-income debt list. */
+const always = new Set([...builtIn].filter((iso3) => !LOW_INCOME_DEBT_ADDED_ISO3.includes(iso3)));
 const added = (list: unknown) => ({ [ADDED_COUNTRIES_KEY]: JSON.stringify(list) });
-const kenya = { iso3: 'ZMB', countryName: 'Zambia', region: 'Africa', currencyCode: 'zmw' };
+const kenya = { iso3: 'NAM', countryName: 'Namibia', region: 'Africa', currencyCode: 'nad' };
 
 test('added countries: valid ISO codes are taken, built-in and made-up codes are left out, each country once', () => {
   const pick = pickAddedCountries(
-    [added([kenya, { iso3: 'bra', countryName: 'Brazil' }, { iso3: 'XXX', countryName: 'Nowhere' }, { iso3: 'KE' }, 'text']), added([{ iso3: 'ZMB', countryName: 'Zambia again' }, { iso3: 'SEN', countryName: 'Senegal' }])],
+    [added([kenya, { iso3: 'bra', countryName: 'Brazil' }, { iso3: 'XXX', countryName: 'Nowhere' }, { iso3: 'KE' }, 'text']), added([{ iso3: 'NAM', countryName: 'Namibia again' }, { iso3: 'MAR', countryName: 'Morocco' }])],
     builtIn
   );
   assert.deepEqual(pick.countries, [
-    { iso3: 'ZMB', countryName: 'Zambia', region: 'Africa', currencyCode: 'ZMW' },
-    { iso3: 'SEN', countryName: 'Senegal', region: '', currencyCode: '' },
+    { iso3: 'NAM', countryName: 'Namibia', region: 'Africa', currencyCode: 'NAD' },
+    { iso3: 'MAR', countryName: 'Morocco', region: '', currencyCode: '' },
   ]);
   assert.deepEqual(pick.overLimit, []);
 });
 
 test('added countries: unreadable workspace values give nothing; a missing name falls back to the code', () => {
-  assert.deepEqual(pickAddedCountries([{ [ADDED_COUNTRIES_KEY]: 'not json' }, {}, { [ADDED_COUNTRIES_KEY]: '{"iso3":"ZMB"}' }], builtIn).countries, []);
-  assert.equal(pickAddedCountries([added([{ iso3: 'NPL' }])], builtIn).countries[0].countryName, 'NPL');
+  assert.deepEqual(pickAddedCountries([{ [ADDED_COUNTRIES_KEY]: 'not json' }, {}, { [ADDED_COUNTRIES_KEY]: '{"iso3":"NAM"}' }], builtIn).countries, []);
+  assert.equal(pickAddedCountries([added([{ iso3: 'LKA' }])], builtIn).countries[0].countryName, 'LKA');
 });
 
 test('added countries: at most the limit are taken, in the order added; the rest are named', () => {
-  const pick = pickAddedCountries([added([{ iso3: 'ZMB' }, { iso3: 'SEN' }, { iso3: 'NPL' }, { iso3: 'MWI' }])], builtIn, 2);
-  assert.deepEqual(pick.countries.map((c) => c.iso3), ['ZMB', 'SEN']);
-  assert.deepEqual(pick.overLimit, ['NPL', 'MWI']);
+  const pick = pickAddedCountries([added([{ iso3: 'NAM' }, { iso3: 'MAR' }, { iso3: 'LKA' }, { iso3: 'JAM' }])], builtIn, 2);
+  assert.deepEqual(pick.countries.map((c) => c.iso3), ['NAM', 'MAR']);
+  assert.deepEqual(pick.overLimit, ['LKA', 'JAM']);
   assert.equal(ADDED_COUNTRIES_MAX, 25);
 });
 
@@ -93,17 +96,26 @@ const onlineTotal = async () => ((await (await fetch(`${base}/api/online`)).json
 
 test('added countries server: a country in the workspace is in the download', async () => {
   const body = await preload();
-  assert.equal(body.summary.countriesTotal, builtIn.size + 1);
+  assert.equal(body.summary.countriesTotal, always.size + 1);
   assert.deepEqual(body.added, { overLimit: [], max: ADDED_COUNTRIES_MAX });
-  assert.equal(await onlineTotal(), builtIn.size + 1);
+  assert.equal(await onlineTotal(), always.size + 1);
 });
 
 test('added countries server: adding and removing a country on the page changes the download list', async () => {
   const put = (list: unknown) =>
     fetch(`${base}/api/workspace/${ADDED_COUNTRIES_KEY}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: JSON.stringify(list) }) });
-  assert.equal((await put([kenya, { iso3: 'SEN', countryName: 'Senegal', region: 'Africa', currencyCode: 'XOF' }, { iso3: 'BRA', countryName: 'Brazil' }])).status, 200);
-  assert.equal((await preload()).summary.countriesTotal, builtIn.size + 2);
+  assert.equal((await put([kenya, { iso3: 'MAR', countryName: 'Morocco', region: 'Africa', currencyCode: 'MAD' }, { iso3: 'BRA', countryName: 'Brazil' }])).status, 200);
+  assert.equal((await preload()).summary.countriesTotal, always.size + 2);
   assert.equal((await put([])).status, 200);
-  assert.equal((await preload()).summary.countriesTotal, builtIn.size);
-  assert.equal(await onlineTotal(), builtIn.size);
+  assert.equal((await preload()).summary.countriesTotal, always.size);
+  assert.equal(await onlineTotal(), always.size);
+});
+
+test('added countries server: a country on the IMF low-income debt list is downloaded once it is on a watchlist', async () => {
+  const putLists = (groups: unknown) =>
+    fetch(`${base}/api/workspace/sovereign_council_watchlists_v1`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: JSON.stringify(groups) }) });
+  assert.equal((await putLists([{ id: 'mine', name: 'Mine', items: [{ iso3: 'MWI' }, { iso3: 'BRA' }] }])).status, 200);
+  assert.equal((await preload()).summary.countriesTotal, always.size + 1);
+  assert.equal((await putLists([{ id: 'mine', name: 'Mine', items: [{ iso3: 'BRA' }] }])).status, 200);
+  assert.equal((await preload()).summary.countriesTotal, always.size);
 });
