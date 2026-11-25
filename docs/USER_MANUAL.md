@@ -1479,6 +1479,10 @@ built-in ones, so they also get saved history, the As-of day and alerts. At most
 are taken, in the order you added them; any beyond that are named on the Offline data page and are
 still fetched live when you open them.
 
+The 59 countries on the IMF and World Bank low-income debt list that were added to the built-in list
+on 25 November 2026 (src/data/lowIncomeCatalog.ts) join this pass only once they are on a saved
+watchlist. They do not count toward the 25. Until then they are fetched live when you open them.
+
 In the app: Menu > Offline data > *Download all country data*. The window shows the step running,
 countries ready, the size on disk and an estimate for what is left (the average of the countries
 already saved; "known after the first country" until then). You can close it; the download carries

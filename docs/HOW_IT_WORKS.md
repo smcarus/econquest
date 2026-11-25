@@ -1,6 +1,6 @@
 # How EconQuest works, in plain words
 
-**Version 1.6, 24 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
+**Version 1.7, 25 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
 validated advice.
 
 This guide explains, without jargon, where EconQuest's figures come from, what its AI does and does
@@ -151,9 +151,15 @@ can be withdrawn. Every comment and link is written in the log.
   the app to download or pass on their files; for those, you download the file yourself and put it in
   a folder the [install guide](./INSTALL.md#files-you-save-yourself) names, and until then the parts
   that need it read Missing.
-- **Fifteen lower-income countries on one list.** The *Lower-income countries* watchlist holds the 15
-  largest by region, from India and Nigeria to Ghana and Bolivia, and any country you add is saved by
-  the daily download like the built-in ones. Where the usual sources skip these countries, the IMF
+- **Fifteen lower-income countries on one list, and the poorest in every list.** The *Lower-income
+  countries* watchlist holds the 15 largest by region, from India and Nigeria to Ghana and Bolivia.
+  The 59 other countries on the IMF and World Bank low-income debt list, such as Malawi, Sierra
+  Leone, Haiti, Nepal and the small island states, are in every country list too. The app knows only
+  their names, regions and currencies; every figure comes from a feed or reads Missing. So the daily
+  download does not grow by 59 countries, one of them is saved each day only once you put it on a
+  watchlist; otherwise its figures are fetched when you open it. *Add a country* lists every country
+  in the world, with names in your language, and any country you add is saved by the daily download
+  like the built-in ones. Where the usual sources skip these countries, the IMF
   fills in, once a month: the exchange rate per US dollar, the central bank policy rate and consumer
   prices. The app's inflation nowcast and forecast and its policy rate forecast use these monthly IMF
   figures too, each labelled as the IMF's. A policy rate more than four months old reads Missing
@@ -544,8 +550,10 @@ Free public sources are sometimes slow, busy or down. The app tries to recover o
 - Updating the app never stops on files the app wrote itself; they are backed up and put back first.
 
 **What leaves your computer**, in one place ([PRIVACY.md](./PRIVACY.md)): requests for figures to
-the public sources; your questions to an online AI provider, only if you choose one; screen fonts
-from Google Fonts; and alerts, outside audit copies or sign-in, only if you set them up. Once a day,
+the public sources; your questions to an online AI provider, only if you choose one; and alerts,
+outside audit copies or sign-in, only if you set them up. The screens themselves ask no outside
+server for anything: the fonts, icons and scripts come with the app, and the app, as Docker and the start
+scripts run it, tells the browser to run only its own scripts and to talk only to its own server. Once a day,
 while the app is open, it asks GitHub for the newest release number so *About* can say when a newer
 version is out; it sends nothing about you, and `UPDATE_CHECK=off` turns it off. The app has no
 tracking, usage counts or crash reports. When a screen fails, *Report a problem* fills in a GitHub
@@ -608,5 +616,5 @@ other.
 
 ---
 
-*How EconQuest works, version 1.6 (24 November 2026). Text licensed under CC BY 4.0: you may share and
+*How EconQuest works, version 1.7 (25 November 2026). Text licensed under CC BY 4.0: you may share and
 adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*

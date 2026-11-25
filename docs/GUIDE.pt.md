@@ -61,10 +61,15 @@ exceto a da seção 10; os nomes dos botões aparecem aqui como no app em portug
    preenche os rendimentos oficiais dos títulos públicos de 10 anos de vários países.
 4. Clique em **Editar** no cartão da lista de acompanhamento para incluir ou tirar países. Para
    acompanhar economias mais pobres, escolha a lista **Países de baixa renda**: os 15 maiores por
-   região, da Índia e da Nigéria a Gana e à Bolívia. Um país que não está na lista do app pode ser
-   incluído com **Adicionar um país** (em **Pesquisa > Um país**, ou no editor da lista); a partir do
-   próximo download diário ele é salvo como os outros, com histórico, visões "em uma data" e alertas
-   (até 25 países incluídos; os demais aparecem em **Menu > Dados offline** com o motivo).
+   região, da Índia e da Nigéria a Gana e à Bolívia. Os 59 países da lista de dívida de baixa renda do
+   FMI e do Banco Mundial (Malaui, Serra Leoa, Haiti, Ruanda, Nepal, Camboja, os pequenos Estados
+   insulares e outros) também estão em todas as listas de países; o download diário salva um deles
+   assim que ele entra em uma lista de acompanhamento e, se não, os números são buscados quando você
+   o abre. Um país que não está na lista do app pode ser incluído com **Adicionar um país** (em
+   **Pesquisa > Um país**, ou no editor da lista), que mostra todos os países com o nome no idioma da
+   página; a partir do próximo download diário ele é salvo como os outros, com histórico, visões "em
+   uma data" e alertas (até 25 países incluídos; os demais aparecem em **Menu > Dados offline** com o
+   motivo).
 5. Escolha um modelo de IA se quiser resumos escritos ([seção 8](#8-escolher-um-modelo-de-ia)). Todo o
    resto funciona sem ele.
 

@@ -240,6 +240,13 @@ No new addresses. What changed for scripts:
 - **While a source does not answer**, five feeds keep their last good answer, with its own dates, as
   the screens do; past its limit the figure is Missing with the reason, as before.
 
+## Added on 25 November
+
+No new addresses. The 59 countries on the IMF and World Bank low-income debt list (Malawi `MWI`,
+Sierra Leone `SLE`, Haiti `HTI`, Nepal `NPL` and the others in `src/data/lowIncomeCatalog.ts`) can be
+asked for by alpha-2 or alpha-3 code like any other country. Saved history for one of them starts the
+day it goes on a watchlist; see *Country snapshot* below.
+
 ## How fast, and how often
 
 The addresses answer from the app's saved copies first; a first download that is slow finishes in
@@ -450,6 +457,12 @@ GET `/api/v1/countries/<code>/snapshot` (alpha-2 or alpha-3; a token with `read:
 every figure the app holds for one country. No council run is needed. It reads what the daily
 download saved and never fetches, so it can be called at any time. GET `/api/v1/countries` lists the
 watchlist countries with both codes.
+
+Any country in the app's lists can be asked for, including the 59 countries on the IMF and World Bank
+low-income debt list that are built in since 25 November 2026. The daily download saves one of those
+only once it is on a saved watchlist, and `/api/v1/countries` lists it only from then. Until then
+its snapshot holds what was saved the last time it was opened; for a country never opened, the
+first request reads Missing and starts a fetch in the background for the next one.
 
 - `figures`: the panel figures (policy rate, inflation, growth, debt, balances, reserves, yield,
   leading indicator, positioning, Treasury holdings).

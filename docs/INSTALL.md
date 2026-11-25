@@ -351,7 +351,12 @@ The daily download keeps a few more files in `data/live/` for the tools added on
 | `data/local/release-watch.json` | Which CPI and monthly activity releases were re-read on their release day (`RELEASE_WATCH=off` in `.env` turns this off) | On release days, about once an hour |
 
 Countries you add with Menu > Add a country are part of the daily download too (up to 25), so their
-figures are saved under `data/live/` like the built-in countries'.
+figures are saved under `data/live/` like the built-in countries'. Add a country lists every country.
+
+The 59 countries on the IMF and World Bank low-income debt list (Malawi, Sierra Leone, Haiti, Nepal,
+the small island states and others) are built in and show in every country list, but the daily
+download saves one only once it is on a saved watchlist; the others are fetched when you open them.
+They do not count toward the 25 added countries. This keeps the daily run about as long as before.
 
 Research notebooks, with their pinned figures and fingerprints, are kept in `data/local/research.json`.
 

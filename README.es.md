@@ -540,12 +540,18 @@ Situación al 24 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./docs/ROADM
     los detalles e Informar de un problema, una pregunta antes de borrar una lista de seguimiento,
     seguir el modo claro u oscuro de la computadora, los pasos para quitar la aplicación y atajos de
     teclado.
+22. **Revisión para la publicación y los países más pobres** (25 de noviembre): una segunda revisión
+    de seguridad y una política de seguridad más estricta para las páginas de la aplicación compilada;
+    Añadir un país muestra todos los países, no solo los del mapa del mundo; los 59 países de la lista
+    de deuda de bajos ingresos del FMI y del Banco Mundial (Malawi, Sierra Leona, Haití, Nepal, los
+    pequeños estados insulares y otros) están en todas las listas de países y la descarga diaria los
+    guarda en cuanto están en una lista de seguimiento; y la comprobación automática en Windows pasa.
 
 **Siguiente**
 
-- **La publicación** en e-conquest/econquest. El modo ligero y la revisión de seguridad están hechos;
-  faltan un primer arranque en un ordenador con Windows, una medición del modo ligero y una nueva
-  exportación pública.
+- **La publicación** en e-conquest/econquest. El modo ligero, las dos revisiones de seguridad y la
+  comprobación automática en Windows están hechos; faltan un primer arranque por una persona en un
+  ordenador con Windows, una medición del modo ligero y una última exportación pública.
 - **El punto de control 1**, unas cuatro semanas después de la publicación, es la única revisión antes
   de planificar más trabajo. El uso real decide lo que viene después; no se añaden funciones nuevas
   antes.
