@@ -5,6 +5,19 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- The 59 countries on the IMF and World Bank low-income debt list that were not built in (Malawi,
+  Sierra Leone, Haiti, Rwanda, Burundi, Chad, Niger, Mali, Mozambique, Zambia, Zimbabwe, Nepal,
+  Cambodia, Laos, Tajikistan, Kyrgyzstan, Moldova, Honduras, Nicaragua, Yemen, Afghanistan and the
+  island states on the list, among others) now show in every country list. The daily download saves
+  one once it is on a watchlist or added; the others are fetched when opened, so the daily run stays
+  short. Names, regions and currencies only; every figure reads Missing until a feed fills it.
+- Add a country lists every country. It used to draw on the world map, which leaves out small
+  countries, so Malawi, Sierra Leone, Haiti, Rwanda and most island states could not be added at all.
+  Names show in the page's language.
+- The built app sends a full security policy with its pages: only its own scripts, connections only to
+  this server, no plugins, no framing. A second security review covers everything added since 12
+  November (docs/SECURITY_REVIEW.md).
+
 - The three screen fonts (Public Sans, Plus Jakarta Sans, JetBrains Mono) now come with the app
   instead of loading from Google Fonts, so opening a page asks no outside server for anything and
   the fonts also show offline. About 380 KB of woff2 files, fetched only for the characters a page
