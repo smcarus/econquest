@@ -464,8 +464,8 @@ Pour rédiger un document de travail que vous pourrez vérifier plus tard :
    8B ou moins n'est jamais un bon arbitre.
 6. Appuyez sur **Tester le modèle**. Il envoie une courte question comme le fait le Chat du conseil.
 
-Quel modèle pour quel ordinateur, et les réglages utilisés par l'application, sont dans le README :
-[Modèles d'IA](../README.fr.md#modèles-dia--lequel-choisir-tailles-et-réglages).
+Quel modèle pour quel ordinateur, et les réglages utilisés par l'application, sont dans Fonctions et détails :
+[Modèles d'IA](./FEATURES.fr.md#modèles-dia--lequel-choisir-tailles-et-réglages).
 
 ## 9. Outils, vérification des données et menu
 
@@ -607,4 +607,4 @@ terminée. Pour les essayer sur votre ordinateur :
    des participants, les questions facultatives de positionnement économique et si le système fonctionne.
 
 Quand les Quêtes seront publiques, **Enter publicly** préparera pour vous une demande de modification vers
-le dépôt public. Le README explique [comment fonctionne le jeu](../README.fr.md#quêtes--des-solutions-économiques-à-plusieurs).
+le dépôt public. La page Fonctions et détails explique [comment fonctionne le jeu](./FEATURES.fr.md#quêtes--des-solutions-économiques-à-plusieurs).

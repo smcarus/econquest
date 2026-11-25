@@ -198,7 +198,7 @@ No step ever takes a figure from a model. A model writes words around figures th
 - A component reads its text with `const t = useT(PANELS)` and `t('key', { country })`
   (`src/i18n/useLang.ts`). A language's files download only when it is picked.
 - Some text is built by rules on the server or in `src/utils/` (headlines, Missing reasons). Where it
-  is translated, it goes through the same catalogs; where it is not yet, the README says so.
+  is translated, it goes through the same catalogs; where it is not yet, the Languages section of FEATURES.md says so.
 
 ## 9. The shared engine
 

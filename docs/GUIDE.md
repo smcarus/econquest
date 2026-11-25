@@ -422,8 +422,8 @@ To write a working paper you can check later:
    answer a 14B referee judges says "Small referee". An 8B or smaller model is never a good referee.
 6. Press **Test the model**. It sends one short question the way Council chat does.
 
-Which model fits which computer, and the settings the app uses, are in the README:
-[AI models](../README.md#ai-models-which-to-use-sizes-and-settings).
+Which model fits which computer, and the settings the app uses, are in Features and details:
+[AI models](./FEATURES.md#ai-models-which-to-use-sizes-and-settings).
 
 ## 9. Tools, data checks and the menu
 
@@ -556,4 +556,4 @@ To try them on your own computer:
    statistics, the optional economics stance questions and whether the Quest system is working.
 
 When Quests go public, **Enter publicly** will prepare a pull request to the public repository for
-you. The README explains [how the game works](../README.md#quests-crowdsourcing-answers-to-economic-questions).
+you. Features and details explains [how the game works](./FEATURES.md#quests-crowdsourcing-answers-to-economic-questions).

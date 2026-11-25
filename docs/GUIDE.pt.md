@@ -446,8 +446,8 @@ Para escrever um texto para discussão que você possa conferir depois:
    nunca é um bom árbitro.
 6. Clique em **Testar o modelo**. Ele envia uma pergunta curta do jeito que o Chat do conselho faz.
 
-Qual modelo serve para qual computador, e os ajustes que o app usa, estão no README:
-[Modelos de IA](../README.pt.md#modelos-de-ia-qual-usar-tamanhos-e-ajustes).
+Qual modelo serve para qual computador, e os ajustes que o app usa, estão em Recursos e detalhes:
+[Modelos de IA](./FEATURES.pt.md#modelos-de-ia-qual-usar-tamanhos-e-ajustes).
 
 ## 9. Ferramentas, checagem dos dados e o menu
 
@@ -582,4 +582,4 @@ completa. Para experimentar no seu computador:
    participantes, as perguntas opcionais de posição econômica e se o sistema está funcionando.
 
 Quando as Quests forem públicas, **Enter publicly** vai preparar para você um pull request para o
-repositório público. O README explica [como o jogo funciona](../README.pt.md#quests-soluções-econômicas-construídas-por-muitos).
+repositório público. A página Recursos e detalhes explica [como o jogo funciona](./FEATURES.pt.md#quests-soluções-econômicas-construídas-por-muitos).
