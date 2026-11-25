@@ -481,7 +481,7 @@ Open accounts (any public email such as gmail.com) do not get. The app does not 
 
 ## Free, with your own key
 
-Keys marked "Settings or .env" can be pasted in the app under **Menu > Settings > Data API keys**
+Keys marked "Settings or .env" can be pasted in the app under **Menu > Settings > Free data keys**
 (or Cmd/Ctrl + comma). The app saves them on this computer only, in `data/local/settings.json`
 (file readable by your user only, not in git), shows them masked, and sends each one only to its
 own source. A key saved in Settings is used instead of the same key in `.env`; removing it there
@@ -650,7 +650,7 @@ the background once the app is up; the app can be used straight away. It runs at
    the forward record; recorded verdicts are never changed. `SCHEDULE_BACKTESTS=off` stops them here
    too.
 5. The connection check, which lists every source that needs a key or a file from you. Sources that
-   need your own key (FRED, Comtrade and the rest under Menu > Settings > API keys) are used only
+   need your own key (FRED, Comtrade and the rest under Menu > Settings > Free data keys) are used only
    when you have set the key.
 
 How much each run downloads (roughly 150 to 200 MB a day, an estimate) and how much space the

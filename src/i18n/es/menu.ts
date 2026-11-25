@@ -264,7 +264,7 @@ export const MENU_ES: Partial<Record<Keys, string>> = {
   ab_closeAria: 'Cerrar Acerca de y licencias de datos',
   we_title: 'Ejemplos resueltos',
   we_closeAria: 'Cerrar ejemplos resueltos',
-  we_intro: 'Cuatro casos guiados, cada uno de una pregunta a un memorando breve, con las propias pantallas de la aplicación. Las cifras son las guardadas hoy en este ordenador para {country}; ninguna viene incorporada, y una cifra que ninguna fuente ha rellenado aparece como Falta.',
+  we_intro: 'Cinco casos guiados, cada uno de una pregunta a un memorando breve, con las propias pantallas de la aplicación. Las cifras son las guardadas hoy en este ordenador para {country}; ninguna viene incorporada, y una cifra que ninguna fuente ha rellenado aparece como Falta.',
   we_otherCountry: 'Para trabajar un ejemplo con otro país, abra primero ese país en Investigación.',
   we_learn: 'Lo que aprenderá: {text}',
   we_back: 'Todos los ejemplos resueltos',

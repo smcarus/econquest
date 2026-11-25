@@ -73,6 +73,6 @@ is a start), `extraEnv` for any plain setting from `.env.example`, and `secret` 
 
 ## Backups and upgrades
 
-Back up the volume (`<release>-data`); it is kept when you uninstall the release. Menu > Backup
+Back up the volume (`<release>-data`); it is kept when you uninstall the release. Menu > Settings > Backup
 works too, and never includes keys. To upgrade, build and push a new image tag, then
 `helm upgrade econquest deploy/helm/econquest -n econquest --reuse-values --set image.tag=<new>`.

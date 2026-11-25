@@ -268,7 +268,7 @@ export const MENU = defineMessages('menu', {
   // Menu > Worked examples (W1)
   we_title: 'Worked examples',
   we_closeAria: 'Close worked examples',
-  we_intro: 'Four guided case studies, each from a question to a short memo, using the app’s own screens. The figures are the ones saved on this computer for {country} today; none is built in, and a figure no source has filled reads Missing.',
+  we_intro: 'Five guided case studies, each from a question to a short memo, using the app’s own screens. The figures are the ones saved on this computer for {country} today; none is built in, and a figure no source has filled reads Missing.',
   we_otherCountry: 'To work an example for another country, open that country in Research first.',
   we_learn: 'What you learn: {text}',
   we_back: 'All worked examples',

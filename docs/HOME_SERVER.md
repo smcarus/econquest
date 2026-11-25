@@ -211,7 +211,7 @@ in Menu > Settings, saved feed data, history, the pull archive, reports, the aud
 health history. The image holds no state, so updating or rebuilding never loses anything.
 Models are in `ollama` and can always be downloaded again.
 
-Back up the `data` folder. Menu > Backup makes a file without keys; how to restore it, and a
+Back up the `data` folder. Menu > Settings > Backup makes a file without keys; how to restore it, and a
 restore drill that proves a backup works, are in [Backup and restore](BACKUP_AND_RESTORE.md).
 
 ## Configuration

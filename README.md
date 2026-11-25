@@ -147,6 +147,10 @@ many figures read Missing in them; on a computer that reaches the feeds, more fi
 
 ## Quick start
 
+> **Not public yet.** The public copy at github.com/e-conquest/econquest and the ready-made app at
+> `ghcr.io/e-conquest/econquest` have not been published yet, so the download links and the
+> `git clone` address below do not work until they are. This note comes out on the day they go live.
+
 **New to this?** [docs/INSTALL.md](docs/INSTALL.md) is a plain-language, step-by-step guide: install
 Docker Desktop, download one file, and run the ready-made app. No building and no programming needed.
 

@@ -32,7 +32,7 @@ no adverts and no tracking. This page says what stays on your computer, what lea
 | What | Where | Notes |
 | --- | --- | --- |
 | Keys and settings | `data/local/settings.json` on the computer running the app | Never written to backups, logs or the audit log |
-| Saved research, reviews, watch alerts, holdings | `data/local/` | Included in Menu > Backup (without keys) |
+| Saved research, reviews, watch alerts, holdings | `data/local/` | Included in Menu > Settings > Backup (without keys) |
 | Downloaded figures and their history | `data/live/` and `data/local/` | Public figures, plus any files you added yourself |
 | Your flags and ratings | `data/local/feedback.jsonl` | Never sent by the app |
 | Screen choices (language, dark mode, layout, last session) | Your browser's own storage for this site | Stays in that browser |
@@ -43,7 +43,7 @@ server keeps, as with any server.
 
 ## Removing your data
 
-Menu > Backup downloads what you made, so you can keep it. To remove everything, follow
+Menu > Settings > Backup downloads what you made, so you can keep it. To remove everything, follow
 [Remove EconQuest](./INSTALL.md#remove-econquest) in INSTALL.md. Clearing the site data in your
 browser removes the screen choices kept there.
 

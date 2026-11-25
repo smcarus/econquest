@@ -59,8 +59,9 @@ question, open Research to study one country, and, if you like, add an AI model.
 opens Settings; *Got it* hides the card for good in this browser. Until a model works, Settings shows
 no AI option picked and the Menu says *AI: not set*: the app works without one.
 
-1. **Start the app** (README: Docker with `start-mac.command`, or `npm run dev`) and open it in the
-   browser. Menu > Settings > AI model > *Test* checks the model; the Supreme Council and summaries use
+1. **Start the app** and open it in the browser: with the ready-made app, `docker compose up -d` in
+   your `econquest` folder, then http://localhost:3737 ([INSTALL.md](./INSTALL.md) has every step;
+   from the code, `npm run dev` and http://localhost:3000). Menu > Settings > AI model > *Test* checks the model; the Supreme Council and summaries use
    the referee model (qwen2.5:32b by default, `ollama pull qwen2.5:32b` first).
    On a smaller computer you can tick *Allow a 14B referee* there instead and pick a 14B model
    (`ollama pull qwen2.5:14b`). It needs about half the memory of the 32B model, but its judgements
@@ -74,8 +75,8 @@ no AI option picked and the Menu says *AI: not set*: the app works without one.
    or No answer. Add the free keys you want (FRED, EIA, UN Comtrade) under Menu > Settings.
 3. **Save it for offline use.** Menu > Offline data > *Download all country data*. After that the app
    works without a connection and each figure shows the date it was saved.
-4. **Try a worked example.** Menu > Worked examples walks through four case studies (debt,
-   inflation, the currency, a policy review) with the open country's figures, from the question to a
+4. **Try a worked example.** Menu > Worked examples walks through five case studies (debt,
+   inflation, the currency, a policy review, a commodity price fall) with the open country's figures, from the question to a
    memo draft.
 5. **Ask the council.** On Workspace, type a question ("Is Brazil's policy rate too tight?"). Each
    agent answers with its figures, sources and dates; open a document for the full working, or
@@ -88,7 +89,7 @@ no AI option picked and the Menu says *AI: not set*: the app works without one.
    each source in the figures (Menu > About & data licences): some ask for a credit line, a few need
    the provider's permission before figures go to clients or into a paid product.
 
-The header has three pages: **Workspace · Research · Reports**. **Tools** is inside the **Settings**
+The header has four pages: **Workspace · Research · Policy review · Reports**. **Tools** is inside the **Settings**
 window (Menu > Tools, or the Tools tab in Settings). Workspace is the daily start; Research is where
 you look into one country, the watchlist side by side, or your own holdings.
 
@@ -332,7 +333,7 @@ every figure with its source and period. *Re-run on this snapshot* sends exactly
 to the model set now and says whether the answer is the same word for word, or what changed and
 why (a different model, changed app instructions, or the model itself). Snapshots are kept in
 `data/local/snapshots/`, named in Menu > Audit log, written into saved and downloaded briefs
-(under Method), and included in Menu > Backup. A snapshot edited after it was saved is not
+(under Method), and included in Menu > Settings > Backup. A snapshot edited after it was saved is not
 re-run.
 
 **Regression check.** `npm run council:regress` (with the app running) sends a fixed set of

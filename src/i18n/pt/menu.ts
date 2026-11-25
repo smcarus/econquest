@@ -257,7 +257,7 @@ export const MENU_PT: Messages<typeof MENU> = {
   ab_closeAria: "Fechar sobre e licenças de dados",
   we_title: "Exemplos guiados",
   we_closeAria: "Fechar exemplos guiados",
-  we_intro: "Quatro estudos de caso guiados, cada um de uma pergunta até um memorando curto, usando as próprias telas do app. Os números são os salvos neste computador para {country} hoje; nenhum é embutido, e um número que nenhuma fonte preencheu aparece como Ausente.",
+  we_intro: "Cinco estudos de caso guiados, cada um de uma pergunta até um memorando curto, usando as próprias telas do app. Os números são os salvos neste computador para {country} hoje; nenhum é embutido, e um número que nenhuma fonte preencheu aparece como Ausente.",
   we_otherCountry: "Para fazer um exemplo com outro país, abra esse país em Pesquisa primeiro.",
   we_learn: "O que você aprende: {text}",
   we_back: "Todos os exemplos guiados",

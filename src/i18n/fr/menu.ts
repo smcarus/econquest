@@ -257,7 +257,7 @@ export const MENU_FR: Messages<typeof MENU> = {
   ab_closeAria: "Fermer À propos et licences des données",
   we_title: 'Exemples guidés',
   we_closeAria: 'Fermer les exemples guidés',
-  we_intro: "Quatre études de cas guidées, chacune d'une question à une courte note, avec les écrans de l'application. Les chiffres sont ceux enregistrés aujourd'hui sur cet ordinateur pour {country} ; aucun n'est intégré, et un chiffre qu'aucune source n'a fourni s'affiche Manquant.",
+  we_intro: "Cinq études de cas guidées, chacune d'une question à une courte note, avec les écrans de l'application. Les chiffres sont ceux enregistrés aujourd'hui sur cet ordinateur pour {country} ; aucun n'est intégré, et un chiffre qu'aucune source n'a fourni s'affiche Manquant.",
   we_otherCountry: "Pour traiter un exemple sur un autre pays, ouvrez d'abord ce pays dans Recherche.",
   we_learn: 'Ce que vous apprendrez : {text}',
   we_back: 'Tous les exemples guidés',

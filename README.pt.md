@@ -158,6 +158,10 @@ números são preenchidos. A maioria está em inglês; a última mostra o app em
 
 ## Início rápido
 
+> **Ainda não é público.** A cópia pública em github.com/e-conquest/econquest e o app pronto em
+> `ghcr.io/e-conquest/econquest` ainda não foram publicados, então os links de download e o endereço
+> do `git clone` abaixo só funcionam depois disso. Esta nota sai no dia em que forem publicados.
+
 **É novo nisso?** [docs/INSTALL.md](docs/INSTALL.md) (em inglês) é um guia passo a passo: instale o
 Docker Desktop, baixe um arquivo e rode o app pronto. Não é preciso compilar nem programar.
 
