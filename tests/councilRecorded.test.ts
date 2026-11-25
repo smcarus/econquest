@@ -51,7 +51,7 @@ async function replayServer(replayDir: string) {
   server.stdout?.on('data', (d) => (log += d));
   server.stderr?.on('data', (d) => (log += d));
   const base = `http://127.0.0.1:${port}`;
-  const deadline = Date.now() + 60_000;
+  const deadline = Date.now() + 120_000; // slow shared CI machines can take over a minute
   for (;;) {
     if (server.exitCode !== null) throw new Error(`server exited early:\n${log}`);
     try {
@@ -59,7 +59,7 @@ async function replayServer(replayDir: string) {
     } catch {
       // not listening yet
     }
-    if (Date.now() > deadline) throw new Error(`server did not start within 60s:\n${log}`);
+    if (Date.now() > deadline) throw new Error(`server did not start within 120s:\n${log}`);
     await new Promise((r) => setTimeout(r, 300));
   }
   const replayLog = () => (existsSync(missLog) ? readFileSync(missLog, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l)) : []);
