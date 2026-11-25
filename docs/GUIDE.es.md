@@ -64,10 +64,15 @@ español.
    Rellena los rendimientos oficiales de los bonos a 10 años de varios países.
 4. Pulse **Editar** en la tarjeta de la lista de seguimiento para añadir o quitar países. Para seguir
    economías más pobres, elija la lista **Países de ingreso bajo**: los 15 mayores por región, de India
-   y Nigeria a Ghana y Bolivia. Un país que no está en la lista de la aplicación se puede añadir con
-   **Añadir un país** (en **Investigación > Un país**, o en el editor de la lista); desde la siguiente
-   descarga diaria se guarda como los demás, con historia, vistas "a una fecha" y alertas (hasta 25
-   países añadidos; los demás se nombran en **Menú > Datos sin conexión** con el motivo).
+   y Nigeria a Ghana y Bolivia. Los 59 países de la lista de deuda de bajos ingresos del FMI y del
+   Banco Mundial (Malawi, Sierra Leona, Haití, Ruanda, Nepal, Camboya, los pequeños estados insulares
+   y otros) también están en todas las listas de países; la descarga diaria guarda uno en cuanto está
+   en una lista de seguimiento y, si no, sus cifras se piden al abrirlo. Un país que no está en la
+   lista de la aplicación se puede añadir con **Añadir un país** (en **Investigación > Un país**, o en
+   el editor de la lista), que muestra todos los países con su nombre en el idioma de la página;
+   desde la siguiente descarga diaria se guarda como los demás, con historia, vistas "a una fecha" y
+   alertas (hasta 25 países añadidos; los demás se nombran en **Menú > Datos sin conexión** con el
+   motivo).
 5. Elija un modelo de IA si quiere resúmenes escritos ([sección 8](#8-elegir-un-modelo-de-ia)). Todo lo
    demás funciona sin él.
 

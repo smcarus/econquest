@@ -54,7 +54,11 @@ The setup code stops someone else on the network from claiming the app before yo
   run the AI model. Over the limit the server answers 429 with Retry-After.
 - **Security headers** on every reply: no framing (`X-Frame-Options: DENY`, `frame-ancestors 'none'`),
   `nosniff`, `Referrer-Policy: same-origin`, no camera, microphone or location, no `X-Powered-By`.
-  A full Content-Security-Policy for scripts is not set yet.
+  The built app (`NODE_ENV=production`, which is how Docker and the start scripts run it) also sends a
+  full Content-Security-Policy: only the app's own scripts, connections only to this server, no
+  plugins, forms posted only here (`PRODUCTION_CSP` in `src/utils/requestLimits.ts`). Without
+  `NODE_ENV=production` (for example `npm run dev`) the server sends only `frame-ancestors 'none'`,
+  because live reload needs inline scripts. A reverse proxy in front of the app should pass this header on, not replace it.
 - The earlier checks stay: only listed host names are answered (DNS rebinding), and changes sent from
   pages on other sites are refused.
 
@@ -155,7 +159,9 @@ or to backups.
 
 The review done before the public release (dependencies, routes, file permissions, backups, the
 local AI model and the Windows start scripts), with what it found and fixed, is in
-[SECURITY_REVIEW.md](SECURITY_REVIEW.md).
+[SECURITY_REVIEW.md](SECURITY_REVIEW.md). A second pass on 25 November covers everything added since
+12 November (sign-in and roles, API tokens, the home server, broker prices, the Quant desk, the
+update check and problem reports) and lists what is still open.
 
 ## Not yet (planned, in order)
 

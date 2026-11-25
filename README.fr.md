@@ -543,12 +543,19 @@ Où en est le projet au 24 novembre 2026 (détail dans [docs/ROADMAP.md](./docs/
     les détails et Signaler un problème, une question avant de supprimer une liste de suivi, le suivi
     du mode clair ou sombre de l'ordinateur, les étapes pour retirer l'application et des raccourcis
     clavier.
+22. **Vérification avant publication et pays les plus pauvres** (25 novembre) : une deuxième revue de
+    sécurité et une politique de sécurité plus stricte pour les pages de l'application compilée ;
+    Ajouter un pays propose tous les pays, pas seulement ceux de la carte du monde ; les 59 pays de la
+    liste de dette des pays à faible revenu du FMI et de la Banque mondiale (Malawi, Sierra Leone,
+    Haïti, Népal, les petits États insulaires et d'autres) figurent dans toutes les listes de pays, et
+    le téléchargement quotidien les enregistre dès qu'ils sont dans une liste de suivi ; et la
+    vérification automatique sous Windows passe.
 
 **Ensuite**
 
-- **La publication** sur e-conquest/econquest. Le mode léger et la revue de sécurité sont faits ; il
-  reste un premier démarrage sur un ordinateur Windows, une mesure du mode léger et un nouvel export
-  public.
+- **La publication** sur e-conquest/econquest. Le mode léger, les deux revues de sécurité et la
+  vérification automatique sous Windows sont faits ; il reste un premier démarrage par une personne
+  sur un ordinateur Windows, une mesure du mode léger et un dernier export public.
 - **Le point d’étape 1**, environ quatre semaines après la publication, est la seule revue avant de
   planifier d’autres travaux. L’usage réel décide de la suite ; aucune nouvelle fonction n’est ajoutée
   avant.

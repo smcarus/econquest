@@ -5,18 +5,25 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Docs brought up to date with #683 to #687: the README and walk-through guide in all four languages
+  (the 59 low-income countries in every list, Add a country with every country, the second security
+  review), HOW_IT_WORKS and METHODOLOGY (version 1.7: screen fonts no longer loaded from Google
+  Fonts, the page security policy, country coverage), INSTALL, SECURITY, DATA_API, the user manual
+  and the roadmap.
+- The Windows check passes again: one test compared file paths with the wrong slash on Windows
+  (#685). Tests also give the app server two minutes to start instead of one (#684).
 - The 59 countries on the IMF and World Bank low-income debt list that were not built in (Malawi,
   Sierra Leone, Haiti, Rwanda, Burundi, Chad, Niger, Mali, Mozambique, Zambia, Zimbabwe, Nepal,
   Cambodia, Laos, Tajikistan, Kyrgyzstan, Moldova, Honduras, Nicaragua, Yemen, Afghanistan and the
   island states on the list, among others) now show in every country list. The daily download saves
   one once it is on a watchlist or added; the others are fetched when opened, so the daily run stays
-  short. Names, regions and currencies only; every figure reads Missing until a feed fills it.
+  short. Names, regions and currencies only; every figure reads Missing until a feed fills it (#687).
 - Add a country lists every country. It used to draw on the world map, which leaves out small
   countries, so Malawi, Sierra Leone, Haiti, Rwanda and most island states could not be added at all.
-  Names show in the page's language.
+  Names show in the page's language (#686).
 - The built app sends a full security policy with its pages: only its own scripts, connections only to
   this server, no plugins, no framing. A second security review covers everything added since 12
-  November (docs/SECURITY_REVIEW.md).
+  November (docs/SECURITY_REVIEW.md) (#683, #684).
 
 - The three screen fonts (Public Sans, Plus Jakarta Sans, JetBrains Mono) now come with the app
   instead of loading from Google Fonts, so opening a page asks no outside server for anything and

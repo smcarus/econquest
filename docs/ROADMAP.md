@@ -39,7 +39,7 @@ The same rules hold for every change:
 | Easier first use (24 November, #660 to #662, #666, #669) | A short answer by stated rules at the top of Council chat when no AI model writes one, a shorter Missing list, more room for the answer, Policy review as its own page next to Reports, plain wording, and a start-here card |
 | Recovering on its own (24 November, #663 to #668, #670) | Updates that never stop on files the app writes itself, slow sources asked again before they count as failed, a second try for failed downloads and later tries after two hours, the next free port when 3000 is busy, and the last good answer with its own dates while a source does not answer |
 | Standard app features (24 November, #671 to #677) | A privacy page, a notice when a newer version is out, Copy details and Report a problem, a question before deleting a watchlist, following the computer's dark or light setting, steps to remove the app, and keyboard shortcuts |
-| Release check and the poorest countries (25 November) | A second security review and a stricter page security policy for the built app; Add a country lists every country, not only those on the world map; the 59 countries on the IMF low-income debt list built in, saved daily once they are on a watchlist |
+| Release check and the poorest countries (25 November, #683 to #687) | A second security review and a stricter page security policy for the built app; Add a country lists every country, not only those on the world map; the 59 countries on the IMF low-income debt list built in, saved daily once they are on a watchlist; the automatic Windows check passes again |
 | Open source | Licences (Apache-2.0, CC BY 4.0, DCO), governance, contributing guide, the methodology and a clean public export |
 
 ## Phase 4: data and economist readiness (G1 to G10 done)
@@ -186,15 +186,18 @@ ship only when Quests are switched on for everyone, not with the classroom chang
 
 ## The public release
 
-The licences, governance files, the security review, light mode and the public export tool are in
+The licences, governance files, the security review (second pass on 25 November), light mode and the public export tool are in
 place. Before the public copy goes up, three checks remain:
 
 1. A person starts the app on a Windows computer with `start-windows.bat` and confirms it opens.
+   The automatic Windows check (start script, type check and tests on a GitHub Windows machine)
+   passed on 25 November; it cannot start Docker Desktop, so the person's run is still needed.
 2. Light mode is measured on a modest laptop (`scripts/start-mac.sh --light`, then
    `docker stats --no-stream`), so the memory and disk figures in the install guide are measured, not
    targets.
 3. The clean public copy is exported again (`npm run public:export`), so it carries everything up to
-   the release, including the console integration and the current documentation.
+   the release. The last export was on 25 November (main through #687); it is run once more after
+   the last change before the release.
 
 Then: publish it at [github.com/e-conquest/econquest](https://github.com/e-conquest/econquest),
 switch on Discussions and private vulnerability reporting there, protect its main branch, make the
