@@ -61,9 +61,14 @@ figures fill in and the council writes its summary.
    government bond yields for several countries.
 4. Press **Edit** on the watchlist card to add or remove countries. To follow poorer economies,
    pick the **Lower-income countries** list: the 15 largest by region, from India and Nigeria to
-   Ghana and Bolivia. A country not in the app's list can be added with **Add a country** (in **Research > One country**, or in the watchlist editor); from
-   the next daily download it is saved like the others, so it gets history, "as of" views and alerts
-   (up to 25 added countries; any more are named on **Menu > Offline data** with the reason).
+   Ghana and Bolivia. The 59 countries on the IMF and World Bank low-income debt list (Malawi, Sierra
+   Leone, Haiti, Rwanda, Nepal, Cambodia, the small island states and others) are in every country
+   list too; the daily download saves one once it is on a watchlist, and otherwise its figures are
+   fetched when you open it. A country not in the app's list can be added with **Add a country** (in
+   **Research > One country**, or in the watchlist editor), which lists every country, with names in
+   the page's language; from the next daily download it is saved like the others, so it gets
+   history, "as of" views and alerts (up to 25 added countries; any more are named on **Menu >
+   Offline data** with the reason).
 5. Choose an AI model if you want written summaries ([section 8](#8-choose-an-ai-model)). Everything
    else works without one.
 

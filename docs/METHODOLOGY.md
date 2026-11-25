@@ -1,6 +1,6 @@
 # EconQuest Terminal: Methodology
 
-**Version 1.6, 24 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of the main branch on 24 November 2026 (after release 0.3.0, through pull request #677).
+**Version 1.7, 25 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of the main branch on 25 November 2026 (after release 0.3.0, through pull request #687).
 Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not validated advice.
 
 This document sets out how the EconQuest Terminal sources its data, how its council of agents
@@ -145,8 +145,13 @@ The consequence for this document: every verdict in section 11 came from a run o
 computer, and anyone can rerun the same tests on theirs (section 13).
 
 What leaves the user's computer is stated in one place, [PRIVACY.md](./PRIVACY.md): requests for
-figures to public sources, questions to an online AI provider only if the user picks one, screen
-fonts from Google Fonts, and alerts, outside audit copies or sign-in only if set up. Once a day, while
+figures to public sources, questions to an online AI provider only if the user picks one, and
+alerts, outside audit copies or sign-in only if set up. The screens ask no outside server for
+anything: the fonts (SIL Open Font License 1.1, credited in NOTICE), icons and scripts ship with the
+app. The built app (`NODE_ENV=production`, as Docker and the start scripts run it) sends a full
+Content-Security-Policy, so a browser runs only the app's own scripts and connects only to the app's
+server (`PRODUCTION_CSP` in `src/utils/requestLimits.ts`; [SECURITY_REVIEW.md](./SECURITY_REVIEW.md),
+second review of 25 November). Once a day, while
 the app is open, the server asks GitHub for the newest release number of the public repository so
 Menu > About can say when a newer version is out (`src/server/updateCheck.ts`; nothing about the user
 is sent; `UPDATE_CHECK=off` turns it off). There is no tracking, usage counting or crash reporting; a
@@ -249,6 +254,14 @@ The rule is applied without exception. Examples of what reads Missing today, and
 - **Inflation targets and central bank decision dates** are filed only where the bank's own page
   states them, with the page and the date it was read. A range stated over several years or a figure
   in a summary is not filed as a target.
+- **The 59 countries added from the IMF and World Bank low-income debt list** on 25 November 2026
+  (`src/data/lowIncomeCatalog.ts`: every country on `DSA_LIST` in `src/utils/lowIncomeDebt.ts` that was
+  not yet built in) carry only a name, a region and an ISO 4217 currency code. No figure, focus line
+  or baseline is written for them; each figure comes from a feed or reads Missing. The daily download
+  saves one only once it is on a saved watchlist or added list, so saved history, the As-of day and
+  alerts start from that day; otherwise figures are fetched live when the country is opened. Add a
+  country covers every ISO 3166 country except uninhabited territories (`src/utils/countryNames.ts`),
+  with names from the browser's own country names in the page's language.
 
 Where an AI model writes the council's final report and leaves a field empty, the field reads
 Missing; template text is never shown as a result (`src/utils/councilResult.ts`).
@@ -930,6 +943,8 @@ pre-registered test files and the recorded runs.
 Pegged and tightly managed currencies are left out of the currency tests by rule. Several G20
 countries (China, Saudi Arabia, Argentina, Russia) are therefore absent from some tests, and a result
 from mostly advanced and large emerging economies may not carry over to smaller or frontier ones.
+The 59 low-income countries added to the lists on 25 November 2026 (section 3.3) are in no recorded
+test; a test that covers them needs a new pre-registration.
 
 ## 12. Quests (built, switched off)
 
@@ -1149,10 +1164,11 @@ Per-model references are given in the [Methods note](./METHODS.md).
 | 1.2 | 13 November 2026 | Sources and the files you save (3.1), statistics conventions in the charts and tables (7.4), figures served to outside systems and hypothetical scenario estimates (3.8), the audit seal and locked copies (4.5), the country risk scorecard listed as Not validated with its registered default test (5, 14), scenario limits (14). The short version corrected: the council's chat agents are fixed code, and only the summary writer is an AI model |
 | 1.3 | 14 November 2026 | New sources in 3.1 (BIS central bank assets and dollar credit, New York Fed swap lines, NASA POWER, the World Bank climate portal, IBTrACS, the exchange rate regime workbook); the policy council (5.2); weather, disasters and parametric insurance (5.3); short-record limits of those tools (14); references for L-moments, IBTrACS, the exchange rate regime classification and the official discount rates |
 | 1.4 | 17 November 2026 | New sources in 3.1 (World Bank projects and IDA credits, PEFA budget outturn, DOSE and Eurostat regional figures, the Global Data Lab file, US Treasury and ECB yield curves, BLS prices, Kalshi CPI snapshots, the user's budget file); Council chat questions over the API and figures from an outside research-tools server (3.8, 3.9); the Chart Agent, Scenario Agent and Quant desk in 4.1, with the eight-section what-if answer; the Scenario Agent (5.4); the tools for five kinds of users (5.5); limits of what-if answers, the new tools and outside figures (14); references for the shock studies, DOSE, PEFA and the Nelson-Siegel-Svensson curve |
-| 1.6 | 24 November 2026 | New sources in 3.1 (IMF market rates and trade by partner, World Bank GEP, OECD Economic Outlook and original-release editions, official documents and speeches, catalogue search, the Philadelphia Fed survey file, the user's own Interactive Brokers prices); last good answers, retries and release-day re-reads (3.2); official forecasts as a labelled stand-in and local market rates (3.3); OECD editions (3.6); what leaves the computer and the update check (1.1); the short answer without an AI model and answers in the chosen language (4.1); results on record brought to 39 tests, 11 passed (11); limits of the forward record, the global VAR and official forecasts (14). The forecasting methods added on 22 November (KPSS, tests on data as first published, GARCH, ridge and lasso, ARIMA, the dynamic factor model, quantile bands and the random forest) were written into 7.3 with each change |
 | 1.5 | 17 November 2026 | Release 0.2.0. IMF monthly exchange rates and policy rates where no daily or BIS figure exists (3.1, 3.3); inflation targets and decision dates filed only from banks' own pages (3.3); countries the user adds are part of the daily download; limits for lower-income countries (14) |
+| 1.6 | 24 November 2026 | New sources in 3.1 (IMF market rates and trade by partner, World Bank GEP, OECD Economic Outlook and original-release editions, official documents and speeches, catalogue search, the Philadelphia Fed survey file, the user's own Interactive Brokers prices); last good answers, retries and release-day re-reads (3.2); official forecasts as a labelled stand-in and local market rates (3.3); OECD editions (3.6); what leaves the computer and the update check (1.1); the short answer without an AI model and answers in the chosen language (4.1); results on record brought to 39 tests, 11 passed (11); limits of the forward record, the global VAR and official forecasts (14). The forecasting methods added on 22 November (KPSS, tests on data as first published, GARCH, ridge and lasso, ARIMA, the dynamic factor model, quantile bands and the random forest) were written into 7.3 with each change |
+| 1.7 | 25 November 2026 | What leaves the computer corrected: the screen fonts ship with the app and no longer come from Google Fonts; the built app's Content-Security-Policy (1.1). The 59 countries from the low-income debt list and Add a country with every country (3.3); those countries are in no recorded test (11.1) |
 
 ---
 
-*EconQuest Terminal methodology, version 1.6 (24 November 2026). Text licensed under CC BY 4.0: you may
+*EconQuest Terminal methodology, version 1.7 (25 November 2026). Text licensed under CC BY 4.0: you may
 share and adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*

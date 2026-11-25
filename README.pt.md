@@ -529,12 +529,18 @@ Situação em 24 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./docs/ROADM
     ([docs/PRIVACY.md](./docs/PRIVACY.md), em inglês), um aviso quando sai uma versão nova, Copiar os
     detalhes e Relatar um problema, uma pergunta antes de apagar uma lista de acompanhamento, seguir o
     modo claro ou escuro do computador, os passos para remover o app e atalhos de teclado.
+22. **Verificação para o lançamento e os países mais pobres** (25 de novembro): uma segunda revisão de
+    segurança e uma política de segurança mais rígida para as páginas do app compilado; Adicionar um
+    país mostra todos os países, não só os do mapa-múndi; os 59 países da lista de dívida de baixa
+    renda do FMI e do Banco Mundial (Malaui, Serra Leoa, Haiti, Nepal, os pequenos Estados insulares e
+    outros) estão em todas as listas de países, e o download diário os salva assim que entram em uma
+    lista de acompanhamento; e a verificação automática no Windows passa.
 
 **Próximo**
 
-- **O lançamento público** em e-conquest/econquest. O modo leve e a revisão de segurança estão
-  feitos; faltam uma primeira execução em um computador com Windows, uma medição do modo leve e uma
-  nova exportação pública.
+- **O lançamento público** em e-conquest/econquest. O modo leve, as duas revisões de segurança e a
+  verificação automática no Windows estão feitos; faltam uma primeira execução por uma pessoa em um
+  computador com Windows, uma medição do modo leve e uma última exportação pública.
 - **O ponto de controle 1**, cerca de quatro semanas após o lançamento, é a única revisão antes de
   planejar mais trabalho. O uso real decide o que vem depois; nenhum recurso novo é adicionado antes.
 

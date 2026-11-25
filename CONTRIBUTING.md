@@ -54,7 +54,13 @@ npm run size:check     # start-up under 520 KB compressed, the whole app under 9
 
 - Keep pull requests small and about one thing. Rebase on `main` rather than merging it in.
 - Add or update a test in `tests/` for each module you change in `src/utils/` or `server.ts`.
-  Tests must not reach the network; use `tests/helpers/offline-fetch.mjs`.
+  Tests must not reach the network; use `tests/helpers/offline-fetch.mjs`. Tests also run on
+  Windows (Actions > Windows check), so compare file paths with forward slashes
+  (`path.relative(...).split(path.sep).join('/')`), never by hand-written `/`.
+- The built app sends a strict page security policy (`PRODUCTION_CSP` in
+  `src/utils/requestLimits.ts`): no inline scripts, no `eval`, and connections only to the app's own
+  server. A screen that needs an outside address goes through a server route. `npm run test:smoke`
+  fails on anything the policy blocks.
 - New UI follows [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) and sits inside a `PanelBoundary`.
   A new screen loads only when it is opened (`lazyNamed` in `src/components/LazyDesk.tsx`).
 - Every new piece of screen text goes in `src/i18n/messages/` and in the Spanish, French and

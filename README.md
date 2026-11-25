@@ -546,11 +546,17 @@ Where things stand on 24 November 2026 (details and status in [docs/ROADMAP.md](
     notice when a newer version is out, Copy details and Report a problem, a question before deleting
     a watchlist, following the computer's dark or light setting, steps to remove the app, and keyboard
     shortcuts.
+22. **Release check and the poorest countries** (25 November): a second security review and a
+    stricter page security policy for the built app; Add a country lists every country, not only
+    those on the world map; the 59 countries on the IMF and World Bank low-income debt list (Malawi,
+    Sierra Leone, Haiti, Nepal, the small island states and others) are in every country list, saved
+    by the daily download once they are on a watchlist; and the automatic Windows check passes.
 
 **Next**
 
-- **The public release** at e-conquest/econquest. Light mode and the security review are done; a
-  first start on a Windows computer, a light-mode measurement and a fresh public export remain.
+- **The public release** at e-conquest/econquest. Light mode, both security reviews and the
+  automatic Windows check are done; a first start by a person on a Windows computer, a light-mode
+  measurement and a last public export remain.
 - **Checkpoint 1**, about four weeks after the public release, is the one review before more work is
   planned. Real use decides what comes next; no new features are added before it.
 

@@ -64,11 +64,15 @@ tels qu'ils apparaissent avec l'application en français.
    les rendements officiels des obligations d'État à 10 ans de plusieurs pays.
 4. Appuyez sur **Modifier** sur la carte de la liste de suivi pour ajouter ou retirer des pays. Pour
    suivre les économies plus pauvres, choisissez la liste **Pays à faible revenu** : les 15 plus grands
-   par région, de l'Inde et du Nigeria au Ghana et à la Bolivie. Un pays absent de la liste de
-   l'application s'ajoute avec **Ajouter un pays** (dans **Recherche > Un pays**, ou dans l'éditeur de
-   la liste) ; dès le téléchargement quotidien suivant, il est enregistré comme les autres, avec
-   historique, vues « à une date » et alertes (jusqu'à 25 pays ajoutés ; les autres sont nommés dans
-   **Menu > Données hors ligne** avec la raison).
+   par région, de l'Inde et du Nigeria au Ghana et à la Bolivie. Les 59 pays de la liste de dette des
+   pays à faible revenu du FMI et de la Banque mondiale (Malawi, Sierra Leone, Haïti, Rwanda, Népal,
+   Cambodge, les petits États insulaires et d'autres) figurent aussi dans toutes les listes de pays ;
+   le téléchargement quotidien en enregistre un dès qu'il est dans une liste de suivi, sinon ses
+   chiffres sont demandés quand vous l'ouvrez. Un pays absent de la liste de l'application s'ajoute
+   avec **Ajouter un pays** (dans **Recherche > Un pays**, ou dans l'éditeur de la liste), qui propose
+   tous les pays avec leur nom dans la langue de la page ; dès le téléchargement quotidien suivant,
+   il est enregistré comme les autres, avec historique, vues « à une date » et alertes (jusqu'à 25
+   pays ajoutés ; les autres sont nommés dans **Menu > Données hors ligne** avec la raison).
 5. Choisissez un modèle d'IA si vous voulez des synthèses rédigées ([section 8](#8-choisir-un-modèle-dia)).
    Tout le reste fonctionne sans.
 
