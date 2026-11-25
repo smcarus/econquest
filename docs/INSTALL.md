@@ -127,11 +127,20 @@ sudo sh`, then log out and back in after `sudo usermod -aG docker "$USER"`).
    into that folder (in your browser: right-click the link, then "Save link as"). Keep the name
    `compose.yml`. This small text file tells Docker which app to fetch and how to run it.
 
-If you prefer the terminal, these two lines do the same:
+If you prefer the terminal, these lines do the same. On a Mac or Linux:
 
 ```sh
-mkdir econquest && cd econquest
+mkdir econquest
+cd econquest
 curl -fsSLO https://raw.githubusercontent.com/e-conquest/econquest/main/deploy/quick-start/compose.yml
+```
+
+On Windows, in PowerShell:
+
+```powershell
+mkdir econquest
+cd econquest
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/e-conquest/econquest/main/deploy/quick-start/compose.yml -OutFile compose.yml
 ```
 
 ### Step 3: Start EconQuest
@@ -180,7 +189,8 @@ Light mode is a lighter way to run EconQuest, chosen when you install it:
   the app covers.
 
 To turn it on with the ready-made app, create a file called `.env` in your `econquest` folder (next
-to `compose.yml`) containing the line `LIGHT_MODE=on`, then start the app as in step 3. If you start
+to `compose.yml`) containing the line `LIGHT_MODE=on` (in the terminal: `echo LIGHT_MODE=on > .env` on a Mac or Linux, or
+`Set-Content .env LIGHT_MODE=on` in Windows PowerShell), then start the app as in step 3. If you start
 it from the code instead, use `scripts/start-mac.sh --light` on a Mac, or double-click
 `scripts\start-windows-light.bat` on Windows. To turn it off again, remove the line and run
 `docker compose up -d`.
@@ -212,7 +222,7 @@ EconQuest uses two Ollama models. A small one (qwen2.5:7b) answers for each desk
 (qwen2.5:32b) acts as the referee that weighs the desks' answers, writes the summary and runs the
 debate. The referee is the large model by default, because a small one makes too many mistakes; an
 8B or smaller model is never used as referee. The settings the app uses (temperature, context window,
-time limits) are listed in the [README](../README.md#ai-models-which-to-use-sizes-and-settings).
+time limits) are listed in [Features and details](./FEATURES.md#ai-models-which-to-use-sizes-and-settings).
 
 | Your computer's memory | What works with Ollama |
 | --- | --- |
@@ -469,7 +479,8 @@ npm run dev          # http://localhost:3000
 ```
 
 Or build the image yourself: `docker compose up -d --build` in the repository folder (port 3737).
-The [README](../README.md) covers development, tests and connecting an outside system.
+[Features and details, For developers](./FEATURES.md#for-developers) covers development, tests and
+connecting an outside system; [ARCHITECTURE.md](./ARCHITECTURE.md) explains how the code fits together.
 
 Useful commands in the code copy, on a computer that reaches the data sources:
 

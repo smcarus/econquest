@@ -454,8 +454,8 @@ Para escribir un documento de trabajo que pueda comprobar más tarde:
    nunca es un buen árbitro.
 6. Pulse **Probar el modelo**. Envía una pregunta breve igual que el Chat del consejo.
 
-Qué modelo conviene a cada ordenador y los ajustes que usa la aplicación están en el README:
-[Modelos de IA](../README.es.md#modelos-de-ia-cuál-usar-tamaños-y-ajustes).
+Qué modelo conviene a cada ordenador y los ajustes que usa la aplicación están en Funciones y detalles:
+[Modelos de IA](./FEATURES.es.md#modelos-de-ia-cuál-usar-tamaños-y-ajustes).
 
 ## 9. Herramientas, comprobación de datos y el menú
 
@@ -592,4 +592,4 @@ Los Retos están desactivados para todos hasta que se complete la lista de lanza
    de los participantes, las preguntas opcionales de postura económica y si el sistema funciona.
 
 Cuando los Retos sean públicos, **Enter publicly** le preparará una solicitud de cambios al repositorio
-público. El README explica [cómo funciona el juego](../README.es.md#retos-quests-soluciones-económicas-entre-muchos).
+público. La página Funciones y detalles explica [cómo funciona el juego](./FEATURES.es.md#retos-quests-soluciones-económicas-entre-muchos).

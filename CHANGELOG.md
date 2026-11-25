@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- The README in each language is now a short front page: what the app is, a few screenshots, install
+  steps for a Mac or Linux and for Windows PowerShell, and links onward. The detailed sections (every
+  task and tool, sizes, AI models and settings, languages, Quests, data sources, checks, commands,
+  roadmap and the developer notes) moved unchanged to docs/FEATURES.md, FEATURES.es.md, FEATURES.fr.md
+  and FEATURES.pt.md. INSTALL gains the PowerShell lines too.
 - Docs for lay readers and developers: corrected menu paths (the Gemini key is under Settings > AI
   model, other keys under Free data keys, Backup under Settings), the first-start card name, four
   header pages and five worked examples in the user manual (the Worked examples window now says five
