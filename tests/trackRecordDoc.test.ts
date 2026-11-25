@@ -41,6 +41,16 @@ test('the carry pass does not survive the correction across the record, and the 
   assert.match(md, /\| fx_carry v1 \| Signal test \|[^\n]*\| No \(0\.05\) \|/);
 });
 
+test('a failed test with a small p does not read as holding at its pass mark', () => {
+  const v = (id: string, verdict: RecordedVerdict['verdict'], p: number): RecordedVerdict => ({ id, version: 1, ranAt: '2026-11-23T00:00Z', verdict, summary: '', p });
+  const files: TestFile[] = [{ kind: 'forecast', id: 'f', version: 1, file: 'f.json', maxPValue: 0.1 }];
+  const f = trackRows([v('f', 'failed', 0.0001)], files).find((r) => r.verdict.id === 'f')!;
+  assert.ok((f.adjusted ?? 1) <= 0.1);
+  assert.equal(f.holds, false);
+  const md = trackRecordFromRepo(root);
+  assert.match(md, /\| gdp_nowcast_forest v1 \| Forecast evaluation \|[^\n]*\| Failed \|[^\n]*\| No \(0\.1\) \|/);
+});
+
 test('the page says how long before each run its test was written down', async () => {
   const { trackRecordMarkdown, daysBeforeRun } = await import('../src/utils/trackRecordDoc');
   const v = { id: 'a', version: 1, ranAt: '2026-11-06T10:00:00Z', verdict: 'failed' as const, summary: 'p 0.4', method: 2 };

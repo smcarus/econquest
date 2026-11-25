@@ -105,7 +105,7 @@ export const COUNCIL_ES: Messages<typeof COUNCIL> = {
   saveToReports: 'Guardar en Informes',
   saveTitle: 'Guarde esta respuesta y cada documento en Informes (data/local/research.json)',
   startReview: 'Iniciar una revisión de política',
-  startReviewTitle: 'Convierta esta pregunta en una revisión de política paso a paso en Informes',
+  startReviewTitle: 'Convierta esta pregunta en una revisión de política paso a paso en la página Revisión de políticas',
   logIdea: 'Anotar idea',
   logIdeaTitle: 'Anota una idea de inversión de esta respuesta en el diario de ideas; se registra con una huella y se puntúa al llegar el plazo',
   copy: 'Copiar',

@@ -110,7 +110,7 @@ export const COUNCIL = defineMessages('council', {
   saveToReports: 'Save to Reports',
   saveTitle: 'Keeps this answer and each document in Reports (data/local/research.json)',
   startReview: 'Start a policy review',
-  startReviewTitle: 'Turn this question into a step-by-step policy review in Reports',
+  startReviewTitle: 'Turn this question into a step-by-step policy review on the Policy review page',
   logIdea: 'Log idea',
   logIdeaTitle: 'Log a trade idea from this answer in the idea journal; it is hashed and scored at the horizon',
   copy: 'Copy',

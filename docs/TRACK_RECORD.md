@@ -73,7 +73,7 @@ forward record (below) confirms it or the test is run again with a new pre-regis
 | gdp_forecast_quantile v1 | Forecast evaluation | 2026-11-22 | 2026-11-23 | Passed | < 0.001 | < 0.001 | Yes (0.1) |
 | gdp_forecast_realtime v1 | Forecast evaluation | 2026-11-22 | 2026-11-23 | Failed | 0.997 | 1 | No (0.1) |
 | gdp_nowcast_dfm v1 | Forecast evaluation | 2026-11-22 | 2026-11-23 | Failed | 0.646 | 1 | No (0.1) |
-| gdp_nowcast_forest v1 | Forecast evaluation | 2026-11-22 | 2026-11-23 | Failed | < 0.001 | < 0.001 | Yes (0.1) |
+| gdp_nowcast_forest v1 | Forecast evaluation | 2026-11-22 | 2026-11-23 | Failed | < 0.001 | < 0.001 | No (0.1) |
 | gdp_nowcast_lasso v1 | Forecast evaluation | 2026-11-22 | 2026-11-23 | Passed | 0.09 | 1 | No (0.1) |
 | gdp_nowcast_ridge v1 | Forecast evaluation | 2026-11-22 | 2026-11-23 | Passed | 0.044 | 1 | No (0.1) |
 | gdp_weo_realtime v1 | Forecast evaluation | 2026-11-22 | 2026-11-23 | Failed | 0.575 | 1 | No (0.1) |

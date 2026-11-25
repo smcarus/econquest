@@ -53,6 +53,7 @@ export interface TrackRow {
   p?: number;
   adjusted?: number;
   alpha: number;
+  /** Passed, and the Holm-adjusted p is at or below its pass mark. */
   holds?: boolean;
 }
 
@@ -91,7 +92,7 @@ export function trackRows(verdicts: RecordedVerdict[], files: TestFile[], questV
   return base.map((r) => {
     if (r.p === undefined) return r;
     const a = adj.get(r.key) ?? 1;
-    return { ...r, adjusted: r3(a), holds: a <= r.alpha };
+    return { ...r, adjusted: r3(a), holds: r.verdict.verdict === 'passed' && a <= r.alpha };
   });
 }
 
