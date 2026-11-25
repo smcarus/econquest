@@ -28,7 +28,7 @@ Every change has to keep these. Pull requests that break them are not merged, ho
 
 ## Set up
 
-You need Node.js 20 or later.
+You need Node.js 20.19 or later, or 22.12 or later.
 
 ```bash
 npm install
@@ -46,14 +46,25 @@ npm run lint         # TypeScript
 npm test             # unit and server tests, network replaced by fixtures
 npm run build
 npx playwright install chromium   # once
-npm run test:smoke   # every page with all feeds down
-npm run test:a11y    # accessibility check of the main pages
+npm run test:smoke     # every page with all feeds down
+npm run test:journeys  # the main tasks, click by click
+npm run test:a11y      # accessibility check of the main pages
+npm run size:check     # start-up under 520 KB compressed, the whole app under 9 MB
 ```
 
 - Keep pull requests small and about one thing. Rebase on `main` rather than merging it in.
 - Add or update a test in `tests/` for each module you change in `src/utils/` or `server.ts`.
   Tests must not reach the network; use `tests/helpers/offline-fetch.mjs`.
 - New UI follows [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) and sits inside a `PanelBoundary`.
+  A new screen loads only when it is opened (`lazyNamed` in `src/components/LazyDesk.tsx`).
+- Every new piece of screen text goes in `src/i18n/messages/` and in the Spanish, French and
+  Portuguese files beside it (`src/i18n/es/`, `fr/`, `pt/`): Spanish uses *usted*, French *vous* and
+  Portuguese is Brazilian, with *você*. `npm test` fails when a language misses a key.
+- Some documents are generated and must not be edited by hand: `docs/METHODS.md`
+  (`npm run docs:methods`), `docs/TRACK_RECORD.md` (`npm run docs:track-record`, from
+  `docs/validation/recorded-verdicts.json`, which only `npm run track-record:import` adds to),
+  `docs/DATA_LICENCES.md` (`npm run docs:licences`) and `docs/GLOSSARY.md` (`npm run docs:glossary`).
+- Use plain words a lay reader understands. Say what something does, not how good it is.
 - Never commit keys, `.env`, or anything from `data/`.
 - Real feed replies to test against ship in `tests/fixtures/recorded-public/`: World Bank, IMF
   DataMapper, BIS, ECB, New York Fed, Eurostat, CFTC, GDELT and Brazil Treasury replies, kept
@@ -83,12 +94,15 @@ it, test it, and say in the pull request that a tool helped.
 
 | Path | What |
 | --- | --- |
-| `server.ts` | Express API, data pulls, caches and the archive |
+| `server.ts` | Express app start-up: routes, data pulls, caches and the archive |
+| `src/server/` | Server parts: feed readers (`feeds/`), routes, the AI client, the last good answers (`lastGood.ts`), release-day re-reads (`releaseWatch.ts`), the update check (`updateCheck.ts`), the broker gateway, events and webhooks, sign-in |
 | `src/utils/` | One module per source or calculation, each with a test in `tests/` |
 | `src/components/` | React pages and panels |
-| `src/data/` | Navigation, official calendar, country list, licence register |
+| `src/i18n/` | Screen text in English (`messages/`) and Spanish, French and Portuguese |
+| `src/data/` | Navigation, official calendar, country list, model register, licence register |
 | `docs/validation/` | Pre-registered specs and recorded verdicts |
-| `scripts/` | Command-line jobs (`npm run check:data`, backtests, evaluations) |
+| `scripts/` | Command-line jobs (`npm run check:data`, the daily run, backtests, evaluations, safe updates) |
+| `tests/smoke/` | Browser checks of the built app: every page, the main journeys, accessibility |
 
 ## Good first contributions
 

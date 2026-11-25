@@ -13,7 +13,8 @@ Menu > User manual > *Glossary*, and *Explain* on any figure asks the council wh
 country.
 
 **How much is explained.** The help button at the top of the page (next to the light and dark
-switch) sets the level, and each press moves to the next:
+switch) sets the level. Pressing it opens the four levels, each with one line on what it explains;
+press one to choose it:
 
 - *Key help* (the default): a guide on every chart (how to read it, and what it means in real life),
   a short introduction on each panel, a "What it means" line under each brief observation, and
@@ -35,15 +36,28 @@ Spanish, French and Portuguese cover the whole app. Spanish
 and French use the formal "you" (usted, vous); Portuguese uses the polite "você", as Brazilian
 software and official sites do. The council's agents still read questions in English, so in the other
 languages the chat asks you to type questions in English for now, and the suggested questions stay in
-English. Figures, source names, series names and answers written by the AI model are never
-translated: they show as the source or the model wrote them. No translation has yet been checked by
-a native speaker, and the button's hover text says so.
+English. With Spanish, French or Portuguese picked, the AI model writes Council chat answers, the
+Supreme Council, what-ifs and policy reviews in that language; figures, source names and series names
+are never translated. No translation has yet been checked by a native speaker, and the button's
+hover text says so; the review steps are in [TRANSLATION_REVIEW.md](./TRANSLATION_REVIEW.md).
+
+**Shortcuts.** **/** jumps to the council question box, **Cmd+K** (Ctrl+K) opens Tools with its
+search box, **Cmd+,** (Ctrl+,) opens Settings, **Esc** closes a window and **?** shows the list.
+/ and ? do nothing while you type in a box or while a window is open.
+
+**Dark and light.** Until you press the dark-mode switch, the app follows your computer's own
+setting and changes with it; from then on your choice is kept in this browser.
 
 **Research, not validated advice.** The app is a research workspace. No model in it has been
 independently validated, each signal shows its pre-registered backtest verdict (Menu > Models &
 validation), and nothing in it is a recommendation to buy or sell. Every export ends with that line.
 
 ## Start here: a first hour
+
+On a first start, the chat shows a short **New here? Three steps** card under the welcome: ask a
+question, open Research to study one country, and, if you like, add an AI model. *Choose an AI model*
+opens Settings; *Got it* hides the card for good in this browser. Until a model works, Settings shows
+no AI option picked and the Menu says *AI: not set*: the app works without one.
 
 1. **Start the app** (README: Docker with `start-mac.command`, or `npm run dev`) and open it in the
    browser. Menu > Settings > AI model > *Test* checks the model; the Supreme Council and summaries use
@@ -137,6 +151,16 @@ The chat is one conversation across the whole app. On Research and Reports, *Cou
 header opens the same chat in a panel on the right (full screen on a phone); questions asked there
 show on Workspace too, and an answer that is still being written keeps going when you change page.
 *Close* hides the panel; the header button brings it back.
+
+**Without an AI model**, each answer opens with a *Short answer, by the app's stated rules (not AI)*:
+for a question about central banks behind the curve, *No*, *Possibly* or *Not clearly* for each
+country, from the Central Bank Watcher's call and the gap to a simple Taylor rule; for other
+questions, each country's calls and debt path in one line. *What the agents found* follows. The
+Missing list under the answer drops repeats, puts figures that are only older than usual under their
+own heading and folds what no source the app reads publishes for the country into one line; its count
+shows only what could be filled. The *Agents* panel stays closed until you open it, a reason shared by
+every agent is said once, *What changed* since a saved question is one line when nothing moved, and
+follow-up suggestions sit under the answer.
 
 Under the question box, *Options* holds the rest: the countries to ask about, policy documents, the
 full council and saved research.
@@ -938,15 +962,16 @@ count. A signal against a position is a reason to look, not a call to trade.
 
 ## 3. Reports
 
-Reports opens with five tabs, each shown on its own: **Write a note** (the report builder: country
-note, issuer note, sustainability, portfolio and client reviews, and the council brief), **Policy
-reviews**, **Council documents** (agent and synthesis documents saved from Council chat), **Notebooks**
+Reports holds notes, briefs and teaching material to download or share, in four tabs, each shown on
+its own: **Write a note** (the report builder: country note, issuer note, sustainability, portfolio
+and client reviews, and the council brief), **Council documents** (agent and synthesis documents saved from Council chat), **Notebooks**
 (saved research grouped by topic, pinned figures and the working-paper bundle) and **Teaching** (a past
 rate decision as a student handout and a teacher copy). Links from Tools, worked examples and Council
 chat open the right tab. In Write a note, the text and the preview scroll inside a fixed height; on a
 phone they take turns.
 
-**Policy reviews.** In the Policy reviews tab. A step-by-step case file for a principal, economist or
+**Policy reviews.** On their own page, **Policy review** in the header (next to Reports); links from
+Tools and *Start a policy review* in Council chat open it there. A step-by-step case file for a principal, economist or
 politician looking for ways to improve policy in one country, with the council's help. Start one with
 *New policy review*, or with *Start a policy review* under any Council chat answer (the question
 becomes the problem). Six steps, in order:
@@ -1156,13 +1181,15 @@ hold no figures of their own; the handout reads them from the app's series when 
 
 ---
 
-## 4. Tools (Menu > Tools, inside Settings)
+## 4. Tools (Menu > Tools, or Cmd+K / Ctrl+K)
 
+- **Search**: type a word (for example debt, inflation or storms) to narrow the list.
 - **Groups**: every working tool, grouped by use (Council chat, Keep up, Screen and compare
-  countries, Study one country, Look back, Your portfolio, Write and share). Click a group to open
-  it; *Open all* opens every group and *Show sources* lists each tool's sources.
-- **Data connections**: the same check as `npm run check:data`, one line per source. *Check again*
-  re-runs it.
+  countries, Study one country, Debt and the budget, Rates, prices and trade, Growth, people and aid,
+  Disasters and climate, Look back, Your portfolio, Write and share). Click a group to open it;
+  *Open all* opens every group and *Show sources* lists each tool's sources.
+- **Data connections** (under *Set up*): the same check as `npm run check:data`, one line per source.
+  *Show every source* lists them; *Check again* re-runs it.
 - **Hidden desks**: each older desk, what live input it would need to come back, and which ready
   tool already covers it.
 
@@ -1170,11 +1197,20 @@ hold no figures of their own; the handout reads them from the app's series when 
 
 ## 5. Menu
 
-- **Worked examples** (W1): four guided case studies for the country open in Research, each going
+- **The Menu** is in three groups after **Tools**: *Set up* (Settings, Account, Offline data, Your
+  data, Sharing mode, Exam mode, Find data), *Check the data* (Data health, Models & validation, Audit
+  log, Idea journal) and *Learn* (User manual, Worked examples, About & data licences, Report a
+  problem, Quests). Settings shows *AI: not set* until a model works.
+- **Report a problem**: opens a new GitHub issue with the app's version filled in; you read it and
+  send it yourself. When a panel cannot be drawn, its note has *Copy details* (version, where, the
+  error and the first lines of the component stack; no figures or saved data) and *Report this
+  problem*.
+- **Worked examples** (W1): five guided case studies for the country open in Research, each going
   from a question to a short memo with the app's own screens: debt sustainability ("Is government
   debt on a path the country can keep up?"), inflation and interest rates ("Is the central bank's
   policy tight or loose?"), the currency ("How exposed is the currency if foreign money stops coming
-  in?") and a policy review ("Can the government afford to spend 1% of GDP more each year?"). Each
+  in?"), a policy review ("Can the government afford to spend 1% of GDP more each year?") and a
+  commodity price fall (added 23 November). Each
   example lists the figures saved on this computer for that country, with source and year; a figure
   no source has filled reads Missing, and nothing is built in. A short working follows (for example
   the primary balance that holds debt steady, or the real policy rate), done only when every figure
@@ -1183,7 +1219,7 @@ hold no figures of their own; the handout reads them from the app's series when 
   working and space for your own answers: *Copy* or *Download (.md)*, then write the conclusion in
   your own words. To work an example for another country, open that country in Research first. In
   English, Spanish, French and Portuguese.
-- **Tools**: opens Settings on its Tools tab (section 6). Opening a tool closes Settings and goes to it.
+- **Tools**: opens the Tools page (section 4). Opening a tool goes to it.
 - **Settings** (⌘, or Ctrl+,): free keys (FRED, EIA, UN Comtrade, Turkey EVDS), your own paid data
   (CDS source Off, My CSV or My LSEG), and the Gemini key. Each key has a Test button. Keys are
   saved on this computer, shown masked, and can be changed only from this computer.
@@ -1351,6 +1387,10 @@ hold no figures of their own; the handout reads them from the app's series when 
   commercial use, the credit to print, quotes from the terms page with links, and the open questions
   (rows marked *Permission needed* or *Terms not confirmed*). The *Data licences* button on a
   country's Sources tab opens it too. The same register is in [DATA_LICENCES.md](./DATA_LICENCES.md).
+  It also has a short Privacy section ([PRIVACY.md](./PRIVACY.md)) and says when a newer release is
+  out, with a link to what changed and the update steps; the Menu then shows *New version* beside
+  About. The check asks GitHub once a day at most, only while the app is open, and sends nothing
+  about you (`UPDATE_CHECK=off` turns it off).
 - **Sign-off on saved research**: each saved council conversation (Saved research) shows Draft,
   Reviewed or Approved. *Mark reviewed*, then *Approve*, each with your name; the step records the
   SHA-256 of the report's content. If the report changes afterwards (a follow-up saved over it) it

@@ -294,6 +294,7 @@ the file read Missing and say where to get it.
 | `data/local/ibtracs/` | An IBTrACS v04 CSV (optional: the since-1980 file or a basin file) | https://www.ncei.noaa.gov/products/international-best-track-archive | Tropical cyclones (History & data), instead of the download button in the panel |
 | `data/local/gdl/` | Global Data Lab subnational Human Development Index, the CSV download (optional) | https://globaldatalab.org, Subnational HDI (free for non-commercial use; the app never downloads or ships it) | Regional figures (History & data) |
 | `data/local/budget-execution/` | Your own approved budget and monthly spending, one row per line and month (columns line, approved, month, spent). Load it from the panel with *Download the template* and the file picker rather than copying it in | Your ministry or treasury | Budget execution (History & data). It stays on this computer; the audit log keeps only its fingerprint |
+| `data/local/philly-spf/` | `medianLevel.xlsx`, the Philadelphia Fed Survey of Professional Forecasters median levels (optional) | philadelphiafed.org, Survey of Professional Forecasters (no terms of use found, so the app never downloads it) | Official forecasts side by side, United States (History & data > IMF forecasts by edition) |
 | `data/local/cb-statements/<ISO3>/` | Central bank statements, one text, Markdown or web page file each, named from its date (for example `2026-10-29.txt`) | The central bank's own site | Central bank word count |
 
 [USER_MANUAL.md](./USER_MANUAL.md) explains each panel, and [DATA_LICENCES.md](./DATA_LICENCES.md)
@@ -323,6 +324,7 @@ here so you know what the folders are. Each one can also be fetched by hand from
 | `data/local/weo-vintages/` | Past IMF World Economic Outlook editions | Once a week at most | `npm run weo:pull` |
 | `data/local/gpr/` | The Geopolitical Risk index (Caldara and Iacoviello) | Once a week at most | `npm run gpr:pull` |
 | `data/local/sanctions/`, `data/local/ucdp/` | OFAC and UN sanctions lists; newer UCDP conflict files | With each daily download | `npm run sanctions:pull`, `npm run ucdp:pull` |
+| `data/local/oecd-vintages/` | The OECD's monthly Main Economic Indicators editions since 1999 (GDP volume and consumer prices, 38 members), for the real-time forecast tests | Only when you run it; later runs fetch new editions only | `npm run oecd:vintages` |
 
 A few sources are fetched for one country at a time, the first time you open its History & data
 page, and kept under `data/live/`:
@@ -344,6 +346,9 @@ The daily download keeps a few more files in `data/live/` for the tools added on
 | `data/live/surprise-inputs.json` | Releases and the expectations saved before them (BCB Focus, ECB SPF, Kalshi CPI snapshots, BLS CPI) | At most every 6 hours |
 | `data/live/imf-fx.json` | IMF monthly exchange rates per US dollar for currencies with no ECB or central bank daily rate in the app | With each daily download |
 | `data/live/imf-policy.json` | IMF monthly central bank policy rates for countries the app does not take from the BIS | With each daily download |
+| `data/live/official-forecasts.json` | Growth and inflation forecasts from the IMF, the World Bank (Global Economic Prospects) and the OECD (Economic Outlook) for every country | With each daily download |
+| `data/live/last-good/` | The last good answer of five feeds, served with its own dates while the source does not answer, never past its limit | Each time the source answers |
+| `data/local/release-watch.json` | Which CPI and monthly activity releases were re-read on their release day (`RELEASE_WATCH=off` in `.env` turns this off) | On release days, about once an hour |
 
 Countries you add with Menu > Add a country are part of the daily download too (up to 25), so their
 figures are saved under `data/live/` like the built-in countries'.
@@ -351,7 +356,11 @@ figures are saved under `data/live/` like the built-in countries'.
 Research notebooks, with their pinned figures and fingerprints, are kept in `data/local/research.json`.
 
 If a download fails, the copy saved before is kept and nothing is filled in. `npm run check:data`
-then shows which source did not answer. The newest row is `imf_rates` (IMF monthly Treasury bill,
+then shows which source did not answer. A slow or busy source is asked up to three times before it
+counts as failed, and a step that failed in the daily run is tried again at the end of the run and
+later, after two hours. The newest rows (23 November) are `wb_gep` and `oecd_eo` (official forecasts),
+`oecd_rtd` (OECD editions), `catalogues` (Find data) and `broker_prices` (your own Interactive
+Brokers gateway, sign-in state only). Before them came `imf_rates` (IMF monthly Treasury bill,
 government bond and money market rates; if the code names do not match, set `IMF_TBILL_KEY`,
 `IMF_GOVBOND_KEY` or `IMF_MONEY_KEY` in `.env` as the row says). Before it came `imf_fx` and `imf_policy` (IMF monthly
 exchange rates and policy rates, found by the IMF's code names; if they do not match, set
@@ -390,6 +399,9 @@ names again; a full copy of the `data/` folder keeps them ([BACKUP_AND_RESTORE.m
 | The page does not open | Wait a minute after starting and reload. `docker compose ps` should show econquest as "healthy". |
 | Many figures say **Missing** | That is expected, not a fault: the app never invents a number. Each Missing figure says why (no free source, the source is down, or a key is needed). Data connections shows which sources answer. |
 | The council says it cannot reach the AI | Ollama is not running, or the models are not downloaded. Start the Ollama app and run the `ollama pull` lines above, or switch to Gemini or No AI in Settings. |
+| A figure shows an older date than usual | Its source did not answer this time, so the last good answer is shown with its own dates. Menu > Data health > Sources says when the source is asked again. Past its limit the figure reads Missing |
+| From the code: `npm run go` says port 3000 is in use | Another program (often another Docker container) holds port 3000. The development app starts on the next free port and the note names it; nothing else is needed |
+| A panel says it "could not be drawn" | Press **Copy details** to copy what went wrong (no figures or saved data), or **Report this problem** to open a GitHub issue with those details filled in. Nothing is sent until you send it. Menu > Report a problem works the same way |
 | Answers are very slow | The large model on a computer without enough memory or a graphics chip can take 10 minutes or more per full council report. Use Gemini for the referee, or run Ollama on a bigger machine. |
 
 ## Remove EconQuest
@@ -453,11 +465,15 @@ Useful commands in the code copy, on a computer that reaches the data sources:
 | --- | --- |
 | `npm run go` | Pull the newest code, install, start Ollama and the app |
 | `npm run go -- daily` | Run the daily data download now (log: `data/local/logs/daily.log`) |
-| `npm run go -- status` | What is running and what the last daily download did, with its size |
+| `npm run go -- status` | What is running and what the last daily download did, with its size, and any later tries of failed steps |
+| `npm run update` | Update the code and the Docker app only; files the app writes itself are backed up and put back first, so they never block the update |
 | `npm run check:data` | Ask every source now and print one row each: connected, needs setup, or why it failed |
 | `npm run replays:pull` | Save the monthly history for the past-crisis replays (`-- --force` saves it again) |
 | `npm run chinn-ito:pull` | Save the Chinn-Ito file (`-- --force` downloads it again) |
 | `npm run tokens -- list` | List, make or revoke API tokens |
+| `npm run oecd:vintages` | Save the OECD's real-time editions (new ones only after the first run) |
+| `npm run forecast:evaluate` | Run the pre-registered forecast tests and write their verdicts to `data/local/validation/` |
+| `npm run track-record:import -- --where "<computer>"` | Copy verdicts from that run into docs/validation/ and rebuild the track record |
 | `npm run notebook:check` | Check every pinned figure in your research notebooks against the figures today, while the app runs (`--url`, `--token`, `--json`) |
 
 ## Your own cloud server
