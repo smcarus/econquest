@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Docs for lay readers and developers: corrected menu paths (the Gemini key is under Settings > AI
+  model, other keys under Free data keys, Backup under Settings), the first-start card name, four
+  header pages and five worked examples in the user manual (the Worked examples window now says five
+  in every language), a "Not public yet" note on the install routes until the public copy is
+  published, new docs/ARCHITECTURE.md (how the parts fit together and how one figure travels), and
+  CONTRIBUTING steps for adding a data source and for changes to what a model is asked.
 - Docs brought up to date with #683 to #687: the README and walk-through guide in all four languages
   (the 59 low-income countries in every list, Add a country with every country, the second security
   review), HOW_IT_WORKS and METHODOLOGY (version 1.7: screen fonts no longer loaded from Google
