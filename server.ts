@@ -168,7 +168,8 @@ import { toLive } from './src/utils/liveFigures';
 import { EVENT_LABEL, openIssues, watchFigures, type FigureEventKind } from './src/utils/figureWatch';
 import { readEvents, readLedger, saveWatch } from './src/utils/figureWatchStore';
 import { DEFAULT_WATCHLISTS } from './src/data/presetsAndBaselines';
-import { ADDED_COUNTRIES_KEY, ADDED_COUNTRIES_MAX, pickAddedCountries } from './src/utils/addedCountries';
+import { ADDED_COUNTRIES_KEY, ADDED_COUNTRIES_MAX, pickAddedCountries, watchedCountries, WATCHLISTS_KEY } from './src/utils/addedCountries';
+import { LOW_INCOME_DEBT_ADDED_ISO3, lowIncomeCatalogItems } from './src/data/lowIncomeCatalog';
 import { defaultProvider, isLightMode, LIGHT_GDELT_NOTE, lightModeCountries, skipGdeltRaw } from './src/utils/lightMode';
 import { isModelPlaceholder, MODEL_FIELD_MISSING } from './src/utils/councilResult';
 import { FIGURE_LIST, FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
@@ -220,7 +221,7 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { ThinkingLevel, Type } from '@google/genai';
 import {
-  SOVEREIGN_CATALOG,
+  SOVEREIGN_CATALOG, catalogEntry,
   registerCustomSovereignInCatalog,
   buildBaselineOpenData,
   buildDefaultAssessmentRun,
@@ -624,6 +625,15 @@ function preloadCountries(): Array<{ iso3: string; countryName: string }> {
 }
 /** The built-in countries, before any added country joins the list. */
 const BUILT_IN_ISO3 = new Set(SOVEREIGN_CATALOG.map((c) => c.iso3));
+/**
+ * The countries on the IMF low-income debt list (src/data/lowIncomeCatalog.ts): built in and shown in
+ * every list, but the server downloads and refreshes only those on a saved watchlist or added list
+ * (Sam, 25 November 2026), so the daily run stays short. The others are fetched live when opened.
+ */
+const FOLLOW_ONLY_ISO3 = new Set(LOW_INCOME_DEBT_ADDED_ISO3);
+const FOLLOW_ONLY_ITEMS = new Map(lowIncomeCatalogItems().map((c) => [c.iso3, c]));
+/** Countries the server always keeps: the built-in ones less the follow-only ones. */
+const ALWAYS_ISO3 = new Set([...BUILT_IN_ISO3].filter((iso3) => !FOLLOW_ONLY_ISO3.has(iso3)));
 /** Added countries left out of the daily download because the limit was reached (LI1). */
 let addedOverLimit: string[] = [];
 /**
@@ -632,11 +642,16 @@ let addedOverLimit: string[] = [];
  * removed leaves it again (src/utils/addedCountries.ts).
  */
 function syncAddedCountries(): void {
-  const pick = pickAddedCountries(workspaceValuesOnDisk(), BUILT_IN_ISO3);
-  const want = new Set(pick.countries.map((c) => c.iso3));
+  const values = workspaceValuesOnDisk();
+  const pick = pickAddedCountries(values, BUILT_IN_ISO3);
+  const followed = watchedCountries(values, FOLLOW_ONLY_ISO3);
+  const want = new Set([...pick.countries.map((c) => c.iso3), ...followed]);
   for (let i = SOVEREIGN_CATALOG.length - 1; i >= 0; i--) {
     const iso3 = SOVEREIGN_CATALOG[i].iso3;
-    if (!BUILT_IN_ISO3.has(iso3) && !want.has(iso3)) SOVEREIGN_CATALOG.splice(i, 1);
+    if (!ALWAYS_ISO3.has(iso3) && !want.has(iso3)) SOVEREIGN_CATALOG.splice(i, 1);
+  }
+  for (const iso3 of LOW_INCOME_DEBT_ADDED_ISO3) {
+    if (followed.has(iso3) && !SOVEREIGN_CATALOG.some((c) => c.iso3 === iso3)) SOVEREIGN_CATALOG.push(FOLLOW_ONLY_ITEMS.get(iso3)!);
   }
   for (const c of pick.countries) registerCustomSovereignInCatalog(c);
   addedOverLimit = pick.overLimit;
@@ -676,7 +691,7 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
     }
     // GDELT's 15-minute pause is not waited out here (it can refuse every country in turn);
     // its figures fill in on a later hourly refresh.
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === step.iso3)?.countryName;
+    const name = catalogEntry(step.iso3)?.countryName;
     const pausedBefore = gdeltPausedUntil;
     const snap = await refreshStoredSnapshot(step.iso3, name);
     if (!snap) return { outcome: 'failed', note: 'The pull failed; see the server log' };
@@ -4206,7 +4221,7 @@ async function startServer() {
       const file = workspaceFor(res);
       const before = loadWorkspace(file).values[req.params.key] ?? null;
       const w = setWorkspaceValue(file, req.params.key, value);
-      if (req.params.key === ADDED_COUNTRIES_KEY) syncAddedCountries();
+      if (req.params.key === ADDED_COUNTRIES_KEY || req.params.key === WATCHLISTS_KEY) syncAddedCountries();
       // The page re-sends these on every load; only a real change goes in the audit log.
       if (before !== value) appendAudit(AUDIT_FILES, { kind: req.params.key === 'econquest_ai_runtime_config_v1' ? 'model' : 'workspace', summary: `Changed ${WORKSPACE_KEYS[req.params.key] || req.params.key}` });
       res.json({ ok: true, updatedAt: w.updatedAt[req.params.key] || null });
@@ -4493,7 +4508,7 @@ async function startServer() {
       ustAuctions: iso3.toUpperCase() === 'USA' ? loadUstAuctions() : null,
       euSurveys: loadEuSurveys(),
       monthlyIndicators: loadMonthlyIndicators(),
-      currency: SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3.toUpperCase())?.currencyCode,
+      currency: catalogEntry(iso3.toUpperCase())?.currencyCode,
     });
     // Your own series for this country, after the feeds' and labelled "Your file" (Menu > Your data).
     const own = await ownSeriesViewsFor(enginePlatform, iso3).catch(() => []);
@@ -4671,7 +4686,7 @@ async function startServer() {
     return Promise.all(
       iso3s.map(async (iso3) => ({
         iso3,
-        snapshot: await fetchLiveOpenDataSnapshot(iso3, SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName, { cacheOnly: true }),
+        snapshot: await fetchLiveOpenDataSnapshot(iso3, catalogEntry(iso3)?.countryName, { cacheOnly: true }),
         series: await seriesFor(iso3),
       }))
     );
@@ -4692,7 +4707,7 @@ async function startServer() {
     if (!iso2For(iso3)) return res.status(404).json({ error: 'NO_COUNTRY', message: `${req.params.iso3} is not an ISO alpha-2 or alpha-3 country code.` });
     const [data] = await panelData(iso3);
     if (!data) return res.status(404).json({ error: 'NO_COUNTRY', message: `No country ${iso3}.` });
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || data.snapshot.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || data.snapshot.countryName || iso3;
     res.json(
       buildCountrySnapshot({
         iso3,
@@ -4770,7 +4785,7 @@ async function startServer() {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const series = gdeltDailySeries(DATA_DIR, iso3);
     const spikes = spikeMonths(series);
-    res.json({ series, reading: v1Reading(series), spikes: spikes.slice(-36), spikeSentence: series ? spikeSentence(SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3, spikes) : null, spikeMethod: SPIKE_METHOD, pull: loadDailyState(gdeltDailyDir(DATA_DIR)), from: v1FromMonth(process.env) });
+    res.json({ series, reading: v1Reading(series), spikes: spikes.slice(-36), spikeSentence: series ? spikeSentence(catalogEntry(iso3)?.countryName || iso3, spikes) : null, spikeMethod: SPIKE_METHOD, pull: loadDailyState(gdeltDailyDir(DATA_DIR)), from: v1FromMonth(process.env) });
   });
   // Country risk scorecard (src/utils/countryRiskScorecard.ts): governance, conflict, unrest, geopolitical, capital account, economy; no overall score.
   app.get('/api/risk-scorecard/:iso3', async (req, res) => {
@@ -4799,7 +4814,7 @@ async function startServer() {
       capital: ciReading && !('missing' in ciReading) ? ciReading : null,
       capitalMissing: !ci.ok ? ci.reason : ciReading && 'missing' in ciReading ? ciReading.missing : undefined,
     });
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...sc, sentence: scorecardSentence(name, sc), method: SCORECARD_METHOD });
   });
   // Sanctions lists (src/utils/sanctionsLists.ts): OFAC and UN files in data/local/sanctions/, by country.
@@ -4812,7 +4827,7 @@ async function startServer() {
     const d = sanctionsData(DATA_DIR);
     if (!d || !d.files.length) return res.json({ iso3, ok: false, reason: `No sanctions list files read from ${sanctionsDir(DATA_DIR)} (run npm run sanctions:pull, or download them by hand)`, ...(d ? { skipped: d.skipped } : {}), method: SANCTIONS_METHOD });
     const c = countrySanctions(d, iso3);
-    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ ok: true, ...c, sentence: sanctionsSentence(name, c, d), ...sanctionsFiles(), method: SANCTIONS_METHOD });
   });
   app.get('/api/sanctions-search', (req, res) => {

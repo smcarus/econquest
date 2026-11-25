@@ -122,6 +122,8 @@ export const BRIEF_TEXT_PT: Record<string, string> = {
   "FX feed did not answer": "A fonte de câmbio não respondeu",
   "CFTC did not answer": "A CFTC não respondeu",
   "Comtrade did not answer": "O Comtrade não respondeu",
+  "Not in the app’s Comtrade list": "Fora da lista do Comtrade do aplicativo",
+  "This country has no Comtrade reporter code in the app yet.": "Este país ainda não tem um código de declarante do Comtrade no aplicativo.",
   "GDELT did not answer": "O GDELT não respondeu",
   "Trade figures did not answer": "Os números de comércio não responderam",
   "No ECB rate": "Sem taxa do BCE",

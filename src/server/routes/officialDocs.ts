@@ -1,6 +1,6 @@
 import type express from 'express';
 import { fetchWithTimeout, RESEARCH_USER_AGENT } from '../http';
-import { SOVEREIGN_CATALOG } from '../../data/presetsAndBaselines.ts';
+import { SOVEREIGN_CATALOG, catalogEntry } from '../../data/presetsAndBaselines.ts';
 import { iso2For } from '../../data/iso3166Alpha2';
 import { BIS_SPEECHES_RSS, DOC_SOURCE_LABEL, parseBisSpeeches, parseWdsDocs, speechesFor, wdsUrl, type OfficialDoc } from '../../utils/officialDocs';
 
@@ -28,7 +28,7 @@ async function text(url: string): Promise<string> {
 export function registerOfficialDocsRoutes(app: express.Express): void {
   app.get('/api/official-docs', async (req, res) => {
     const iso3 = String(req.query.iso3 || '').toUpperCase();
-    const country = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3);
+    const country = catalogEntry(iso3);
     if (!country) return res.status(400).json({ error: 'Unknown country.' });
     const iso2 = iso2For(iso3);
     const problems: string[] = [];

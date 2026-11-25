@@ -7,7 +7,7 @@ import { refusal } from '../../utils/permissions';
 import { appendAudit } from '../../utils/auditStore';
 import { AUDIT_FILES } from '../config';
 import { CBPOL_AREA, CBPOL_NOT_COVERED } from '../../utils/bisPolicyRates';
-import { SOVEREIGN_CATALOG } from '../../data/presetsAndBaselines.ts';
+import { SOVEREIGN_CATALOG, catalogEntry } from '../../data/presetsAndBaselines.ts';
 import { addDays, IDEA_METHOD, scoreIdea, summariseIdeas, validateIdea, valueOnOrBefore, type IdeaInput } from '../../utils/ideaJournal';
 import { appendIdea, ideaFilePath, loadIdeas } from '../../utils/ideaStore';
 import { fetchPolicyDaily } from '../feeds/rates';
@@ -27,7 +27,7 @@ const IDEA_FILE = ideaFilePath(DATA_DIR);
 
 export function registerIdeaRoutes(app: express.Express, deps: IdeaDeps): void {
   const { quick, seriesFor, refuseRemoteChange, signedIn } = deps;
-  const nameOf = (iso3: string) => SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+  const nameOf = (iso3: string) => catalogEntry(iso3)?.countryName || iso3;
   /** The published series an idea is scored on, or why there is none. */
   const seriesForIdea = async (iso3: string, instrument: IdeaInput['instrument']): Promise<{ target: string; points: Array<{ date: string; value: number }> } | { reason: string }> => {
     if (instrument === 'fx') {

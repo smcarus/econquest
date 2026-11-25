@@ -77,7 +77,7 @@ import { areaSeries } from '../../utils/oecdSdmx';
 import { CBPOL_AREA, CBPOL_NOT_COVERED } from '../../utils/bisPolicyRates';
 import { countrySeries } from '../../utils/seriesHistory';
 import path from 'path';
-import { SOVEREIGN_CATALOG } from '../../data/presetsAndBaselines.ts';
+import { SOVEREIGN_CATALOG, catalogEntry } from '../../data/presetsAndBaselines.ts';
 import { oecdFetch, fetchQnaPull, fetchNationalCpi, nationalCpiOrSaved, fetchMonthlyActivity } from '../feeds/oecd';
 import { GSCPI_SOURCE, STRESS_INDICES, stressIndex } from '../../utils/stressIndices';
 import { fetchBisCreditCycle, fetchDebtSchedule, fetchFxHistory, fetchPolicyDaily, fetchReerLong, fetchStressPulls, fetchAlfred, loadFxHistory, fetchFredHistory } from '../feeds/rates';
@@ -190,7 +190,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       if (x) series[id] = x;
     }
     const t = INFLATION_TARGETS[iso3];
-    const countryName = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const countryName = catalogEntry(iso3)?.countryName || iso3;
     return buildExercises({ countryName, month, series, ...(t ? { target: { pct: t.pct, bank: t.bank } } : {}) });
   };
   const monthOf = (v: unknown) => (typeof v === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(v) ? v : '');
@@ -268,7 +268,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
         if (!('points' in s)) continue;
         series.push({ id: fig.id, label: fig.label, unit: fig.unit, source: s.source || fig.sourceName || '', points: s.points, revisions: file.revisions?.[fig.id] });
       }
-      return [{ iso3, countryName: SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3, series }];
+      return [{ iso3, countryName: catalogEntry(iso3)?.countryName || iso3, series }];
     });
     res.json({ leads: storyLeads(countries), countries: countries.length, noHistory: missing, method: STORY_LEADS_METHOD });
   });
@@ -301,7 +301,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     };
     const gap = outputGapFrom(file);
     const r = bohnTest({ primaryBalance: pick('primary_balance'), debt: pick('debt_gdp'), gap: gap.ok ? gap.years : undefined });
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: bohnSentence(r, name), references: BOHN_REFERENCES } : {}) });
   });
   // Gross financing need (src/utils/grossFinancingNeed.ts): deficit + external amortisation, a lower bound.
@@ -317,7 +317,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       return s && 'points' in s ? s : undefined;
     };
     const r = grossFinancingNeed({ primaryBalance: pick('primary_balance'), overallBalance: pick('overall_balance'), gdpUsd: pick('gdp_usd'), schedule: schedule ?? null });
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: gfnSentence(r, name) } : {}) });
   });
   // Reserve adequacy (src/utils/reserveAdequacy.ts): traditional ratios and the IMF ARA metric without other liabilities.
@@ -331,7 +331,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       return s && 'points' in s ? s : undefined;
     };
     const r = reserveAdequacy({ reservesUsd: pick('reserves_usd'), shortTermDebtUsd: pick('short_term_debt_usd'), broadMoneyGdp: pick('broad_money_gdp'), exportsUsd: pick('exports_usd'), gdpUsd: pick('gdp_usd'), reservesMonths: pick('reserves_months') });
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: reserveAdequacySentence(r, name) } : {}) });
   });
   // External sustainability (G24, src/utils/externalSustainability.ts): external debt, debt service and the debt-stabilising current account.
@@ -353,7 +353,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       reservesUsd: pick('reserves_usd'),
       exportsUsd: pick('exports_usd'),
     });
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: esSentence(r, name) } : {}) });
   });
   // Crisis early-warning (G23, src/utils/crisisWarning.ts): the BIS credit cycle against the Basel III lines.
@@ -362,7 +362,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const covered = Boolean(BIS_ISO2[iso3]);
     const cycle = covered ? await quick(fetchBisCreditCycle(iso3)) : null;
     const r = crisisWarning(cycle, covered);
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: crisisSentence(r, name), notValidated: CRISIS_NOT_RUN } : {}) });
   });
   // Yield curve and financial conditions (G25, src/utils/yieldCurve.ts): 10-year yield minus policy rate, and an equal-weight conditions index.
@@ -388,7 +388,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       policy: area ? hist?.policyMonthly?.[area]?.points.map((p) => ({ period: p.period, value: p.pct })) : null,
       test: saved || null,
     });
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: curveSentence(r, name), ...(r.hitRate ? {} : { notValidated: CURVE_NOT_RUN }) } : {}) });
   });
   // Inflation drivers (G26, src/utils/inflationDrivers.ts): headline against core, food and energy, from official sub-indices.
@@ -399,7 +399,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const oecdCovered = Boolean(hist?.cpi && areaSeries(iso3, hist.cpi)?.points?.length);
     if (!EUROSTAT_GEO[iso3] && iso3 !== 'USA' && !oecdCovered) return res.json({ iso3, ok: false, reason: NO_DRIVER_SOURCE });
     const inputs = await quick(fetchInflationDrivers(iso3, oecdCovered));
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     if (!inputs) return res.json({ iso3, ok: false, reason: 'The consumer price sources have not answered yet' });
     const r = inflationDrivers(inputs);
     res.json({ iso3, ...r, ...(r.ok ? { sentence: driversSentence(r, name) } : {}) });
@@ -409,7 +409,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const file = await quick(fetchPwt());
     const r = growthAccounting(file, iso3);
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: gaSentence(r, name) } : {}) });
   });
   // Bank and government links (G28, src/utils/bankSovereign.ts): bank size, claims on government, banks' share of government debt, soundness.
@@ -437,7 +437,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       investorBase: ib,
       firstProjectionYear: new Date().getUTCFullYear(),
     });
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: bsSentence(r, name) } : {}) });
   });
   // Fiscal rules check (G35, src/utils/fiscalRules.ts): treaty limits against the saved IMF history, national rules from the IMF workbook the user saved.
@@ -457,7 +457,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       imf = { table: null, reason: `The folder data/local/imf-fiscal-rules/ could not be read (${err?.message || err})` };
     }
     const r = fiscalRulesCheck(iso3, new Date().getUTCFullYear(), { debt_gdp: pick('debt_gdp'), overall_balance: pick('overall_balance') }, imf);
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ ...r, sentence: frSentence(r, name), historySaved: Boolean(file) });
   });
   // Remittances (PA1, src/utils/remittances.ts): saved World Bank history only.
@@ -471,7 +471,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
     };
     const p = remittanceProfile(Object.fromEntries(REMIT_IDS.map((id) => [id, pick(id)])), new Date().getUTCFullYear(), Boolean(file));
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...p, sentence: remitSentence(p, name) });
   });
   // Financial inclusion (PA5, src/utils/financialInclusion.ts): saved World Bank history only.
@@ -485,7 +485,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
     };
     const f = financialInclusion(Object.fromEntries(FI_IDS.map((id) => [id, pick(id)])), new Date().getUTCFullYear(), Boolean(file));
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...f, sentence: fiSentence(f, name) });
   });
   // Commodity prices and terms of trade (PA3, src/utils/commodityTerms.ts): saved World Bank history and the Pink Sheet moves.
@@ -499,7 +499,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
     };
     const c = commodityTerms(Object.fromEntries(CT_IDS.map((id) => [id, pick(id)])), prices?.moves ?? null, new Date().getUTCFullYear(), Boolean(file));
-    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...c, sentence: ctSentence(c, name) });
   });
   // Aid received (PA4, src/utils/aidReceived.ts): saved World Bank history only (OECD DAC figures as the World Bank republishes them).
@@ -513,7 +513,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
     };
     const a = aidProfile(Object.fromEntries(AID_IDS.map((id) => [id, pick(id)])), new Date().getUTCFullYear(), Boolean(file));
-    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...a, sentence: aidSentence(a, name) });
   });
   // Budget credibility (R3, src/utils/budgetCredibility.ts): saved World Bank history only (GF.XPD.BUDG.ZS, from PEFA assessments).
@@ -527,14 +527,14 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       return s && 'points' in s ? s.points.map((p) => ({ year: Number(String(p.date).slice(0, 4)), value: p.value })).filter((p) => Number.isFinite(p.year) && Number.isFinite(p.value)) : undefined;
     };
     const b = budgetCredibility(Object.fromEntries(BC_IDS.map((id) => [id, pick(id)])), new Date().getUTCFullYear(), Boolean(file));
-    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...b, sentence: bcSentence(b, name) });
   });
   // World Bank development projects (R5, src/utils/wbProjects.ts): the saved list from the daily download only, never fetched on page open.
   app.get('/api/wb-projects/:iso3', (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const p = wbProjectsProfile(loadWbProjects(), iso2For(iso3), new Date().toISOString().slice(0, 10));
-    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...p, sentence: wbProjectsSentence(p, name) });
   });
 
@@ -543,7 +543,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const g = loadGdl();
     const p = regionalProfile({ iso3, iso2: iso2For(iso3), dose: loadDose(), euro: loadEuroRegions(), gdl: g.rows, gdlFile: g.file });
-    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...p, sentence: regionalSentence(p, name) });
   });
   // Official forecasts side by side (CG2, src/utils/officialForecasts.ts): the saved copy from the daily download, and your Philadelphia Fed workbook for the United States; never fetched on page open.
@@ -570,7 +570,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       cpi: faoCpiInput(DATA_DIR),
       moves: prices?.moves ?? null,
     });
-    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...f, sentence: foodSentence(f, name) });
   });
   // Natural disasters (src/utils/disasters.ts): EM-DAT events from the file the user saved in data/local/emdat/, with GDP and population from the saved history.
@@ -586,7 +586,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const emdat = emdatInput(DATA_DIR);
     const gdp = pick('gdp_usd');
     const v = disasterView({ iso3, emdat, series: { gdp_usd: gdp, population: pick('population') } });
-    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     // Loss history and frequency-severity model (src/utils/lossModel.ts).
     const evs = !v.missing && emdat.table ? emdat.table.countries.get(iso3) : undefined;
     const losses = evs ? lossModels(evs, emdat.table!.latestYear, new Map((gdp ?? []).map((p) => [p.year, p.value]))) : [];
@@ -611,7 +611,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       v = stormsNear(t.storms, outline, radiusKm, to);
       stormCache.set(key, v);
     }
-    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ ...base, file: t.file, pulledAt: t.pulledAt, source: got.source, stale: got.stale ?? false, wmoWindPoints: t.wmoWindPoints, ...v, list: v.list.slice(0, 200), sentence: stormSentence(v, name) });
   });
   app.post('/api/storms/download', (_req, res) => {
@@ -635,7 +635,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
   app.get('/api/cb-words/:iso3', (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const got = readCbStatements(iso3);
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...got, method: CBW_METHOD, reference: CBW_REFERENCE, ...(got.statements.length ? { sentence: cbwSentence(got.statements, name) } : {}) });
   });
   // Local projections (src/utils/localProjections.ts): inflation after a policy rate change, reduced form.
@@ -649,7 +649,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     if (!cpi) return res.json({ iso3, ok: false, reason: `Monthly inflation: ${why('cpi_monthly') || 'not saved'}` });
     if (!rate) return res.json({ iso3, ok: false, reason: `Policy rate: ${why('policy_rate') || 'not saved'}` });
     const r = localProjections(cpi.points, rate.points);
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: lpSentence(r, name), sources: [cpi.source, rate.source].filter(Boolean) } : {}) });
   });
   // Policy rule family (src/utils/ruleFamily.ts): the policy rate against five stated rules.
@@ -689,7 +689,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       ...(INFLATION_TARGETS[iso3] ? { targetPct: INFLATION_TARGETS[iso3].pct } : {}),
       ...(gap ? { gap } : {}),
     });
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     res.json({ iso3, ...r, method: RULE_FAMILY_METHOD, ...(r.ok ? { sentence: ruleFamilySentence(r, name), sources: [pick('policy_rate')?.source, pick('cpi_monthly')?.source, gap ? (gap.source === 'imf' ? 'IMF WEO output gap (NGAP_NPGDP)' : "The app's output gap estimate") : undefined, INFLATION_TARGETS[iso3]?.bank].filter(Boolean) } : {}) });
   });
   // Replicate a rate decision (src/utils/decisionReplay.ts): the week-before data, the rule, the move.
@@ -727,7 +727,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
   // BEER fair value (src/utils/beer.ts): REER on terms of trade, productivity vs the US and an NFA proxy.
   app.get('/api/beer/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     if (iso3 === 'USA') return res.json({ iso3, name, ok: false, reason: 'The US is the productivity benchmark in this model, so it has no BEER of its own here' });
     const [file, usFile, reer] = await Promise.all([
       quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
@@ -745,7 +745,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
   app.get('/api/event-study/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const bank = req.query.bank === 'fed' ? 'fed' : 'own';
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     if (iso3 === 'USA') return res.json({ iso3, name, ok: false, reason: 'The US dollar is the base currency, so there is no exchange rate against it to study' });
     const area = bank === 'fed' ? 'US' : CBPOL_AREA[iso3];
     if (!area || CBPOL_NOT_COVERED.has(iso3)) return res.json({ iso3, name, ok: false, reason: 'This central bank is not in the BIS policy rate data' });
@@ -797,7 +797,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
   app.get('/api/scenario/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const { pick, factors, missingFactors, fx, models } = await scenarioFits(iso3, req.query.stress);
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     // Geopolitical risk VaR (src/utils/grVar.ts): currency moves in high-GPR months, and the fx model's implied move.
     const gpr = gprData(DATA_DIR);
     const fxModel = models[0].ok ? (models[0] as ScenarioModel) : null;
@@ -827,7 +827,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
   // src/utils/scenarioQuestion.ts) applied with the scenario engine, local projections and the debt identity.
   app.get('/api/council/scenario/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    const name = catalogEntry(iso3)?.countryName || iso3;
     const sq = scenarioFromQuery(req.query.shocks);
     if (!sq) return res.status(400).json({ error: 'shocks must be a JSON list of stated shocks' });
     const kinds = new Set(sq.shocks.map((x) => x.kind));

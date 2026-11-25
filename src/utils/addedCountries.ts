@@ -74,3 +74,37 @@ function parseList(text: string | undefined): Array<Partial<AddedCountry>> {
 function cleanText(v: unknown): string {
   return typeof v === 'string' ? v.replace(/[\u0000-\u001f]/g, '').trim().slice(0, 80) : '';
 }
+
+/**
+ * Of the `candidates`, the countries on any saved watchlist or added list in the given workspaces
+ * (Sam, 25 November 2026): the countries on the IMF low-income debt list are built in and show in
+ * every list, but the daily download saves only those someone follows.
+ */
+export function watchedCountries(workspaceValues: Array<Record<string, string | undefined>>, candidates: ReadonlySet<string>): Set<string> {
+  const out = new Set<string>();
+  const add = (raw: unknown) => {
+    const iso3 = String(raw || '').trim().toUpperCase();
+    if (candidates.has(iso3)) out.add(iso3);
+  };
+  for (const values of workspaceValues) {
+    for (const group of parseJsonArray(values[WATCHLISTS_KEY])) {
+      const items = (group as { items?: unknown })?.items;
+      if (Array.isArray(items)) for (const it of items) add((it as { iso3?: unknown })?.iso3);
+    }
+    for (const c of parseList(values[ADDED_COUNTRIES_KEY])) add(c?.iso3);
+  }
+  return out;
+}
+
+/** Workspace key of the saved watchlists. */
+export const WATCHLISTS_KEY = 'sovereign_council_watchlists_v1';
+
+function parseJsonArray(text: string | undefined): unknown[] {
+  if (!text) return [];
+  try {
+    const v = JSON.parse(text);
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}

@@ -1,6 +1,6 @@
 # Roadmap
 
-What is planned for EconQuest, in the order it will be built. Last updated 24 November 2026.
+What is planned for EconQuest, in the order it will be built. Last updated 25 November 2026.
 
 ## How the work is done
 
@@ -39,6 +39,7 @@ The same rules hold for every change:
 | Easier first use (24 November, #660 to #662, #666, #669) | A short answer by stated rules at the top of Council chat when no AI model writes one, a shorter Missing list, more room for the answer, Policy review as its own page next to Reports, plain wording, and a start-here card |
 | Recovering on its own (24 November, #663 to #668, #670) | Updates that never stop on files the app writes itself, slow sources asked again before they count as failed, a second try for failed downloads and later tries after two hours, the next free port when 3000 is busy, and the last good answer with its own dates while a source does not answer |
 | Standard app features (24 November, #671 to #677) | A privacy page, a notice when a newer version is out, Copy details and Report a problem, a question before deleting a watchlist, following the computer's dark or light setting, steps to remove the app, and keyboard shortcuts |
+| Release check and the poorest countries (25 November) | A second security review and a stricter page security policy for the built app; Add a country lists every country, not only those on the world map; the 59 countries on the IMF low-income debt list built in, saved daily once they are on a watchlist |
 | Open source | Licences (Apache-2.0, CC BY 4.0, DCO), governance, contributing guide, the methodology and a clean public export |
 
 ## Phase 4: data and economist readiness (G1 to G10 done)
