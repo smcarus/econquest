@@ -17,6 +17,7 @@ in `tests/securityChecks.test.ts` so they cannot come back unnoticed. To report 
 | Ollama (the local AI model) | **Fixed:** the bundled Docker model was open to the network and to every web page |
 | Windows start scripts | **Fixed:** the PowerShell script could not run on Windows PowerShell 5.1, and did not stop when a step failed |
 | Windows real run | **Still open:** needs a Windows computer (see the end) |
+| Second review, 25 November | Everything added since 12 November checked; a full security policy added for the built app's pages (see "Second review") |
 
 ## What was checked
 
@@ -105,6 +106,48 @@ patterns finds only one made-up test value (`tests/userSettings.test.ts`).
      itself was not affected.
    - Two file-permission checks (mode 600, a read-only folder) do not apply on Windows and are skipped
      there, as the other permission checks already were.
+
+## Second review (25 November 2026)
+
+Done at main `7084e35` (#682), before the public copy is refreshed. It covers what was added after
+the first review: API tokens and the event stream (#512 to #525), the five user roles and team work
+(#583 to #593), the data API, share links, the IBKR gateway (CG9), the outside research tools and
+Quant desk (#597, #598), the update check (#672) and the problem report (#673).
+
+| Area | Result |
+| --- | --- |
+| Dependencies | `npm audit`: 0 known vulnerabilities (all severities, production and development) |
+| Secrets in the repository | Only made-up test values (the AWS documentation example key, a fake Gemini key) |
+| API tokens | Made by an Admin only (Settings is Admin only); 32 random bytes, only a SHA-256 hash kept; one scope each; per-token rate limit; every use and refusal in the audit log; the secret never reaches the log (test `authServer`) |
+| Webhooks and the event stream | Only reachable with a token (`/api/v1/` other than the integration addresses needs one); each delivery signed; addresses checked: http or https only, never this app itself or a cloud metadata address |
+| Sign-in with an outside provider (OIDC) | State, nonce and PKCE on every sign-in; a state used once and only for 10 minutes; ID tokens checked against the provider's published keys |
+| Roles | One table for every call (`src/utils/permissions.ts`); routes added since 12 November fall under Analyst unless listed, which is the safe default |
+| Share links | 32 random bytes, only the hash kept, 1 to 90 days (14 by default), can be withdrawn, each made link in the audit log; the shared page sends its own strict policy |
+| IBKR gateway | The certificate check is relaxed only for the gateway on this computer; any other address is refused (`checkGatewayUrl`); https only |
+| Update check | One request a day to GitHub's public release address, with the app's name as the only identifier; `UPDATE_CHECK=off` turns it off |
+| Problem report | Opens a GitHub issue page filled in on your screen; nothing is sent until you press Submit there |
+| Backups | Still leave out keys, tokens and paid figures; restores read JSON into fixed files, never a path from the file |
+
+### Changed in this review
+
+- **A full security policy for the built app's pages.** Until now the app sent only "never put this
+  page in a frame" as its Content-Security-Policy. The built app (`NODE_ENV=production`, which is how
+  Docker and the start scripts run it) now also says pages may run only the app's own scripts, connect
+  only to this server, load no plugins, and post forms only here (`PRODUCTION_CSP` in
+  `src/utils/requestLimits.ts`). If someone ever got text into a page that a browser read as a
+  script, the browser would refuse to run it. The development server keeps the old header, because
+  live reload needs inline scripts. The built bundle was searched for `eval` and `new Function`
+  (none), and the UI smoke test now fails on anything the policy blocks.
+
+### Still open from this review
+
+- **Research tools over plain http.** The research-tools token is sent with every request. If the
+  address is `http://` on another computer, the token crosses the network unencrypted. On this
+  computer (`http://localhost`) that does not matter. Use an `https://` address for a server on
+  another computer; a warning in Settings could be added later.
+- **Webhook addresses are checked by name.** A host name that resolves to a cloud metadata address
+  is not caught; only the address itself is. This matters only on a cloud server, and only an Admin
+  can make the token that adds a webhook.
 
 ## Still open
 
