@@ -143,7 +143,7 @@ test('broker prices never reach downloads, backups or the council: no other modu
     for (const f of fs.readdirSync(d, { withFileTypes: true })) {
       const p = path.join(d, f.name);
       if (f.isDirectory()) walk(p);
-      else if (/\.(ts|tsx)$/.test(f.name) && /from '[^']*brokerGateway'|brokerQuotes\(|fetch\('\/api\/broker\/prices'/.test(fs.readFileSync(p, 'utf8'))) hits.push(path.relative(src, p));
+      else if (/\.(ts|tsx)$/.test(f.name) && /from '[^']*brokerGateway'|brokerQuotes\(|fetch\('\/api\/broker\/prices'/.test(fs.readFileSync(p, 'utf8'))) hits.push(path.relative(src, p).split(path.sep).join('/'));
     }
   };
   walk(src);
