@@ -56,3 +56,15 @@ test('Windows check: a helper loaded with --import is given as a file URL, never
     }
   }
 });
+
+test('Built app: the security policy allows only the app\'s own scripts and connections, and no framing', async () => {
+  const { PRODUCTION_CSP, SECURITY_HEADERS } = await import('../src/utils/requestLimits.ts');
+  const rules = new Map(PRODUCTION_CSP.split(';').map((r: string) => r.trim().split(/\s+/)).map((p: string[]) => [p[0], p.slice(1)]));
+  assert.deepEqual(rules.get('script-src'), ["'self'"]);
+  assert.deepEqual(rules.get('connect-src'), ["'self'"]);
+  assert.deepEqual(rules.get('object-src'), ["'none'"]);
+  assert.deepEqual(rules.get('frame-ancestors'), ["'none'"]);
+  assert.ok(!PRODUCTION_CSP.includes('unsafe-eval'));
+  assert.equal(SECURITY_HEADERS['X-Frame-Options'], 'DENY');
+  assert.match(read('server.ts'), /if \(IS_PRODUCTION_BUILD\) res\.setHeader\('Content-Security-Policy', PRODUCTION_CSP\)/);
+});

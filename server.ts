@@ -45,7 +45,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { ANSWER_LANG_HEADER, parseAnswerLang, setAnswerLanguageSource } from './src/utils/answerLanguage';
 import type { Lang } from './src/i18n/lang';
 import { refusal, requiredRole, roleAtLeast } from './src/utils/permissions';
-import { CSRF_HEADER, csrfMatches, csrfToken, isAiCall, isWrite, LIMITS, RateLimiter, SECURITY_HEADERS } from './src/utils/requestLimits';
+import { CSRF_HEADER, csrfMatches, csrfToken, isAiCall, isWrite, LIMITS, RateLimiter, PRODUCTION_CSP, SECURITY_HEADERS } from './src/utils/requestLimits';
 import { apiKeyFrom, DATA_API_LIMIT, isDataApiRead, keyMatches } from './src/server/dataApi';
 import { countryInPath, normaliseCountryQuery, normaliseCountryUrl, withoutHiddenCountries } from './src/server/countryCodes';
 import { ExclusionStore } from './src/server/exclusionStore';
@@ -3293,9 +3293,11 @@ async function startServer() {
   // TRUST_PROXY=1 trusts one proxy hop; it can also list addresses, as Express accepts.
   const trustProxy = String(process.env.TRUST_PROXY || '').trim();
   if (trustProxy) app.set('trust proxy', /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy === 'true' ? true : trustProxy);
+  const IS_PRODUCTION_BUILD = process.env.NODE_ENV === 'production';
   // Security headers on every reply (src/utils/requestLimits.ts): no framing, no sniffing.
   app.use((_req, res, next) => {
     for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v);
+    if (IS_PRODUCTION_BUILD) res.setHeader('Content-Security-Policy', PRODUCTION_CSP);
     if (_req.secure) res.setHeader('Strict-Transport-Security', 'max-age=31536000');
     next();
   });

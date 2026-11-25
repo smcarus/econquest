@@ -52,6 +52,8 @@ const notes = [];
 let browser;
 
 /** Runs axe on what the page shows now and sorts each problem into failures or notes. */
+// The pages are opened with bypassCSP: the checker is added as an inline script, which the built
+// app's security policy (PRODUCTION_CSP) rightly refuses. The UI smoke test runs with the policy on.
 async function scan(page, where) {
   await page.waitForTimeout(600);
   await page.addScriptTag({ path: axePath });
@@ -88,7 +90,7 @@ try {
   browser = await chromium.launch(process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {});
 
   // Laptop width: the pages most people use.
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, bypassCSP: true });
   await page.goto(base, { waitUntil: 'networkidle', timeout: 90_000 });
   await scan(page, 'Workspace');
 
@@ -115,13 +117,13 @@ try {
   await page.close();
 
   // Phone width.
-  const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, bypassCSP: true });
   await phone.goto(base, { waitUntil: 'networkidle', timeout: 90_000 });
   await scan(phone, 'Phone: Workspace');
   await phone.close();
 
   // The popped-out watchlist.
-  const pop = await browser.newPage();
+  const pop = await browser.newPage({ bypassCSP: true });
   await pop.goto(`${base}/?view=watchlist`, { waitUntil: 'networkidle', timeout: 60_000 });
   await scan(pop, 'Pop-out watchlist');
 } catch (err) {
