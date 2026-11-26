@@ -83,6 +83,7 @@ import {
 import { lsegSnapshotUrl, lsegTokenRequest, ownCdsSettings, parseLsegSnapshot, parseOwnCdsCsv } from './ownCds';
 import { paidVendorFromEnv, parsePaidMappings } from '../engine/paidData';
 import { brokerConfigFromEnv } from '../engine/brokerPrices';
+import { mfmodConfigFromEnv } from '../server/mfmod';
 import { macrobondCredentials, macrobondFetchUrl, macrobondTokenBody, MACROBOND_AUTH_URL, readMacrobondSeries, readMacrobondToken } from '../engine/macrobond';
 import { parseWitsShare, witsUrl } from './scenarioExposure';
 import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, eiaSpotUrl, findPinkSheetUrl, moveSentence, parseEiaSpot, parsePinkSheet, priceMove } from './commodityPrices';
@@ -170,6 +171,8 @@ export interface CheckOptions {
   oecdGapMs?: number;
   /** Sign-in state of your IBKR gateway (src/server/brokerGateway.ts brokerStatus); absent = not asked. */
   brokerStatus?: () => Promise<{ state: 'off' | 'needs_setup' | 'no_answer' | 'connected'; note: string; gateway?: string; contracts?: number }>;
+  /** Whether the World Bank models service answers (src/server/mfmod.ts mfmodStatus); absent = not asked. */
+  mfmodStatus?: () => Promise<import('../server/mfmod').MfmodStatus>;
 }
 
 export const STATE_LABEL: Record<ConnectionState, string> = {
@@ -444,6 +447,7 @@ export const SOURCE_IDS = [
   'own_cds',
   'paid_data',
   'broker_prices',
+  'mfmod',
   'gemini',
   'ollama',
   'openai_compatible',
@@ -2353,6 +2357,26 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     const st = await opts.brokerStatus();
     if (st.state === 'connected') return { ...setRow(def, 'connected', `${st.note} ${cfg.config.contracts.length} contracts listed. Prices are shown on screen only.`, host), sample: `${cfg.config.contracts.length} contracts (prices not shown)` };
     return setRow(def, st.state === 'off' ? 'off' : st.state, st.note, host);
+  });
+
+  // World Bank country models (src/server/mfmod.ts): only whether the optional models service on this
+  // computer answers and how many of the six public model files it holds.
+  add('mfmod', async () => {
+    const def: Def = {
+      id: 'mfmod',
+      name: 'World Bank country models (MFMod, on this computer)',
+      group: 'free',
+      feeds: 'The World Bank\'s public macro-fiscal models for Bolivia, Croatia, Iraq, Nepal, Pakistan and Turkiye, run on this computer (optional)',
+      setup: 'docker compose --profile models up -d --build with MFMOD_URL="http://mfmod:8765" in .env (docs/INSTALL.md).',
+    };
+    const cfg = mfmodConfigFromEnv(env);
+    if ('off' in cfg) return setRow(def, 'off', 'Off. What-if answers use the app\'s own tools only.', 'models service');
+    if ('problem' in cfg) return setRow(def, 'needs_setup', cfg.problem, 'models service');
+    const host = new URL(cfg.url).host;
+    if (!opts.mfmodStatus) return setRow(def, 'needs_setup', 'Switched on; the models service was not asked in this check.', host);
+    const st = await opts.mfmodStatus();
+    if (st.state === 'connected') return { ...setRow(def, 'connected', st.note, host), sample: `${st.onDisk} model files` };
+    return setRow(def, st.state, st.note, host);
   });
 
   // ---- AI models ---------------------------------------------------------------------------------

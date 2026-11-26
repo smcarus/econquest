@@ -252,6 +252,45 @@ docker compose exec ollama ollama pull qwen2.5:7b
 docker compose exec ollama ollama pull qwen2.5:32b
 ```
 
+## Add the World Bank country models (optional)
+
+The World Bank publishes its own macro-fiscal models for six countries: Bolivia, Croatia, Iraq,
+Nepal, Pakistan and Turkiye. Each one links growth, prices, the budget, debt and trade in one
+model, the kind World Bank country economists use. EconQuest can run them on your computer through
+a small extra service. It is off unless you turn it on, and the app works the same without it.
+
+| | |
+| --- | --- |
+| What it costs | Nothing. The model files are public domain (CC0); the ModelFlow software that runs them is free (MIT-based licence) |
+| What it needs | Docker and about 1.5 GB more disk: 1.3 GB of Python packages measured, the Python base image, and under 5 MB for the six model files |
+| What leaves your computer | One download of the six model files from the World Bank's GitHub page; nothing else |
+
+To turn it on, add this line to the `.env` file in your `econquest` folder:
+
+```sh
+MFMOD_URL=http://mfmod:8765
+```
+
+then start EconQuest with the models profile:
+
+```sh
+docker compose --profile models up -d --build
+```
+
+The first start builds the service (a few minutes) and saves the model files in
+`data/local/mfmod/`. Menu > Settings > Data connections then shows "World Bank country models" as
+connected. To turn it off, remove the line from `.env` and run `docker compose --profile models down`.
+
+Developers running `npm run dev` can start the service by hand instead (Python 3.12):
+
+```sh
+pip install -r models/requirements.txt
+MFMOD_DIR=data/local/mfmod python models/service.py
+```
+
+with `MFMOD_URL=http://localhost:8765` in `.env`. Results are the app's run of the World Bank's
+public model files, labelled as such; they are not a World Bank forecast.
+
 ## Your first few minutes
 
 1. **See which sources answer:** Menu > Tools > Data connections lists every source and whether it
