@@ -8,6 +8,7 @@
  */
 
 import { MFMOD_COUNTRIES, hasMfmodModel } from '../utils/mfmodBaseline';
+import { checkMfmodShock, shockDiff, type MfmodPlan, type MfmodScenarioData, type MfmodShockReply } from '../utils/mfmodShock';
 
 export { MFMOD_COUNTRIES, hasMfmodModel };
 
@@ -41,9 +42,11 @@ export const serviceGet: ServiceGet = async (url, timeoutMs) => {
 };
 
 const why = (e: unknown): string => {
-  const m = e instanceof Error ? `${e.message} ${(e as { cause?: { code?: string } }).cause?.code ?? ''}` : String(e);
-  if (/ECONNREFUSED|ENOTFOUND|EAI_AGAIN|fetch failed/i.test(m)) return 'nothing answered at the models service address. Start it with docker compose --profile models up -d.';
+  const cause = e instanceof Error ? (e as { cause?: { code?: string; message?: string } }).cause : undefined;
+  const m = e instanceof Error ? `${e.message} ${cause?.code ?? ''}` : String(e);
   if (/timeout|aborted/i.test(m)) return 'the models service did not answer in time.';
+  if (/ECONNREFUSED|ENOTFOUND|EAI_AGAIN/i.test(m)) return 'nothing answered at the models service address. Start it with docker compose --profile models up -d.';
+  if (/fetch failed/i.test(m)) return `the connection to the models service broke (${cause?.code || cause?.message || 'no reason given'}).`;
   return m.trim();
 };
 
@@ -88,8 +91,15 @@ export interface MfmodPassReply {
   body: Record<string, unknown>;
 }
 
-/** /models or /baseline from the service, passed on; a clear note when it is off or silent. */
-export async function mfmodAsk(env: Record<string, string | undefined>, call: 'models' | 'baseline', iso3?: string, get: ServiceGet = serviceGet): Promise<MfmodPassReply> {
+/** A shock to run in one country's model (/shock on the service). */
+export interface MfmodShockAsk {
+  kind: unknown;
+  size: unknown;
+  hold?: unknown;
+}
+
+/** /models, /baseline or /shock from the service, passed on; a clear note when it is off or silent. */
+export async function mfmodAsk(env: Record<string, string | undefined>, call: 'models' | 'baseline' | 'shock', iso3?: string, get: ServiceGet = serviceGet, shock?: MfmodShockAsk): Promise<MfmodPassReply> {
   const c = mfmodConfigFromEnv(env);
   if ('off' in c) return { status: 200, body: { on: false, note: 'The World Bank country models are off (set MFMOD_URL; docs/INSTALL.md).' } };
   if ('problem' in c) return { status: 200, body: { on: true, ready: false, note: c.problem } };
@@ -98,6 +108,13 @@ export async function mfmodAsk(env: Record<string, string | undefined>, call: 'm
     const code = (iso3 ?? '').toUpperCase();
     if (!hasMfmodModel(code)) return { status: 404, body: { on: true, ready: false, note: `The World Bank has not published a model for ${code || 'that country'}. Public models: ${MFMOD_COUNTRIES.join(', ')}.` } };
     path = `/baseline?iso3=${code}`;
+  }
+  if (call === 'shock') {
+    const code = (iso3 ?? '').toUpperCase();
+    if (!hasMfmodModel(code)) return { status: 404, body: { on: true, ready: false, note: `The World Bank has not published a model for ${code || 'that country'}. Public models: ${MFMOD_COUNTRIES.join(', ')}.` } };
+    const c = checkMfmodShock(code, shock?.kind, shock?.size, shock?.hold);
+    if (!c.ok) return { status: 400, body: { on: true, ready: false, note: `Shock not run: ${c.reason}.` } };
+    path = `/shock?iso3=${code}&kind=${c.kind}&size=${c.size}&hold=${c.hold}`;
   }
   try {
     // A model's first load solves it, which takes a few seconds; later asks are quick.
@@ -109,4 +126,22 @@ export async function mfmodAsk(env: Record<string, string | undefined>, call: 'm
   } catch (e) {
     return { status: 200, body: { on: true, ready: false, note: `Models service: ${why(e)}` } };
   }
+}
+
+/**
+ * The Scenario Agent's shocks run in one country's World Bank model (M3): each shock on its own,
+ * one after the other, as the service holds one model run at a time.
+ */
+export async function mfmodScenario(env: Record<string, string | undefined>, iso3: string, plan: MfmodPlan[], get: ServiceGet = serviceGet): Promise<MfmodScenarioData> {
+  const notRun = plan.filter((p): p is Extract<MfmodPlan, { reason: string }> => 'reason' in p).map((p) => ({ kind: p.kind, reason: p.reason }));
+  const todo = plan.filter((p): p is Extract<MfmodPlan, { size: number }> => 'size' in p);
+  if ('off' in mfmodConfigFromEnv(env)) return { on: false, runs: todo.map((p) => ({ ...p })), notRun };
+  const runs: MfmodScenarioData['runs'] = [];
+  for (const p of todo) {
+    const r = await mfmodAsk(env, 'shock', iso3, get, p);
+    const body = r.body as MfmodShockReply;
+    const table = body.ready ? shockDiff(body) : null;
+    runs.push(table ? { ...p, table } : { ...p, reason: body.note ?? (body.ready ? 'the reply had no series to compare' : `HTTP ${r.status}`) });
+  }
+  return { on: true, runs, notRun };
 }

@@ -5,6 +5,18 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- World Bank country models, step M3: what-if shocks. The World Bank country model panel gains "Try a
+  shock in the model": world oil price or world food prices (% change), government purchases (% of
+  GDP) and, for Pakistan, Turkiye and Iraq, the policy rate (points). The model is solved again with
+  the shock and the panel shows the difference from its own baseline, year by year from the start of
+  the shock (real GDP, growth, inflation, budget balance, debt, current account, policy rate,
+  currency), because the public files carry old data. In Council chat, the Scenario Agent adds a
+  "World Bank model" section for oil, food and policy rate what-ifs in those six countries, or a
+  Missing line saying why not (add-on off, no policy rate rule, a price level instead of a change).
+  Pakistan's inflation now comes from the private consumption deflator, as its model stops filling
+  the consumer price index in 2017; the panel says so. Models service: new call /shock; app route
+  /api/mfmod/shock. Register row wb_mfmod. English, Spanish, French and Portuguese.
+
 - World Bank country models, step M2: for Bolivia, Croatia, Iraq, Nepal, Pakistan and Turkiye, Country
   Research > History & data > IMF forecasts by edition gains a "World Bank country model" panel under
   Official forecasts side by side. It shows the baseline stored in the World Bank's public MFMod file

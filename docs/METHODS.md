@@ -70,6 +70,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Ranges from past forecast misses (R8) | Research | Description, not a tested signal | None |
 | Costed fiscal options | Research | Description, not a tested signal | None |
 | Scenario Agent (what-if questions) | Research | Description, not a tested signal | None |
+| World Bank country models (MFMod, public versions) | Research | Description, not a tested signal | None |
 | Quant desk (outside research tools, Council chat only) | Research | Description, not a tested signal | None |
 | Remittances | Research | Description, not a tested signal | None |
 | Financial inclusion | Research | Description, not a tested signal | None |
@@ -982,6 +983,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: a stated what-if on stated assumptions, not a forecast or a recommendation.
 - **Limits:** Co-movement, not cause; linear in the shock; first round only for trade (volumes held); dollar bonds only, a lower bound for currency debt; a shock larger than any month in the sample is flagged as extrapolation.
 - **Code:** `src/utils/scenarioAgent.ts, src/utils/scenarioQuestion.ts`
+
+### World Bank country models (MFMod, public versions)
+
+- **Says:** For Bolivia, Croatia, Iraq, Nepal, Pakistan and Turkiye: the baseline stored in the World Bank's public model file, and how far the model's results move when one shock is applied (world oil or food prices, the policy rate where the model has a rule, government purchases), year by year from the start of the shock.
+- **Rule:** The World Bank's own equations, run on your computer with ModelFlow by the optional models service (models/service.py). A shock is set in the model's inputs (oil: WLDFCRUDE_PETRO x (1 + size); food: maize, rice, wheat and soybean prices x (1 + size); policy rate: the rule switched off and the rate set size points above its own path; spending: GGEXPGNFSCN fixed at its own path plus size % of baseline nominal GDP), held for a stated number of years, and the model solved again. Shown: shocked run minus the baseline run; quarterly results summed or averaged into years.
+- **Reads:** World Bank MFMod public model files (github.com/worldbank/MFMod-ModelFlow, CC0 1.0), ModelFlow (MIT-based licence)
+- **Shows in:** Country Research > History & data > IMF forecasts by edition (World Bank country model); Council chat (Scenario Agent, oil, food and policy rate what-ifs)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: the World Bank model's answer to a stated shock. Step M4 of the plan pre-registers checks that the app reproduces the stored baseline and a published shock result.
+- **Limits:** The public model files are teaching copies with old data (Pakistan's model solves from 2016), so levels are not today's economy and only differences are shown. One shock at a time. Bolivia, Nepal and Croatia have no policy rate rule (peg, peg to the Indian rupee, euro). Off unless the models service is set up (MFMOD_URL).
+- **Code:** `models/service.py, src/utils/mfmodShock.ts, src/utils/mfmodBaseline.ts, src/server/mfmod.ts`
 
 ### Quant desk (outside research tools, Council chat only)
 

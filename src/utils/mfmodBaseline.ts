@@ -31,7 +31,8 @@ export type MfmodSeriesKey =
   | 'gov_spending'
   | 'current_account_usd'
   | 'usd_rate'
-  | 'policy_rate';
+  | 'policy_rate'
+  | 'consumer_deflator';
 
 export interface MfmodBaselineReply {
   on?: boolean;
@@ -50,7 +51,7 @@ export type MfmodMeasure = 'growth' | 'inflation' | 'balance' | 'debt' | 'curren
 /** How each measure is worked out, in words (shown under the table). */
 export const MEASURE_FORMULA: Record<MfmodMeasure, string> = {
   growth: 'real GDP, % change on the year before',
-  inflation: 'consumer price index, % change on the year before',
+  inflation: 'consumer price index, % change on the year before; the private consumption deflator where the model does not fill the index',
   balance: 'general government balance / nominal GDP x 100',
   debt: 'general government gross debt / nominal GDP x 100',
   current_account: 'current account in US$ x LCU per US$ / nominal GDP x 100',
@@ -123,6 +124,8 @@ export interface MeasureRow {
 
 export interface MfmodTable {
   years: number[];
+  /** Which series inflation was worked out from; null when neither is there. */
+  inflationFrom: 'cpi' | 'consumer_deflator' | null;
   projectedFrom: number | null;
   quarterly: boolean;
   rows: MeasureRow[];
@@ -140,8 +143,13 @@ function pctChange(xs: Array<number | null>, i: number): number | null {
 }
 
 /** The headline measures for every year of the annual series. */
-export function measures(a: AnnualSeries): MfmodTable {
+export function measures(a: AnnualSeries, opts: { round?: boolean; inflationFrom?: MfmodTable['inflationFrom'] } = {}): MfmodTable {
+  const rnd = opts.round === false ? (x: number | null) => (x === null || !Number.isFinite(x) ? null : x) : round1;
   const v = a.values;
+  const filled = (xs: Array<number | null> | undefined): boolean => Boolean(xs) && a.years.every((y, i) => a.projectedFrom === null || y < a.projectedFrom || (xs![i] !== null && xs![i] !== undefined));
+  // Pakistan's model stops filling its consumer price index in 2017: inflation then comes from the private consumption deflator for every year, never a mix of the two.
+  const inflationFrom: MfmodTable['inflationFrom'] = opts.inflationFrom !== undefined ? opts.inflationFrom : filled(v.cpi) ? 'cpi' : v.consumer_deflator ? 'consumer_deflator' : v.cpi ? 'cpi' : null;
+  const prices = inflationFrom ? v[inflationFrom] : undefined;
   const at = (k: MfmodSeriesKey, i: number): number | null => v[k]?.[i] ?? null;
   const ratio = (num: MfmodSeriesKey, i: number): number | null => {
     const n = at(num, i);
@@ -150,7 +158,7 @@ export function measures(a: AnnualSeries): MfmodTable {
   };
   const calc: Record<MfmodMeasure, (i: number) => number | null> = {
     growth: (i) => (v.real_gdp ? pctChange(v.real_gdp, i) : null),
-    inflation: (i) => (v.cpi ? pctChange(v.cpi, i) : null),
+    inflation: (i) => (prices ? pctChange(prices, i) : null),
     balance: (i) => ratio('gov_balance', i),
     debt: (i) => ratio('gov_debt', i),
     current_account: (i) => {
@@ -164,15 +172,15 @@ export function measures(a: AnnualSeries): MfmodTable {
   const rows: MeasureRow[] = [];
   const missing: MfmodTable['missing'] = [];
   for (const m of Object.keys(calc) as MfmodMeasure[]) {
-    const lacks = NEEDS[m].filter((k) => !v[k]);
-    const values = a.years.map((_, i) => round1(calc[m](i)));
+    const lacks = m === 'inflation' ? (inflationFrom ? [] : (['cpi'] as MfmodSeriesKey[])) : NEEDS[m].filter((k) => !v[k]);
+    const values = a.years.map((_, i) => rnd(calc[m](i)));
     if (lacks.length || values.every((x) => x === null)) {
       missing.push({ measure: m, lacks });
       continue;
     }
     rows.push({ measure: m, values });
   }
-  return { years: a.years, projectedFrom: a.projectedFrom, quarterly: a.quarterly, rows, missing };
+  return { years: a.years, inflationFrom, projectedFrom: a.projectedFrom, quarterly: a.quarterly, rows, missing };
 }
 
 /**
