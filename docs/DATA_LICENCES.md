@@ -84,6 +84,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | EM-DAT, the international disaster database (CRED, UCLouvain) | Terms not confirmed | Do not pass on | Figures and charts built from the data may be shown with the citation; the data itself may not be passed on. | Free accounts are for non-commercial use by universities, non-profit research bodies, public bodies and the media; other users need a paid licence from CRED. | EM-DAT, CRED / UCLouvain, Brussels, Belgium, www.emdat.be (year of access). |
 | FAOSTAT Consumer Price Indices (FAO) | Terms not confirmed | Sharing unclear | FAO statistical databases are CC BY 4.0 by default; whether that covers this table is not confirmed. | Not confirmed for this table. | FAO. FAOSTAT: Consumer Price Indices. Rome (year of access). |
 | DSSI and Common Framework status (World Bank, Paris Club) | Terms not confirmed | Sharing unclear | Not stated on either page. | Not stated. | World Bank, COVID-19 Debt Service Suspension Initiative; Paris Club, Common Framework. |
+| World Bank MFMod country models (public set), run with ModelFlow | Open with attribution | Free sharing allowed | Allowed: the model files are dedicated to the public domain (CC0 1.0); results may be shown to anyone. | Allowed (CC0 1.0 sets no limit). The ModelFlow software is MIT-based; its owners' names may not be used to promote EconQuest. | World Bank MFMod model (<country>), public version, run with ModelFlow. Results are the app's run of the model, not a World Bank forecast. |
 
 ## Sources
 
@@ -974,6 +975,27 @@ From the terms:
 > Forty-eight out of 73 eligible countries participated.
 >
 > As of 2024, four countries have applied to the Common Framework for a debt treatment: Tchad, Zambia, Ethiopia and Ghana.
+
+### World Bank MFMod country models (public set), run with ModelFlow
+
+- **Used for:** The macro-fiscal models the World Bank publishes for Bolivia, Croatia, Iraq, Nepal, Pakistan and Turkiye (github.com/worldbank/MFMod-ModelFlow, folder models/), run on your computer by the optional models service (models/service.py) with the ModelFlow toolkit; the model files are downloaded there, never shipped with the app
+- **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. CC0 places the model files in the public domain.
+- **Terms read:** [MFMod-ModelFlow repository licence (CC0 1.0)](https://raw.githubusercontent.com/worldbank/MFMod-ModelFlow/main/LICENSE); [Reproducibility package FR_WLD_2025_379 (LICENSE.txt, BSD-3-Clause)](https://reproducibility.worldbank.org/catalog/324); [ModelFlow licence (license.md)](https://github.com/IbHansen/modelflow/blob/master/license.md) (checked 2026-11-26)
+- **Show to others:** Allowed: the model files are dedicated to the public domain (CC0 1.0); results may be shown to anyone.
+- **Commercial use:** Allowed (CC0 1.0 sets no limit). The ModelFlow software is MIT-based; its owners' names may not be used to promote EconQuest.
+- **Credit:** World Bank MFMod model (<country>), public version, run with ModelFlow. Results are the app's run of the model, not a World Bank forecast.
+- **Open question:** The model files carry no credit requirement (CC0); the app names the World Bank anyway. ModelFlow's licence adds that the names Danmarks Nationalbank and ECB may not be used to promote the software without written permission: keep them out of the site and announcements.
+
+From the terms:
+
+> CC0 1.0 Universal
+>
+> Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+>
+> Copyright © 2019 Danmarks Nationalbank and ECB
+>
+> Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
 
 ## Sources planned, not read by the app yet
 

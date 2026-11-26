@@ -67,6 +67,7 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['pwt', /Penn World Table/i],
   ['ilostat', /ILOSTAT/i],
   ['pinksheet', /Pink Sheet|pink_sheet/i],
+  ['wb_mfmod', /\bMFMod\b|ModelFlow/i],
   ['wb_projects', /World Bank Projects|Projects & Operations|IDA Statement of Credits/i],
   ['dose', /\bDOSE\b|subnational economic output/i],
   ['gdl', /Global Data Lab/i],
