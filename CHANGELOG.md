@@ -5,6 +5,15 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- World Bank country models, step M2: for Bolivia, Croatia, Iraq, Nepal, Pakistan and Turkiye, Country
+  Research > History & data > IMF forecasts by edition gains a "World Bank country model" panel under
+  Official forecasts side by side. It shows the baseline stored in the World Bank's public MFMod file
+  (real GDP growth, inflation, budget balance and debt as % of GDP, current account as % of GDP, and
+  the policy rate where the model has one), with each formula named, and says plainly that the public
+  copies are teaching versions whose data are not kept up to date, not a current forecast. Croatia's
+  quarters are turned into years. A series the model lacks reads Missing; with the add-on off the panel
+  says how to turn it on; other countries show nothing. English, Spanish, French and Portuguese.
+
 - World Bank country models, first step: an optional models service (`models/`, Docker profile
   `models`, setting `MFMOD_URL`, off by default) runs the six public MFMod models the World Bank
   publishes (Bolivia, Croatia, Iraq, Nepal, Pakistan, Turkiye) with the ModelFlow toolkit. It
