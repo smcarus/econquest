@@ -1142,6 +1142,30 @@ export const DATA_LICENCES: LicenceRow[] = [
     shareNote: 'No terms stated.',
     checked: '2026-11-11',
   },
+  {
+    id: 'wb_mfmod',
+    name: 'World Bank MFMod country models (public set), run with ModelFlow',
+    usedFor: 'The macro-fiscal models the World Bank publishes for Bolivia, Croatia, Iraq, Nepal, Pakistan and Turkiye (github.com/worldbank/MFMod-ModelFlow, folder models/), run on your computer by the optional models service (models/service.py) with the ModelFlow toolkit; the model files are downloaded there, never shipped with the app',
+    terms: [
+      { label: 'MFMod-ModelFlow repository licence (CC0 1.0)', url: 'https://raw.githubusercontent.com/worldbank/MFMod-ModelFlow/main/LICENSE' },
+      { label: 'Reproducibility package FR_WLD_2025_379 (LICENSE.txt, BSD-3-Clause)', url: 'https://reproducibility.worldbank.org/catalog/324' },
+      { label: 'ModelFlow licence (license.md)', url: 'https://github.com/IbHansen/modelflow/blob/master/license.md' },
+    ],
+    status: 'open',
+    display: 'Allowed: the model files are dedicated to the public domain (CC0 1.0); results may be shown to anyone.',
+    commercial: 'Allowed (CC0 1.0 sets no limit). The ModelFlow software is MIT-based; its owners\' names may not be used to promote EconQuest.',
+    attribution: 'World Bank MFMod model (<country>), public version, run with ModelFlow. Results are the app\'s run of the model, not a World Bank forecast.',
+    quotes: [
+      'CC0 1.0 Universal',
+      'Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:',
+      'Copyright © 2019 Danmarks Nationalbank and ECB',
+      'Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files',
+    ],
+    flag: 'The model files carry no credit requirement (CC0); the app names the World Bank anyway. ModelFlow\'s licence adds that the names Danmarks Nationalbank and ECB may not be used to promote the software without written permission: keep them out of the site and announcements.',
+    share: 'allowed',
+    shareNote: 'CC0 places the model files in the public domain.',
+    checked: '2026-11-26',
+  },
 ];
 
 const P = '2026-11-11';
