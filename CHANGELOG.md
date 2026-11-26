@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Reduce motion: when the computer's "reduce motion" setting is on (Mac: System Settings >
+  Accessibility > Display; Windows: Settings > Accessibility > Visual effects > Animation effects
+  off), spinners, pulses and transitions stop and the app jumps to a section instead of gliding to it
+  (`src/utils/motion.ts`, WCAG 2.3.3).
 - Accessibility check moved to WCAG 2.2 A and AA (adds the 24-pixel minimum target size rule) and
   gains a keyboard pass: on the Workspace, Research and phone pages, every control reached with Tab
   must show a focus ring (2.4.7) and must not sit behind a fixed bar or panel (2.4.11). All pages
