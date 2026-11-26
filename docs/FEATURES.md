@@ -446,7 +446,7 @@ npm test             # unit and server tests (Node's built-in runner, network re
 npm run build        # production bundle
 npm run size:check   # fails if the start-up download or the whole app grows past its limit
 npm run test:smoke   # opens every page of the built app in Chromium with all feeds down
-npm run test:a11y    # accessibility check of the main pages (WCAG 2.1 A and AA); fails on serious problems
+npm run test:a11y    # accessibility check of the main pages (WCAG 2.2 A and AA, keyboard focus); fails on serious problems
 npm run check:data   # live check of every source from this computer
 npm run check:imf    # prints the IMF series codes the app matches
 npm run record:feeds # records every free feed's real reply for the tests (run where the feeds answer), then the shareable subset
