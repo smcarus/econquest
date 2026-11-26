@@ -23,6 +23,18 @@
     outline-color: #60a5fa;
   }
 
+  /* Reduce motion (WCAG 2.3.3): when the computer asks for less motion, spinners, pulses and
+     transitions stop and scrolling jumps instead of gliding (src/utils/motion.ts for scripted
+     scrolls). Charts are drawn without animation in any case. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
   h1, h2, h3, h4, .font-display {
     font-family: var(--font-display);
   }

@@ -22,6 +22,7 @@ import { PanelBoundary } from './PanelBoundary';
 import { ResearchSectionNav } from './ResearchSections';
 import { lazyNamed, DeskLoading } from './LazyDesk';
 import { COUNTRY_TOOL_EVENT, isCountryTool, readToolPick, saveToolPick, toolGroupsFor } from '../utils/countryTools';
+import { scrollBehavior } from '../utils/motion';
 // Charts (recharts) load only when History opens, keeping them out of the first download.
 const HistoryPanel = lazyNamed(() => import('./HistoryPanel'), 'HistoryPanel');
 const AsOfPanel = lazyNamed(() => import('./AsOfPanel'), 'AsOfPanel');
@@ -411,7 +412,7 @@ export const CountryPage: React.FC<{
             onPick={(id) => {
               pickTool(id);
               // Bring the tool that just opened into view.
-              if (id) window.setTimeout(() => document.querySelector('[data-tool-menu]')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+              if (id) window.setTimeout(() => document.querySelector('[data-tool-menu]')?.scrollIntoView({ behavior: scrollBehavior(), block: 'start' }), 60);
             }}
           />
           <ToolSlot id="tool-event-history" pick={toolPick}>

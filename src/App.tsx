@@ -135,6 +135,7 @@ import { useUpdateStatus } from './components/updateStatus';
 import { THEME_STORAGE_KEY, initialDark, savedThemeChoice, systemPrefersDark } from './utils/theme';
 import { blankProblemUrl } from './utils/problemReport';
 import { shortcutFor } from './utils/shortcuts';
+import { scrollBehavior } from './utils/motion';
 
 /** Focus an element once its screen has drawn (lazy screens take a moment); gives up after 2 s. */
 function focusWhenReady(selector: string, tries = 20): void {
@@ -1070,7 +1071,7 @@ export default function App() {
         }
         // The approval card at the top of the page is the notice now; a banner would repeat it.
         setStatusBanner(null);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: scrollBehavior() });
       }
     } catch (err: any) {
       setStatusBanner({
@@ -1223,7 +1224,7 @@ export default function App() {
       const el = document.getElementById(anchor);
       // A History & data tool draws only once picked: ask the country page to open it.
       if (!el && isCountryTool(anchor)) window.dispatchEvent(new CustomEvent(COUNTRY_TOOL_EVENT, { detail: anchor }));
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (el) el.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
       else if (tries++ < 25) window.setTimeout(go, 200);
     };
     window.setTimeout(go, 120);
@@ -1236,7 +1237,7 @@ export default function App() {
       const reveal = () => window.dispatchEvent(new CustomEvent(REVEAL_EVENT, { detail: t.anchor }));
       window.setTimeout(reveal, 80);
       window.setTimeout(reveal, 300);
-      window.setTimeout(() => document.getElementById(t.anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 360);
+      window.setTimeout(() => document.getElementById(t.anchor)?.scrollIntoView({ behavior: scrollBehavior(), block: 'start' }), 360);
     } else if (t.area === 'country') {
       if (t.brief) setCountryBriefView(t.brief);
       setCountryTab(t.tab as CountryTabId);
@@ -1911,7 +1912,7 @@ export default function App() {
                 else if (id === 'holdings') openHoldingsEditor();
                 else {
                   setAppArea('desks');
-                  window.setTimeout(() => document.querySelector('[data-connections-panel]')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+                  window.setTimeout(() => document.querySelector('[data-connections-panel]')?.scrollIntoView({ behavior: scrollBehavior(), block: 'start' }), 120);
                 }
               }}
             />
