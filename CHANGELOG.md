@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Accessibility check moved to WCAG 2.2 A and AA (adds the 24-pixel minimum target size rule) and
+  gains a keyboard pass: on the Workspace, Research and phone pages, every control reached with Tab
+  must show a focus ring (2.4.7) and must not sit behind a fixed bar or panel (2.4.11). All pages
+  pass with no changes to the app.
 - Software parts list, build proof and checksums. Publishing a GitHub Release now adds a source
   archive, a software parts list (SBOM) in SPDX 2.3 and CycloneDX 1.5, a `SHA256SUMS` file and
   GitHub-signed build proof (SLSA provenance) to it (`.github/workflows/release.yml`). Published
