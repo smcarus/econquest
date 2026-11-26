@@ -85,6 +85,8 @@ import { beer, beerSentence } from '../../utils/beer';
 import { EVENT_METHOD, eventSentence, eventStudy } from '../../utils/eventStudy';
 import { fxDailySeries } from '../../utils/fxHistory';
 import { fitScenarioModel, monthEnd, monthlyChanges, PRESETS, SCENARIO_METHOD, FACTORS, RESPONSES, type FactorId, type ScenarioModel } from '../../utils/scenarioEngine';
+import { hasMfmodModel, mfmodScenario, type ServiceGet } from '../mfmod';
+import { mfmodPlan } from '../../utils/mfmodShock';
 import { dsaRuns, engineRuns, largestMove, lpRun, scenarioFromQuery, type LargestMove, type ScenarioCountryData } from '../../utils/scenarioAgent';
 import type { ShockKind } from '../../utils/scenarioQuestion';
 import { episodeReads, episodesFor, levelContext, shockPrecedents, SHOCK_YEARLY, type LevelContext } from '../../utils/scenarioHistory';
@@ -117,6 +119,9 @@ export interface AnalysisDeps {
   /** Scenario Agent history (WI3): the replay series for past episodes, and every country's yearly history. */
   replayInputs?: () => ReplayInputs;
   allHistories?: () => { histories: HistoryInput[] };
+  /** World Bank country models (M3, src/server/mfmod.ts): settings and service call, for tests. */
+  mfmodEnv?: () => Record<string, string | undefined>;
+  mfmodGet?: ServiceGet;
 }
 
 // Nowcasts (src/utils/nowcast.ts) and forecasts: long histories for the fits come from
@@ -893,6 +898,11 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       if (levels.length) history.levels = levels;
     }
     if (Object.keys(history).length) out.history = history;
+    // World Bank country model (M3, src/utils/mfmodShock.ts): oil, food and policy rate shocks for the six countries with a public model.
+    if (hasMfmodModel(iso3)) {
+      const plan = mfmodPlan(sq, iso3);
+      if (plan.length) out.worldBankModel = await mfmodScenario(deps.mfmodEnv?.() ?? process.env, iso3, plan, deps.mfmodGet);
+    }
     res.json(out);
   });
   app.get('/api/nowcast/:iso3', async (req, res) => {

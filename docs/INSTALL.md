@@ -291,6 +291,13 @@ MFMOD_DIR=data/local/mfmod python models/service.py
 with `MFMOD_URL=http://localhost:8765` in `.env`. Results are the app's run of the World Bank's
 public model files, labelled as such; they are not a World Bank forecast.
 
+Where it shows: Country Research > History & data > IMF forecasts by edition, for those six
+countries, with the model's stored baseline and "Try a shock in the model" (oil or food prices,
+government purchases, and the policy rate in Pakistan, Turkiye and Iraq); and in Council chat, where
+the Scenario Agent adds the model's answer to an oil, food or policy rate what-if. The public files
+carry old data, so shocks are shown as the difference from the model's own baseline. A shock takes a
+few seconds the first time a country's model is loaded.
+
 ## Your first few minutes
 
 1. **See which sources answer:** Menu > Tools > Data connections lists every source and whether it

@@ -22,6 +22,10 @@
  *   in that group times the price change (World Bank shares; merchandise shares applied to goods
  *   and services totals, as in the Global Spillover Agent). Volumes held, so a first round only.
  *
+ * - Oil, food and policy rate, for the six countries with a public World Bank MFMod model: the
+ *   model run with and without the shock on this computer (src/utils/mfmodShock.ts), the difference
+ *   year by year; only when the World Bank country models are turned on.
+ *
  * Every number comes from a feed, a saved history or a stated calculation on them; none is built
  * in. Sizes are the question's. Browser-safe, pure: the server hands in the fitted pieces.
  */
@@ -37,6 +41,7 @@ import type { EpisodeRead, LevelContext, ShockPrecedentOutcome } from './scenari
 import type { PrecedentOutcome } from './precedentFinder';
 import type { LiveWatchlistItem } from '../types/council';
 import { itemFromScenarioDebt, type TradeOffItem } from './tradeOff';
+import { mfmodFigures, type MfmodScenarioData } from './mfmodShock';
 
 export { SCENARIO_AGENT_NAME, SCENARIO_AGENT_COVERS } from './scenarioAgentInfo';
 import { SCENARIO_AGENT_NAME } from './scenarioAgentInfo';
@@ -98,6 +103,8 @@ export interface ScenarioCountryData {
   missingFactors?: string[];
   /** What history says (WI3, src/utils/scenarioHistory.ts). */
   history?: ScenarioHistory;
+  /** The World Bank country model's runs (M3, src/utils/mfmodShock.ts), for the six countries with a public model. */
+  worldBankModel?: MfmodScenarioData;
 }
 
 export interface ScenarioHistory {
@@ -350,6 +357,9 @@ export function scenarioFinding(sq: ScenarioQuestion, it: LiveWatchlistItem, dat
     } else if (sq.shocks.some((s) => ['interest_cost', 'growth', 'inflation'].includes(s.kind) && s.change !== null)) missing.push(`${name}: debt path (${data.dsa.reason})`);
   } else if (sq.shocks.some((s) => ['interest_cost', 'growth', 'inflation'].includes(s.kind) && s.change !== null)) missing.push(`${name}: debt path (the app's debt tool did not answer)`);
 
+  // The World Bank country model (M3), for the six countries with a public model.
+  weight = Math.max(weight, mfmodFigures(data?.worldBankModel, name, figures, parts, missing));
+
   // What history says (WI3).
   const hist = data?.history;
   if (hist) historyFigures(hist, name, figures, parts, missing);
@@ -357,7 +367,7 @@ export function scenarioFinding(sq: ScenarioQuestion, it: LiveWatchlistItem, dat
   // What published research found (WI4, src/data/shockResearch.ts), for the country's group.
   researchFigures(sq, it.iso3, figures);
 
-  const shockFigures = figures.filter((f) => /^(After the shock|Past episode|When it happened before|Record|Research)/.test(f.label));
+  const shockFigures = figures.filter((f) => /^(After the shock|World Bank model|Past episode|When it happened before|Record|Research)/.test(f.label));
   if (!shockFigures.length) return { finding: null, missing, keep: [] };
   return { finding: { iso3: it.iso3, countryName: name, reading: parts.join(' '), figures, weight }, missing, keep };
 }
