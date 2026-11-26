@@ -11,6 +11,9 @@
 #
 # 3) Run with Bundled Ollama Container + NVIDIA GPU Passthrough (Windows WSL2 / Linux NVIDIA):
 #    OLLAMA_BASE_URL=http://ollama-gpu:11434 docker compose --profile bundled-ollama-gpu up -d --build
+#
+# 4) Add the World Bank country models (optional, any of the above; docs/INSTALL.md):
+#    MFMOD_URL=http://mfmod:8765 docker compose --profile models up -d --build
 # ==============================================================================
 
 services:
@@ -51,6 +54,8 @@ services:
       - OLLAMA_DEEP_MODEL=${OLLAMA_DEEP_MODEL:-qwen2.5:32b}
       - OPENAI_COMPATIBLE_BASE_URL=${OPENAI_COMPATIBLE_BASE_URL:-http://host.docker.internal:8000/v1}
       - OPENAI_COMPATIBLE_MODEL=${OPENAI_COMPATIBLE_MODEL:-gpt-4o}
+      # World Bank country models service (profile "models" below). Empty = off.
+      - MFMOD_URL=${MFMOD_URL:-}
     volumes:
       - econquest_data:/app/data
       # Menu > Settings keys live in the project folder (data/local/, not in git), shared with
@@ -125,6 +130,23 @@ services:
         echo "[EconQuest Ollama GPU] Pulling Phase 3 Supreme Council model (${OLLAMA_DEEP_MODEL:-qwen2.5:32b})..."
         /bin/ollama pull ${OLLAMA_DEEP_MODEL:-qwen2.5:32b} || true
         wait $$SERVER_PID
+    networks:
+      - econquest-net
+
+  # Optional World Bank country models (MFMod, run with ModelFlow): the six public models, downloaded
+  # once into data/local/mfmod/ and run on this computer. Not published on any port: only the app,
+  # inside Docker, reaches it as http://mfmod:8765.
+  mfmod:
+    build:
+      context: ./models
+    container_name: econquest-models
+    profiles:
+      - models
+    restart: unless-stopped
+    environment:
+      - MFMOD_DIR=/data/mfmod
+    volumes:
+      - ./data/local/mfmod:/data/mfmod
     networks:
       - econquest-net
 

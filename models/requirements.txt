@@ -1,0 +1,3 @@
+# Models service (optional, docker compose --profile models). ModelFlow: MIT-based licence,
+# copyright Danmarks Nationalbank and ECB (github.com/IbHansen/modelflow, license.md).
+ModelFlowIb==2.97

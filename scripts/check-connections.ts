@@ -26,6 +26,7 @@ import { fiscalRulesData } from '../src/utils/fiscalRulesStore.ts';
 import { fxRegimeData } from '../src/utils/fxRegimeStore.ts';
 import { dpiData } from '../src/utils/dpiStore.ts';
 import { brokerStatus } from '../src/server/brokerGateway.ts';
+import { mfmodStatus } from '../src/server/mfmod.ts';
 import { applyKeysToEnv, envKeySnapshot, keySources, loadSettings, settingsFilePath } from '../src/utils/userSettings.ts';
 import { ensureCurrentCode } from '../src/utils/codeUpdateNode.ts';
 
@@ -48,6 +49,7 @@ const report = await checkConnections({
   fxRegime: () => fxRegimeData(dataDir),
   dpi: () => dpiData(dataDir),
   brokerStatus: () => brokerStatus(process.env),
+  mfmodStatus: () => mfmodStatus(process.env),
   readFile: (p) => {
     try {
       return { text: fs.readFileSync(p, 'utf8'), modified: fs.statSync(p).mtime };

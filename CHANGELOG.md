@@ -5,6 +5,16 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- World Bank country models, first step: an optional models service (`models/`, Docker profile
+  `models`, setting `MFMOD_URL`, off by default) runs the six public MFMod models the World Bank
+  publishes (Bolivia, Croatia, Iraq, Nepal, Pakistan, Turkiye) with the ModelFlow toolkit. It
+  downloads the model files once into data/local/mfmod/ and answers /health, /models and
+  /baseline. The app passes these on at /api/mfmod/status, /api/mfmod/models and
+  /api/mfmod/baseline, adds a "World Bank country models" row to the connection check, and the
+  licence register gains the MFMod row (model files CC0 1.0, package BSD-3-Clause, ModelFlow
+  MIT-based; read 26 November 2026). Nothing is shown in the app yet; the baseline view and
+  what-if shocks follow. INSTALL explains how to turn it on.
+
 - The README in each language is now a short front page: what the app is, a few screenshots, install
   steps for a Mac or Linux and for Windows PowerShell, and links onward. The detailed sections (every
   task and tool, sizes, AI models and settings, languages, Quests, data sources, checks, commands,

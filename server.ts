@@ -15,6 +15,7 @@ import { getUpdateStatus } from './src/server/updateCheck';
 import { registerCatalogueRoutes } from './src/server/routes/catalogue';
 import { offlineReportHtml } from './src/utils/offlineReport';
 import { registerOfficialDocsRoutes } from './src/server/routes/officialDocs';
+import { registerMfmodRoutes } from './src/server/routes/mfmod';
 import { registerGvarRoutes } from './src/server/routes/gvar';
 import { registerTeamRoutes } from './src/server/routes/team';
 import { mountEngineRoutes } from './src/server/engineRoutes';
@@ -4580,6 +4581,7 @@ async function startServer() {
   registerFeedbackRoutes(app, { refuseRemoteChange });
   registerCatalogueRoutes(app);
   registerOfficialDocsRoutes(app);
+  registerMfmodRoutes(app);
   registerGvarRoutes(app);
   registerTeamRoutes(app, { signedIn, refuseRemoteChange });
   registerOwnSeriesRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
