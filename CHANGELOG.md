@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Software parts list, build proof and checksums. Publishing a GitHub Release now adds a source
+  archive, a software parts list (SBOM) in SPDX 2.3 and CycloneDX 1.5, a `SHA256SUMS` file and
+  GitHub-signed build proof (SLSA provenance) to it (`.github/workflows/release.yml`). Published
+  images carry their own parts list and build proof, and GitHub signs a build proof for each image.
+  `npm run sbom` makes the parts list locally. docs/SECURITY.md explains how to check a download.
 - Code scanning and OpenSSF Scorecard: two new workflows. `codeql.yml` looks for security mistakes in
   the TypeScript code, the Python models service and the workflow files on each pull request, each
   push to main and weekly; `scorecard.yml` scores the project against the OpenSSF Scorecard checks

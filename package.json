@@ -15,6 +15,7 @@
     "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.strict.json",
     "size:check": "tsx scripts/size-check.ts",
     "test": "tsx --test \"tests/*.test.ts\"",
+    "sbom": "npm sbom --omit dev --sbom-format spdx",
     "test:smoke": "node tests/smoke/ui-smoke.mjs",
     "test:journeys": "node tests/smoke/journeys.mjs",
     "test:a11y": "node tests/smoke/a11y.mjs",
