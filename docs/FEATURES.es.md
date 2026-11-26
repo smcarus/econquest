@@ -400,8 +400,8 @@ Situación al 26 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./ROADMAP.md
     Mundial publica para Bolivia, Croacia, Irak, Nepal, Pakistán y Turquía se ejecutan en su
     computadora mediante un servicio opcional; su trayectoria base y los cálculos con un choque en
     Historia y datos y en las respuestas «¿y si...?»; y una comprobación prerregistrada de que la
-    aplicación reproduce los resultados del propio Banco Mundial, cuyo veredicto espera su primera
-    ejecución en la computadora del desarrollador.
+    aplicación reproduce los resultados del propio Banco Mundial, que pasó en la computadora del
+    desarrollador el 26 de noviembre.
 
 **Siguiente**
 

@@ -676,7 +676,10 @@ of the six files, solved again with no change, gives back its stored values with
 difference of 0.00001, and (B) the oil example in the World Bank's manual (oil +$25 a barrel in
 2025 to 2027 in Pakistan) gives the manual's 64 published figures within 0.006 points. A dry run in
 the build environment on 26 November 2026 passed both (largest differences 0.00000034 and 0.0050
-points); the verdict that counts is the run on the developer's computer, still owed. Status:
+points). The run that counts, on the developer's computer on 26 November 2026 (ModelFlow 2.97),
+passed both: largest relative difference 0.000000342 (Croatia's government debt) and largest
+difference 0.0050 points of the 0.006 allowed (Pakistan's real GDP, 2033). The verdict is kept in
+`docs/validation/models/results.json`, apart from the track record of signals and forecasts. Status:
 Description, not a tested signal (register `wb_mfmod`; rules in the [Methods note](./METHODS.md)).
 
 ## 6. The signal standard
@@ -1218,7 +1221,7 @@ Per-model references are given in the [Methods note](./METHODS.md).
 | 1.5 | 17 November 2026 | Release 0.2.0. IMF monthly exchange rates and policy rates where no daily or BIS figure exists (3.1, 3.3); inflation targets and decision dates filed only from banks' own pages (3.3); countries the user adds are part of the daily download; limits for lower-income countries (14) |
 | 1.6 | 24 November 2026 | New sources in 3.1 (IMF market rates and trade by partner, World Bank GEP, OECD Economic Outlook and original-release editions, official documents and speeches, catalogue search, the Philadelphia Fed survey file, the user's own Interactive Brokers prices); last good answers, retries and release-day re-reads (3.2); official forecasts as a labelled stand-in and local market rates (3.3); OECD editions (3.6); what leaves the computer and the update check (1.1); the short answer without an AI model and answers in the chosen language (4.1); results on record brought to 39 tests, 11 passed (11); limits of the forward record, the global VAR and official forecasts (14). The forecasting methods added on 22 November (KPSS, tests on data as first published, GARCH, ridge and lasso, ARIMA, the dynamic factor model, quantile bands and the random forest) were written into 7.3 with each change |
 | 1.7 | 25 November 2026 | What leaves the computer corrected: the screen fonts ship with the app and no longer come from Google Fonts; the built app's Content-Security-Policy (1.1). The 59 countries from the low-income debt list and Add a country with every country (3.3); those countries are in no recorded test (11.1) |
-| 1.8 | 26 November 2026 | The World Bank country models (5.6): the public MFMod models for six countries run on the user's computer, their stored baseline, one-shock runs shown as differences, and the pre-registered reproduction check; the model files as a source (3.1), the check in reproducibility (13) and their limits (14) |
+| 1.8 | 26 November 2026 | The World Bank country models (5.6): the public MFMod models for six countries run on the user's computer, their stored baseline, one-shock runs shown as differences, and the pre-registered reproduction check, which passed on the developer's computer the same day; the model files as a source (3.1), the check in reproducibility (13) and their limits (14) |
 
 ---
 

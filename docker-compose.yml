@@ -134,8 +134,9 @@ services:
       - econquest-net
 
   # Optional World Bank country models (MFMod, run with ModelFlow): the six public models, downloaded
-  # once into data/local/mfmod/ and run on this computer. Not published on any port: only the app,
-  # inside Docker, reaches it as http://mfmod:8765.
+  # once into data/local/mfmod/ and run on this computer. The app, inside Docker, reaches it as
+  # http://mfmod:8765. Published on this Mac/PC only (127.0.0.1), so `npm run mfmod:validate` run
+  # outside Docker can reach it too; other machines on the network cannot.
   mfmod:
     build:
       context: ./models
@@ -143,6 +144,8 @@ services:
     profiles:
       - models
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MFMOD_PORT:-8765}:8765"
     environment:
       - MFMOD_DIR=/data/mfmod
     volumes:

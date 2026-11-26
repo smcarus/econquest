@@ -120,6 +120,18 @@ export function judgeMfmodReproduction(spec: MfmodCheckSpec, baseline: BaselineC
 }
 
 /** Plain-text summary for the terminal and the Mac validation report. */
+/**
+ * The address the check script uses. MFMOD_URL in .env names the service as Docker's app sees it
+ * (http://mfmod:8765); run outside Docker, that name does not resolve, so the script asks the port
+ * docker-compose.yml publishes on this computer instead (127.0.0.1, MFMOD_PORT or 8765).
+ */
+export function checkBaseUrl(url: string, insideDocker: boolean, port?: string): string {
+  const u = new URL(url);
+  if (insideDocker || u.hostname !== 'mfmod') return u.origin;
+  const p = port && /^\d{1,5}$/.test(port) ? port : '8765';
+  return `http://127.0.0.1:${p}`;
+}
+
 export function checkSummary(r: MfmodCheckResult): string {
   const word = (s: CheckStatus) => (s === 'passed' ? 'PASSED' : s === 'failed' ? 'FAILED' : 'NOT RUN');
   return [

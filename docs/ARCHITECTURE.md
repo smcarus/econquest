@@ -54,7 +54,8 @@ numbers are left out because they move with every change.
   country (`snapshot/network.ts`), the last good answers (`lastGood.ts`), events and webhooks,
   sign-in and the update check.
 - **`models/`** is an optional Python service (ModelFlow, Docker profile `models`) that runs the
-  World Bank's public country models. The server reaches it only when `MFMOD_URL` is set
+  World Bank's public country models, on port 8765 of this computer only. The server reaches it
+  only when `MFMOD_URL` is set
   (`src/server/mfmod.ts`, routes `/api/mfmod/...`); without it the app works the same and the
   model panels say how to turn it on.
 - **`src/utils/`** is most of the app's logic: one module per source or calculation (about 400 of

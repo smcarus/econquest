@@ -406,7 +406,7 @@ Où en est le projet au 26 novembre 2026 (détail dans [docs/ROADMAP.md](./ROADM
     tournent sur votre ordinateur grâce à un service optionnel ; leur trajectoire de base et les
     calculs avec un choc dans Historique et données et dans les réponses « et si... ? » ; et une
     vérification préenregistrée que l'application reproduit les résultats de la Banque mondiale
-    elle-même, dont le verdict attend son premier passage sur l'ordinateur du développeur.
+    elle-même, réussie sur l'ordinateur du développeur le 26 novembre.
 
 **Ensuite**
 

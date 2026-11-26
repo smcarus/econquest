@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 import { sha256 } from '../src/utils/backtestRun';
 import { mfmodConfigFromEnv, serviceGet } from '../src/server/mfmod';
-import { checkSummary, judgeMfmodReproduction, type BaselineCheckReply, type BookOilReply, type MfmodCheckSpec } from '../src/utils/mfmodCheck';
+import { checkBaseUrl, checkSummary, judgeMfmodReproduction, type BaselineCheckReply, type BookOilReply, type MfmodCheckSpec } from '../src/utils/mfmodCheck';
 
 dotenv.config();
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -39,7 +39,8 @@ if ('problem' in cfg) {
   console.log(`World Bank country models: ${cfg.problem} The reproduction check was not run.`);
   process.exit(0);
 }
-const base = cfg.url;
+// Outside Docker the service's Docker name (mfmod) does not resolve: use the port published on 127.0.0.1.
+const base = checkBaseUrl(cfg.url, fs.existsSync('/.dockerenv'), process.env.MFMOD_PORT);
 
 async function ask<T>(p: string): Promise<T | null> {
   try {

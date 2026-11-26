@@ -392,8 +392,8 @@ Situação em 26 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./ROADMAP.md
     Mundial publica para Bolívia, Croácia, Iraque, Nepal, Paquistão e Turquia rodam no seu computador
     por meio de um serviço opcional; sua trajetória base e os cálculos com um choque em Histórico e
     dados e nas respostas "e se...?"; e uma verificação pré-registrada de que o app reproduz os
-    resultados do próprio Banco Mundial, cujo veredito espera a primeira execução no computador do
-    desenvolvedor.
+    resultados do próprio Banco Mundial, que passou no computador do desenvolvedor em 26 de
+    novembro.
 
 **Próximo**
 

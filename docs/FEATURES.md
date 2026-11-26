@@ -409,8 +409,8 @@ Where things stand on 26 November 2026 (details and status in [docs/ROADMAP.md](
 23. **The World Bank's country models** (26 November): the macro-fiscal models the World Bank
     publishes for Bolivia, Croatia, Iraq, Nepal, Pakistan and Turkiye run on your computer through an
     optional service; their baseline and one-shock runs in History & data and in what-if answers; and
-    a pre-registered check that the app reproduces the World Bank's own results, whose verdict waits
-    for its first run on the developer's computer.
+    a pre-registered check that the app reproduces the World Bank's own results, which passed on the
+    developer's computer on 26 November.
 
 **Next**
 
