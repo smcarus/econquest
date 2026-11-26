@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
-import { checkSummary, judgeMfmodReproduction, type BaselineCheckReply, type BookOilReply, type MfmodCheckSpec } from '../src/utils/mfmodCheck';
+import { checkBaseUrl, checkSummary, judgeMfmodReproduction, type BaselineCheckReply, type BookOilReply, type MfmodCheckSpec } from '../src/utils/mfmodCheck';
 
 const dir = 'docs/validation/models';
 const raw = fs.readFileSync(`${dir}/mfmod_reproduction.json`);
@@ -54,4 +54,17 @@ test('not run: service silent or a model missing is not a verdict', () => {
   assert.equal(r.status, 'not_run');
   assert.match(r.baseline.note, /HRV, IRQ, NPL, TUR/);
   assert.match(checkSummary(r), /NOT RUN/);
+});
+
+test('outside Docker the check asks the port published on 127.0.0.1, not the Docker name', () => {
+  assert.equal(checkBaseUrl('http://mfmod:8765', false), 'http://127.0.0.1:8765');
+  assert.equal(checkBaseUrl('http://mfmod:8765', false, '9001'), 'http://127.0.0.1:9001');
+  assert.equal(checkBaseUrl('http://mfmod:8765', false, 'x; rm'), 'http://127.0.0.1:8765');
+  assert.equal(checkBaseUrl('http://mfmod:8765', true), 'http://mfmod:8765');
+  assert.equal(checkBaseUrl('http://127.0.0.1:8765/', false), 'http://127.0.0.1:8765');
+});
+
+test('docker-compose.yml publishes the models service on this computer only', () => {
+  const compose = fs.readFileSync(new URL('../docker-compose.yml', import.meta.url), 'utf8');
+  assert.match(compose, /mfmod:[\s\S]*?ports:\s*\n\s*- "127\.0\.0\.1:\$\{MFMOD_PORT:-8765\}:8765"/);
 });

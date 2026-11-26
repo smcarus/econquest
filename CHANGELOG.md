@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- World Bank country models: the reproduction check passed on the owner's Mac on 26 November 2026
+  (A: largest relative difference 3.42e-7, pass mark 1e-5; B: 64 figures, largest 0.0050 points,
+  pass mark 0.006), recorded in `docs/validation/models/results.json`. The models service is now
+  published on 127.0.0.1 only (port 8765, or `MFMOD_PORT`), and `npm run mfmod:validate` run
+  outside Docker uses that port when `.env` names the service `mfmod`, so the check runs from the
+  Mac itself and in `npm run mac:validate`.
 - Accessibility statement, `docs/ACCESSIBILITY.md`: aims for WCAG 2.2 AA, partly meets it; what is
   checked on every change, what works (keyboard, focus, reduce motion, zoom, languages, figures as
   text), known gaps (charts as pictures, no screen-reader test by a person yet) and how to report a

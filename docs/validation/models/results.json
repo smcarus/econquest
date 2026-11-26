@@ -1,0 +1,18 @@
+{
+  "note": "Verdicts of the World Bank country models reproduction check (mfmod_reproduction.json) from real runs on the owner's computer, copied from the script's printed summary. Not part of the signal and forecast track record (docs/validation/recorded-verdicts.json): this check tests that the app runs the World Bank's models as the World Bank does, not a forecast or a signal. The live result files are in data/local/validation/ on the computer that ran them and win over this file. Add a row only from a real run; never edit a figure by hand.",
+  "runs": [
+    {
+      "ranAt": "2026-11-26T17:54:48Z",
+      "where": "Sam's Mac (Jahre), main at 5cb8ed2, models service built with docker compose --profile models; run inside the app container (docker compose exec -e MFMOD_URL=http://mfmod:8765 econquest npx tsx scripts/mfmod-validate.ts) because the service's port was not yet published to the Mac",
+      "file": "mfmod_reproduction.json",
+      "version": 1,
+      "hash": "513bace2aeef",
+      "modelflow": "2.97",
+      "python": "3.12.16",
+      "verdict": "passed",
+      "baseline": { "status": "passed", "models": 6, "largestRelativeDifference": 3.42e-7, "at": "HRV gov_debt", "passMark": 1e-5 },
+      "bookOil": { "status": "passed", "figures": 64, "largestDifferencePts": 0.005, "at": "PAKNYGDPMKTPKN 2033", "passMark": 0.006 },
+      "publicCopy": { "figures": 44, "years": "2020-2030", "largestDifferencePts": 0.0049, "forInformation": true }
+    }
+  ]
+}

@@ -303,7 +303,10 @@ part of `npm run mac:validate`). It is a pre-registered check
 (`docs/validation/models/mfmod_reproduction.json`): each model, solved again, must give back the
 values stored in its file, and the World Bank manual's Pakistan oil example must give the manual's
 published figures. It downloads one more file the first time, the copy of the Pakistan model kept
-beside the manual (about 1 MB).
+beside the manual (about 1 MB). The service is published on this computer only (127.0.0.1, port
+8765, or `MFMOD_PORT` in `.env`), so the check reaches it from outside Docker even though `.env`
+names it `mfmod`. On 26 November 2026 it passed on the developer's Mac
+(`docs/validation/models/results.json`).
 
 ## Your first few minutes
 
