@@ -28,6 +28,7 @@ qu'en anglais.
 | --- | --- | --- |
 | Poser une question en langage courant | **Espace de travail** (Chat du conseil) | Des agents spécialisés répondent à partir des chiffres de l'application, chacun avec sa source ; sans modèle d'IA, une réponse courte selon les règles déclarées de l'application vient d'abord ; avec un modèle d'IA, un agent de synthèse rédige une courte note qui ne peut citer que leurs chiffres, et un contrôle signale tout chiffre impossible à retracer |
 | Demander ce que ferait un changement | **Espace de travail** (Chat du conseil) | Demandez « que se passerait-il pour la Turquie si la Fed relevait ses taux d'un point ? ». L'application vous montre le changement qu'elle a compris (vous pouvez modifier les ampleurs et reposer la question), le Scenario Agent met les chiffres d'aujourd'hui à côté des chiffres après le changement, liste ce qui s'est passé lors d'épisodes passés du même type et ce qu'ont trouvé des études publiées, et la réponse arrive en huit parties, chacune marquée du type d'éléments sur lequel elle repose |
+| Utiliser le modèle pays de la Banque mondiale elle-même | **Historique et données > Prévisions du FMI par édition**, et les questions « et si... ? » du Chat du conseil | Pour la Bolivie, la Croatie, l'Irak, le Népal, le Pakistan et la Turquie, une fois le service optionnel des modèles activé ([guide d'installation](./INSTALL.md#add-the-world-bank-country-models-optional), en anglais) : la trajectoire de base enregistrée dans le modèle public MFMod de la Banque mondiale, et *Essayez un choc dans le modèle* (prix mondiaux du pétrole ou des produits alimentaires, achats de l'État, ou taux directeur là où le modèle en a un), montré comme l'écart à la trajectoire propre du modèle, car les copies publiques ont des données anciennes. Le Scenario Agent ajoute la réponse du modèle aux questions sur le pétrole, l'alimentation et le taux directeur. Une vérification écrite avant le vrai calcul teste que l'application reproduit les résultats de la Banque mondiale elle-même |
 | Étudier un pays | **Recherche > Un pays** | Résumé, Marchés et signaux, Historique et données, Sources. Historique et données montre le graphique de l'historique, puis un menu d'outils en huit groupes qui s'ouvrent un par un : graphiques sur des années, estimations du présent et prévisions avec intervalles, écart de production, soutenabilité de la dette, adéquation des réserves, règles de politique monétaire, alerte précoce de crise, courbe des taux, moteurs de l'inflation, comptabilité de la croissance, prévisions du FMI par édition, et vues « à une date passée ». Pour les pays à revenu plus faible : envois de fonds, aide reçue, inclusion financière, prix des matières premières et termes de l’échange, prix alimentaires et sécurité alimentaire, et catastrophes naturelles. Météo dans la capitale depuis 1981 et sur tout le pays depuis 1901, prix du riz, du blé, du maïs et du soja depuis 1960, un outil de conception d'assurance paramétrique (coût de sinistralité, prix équitable, périodes de retour, risque de base), un modèle de pertes dues aux catastrophes et les trajectoires des cyclones tropicaux. Comment la monnaie est gérée dans les faits, actifs de la banque centrale et tension sur le financement en dollars. Pour les administrations et les élus : crédibilité du budget (quelle part du budget voté a été dépensée, avec les bandes de note PEFA), un suivi de l'exécution du budget à partir de votre propre fichier, les projets de la Banque mondiale et leur rythme de décaissement, et des chiffres régionaux. Pour les économistes et les opérateurs de marché : fourchettes tirées des erreurs passées des prévisions, courbes de taux complètes des États-Unis et de la zone euro, et surprises dans les données avec un indice de surprises d'inflation |
 | Comparer des pays | **Recherche > Comparer des pays** | Votre liste de suivi côte à côte (les 19 pays membres du G20 au départ, ou les 15 plus grands pays à faible revenu par région), des pistes d'articles et les écarts entre prix de marché et données |
 | Suivre vos positions | **Recherche > Mes positions** | Une liste d'obligations ou de positions que vous chargez, face aux risques et aux signaux |
@@ -292,7 +293,7 @@ La méthode complète est dans [docs/METHODOLOGY.md](./METHODOLOGY.md) (en angla
 
 ## Feuille de route
 
-Où en est le projet au 24 novembre 2026 (détail dans [docs/ROADMAP.md](./ROADMAP.md), en anglais) :
+Où en est le projet au 26 novembre 2026 (détail dans [docs/ROADMAP.md](./ROADMAP.md), en anglais) :
 
 **Fait**
 
@@ -400,6 +401,12 @@ Où en est le projet au 24 novembre 2026 (détail dans [docs/ROADMAP.md](./ROADM
     Haïti, Népal, les petits États insulaires et d'autres) figurent dans toutes les listes de pays, et
     le téléchargement quotidien les enregistre dès qu'ils sont dans une liste de suivi ; et la
     vérification automatique sous Windows passe.
+23. **Les modèles pays de la Banque mondiale** (26 novembre) : les modèles macro-budgétaires que la
+    Banque mondiale publie pour la Bolivie, la Croatie, l'Irak, le Népal, le Pakistan et la Turquie
+    tournent sur votre ordinateur grâce à un service optionnel ; leur trajectoire de base et les
+    calculs avec un choc dans Historique et données et dans les réponses « et si... ? » ; et une
+    vérification préenregistrée que l'application reproduit les résultats de la Banque mondiale
+    elle-même, dont le verdict attend son premier passage sur l'ordinateur du développeur.
 
 **Ensuite**
 

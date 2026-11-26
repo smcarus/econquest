@@ -28,6 +28,7 @@ roadmap and the developer notes. The short introduction and the install steps ar
 | --- | --- | --- |
 | Ask a question in plain words | **Workspace** (Council chat) | Specialist agents answer from the app's figures, each naming its source; without an AI model a short answer by the app's stated rules comes first; with an AI model, a summary agent writes a short brief that may quote only their figures, and a number check flags any figure it cannot trace |
 | Ask what a change would do | **Workspace** (Council chat) | Ask "what would happen to Turkey if the Fed raised rates by 1 point?" The app reads the change back to you (you can edit the sizes and ask again), the Scenario Agent sets today's figures beside the figures after the change, lists what happened in past episodes of the same kind and what published studies found, and the answer comes in eight parts, each marked with the kind of evidence it rests on |
+| Run the World Bank's own country model | **History & data > IMF forecasts by edition**, and Council chat what-ifs | For Bolivia, Croatia, Iraq, Nepal, Pakistan and Turkiye, with the optional models service turned on ([install guide](./INSTALL.md#add-the-world-bank-country-models-optional)): the baseline stored in the World Bank's public MFMod model, and *Try a shock in the model* (world oil or food prices, government purchases, or the policy rate where the model has one), shown as the difference from the model's own path because the public copies carry old data. The Scenario Agent adds the model's answer to oil, food and policy rate questions. A check written down before the real run tests that the app reproduces the World Bank's own results |
 | Study one country | **Research > One country** | Summary, Markets & signals, History & data and Sources. History & data shows the history chart, then a menu of tools in eight groups that open one at a time: charts going back years, nowcasts and forecasts with ranges, output gap, debt sustainability, reserve adequacy, policy rules, crisis early-warning, yield curve, inflation drivers, growth accounting, IMF forecasts by edition, and "as of" views of what was known on a past day. For lower-income countries: remittances, aid received, financial inclusion, commodity prices and terms of trade, food prices and food security, and natural disasters. Weather at the capital since 1981 and across the country since 1901, rice, wheat, maize and soybean prices since 1960, a parametric insurance designer (burn cost, fair price, return periods, basis risk), a disaster loss model and tropical cyclone tracks. How the currency is run in fact, central bank assets and dollar funding stress. For public administrators and politicians: budget credibility (how much of the approved budget was spent, with PEFA grade bands), a budget execution tracker from your own file, World Bank projects and how fast they pay out, and regional figures. For economists and traders: ranges from past forecast misses, full US and euro area yield curves, and data surprises with an inflation surprise index |
 | Compare countries | **Research > Compare countries** | Your watchlist side by side (the 19 G20 member countries to start with, or the 15 largest lower-income countries by region), story leads and where market prices and the data disagree |
 | Follow your holdings | **Research > My holdings** | A list of bonds or positions you load, against the risks and signals |
@@ -316,7 +317,7 @@ The full method is in [docs/METHODOLOGY.md](./METHODOLOGY.md); the same in plain
 
 ## Roadmap
 
-Where things stand on 24 November 2026 (details and status in [docs/ROADMAP.md](./ROADMAP.md)):
+Where things stand on 26 November 2026 (details and status in [docs/ROADMAP.md](./ROADMAP.md)):
 
 **Done**
 
@@ -405,6 +406,11 @@ Where things stand on 24 November 2026 (details and status in [docs/ROADMAP.md](
     those on the world map; the 59 countries on the IMF and World Bank low-income debt list (Malawi,
     Sierra Leone, Haiti, Nepal, the small island states and others) are in every country list, saved
     by the daily download once they are on a watchlist; and the automatic Windows check passes.
+23. **The World Bank's country models** (26 November): the macro-fiscal models the World Bank
+    publishes for Bolivia, Croatia, Iraq, Nepal, Pakistan and Turkiye run on your computer through an
+    optional service; their baseline and one-shock runs in History & data and in what-if answers; and
+    a pre-registered check that the app reproduces the World Bank's own results, whose verdict waits
+    for its first run on the developer's computer.
 
 **Next**
 

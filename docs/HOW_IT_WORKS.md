@@ -1,6 +1,6 @@
 # How EconQuest works, in plain words
 
-**Version 1.7, 25 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
+**Version 1.8, 26 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
 validated advice.
 
 This guide explains, without jargon, where EconQuest's figures come from, what its AI does and does
@@ -460,6 +460,19 @@ the Fed raised rates by 1 point and the dollar strengthened 5%?"
   part with no figures reads Missing instead of being filled in. Every sentence goes through the same
   number check as any answer.
 
+- **The World Bank's own model, for six countries.** The World Bank publishes the economic models its
+  country economists use for Bolivia, Croatia, Iraq, Nepal, Pakistan and Turkiye. Each one links
+  growth, prices, the budget, debt and trade, so a change in one works through to the others. If you
+  turn on the optional models service ([install guide](./INSTALL.md#add-the-world-bank-country-models-optional)),
+  the app runs these models on your computer. For an oil, food or policy rate question about one of
+  those countries, the answer adds what the World Bank's model gives. You can also try a change
+  yourself under History & data > IMF forecasts by edition, with *Try a shock in the model*. The
+  public copies of the models carry old figures, so the app shows only how far the change moves the
+  results from the model's own path, year by year, not the levels. A check written down before the
+  real run tests that the app runs the models as the World Bank does: each model must give back its
+  own stored figures, and the oil example in the World Bank's manual must give the manual's 64
+  figures.
+
 None of this is a forecast. It shows what the figures and the past say about a change you describe, so
 you can judge it yourself.
 
@@ -608,6 +621,9 @@ other.
   names properly.
 - **Rare events need long records.** Weather, disaster and storm records cover a few decades, which is
   short for a 1-in-100-year event. A parametric cover's index is not anyone's real loss.
+- **The World Bank models are old teaching copies.** Only six countries' models are public, their
+  figures are years out of date, and the app runs one change at a time. A result is what the model
+  says, not what the World Bank forecasts.
 - **Crisis replays are rough.** They use monthly averages and the simplest bond arithmetic, so they
   understate the worst days of a crisis.
 - **The log can be checked, not made unbreakable.** Every entry in the app's log is linked to the one
@@ -616,5 +632,5 @@ other.
 
 ---
 
-*How EconQuest works, version 1.7 (25 November 2026). Text licensed under CC BY 4.0: you may share and
+*How EconQuest works, version 1.8 (26 November 2026). Text licensed under CC BY 4.0: you may share and
 adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*

@@ -126,7 +126,10 @@ minutos.
 3. O **Scenario Agent** (agente de cenários) coloca os números de hoje ao lado dos números depois da
    mudança, para até quatro países, e acrescenta o que aconteceu em episódios passados do mesmo tipo e o
    que estudos publicados encontraram (cada estudo com sua página e seu DOI; o número de um estudo é uma
-   média de muitos países). As partes sem números mostram **Ausente** com o motivo.
+   média de muitos países). As partes sem números mostram **Ausente** com o motivo. Para Bolívia,
+   Croácia, Iraque, Nepal, Paquistão ou Turquia, uma mudança no petróleo, nos alimentos ou na taxa
+   básica de juros recebe também números do **modelo do Banco Mundial**, se os modelos de país do
+   Banco Mundial estiverem ligados (veja a seção 5).
 4. Com um modelo de IA configurado, a resposta vem em oito partes, de *Onde as coisas estão hoje* a *O que
    mudaria a resposta*, cada uma marcada com o tipo de evidência em que se apoia: *Dados*, *Cálculo do
    app*, *Passado*, *Estudo publicado* ou *Interpretação*.
@@ -320,6 +323,16 @@ baseiam em projeções do FMI.
    com a distância entre elas; para os Estados Unidos, acrescenta a pesquisa de previsores
    profissionais do Federal Reserve da Filadélfia a partir de um arquivo que você salva. São previsões
    oficiais, não um consenso de mercado pago.
+4. Para Bolívia, Croácia, Iraque, Nepal, Paquistão e Turquia, **Modelo de país do Banco Mundial** vem
+   em seguida na mesma ferramenta, depois que o serviço opcional de modelos é ligado
+   ([guia de instalação](./INSTALL.md#add-the-world-bank-country-models-optional), em inglês).
+   Mostra os números guardados no modelo público do Banco Mundial para o país: crescimento, inflação,
+   saldo do orçamento, dívida, conta corrente e taxa básica de juros. Essas cópias públicas são
+   versões didáticas com dados antigos, então leia-as como a trajetória do modelo, não como uma
+   previsão. Abaixo, **Teste um choque no modelo**: escolha o preço mundial do petróleo, os preços
+   mundiais de alimentos, as compras do governo ou (só Paquistão, Turquia e Iraque) a taxa básica de
+   juros, informe um tamanho e clique em **Calcular**. A tabela mostra quanto o choque afasta cada
+   número da trajetória do próprio modelo, ano a ano desde o ano em que o choque começa.
 
 ## 6. Comparar países
 

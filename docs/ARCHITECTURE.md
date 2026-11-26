@@ -53,6 +53,10 @@ numbers are left out because they move with every change.
   (`feeds/`), groups of routes (`routes/`), the AI client (`ai.ts`), the network pull for one
   country (`snapshot/network.ts`), the last good answers (`lastGood.ts`), events and webhooks,
   sign-in and the update check.
+- **`models/`** is an optional Python service (ModelFlow, Docker profile `models`) that runs the
+  World Bank's public country models. The server reaches it only when `MFMOD_URL` is set
+  (`src/server/mfmod.ts`, routes `/api/mfmod/...`); without it the app works the same and the
+  model panels say how to turn it on.
 - **`src/utils/`** is most of the app's logic: one module per source or calculation (about 400 of
   them), each with a test in `tests/`. Most modules are plain functions with no network or file
   access, so the page, the server and the tests can all use them.

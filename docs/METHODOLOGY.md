@@ -1,6 +1,6 @@
 # EconQuest Terminal: Methodology
 
-**Version 1.7, 25 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of the main branch on 25 November 2026 (after release 0.3.0, through pull request #687).
+**Version 1.8, 26 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of the main branch on 26 November 2026 (after release 0.3.0, through pull request #695).
 Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not validated advice.
 
 This document sets out how the EconQuest Terminal sources its data, how its council of agents
@@ -190,7 +190,7 @@ what each fills, its address, how long it is cached and how to set it up is in
 
 | Group | Examples |
 | --- | --- |
-| Free feeds, no key | World Bank (indicators, governance, debt statistics, Pink Sheet commodity prices, remittances and remittance prices, Global Findex, aid received as republished from the OECD DAC, food security), IMF (World Economic Outlook, reserves and balance of payments, COFER, monthly exchange rates and monthly policy rates where no daily or BIS figure exists), BIS (policy rates, real exchange rates, debt securities, credit gap, central bank total assets, US dollar credit to non-banks), OECD (via DBnomics), ECB reference rates, Eurostat, CFTC Commitments of Traders, US Treasury, New York Fed (rates and dollar swap lines), NASA POWER (weather at each capital since 1981), World Bank Climate Change Knowledge Portal (CRU TS country weather since 1901), UN Comtrade, WITS, national central banks (for example BCB, BCRP), GDELT, Polymarket and Kalshi odds (Kalshi CPI market snapshots saved before each US CPI release for the data surprises), World Bank Projects and Operations API and the IDA statement of credits, World Bank budget outturn from PEFA assessments (GF.XPD.BUDG.ZS), the DOSE regional output dataset (Zenodo, CC BY 4.0), Eurostat regional accounts and labour force survey (NUTS 2), the US Treasury daily par yield curve, the ECB euro area government yield curve, BLS consumer prices, IMF Monetary and Financial Statistics market rates (Treasury bill, government bond and money market rates), IMF International Trade in Goods by partner (trade weights for the global VAR), World Bank Global Economic Prospects, OECD Economic Outlook, OECD Main Economic Indicators original-release editions since 1999, the ECB Real-Time Database, the World Bank Documents and Reports API and BIS central bankers' speeches (titles and links only), and the DBnomics, IMF DataMapper, World Development Indicators and Eurostat catalogues (search only, each with its licence note) |
+| Free feeds, no key | World Bank (indicators, governance, debt statistics, Pink Sheet commodity prices, remittances and remittance prices, Global Findex, aid received as republished from the OECD DAC, food security), IMF (World Economic Outlook, reserves and balance of payments, COFER, monthly exchange rates and monthly policy rates where no daily or BIS figure exists), BIS (policy rates, real exchange rates, debt securities, credit gap, central bank total assets, US dollar credit to non-banks), OECD (via DBnomics), ECB reference rates, Eurostat, CFTC Commitments of Traders, US Treasury, New York Fed (rates and dollar swap lines), NASA POWER (weather at each capital since 1981), World Bank Climate Change Knowledge Portal (CRU TS country weather since 1901), UN Comtrade, WITS, national central banks (for example BCB, BCRP), GDELT, Polymarket and Kalshi odds (Kalshi CPI market snapshots saved before each US CPI release for the data surprises), World Bank Projects and Operations API and the IDA statement of credits, World Bank budget outturn from PEFA assessments (GF.XPD.BUDG.ZS), the DOSE regional output dataset (Zenodo, CC BY 4.0), Eurostat regional accounts and labour force survey (NUTS 2), the US Treasury daily par yield curve, the ECB euro area government yield curve, BLS consumer prices, IMF Monetary and Financial Statistics market rates (Treasury bill, government bond and money market rates), IMF International Trade in Goods by partner (trade weights for the global VAR), World Bank Global Economic Prospects, OECD Economic Outlook, OECD Main Economic Indicators original-release editions since 1999, the ECB Real-Time Database, the World Bank Documents and Reports API and BIS central bankers' speeches (titles and links only), the DBnomics, IMF DataMapper, World Development Indicators and Eurostat catalogues (search only, each with its licence note), and the World Bank's six public MFMod country model files (downloaded once by the optional models service, section 5.6) |
 | Free with the user's own key | FRED and ALFRED (St. Louis Fed), US EIA |
 | Free files the user downloads | IMF WEO past editions, Caldara-Iacoviello Geopolitical Risk index, Chinn-Ito capital account openness index, OFAC and UN sanctions lists, UCDP conflict data (one release ships with the code under CC BY 4.0), ACLED aggregated files, NOAA IBTrACS tropical cyclone tracks (downloaded only when the user presses the button, or read from a file the user saves). Read from `data/local/` and never shipped, because their terms are unconfirmed or forbid passing them on: FAOSTAT Consumer Price Indices, EM-DAT disasters (each user's own account), IMF Fiscal Rules Dataset, Database of Political Institutions 2020, IMF investor base workbook, the Ilzetzki-Reinhart-Rogoff exchange rate regime workbook, the Global Data Lab subnational Human Development Index (non-commercial terms), central bank statements the user saves, the Philadelphia Fed Survey of Professional Forecasters (medianLevel.xlsx in `data/local/philly-spf/`; no terms of use found, so never downloaded), and the user's own budget execution file. The full table is in [INSTALL.md](./INSTALL.md#files-you-save-yourself) |
 | The user's own paid data (off by default) | Their own CDS file, their own LSEG account, or live prices from their own Interactive Brokers account through the IBKR Client Portal Gateway they run (held in memory for 10 seconds, shown on screen only, never saved, downloaded, backed up, shared, served to scripts or sent to the AI model) |
@@ -639,6 +639,46 @@ politician, an economist and a market trader need, and eleven tools were added (
 | Data surprises | Each release against an expectation published before it (BCB Focus for Brazil's IPCA, ECB SPF for euro area HICP, the Kalshi CPI market for US CPI, the app's own GDP nowcast on the forward record), scaled by the spread of earlier surprises once there are 8 | Description |
 | Inflation surprise index | The scaled inflation surprises with a 90-day half-life, a year at most and 3 needed. Its test (a reading above +0.5 followed by a policy rate rise within three months more often than usual) was registered and hashed before any run (`docs/validation/pending/surprise_index.json`) and runs once 60 month ends qualify | Not validated |
 
+### 5.6 World Bank country models
+
+The World Bank publishes the macro-fiscal models (MFMod) its country economists use for six
+countries: Bolivia, Croatia (quarterly), Iraq, Nepal, Pakistan and Turkiye (github.com/worldbank/
+MFMod-ModelFlow, folder `models/`, CC0 1.0). Each is a full model of one economy: national accounts,
+prices, the government budget and debt, the balance of payments and, for Pakistan, Turkiye and Iraq,
+a central bank rule. An optional service (`models/`, Docker profile `models`, turned on by
+`MFMOD_URL`, off by default) runs them on the user's computer with ModelFlow (MIT-based licence),
+the toolkit the World Bank's manual uses. The app shows the model in two places:
+
+- **Baseline.** Research > History & data > IMF forecasts by edition shows the figures stored in the
+  public model file: real GDP growth, consumer price inflation (for Pakistan the private consumption
+  deflator, because its file stops filling the consumer price index after 2017), the government
+  balance and debt as % of GDP, the current account as % of GDP and the policy rate where the model
+  has one. Croatia's quarters are summed or averaged to years. The public files are teaching copies
+  with old data (Pakistan's model solves from 2016, Turkiye's exchange rate is 6.7 per dollar), so
+  the panel says the levels are not a forecast, names the year the model works out from, and points
+  to the official forecasts above it for recent years.
+- **Shocks.** "Try a shock in the model" on the same panel, and the Scenario Agent (section 5.4) for
+  an oil, food or policy rate question in one of the six countries, run the model twice, with and
+  without one change, and show only the difference, year by year from the year the shock starts.
+  The shocks are: the world oil price (WLDFCRUDE_PETRO) or the four world food prices (maize, rice,
+  wheat, soybeans) by a percentage; government purchases (GGEXPGNFSCN) by a share of nominal GDP;
+  and the policy rate by percentage points in the three models with a rate rule (held with the
+  model's own `_D`/`_X` switch). Prices and purchases are held for six years and the rate for two,
+  then the model's own equations take over again. Results are the model's levels in % (real GDP,
+  currency per dollar) or points (growth, inflation, budget balance, debt, current account, rate).
+  Bolivia, Nepal and Croatia have no policy rate rule, so a rate shock there reads Missing.
+
+Every result is labelled as the app's run of the World Bank's public model, not a World Bank
+forecast. A pre-registered reproduction check (`docs/validation/models/mfmod_reproduction.json`,
+hash in `docs/validation/models/manifest.json`, `npm run mfmod:validate`) states before any run on
+the developer's computer what "the service runs the models as the World Bank does" means: (A) each
+of the six files, solved again with no change, gives back its stored values within a relative
+difference of 0.00001, and (B) the oil example in the World Bank's manual (oil +$25 a barrel in
+2025 to 2027 in Pakistan) gives the manual's 64 published figures within 0.006 points. A dry run in
+the build environment on 26 November 2026 passed both (largest differences 0.00000034 and 0.0050
+points); the verdict that counts is the run on the developer's computer, still owed. Status:
+Description, not a tested signal (register `wb_mfmod`; rules in the [Methods note](./METHODS.md)).
+
 ## 6. The signal standard
 
 Every signal that makes a forward claim is held to the same standard. It applies to new signals and
@@ -1003,6 +1043,9 @@ advance exactly which feed and which value will settle it.
   chosen by AIC on one common sample and the test refitted at that lag on every usable row,
   Hodrick-Prescott filter) so they match the terminal's statistics rather than a
   package's defaults (`src/utils/replicationPack.ts`).
+- **Model runs checked against the source.** The World Bank country models are checked against the
+  World Bank's own stored results and its manual's published example by a pre-registered check
+  (section 5.6, `npm run mfmod:validate`).
 - **Point-in-time views.** *As of a past day* shows every figure the terminal held on a date;
   *Replicate a rate decision* shows the inputs a simple rule would have had before a central bank
   move, with its caveats.
@@ -1047,6 +1090,10 @@ The terminal states what it cannot do. In particular:
 - **What-if answers are arithmetic on stated changes.** The scenario engine and local projections
   show past co-movement, not cause; the debt identity leaves out feedback from the shock to growth and
   rates; a published study is an average over its sample. None is a forecast for the country.
+- **The World Bank country models are teaching copies.** Only six public models exist, their data
+  are old, and only one shock is run at a time. The app shows differences from the model's own
+  baseline, which depend less on the old data than levels do but still carry the model's starting
+  point. ModelFlow can solve a model; the app does not re-estimate one.
 - **The five-roles tools rest on what is published.** Budget credibility has only the years a PEFA
   assessment covered; regional figures come out years late and GDP is counted where people work; IBRD
   loans have no paid-out figure yet; US data surprises build up only from the user's first daily run,
@@ -1149,6 +1196,10 @@ version number.
 - US Securities and Exchange Commission (2020). *Investment Adviser Marketing* (Rule 206(4)-1, the
   Marketing Rule). Release No. IA-5653.
 
+- World Bank. *The World Bank's MFMod Framework in Python with Modelflow* (online manual, read 26 November 2026).
+  https://worldbank.github.io/MFMod-ModelFlow/. Model files and notebooks:
+  github.com/worldbank/MFMod-ModelFlow (CC0 1.0).
+
 - Wenz, L., Carr, R. D., Kögel, N., Kotz, M. and Kalkuhl, M. (2023). DOSE: global data set of reported
   sub-national economic output. *Scientific Data*, 10, 425. Data on Zenodo,
   doi:10.5281/zenodo.20035157.
@@ -1167,8 +1218,9 @@ Per-model references are given in the [Methods note](./METHODS.md).
 | 1.5 | 17 November 2026 | Release 0.2.0. IMF monthly exchange rates and policy rates where no daily or BIS figure exists (3.1, 3.3); inflation targets and decision dates filed only from banks' own pages (3.3); countries the user adds are part of the daily download; limits for lower-income countries (14) |
 | 1.6 | 24 November 2026 | New sources in 3.1 (IMF market rates and trade by partner, World Bank GEP, OECD Economic Outlook and original-release editions, official documents and speeches, catalogue search, the Philadelphia Fed survey file, the user's own Interactive Brokers prices); last good answers, retries and release-day re-reads (3.2); official forecasts as a labelled stand-in and local market rates (3.3); OECD editions (3.6); what leaves the computer and the update check (1.1); the short answer without an AI model and answers in the chosen language (4.1); results on record brought to 39 tests, 11 passed (11); limits of the forward record, the global VAR and official forecasts (14). The forecasting methods added on 22 November (KPSS, tests on data as first published, GARCH, ridge and lasso, ARIMA, the dynamic factor model, quantile bands and the random forest) were written into 7.3 with each change |
 | 1.7 | 25 November 2026 | What leaves the computer corrected: the screen fonts ship with the app and no longer come from Google Fonts; the built app's Content-Security-Policy (1.1). The 59 countries from the low-income debt list and Add a country with every country (3.3); those countries are in no recorded test (11.1) |
+| 1.8 | 26 November 2026 | The World Bank country models (5.6): the public MFMod models for six countries run on the user's computer, their stored baseline, one-shock runs shown as differences, and the pre-registered reproduction check; the model files as a source (3.1), the check in reproducibility (13) and their limits (14) |
 
 ---
 
-*EconQuest Terminal methodology, version 1.7 (25 November 2026). Text licensed under CC BY 4.0: you may
+*EconQuest Terminal methodology, version 1.8 (26 November 2026). Text licensed under CC BY 4.0: you may
 share and adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*
