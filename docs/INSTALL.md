@@ -262,8 +262,8 @@ a small extra service. It is off unless you turn it on, and the app works the sa
 | | |
 | --- | --- |
 | What it costs | Nothing. The model files are public domain (CC0); the ModelFlow software that runs them is free (MIT-based licence) |
-| What it needs | Docker and about 1.5 GB more disk: 1.3 GB of Python packages measured, the Python base image, and under 5 MB for the six model files |
-| What leaves your computer | One download of the six model files from the World Bank's GitHub page; nothing else |
+| What it needs | Docker and about 1.5 GB more disk: 1.3 GB of Python packages measured, the Python base image, and about 6 MB for the six model files and the manual's Pakistan copy |
+| What leaves your computer | One download of the model files from the World Bank's GitHub page; nothing else |
 
 To turn it on, add this line to the `.env` file in your `econquest` folder:
 
@@ -297,6 +297,13 @@ government purchases, and the policy rate in Pakistan, Turkiye and Iraq); and in
 the Scenario Agent adds the model's answer to an oil, food or policy rate what-if. The public files
 carry old data, so shocks are shown as the difference from the model's own baseline. A shock takes a
 few seconds the first time a country's model is loaded.
+
+To check that the service runs the models as the World Bank does, run `npm run mfmod:validate` (also
+part of `npm run mac:validate`). It is a pre-registered check
+(`docs/validation/models/mfmod_reproduction.json`): each model, solved again, must give back the
+values stored in its file, and the World Bank manual's Pakistan oil example must give the manual's
+published figures. It downloads one more file the first time, the copy of the Pakistan model kept
+beside the manual (about 1 MB).
 
 ## Your first few minutes
 

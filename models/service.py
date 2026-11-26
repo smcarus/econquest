@@ -23,6 +23,14 @@ Calls (all GET, JSON):
                      only where the model has a policy rate rule) and spending (government purchases
                      of goods and services, points of nominal GDP). The shock is held for `hold`
                      years, then the model's own equations take over again.
+  /check/baseline    Each model loaded as stored and solved again: the largest relative difference
+                     per headline series over the solve span (pre-registered check A,
+                     docs/validation/models/mfmod_reproduction.json).
+  /check/book-oil    The World Bank manual's Pakistan example (oil +25 US$ a barrel in 2025-27,
+                     solved 2020-2040) on the manual's own copy of the model, downloaded once from
+                     the same repository: % difference from the baseline for the four series the
+                     manual prints, 2020-2035 (pre-registered check B); and the same run on the
+                     public copy the app uses, 2020-2030, for information.
 
 Every figure comes from the model file as the World Bank published it. Where a model lacks a
 series the reply says so; no figure is filled in.
@@ -299,6 +307,100 @@ def shock(iso3: str, kind: str, size: float, hold: int) -> dict:
     }
 
 
+def _quiet(f, *a, **k):
+    import contextlib
+    import io
+
+    with contextlib.redirect_stdout(io.StringIO()):
+        return f(*a, **k)
+
+
+def check_baseline() -> dict:
+    """Check A: each model as stored against the same file solved again, over its solve span."""
+    from modelclass import model
+
+    out, problems = [], []
+    for m in MODELS:
+        iso3 = m["iso3"]
+        if not os.path.exists(local_file(m)):
+            problems.append(f"{m['name']}: model file not downloaded")
+            continue
+        try:
+            with _lock:
+                _m0, stored = _quiet(model.modelload, local_file(m), run=False)
+                solved_mdl, solved = _quiet(model.modelload, local_file(m), run=True, keep="Check")
+                per = list(solved_mdl.current_per)
+            rows = {}
+            gdp = stored.loc[per[0] : per[-1], iso3 + SERIES["nominal_gdp"]].astype(float)
+            for key in SERIES:
+                col = column(iso3, key)
+                if col not in stored.columns:
+                    continue
+                a = stored.loc[per[0] : per[-1], col].astype(float)
+                b = solved.loc[per[0] : per[-1], col].astype(float)
+                if key == "gov_balance":
+                    diffs = [abs(y - x) / g for x, y, g in zip(a, b, gdp) if math.isfinite(x) and math.isfinite(y) and g]
+                else:
+                    diffs = [abs(y / x - 1) for x, y in zip(a, b) if math.isfinite(x) and math.isfinite(y) and x != 0 and y != 0]
+                if diffs:
+                    rows[key] = {"code": col, "maxRelativeDifference": max(diffs), "periods": len(diffs)}
+            out.append({"iso3": iso3, "solveFrom": period_label(per[0]), "solveTo": period_label(per[-1]), "series": rows})
+        except Exception as e:  # noqa: BLE001
+            problems.append(f"{m['name']}: {e}")
+    return {"models": out, "problems": problems, "modelflow": modelflow_version()}
+
+
+BOOK_OIL_SERIES = ["PAKNYGDPMKTPKN", "PAKNECONPRVTKN", "PAKNEIMPGNFSKN", "PAKNECONPRVTXN"]
+# The copy of the Pakistan model kept beside the World Bank's manual (same repository, CC0), which the
+# manual's example loads; it solves to 2035, the public copy in models/Pakistan/data/ to 2030.
+BOOK_PAK_PATH = "jn/mfbook/content/models/pak.pcim"  # from the repository root (MFMOD_SOURCE minus its last folder, models)
+
+
+def book_pak_file() -> str:
+    """The manual's Pakistan model, downloaded once next to the six public files."""
+    dest = os.path.join(MFMOD_DIR, "pak-book.pcim")
+    if os.path.exists(dest) and os.path.getsize(dest) > 0:
+        return dest
+    url = MFMOD_SOURCE.rstrip("/").rsplit("/", 1)[0] + "/" + BOOK_PAK_PATH
+    req = urllib.request.Request(url, headers={"User-Agent": "econquest-models"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        body = r.read()
+    if len(body) < 1000:
+        raise ValueError(f"the manual's Pakistan model: only {len(body)} bytes")
+    tmp = dest + ".part"
+    with open(tmp, "wb") as f:
+        f.write(body)
+    os.replace(tmp, dest)
+    return dest
+
+
+def _book_oil_run(path: str, years: list) -> dict:
+    from modelclass import model
+
+    with _lock:
+        mpak, _bline = _quiet(model.modelload, path, run=True, keep="Baseline")
+        shocked_in = mpak.basedf.upd("<2025 2027> WLDFCRUDE_PETRO + 25")
+        res = _quiet(mpak, shocked_in, 2020, 2040, keep="$25 increase in oil prices 2025-27")
+        base = mpak.basedf
+    return {v: [num((res.loc[y, v] / base.loc[y, v] - 1) * 100) for y in years] for v in BOOK_OIL_SERIES}
+
+
+def check_book_oil() -> dict:
+    """Check B: the manual's Pakistan oil example, run exactly as the manual runs it on the manual's own
+    copy of the model; and, for information, the same run on the public copy the app uses, to 2030."""
+    years = list(range(2020, 2036))
+    series = _book_oil_run(book_pak_file(), years)
+    public_years = list(range(2020, 2031))
+    public = _book_oil_run(local_file(BY_ISO["PAK"]), public_years)
+    return {
+        "years": years,
+        "series": series,
+        "publicCopy": {"years": public_years, "series": public},
+        "shock": "WLDFCRUDE_PETRO + 25 in 2025-2027, solved 2020-2040",
+        "modelflow": modelflow_version(),
+    }
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "econquest-models"
 
@@ -346,6 +448,12 @@ class Handler(BaseHTTPRequestHandler):
                 if not os.path.exists(local_file(BY_ISO[iso3])):
                     return self.reply(503, {"error": "The model file is not downloaded yet."})
                 return self.reply(200, baseline(iso3))
+            if u.path == "/check/baseline":
+                return self.reply(200, check_baseline())
+            if u.path == "/check/book-oil":
+                if not os.path.exists(local_file(BY_ISO["PAK"])):
+                    return self.reply(503, {"error": "The Pakistan model file is not downloaded yet."})
+                return self.reply(200, check_book_oil())
             if u.path == "/shock":
                 iso3 = (q.get("iso3") or [""])[0].upper()
                 if iso3 not in BY_ISO:

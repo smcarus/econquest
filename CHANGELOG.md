@@ -5,6 +5,16 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- World Bank country models, step M4: a pre-registered reproduction check,
+  `docs/validation/models/mfmod_reproduction.json` (hash in `docs/validation/models/manifest.json`),
+  run with `npm run mfmod:validate` and as the new `models` step of `npm run mac:validate`. Check A:
+  each of the six models, solved again, gives back the values stored in its file (within 1e-5).
+  Check B: the World Bank manual's Pakistan oil example (+US$25 a barrel in 2025-27) gives the
+  manual's 64 published figures (within 0.006 points), on the copy of the model kept beside the
+  manual; the public copy the app uses is reported for 2020-2030 as information. Models service:
+  new calls /check/baseline and /check/book-oil. With the service off the check says so: not a
+  verdict. The verdict that counts is the one from Sam's Mac.
+
 - World Bank country models, step M3: what-if shocks. The World Bank country model panel gains "Try a
   shock in the model": world oil price or world food prices (% change), government purchases (% of
   GDP) and, for Pakistan, Turkiye and Iraq, the policy rate (points). The model is solved again with

@@ -49,6 +49,12 @@ export const VALIDATE_STEPS: ValidateStep[] = [
     hint: 'Uses the saved ECB history. A FAILED verdict is a result; tests are never re-tuned after a fail.',
   },
   {
+    id: 'models',
+    title: 'World Bank country models, reproduction check (mfmod:validate)',
+    npm: ['run', 'mfmod:validate'],
+    hint: 'Needs the models service (MFMOD_URL; docs/INSTALL.md). With it off the step says so: not a verdict. A FAILED verdict is a result; the check is never re-tuned after a fail.',
+  },
+  {
     id: 'council',
     title: 'Council regression on the real model (council:regress)',
     npm: ['run', 'council:regress'],

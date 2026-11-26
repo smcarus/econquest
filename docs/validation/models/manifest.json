@@ -1,0 +1,6 @@
+{
+  "note": "SHA-256 of each pre-registered model check. npm run mfmod:validate refuses a file whose hash is not listed here; a changed check needs a new version and a new hash, committed before it is run.",
+  "files": {
+    "mfmod_reproduction.json": "513bace2aeefbfc1583f6a4fc24a48f6d5dc1f6333b7df97dc1bbe8b33de0676"
+  }
+}

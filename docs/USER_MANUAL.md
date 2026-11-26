@@ -1579,14 +1579,15 @@ Two commands check that the council still answers the fixed test questions in
 ## Checking everything on your Mac in one command
 
 `npm run mac:validate` runs, one after the other: the data source check, the pre-registered
-backtests, the saved WEO editions, the forecast evaluations, the currency signal tests, and (when the
-app is running) the council regression. Each step saves its own results as usual, and one report is
+backtests, the saved WEO editions, the forecast evaluations, the currency signal tests, the World
+Bank country models reproduction check (when the models service is set up), and (when the app is
+running) the council regression. Each step saves its own results as usual, and one report is
 written to `data/local/validation/mac-validate-<time>.md`, with the commit, Node, the running app and
 the Ollama models at the top, a summary row per step and each step's output. Keys never reach the
 report. Run `npm run update` first so the Docker app runs the code you pulled.
 
 Leave steps out with `-- --skip council,backtest`, or pick them with `-- --only data,signals`
-(steps: data, backtest, weo, forecast, signals, council). A FAILED verdict inside a test is a result,
+(steps: data, backtest, weo, forecast, signals, models, council). A FAILED verdict inside a test is a result,
 not a fault; a step is marked failed only when its command stops with an error (the data check also
 does so when a source is down).
 
