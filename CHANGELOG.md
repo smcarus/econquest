@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Build steps pinned: every GitHub Actions step now names a fixed commit (with the version in a
+  comment) and both Docker base images name a fixed digest, so a moved or hijacked tag cannot change
+  what CI runs or what goes into the image. Dependabot moves the pins (now also for the models
+  image); `tests/pinnedBuildSteps.test.ts` fails if a loose tag comes back.
 - World Bank country models, step M5: documentation. Methodology version 1.8 (new section 5.6, with
   the model files as a source, the reproduction check and the limits), How EconQuest works version
   1.8, the walk-through guide and the features page in English, Spanish, French and Portuguese, the

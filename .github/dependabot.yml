@@ -1,7 +1,8 @@
-# Monthly check for dependency updates (npm, GitHub Actions, the Docker base image), handled once a
+# Monthly check for dependency updates (npm, GitHub Actions, the Docker base images), handled once a
 # month under the upkeep routine (docs/MAINTENANCE.md). Minor and patch updates arrive together in one
 # pull request per ecosystem; each major update arrives on its own. Merged only after CI passes and on
-# the maintainer's word.
+# the maintainer's word. Actions and base images are pinned to fixed commits and digests
+# (tests/pinnedBuildSteps.test.ts); Dependabot moves the pins and the version comments together.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -20,6 +21,6 @@ updates:
       minor-and-patch:
         update-types: [minor, patch]
   - package-ecosystem: docker
-    directory: /
+    directories: [/, /models]
     schedule:
       interval: monthly
