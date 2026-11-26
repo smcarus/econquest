@@ -502,7 +502,8 @@ O **Menu** reúne tudo o que não é uma página, em três grupos depois de **Fe
   versão** ao lado de Sobre.
 - **Relatar um problema**: abre um novo issue no GitHub com a versão do app já preenchida. Você lê e
   envia. Se uma tela não puder ser desenhada, a nota dela também tem **Copiar os detalhes** e
-  **Relatar este problema**.
+  **Relatar este problema**. Até a cópia pública ser aberta, os issues vão para
+  github.com/smcarus/econquest; para enviar um, você precisa de uma conta gratuita no GitHub.
 - **Atalhos de teclado**: aperte **?** para ver a lista. **/** vai para a caixa de pergunta do
   conselho, **Cmd+K** (Ctrl+K no Windows) busca nas ferramentas, **Cmd+,** abre as configurações e
   **Esc** fecha uma janela. / e ? não fazem nada enquanto você digita numa caixa.

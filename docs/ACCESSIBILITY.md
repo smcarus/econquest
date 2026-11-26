@@ -60,7 +60,7 @@ Automated checks find only part of the problems a person meets, so they are a fl
 ## Reporting a problem
 
 If something in EconQuest is hard or impossible to use, please say so: Menu > Report a problem, or
-open an issue on GitHub with the screen, what you tried and what assistive technology you use (for
+open an issue on GitHub (github.com/smcarus/econquest/issues until the public copy opens) with the screen, what you tried and what assistive technology you use (for
 example "VoiceOver on macOS 16, Safari"). Accessibility problems are treated as bugs.
 
 ## How this page is kept current

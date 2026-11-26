@@ -79,7 +79,9 @@ a reader can find the exact code. The version only changes when someone changes 
    ([SECURITY.md](SECURITY.md#build-safety-and-checking-a-download)).
 5. On the day the public repository and the image are first published, take out the "Not public
    yet" note at the top of Quick start in the four READMEs and of "The ready-made app, step by step"
-   in `docs/INSTALL.md`, point `ISSUE_REPO` in `src/utils/problemReport.ts` at
+   in `docs/INSTALL.md`, the testers' lines in the "Not public yet" notes and the "Testing first" item
+   under Next in `docs/FEATURES*.md`, replace `docs/TESTING.md` with a pointer to INSTALL (and its
+   links in the READMEs, HOW_IT_WORKS and the guides' Report a problem lines), point `ISSUE_REPO` in `src/utils/problemReport.ts` at
    `e-conquest/econquest` (Flag and Report a problem open issues there), then follow INSTALL steps 1 to 4 on a computer that has never run EconQuest
    (one Mac and one Windows PC) to check every link and command works.
 6. Read [ACCESSIBILITY.md](ACCESSIBILITY.md) again and update its "Last reviewed" line and its known

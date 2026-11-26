@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Docs brought up to date with #712 and the tester round: a new page for testers, `docs/TESTING.md`
+  (installing from the code at github.com/smcarus/econquest in light mode, what to try, how to report
+  a problem), linked from the four READMEs, INSTALL, HOW_IT_WORKS, the roadmap and the Next list in
+  FEATURES in four languages; the walk-through guide in four languages, the user manual and
+  ACCESSIBILITY say where Report a problem and Flag send issues until the public copy opens;
+  HOW_IT_WORKS 1.9 explains checking a download (pinned build steps, parts lists, checksums, signed
+  build proof, code scanning) and use without a mouse; METHODOLOGY 1.9 adds builds that can be
+  checked (13); MAINTENANCE release step 5 lists the tester lines to take out on the public day.
 - Flag and Report a problem now open issues on smcarus/econquest, which takes issues today, instead of
   e-conquest/econquest, which is not published yet. MAINTENANCE.md step 5 switches it back on the day
   the public repository opens.

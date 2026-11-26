@@ -524,7 +524,9 @@ Le **Menu** rassemble tout ce qui n'est pas une page, en trois groupes après **
   mise à jour. Quand il y en a une, le Menu affiche **Nouvelle version** à côté d'À propos.
 - **Signaler un problème** : ouvre un nouveau ticket GitHub avec la version de l'application déjà
   remplie. Vous le lisez et l'envoyez vous-même. Si un écran ne peut pas s'afficher, sa note propose
-  aussi **Copier les détails** et **Signaler ce problème**.
+  aussi **Copier les détails** et **Signaler ce problème**. Jusqu'à l'ouverture de la copie publique,
+  les tickets vont sur github.com/smcarus/econquest ; pour en envoyer un, il vous faut un compte GitHub
+  gratuit.
 - **Raccourcis clavier** : appuyez sur **?** pour la liste. **/** va à la zone de question du conseil,
   **Cmd+K** (Ctrl+K sous Windows) cherche dans les outils, **Cmd+,** ouvre les réglages et **Échap**
   ferme une fenêtre. / et ? ne font rien pendant que vous écrivez dans une zone.

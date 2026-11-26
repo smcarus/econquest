@@ -1,6 +1,6 @@
 # How EconQuest works, in plain words
 
-**Version 1.8, 26 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
+**Version 1.9, 26 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
 validated advice.
 
 This guide explains, without jargon, where EconQuest's figures come from, what its AI does and does
@@ -570,7 +570,19 @@ scripts run it, tells the browser to run only its own scripts and to talk only t
 while the app is open, it asks GitHub for the newest release number so *About* can say when a newer
 version is out; it sends nothing about you, and `UPDATE_CHECK=off` turns it off. The app has no
 tracking, usage counts or crash reports. When a screen fails, *Report a problem* fills in a GitHub
-issue for you to read and send yourself.
+issue for you to read and send yourself. Until the public copy opens, these issues go to
+github.com/smcarus/econquest, and invited testers install from the code there ([TESTING.md](./TESTING.md)).
+
+**Checking what you downloaded.** Every step that builds the app uses a fixed, named version of each
+tool, so the same code always builds the same way. Each release comes with a list of every software
+part inside it, a file of checksums, and a proof signed by GitHub of which code it was built from,
+so anyone can check a download has not been changed ([SECURITY.md](./SECURITY.md)). GitHub's code
+scanning reads every change for common security mistakes.
+
+**Using it without a mouse.** Every page works with the keyboard alone, screen readers get a name
+for each control, and when the computer's "reduce motion" setting is on, nothing on screen slides or
+spins. Each change is checked against the WCAG 2.2 accessibility guidelines; what still does not work
+is listed in [ACCESSIBILITY.md](./ACCESSIBILITY.md).
 
 ## 18. Quests: coming later
 
@@ -632,5 +644,5 @@ other.
 
 ---
 
-*How EconQuest works, version 1.8 (26 November 2026). Text licensed under CC BY 4.0: you may share and
+*How EconQuest works, version 1.9 (26 November 2026). Text licensed under CC BY 4.0: you may share and
 adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*

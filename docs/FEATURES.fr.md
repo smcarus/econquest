@@ -416,6 +416,10 @@ Où en est le projet au 26 novembre 2026 (détail dans [docs/ROADMAP.md](./ROADM
 
 **Ensuite**
 
+- **D'abord les tests.** Un petit groupe de testeurs invités installe l'application à partir du code
+  sur github.com/smcarus/econquest en mode léger et signale les problèmes avec Menu > Signaler un
+  problème ou le bouton Signaler, qui ouvrent des tickets là-bas jusqu'à l'ouverture de la copie
+  publique ([TESTING.md](./TESTING.md), en anglais).
 - **La publication** sur e-conquest/econquest. Le mode léger, les deux revues de sécurité et la
   vérification automatique sous Windows sont faits ; il reste un premier démarrage par une personne
   sur un ordinateur Windows, une mesure du mode léger et un dernier export public.

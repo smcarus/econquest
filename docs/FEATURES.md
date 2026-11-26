@@ -419,6 +419,9 @@ Where things stand on 26 November 2026 (details and status in [docs/ROADMAP.md](
 
 **Next**
 
+- **Testing first.** A small group of invited testers install from the code at
+  github.com/smcarus/econquest in light mode and report problems with Menu > Report a problem or the
+  Flag button, which open issues there until the public copy opens ([TESTING.md](./TESTING.md)).
 - **The public release** at e-conquest/econquest. Light mode, both security reviews and the
   automatic Windows check are done; a first start by a person on a Windows computer, a light-mode
   measurement and a last public export remain.

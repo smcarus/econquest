@@ -1239,7 +1239,9 @@ hold no figures of their own; the handout reads them from the app's series when 
 - **Report a problem**: opens a new GitHub issue with the app's version filled in; you read it and
   send it yourself. When a panel cannot be drawn, its note has *Copy details* (version, where, the
   error and the first lines of the component stack; no figures or saved data) and *Report this
-  problem*.
+  problem*. Until the public copy opens, Report a problem and Flag open issues on
+  github.com/smcarus/econquest (`ISSUE_REPO` in `src/utils/problemReport.ts`); sending one needs a
+  free GitHub account.
 - **Worked examples** (W1): five guided case studies for the country open in Research, each going
   from a question to a short memo with the app's own screens: debt sustainability ("Is government
   debt on a path the country can keep up?"), inflation and interest rates ("Is the central bank's
