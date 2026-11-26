@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Accessibility statement, `docs/ACCESSIBILITY.md`: aims for WCAG 2.2 AA, partly meets it; what is
+  checked on every change, what works (keyboard, focus, reduce motion, zoom, languages, figures as
+  text), known gaps (charts as pictures, no screen-reader test by a person yet) and how to report a
+  problem. Linked from the four READMEs and reviewed at each release.
 - Reduce motion: when the computer's "reduce motion" setting is on (Mac: System Settings >
   Accessibility > Display; Windows: Settings > Accessibility > Visual effects > Animation effects
   off), spinners, pulses and transitions stop and the app jumps to a section instead of gliding to it
