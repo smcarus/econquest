@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Flag and Report a problem now open issues on smcarus/econquest, which takes issues today, instead of
+  e-conquest/econquest, which is not published yet. MAINTENANCE.md step 5 switches it back on the day
+  the public repository opens.
 - Docs brought up to date with #697 to #710: CONTRIBUTING (keyboard focus and reduce motion rules,
   pinned build steps, code scanning, `npm run sbom`, `models/` and the workflows in the file map),
   ARCHITECTURE and FEATURES (the accessibility check, pinned steps, CodeQL, Scorecard and release

@@ -43,7 +43,7 @@ test('the issue link: filled in, nothing sent; a paid figure leaves its value ou
   const free = ok({ kind: 'flag', target: 'figure', note: 'Wrong period', figure: { label: 'Policy rate', value: '13.75%', source: 'BIS' } });
   assert.match(issueText(free).body, /Value shown: 13\.75%/);
   const url = issueUrl(free);
-  assert.ok(url.startsWith('https://github.com/e-conquest/econquest/issues/new?title=Flag%3A%20Policy%20rate&body='));
+  assert.ok(url.startsWith('https://github.com/smcarus/econquest/issues/new?title=Flag%3A%20Policy%20rate&body='));
   const paid = ok({ kind: 'flag', target: 'figure', note: 'Odd jump', figure: { label: 'CDS 5y', value: '231 bps', source: 'Your subscription: Macrobond, series x' } });
   const t = issueText(paid);
   assert.doesNotMatch(t.body, /231/);
