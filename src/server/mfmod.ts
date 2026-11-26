@@ -7,8 +7,9 @@
  * another machine. Replies are passed on as the service gives them; no figure is made up here.
  */
 
-export const MFMOD_COUNTRIES = ['BOL', 'HRV', 'IRQ', 'NPL', 'PAK', 'TUR'] as const;
-export type MfmodCountry = (typeof MFMOD_COUNTRIES)[number];
+import { MFMOD_COUNTRIES, hasMfmodModel } from '../utils/mfmodBaseline';
+
+export { MFMOD_COUNTRIES, hasMfmodModel };
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', 'mfmod', 'host.docker.internal']);
 
@@ -26,10 +27,6 @@ export function mfmodConfigFromEnv(env: Record<string, string | undefined>): Mfm
   if (u.protocol !== 'http:' && u.protocol !== 'https:') return { problem: 'MFMOD_URL must start with http:// or https://.' };
   if (!LOCAL_HOSTS.has(u.hostname)) return { problem: `MFMOD_URL must point at this computer or the models service in Docker (localhost or mfmod), not ${u.hostname}.` };
   return { url: u.origin };
-}
-
-export function hasMfmodModel(iso3: string): iso3 is MfmodCountry {
-  return (MFMOD_COUNTRIES as readonly string[]).includes(iso3.toUpperCase());
 }
 
 export interface ServiceReply {
