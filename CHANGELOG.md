@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Code scanning and OpenSSF Scorecard: two new workflows. `codeql.yml` looks for security mistakes in
+  the TypeScript code, the Python models service and the workflow files on each pull request, each
+  push to main and weekly; `scorecard.yml` scores the project against the OpenSSF Scorecard checks
+  weekly and after each push to main. Both are free only for public repositories, so they run in the
+  public copy and do nothing in a private one. Findings appear under Security > Code scanning.
 - Build steps pinned: every GitHub Actions step now names a fixed commit (with the version in a
   comment) and both Docker base images name a fixed digest, so a moved or hijacked tag cannot change
   what CI runs or what goes into the image. Dependabot moves the pins (now also for the models
