@@ -15,7 +15,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Start script parses in Windows PowerShell 5.1
         shell: powershell
         run: |
@@ -26,7 +26,7 @@ jobs:
           $bytes = [System.IO.File]::ReadAllBytes("$PWD\scripts\start-windows.ps1")
           if (-not ($bytes -contains 13)) { Write-Host "start-windows.ps1 was not checked out with Windows line endings"; exit 1 }
           Write-Host "start-windows.ps1 parses with no errors."
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm

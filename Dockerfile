@@ -9,7 +9,7 @@
 # ==============================================================================
 
 # Stage 1: install everything and build the web pages into /app/dist
-FROM node:22-alpine AS builder
+FROM node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
@@ -21,13 +21,13 @@ ENV APP_COMMIT=$APP_COMMIT
 RUN npm run build
 
 # Stage 2: runtime dependencies only (no Vite build tools, Playwright or TypeScript checker)
-FROM node:22-alpine AS deps
+FROM node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --no-audit --no-fund && npm cache clean --force
 
 # Stage 3: the image that runs
-FROM node:22-alpine AS runner
+FROM node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a AS runner
 WORKDIR /app
 ARG APP_COMMIT=""
 ENV APP_COMMIT=$APP_COMMIT

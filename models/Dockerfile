@@ -1,6 +1,6 @@
 # Optional models service: the World Bank's public MFMod country models, run with ModelFlow.
 # Built and started only with `docker compose --profile models up -d --build` (docs/INSTALL.md).
-FROM python:3.12-slim
+FROM python:3.12-slim@sha256:191083cdf6c7bda8c76158983163ead5d5cf7b77cf3033e805bb0f5296f51b4b
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 MFMOD_DIR=/data/mfmod MFMOD_PORT=8765
 WORKDIR /srv
 COPY requirements.txt .
