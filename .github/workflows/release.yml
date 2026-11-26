@@ -1,0 +1,79 @@
+name: Release files
+
+# When a GitHub Release is published, adds to it the files that let anyone check the download:
+#   econquest-<version>-source.tar.gz   the code at the release tag
+#   econquest-<version>.spdx.json       software parts list (SBOM), SPDX 2.3
+#   econquest-<version>.cdx.json        the same list in CycloneDX 1.5
+#   SHA256SUMS                          a checksum for each file above
+# and records build proof (SLSA provenance) for the source archive and the parts lists, signed by
+# GitHub, so `gh attestation verify` can show they were built here from the tagged commit
+# (docs/SECURITY.md, "Checking a download"). The parts lists cover what ships in the app and image
+# (`npm sbom --omit dev`); the build and test tools are left out.
+#
+# Build proof is free only in public repositories; in a private copy the files are still added.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to add the files to (for example v0.4.0)
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  files:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.TAG }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund --ignore-scripts
+
+      - name: Make the files
+        id: files
+        run: |
+          set -euo pipefail
+          v="${TAG#v}"
+          mkdir -p out
+          git archive --format=tar.gz --prefix="econquest-$v/" -o "out/econquest-$v-source.tar.gz" HEAD
+          npm sbom --omit dev --sbom-format spdx > "out/econquest-$v.spdx.json"
+          npm sbom --omit dev --sbom-format cyclonedx > "out/econquest-$v.cdx.json"
+          (cd out && sha256sum econquest-* > SHA256SUMS && cat SHA256SUMS)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Build proof (SLSA provenance)
+        if: ${{ !github.event.repository.private }}
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            out/econquest-*-source.tar.gz
+            out/econquest-*.spdx.json
+            out/econquest-*.cdx.json
+
+      - name: Link the parts list to the source archive
+        if: ${{ !github.event.repository.private }}
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-path: out/econquest-*-source.tar.gz
+          sbom-path: out/econquest-${{ steps.files.outputs.version }}.spdx.json
+
+      - name: Add the files to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" out/* --clobber --repo "$GITHUB_REPOSITORY"

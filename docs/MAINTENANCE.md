@@ -73,7 +73,10 @@ a reader can find the exact code. The version only changes when someone changes 
 4. Publish a GitHub Release for the tag on the public repository. Menu > About reads the newest
    release there once a day (`src/server/updateCheck.ts`) to tell people a newer version is out; a tag
    without a Release is not seen. Until the public repository has a release, About says "No public
-   release yet".
+   release yet". Publishing the Release starts `.github/workflows/release.yml`, which adds the
+   source archive, the software parts lists (SPDX and CycloneDX), `SHA256SUMS` and GitHub-signed
+   build proof to it within a few minutes; check they appear
+   ([SECURITY.md](SECURITY.md#build-safety-and-checking-a-download)).
 5. On the day the public repository and the image are first published, take out the "Not public
    yet" note at the top of Quick start in the four READMEs and of "The ready-made app, step by step"
    in `docs/INSTALL.md`, then follow INSTALL steps 1 to 4 on a computer that has never run EconQuest

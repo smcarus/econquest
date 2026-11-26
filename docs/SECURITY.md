@@ -155,6 +155,37 @@ same number in an export (Menu > Audit log > JSON Lines): they must be byte for 
 The keys are read from the environment only. They are never written to the audit log, to settings
 or to backups.
 
+## Build safety and checking a download
+
+How the project keeps the code people download the same as the code in the repository:
+
+- **Pinned build steps.** Every GitHub Actions step names a fixed commit and both Docker base images
+  name a fixed digest, so a moved or hijacked tag cannot change what is built. Dependabot moves the
+  pins once a month; `tests/pinnedBuildSteps.test.ts` fails if a loose tag comes back.
+- **Code scanning.** CodeQL checks the TypeScript code, the Python models service and the workflow
+  files on each pull request and each week (`.github/workflows/codeql.yml`). OpenSSF Scorecard scores
+  the project's practices each week (`.github/workflows/scorecard.yml`). Both run in the public
+  repository only, where they are free. Results are under Security > Code scanning.
+- **Software parts list (SBOM).** Each GitHub Release gets `econquest-<version>.spdx.json` (SPDX 2.3)
+  and `econquest-<version>.cdx.json` (CycloneDX 1.5): every package that ships in the app and image,
+  with its version and licence. Make one yourself with `npm run sbom`. Each published image carries
+  its own parts list in the registry.
+- **Build proof (SLSA provenance).** GitHub signs a record of where and how each release file and
+  each image was built: which repository, which commit and which workflow
+  (`.github/workflows/release.yml` and `image.yml`).
+- **Checksums.** Each release has a `SHA256SUMS` file.
+
+To check a download (needs the GitHub command-line tool `gh` for the last two):
+
+```
+sha256sum -c SHA256SUMS --ignore-missing          # on a Mac: shasum -a 256 -c SHA256SUMS --ignore-missing
+gh attestation verify econquest-<version>-source.tar.gz -R e-conquest/econquest
+gh attestation verify oci://ghcr.io/e-conquest/econquest:<version> -R e-conquest/econquest
+```
+
+Each should end with a success line. If one fails, do not run the file, and report it as described
+in [SECURITY.md](../SECURITY.md).
+
 ## Release review
 
 The review done before the public release (dependencies, routes, file permissions, backups, the
