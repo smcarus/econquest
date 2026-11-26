@@ -786,9 +786,9 @@ export const MODEL_REGISTER: RegisterEntry[] = [
     where: 'Country Research > History & data > IMF forecasts by edition (World Bank country model); Council chat (Scenario Agent, oil, food and policy rate what-ifs)',
     use: 'Research',
     status: 'descriptive',
-    testPlan: 'Description, not a tested signal: the World Bank model\'s answer to a stated shock. Step M4 of the plan pre-registers checks that the app reproduces the stored baseline and a published shock result.',
+    testPlan: 'Description, not a tested signal: the World Bank model\'s answer to a stated shock. A pre-registered reproduction check (docs/validation/models/mfmod_reproduction.json, npm run mfmod:validate) tests that each model, solved again, gives back its stored values (within 1e-5) and that the World Bank manual\'s Pakistan oil example gives the manual\'s 64 published figures (within 0.006 points). It checks the app runs the models as the World Bank does, not how good the models are.',
     limits: 'The public model files are teaching copies with old data (Pakistan\'s model solves from 2016), so levels are not today\'s economy and only differences are shown. One shock at a time. Bolivia, Nepal and Croatia have no policy rate rule (peg, peg to the Indian rupee, euro). Off unless the models service is set up (MFMOD_URL).',
-    code: 'models/service.py, src/utils/mfmodShock.ts, src/utils/mfmodBaseline.ts, src/server/mfmod.ts',
+    code: 'models/service.py, src/utils/mfmodShock.ts, src/utils/mfmodBaseline.ts, src/server/mfmod.ts, src/utils/mfmodCheck.ts, scripts/mfmod-validate.ts',
     panels: [],
   },
   {

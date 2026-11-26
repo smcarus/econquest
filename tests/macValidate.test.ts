@@ -5,8 +5,8 @@ import { clip, parseValidateArgs, redact, renderReport, secretValues, stripAnsi,
 const ids = (o: ReturnType<typeof parseValidateArgs>) => o.steps.map((s) => s.id);
 
 test('steps run in a fixed order; --skip leaves steps out, --only picks them, unknown names are named', () => {
-  assert.deepEqual(ids(parseValidateArgs([])), ['data', 'backtest', 'weo', 'forecast', 'signals', 'council']);
-  assert.deepEqual(ids(parseValidateArgs(['--skip', 'council,backtest'])), ['data', 'weo', 'forecast', 'signals']);
+  assert.deepEqual(ids(parseValidateArgs([])), ['data', 'backtest', 'weo', 'forecast', 'signals', 'models', 'council']);
+  assert.deepEqual(ids(parseValidateArgs(['--skip', 'council,backtest'])), ['data', 'weo', 'forecast', 'signals', 'models']);
   assert.deepEqual(ids(parseValidateArgs(['--only=signals,data'])), ['data', 'signals']);
   assert.deepEqual(ids(parseValidateArgs(['--only', 'data', '--skip', 'data'])), ['data']);
   assert.deepEqual(parseValidateArgs(['--skip', 'nope,data']).unknown, ['nope']);

@@ -5,11 +5,12 @@
  *   data/local/validation/mac-validate-<time>.md
  *
  * Steps: data sources, pre-registered backtests, saved WEO editions, forecast evaluations,
- * currency signal tests, and the council regression on the real model (only when the app is
+ * currency signal tests, the World Bank country models reproduction check (only when the models
+ * service is set up), and the council regression on the real model (only when the app is
  * running). Each step still saves its own results as before. Keys never reach the report.
  *
  *   npm run mac:validate                      every step
- *   npm run mac:validate -- --skip council    leave steps out (data, backtest, weo, forecast, signals, council)
+ *   npm run mac:validate -- --skip council    leave steps out (data, backtest, weo, forecast, signals, models, council)
  *   npm run mac:validate -- --only data,signals
  */
 import { spawn, execFileSync } from 'node:child_process';

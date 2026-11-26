@@ -1,0 +1,116 @@
+{
+  "id": "mfmod_reproduction",
+  "version": 1,
+  "registeredOn": "2026-11-26",
+  "registeredBy": "Sam (owner) asked for step M4 of the World Bank country models plan (2026-11-26): a pre-registered check before the World Bank model link is called reproduced. Registered before any run on Sam's Mac.",
+  "plannedStep": "World Bank country models plan, step M4",
+  "hypothesis": "The app's models service runs the World Bank's public MFMod models as the World Bank does: (A) solving each of the six public model files with no change reproduces the values stored in the file, and (B) the World Bank's own published Pakistan oil price example gives the same results through the service as in the World Bank's manual.",
+  "method": "mfmod_reproduction",
+  "checks": {
+    "baseline": {
+      "what": "For each of the six public models (BOL, HRV, IRQ, NPL, PAK, TUR), the file as downloaded by the service is loaded twice with ModelFlow: once as stored (run=False) and once solved over the model's own solve span (run=True). Compared in every period of the solve span, for each headline series the app shows (real GDP, nominal GDP, consumer price index, government debt, revenue and spending, current account in US$, LCU per US$, policy rate where the model has one, private consumption deflator).",
+      "measure": "largest absolute relative difference, |solved / stored - 1|, over the periods where both are non-zero; the budget balance is compared as |solved - stored| / stored nominal GDP",
+      "passMark": {
+        "maxRelativeDifference": 1e-05
+      },
+      "needs": "all six models load and solve"
+    },
+    "bookOil": {
+      "what": "The Pakistan model copy the World Bank keeps beside its manual (worldbank/MFMod-ModelFlow, jn/mfbook/content/models/pak.pcim, which the manual's example loads), downloaded by the service. Shock exactly as the manual: WLDFCRUDE_PETRO + 25 (US$ a barrel) in 2025, 2026 and 2027, model solved 2020 to 2040. Result: shocked / baseline - 1, in %, for 2020 to 2035.",
+      "source": {
+        "title": "The World Bank's MFMod Framework in Python with Modelflow, chapter 4 of part 5, Scenario analysis: the table printed under 'Impact of temporary $25 hike in oil prices' (mpak[...].difpctlevel.df, 2020 to 2035)",
+        "url": "https://worldbank.github.io/MFMod-ModelFlow/content/05_WBModels/ScenarioAnalysis.html",
+        "notebook": "https://github.com/worldbank/MFMod-ModelFlow/blob/main/jn/mfbook/content/05_WBModels/ScenarioAnalysis.ipynb",
+        "read": "2026-11-26",
+        "licence": "CC0 1.0 (repository licence)"
+      },
+      "published": {
+        "PAKNYGDPMKTPKN": {
+          "2020": 0.0,
+          "2021": 0.0,
+          "2022": 0.0,
+          "2023": 0.0,
+          "2024": 0.0,
+          "2025": -0.89,
+          "2026": -0.85,
+          "2027": -0.64,
+          "2028": 0.34,
+          "2029": 0.5,
+          "2030": 0.45,
+          "2031": 0.33,
+          "2032": 0.2,
+          "2033": 0.1,
+          "2034": 0.04,
+          "2035": 0.0
+        },
+        "PAKNECONPRVTKN": {
+          "2020": 0.0,
+          "2021": 0.0,
+          "2022": 0.0,
+          "2023": 0.0,
+          "2024": 0.0,
+          "2025": -1.32,
+          "2026": -1.48,
+          "2027": -1.37,
+          "2028": -0.08,
+          "2029": 0.2,
+          "2030": 0.19,
+          "2031": 0.11,
+          "2032": 0.02,
+          "2033": -0.04,
+          "2034": -0.07,
+          "2035": -0.07
+        },
+        "PAKNEIMPGNFSKN": {
+          "2020": 0.0,
+          "2021": 0.0,
+          "2022": 0.0,
+          "2023": 0.0,
+          "2024": 0.0,
+          "2025": -1.49,
+          "2026": -2.65,
+          "2027": -3.19,
+          "2028": -2.17,
+          "2029": -1.25,
+          "2030": -0.8,
+          "2031": -0.57,
+          "2032": -0.46,
+          "2033": -0.39,
+          "2034": -0.33,
+          "2035": -0.28
+        },
+        "PAKNECONPRVTXN": {
+          "2020": 0.0,
+          "2021": 0.0,
+          "2022": 0.0,
+          "2023": 0.0,
+          "2024": 0.0,
+          "2025": 1.64,
+          "2026": 1.35,
+          "2027": 1.08,
+          "2028": -0.51,
+          "2029": -0.43,
+          "2030": -0.31,
+          "2031": -0.22,
+          "2032": -0.15,
+          "2033": -0.12,
+          "2034": -0.1,
+          "2035": -0.09
+        }
+      },
+      "measure": "largest absolute difference between the service's figure and the published one, each series and year",
+      "passMark": {
+        "maxAbsoluteDifferencePts": 0.006
+      },
+      "information": "Not part of the verdict: the same run on the public copy the app uses (models/Pakistan/data/pak.pcim), compared with the published figures for 2020 to 2030, the years that copy solves; the largest difference is reported beside the verdict."
+    }
+  },
+  "verdict": "Passed when both checks pass. Failed when either check runs and misses its pass mark. Not run when the models service is off or does not answer, or a model file is missing: that is not a verdict.",
+  "knownLimits": [
+    "Dry runs in the cloud sandbox on 2026-11-26, before this file was committed: check A gave differences of at most 3.5e-7. A first draft of check B ran the example on the public copy of the Pakistan model and compared all 2020-2035 figures; it matched every figure to two decimals through 2030 and missed by up to 0.023 points in 2031 and 2032, because the public copy's stored baseline is solved only to 2030. Check B was then changed, before this file was committed, to run on the manual's own copy of the model (which matched all 64 figures in the dry run), with the public copy reported for 2020-2030 as information. That change was made after seeing the dry-run result and is stated here for that reason.",
+    "The pass marks were not set from the dry runs: 1e-5 is a hundred times ModelFlow's default convergence tolerance on a relative change (1e-7), and 0.006 is the published two-decimal rounding (0.005) plus a margin for floating point. The run that counts is the one on Sam's Mac with the models image as built there.",
+    "Check A shows the solver reproduces the file; it says nothing about whether the model's equations describe the country well. Check B shows the app's models service runs a shock the way the World Bank's manual does, for one example in one country; the other five models have no published example to match.",
+    "The app shows shocks only inside each model's solve span (Pakistan: 2016-2030), where the public copy matched the manual in the dry run. Beyond the solve span the public copy's baseline is the stored, unsolved data, so a difference there mixes the shock with re-solving.",
+    "The public model files carry old data, so this check is about reproduction, not about how good the projections are. The app shows differences from the model's own baseline, never its levels, for that reason."
+  ]
+}
