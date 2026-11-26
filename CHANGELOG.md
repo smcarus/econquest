@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Docs brought up to date with #697 to #710: CONTRIBUTING (keyboard focus and reduce motion rules,
+  pinned build steps, code scanning, `npm run sbom`, `models/` and the workflows in the file map),
+  ARCHITECTURE and FEATURES (the accessibility check, pinned steps, CodeQL, Scorecard and release
+  parts lists), the user manual and the walk-through guide in four languages (keyboard, screen reader
+  and reduce motion, with a link to ACCESSIBILITY.md), the roadmap (a row for safer builds and
+  accessibility) and the Done list in FEATURES in four languages.
 - World Bank country models: the reproduction check passed on the owner's Mac on 26 November 2026
   (A: largest relative difference 3.42e-7, pass mark 1e-5; B: 64 figures, largest 0.0050 points,
   pass mark 0.006), recorded in `docs/validation/models/results.json`. The models service is now

@@ -407,6 +407,12 @@ Où en est le projet au 26 novembre 2026 (détail dans [docs/ROADMAP.md](./ROADM
     calculs avec un choc dans Historique et données et dans les réponses « et si... ? » ; et une
     vérification préenregistrée que l'application reproduit les résultats de la Banque mondiale
     elle-même, réussie sur l'ordinateur du développeur le 26 novembre.
+24. **Des compilations plus sûres et l'accessibilité** (26 novembre) : chaque étape de compilation et
+    chaque image de base fixées à une version précise ; analyse du code et note des bonnes pratiques
+    une fois le dépôt public ; listes des composants, sommes de contrôle et preuve de compilation
+    signée avec chaque version ; accessibilité vérifiée selon WCAG 2.2, avec un passage au clavier ;
+    respect du réglage « réduire les animations » de l'ordinateur ; et une déclaration
+    d'accessibilité ([docs/ACCESSIBILITY.md](./ACCESSIBILITY.md), en anglais).
 
 **Ensuite**
 

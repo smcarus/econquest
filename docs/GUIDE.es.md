@@ -578,6 +578,12 @@ Las cifras y los nombres de fuentes y series quedan como los escribe la fuente. 
 aplicación escribe sobre un país siguen en inglés, como muestra la captura; el Chat del consejo y el consejo
 responden en el idioma que usted elija; sus agentes siguen entendiendo mejor las preguntas en inglés.
 
+**Teclado, lector de pantalla y reducir movimiento.** Cada página se puede usar solo con el
+teclado: Tab pasa de un control al siguiente, y el que tiene el foco muestra un recuadro. Con el
+ajuste «reducir movimiento» del ordenador activado, se detienen los indicadores giratorios y las
+transiciones. Qué se ha comprobado, y qué se sabe que aún no funciona, está en
+[ACCESSIBILITY.md](./ACCESSIBILITY.md) (en inglés).
+
 ## 11. Usarla en el teléfono
 
 <img src="images/19-phone.png" alt="Página de Investigación en una pantalla de teléfono" width="300">

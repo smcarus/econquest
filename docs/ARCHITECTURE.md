@@ -246,7 +246,7 @@ there rather than into `server.ts`. Every address an outside program may call is
 | `npm run lint` | The type check, normal and strict |
 | `npm run test:smoke` | Opens every page of the built app (run `npm run build` first) in Chromium with every feed down, and fails on a crash or a blocked request |
 | `npm run test:journeys` | The main tasks, click by click |
-| `npm run test:a11y` | Accessibility of the main pages |
+| `npm run test:a11y` | WCAG 2.2 A and AA rules on the main pages, and a keyboard focus pass on Workspace, Research and the phone layout |
 
 How the network is replaced in tests:
 
@@ -266,7 +266,11 @@ How the network is replaced in tests:
 
 Continuous integration (`.github/workflows/ci.yml`) runs the type check and tests on every pull
 request, and the build, size check and browser tests when code changes. Actions > Windows check
-runs the tests on Windows by hand.
+runs the tests on Windows by hand. Every step in the workflows is pinned to a full commit
+(`tests/pinnedBuildSteps.test.ts`). In the public repository, `codeql.yml` scans the code on each
+pull request and each week and `scorecard.yml` scores the project's practices each week;
+`release.yml` adds the source archive, software parts lists, checksums and a signed build proof to
+each GitHub Release ([SECURITY.md](./SECURITY.md)).
 
 ## 12. Where to start for common changes
 

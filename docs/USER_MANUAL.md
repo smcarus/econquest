@@ -28,6 +28,12 @@ press one to choose it:
 
 The level is kept in this browser.
 
+**Keyboard, screen reader and reduce motion.** Every page works with the keyboard alone (Tab moves
+between controls and the one in focus shows a ring; `?` lists the shortcuts). With the computer's
+"reduce motion" setting on, spinners and transitions stop and the page jumps instead of scrolling
+smoothly. The automated checks cover WCAG 2.2 A and AA on the main pages; what has been checked and
+what is known not to work yet is in [ACCESSIBILITY.md](./ACCESSIBILITY.md).
+
 **Language.** The *EN* / *ES* / *FR* / *PT* button beside the help button switches the app between
 English, Spanish (español), French (français) and Brazilian Portuguese (português); each press moves
 to the next language, and the choice is kept in this browser. Each language downloads only when you
