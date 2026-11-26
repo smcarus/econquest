@@ -132,7 +132,9 @@ quelques minutes.
    changement, pour quatre pays au plus, et ajoute ce qui s'est passé lors d'épisodes passés du même type
    et ce qu'ont trouvé des études publiées (chaque étude avec sa page et son DOI ; le chiffre d'une étude
    est une moyenne sur de nombreux pays). Les parties sans chiffres affichent **Manquant** avec la
-   raison.
+   raison. Pour la Bolivie, la Croatie, l'Irak, le Népal, le Pakistan ou la Turquie, un changement du
+   pétrole, des prix alimentaires ou du taux directeur reçoit aussi des chiffres du **modèle de la
+   Banque mondiale**, si les modèles pays de la Banque mondiale sont activés (voir la section 5).
 4. Avec un modèle d'IA configuré, la réponse arrive en huit parties, de *Où en sont les choses
    aujourd’hui* à *Ce qui changerait la réponse*, chacune marquée du type d'éléments sur lequel elle
    repose : *Données*, *Calcul de l’application*, *Passé*, *Étude publiée* ou *Interprétation*.
@@ -333,6 +335,17 @@ années en pointillés reposent sur des projections du FMI.
    année et les deux suivantes, avec l'écart entre elles ; pour les États-Unis, elle ajoute l'enquête
    des prévisionnistes professionnels de la Réserve fédérale de Philadelphie à partir d'un fichier que
    vous enregistrez. Ce sont des prévisions officielles, pas un consensus de marché payant.
+4. Pour la Bolivie, la Croatie, l'Irak, le Népal, le Pakistan et la Turquie, **Modèle pays de la
+   Banque mondiale** vient ensuite dans le même outil, une fois le service optionnel des modèles
+   activé ([guide d'installation](./INSTALL.md#add-the-world-bank-country-models-optional), en
+   anglais). Il montre les chiffres enregistrés dans le modèle public de la Banque mondiale pour le
+   pays : croissance, inflation, solde budgétaire, dette, balance courante et taux directeur. Ces
+   copies publiques sont des versions d'enseignement aux données anciennes : lisez-les comme la
+   trajectoire du modèle, pas comme une prévision. En dessous, **Essayez un choc dans le modèle** :
+   choisissez le prix mondial du pétrole, les prix alimentaires mondiaux, les achats de l'État ou
+   (Pakistan, Turquie et Irak seulement) le taux directeur, indiquez une ampleur et appuyez sur
+   **Calculer**. Le tableau montre de combien le choc écarte chaque chiffre de la trajectoire propre au
+   modèle, année par année à partir de l'année où le choc commence.
 
 ## 6. Comparer des pays
 

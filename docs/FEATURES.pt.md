@@ -27,6 +27,7 @@ desenvolvedores existem só em inglês.
 | --- | --- | --- |
 | Fazer uma pergunta com palavras simples | **Área de trabalho** (Chat do conselho) | Agentes especializados respondem com os números do app, cada um com sua fonte; sem modelo de IA, primeiro vem uma resposta curta pelas regras declaradas do aplicativo; com um modelo de IA, um agente de síntese escreve um breve resumo que só pode citar esses números, e uma checagem aponta qualquer número que não consiga rastrear |
 | Perguntar o que uma mudança faria | **Área de trabalho** (Chat do conselho) | Pergunte "o que aconteceria com a Turquia se o Fed subisse os juros em 1 ponto?". O app mostra a mudança que entendeu (você pode editar os tamanhos e perguntar de novo), o Scenario Agent coloca os números de hoje ao lado dos números depois da mudança, lista o que aconteceu em episódios passados do mesmo tipo e o que estudos publicados encontraram, e a resposta vem em oito partes, cada uma marcada com o tipo de evidência em que se apoia |
+| Usar o modelo de país do próprio Banco Mundial | **Histórico e dados > Previsões do FMI por edição**, e as perguntas "e se...?" do Chat do conselho | Para Bolívia, Croácia, Iraque, Nepal, Paquistão e Turquia, com o serviço opcional de modelos ligado ([guia de instalação](./INSTALL.md#add-the-world-bank-country-models-optional), em inglês): a trajetória base guardada no modelo público MFMod do Banco Mundial e *Teste um choque no modelo* (preços mundiais do petróleo ou dos alimentos, compras do governo, ou a taxa básica de juros onde o modelo a tem), mostrado como a diferença em relação à trajetória do próprio modelo, porque as cópias públicas têm dados antigos. O Scenario Agent acrescenta a resposta do modelo às perguntas sobre petróleo, alimentos e taxa básica de juros. Uma verificação escrita antes da execução real testa se o app reproduz os resultados do próprio Banco Mundial |
 | Estudar um país | **Pesquisa > Um país** | Resumo, Mercados e sinais, Histórico e dados, e Fontes. Histórico e dados mostra o gráfico do histórico e depois um menu de ferramentas em oito grupos que abrem uma de cada vez: gráficos de muitos anos, estimativas do presente e previsões com faixas, hiato do produto, sustentabilidade da dívida, adequação das reservas, regras de política monetária, alerta antecipado de crise, curva de juros, fatores da inflação, contabilidade do crescimento, previsões do FMI por edição e visões "em um dia passado". Para países de renda mais baixa: remessas, ajuda recebida, inclusão financeira, preços de commodities e termos de troca, preços dos alimentos e segurança alimentar, e desastres naturais. Clima na capital desde 1981 e no país inteiro desde 1901, preços de arroz, trigo, milho e soja desde 1960, um desenhador de seguro paramétrico (custo de sinistralidade, preço justo, períodos de retorno, risco de base), um modelo de perdas por desastres e trajetórias de ciclones tropicais. Como a moeda é administrada de fato, ativos do banco central e pressão no financiamento em dólares. Para a administração pública e para políticos: credibilidade do orçamento (quanto do orçamento aprovado foi gasto, com as faixas de nota do PEFA), um acompanhamento da execução do orçamento com seu próprio arquivo, os projetos do Banco Mundial e o ritmo dos desembolsos, e números regionais. Para economistas e operadores de mercado: faixas a partir de erros passados das previsões, curvas de juros completas dos EUA e da zona do euro, e surpresas nos dados com um índice de surpresas de inflação |
 | Comparar países | **Pesquisa > Comparar países** | Sua lista de acompanhamento lado a lado (os 19 países membros do G20 no início, ou os 15 maiores países de baixa renda por região), pautas e onde os preços de mercado e os dados discordam |
 | Acompanhar suas posições | **Pesquisa > Minhas posições** | Uma lista de títulos ou posições que você carrega, diante dos riscos e sinais |
@@ -286,7 +287,7 @@ O método completo está em [docs/METHODOLOGY.md](./METHODOLOGY.md) (em inglês)
 
 ## Roteiro
 
-Situação em 24 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./ROADMAP.md), em inglês):
+Situação em 26 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./ROADMAP.md), em inglês):
 
 **Feito**
 
@@ -387,6 +388,12 @@ Situação em 24 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./ROADMAP.md
     renda do FMI e do Banco Mundial (Malaui, Serra Leoa, Haiti, Nepal, os pequenos Estados insulares e
     outros) estão em todas as listas de países, e o download diário os salva assim que entram em uma
     lista de acompanhamento; e a verificação automática no Windows passa.
+23. **Os modelos de país do Banco Mundial** (26 de novembro): os modelos macrofiscais que o Banco
+    Mundial publica para Bolívia, Croácia, Iraque, Nepal, Paquistão e Turquia rodam no seu computador
+    por meio de um serviço opcional; sua trajetória base e os cálculos com um choque em Histórico e
+    dados e nas respostas "e se...?"; e uma verificação pré-registrada de que o app reproduz os
+    resultados do próprio Banco Mundial, cujo veredito espera a primeira execução no computador do
+    desenvolvedor.
 
 **Próximo**
 

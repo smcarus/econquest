@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- World Bank country models, step M5: documentation. Methodology version 1.8 (new section 5.6, with
+  the model files as a source, the reproduction check and the limits), How EconQuest works version
+  1.8, the walk-through guide and the features page in English, Spanish, French and Portuguese, the
+  user manual (the World Bank country model panel and the World Bank model figures in what-if
+  answers), the code map and the roadmap.
 - World Bank country models, step M4: a pre-registered reproduction check,
   `docs/validation/models/mfmod_reproduction.json` (hash in `docs/validation/models/manifest.json`),
   run with `npm run mfmod:validate` and as the new `models` step of `npm run mac:validate`. Check A:

@@ -129,7 +129,10 @@ unos minutos.
 3. El **Scenario Agent** (agente de escenarios) pone las cifras de hoy junto a las cifras después del
    cambio, para un máximo de cuatro países, y añade lo que ocurrió en episodios pasados del mismo tipo y
    lo que hallaron estudios publicados (cada estudio con su página y su DOI; la cifra de un estudio es
-   un promedio de muchos países). Las partes sin cifras dicen **Falta** con el motivo.
+   un promedio de muchos países). Las partes sin cifras dicen **Falta** con el motivo. Para Bolivia,
+   Croacia, Irak, Nepal, Pakistán o Turquía, un cambio en el petróleo, los alimentos o la tasa de
+   política monetaria recibe también cifras del **modelo del Banco Mundial**, si los modelos de país
+   del Banco Mundial están activados (vea la sección 5).
 4. Con un modelo de IA configurado, la respuesta llega en ocho partes, de *Dónde estamos hoy* a *Qué
    cambiaría la respuesta*, cada una marcada con el tipo de evidencia en que se apoya: *Datos*, *Cálculo
    de la app*, *Pasado*, *Estudio publicado* o *Interpretación*.
@@ -327,6 +330,17 @@ años discontinuos se basan en proyecciones del FMI.
    los dos siguientes, con la distancia entre ellas; para Estados Unidos añade la encuesta de
    pronosticadores profesionales de la Reserva Federal de Filadelfia desde un archivo que usted guarda.
    Son previsiones oficiales, no un consenso de mercado de pago.
+4. Para Bolivia, Croacia, Irak, Nepal, Pakistán y Turquía, **Modelo de país del Banco Mundial** viene
+   después en la misma herramienta, una vez activado el servicio opcional de modelos
+   ([guía de instalación](./INSTALL.md#add-the-world-bank-country-models-optional), en inglés).
+   Muestra las cifras guardadas en el modelo público del Banco Mundial para el país: crecimiento,
+   inflación, saldo presupuestario, deuda, cuenta corriente y tasa de política monetaria. Estas
+   copias públicas son versiones didácticas con datos antiguos, así que léalas como la trayectoria
+   del modelo, no como una previsión. Debajo, **Pruebe un choque en el modelo**: elija el precio
+   mundial del petróleo, los precios mundiales de alimentos, las compras del gobierno o (solo
+   Pakistán, Turquía e Irak) la tasa de política monetaria, indique un tamaño y pulse **Calcular**.
+   La tabla muestra cuánto aleja el choque cada cifra de la trayectoria propia del modelo, año por
+   año desde el año en que empieza el choque.
 
 ## 6. Comparar países
 

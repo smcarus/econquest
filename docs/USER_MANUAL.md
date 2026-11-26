@@ -241,6 +241,11 @@ full council and saved research.
   emerging economies as the country is classed by the IMF. A study's number is an average over the
   countries it covers, not an estimate for the country you asked about. No study is cited that is
   not on the list.
+  For Bolivia, Croatia, Iraq, Nepal, Pakistan and Turkiye, when the World Bank country models are
+  turned on, an oil, food or policy rate change is also run in the World Bank's own model for the
+  country, and the answer adds *World Bank model* figures: the difference from the model's own
+  baseline in year 1 and year 3 (see *World Bank country model* under One country). A change the model
+  cannot take (a policy rate in Bolivia, Nepal or Croatia) reads Missing with the reason.
   When the Scenario Agent has answered, the AI model writes the answer in eight parts, in this
   order: *Where things stand now*, *The change*, *First effects*, *How it spreads*, *What history
   shows*, *What research finds*, *Trends now* and *What would change the answer*. Each part is marked
@@ -878,6 +883,29 @@ because an April projection knows less. The 70% range is the projection plus the
 percentile of the past misses, the 90% range the 5th to 95th; the table shows the average miss, the
 number of past editions and which editions were used. Fewer than 8 past editions with an outturn
 reads Missing.
+
+**World Bank country model.** For Bolivia, Croatia, Iraq, Nepal, Pakistan and Turkiye, the same tool
+(after *Official forecasts side by side*) shows the World Bank's own macro-fiscal model (MFMod) for
+the country, once the optional models service is turned on ([INSTALL.md](./INSTALL.md#add-the-world-bank-country-models-optional));
+otherwise it says how to turn it on. The table gives the figures stored in the World Bank's public
+copy of the model for real GDP growth, consumer price inflation, the government budget balance and
+debt (% of GDP), the current account (% of GDP) and the policy rate where the model has one, for the
+model's own years. A measure the model does not have reads Missing. Pakistan's inflation comes from
+the private consumption deflator, because its file stops filling the consumer price index after
+2017; Croatia's model is quarterly and is turned into years (flows summed, prices and rates
+averaged, debt at the end of the year). The public copies are teaching versions with old data, so
+these are not a forecast: compare recent years with the official forecasts above.
+*Try a shock in the model* runs the model again with one change: the world oil price or world food
+prices (maize, rice, wheat and soybeans) by a percentage, government purchases by a share of GDP,
+or the policy rate by percentage points (Pakistan, Turkiye and Iraq only; the other three models
+have no policy rate rule). Pick the shock, give a size other than 0 and press *Run*. The table
+shows, for year 1 onward from the shock, how far each figure moves from the model's own baseline:
+real GDP and the currency per US dollar in % (+ = weaker currency), the rest in points. Prices and
+purchases are held for six years and the rate for two, then the model's own equations take over. The
+first run for a country takes a few seconds while its model loads. Every figure is labelled as the
+app's run of the World Bank's public model, not a World Bank forecast. `npm run mfmod:validate`
+runs the pre-registered check that the service reproduces the World Bank's own results
+(`docs/validation/models/mfmod_reproduction.json`).
 
 **Figures as first published.** Research > History & data shows, for the United States (with your
 FRED key), every release of real GDP growth, CPI inflation and unemployment from ALFRED. Euro

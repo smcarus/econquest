@@ -119,7 +119,9 @@ A new install shows dashes until the first data download finishes, which can tak
 3. The **Scenario Agent** sets today's figures beside the figures after the change, for up to four
    countries, and adds what happened in past episodes of the same kind and what published studies
    found (each study with its page and DOI; a study's number is an average over many countries).
-   Parts with no figures read Missing with the reason.
+   Parts with no figures read Missing with the reason. For Bolivia, Croatia, Iraq, Nepal, Pakistan or
+   Turkiye, an oil, food or policy rate change also gets **World Bank model** figures, when the World
+   Bank country models are turned on (see section 5).
 4. With an AI model set up, the answer comes in eight parts, from *Where things stand now* to *What
    would change the answer*, each marked with the kind of evidence it rests on: *Data*, *App
    calculation*, *Past*, *Published study* or *Interpretation*.
@@ -304,6 +306,15 @@ projections. The sentence above the chart states the latest reading and where it
    next to each other, with the spread between them; for the United States it adds the Philadelphia
    Fed's Survey of Professional Forecasters from a file you save. These are official forecasts, not
    a paid market consensus.
+4. For Bolivia, Croatia, Iraq, Nepal, Pakistan and Turkiye, **World Bank country model** comes next
+   in the same tool, once the optional models service is turned on
+   ([install guide](./INSTALL.md#add-the-world-bank-country-models-optional)). It shows the figures
+   stored in the World Bank's public model for the country: growth, inflation, the budget balance,
+   debt, the current account and the policy rate. These public copies are teaching versions with old
+   data, so read them as the model's path, not a forecast. Under it, **Try a shock in the model**:
+   pick the world oil price, world food prices, government purchases or (Pakistan, Turkiye and Iraq
+   only) the policy rate, give a size and press **Run**. The table shows how far the shock moves each
+   figure from the model's own path, year by year from the year the shock starts.
 
 ## 6. Compare countries
 
