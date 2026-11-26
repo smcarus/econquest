@@ -227,6 +227,7 @@ log) and take effect without a restart.
 | [docs/BACKUP_AND_RESTORE.md](./docs/BACKUP_AND_RESTORE.md) | Backups and moving to another computer |
 | [docs/HOME_SERVER.md](./docs/HOME_SERVER.md), [docs/KUBERNETES.md](./docs/KUBERNETES.md) | Running it for a household, team or class |
 | [docs/PRIVACY.md](./docs/PRIVACY.md) | What stays on your computer, what leaves it, and when |
+| [docs/ACCESSIBILITY.md](./docs/ACCESSIBILITY.md) | How EconQuest works with a keyboard, a screen reader and reduce motion, what is checked (WCAG 2.2 AA), known gaps |
 | [docs/SECURITY.md](./docs/SECURITY.md), [docs/SECURITY_REVIEW.md](./docs/SECURITY_REVIEW.md) | Accounts, sign-in (including OpenID Connect), sessions, the audit seal, and the security review |
 | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | How the code fits together: how a figure travels from a source to the screen and the council, and where to start for common changes |
 | [docs/DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md) | UI rules for contributors |

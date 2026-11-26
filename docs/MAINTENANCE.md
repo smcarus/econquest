@@ -81,7 +81,9 @@ a reader can find the exact code. The version only changes when someone changes 
    yet" note at the top of Quick start in the four READMEs and of "The ready-made app, step by step"
    in `docs/INSTALL.md`, then follow INSTALL steps 1 to 4 on a computer that has never run EconQuest
    (one Mac and one Windows PC) to check every link and command works.
-6. Once the repository is public, archive the tag on Zenodo so the release gets a DOI, and add the
+6. Read [ACCESSIBILITY.md](ACCESSIBILITY.md) again and update its "Last reviewed" line and its known
+   gaps.
+7. Once the repository is public, archive the tag on Zenodo so the release gets a DOI, and add the
    DOI to `CITATION.cff`.
 
 Docker builds pass the commit in (`APP_COMMIT`; `npm run go`, `start-mac.sh` and `update.sh` set it
