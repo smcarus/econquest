@@ -540,6 +540,11 @@ you pick; their agents still read questions best in English.
 | --- | --- |
 | ![Research page in French](images/17-research-fr.png) | ![Research page in Portuguese](images/17-research-pt.png) |
 
+**Keyboard, screen reader and reduce motion.** Every page can be used with the keyboard alone: Tab
+moves from one control to the next, and the one in focus shows a ring. With the computer's "reduce
+motion" setting on, spinners and moving transitions stop. What has been checked, and what is known
+not to work yet, is in [ACCESSIBILITY.md](./ACCESSIBILITY.md).
+
 ## 11. Use it on a phone
 
 <img src="images/19-phone.png" alt="Research page on a phone-width screen" width="300">

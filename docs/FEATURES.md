@@ -411,6 +411,11 @@ Where things stand on 26 November 2026 (details and status in [docs/ROADMAP.md](
     optional service; their baseline and one-shock runs in History & data and in what-if answers; and
     a pre-registered check that the app reproduces the World Bank's own results, which passed on the
     developer's computer on 26 November.
+24. **Safer builds and accessibility** (26 November): every build step and base image pinned to a
+    fixed version; code scanning and a practices score once the repository is public; software parts
+    lists, checksums and a signed build proof with each release; accessibility checked against WCAG
+    2.2 with a keyboard pass; the computer's reduce motion setting followed; and an accessibility
+    statement ([docs/ACCESSIBILITY.md](./ACCESSIBILITY.md)).
 
 **Next**
 
@@ -465,7 +470,11 @@ a crash guard (`PanelBoundary`), so one failing panel never blanks the app.
 
 **Continuous integration.** Every pull request runs the type check and tests on GitHub
 (`.github/workflows/ci.yml`); changes to code also run the build, size check and browser tests, and
-changes to packaging also build the app image. The smoke test needs Playwright's Chromium once:
+changes to packaging also build the app image. Every outside build step and base image is pinned to a
+fixed version, and a test fails on a loose tag. In the public repository, CodeQL code scanning and
+OpenSSF Scorecard run as well, and each GitHub Release carries software parts lists (SPDX and
+CycloneDX), checksums and a signed build proof ([docs/SECURITY.md](./SECURITY.md); `npm run sbom`
+makes the list locally). The smoke test needs Playwright's Chromium once:
 `npx playwright install chromium`. `tests/server.test.ts` and the smoke test start the real server
 with `tests/helpers/offline-fetch.mjs` in place of the network.
 

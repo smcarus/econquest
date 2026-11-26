@@ -402,6 +402,12 @@ Situación al 26 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./ROADMAP.md
     Historia y datos y en las respuestas «¿y si...?»; y una comprobación prerregistrada de que la
     aplicación reproduce los resultados del propio Banco Mundial, que pasó en la computadora del
     desarrollador el 26 de noviembre.
+24. **Compilaciones más seguras y accesibilidad** (26 de noviembre): cada paso de compilación y cada
+    imagen base fijados a una versión concreta; análisis del código y una puntuación de buenas
+    prácticas cuando el repositorio sea público; listas de componentes, sumas de comprobación y una
+    prueba de compilación firmada con cada versión; accesibilidad comprobada con WCAG 2.2 y un repaso
+    con el teclado; se respeta el ajuste «reducir movimiento» del ordenador; y una declaración de
+    accesibilidad ([docs/ACCESSIBILITY.md](./ACCESSIBILITY.md), en inglés).
 
 **Siguiente**
 

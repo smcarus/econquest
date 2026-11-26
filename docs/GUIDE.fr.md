@@ -591,6 +591,12 @@ Les chiffres et les noms de sources et de séries restent tels que la source les
 que l'application écrit sur un pays sont encore en anglais, comme le montre la capture ; le Chat du
 conseil et le conseil répondent dans la langue choisie ; leurs agents comprennent encore mieux les questions en anglais.
 
+**Clavier, lecteur d'écran et réduction des animations.** Chaque page s'utilise avec le clavier
+seul : Tab passe d'une commande à la suivante, et celle qui a le focus est entourée d'un cadre. Quand
+le réglage « réduire les animations » de l'ordinateur est activé, les indicateurs qui tournent et les
+transitions s'arrêtent. Ce qui a été vérifié, et ce qui ne fonctionne pas encore, est dans
+[ACCESSIBILITY.md](./ACCESSIBILITY.md) (en anglais).
+
 ## 11. L'utiliser sur un téléphone
 
 <img src="images/19-phone.png" alt="Page Recherche sur un écran de téléphone" width="300">

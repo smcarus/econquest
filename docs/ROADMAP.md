@@ -41,6 +41,7 @@ The same rules hold for every change:
 | Standard app features (24 November, #671 to #677) | A privacy page, a notice when a newer version is out, Copy details and Report a problem, a question before deleting a watchlist, following the computer's dark or light setting, steps to remove the app, and keyboard shortcuts |
 | Release check and the poorest countries (25 November, #683 to #687) | A second security review and a stricter page security policy for the built app; Add a country lists every country, not only those on the world map; the 59 countries on the IMF low-income debt list built in, saved daily once they are on a watchlist; the automatic Windows check passes again |
 | The World Bank's country models (26 November, #691 to #696) | The World Bank's public MFMod models for Bolivia, Croatia, Iraq, Nepal, Pakistan and Turkiye, run on the user's computer by an optional Python service (ModelFlow, Docker profile `models`, off by default); their stored baseline under IMF forecasts by edition; one-shock runs (oil, food, government purchases, policy rate) shown as differences from the model's own baseline, in the panel and in Scenario Agent answers; and a pre-registered reproduction check (`npm run mfmod:validate`) that passed on the maintainer's computer on 26 November (`docs/validation/models/results.json`) |
+| Safer builds and accessibility (26 November, #697, #698, #706 to #709) | Every build step and base image pinned to a fixed version, with a test that fails on a loose tag; CodeQL code scanning and OpenSSF Scorecard, which run once the repository is public; software parts lists (SPDX and CycloneDX), checksums and a signed build proof with each release and image; accessibility checked against WCAG 2.2 A and AA with a keyboard focus pass; the computer's reduce motion setting followed; and an accessibility statement ([ACCESSIBILITY.md](./ACCESSIBILITY.md)) |
 | Open source | Licences (Apache-2.0, CC BY 4.0, DCO), governance, contributing guide, the methodology and a clean public export |
 
 ## Phase 4: data and economist readiness (G1 to G10 done)
@@ -151,7 +152,7 @@ professor does.
 | Q7 | Class table settings and a one-page student report |
 | Q8 | Gradebook file, voided Quests left out of marks, archived classes deleted after a period the professor sets |
 | Q9 | Sealed hand-in files for students working on their own copies |
-| Q10 | Accessibility review (WCAG 2.1 AA), designed for phone width first |
+| Q10 | Accessibility review of the classroom screens (WCAG 2.2 AA, as the rest of the app is checked since 26 November), designed for phone width first |
 | Q11 | Load test: 40 students on one modest laptop |
 | Q12 | Community links on GitHub (publish an entry, class tags, packs), after the public release |
 | Q13 | Teacher guide (English, then Spanish and French) and a Teaching page on the website |

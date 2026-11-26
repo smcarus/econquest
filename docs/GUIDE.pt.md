@@ -567,6 +567,12 @@ Números e nomes de fontes e séries ficam como a fonte os escreve. Algumas fras
 país ainda estão em inglês, como mostra a captura; o Chat do conselho e o conselho
 respondem no idioma que você escolher; os agentes ainda entendem melhor perguntas em inglês.
 
+**Teclado, leitor de tela e reduzir movimento.** Cada página pode ser usada só com o teclado: Tab
+passa de um controle para o próximo, e o que está em foco mostra um contorno. Com o ajuste "reduzir
+movimento" do computador ligado, os indicadores que giram e as transições param. O que foi
+verificado, e o que ainda se sabe que não funciona, está em [ACCESSIBILITY.md](./ACCESSIBILITY.md)
+(em inglês).
+
 ## 11. Usar no celular
 
 <img src="images/19-phone.png" alt="Página de Pesquisa numa tela de celular" width="300">

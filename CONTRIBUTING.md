@@ -57,7 +57,7 @@ npm run build
 npx playwright install chromium   # once
 npm run test:smoke     # every page with all feeds down
 npm run test:journeys  # the main tasks, click by click
-npm run test:a11y      # accessibility check of the main pages
+npm run test:a11y      # WCAG 2.2 A and AA on the main pages, and a keyboard focus pass
 npm run size:check     # start-up under 520 KB compressed, the whole app under 9 MB
 ```
 
@@ -71,6 +71,12 @@ npm run size:check     # start-up under 520 KB compressed, the whole app under 9
   server. A screen that needs an outside address goes through a server route. `npm run test:smoke`
   fails on anything the policy blocks.
 - New UI follows [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) and sits inside a `PanelBoundary`.
+  It must work with a keyboard alone: every control can be reached with Tab, shows a focus ring and
+  is not hidden behind another element when focused (`npm run test:a11y` checks this on the main
+  pages). Animation stops when the computer's "reduce motion" setting is on: the style rule in
+  `src/index.css` covers spinners and transitions, and a scripted scroll takes its behaviour from
+  `scrollBehavior()` in `src/utils/motion.ts`. [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) says
+  what is checked and what is known not to work yet.
   A new screen loads only when it is opened (`lazyNamed` in `src/components/LazyDesk.tsx`).
 - Every new piece of screen text goes in `src/i18n/messages/` and in the Spanish, French and
   Portuguese files beside it (`src/i18n/es/`, `fr/`, `pt/`): Spanish uses *usted*, French *vous* and
@@ -81,6 +87,12 @@ npm run size:check     # start-up under 520 KB compressed, the whole app under 9
   `docs/DATA_LICENCES.md` (`npm run docs:licences`) and `docs/GLOSSARY.md` (`npm run docs:glossary`).
 - Use plain words a lay reader understands. Say what something does, not how good it is.
 - Never commit keys, `.env`, or anything from `data/`.
+- Every outside build step and base image is pinned to a fixed version: a GitHub Actions step names
+  a full commit with the version in a comment after it, and a Dockerfile names a base image digest.
+  `tests/pinnedBuildSteps.test.ts` fails on a loose tag such as `@v4` or `node:22`; Dependabot keeps
+  the pins current. Once the repository is public, CodeQL code scanning runs on each pull request
+  and its findings show under Security > Code scanning. `npm run sbom` prints the software parts
+  list of what the app ships.
 - Real feed replies to test against ship in `tests/fixtures/recorded-public/`: World Bank, IMF
   DataMapper, BIS, ECB, New York Fed, Eurostat, CFTC, GDELT and Brazil Treasury replies, kept
   unchanged, from sources whose terms allow passing them on (see its README for each credit).
@@ -120,6 +132,8 @@ The short table is below; [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) has the f
 | `docs/validation/` | Pre-registered specs and recorded verdicts |
 | `scripts/` | Command-line jobs (`npm run check:data`, the daily run, backtests, evaluations, safe updates) |
 | `tests/smoke/` | Browser checks of the built app: every page, the main journeys, accessibility |
+| `models/` | The optional Python service that runs the World Bank country models (ModelFlow, Docker profile `models`) |
+| `.github/workflows/` | CI, the Windows check, the image build, releases, the Quests checks, code scanning and Scorecard |
 
 ## Add a data source, step by step
 
