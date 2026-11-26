@@ -5,8 +5,12 @@
  * (src/utils/feedback.ts). Browser-safe and small: the crash screen loads with the first page.
  */
 
-/** Where flags and problem reports go (the project's public home). */
-export const ISSUE_REPO = 'e-conquest/econquest';
+/**
+ * Where flags and problem reports go. Until e-conquest/econquest is published, reports go to the
+ * development repository, which is public and takes issues. On the day the public repository opens,
+ * change this to 'e-conquest/econquest' (docs/MAINTENANCE.md, "Each release", step 5).
+ */
+export const ISSUE_REPO = 'smcarus/econquest';
 
 export interface ProblemDetails {
   /** App version, with its commit when known. */
