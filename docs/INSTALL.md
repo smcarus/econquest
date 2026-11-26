@@ -105,7 +105,8 @@ the council chat, summaries, debates and plain-language explanations ("Choose yo
 > **Not public yet.** The public copy at github.com/e-conquest/econquest and the ready-made app at
 > `ghcr.io/e-conquest/econquest` have not been published yet, so the `compose.yml` link in step 2,
 > the app download in step 3 and the `git clone` address under "From the code" do not work until
-> they are. This note comes out on the day they go live.
+> they are. This note comes out on the day they go live. Until then, install from the code at
+> github.com/smcarus/econquest, which is public: [TESTING.md](./TESTING.md) has the steps for testers.
 
 ### Step 1: Install Docker Desktop
 

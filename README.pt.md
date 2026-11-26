@@ -140,6 +140,8 @@ números são preenchidos. A maioria está em inglês; a última mostra o app em
 > **Ainda não é público.** A cópia pública em github.com/e-conquest/econquest e o app pronto em
 > `ghcr.io/e-conquest/econquest` ainda não foram publicados, então os links de download e o endereço
 > do `git clone` abaixo só funcionam depois disso. Esta nota sai no dia em que forem publicados.
+> Até lá, quem testa o app instala a partir do código em github.com/smcarus/econquest: os passos
+> estão em [docs/TESTING.md](docs/TESTING.md) (em inglês).
 
 **É novo nisso?** [docs/INSTALL.md](docs/INSTALL.md) (em inglês) é um guia passo a passo: instale o
 Docker Desktop, baixe um arquivo e rode o app pronto. Não é preciso compilar nem programar.
@@ -218,7 +220,7 @@ As chaves ficam em `data/local/settings.json` (nunca no git, nos backups ou no l
   [DATA_LICENCES.md](./docs/DATA_LICENCES.md), [DATA_API.md](./docs/DATA_API.md), [DEPLOYMENT.md](./docs/DEPLOYMENT.md),
   [POLICY_REVIEW.md](./docs/POLICY_REVIEW.md), [QUESTS.md](./docs/QUESTS.md),
   [ROADMAP.md](./docs/ROADMAP.md), [HOME_SERVER.md](./docs/HOME_SERVER.md),
-  [PRIVACY.md](./docs/PRIVACY.md), [ACCESSIBILITY.md](./docs/ACCESSIBILITY.md), [SECURITY.md](./docs/SECURITY.md), [ARCHITECTURE.md](./docs/ARCHITECTURE.md), [CONTRIBUTING.md](./CONTRIBUTING.md)
+  [PRIVACY.md](./docs/PRIVACY.md), [TESTING.md](./docs/TESTING.md), [ACCESSIBILITY.md](./docs/ACCESSIBILITY.md), [SECURITY.md](./docs/SECURITY.md), [ARCHITECTURE.md](./docs/ARCHITECTURE.md), [CONTRIBUTING.md](./CONTRIBUTING.md)
 - Desenvolvedores: [For developers, em Recursos e detalhes em inglês](./docs/FEATURES.md#for-developers)
 
 ---

@@ -514,7 +514,8 @@ El **Menú** reúne todo lo que no es una página, en tres grupos después de **
   Cuando la hay, el Menú muestra **Nueva versión** junto a Acerca de.
 - **Informar de un problema**: abre una nueva incidencia en GitHub con la versión de la app ya escrita.
   Usted la lee y la envía. Si una pantalla no se puede dibujar, su nota también tiene **Copiar los
-  detalles** e **Informar de este problema**.
+  detalles** e **Informar de este problema**. Hasta que se publique la copia pública, las incidencias
+  van a github.com/smcarus/econquest; para enviar una se necesita una cuenta gratuita de GitHub.
 - **Atajos de teclado**: pulse **?** para ver la lista. **/** va al cuadro de pregunta del consejo,
   **Cmd+K** (Ctrl+K en Windows) busca en las herramientas, **Cmd+,** abre la configuración y **Esc**
   cierra una ventana. / y ? no hacen nada mientras escribe en un cuadro.

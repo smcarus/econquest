@@ -142,7 +142,8 @@ español.
 > **Aún no es público.** La copia pública en github.com/e-conquest/econquest y la aplicación lista
 > para usar en `ghcr.io/e-conquest/econquest` todavía no se han publicado, así que los enlaces de
 > descarga y la dirección de `git clone` de abajo no funcionan hasta entonces. Esta nota se quitará el
-> día en que se publiquen.
+> día en que se publiquen. Mientras tanto, quienes prueban la aplicación la instalan desde el código en
+> github.com/smcarus/econquest: los pasos están en [docs/TESTING.md](docs/TESTING.md) (en inglés).
 
 **¿Es nuevo en esto?** [docs/INSTALL.md](docs/INSTALL.md) (en inglés) es una guía paso a paso: instale
 Docker Desktop, descargue un archivo y ejecute la aplicación lista para usar. No hay que compilar ni
@@ -223,7 +224,7 @@ registro de auditoría).
   [DATA_LICENCES.md](./docs/DATA_LICENCES.md), [DATA_API.md](./docs/DATA_API.md), [DEPLOYMENT.md](./docs/DEPLOYMENT.md),
   [POLICY_REVIEW.md](./docs/POLICY_REVIEW.md), [QUESTS.md](./docs/QUESTS.md),
   [ROADMAP.md](./docs/ROADMAP.md), [HOME_SERVER.md](./docs/HOME_SERVER.md),
-  [PRIVACY.md](./docs/PRIVACY.md), [ACCESSIBILITY.md](./docs/ACCESSIBILITY.md), [SECURITY.md](./docs/SECURITY.md), [ARCHITECTURE.md](./docs/ARCHITECTURE.md), [CONTRIBUTING.md](./CONTRIBUTING.md)
+  [PRIVACY.md](./docs/PRIVACY.md), [TESTING.md](./docs/TESTING.md), [ACCESSIBILITY.md](./docs/ACCESSIBILITY.md), [SECURITY.md](./docs/SECURITY.md), [ARCHITECTURE.md](./docs/ARCHITECTURE.md), [CONTRIBUTING.md](./CONTRIBUTING.md)
 - Desarrolladores: [For developers, en Funciones y detalles en inglés](./docs/FEATURES.md#for-developers)
 
 ---

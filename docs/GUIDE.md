@@ -475,7 +475,8 @@ data* and *Learn*. Items worth knowing first:
   version** beside About.
 - **Report a problem**: opens a new GitHub issue with the app version filled in. You read it and
   send it yourself. If a screen fails to draw, its note has **Copy details** and **Report this
-  problem** too.
+  problem** too. Until the public copy opens, issues go to github.com/smcarus/econquest; sending one
+  needs a free GitHub account.
 - **Keyboard shortcuts**: press **?** for the list. **/** jumps to the council question box,
   **Cmd+K** (Ctrl+K on Windows) searches the tools, **Cmd+,** opens Settings and **Esc** closes a
   window. / and ? do nothing while you type in a box.

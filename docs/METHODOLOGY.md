@@ -1,6 +1,6 @@
 # EconQuest Terminal: Methodology
 
-**Version 1.8, 26 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of the main branch on 26 November 2026 (after release 0.3.0, through pull request #695).
+**Version 1.9, 26 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of the main branch on 26 November 2026 (after release 0.3.0, through pull request #712).
 Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not validated advice.
 
 This document sets out how the EconQuest Terminal sources its data, how its council of agents
@@ -155,7 +155,8 @@ second review of 25 November). Once a day, while
 the app is open, the server asks GitHub for the newest release number of the public repository so
 Menu > About can say when a newer version is out (`src/server/updateCheck.ts`; nothing about the user
 is sent; `UPDATE_CHECK=off` turns it off). There is no tracking, usage counting or crash reporting; a
-problem report is a GitHub issue the user fills in and sends themselves (`src/utils/problemReport.ts`).
+problem report is a GitHub issue the user fills in and sends themselves (`src/utils/problemReport.ts`;
+until the public repository opens, on github.com/smcarus/econquest).
 
 ## 2. Principles
 
@@ -1049,6 +1050,11 @@ advance exactly which feed and which value will settle it.
 - **Model runs checked against the source.** The World Bank country models are checked against the
   World Bank's own stored results and its manual's published example by a pre-registered check
   (section 5.6, `npm run mfmod:validate`).
+- **Builds that can be checked.** Every build step and base image is pinned to a fixed version, each
+  release carries a software parts list (SPDX and CycloneDX), `SHA256SUMS` and build proof signed by
+  GitHub, and code scanning (CodeQL) and the OpenSSF Scorecard run on every change
+  ([SECURITY.md](./SECURITY.md#build-safety-and-checking-a-download)). Anyone can confirm that a
+  release was built from the published code.
 - **Point-in-time views.** *As of a past day* shows every figure the terminal held on a date;
   *Replicate a rate decision* shows the inputs a simple rule would have had before a central bank
   move, with its caveats.
@@ -1222,8 +1228,9 @@ Per-model references are given in the [Methods note](./METHODS.md).
 | 1.6 | 24 November 2026 | New sources in 3.1 (IMF market rates and trade by partner, World Bank GEP, OECD Economic Outlook and original-release editions, official documents and speeches, catalogue search, the Philadelphia Fed survey file, the user's own Interactive Brokers prices); last good answers, retries and release-day re-reads (3.2); official forecasts as a labelled stand-in and local market rates (3.3); OECD editions (3.6); what leaves the computer and the update check (1.1); the short answer without an AI model and answers in the chosen language (4.1); results on record brought to 39 tests, 11 passed (11); limits of the forward record, the global VAR and official forecasts (14). The forecasting methods added on 22 November (KPSS, tests on data as first published, GARCH, ridge and lasso, ARIMA, the dynamic factor model, quantile bands and the random forest) were written into 7.3 with each change |
 | 1.7 | 25 November 2026 | What leaves the computer corrected: the screen fonts ship with the app and no longer come from Google Fonts; the built app's Content-Security-Policy (1.1). The 59 countries from the low-income debt list and Add a country with every country (3.3); those countries are in no recorded test (11.1) |
 | 1.8 | 26 November 2026 | The World Bank country models (5.6): the public MFMod models for six countries run on the user's computer, their stored baseline, one-shock runs shown as differences, and the pre-registered reproduction check, which passed on the developer's computer the same day; the model files as a source (3.1), the check in reproducibility (13) and their limits (14) |
+| 1.9 | 26 November 2026 | Builds that can be checked (13): pinned build steps, software parts lists, checksums and signed build proof on each release, code scanning; where problem reports go until the public repository opens (1.1) |
 
 ---
 
-*EconQuest Terminal methodology, version 1.8 (26 November 2026). Text licensed under CC BY 4.0: you may
+*EconQuest Terminal methodology, version 1.9 (26 November 2026). Text licensed under CC BY 4.0: you may
 share and adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*

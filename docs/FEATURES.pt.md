@@ -403,6 +403,10 @@ Situação em 26 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./ROADMAP.md
 
 **Próximo**
 
+- **Primeiro, os testes.** Um pequeno grupo de pessoas convidadas instala o app a partir do código em
+  github.com/smcarus/econquest no modo leve e relata problemas com Menu > Relatar um problema ou o
+  botão Sinalizar, que abrem issues lá até a cópia pública ser aberta ([TESTING.md](./TESTING.md),
+  em inglês).
 - **O lançamento público** em e-conquest/econquest. O modo leve, as duas revisões de segurança e a
   verificação automática no Windows estão feitos; faltam uma primeira execução por uma pessoa em um
   computador com Windows, uma medição do modo leve e uma última exportação pública.
