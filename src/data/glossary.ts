@@ -1181,6 +1181,16 @@ export const GLOSSARY: GlossaryEntry[] = [
     match: [/weather anomaly/i, /1991-2020/],
   },
   {
+    id: 'synthetic_control',
+    term: 'Synthetic control',
+    group: 'methods',
+    what: 'A way to judge what a change did in one country: a "twin" is built from other countries, each given a weight, so that the mix moved like the country in the years before the change. After the change, the gap between the country and its twin is the estimate.',
+    why: 'A country cannot be watched both with and without a change. The twin stands in for the path it would likely have taken, so the effect is not just read off a before-and-after comparison that mixes in everything else that happened.',
+    read: 'A gap that opens after the change and stays, with a small placebo p-value (0.10 or less), means few countries that made no change moved that differently from their own twins. A twin that missed the years before badly is not shown.',
+    limits: 'Yearly figures only. It describes one country against a constructed comparison; it does not prove the same change would work elsewhere. Changes that spread to neighbours, or other changes at the same time, bias it.',
+    match: [/synthetic control/i, /what happened after/i],
+  },
+  {
     id: 'present_value',
     term: 'Present value',
     group: 'methods',

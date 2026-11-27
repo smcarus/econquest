@@ -19,6 +19,7 @@ import { PANEL_TEXT_FR } from './panelText';
 import { WATCHLIST_FR } from './watchlist';
 import { OWN_DATA_FR } from './ownData';
 import { GAP_MODEL_FR } from './gapModel';
+import { SYNTH_FR } from './synth';
 import { YOUR_TESTS_FR } from './yourTests';
 import { TOOLS_FR } from './tools';
 import { TOOL_TEXT_FR } from './toolText';
@@ -44,6 +45,7 @@ export const FR: Record<string, Record<string, string>> = {
   watchlist: WATCHLIST_FR,
   ownData: OWN_DATA_FR,
   gapModel: GAP_MODEL_FR,
+  synth: SYNTH_FR,
   yourTests: YOUR_TESTS_FR,
   tools: TOOLS_FR,
   menu: MENU_FR,

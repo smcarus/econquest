@@ -1176,6 +1176,16 @@ A set of specialist AI agents, each covering one area (for example the central b
 
 **Limits.** Answers are written by an AI model and are labelled so. They are interpretation of the figures shown, not advice, and the app checks that every number they quote appears in the source figures.
 
+### Synthetic control
+
+A way to judge what a change did in one country: a "twin" is built from other countries, each given a weight, so that the mix moved like the country in the years before the change. After the change, the gap between the country and its twin is the estimate.
+
+**Why it matters.** A country cannot be watched both with and without a change. The twin stands in for the path it would likely have taken, so the effect is not just read off a before-and-after comparison that mixes in everything else that happened.
+
+**How to read it.** A gap that opens after the change and stays, with a small placebo p-value (0.10 or less), means few countries that made no change moved that differently from their own twins. A twin that missed the years before badly is not shown.
+
+**Limits.** Yearly figures only. It describes one country against a constructed comparison; it does not prove the same change would work elsewhere. Changes that spread to neighbours, or other changes at the same time, bias it.
+
 ### Present value
 
 What a stream of future gains or costs is worth today, after each year is shrunk by the discount rate. Net present value is the present value of the gains minus the present value of the costs.
