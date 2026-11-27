@@ -33,6 +33,12 @@ import { buildMarketReadings, COUNCIL_PARTS, councilPartsFor, currentCouncilInpu
 import type { DiagnosisFigure } from '../../utils/reviewDiagnosis';
 import { CONSENTS, expertCsv, expertSummaryMarkdown, parseExpertForm } from '../../utils/expertReview';
 import { findPrecedents, parseFeatures, type HistoryInput } from '../../utils/precedentFinder';
+import { syntheticControl, parseOutcome } from '../../utils/syntheticControl';
+import { EVENT_RULE, DEFAULT_OUTCOME, eventsFor, excludedFor, fileEvents, ownEvents, parseOwnEvent, ruleEvents, type PolicyEvent } from '../../utils/policyEvents';
+import { addOwnEvent, loadOwnEvents, policyEventFile } from '../../utils/policyEventStore';
+import type { FxRegimeTable } from '../../utils/fxRegime';
+import type { FiscalRulesTable } from '../../utils/fiscalRules';
+import type { ChinnItoTable } from '../../utils/chinnIto';
 import { buildPeopleExtras } from '../../utils/peopleSummary';
 import { regionalProfile } from '../../utils/regional';
 import { loadDose, loadEuroRegions } from '../feeds/regional';
@@ -64,10 +70,12 @@ export interface ReviewDeps {
   allHistories: () => { histories: HistoryInput[]; pulledAt?: string };
   /** Saved inputs for Political feasibility: the DPI file and the GDELT monthly series. */
   politicalInputs: (iso3: string) => { dpi: { table: DpiTable | null; reason?: string }; gdelt: V1Series | null };
+  /** The saved files events can come from (SC2); each null with the reason when not saved. */
+  eventFiles: () => { fxRegime: FxRegimeTable | null; fiscalRules: FiscalRulesTable | null; chinnIto: ChinnItoTable | null; reasons: Record<string, string> };
 }
 
 export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): void {
-  const { refuseRemoteChange, signedIn, archivedSnapshot, seriesFor, fetchLiveOpenDataSnapshot, reviewOptionsStep, withModelFigures, allHistories, politicalInputs } = deps;
+  const { refuseRemoteChange, signedIn, archivedSnapshot, seriesFor, fetchLiveOpenDataSnapshot, reviewOptionsStep, withModelFigures, allHistories, politicalInputs, eventFiles } = deps;
   // Report sign-off: where each saved council conversation stands, and one step at a time.
   app.get('/api/signoffs', (_req, res) => {
     const all = loadSignOffs(SIGNOFF_FILE);
@@ -393,6 +401,49 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
     if (!frame) return res.status(400).json({ error: 'Save the frame first.' });
     const { histories, pulledAt } = allHistories();
     res.json({ ...findPrecedents(frame.iso3, frame.asOf, parseFeatures(req.query.features), histories), historyPulledAt: pulledAt, folder: 'data/history/' });
+  });
+  // What happened after (SC1, SC2): the review country's events and, for one of them, its twin
+  // (synthetic control) from the saved yearly histories, cut at the As of year. Read-only apart from
+  // your own events, which are saved in data/local/policy-events.json.
+  const EVENT_FILE = policyEventFile(DATA_DIR);
+  const allEvents = (lastYear: number): PolicyEvent[] => {
+    const { histories } = allHistories();
+    const files = eventFiles();
+    return [...ruleEvents(histories, lastYear), ...fileEvents(files, lastYear), ...ownEvents(loadOwnEvents(EVENT_FILE), lastYear)];
+  };
+  app.get('/api/reviews/:id/events', (req, res) => {
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const frame = frameOf(r);
+    if (!frame) return res.status(400).json({ error: 'Save the frame first.' });
+    const lastYear = Number(frame.asOf.slice(0, 4));
+    const files = eventFiles();
+    res.json({ iso3: frame.iso3, asOf: frame.asOf, events: eventsFor(frame.iso3, allEvents(lastYear)), rules: EVENT_RULE, defaultOutcome: DEFAULT_OUTCOME, fileReasons: files.reasons, historyPulledAt: allHistories().pulledAt });
+  });
+  app.post('/api/reviews/:id/events', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const frame = frameOf(r);
+    if (!frame) return res.status(400).json({ error: 'Save the frame first.' });
+    const parsed = parseOwnEvent(req.body, frame.iso3, Number(frame.asOf.slice(0, 4)));
+    if ('error' in parsed) return res.status(400).json({ error: parsed.error });
+    const saved = addOwnEvent(EVENT_FILE, { iso3: frame.iso3, ...parsed });
+    res.json({ event: ownEvents([saved], Number(frame.asOf.slice(0, 4)))[0] });
+  });
+  app.get('/api/reviews/:id/what-happened', (req, res) => {
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const frame = frameOf(r);
+    if (!frame) return res.status(400).json({ error: 'Save the frame first.' });
+    const lastYear = Number(frame.asOf.slice(0, 4));
+    const events = allEvents(lastYear);
+    const event = events.find((e) => e.id === String(req.query.event || '') && e.iso3 === frame.iso3);
+    if (!event) return res.status(404).json({ error: 'No such event for this country before the As of year.' });
+    const outcome = req.query.outcome ? parseOutcome(req.query.outcome) : DEFAULT_OUTCOME[event.kind];
+    const { histories, pulledAt } = allHistories();
+    const result = syntheticControl({ iso3: frame.iso3, eventYear: event.year, asOf: frame.asOf, outcome, histories, exclude: excludedFor(event, events) });
+    res.json({ ...result, event, rule: EVENT_RULE[event.kind], historyPulledAt: pulledAt, folder: 'data/history/' });
   });
   // Behavioural check (G33): the flags are worked out in the browser from the saved options; only the
   // effect sizes the user enters, each with its source, are saved here, beside the steps.

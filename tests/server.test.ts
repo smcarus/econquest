@@ -967,6 +967,20 @@ test('policy reviews: a frame starts a review, a bad one is refused, and both ar
   assert.ok(list.reviews.some((r: { id: string; next: string }) => r.id === review.id && r.next === 'diagnose'));
   const one = await (await fetch(`${base}/api/reviews/${review.id}`)).json();
   assert.deepEqual(one.changed, []);
+  // What happened after (SC2): the country's events, your own event (checked, then saved), and its twin or the reason.
+  const evs = await (await fetch(`${base}/api/reviews/${review.id}/events`)).json();
+  assert.ok(Array.isArray(evs.events) && evs.rules.devaluation, JSON.stringify(evs).slice(0, 200));
+  const addEv = (body: unknown) => fetch(`${base}/api/reviews/${review.id}/events`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  assert.equal((await addEv({ year: 2015, label: 'x', sourceUrl: 'not a link' })).status, 400);
+  const added = await addEv({ year: 2015, label: 'New central bank law', sourceUrl: 'https://example.org/law' });
+  assert.equal(added.status, 200);
+  const { event } = await added.json();
+  assert.equal(event.origin, 'own');
+  const wh = await (await fetch(`${base}/api/reviews/${review.id}/what-happened?event=${encodeURIComponent(event.id)}&outcome=cpi_imf`)).json();
+  assert.equal(wh.event.id, event.id);
+  assert.equal(wh.methodVersion, 'synth-v1');
+  assert.ok(wh.missing || wh.path.length, JSON.stringify(wh).slice(0, 200));
+  assert.equal((await fetch(`${base}/api/reviews/${review.id}/what-happened?event=nope`)).status, 404);
   const audit = await (await fetch(`${base}/api/audit`)).json();
   assert.ok(JSON.stringify(audit).includes('Started policy review'));
   // Policy council (PK2): refused without a measure in the frame; saved with sources once there is one.
