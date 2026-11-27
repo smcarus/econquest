@@ -10,6 +10,7 @@
  */
 import { IMF_MEASURES, getJson, imfDataUrl, imfStructureUrl, matchIndicators, parseImfData, parseImfStructure, pickSeries, seriesKey, labelOf } from '../src/utils/imfReserves.ts';
 import { WORLD_IDS, coferKey, findWorldCode, describeSeries } from '../src/utils/imfCofer.ts';
+import { pullImfGroups } from '../src/utils/imfCpiGroups.ts';
 import { imfCpiDataUrl, imfCpiKey, imfCpiStructureUrl, parseImfCpiStructure, pickImfCpiSeries } from '../src/utils/imfCpi.ts';
 
 const fetchFn = (u: string, i?: RequestInit) => fetch(u, i);
@@ -90,5 +91,20 @@ for (const flow of ['IL', 'BOP', 'COFER']) {
       }
       console.log(`  picked: ${pickImfCpiSeries(series)?.key ?? 'none'}`);
     }
+  }
+}
+
+// ---- CPI groups (What this means for you, src/utils/imfCpiGroups.ts) ----------------------------
+// The app reads these only with IMF_CPI_GROUPS=on in .env. Turn it on once Ghana, India and Kenya
+// below show twelve groups with recent months and names that fit.
+{
+  console.log('\n=== CPI groups (switched on with IMF_CPI_GROUPS=on)');
+  let structure = null as Awaited<ReturnType<typeof pullImfGroups>>['structure'];
+  for (const iso3 of ['GHA', 'IND', 'KEN']) {
+    const head = [{ period: '2000-01', value: 0 }];
+    const g = await pullImfGroups({ fetchFn, timeoutMs: 60000, structure, headline: head }, iso3);
+    structure = g.structure;
+    console.log(`\n${iso3}: ${g.note}`);
+    if (g.outcome.ok) for (const x of g.outcome.groups) console.log(`    ${x.id} ${x.label}: ${x.rates.length ? `${x.rates[x.rates.length - 1].period} ${x.rates[x.rates.length - 1].value}%` : '-'}${x.weightPct !== undefined ? `, weight ${x.weightPct}%` : ''}`);
   }
 }
