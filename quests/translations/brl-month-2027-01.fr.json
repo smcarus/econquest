@@ -1,0 +1,11 @@
+{
+  "quest": "brl-month-2027-01",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "Le réal brésilien sera-t-il plus faible face au dollar un mois après la clôture ?",
+  "summary": "Donnez la probabilité que le nombre de réals par dollar américain (cours de référence de la BCE croisés avec le dollar) soit plus élevé, donc un réal plus faible, environ un mois après la clôture des participations que le jour de la clôture.",
+  "knownLimits": [
+    "La BCE ne publie pas de cours les jours fériés TARGET ; le premier cours publié à chaque date ou après est utilisé."
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "quest": "credit-gap-crisis-signal",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "Um hiato de crédito alto do BIS avisa de uma crise cambial?",
+  "summary": "Proponha um teste pré-registrado sobre se um hiato de crédito/PIB do BIS bem acima da tendência vem antes de uma forte queda da moeda. As participações são arquivos de teste que seguem o padrão de sinais: fixados antes de qualquer execução, com defasagens em tempo real, comparados a uma taxa base simples e com correção para testes múltiplos.",
+  "knownLimits": [
+    "Cada teste proposto é executado uma vez depois de aceito e entra na família de testes corrigidos para testes múltiplos; um teste que falha é registrado e nunca reajustado."
+  ],
+  "hypothesis": "Países cujo hiato de crédito/PIB do BIS passa de um limite indicado sofrem uma queda da moeda de um tamanho indicado dentro de um prazo indicado com mais frequência do que a taxa base."
+}

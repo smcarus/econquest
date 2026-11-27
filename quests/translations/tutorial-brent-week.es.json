@@ -1,0 +1,12 @@
+{
+  "quest": "tutorial-brent-week",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "Tutorial: ¿estará el Brent más alto una semana después del cierre?",
+  "summary": "Un primer reto para aprender cómo funcionan las participaciones, la puntuación y los resultados. Indique la probabilidad de que el precio spot diario del Brent según la EIA una semana después del cierre sea mayor que el día del cierre. Se resuelve en una semana, así que verá pronto su primera puntuación.",
+  "knownLimits": [
+    "La EIA publica los precios spot diarios con unos días de retraso; el reto se resuelve cuando sale el valor de la fecha.",
+    "Si falta el Brent, decide el WTI."
+  ]
+}

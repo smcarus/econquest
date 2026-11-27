@@ -1,0 +1,12 @@
+{
+  "quest": "tur-taylor-exercise-replication",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "Reproduisez le corrigé de la règle de Taylor pour la Turquie",
+  "summary": "Outils > Exercices pose une question sur la règle de Taylor avec une réponse rédigée à partir des séries de l'application. Reproduisez le corrigé pour la Turquie à la date de votre choix et vérifiez les calculs de l'application.",
+  "knownLimits": [
+    "L'exercice n'a pas de terme d'écart de production quand aucun n'est publié ; indiquez les données utilisées."
+  ],
+  "target": "Exercices, question sur la règle de Taylor pour la Turquie à un mois indiqué : le taux donné par la règle et ses données."
+}

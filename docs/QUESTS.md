@@ -32,6 +32,7 @@ Quests stay off until every box in the checklist below is ticked. Only the proje
 | Stance profiles: eight economics questions set in the app (kept in the browser); a public profile only by the person's own pull request (`quests/profiles/<login>.json`, checked by the `Quest entries` CI job); shown on the Stances tab and contributor pages; group tables of stance against skill not shown | Built and tested, switched off |
 | Health measures for the six-month review: people per month, entries per Quest, results recorded on time, crowd against the base rate (Health tab, `/api/quests/health`, and on the public board) | Built and tested, switched off |
 | Yearly open dataset (`npm run quests:dataset -- --year <YYYY>`): CSV tables of Quests, entries, results, test verdicts and scores with a README, citation file and checksums, ready to deposit for a DOI; stance profiles left out | Built and tested; no dataset released yet |
+| Translated Quest text: each Quest's title, question, known limits and positions (or idea to test, or figure to reproduce) in Spanish, French and Brazilian Portuguese, from separate files in `quests/translations/`, checked by `npm run quests:check`; the Quest page says it is a translation and offers the English, which is the rule. All 14 drafts are translated | Built and tested, switched off |
 
 ## How a Quest is settled
 
@@ -111,6 +112,17 @@ A Replication Quest asks people to rebuild a figure the app shows, for example t
 3. **The app's figure is recorded.** The maintainer opens the panel the Quest names, with the settings it states, and records what the app shows: `npm run quests:resolve -- --by <login> --replicate <id> <figure> "panel, settings, date read"`. This is a line in the results record like any other result, and is never changed (a dispute is decided with `--decide`).
 4. **Matching.** An entry reproduces the figure when it is within the Quest's tolerance of the app's figure. An entry that differs is not "wrong": if its notes show the app made a mistake, the maintainer opens a bug against the app and records a note naming the entry (`--note`), and that entry solves the Quest.
 5. **Contributor pages** list each replication and whether it reproduced the app's figure. Replications are never ranked.
+
+## Translations
+
+A Quest can be read in Spanish (usted), French (vous) and Brazilian Portuguese (você). The English Quest file is always the rule that settles it; a translation only helps people read it.
+
+- **Where.** Each translation is its own file, `quests/translations/<Quest file name without .json>.<lang>.json`, for example `arg-debt-2026.es.json` or `tur-policy.v2.fr.json`. Keeping it apart from the Quest file means an approved Quest's fingerprint never changes when a translation is added or corrected, so anyone can add or fix one by pull request at any time.
+- **What it holds.** The Quest's `quest` id and `version`, the `lang`, the `translator`'s GitHub name, and the same text as the Quest: `title`, `summary` and `knownLimits`, plus `positions` for a Debate, `hypothesis` for a Signal Quest or `target` for a Replication. Each list has one line for each English line, in the same order.
+- **Checked.** `npm run quests:check` checks every translation against its Quest: the right file name, every field the Quest has and none it lacks, lists of the same length, and **no new figures**: a translated field may only use numbers that appear in the same English field (dates, years, thresholds). A translation that fails is not shown.
+- **In the app.** When the app is set to Spanish, French or Portuguese, the list and the Quest page show the translation, with a line naming the translator, saying the English is the rule, and a button to show the English. A Quest with no translation in that language shows in English.
+
+The translations are not yet checked by native speakers, like the rest of the app's Spanish, French and Portuguese.
 
 ## Making new Quests
 

@@ -1,0 +1,11 @@
+{
+  "quest": "tur-policy-2027h1",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "¿Estará el tipo de interés oficial de Turquía más bajo el 30 de junio de 2027 que al cierre?",
+  "summary": "Indique la probabilidad de que el tipo de interés oficial diario del BPI para Turquía el 30 de junio de 2027 sea inferior a su valor el día del cierre de participaciones.",
+  "knownLimits": [
+    "Los datos diarios del BPI pueden ir unos días por detrás de una decisión."
+  ]
+}

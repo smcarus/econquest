@@ -1,0 +1,11 @@
+{
+  "quest": "mex-policy-level-2027-03",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "¿Cuál será el tipo de interés oficial de México el 31 de marzo de 2027?",
+  "summary": "Pronostique el tipo de interés oficial diario del BPI para México el 31 de marzo de 2027, en porcentaje. Se califica por el error absoluto, frente a un pronóstico sin cambios.",
+  "knownLimits": [
+    "Los datos diarios del BPI pueden ir unos días por detrás de una decisión."
+  ]
+}

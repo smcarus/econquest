@@ -1,0 +1,11 @@
+{
+  "quest": "jpy-positioning-4w-2027-01",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "¿Tendrán los fondos apalancados una posición más larga en yenes cuatro semanas después del cierre?",
+  "summary": "Indique la probabilidad de que la posición neta de los fondos apalancados en futuros del yen según la CFTC, como proporción del interés abierto, sea mayor en el primer informe semanal en o después de la fecha de resolución que en el primer informe en o después de la fecha de cierre.",
+  "knownLimits": [
+    "Los informes de la CFTC llevan fecha del martes y se publican el viernes; un cierre del gobierno de EE. UU. puede retrasarlos."
+  ]
+}

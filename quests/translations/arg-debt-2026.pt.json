@@ -1,0 +1,12 @@
+{
+  "quest": "arg-debt-2026",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "A relação dívida pública/PIB da Argentina vai cair em 2026?",
+  "summary": "Dê a probabilidade de que a dívida bruta do governo geral da Argentina segundo o WEO do FMI, em % do PIB, seja menor em 2026 do que em 2025, ambas lidas pela primeira vez em 1 de maio de 2027 ou depois (após o WEO de abril de 2027).",
+  "knownLimits": [
+    "O número de 2026 no WEO de abril de 2027 ainda é uma estimativa do FMI e pode ser revisado depois; vale a primeira leitura.",
+    "Um movimento forte do peso muda a relação pela dívida em moeda estrangeira tanto quanto pelo orçamento."
+  ]
+}

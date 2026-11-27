@@ -1,0 +1,18 @@
+{
+  "quest": "egy-reserves-debate",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "Qu'est-ce qui reconstituerait le plus sûrement les réserves de change de l'Égypte ?",
+  "summary": "Défendez la voie qui reconstituerait le plus sûrement les réserves de l'Égypte au cours des deux prochaines années. Citez les chiffres de l'application (réserves, compte courant, dette extérieure, dette à court terme) pour chaque affirmation ; la Vérification des chiffres signale ceux qui ne correspondent pas.",
+  "knownLimits": [
+    "Débat, pas un signal testé : aucune position n'est notée juste ou fausse.",
+    "La BRI n'a pas de taux directeur quotidien pour l'Égypte."
+  ],
+  "positions": [
+    "Un taux de change plus flexible",
+    "Des financements du Golfe et des institutions financières internationales, avec des recettes de privatisation",
+    "La croissance des exportations et du tourisme",
+    "Rien de tout cela sans allègement de la dette"
+  ]
+}

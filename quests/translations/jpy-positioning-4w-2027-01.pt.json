@@ -1,0 +1,11 @@
+{
+  "quest": "jpy-positioning-4w-2027-01",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "Os fundos alavancados vão estar mais comprados em iene quatro semanas depois do encerramento?",
+  "summary": "Dê a probabilidade de que a posição líquida dos fundos alavancados em futuros de iene segundo a CFTC, como parcela das posições em aberto, seja maior no primeiro relatório semanal na data de resolução ou depois do que no primeiro relatório na data de encerramento ou depois.",
+  "knownLimits": [
+    "Os relatórios da CFTC têm data de terça-feira e saem na sexta; uma paralisação do governo dos EUA pode atrasá-los."
+  ]
+}

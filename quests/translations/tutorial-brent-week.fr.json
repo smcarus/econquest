@@ -1,0 +1,12 @@
+{
+  "quest": "tutorial-brent-week",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "Tutoriel : le Brent sera-t-il plus haut une semaine après la clôture ?",
+  "summary": "Une première quête pour apprendre comment fonctionnent les participations, la notation et les résultats. Donnez la probabilité que le prix spot quotidien du Brent selon l'EIA une semaine après la clôture soit plus élevé que le jour de la clôture. Elle se règle en une semaine, vous verrez donc vite votre première note.",
+  "knownLimits": [
+    "L'EIA publie les prix spot quotidiens avec quelques jours de retard ; la quête se règle quand la valeur de la date est publiée.",
+    "Si le Brent manque, le WTI tranche la quête."
+  ]
+}

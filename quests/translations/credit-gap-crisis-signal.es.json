@@ -1,0 +1,12 @@
+{
+  "quest": "credit-gap-crisis-signal",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "¿Avisa una brecha de crédito alta del BPI de una crisis cambiaria?",
+  "summary": "Proponga una prueba prerregistrada de si una brecha de crédito sobre PIB del BPI muy por encima de su tendencia precede a una fuerte caída de la moneda. Las participaciones son archivos de prueba que siguen el estándar de señales: fijados antes de cualquier ejecución, con rezagos en tiempo real, frente a una tasa base simple y con corrección por pruebas múltiples.",
+  "knownLimits": [
+    "Cada prueba propuesta se ejecuta una vez después de aceptarse y se une a la familia de pruebas corregidas por pruebas múltiples; una prueba fallida se registra y nunca se reajusta."
+  ],
+  "hypothesis": "Los países cuya brecha de crédito sobre PIB del BPI supera un umbral indicado sufren una caída de la moneda de un tamaño indicado dentro de un plazo indicado con más frecuencia que la tasa base."
+}

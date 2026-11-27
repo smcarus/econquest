@@ -1,0 +1,12 @@
+{
+  "quest": "credit-gap-crisis-signal",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "Un écart de crédit BRI élevé annonce-t-il une crise de change ?",
+  "summary": "Proposez un test préenregistré pour savoir si un écart crédit/PIB de la BRI bien au-dessus de sa tendance précède une forte baisse de la monnaie. Les participations sont des fichiers de test qui suivent la norme des signaux : fixés avant toute exécution, décalages en temps réel, comparés à un taux de base simple, correction pour tests multiples.",
+  "knownLimits": [
+    "Chaque test proposé est exécuté une fois après acceptation et rejoint la famille des tests corrigés pour tests multiples ; un test échoué est enregistré et jamais réajusté."
+  ],
+  "hypothesis": "Les pays dont l'écart crédit/PIB de la BRI dépasse un seuil indiqué subissent une baisse de la monnaie d'une ampleur indiquée dans un délai indiqué plus souvent que le taux de base."
+}

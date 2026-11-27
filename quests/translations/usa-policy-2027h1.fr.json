@@ -1,0 +1,12 @@
+{
+  "quest": "usa-policy-2027h1",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "Le taux directeur des États-Unis sera-t-il plus bas le 30 juin 2027 qu'à la clôture ?",
+  "summary": "Donnez la probabilité que le taux directeur quotidien de la BRI pour les États-Unis (la cible des fonds fédéraux) le 30 juin 2027 soit inférieur à sa valeur le jour de la clôture des participations.",
+  "knownLimits": [
+    "La BRI publie le milieu de la fourchette cible pour les États-Unis.",
+    "Les données quotidiennes de la BRI peuvent avoir quelques jours de retard sur une décision."
+  ]
+}

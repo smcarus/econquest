@@ -18,10 +18,14 @@ import type { LiveWatchlistItem } from '../types/council';
 import { newFileUrl, type PublicEntry } from '../utils/questPublicEntries';
 import { profileFileText, profilePath, stancesProblems, stanceWords, type StanceAxis, type StanceProfile, type Stances, type StanceValue } from '../utils/questStances';
 import { ARGUMENT_MIN } from '../utils/questEntries';
+import { questTextIn, type QuestTranslationLang, type QuestText, type QuestTranslationMap } from '../utils/questTranslations';
+import { useLang, useT } from '../i18n/useLang';
+import { QUESTS } from '../i18n/messages/quests';
 import { checkArgument, evidenceMap, evidenceMarkdown, type ArgumentCheck, type DebateBrief, type EvidenceMap } from '../utils/questDebate';
 
 type Summary = {
   id: string;
+  version: number;
   type: QuestType;
   title: string;
   countries: string[];
@@ -37,8 +41,8 @@ type Summary = {
   settlesOn: string;
 };
 type Figure = { country: string; series: string; label: string; value?: number; date?: string; unit?: string; source?: string; missing?: string };
-type ListReply = { enabled: false; reason: string } | { enabled: true; quests: Summary[] };
-type Detail = { enabled: true; quest: Quest; summary: Summary; file: string; rule?: string; fallback?: string; figures: Figure[]; result?: QuestResultState; brief?: { brief: DebateBrief; hashOk: boolean } | null; related?: EvidenceMap['related'] };
+type ListReply = { enabled: false; reason: string } | { enabled: true; quests: Summary[]; translations?: QuestTranslationMap };
+type Detail = { enabled: true; quest: Quest; summary: Summary; file: string; rule?: string; fallback?: string; figures: Figure[]; result?: QuestResultState; translations?: Partial<Record<QuestTranslationLang, QuestText>>; brief?: { brief: DebateBrief; hashOk: boolean } | null; related?: EvidenceMap['related'] };
 
 const TYPE_LABEL: Record<QuestType, string> = { forecast: 'Forecast', signal: 'Signal', replication: 'Replication', debate: 'Debate' };
 const STATUS_LABEL: Record<QuestStatus, string> = { draft: 'Draft', upcoming: 'Opens soon', open: 'Open', closed: 'Closed to entries', due: 'Result due' };
@@ -59,6 +63,11 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
   const [detail, setDetail] = useState<Detail | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [view, setView] = useState<'quests' | 'mine' | 'class' | 'results' | 'board' | 'stances' | 'health'>('quests');
+  const lang = useLang();
+  const t = useT(QUESTS);
+  const [english, setEnglish] = useState(false);
+  const shownLang = english ? 'en' : lang;
+  const listTr = list && list.enabled ? list.translations : undefined;
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -76,6 +85,7 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
 
   const open = useCallback(async (id: string) => {
     setOpenId(id);
+    setEnglish(false);
     setDetail(null);
     setDetailError(null);
     try {
@@ -167,7 +177,7 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
                   {quests.map((q) => (
                     <li key={q.id}>
                       <button type="button" onClick={() => open(q.id)} className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800" data-quest-row={q.id}>
-                        <div className="text-sm text-slate-900 dark:text-white">{q.title}</div>
+                        <div className="text-sm text-slate-900 dark:text-white">{questTextIn({ ...q, summary: '', knownLimits: [] }, shownLang, listTr).title}</div>
                         <div className="text-xs text-slate-500 dark:text-slate-400">
                           {TYPE_LABEL[q.type]} · {q.approved ? STATUS_LABEL[q.status] : 'Draft'} · {q.horizonLabel} · result due {q.settlesOn}
                           {q.tutorial ? ' · Tutorial' : ''}
@@ -186,13 +196,25 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
               </button>
               {detailError && <p className="text-sm text-rose-700 dark:text-rose-400">This Quest did not load: {detailError}</p>}
               {!detail && !detailError && <p className="text-sm text-slate-500">Loading…</p>}
-              {detail && (
+              {detail && (() => {
+                const qd = detail.quest as Quest & { positions?: string[]; hypothesis?: string; target?: string };
+                const tr = questTextIn(qd, lang, detail.translations ? { [`${qd.id}@${qd.version}`]: detail.translations } : undefined);
+                const text = english ? questTextIn(qd, 'en', undefined) : tr;
+                return (
                 <>
-                  <h3 className="text-base text-slate-900 dark:text-white">{detail.quest.title}</h3>
+                  <h3 className="text-base text-slate-900 dark:text-white">{text.title}</h3>
+                  {tr.translated && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400" data-quest-translated>
+                      {t('translatedNote', { who: tr.translator || '?' })}{' '}
+                      <button type="button" className="underline" onClick={() => setEnglish((v) => !v)}>
+                        {english ? t('showTranslation') : t('showEnglish')}
+                      </button>
+                    </p>
+                  )}
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     {TYPE_LABEL[detail.quest.type]} · {detail.summary.approved ? STATUS_LABEL[detail.summary.status] : 'Draft, not yet approved'} · opens {detail.quest.opensOn}, entries close {detail.quest.closesOn}, result due {detail.summary.settlesOn}
                   </p>
-                  <p className="text-sm">{detail.quest.summary}</p>
+                  <p className="text-sm">{text.summary}</p>
                   <p className="text-xs text-slate-600 dark:text-slate-300">{HOW_IT_ENDS[detail.quest.type]}</p>
                   {detail.rule && (
                     <div className="border border-slate-200 dark:border-slate-800 p-3 space-y-1">
@@ -205,7 +227,7 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
                     <div className="space-y-1">
                       <div className="text-xs text-slate-500">Positions</div>
                       <ul className="list-disc pl-5 text-sm">
-                        {detail.quest.positions.map((p) => (
+                        {(text.positions ?? detail.quest.positions).map((p) => (
                           <li key={p}>{p}</li>
                         ))}
                       </ul>
@@ -213,10 +235,10 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
                   )}
                   {detail.quest.type === 'replication' && (
                     <p className="text-sm">
-                      Reproduce: {detail.quest.target} Tolerance: {detail.quest.tolerance}.
+                      Reproduce: {text.target ?? detail.quest.target} Tolerance: {detail.quest.tolerance}.
                     </p>
                   )}
-                  {detail.quest.type === 'signal' && <p className="text-sm">Idea to test: {detail.quest.hypothesis}</p>}
+                  {detail.quest.type === 'signal' && <p className="text-sm">Idea to test: {text.hypothesis ?? detail.quest.hypothesis}</p>}
                   {detail.figures.length > 0 && (
                     <table className="w-full text-sm" data-quest-figures>
                       <thead>
@@ -237,11 +259,11 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
                       </tbody>
                     </table>
                   )}
-                  {detail.quest.knownLimits.length > 0 && (
+                  {text.knownLimits.length > 0 && (
                     <div className="space-y-1">
                       <div className="text-xs text-slate-500">Known limits</div>
                       <ul className="list-disc pl-5 text-xs text-slate-600 dark:text-slate-300">
-                        {detail.quest.knownLimits.map((k) => (
+                        {text.knownLimits.map((k) => (
                           <li key={k}>{k}</li>
                         ))}
                       </ul>
@@ -270,9 +292,9 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
                   )}
                   {detail.quest.type === 'debate' && (
                     <>
-                      <BriefBox brief={detail.brief ?? null} quest={detail.quest} />
-                      <EvidenceMapBox quest={detail.quest} items={items} brief={detail.brief?.brief ?? null} related={detail.related ?? []} />
-                      <Argue quest={detail.quest} items={items} />
+                      <BriefBox brief={detail.brief ?? null} quest={{ ...detail.quest, positions: text.positions ?? detail.quest.positions }} />
+                      <EvidenceMapBox quest={{ ...detail.quest, positions: text.positions ?? detail.quest.positions }} items={items} brief={detail.brief?.brief ?? null} related={detail.related ?? []} />
+                      <Argue quest={{ ...detail.quest, positions: text.positions ?? detail.quest.positions }} items={items} />
                     </>
                   )}
                   <p className="text-xs text-slate-500">
@@ -287,7 +309,8 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
                     ) : null}
                   </p>
                 </>
-              )}
+                );
+              })()}
             </div>
           )}
         </div>

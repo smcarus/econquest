@@ -1,0 +1,12 @@
+{
+  "quest": "tur-taylor-exercise-replication",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "Reproduzca la clave de respuesta de la regla de Taylor para Turquía",
+  "summary": "Herramientas > Ejercicios plantea una pregunta de regla de Taylor con una respuesta resuelta a partir de las series de la aplicación. Reproduzca la clave de respuesta para Turquía en la fecha que elija y revise los cálculos de la aplicación.",
+  "knownLimits": [
+    "El ejercicio no tiene término de brecha del producto cuando no se publica ninguno; indique los datos que usó."
+  ],
+  "target": "Ejercicios, pregunta de regla de Taylor para Turquía en un mes indicado: el tipo que da la regla y sus datos."
+}
