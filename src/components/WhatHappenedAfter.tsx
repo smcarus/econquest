@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { History } from 'lucide-react';
-import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Area, CartesianGrid, ComposedChart, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import type { PooledResult } from '../utils/synthPooled';
 import { SYNTH_OUTCOMES, SYNTH_SOURCES, type SynthOutcome, type SynthResult } from '../utils/syntheticControl';
 import type { EventKind, PolicyEvent } from '../utils/policyEvents';
 import { frameOf, type PolicyReview, type ReviewStep, type StepState } from '../utils/policyReview';
@@ -59,6 +60,8 @@ export const WhatHappenedAfter: React.FC<{
   const [own, setOwn] = useState({ year: '', label: '', sourceUrl: '' });
   const [ownNote, setOwnNote] = useState('');
   const [keepNote, setKeepNote] = useState('');
+  const [pooled, setPooled] = useState<PooledResult | null>(null);
+  const [pooledBusy, setPooledBusy] = useState(false);
   const base = `/api/reviews/${encodeURIComponent(review.id)}`;
   const year = Number(frameOf(review)?.asOf.slice(0, 4));
 
@@ -135,6 +138,18 @@ export const WhatHappenedAfter: React.FC<{
     }
   };
   const kept = review.whatHappened ?? [];
+  // SC6: every country that made this kind of change, each against its own twin.
+  const runPooled = async (kind: string) => {
+    setPooledBusy(true);
+    setError('');
+    try {
+      setPooled(await getJson<PooledResult>(`${base}/what-happened/pooled?kind=${encodeURIComponent(kind)}&outcome=${outcome}`));
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setPooledBusy(false);
+    }
+  };
 
   const current = events?.events.find((e) => e.id === picked);
   const chart = answer && !answer.missing ? answer.path.map((p) => ({ k: p.k, year: p.year, actual: p.actual, twin: p.twin })) : [];
@@ -158,6 +173,7 @@ export const WhatHappenedAfter: React.FC<{
                 onChange={(e) => {
                   setPicked(e.target.value);
                   setAnswer(null);
+                  setPooled(null);
                   const ev = events.events.find((x) => x.id === e.target.value);
                   if (ev) setOutcome(events.defaultOutcome[ev.kind]);
                 }}
@@ -198,7 +214,7 @@ export const WhatHappenedAfter: React.FC<{
               <div className="flex flex-wrap items-end gap-2">
                 <label className="text-xs">
                   <span className="ui-label">{t('outcome')}</span>
-                  <select className="ui-input mt-1" value={outcome} onChange={(e) => { setOutcome(e.target.value as SynthOutcome); setAnswer(null); }}>
+                  <select className="ui-input mt-1" value={outcome} onChange={(e) => { setOutcome(e.target.value as SynthOutcome); setAnswer(null); setPooled(null); }}>
                     {SYNTH_OUTCOMES.map((o) => (
                       <option key={o} value={o}>{figure(o)}</option>
                     ))}
@@ -272,6 +288,57 @@ export const WhatHappenedAfter: React.FC<{
             <CiteButton kind="chart" title={t('caption', { figure: figure(answer.outcome), country: countryName })} sources={[SYNTH_SOURCES[answer.outcome]]} asOf={answer.historyPulledAt?.slice(0, 10)} />
           </div>
           {keepNote && <p className="text-xs">{keepNote}</p>}
+        </div>
+      )}
+      {current && current.kind !== 'own' && (
+        <div className="space-y-2" data-synth-pooled="true">
+          {!pooled && (
+            <button type="button" className="ui-btn ui-btn-ghost text-xs" disabled={pooledBusy} onClick={() => runPooled(current.kind)}>
+              {pooledBusy ? t('pooledRunning') : t('pooledRun')}
+            </button>
+          )}
+          {pooled && (
+            <>
+              <p className="ui-label">{t('pooledTitle')}</p>
+              {pooled.years.length ? (
+                <>
+                  <p className="text-xs text-slate-700 dark:text-slate-200">
+                    {t('pooledLead', { used: pooled.used, events: pooled.events, year: Number.isFinite(year) ? year : '', countries: pooled.countries })}
+                    {pooled.tried < pooled.events ? ` ${t('pooledCapped', { tried: pooled.tried })}` : ''}
+                  </p>
+                  <div className="h-48" role="img" aria-label={t('pooledAria', { figure: figure(pooled.outcome) })}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={pooled.years.map((y) => ({ k: y.k, median: y.median, band: [y.p10, y.p90] }))} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-slate-200 dark:text-slate-700" />
+                        <XAxis dataKey="k" tick={{ fontSize: 12 }} />
+                        <YAxis tick={{ fontSize: 12 }} width={44} />
+                        <ReferenceLine x={0} stroke="#94a3b8" strokeDasharray="4 2" />
+                        <ReferenceLine y={0} stroke="#94a3b8" />
+                        <Tooltip formatter={(v: unknown) => (Array.isArray(v) ? v.map((x) => f2(x as number)).join(' to ') : f2(v as number))} />
+                        <Legend wrapperStyle={{ fontSize: 12 }} />
+                        <Area dataKey="band" name={t('pooledBand')} stroke="none" fill="#94a3b8" fillOpacity={0.3} isAnimationActive={false} />
+                        <Line dataKey="median" name={t('pooledMedian')} stroke="#2563eb" strokeWidth={2} dot={false} isAnimationActive={false} />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <ChartNumbers
+                    caption={t('pooledCaption', { figure: figure(pooled.outcome) })}
+                    columns={[t('colK'), t('colN'), t('colMedian'), t('colP10'), t('colP90')]}
+                    rows={pooled.years.map((y) => [y.k, y.n, f2(y.median), f2(y.p10), f2(y.p90)])}
+                    newestFirst={false}
+                  />
+                </>
+              ) : (
+                <p className="text-xs text-amber-700 dark:text-amber-400">{t('pooledNone')}</p>
+              )}
+              {Object.keys(pooled.missing).length > 0 && (
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {t('pooledMissing', { list: Object.entries(pooled.missing).map(([r, n]) => `${t(`mr_${r}` as 'mr_poor_fit')} ${n}`).join(', ') })}
+                </p>
+              )}
+              <p className="text-xs text-slate-500 dark:text-slate-400">{t('pooledNote')}</p>
+            </>
+          )}
         </div>
       )}
       {kept.length > 0 && (
