@@ -114,7 +114,9 @@ l'application. Si l'application ne connaît pas un chiffre, elle le dit au lieu 
 
 Les données payantes (par exemple les prix de CDS, LSEG, EPFR, les notations ou le consensus des
 analystes) ne sont utilisées qu'à partir de votre propre compte ou fichier, derrière un interrupteur dans
-les Réglages, et ne sont jamais transmises dans les téléchargements ou les copies partagées.
+les Réglages, et ne sont jamais transmises dans les téléchargements ou les copies partagées. Si vous
+payez déjà Macrobond, Trading Economics ou EODHD, vous pouvez le connecter avec votre propre clé et
+choisir les séries voulues ; ces chiffres restent sur votre ordinateur.
 
 ---
 

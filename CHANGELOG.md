@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Docs for the Trading Economics and EODHD connections (#724): user manual (Your subscriptions:
+  three services, one at a time, what each key is, example codes, CDS refused, check your own
+  agreement); guide in four languages (Your data subscription in the menu list); README and features
+  in four languages (paid data line and where the data comes from, done item 26); privacy page (what
+  goes to the service you switch on); data API (names the three services); How it works and
+  methodology 1.11 (section 3.5); roadmap rows.
 - README in four languages: a short *Why use EconQuest* section after *Why it exists* (traceable
   figures, tests published with their failures, AI never supplies figures, lower-income coverage, policy
   review to brief, on your own computer, four languages and help levels) with what it does not do.

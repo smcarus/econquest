@@ -1,6 +1,6 @@
 # How EconQuest works, in plain words
 
-**Version 1.10, 27 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
+**Version 1.11, 27 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
 validated advice.
 
 This guide explains, without jargon, where EconQuest's figures come from, what its AI does and does
@@ -132,8 +132,9 @@ can be withdrawn. Every comment and link is written in the log.
   credit ratings, business surveys (PMIs), government bond auction results and economists' consensus
   forecasts. Credit default swap prices are hidden for the same reason; a bond spread stands in and is
   labelled as one.
-- **Only free and open sources by default.** If you have a paid data account of your own, you can
-  switch it on, but it is off unless you do.
+- **Only free and open sources by default.** If you already pay for a data service (Macrobond,
+  Trading Economics or EODHD), you can switch it on with your own key and pick the series you want,
+  but it is off unless you do. Those figures stay on your computer and are never sent to the AI.
 - **Old figures are labelled with their date.** If a source fails one week, the last good figure from that same
   source is kept and labelled with the date it came from. Every download is saved by day, so you can
   see exactly what the app showed on any past date. A saved answer older than its limit (two weeks
@@ -659,5 +660,5 @@ other.
 
 ---
 
-*How EconQuest works, version 1.10 (27 November 2026). Text licensed under CC BY 4.0: you may share and
+*How EconQuest works, version 1.11 (27 November 2026). Text licensed under CC BY 4.0: you may share and
 adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*

@@ -1,6 +1,6 @@
 # EconQuest Terminal: Methodology
 
-**Version 1.10, 27 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of the main branch on 27 November 2026 (after release 0.3.0, through pull request #721).
+**Version 1.11, 27 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of the main branch on 27 November 2026 (after release 0.3.0, through pull request #724).
 Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not validated advice.
 
 This document sets out how the EconQuest Terminal sources its data, how its council of agents
@@ -276,10 +276,23 @@ only, labelled "link not checked", and no figure from those pages enters the ana
 
 ### 3.5 Paid data behind the user's own account
 
-Licensed data (CDS today; Bloomberg, fund-flow and consensus feeds are planned) is read only from the
-user's own file or own account, set under Settings and off by default. Keys are stored on the user's
-computer only, sent only to their own source, masked on screen, and kept out of the audit log,
-backups and source checks. No licensed data is redistributed with the software.
+Licensed data is read only from the user's own file or own account, set under Settings and off by
+default. Keys are stored on the user's computer only, sent only to their own source, masked on
+screen, and kept out of the audit log, backups and source checks. No licensed data is redistributed
+with the software.
+
+**The data subscription** (Settings > Your subscriptions) connects one paid data service at a time:
+Macrobond (Web API licence), Trading Economics (any paid plan's API key) or EODHD (API token; its
+personal plans are for the user's own non-commercial use). Haver and Moody's are planned. The app
+ships no vendor codes or figures: the user maps each series they want (the vendor's code, the
+country, what it is, its unit and frequency). Mapped series are fetched in the daily run or with
+*Fetch now* and shown under History labelled "Your subscription: <vendor>". Their figures stay on
+the user's computer: downloads, backups, Sharing mode, answers to scripts and the public copy say
+"Withheld: your subscription data", and the council's AI model is never sent them. A mapping whose
+code or label names a CDS is refused for every vendor while CDS is hidden. The connection check reads
+the first mapped series and reports only how many values came back and their first and last dates.
+None of the three connections has yet been tried against a live key. Each vendor's terms are in
+[DATA_LICENCES.md](./DATA_LICENCES.md) and the request details in [DATA_SOURCES.md](./DATA_SOURCES.md).
 
 ### 3.6 Real-time data and release lags
 
@@ -1282,8 +1295,9 @@ Per-model references are given in the [Methods note](./METHODS.md).
 | 1.8 | 26 November 2026 | The World Bank country models (5.6): the public MFMod models for six countries run on the user's computer, their stored baseline, one-shock runs shown as differences, and the pre-registered reproduction check, which passed on the developer's computer the same day; the model files as a source (3.1), the check in reproducibility (13) and their limits (14) |
 | 1.9 | 26 November 2026 | Builds that can be checked (13): pinned build steps, software parts lists, checksums and signed build proof on each release, code scanning; where problem reports go until the public repository opens (1.1) |
 | 1.10 | 27 November 2026 | What happened after (5.7): a country against a synthetic twin after a change it made, the changes found by rules, files and the user, placebo and other checks, the pooled view, the brief section and the pre-registered false-alarm test; references for synthetic control and devaluations |
+| 1.11 | 27 November 2026 | Paid data behind the user's own account (3.5): the data subscription with Macrobond, Trading Economics and EODHD, each off by default and used only with the user's own key; figures kept on the user's computer; CDS mappings refused while CDS is hidden |
 
 ---
 
-*EconQuest Terminal methodology, version 1.10 (27 November 2026). Text licensed under CC BY 4.0: you may
+*EconQuest Terminal methodology, version 1.11 (27 November 2026). Text licensed under CC BY 4.0: you may
 share and adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*

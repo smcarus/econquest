@@ -510,6 +510,11 @@ El **Menú** reúne todo lo que no es una página, en tres grupos después de **
 - **Sus datos**: cargue sus propias series desde un archivo CSV.
 - **Buscar datos**: una búsqueda en los catálogos gratuitos (DBnomics, el FMI, el Banco Mundial y
   Eurostat), cada resultado con su proveedor y un enlace.
+- **Configuración > Sus suscripciones > Su suscripción de datos**: si usted ya paga Macrobond, Trading
+  Economics o EODHD, actívela, escriba su propia clave y asigne las series que quiera (el código del
+  servicio, el país, qué es). Aparecen en Historial y datos con la etiqueta «Su suscripción» y nunca salen de
+  su ordenador: las descargas, las copias de seguridad y las copias compartidas dicen «Retenido».
+  Desactivada por defecto.
 - **Configuración > Sus suscripciones > Precios de su bróker**: precios en vivo de los contratos que
   usted indique, de su propia cuenta de Interactive Brokers, a través del IBKR Client Portal Gateway
   que usted ejecuta e inicia sesión en su equipo. Desactivado por defecto; solo en pantalla y nunca

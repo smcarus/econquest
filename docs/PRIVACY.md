@@ -24,6 +24,7 @@ no adverts and no tracking. This page says what stays on your computer, what lea
 | Alerts | The webhook or email server you set in Menu > Settings > Server alerts | Only if you set one | The alert text. Keys and passwords are blanked from every message |
 | Locked audit copies | The storage bucket you set in `AUDIT_BUCKET_URL` | Only if you set one | Each audit log entry |
 | Sign-in | The sign-in provider you set (`OIDC_ISSUER`) | Only if you set one, when someone signs in | What that provider needs to sign the person in |
+| Your data subscription | Macrobond, Trading Economics or EODHD, the one you switch on | Only if you switch it on, in the daily run or when you press *Fetch now* | Your own key or sign-in details and the codes of the series you mapped. The figures come back to this computer and are never sent on |
 | Broker prices | Your own IBKR gateway on this computer | Only if you set one | Requests for the contracts you list; it never leaves the computer |
 | Flags and problem reports | GitHub | Only when you open the ready-made issue link (the Flag button, Report this problem on an error note, or Menu > Report a problem) and send it yourself | The text you see before sending. A figure from a paid subscription is left out; error details hold the version, the screen, the error and the page path, never figures or saved data |
 

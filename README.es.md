@@ -113,7 +113,9 @@ aplicación. Si la aplicación no conoce una cifra, lo dice en lugar de adivinar
 
 Los datos de pago (por ejemplo precios de CDS, LSEG, EPFR, calificaciones crediticias o consenso de
 analistas) solo se usan desde su propia cuenta o su propio archivo, tras un interruptor en Configuración,
-y nunca se transmiten en descargas ni copias compartidas.
+y nunca se transmiten en descargas ni copias compartidas. Si usted ya paga Macrobond, Trading Economics
+o EODHD, puede conectarlo con su propia clave y elegir las series que quiera; esas cifras se quedan en
+su ordenador.
 
 ---
 
