@@ -10,7 +10,7 @@
  * running). Each step still saves its own results as before. Keys never reach the report.
  *
  *   npm run mac:validate                      every step
- *   npm run mac:validate -- --skip council    leave steps out (data, backtest, weo, forecast, signals, models, council)
+ *   npm run mac:validate -- --skip council    leave steps out (data, backtest, weo, forecast, signals, models, synth, council)
  *   npm run mac:validate -- --only data,signals
  */
 import { spawn, execFileSync } from 'node:child_process';

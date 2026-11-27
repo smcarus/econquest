@@ -41,6 +41,7 @@
     "record:public": "tsx scripts/public-feeds.ts",
     "backtest": "tsx scripts/backtest.ts",
     "mfmod:validate": "tsx scripts/mfmod-validate.ts",
+    "synth:validate": "tsx scripts/synth-validate.ts",
     "feedback:export": "tsx scripts/feedback-export.ts",
     "council:regress": "tsx scripts/council-regress.ts",
     "council:record": "tsx scripts/council-record.ts",
