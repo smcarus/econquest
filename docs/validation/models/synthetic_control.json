@@ -1,0 +1,24 @@
+{
+  "id": "synthetic_control",
+  "version": 1,
+  "registeredOn": "2026-11-27",
+  "registeredBy": "Sam (owner); registered before any run",
+  "hypothesis": "On country-years where the rules found no event (no primary balance move of 1.5% of GDP or more and no large devaluation in that year or the year before), the placebo p-value of What happened after is at or below 0.10 in about 10% of cases: the method rarely finds an effect where, by the rules, nothing happened.",
+  "method": "synth-v1 (src/utils/syntheticControl.ts): twin from the ten years before, penalty 0.1, placebo in space over every donor; pseudo-events drawn by src/utils/synthCheck.ts",
+  "params": {
+    "seed": 20261127,
+    "perOutcome": 100,
+    "outcomes": ["cpi_imf", "gdp_growth", "debt_gdp"],
+    "fromYear": 1990,
+    "alpha": 0.1,
+    "jumpSd": 1,
+    "maxDrawsPerOutcome": 2000
+  },
+  "passMark": { "minFalseAlarm": 0.05, "maxFalseAlarm": 0.15, "minRunsPerOutcome": 100 },
+  "knownLimits": [
+    "Pseudo-events are years with no event found by the two data rules; other changes (laws, programmes, shocks) may still have happened in them, which would raise the false-alarm rate, not lower it.",
+    "Yearly figures only; the fit uses today's figures, not the figures as first published.",
+    "Power (a made-up jump of one standard deviation from the change year) is reported, not a pass condition: it depends on how noisy each country's figures are.",
+    "Draws whose result is Missing (too few years or donors, outside the range, loose fit) are counted and listed, not used; the test says nothing about cases the screen would not show."
+  ]
+}

@@ -55,6 +55,12 @@ export const VALIDATE_STEPS: ValidateStep[] = [
     hint: 'Needs the models service (MFMOD_URL; docs/INSTALL.md). With it off the step says so: not a verdict. A FAILED verdict is a result; the check is never re-tuned after a fail.',
   },
   {
+    id: 'synth',
+    title: 'What happened after, false-alarm test (synth:validate)',
+    npm: ['run', 'synth:validate'],
+    hint: 'Reads the saved yearly histories in data/history/. Too few saved histories is not a verdict. A FAILED verdict is a result; the method is never re-tuned after a fail.',
+  },
+  {
     id: 'council',
     title: 'Council regression on the real model (council:regress)',
     npm: ['run', 'council:regress'],

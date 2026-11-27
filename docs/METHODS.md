@@ -71,6 +71,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Costed fiscal options | Research | Description, not a tested signal | None |
 | Scenario Agent (what-if questions) | Research | Description, not a tested signal | None |
 | World Bank country models (MFMod, public versions) | Research | Description, not a tested signal | None |
+| What happened after (synthetic control) | Research | Not validated | None |
 | Quant desk (outside research tools, Council chat only) | Research | Description, not a tested signal | None |
 | Remittances | Research | Description, not a tested signal | None |
 | Financial inclusion | Research | Description, not a tested signal | None |
@@ -995,6 +996,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: the World Bank model's answer to a stated shock. A pre-registered reproduction check (docs/validation/models/mfmod_reproduction.json, npm run mfmod:validate) tests that each model, solved again, gives back its stored values (within 1e-5) and that the World Bank manual's Pakistan oil example gives the manual's 64 published figures (within 0.006 points). It checks the app runs the models as the World Bank does, not how good the models are. Passed on the owner's computer on 26 November 2026 (largest differences 3.42e-7 and 0.0050 points; docs/validation/models/results.json).
 - **Limits:** The public model files are teaching copies with old data (Pakistan's model solves from 2016), so levels are not today's economy and only differences are shown. One shock at a time. Bolivia, Nepal and Croatia have no policy rate rule (peg, peg to the Indian rupee, euro). Off unless the models service is set up (MFMOD_URL).
 - **Code:** `models/service.py, src/utils/mfmodShock.ts, src/utils/mfmodBaseline.ts, src/server/mfmod.ts, src/utils/mfmodCheck.ts, scripts/mfmod-validate.ts`
+
+### What happened after (synthetic control)
+
+- **Says:** For a country that made a change in some year (a big budget swing, a devaluation, a new exchange rate regime or fiscal rule, or an event you enter), how its figures moved afterwards compared with a "twin": a mix of other countries that matched it in the ten years before and did not make that change.
+- **Rule:** Synthetic control (Abadie, Diamond and Hainmueller 2010) on one yearly outcome: non-negative weights summing to 1 that best match the ten years before, with the Abadie and L'Hour (2021) penalty (0.1) so there is one answer; gap = country minus twin for the change year and up to five more. Placebo in space over every donor (p-value = share with an after/before ratio at least the country's), leave-one-out, and a placebo three years early. Missing when fewer than 8 years before or 10 donors, the country lies outside every donor's range, or the fit before is looser than half the country's own standard deviation.
+- **Reads:** IMF WEO and Fiscal Monitor, World Bank (saved yearly histories); events from the IMF primary balance and World Bank exchange rate (rules), your IRR, IMF Fiscal Rules and Chinn-Ito files, and your own entries
+- **Shows in:** Policy review > Precedents step (What happened after)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered false-alarm test (docs/validation/models/synthetic_control.json, npm run synth:validate): on 100 country-years per outcome (inflation, growth, debt) where the rules found no event, the placebo p-value is at or below 0.10 in 5% to 15% of cases. Power with a made-up jump of one standard deviation is reported. Not run yet: it needs the saved yearly histories on a computer that reaches the IMF and World Bank.
+- **Limits:** Yearly figures only; one country against a constructed comparison, not proof that the same change would work elsewhere. Changes that spread to neighbours bias the twin. Small states often read Missing. Events found by a rule are not checked by a historian.
+- **Code:** `src/utils/syntheticControl.ts, src/utils/policyEvents.ts, src/utils/synthCheck.ts, scripts/synth-validate.ts`
 
 ### Quant desk (outside research tools, Council chat only)
 

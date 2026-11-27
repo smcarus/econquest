@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- What happened after (SC3): a pre-registered false-alarm test,
+  `docs/validation/models/synthetic_control.json` (hash in the models manifest), run by
+  `npm run synth:validate` and by `npm run mac:validate` (step synth). On 100 country-years per
+  outcome (inflation, growth, debt) where the rules found no event, the placebo p-value must be at or
+  below 0.10 in 5% to 15% of cases; power with a made-up jump of one standard deviation is reported.
+  Results go to `data/local/validation/synthetic-control-<time>.json`. A Models & validation entry
+  (Not validated until the test passes).
 - What happened after (SC2): `src/utils/policyEvents.ts` lists the years a country made a change,
   each labelled with where it came from. Found by a rule on the figures: the primary balance moving
   1.5% of GDP or more in a year, and large devaluations (Frankel and Rose 1996). From files you saved:
