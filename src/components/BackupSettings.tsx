@@ -18,7 +18,7 @@ const when = (iso: string, t: MenuT) => {
 function describe(s: BackupSummary, t: MenuT): string {
   const counts: Array<[keyof BackupSummary, number]> = [
     ['briefs', s.briefs], ['docs', s.docs], ['councilDocs', s.councilDocs], ['notebooks', s.notebooks],
-    ['episodes', s.episodes], ['watchRules', s.watchRules], ['reviews', s.reviews ?? 0], ['snapshots', s.snapshots ?? 0],
+    ['episodes', s.episodes], ['watchRules', s.watchRules], ['reviews', s.reviews ?? 0], ['snapshots', s.snapshots ?? 0], ['policyEvents', s.policyEvents ?? 0],
   ];
   const parts = counts.filter(([, n]) => n).map(([k, n]) => t(`bk_${k}${n === 1 ? '1' : 'N'}` as Parameters<MenuT>[0], { n }));
   const WS: Record<string, Parameters<MenuT>[0]> = { holdings: 'bk_ws_holdings', watchlists: 'bk_ws_watchlists', 'countries you added': 'bk_ws_added', 'AI model settings': 'bk_ws_ai' };

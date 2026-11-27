@@ -8,6 +8,8 @@
  *  - holdings, watchlists, countries you added and AI model settings: data/local/workspace.json
  *  - policy reviews: data/local/reviews.json (a backup made before reviews existed leaves the
  *    reviews on this computer as they are when restored)
+ *  - your own changes for What happened after: data/local/policy-events.json (older backups leave
+ *    the ones on this computer as they are)
  *
  * It never holds your API keys (data/local/settings.json is left out), nor anything from your paid
  * data subscription (data/local/paid/: figures from it never leave this computer, data plan G4), and any key, secret or
@@ -22,6 +24,7 @@ import { parseRules, type WatchRule } from './watchRules';
 import type { PolicyReview } from './policyReview';
 import { isSnapshotId, type AnswerSnapshot } from './answerSnapshot';
 import { EXPORT_NOTICE } from './disclaimer';
+import type { OwnEvent } from './policyEvents';
 
 export const BACKUP_FORMAT = 'econquest-backup';
 export const BACKUP_VERSION = 1;
@@ -42,6 +45,8 @@ export interface BackupContents {
   reviews?: PolicyReview[];
   /** Council answer snapshots (data/local/snapshots/), newest first; left out by older backups. */
   snapshots?: AnswerSnapshot[];
+  /** Your own changes for What happened after; left out by older backups. */
+  policyEvents?: OwnEvent[];
 }
 
 export interface BackupFile {
@@ -63,6 +68,7 @@ export interface BackupSummary {
   watchRules: number;
   reviews: number;
   snapshots: number;
+  policyEvents: number;
   /** Labels of the workspace items present, e.g. "holdings". */
   workspace: string[];
 }
@@ -125,6 +131,14 @@ export function cleanReviews(v: unknown): PolicyReview[] {
   return (Array.isArray(v) ? v : []).filter((r): r is PolicyReview => Boolean(r && typeof r.id === 'string' && r.id && typeof r.title === 'string' && r.steps && typeof r.steps === 'object' && Array.isArray(r.runs))).slice(0, 100);
 }
 
+/** Your own changes that have the fields the app needs; anything else is dropped. */
+export function cleanOwnEvents(v: unknown): OwnEvent[] {
+  return (Array.isArray(v) ? v : [])
+    .filter((e): e is OwnEvent => Boolean(e && typeof e.id === 'string' && /^e\d+$/.test(e.id) && /^[A-Z]{3}$/.test(e.iso3) && Number.isInteger(e.year) && typeof e.label === 'string' && typeof e.sourceUrl === 'string' && /^https?:\/\//i.test(e.sourceUrl)))
+    .map((e) => ({ id: e.id, iso3: e.iso3, year: e.year, label: e.label.slice(0, 160), sourceUrl: e.sourceUrl, savedAt: typeof e.savedAt === 'string' ? e.savedAt.slice(0, 40) : '' }))
+    .slice(0, 1000);
+}
+
 /** The newest answer snapshots a backup keeps. */
 export const MAX_BACKUP_SNAPSHOTS = 300;
 
@@ -150,7 +164,7 @@ function cleanWorkspace(values: unknown): Record<string, string> {
   return out;
 }
 
-export function buildBackup(parts: { research: ResearchLibrary; watchRules: WatchRule[]; workspace: Record<string, string>; reviews?: PolicyReview[]; snapshots?: AnswerSnapshot[] }, now = new Date()): BackupFile {
+export function buildBackup(parts: { research: ResearchLibrary; watchRules: WatchRule[]; workspace: Record<string, string>; reviews?: PolicyReview[]; snapshots?: AnswerSnapshot[]; policyEvents?: OwnEvent[] }, now = new Date()): BackupFile {
   return {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
@@ -162,6 +176,7 @@ export function buildBackup(parts: { research: ResearchLibrary; watchRules: Watc
       workspace: cleanWorkspace(parts.workspace),
       reviews: cleanReviews(parts.reviews),
       snapshots: cleanSnapshots(parts.snapshots),
+      policyEvents: cleanOwnEvents(parts.policyEvents),
     },
   };
 }
@@ -178,6 +193,7 @@ export function summariseBackup(b: BackupFile): BackupSummary {
     watchRules: b.contents.watchRules.length,
     reviews: b.contents.reviews?.length ?? 0,
     snapshots: b.contents.snapshots?.length ?? 0,
+    policyEvents: b.contents.policyEvents?.length ?? 0,
     workspace: Object.keys(BACKUP_WORKSPACE_KEYS)
       .filter((k) => k in b.contents.workspace)
       .map((k) => BACKUP_WORKSPACE_KEYS[k]),
@@ -211,6 +227,7 @@ export function parseBackup(raw: unknown): { ok: true; backup: BackupFile; summa
       workspace: cleanWorkspace(c.workspace),
       ...(Array.isArray(c.reviews) ? { reviews: cleanReviews(c.reviews) } : {}),
       ...(Array.isArray(c.snapshots) ? { snapshots: cleanSnapshots(c.snapshots) } : {}),
+      ...(Array.isArray(c.policyEvents) ? { policyEvents: cleanOwnEvents(c.policyEvents) } : {}),
     },
   };
   return { ok: true, backup, summary: summariseBackup(backup) };
@@ -233,6 +250,7 @@ export function describeBackup(s: BackupSummary): string {
     ...n(s.watchRules, 'watch alert', 'watch alerts'),
     ...n(s.reviews ?? 0, 'policy review', 'policy reviews'),
     ...n(s.snapshots ?? 0, 'answer snapshot', 'answer snapshots'),
+    ...n(s.policyEvents ?? 0, 'change you added', 'changes you added'),
   ];
   if (s.workspace.length) parts.push(s.workspace.length === 1 ? s.workspace[0] : `${s.workspace.slice(0, -1).join(', ')} and ${s.workspace[s.workspace.length - 1]}`);
   return parts.length ? parts.join(', ') : 'nothing saved yet';

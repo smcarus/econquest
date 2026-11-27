@@ -260,6 +260,7 @@ import { countrySanctions, sanctionsSentence, searchSanctions, SANCTIONS_METHOD 
 import { sanctionsData, sanctionsDir } from './src/utils/sanctionsStore.ts';
 import { chinnItoData } from './src/utils/chinnItoStore.ts';
 import { fxRegimeData } from './src/utils/fxRegimeStore.ts';
+import { policyEventFile } from './src/utils/policyEventStore';
 import { OidcClient } from './src/server/oidcClient';
 import { authorizationUrl, newPending, oidcConfigFromEnv, oidcCookie, oidcDecision, tokenRequest, usernameFromEmail, verifiedEmail, OIDC_COOKIE, OIDC_PENDING_MS, type OidcError } from './src/utils/oidc';
 import { chinnItoReading } from './src/utils/chinnIto.ts';
@@ -3850,7 +3851,7 @@ async function startServer() {
   // watchlists and AI settings in one file, never API keys. See src/utils/backup.ts. Restore takes
   // a larger body than the other routes (a library with documents), so it parses its own.
   // A backup holds the team library and the workspace of the account making it (admins only).
-  const backupFilesFor = (res: express.Response) => ({ research: RESEARCH_FILE, watchRules: WATCH_RULES_FILE, workspace: workspaceFor(res), reviews: REVIEW_FILE, snapshots: ANSWER_SNAPSHOT_DIR });
+  const backupFilesFor = (res: express.Response) => ({ research: RESEARCH_FILE, watchRules: WATCH_RULES_FILE, workspace: workspaceFor(res), reviews: REVIEW_FILE, snapshots: ANSWER_SNAPSHOT_DIR, policyEvents: policyEventFile(DATA_DIR) });
   app.get('/api/backup', (_req, res) => {
     res.json({ summary: summariseBackup(currentBackup(backupFilesFor(res))), fileName: backupFileName() });
   });

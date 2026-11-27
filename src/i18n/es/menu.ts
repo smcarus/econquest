@@ -205,7 +205,7 @@ export const MENU_ES: Partial<Record<Keys, string>> = {
   ai_advancedLink: 'Configuración avanzada de IA',
   // Settings > Backup
   bk_unknownDate: 'una fecha desconocida',
-  bk_intro: 'Un solo archivo con su investigación guardada (resúmenes, documentos, cuadernos, episodios didácticos), revisiones de políticas, instantáneas de respuestas del consejo, alertas de vigilancia, posiciones, listas de seguimiento, países que añadió y ajustes del modelo de IA. Sus claves de API nunca van en él. Úselo para pasar a otro ordenador o para guardar una copia.',
+  bk_intro: 'Un solo archivo con su investigación guardada (resúmenes, documentos, cuadernos, episodios didácticos), revisiones de políticas, instantáneas de respuestas del consejo, cambios que añadió en Qué pasó después, alertas de vigilancia, posiciones, listas de seguimiento, países que añadió y ajustes del modelo de IA. Sus claves de API nunca van en él. Úselo para pasar a otro ordenador o para guardar una copia.',
   bk_download: 'Descargar una copia de seguridad',
   bk_now: 'En este ordenador ahora: {list}.',
   bk_downloadBtn: 'Descargar la copia',
@@ -234,6 +234,8 @@ export const MENU_ES: Partial<Record<Keys, string>> = {
   bk_reviewsN: '{n} revisiones de políticas',
   bk_snapshots1: '{n} instantánea de respuesta',
   bk_snapshotsN: '{n} instantáneas de respuestas',
+  bk_policyEvents1: '{n} cambio añadido por usted',
+  bk_policyEventsN: '{n} cambios añadidos por usted',
   bk_ws_holdings: 'posiciones',
   bk_ws_watchlists: 'listas de seguimiento',
   bk_ws_added: 'países que añadió',
