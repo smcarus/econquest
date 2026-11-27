@@ -116,6 +116,8 @@ connect it with your own key and pick the series you want; those figures stay on
 - **Test a policy choice** in Policy review, from the problem to a memo and a one-page brief for
   non-economists, and see how countries went after making the same kind of change.
 - **Write a report** as Markdown or PDF, with every source and date.
+- **See what it means for you**: your own inflation rate from what you spend, and what a rate change
+  does to your loan payment, kept in your browser only.
 - **Learn as you go** with four help levels, a plain-language glossary and five worked examples.
 - **Use the figures in R, Python, Stata or Excel**, or connect another program to the app.
 

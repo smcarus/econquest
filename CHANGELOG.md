@@ -5,6 +5,21 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- What this means for you (Menu > Learn): your own inflation rate from how your spending splits over
+  the official price groups, against headline, and what a rate change does to your loan payment.
+  Price groups from Eurostat HICP for EU members (COICOP 2018, 13 groups, else the older 12, with
+  item weights in the same classification only; `src/utils/priceGroups.ts`), the IMF CPI dataset's
+  groups matched by name and read only with `IMF_CPI_GROUPS=on` after `npm run check:imf`
+  (`src/utils/imfCpiGroups.ts`), otherwise food, energy and the rest from the inflation drivers
+  sources. Your rate (`src/utils/personalInflation.ts`) for the newest month every group you spend
+  in has, each group's push, the official basket worked out the same way; a spent-in group with no
+  figures reads Missing. Loan payments (`src/utils/loanPayment.ts`): annuity and interest-only,
+  fixed or variable, your own rate change, and for a variable loan the central bank's last move (BIS,
+  else the IMF monthly series) with its date, or Missing. `GET /api/your-prices/:iso3`; new
+  check:data row `eurostat_hicp_groups`. Entries kept only in the browser
+  (`econquest.yourPrices.v1`), never sent, never in Backup or For people. Four languages; new UI
+  journey. Docs: user manual, guide and features in four languages, How it works, methodology 1.12
+  (section 5.8), data sources, privacy, `.env.example`, roadmap.
 - Quests (still switched off): translated Quest text (roadmap QL1, part 1). A Quest's title, question,
   known limits and positions can be read in Spanish, French and Brazilian Portuguese, from separate
   files in `quests/translations/` so an approved Quest's fingerprint never changes. `npm run

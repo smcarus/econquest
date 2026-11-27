@@ -37,6 +37,7 @@ qu'en anglais.
 | Rédiger un rapport | **Rapports** (onglets : Rédiger une note, Documents du conseil, Carnets, Enseignement) | Notes pays et émetteur, évaluations de soutenabilité, revues de portefeuille et synthèses du conseil, en Markdown ou PDF avec sources et dates |
 | Rédiger un document de travail | Graphiques du **Chat du conseil**, **Rapports > Carnets** | Épinglez un graphique dans un carnet de recherche avec la date jusqu'à laquelle vont ses chiffres et une empreinte des chiffres ; téléchargez le carnet en un seul zip (brouillon, données, scripts Python, R et Stata, fichier de citation) ; plus tard, *Vérifier que cela tient* dit si chaque chiffre est identique, révisé ou disparu |
 | Apprendre en chemin | Boutons de l'en-tête, **Menu > Manuel d'utilisation**, **Menu > Exemples guidés** | Quatre niveaux d'aide (Aide désactivée, Aide essentielle, Aide complète, Expert), un glossaire en langage clair, cinq cas guidés, des séquences pédagogiques et un mode examen |
+| Voir ce que cela signifie pour vous | **Menu > Ce que cela signifie pour vous** | Votre propre taux d'inflation selon la répartition de vos dépenses entre les groupes de prix officiels (en partant des pondérations officielles du panier quand la source les publie), face au taux d'ensemble, et l'effet d'une variation des taux sur la mensualité de votre prêt, y compris le dernier mouvement de la banque centrale pour un prêt à taux variable. Ce que vous saisissez reste uniquement dans votre navigateur |
 | Utiliser vos propres données et tests | **Menu > Vos données**, **Menu > Modèles et validation** | Chargez vos propres séries CSV ; enregistrez votre propre test de signal ou de modèle selon les mêmes règles strictes que ceux de l'application |
 | Utiliser les chiffres dans R, Python ou Stata | [docs/DATA_API.md](./DATA_API.md) (en anglais) | Les mêmes séries, panels et tableaux qu'à l'écran, avec source et date pour chaque valeur |
 | Connecter un système de portefeuille | **Menu > Réglages > Jetons d’API**, [docs/DATA_API.md](./DATA_API.md) (en anglais) | Un autre programme lit des instantanés de pays et des événements, envoie ses positions et lance des chocs et des rejeux de crises passées sur son portefeuille, chacun avec un jeton limité à ce que vous cochez. Les pays et titres de la liste **Noms masqués** n’apparaissent nulle part |
@@ -431,6 +432,12 @@ Où en est le projet au 27 novembre 2026 (détail dans [docs/ROADMAP.md](./ROADM
     rejoignent Macrobond dans Menu > Réglages > Vos abonnements, chacun uniquement avec votre propre
     clé, un à la fois ; les chiffres restent sur votre ordinateur, et une série qui nomme un CDS est
     refusée tant que les CDS sont masqués. Pas encore essayés avec une vraie clé.
+27. **Ce que cela signifie pour vous** (27 novembre) : Menu > Ce que cela signifie pour vous montre
+    votre propre taux d'inflation selon la répartition de vos dépenses entre les groupes de prix
+    officiels (les grands groupes et les pondérations d'Eurostat pour les membres de l'UE ; alimentation,
+    énergie et le reste ailleurs), face au taux d'ensemble, et l'effet d'une variation des taux sur la
+    mensualité de votre prêt, fixe ou variable, avec le dernier mouvement de la banque centrale et sa
+    date. Ce que vous saisissez reste uniquement dans votre navigateur.
 
 **Ensuite**
 
@@ -459,6 +466,6 @@ Où en est le projet au 27 novembre 2026 (détail dans [docs/ROADMAP.md](./ROADM
   directeurs et taux du marché local mensuels du FMI y ont répondu les 18 et 19 novembre. Les
   prévisions officielles, les éditions en temps réel de l'OCDE et la recherche dans les catalogues
   (lignes `wb_gep`, `oecd_eo`, `oecd_rtd` et `catalogues`) y attendent leur premier contrôle. Ce qui s'est passé ensuite y attend
-  son premier test de fausses alertes (`npm run synth:validate`). Le desk quantitatif attend un
+  son premier test de fausses alertes (`npm run synth:validate`). Ce que cela signifie pour vous attend la ligne `eurostat_hicp_groups`, et ses groupes de prix pour les pays hors UE attendent `npm run check:imf` avant d'être activés (`IMF_CPI_GROUPS=on`). Le desk quantitatif attend un
   premier essai avec un vrai serveur d'outils de recherche, et les surprises dans les données ont besoin
   de quelques semaines de téléchargements quotidiens pour s'accumuler.

@@ -531,6 +531,9 @@ Le **Menu** rassemble tout ce qui n'est pas une page, en trois groupes après **
   uniquement et jamais enregistrés.
 - **Mode examen** : désactive toutes les étapes d'IA pour un examen.
 - **Exemples guidés** : cinq cas, d'une question à une note.
+- **Ce que cela signifie pour vous** : votre propre taux d'inflation selon la répartition de vos
+  dépenses entre les groupes de prix officiels, face au taux d'ensemble, et l'effet d'une variation des
+  taux sur la mensualité de votre prêt. Ce que vous saisissez reste uniquement dans votre navigateur.
 - **À propos et licences des données** : la version, une courte note sur la confidentialité
   ([PRIVACY.md](PRIVACY.md), en anglais) et l'existence d'une version plus récente, avec les étapes de
   mise à jour. Quand il y en a une, le Menu affiche **Nouvelle version** à côté d'À propos.
