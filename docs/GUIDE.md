@@ -374,6 +374,13 @@ To review a policy:
    fiscal rules and political feasibility, the Recommendation memo, a **one-page brief** PDF for
    non-economists, and Track outcomes, which checks the review against what happened at 12 and 24
    months. Every step is saved and fingerprinted.
+   Under Precedents, **What happened after** picks a change the country made (a big budget swing, a
+   devaluation, a new exchange rate regime or fiscal rule, or one you add with a source) and sets the
+   country against a "twin": a mix of other countries that moved like it in the ten years before and
+   did not make that change. It says how far apart they were three years on, how unusual that is
+   among countries that made no change, and can show every country that made the same kind of change.
+   A result can be kept for the one-page brief. It is marked Not validated until its pre-registered
+   test passes.
 
 ![Peers in a policy review: Brazil's diagnosis figures beside Mexico, India, Indonesia, South Africa and Turkey, with the peer median and rank](images/20-peers.png)
 

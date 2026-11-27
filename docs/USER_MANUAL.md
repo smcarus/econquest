@@ -270,6 +270,10 @@ full council and saved research.
   costs, growth or inflation) has *Keep for the trade-off chart*, which puts it on the chart under
   Debt sustainability beside the costed options, as one point (the debt identity gives no range).
   Kept items stay only in this browser tab.
+  *What happened when others did this*, in the same box, starts a policy review on the question
+  (for the country, when the question names one). Once the frame is saved, its Precedents step lists
+  the changes the country made and shows how it went against a twin (What happened after). The
+  council's answer does not change.
 - *Explain on a figure, chart or panel*: an *Explain* link sits beside every figure in an agent
   document and on the Research pages (point at a row on a wide screen to see it), at the top of
   each Research panel, and on every chat chart. It sends that exact figure, with its source and
@@ -1039,6 +1043,26 @@ becomes the problem). Six steps, in order:
    history (a gap reads Missing), with the median and how many precedents had the figure. IMF programme
    dates (MONA) and crisis dates (Laeven and Valencia) read Missing until the IMF confirms their terms.
    Nothing is saved and the memo does not change. This is a description, not a tested signal.
+   **What happened after** (SC1 to SC6), under Precedents: pick a change this country made before the
+   As of year and a figure to compare, then press *Show what happened after*. The list has changes
+   found by a rule on the figures (a primary balance move of 1.5% of GDP or more in a year; a fall of
+   the currency of 25% or more against the US dollar), changes from files you saved (exchange rate
+   regime from IRR, national fiscal rules from the IMF Fiscal Rules file, Chinn-Ito capital account
+   moves) and changes you add yourself under *Add your own change*, each with a year, what changed
+   and a source link (kept in `data/local/policy-events.json`, and in Backup). The app builds a
+   "twin": a mix of other countries whose yearly figure moved like this country's in the ten years
+   before, leaving out countries that made the same kind of change. The card says in one sentence how
+   far the country was above or below its twin three years on and how many placebo countries showed a
+   gap that large (the p-value), with the chart, *Show the numbers*, what the twin is made of, a
+   warning when one country carries more than 80% of it, and the checks (fit before the change,
+   without its largest part, the change moved three years earlier). With too few years or countries,
+   or a loose fit, it reads Missing with the reason. *Keep for the policy brief* adds the result to
+   the one-page brief (up to five; *Take out* removes one); *Cite* gives a citation.
+   *Show every country that made this kind of change* fits a twin for each change of the same kind
+   before the As of year and shows the middle gap with the middle 80% of changes, year by year, and
+   how many were left out as Missing. The whole card is Not validated until its pre-registered
+   false-alarm test passes (`npm run synth:validate`). It describes one country against a constructed
+   comparison; it does not show that the same change would work elsewhere.
 3. **Options.** Add up to four options of your own if you like, then *Ask the council*. It ranks
    options for the goal from the frame and diagnosis only, at temperature 0, each with how it works,
    time to effect, trade-offs, who bears the cost, what must be true and risks, and one sentence from
@@ -1093,6 +1117,9 @@ becomes the problem). Six steps, in order:
    next (the precedent finder). Fixed sentences in the language you are using, Missing with the reason
    where a figure is not there, no AI. The same section is added to the one-page brief, after what to
    watch and before the council parts.
+   Results kept from **What happened after** add a section after that one: each kept change with its
+   sentence, the largest parts of its twin and the source, and a Not validated line until the test
+   passes.
    For a policy or market council review (PK8), the brief ends with the council parts that are up to
    date with the frame: present values at each rate you ticked and the rate at which the net turns,
    who gains and who loses, how many links in the chain rest on a figure, a source or an assumption,
@@ -1485,8 +1512,8 @@ hold no figures of their own; the handout reads them from the app's series when 
     the countries with no central bank decision dates on file. It never adds or moves a date.
   Kept in `data/local/data-health/` and in `data/history/` (never keys).
 - **Backup** (Settings > Backup): *Download backup* saves one file with your saved research
-  (briefs, documents, notebooks, teaching episodes), policy reviews, watch alerts, holdings, watchlists, added
-  countries and AI model settings. API keys are never in it. *Choose a backup file* shows what a
+  (briefs, documents, notebooks, teaching episodes), policy reviews, the changes you added for What
+  happened after, watch alerts, holdings, watchlists, added countries and AI model settings. API keys are never in it. *Choose a backup file* shows what a
   file holds, then *Restore this backup* replaces what is saved here with it; a copy of what was
   here is saved first in `data/local/backups/`, and AI keys already on this computer are kept. Use it
   to move to another computer or to keep a copy.

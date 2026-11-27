@@ -1,6 +1,6 @@
 # EconQuest Terminal: Methodology
 
-**Version 1.9, 26 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of the main branch on 26 November 2026 (after release 0.3.0, through pull request #712).
+**Version 1.10, 27 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of the main branch on 27 November 2026 (after release 0.3.0, through pull request #713), plus What happened after (5.7).
 Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not validated advice.
 
 This document sets out how the EconQuest Terminal sources its data, how its council of agents
@@ -683,6 +683,51 @@ difference 0.0050 points of the 0.006 allowed (Pakistan's real GDP, 2033). The v
 `docs/validation/models/results.json`, apart from the track record of signals and forecasts. Status:
 Description, not a tested signal (register `wb_mfmod`; rules in the [Methods note](./METHODS.md)).
 
+### 5.7 What happened after: a country against its twin
+
+Policy review > Precedents asks a narrower question than the precedent finder: for one change a
+country made in one year, how differently did one of its figures go afterwards compared with
+countries that did not make it? The answer is a synthetic control (Abadie, Diamond and Hainmueller
+2010): a "twin" made of other countries, weighted so that its yearly path of the figure in the ten
+years before the change is as close as possible to the country's.
+
+- **Changes.** Found by a rule on the figures and labelled as such: the primary balance moving
+  1.5% of GDP or more in one year (IMF Fiscal Monitor), and devaluations of 25% or more against the
+  US dollar in a year that are also 10 points more than the year before (World Bank; Frankel and
+  Rose 1996). From files the user saves: exchange rate regime changes in the coarse IRR class
+  (December to December), the first year of each national fiscal rule still in force (IMF Fiscal
+  Rules), and moves of 1 point or more in the Chinn-Ito index. The user's own changes, each with a
+  source link. A rule on the data is not a measure of what a government intended. Policy rate moves
+  are not used: the saved policy rate history covers about two years.
+- **Twin.** Weights are zero or more and add up to 1. They minimise the squared distance over the
+  pre-change years plus a fixed penalty of 0.1 times each donor's own distance (Abadie and L'Hour
+  2021), so that there is one answer when there are more donors than years; an exact active-set
+  solver finds them. Countries that made the same kind of change in the ten years before or five
+  after are left out of the twin. The gap is the country minus its twin, from the change year to
+  five years after, read only from years before the review's As of year.
+- **Checks.** Placebo in space: the same steps for every donor as if it had made the change; the
+  p-value is the share of all runs whose after-to-before ratio of root mean square gaps is at least
+  the country's. Leave-one-out: the gap without the largest donor. In time: the change moved three
+  years earlier, whose gaps before the real change should be small. A donor with more than 80% of
+  the weight is flagged.
+- **Missing.** With fewer than 8 of the 10 years before, no year after, fewer than 10 donors, a
+  pre-change average outside every donor's, or a fit before the change looser than half the
+  country's own standard deviation; each with its reason.
+- **Pooled.** Every change of one kind before the As of year (the newest 300), each against its
+  own twin without placebo runs; the middle gap and the 10th to 90th percentile across changes each
+  year, shown when at least five changes reach that year. The band says how much countries differ,
+  not whether the middle gap is more than chance.
+- **Brief.** A result can be kept on the review for the one-page brief; the server works the twin
+  out again when it is kept, and keeps at most five.
+
+Status: Not validated. A false-alarm test was registered and hashed before any run
+(`docs/validation/models/synthetic_control.json`, `npm run synth:validate`, also a step of
+`npm run mac:validate`): on 100 country-years per outcome (inflation, growth, debt) where the rules
+found no change, the placebo p-value must be at or below 0.10 in 5% to 15% of cases. Power with a
+made-up jump of one standard deviation is reported but is not a pass condition. It needs the saved
+yearly histories, so it runs on the developer's computer. Register `synthetic_control`; rules in the
+[Methods note](./METHODS.md).
+
 ## 6. The signal standard
 
 Every signal that makes a forward claim is held to the same standard. It applies to new signals and
@@ -1127,6 +1172,11 @@ version number.
 
 ## 16. References
 
+- Abadie, A., Diamond, A. and Hainmueller, J. (2010). Synthetic control methods for comparative
+  case studies: estimating the effect of California's tobacco control program. *Journal of the
+  American Statistical Association*, 105(490), 493-505.
+- Abadie, A. and L'Hour, J. (2021). A penalized synthetic control estimator for disaggregated data.
+  *Journal of the American Statistical Association*, 116(536), 1817-1834.
 - Basel Committee on Banking Supervision (1996). *Supervisory framework for the use of "backtesting"
   in conjunction with the internal models approach to market risk capital requirements.* Bank for
   International Settlements.
@@ -1148,6 +1198,8 @@ version number.
   Econometrics*, 105(1), 111-130.
 - Diebold, F. X. and Mariano, R. S. (1995). Comparing predictive accuracy. *Journal of Business &
   Economic Statistics*, 13(3), 253-263.
+- Frankel, J. A. and Rose, A. K. (1996). Currency crashes in emerging markets: an empirical
+  treatment. *Journal of International Economics*, 41(3-4), 351-366.
 - Doz, C., Giannone, D. and Reichlin, L. (2011). A two-step estimator for large approximate dynamic
   factor models based on Kalman filtering. *Journal of Econometrics*, 164(1), 188-205.
 - Durbin, J. and Koopman, S. J. (2012). *Time Series Analysis by State Space Methods*, 2nd ed.
@@ -1229,8 +1281,9 @@ Per-model references are given in the [Methods note](./METHODS.md).
 | 1.7 | 25 November 2026 | What leaves the computer corrected: the screen fonts ship with the app and no longer come from Google Fonts; the built app's Content-Security-Policy (1.1). The 59 countries from the low-income debt list and Add a country with every country (3.3); those countries are in no recorded test (11.1) |
 | 1.8 | 26 November 2026 | The World Bank country models (5.6): the public MFMod models for six countries run on the user's computer, their stored baseline, one-shock runs shown as differences, and the pre-registered reproduction check, which passed on the developer's computer the same day; the model files as a source (3.1), the check in reproducibility (13) and their limits (14) |
 | 1.9 | 26 November 2026 | Builds that can be checked (13): pinned build steps, software parts lists, checksums and signed build proof on each release, code scanning; where problem reports go until the public repository opens (1.1) |
+| 1.10 | 27 November 2026 | What happened after (5.7): a country against a synthetic twin after a change it made, the changes found by rules, files and the user, placebo and other checks, the pooled view, the brief section and the pre-registered false-alarm test; references for synthetic control and devaluations |
 
 ---
 
-*EconQuest Terminal methodology, version 1.9 (26 November 2026). Text licensed under CC BY 4.0: you may
+*EconQuest Terminal methodology, version 1.10 (27 November 2026). Text licensed under CC BY 4.0: you may
 share and adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*
