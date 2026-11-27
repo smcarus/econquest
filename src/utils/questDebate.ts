@@ -25,6 +25,7 @@ import { extractClaims } from './docFigureCheck';
 import { withNotice } from './disclaimer';
 import type { PublicEntry } from './questPublicEntries';
 import type { DebateQuest } from './quests';
+import type { ResolutionLine as ResolutionLineLike } from './questResolve';
 
 // ---------------------------------------------------------------- opening brief
 
@@ -163,7 +164,7 @@ export interface EvidenceMap {
   title: string;
   total: number;
   positions: Array<{ position: number; text: string; count: number; arguments: MapArgument[]; matches: number; differs: number }>;
-  related: Array<{ questId: string; title: string; result: string }>;
+  related: Array<{ questId: string; title: string; result: string; /** The recorded line, so the screen can word the result in its own language. */ line?: Pick<ResolutionLineLike, 'kind' | 'outcome' | 'readings' | 'via' | 'reason' | 'decision'> }>;
   /** Entries whose position is not one the Quest lists (should not happen once checked). */
   skipped: number;
 }

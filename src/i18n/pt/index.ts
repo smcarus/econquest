@@ -32,6 +32,7 @@ import { KEY_FIELDS_PT } from './keyFieldsText';
 import { GLOSSARY_PT } from './glossaryText';
 import { REPORTS_PT } from './reports';
 import { REPORTS_TEXT_PT } from './reportsText';
+import { QUEST_TEXT_PT } from './questText';
 import { DEFINITIONS_TEXT_PT } from './definitionsText';
 import { WORKED_TEXT_PT } from './workedText';
 
@@ -57,4 +58,4 @@ export const PT: Record<string, Record<string, string>> = {
 };
 
 /** Sentences built in English elsewhere and swapped at display time (translateText in ../lang.ts). */
-export const PT_TEXT: Record<string, string> = { ...WORKED_TEXT_PT, ...DEFINITIONS_TEXT_PT, ...COMPARE_TEXT_PT, ...MISSING_PT, ...BRIEF_TEXT_PT, ...PANEL_TEXT_PT, ...TOOL_TEXT_PT, ...TOOLS_CATALOG_PT, ...KEY_FIELDS_PT, ...GLOSSARY_PT, ...CHAT_TEXT_PT, ...REPORTS_TEXT_PT };
+export const PT_TEXT: Record<string, string> = { ...QUEST_TEXT_PT, ...WORKED_TEXT_PT, ...DEFINITIONS_TEXT_PT, ...COMPARE_TEXT_PT, ...MISSING_PT, ...BRIEF_TEXT_PT, ...PANEL_TEXT_PT, ...TOOL_TEXT_PT, ...TOOLS_CATALOG_PT, ...KEY_FIELDS_PT, ...GLOSSARY_PT, ...CHAT_TEXT_PT, ...REPORTS_TEXT_PT };

@@ -449,6 +449,8 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
       question: `On ${w.start.date}, ${def?.label ?? q.rule.ref.series}${q.rule.ref.country === 'WLD' ? '' : ` (${q.rule.ref.country})`} was ${w.start.value} ${def?.unit ?? ''}. What was the probability it would be ${op} on the first value published on or after ${w.endDate}?`,
       start: w.start,
       endDate: w.endDate,
+      ref: q.rule.ref,
+      op,
     });
   });
 
@@ -492,7 +494,7 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
       const r = all.find((x) => x.quest.id === rid && x.approved);
       if (!r) return { questId: rid, title: rid, result: 'Not an approved Quest on file' };
       const st = resultState(lines, r.quest.id, r.quest.version);
-      return { questId: rid, title: r.quest.title, result: st.state === 'none' ? `No result yet (due ${questSettlesOn(r.quest)})` : describeOutcome(st.line) };
+      return { questId: rid, title: r.quest.title, result: st.state === 'none' ? `No result yet (due ${questSettlesOn(r.quest)})` : describeOutcome(st.line), ...(st.state === 'none' ? {} : { line: st.line }) };
     });
     return { brief: readBrief(dir, q.id, q.version), related };
   };

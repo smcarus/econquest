@@ -167,7 +167,7 @@ export interface Digest {
   to: string;
   closingSoon: Array<{ id: string; title: string; closesOn: string }>;
   opening: Array<{ id: string; title: string; opensOn: string }>;
-  settled: Array<{ id: string; title: string; result: string }>;
+  settled: Array<{ id: string; title: string; result: string; line?: ResolutionLine }>;
   due: Array<{ id: string; title: string; settlesOn: string }>;
 }
 
@@ -182,7 +182,7 @@ export function questDigest(quests: Array<{ quest: Quest; approved: boolean }>, 
     to: next,
     closingSoon: approved.filter((q) => questStatus(q, today) === 'open' && q.closesOn <= next).map((q) => ({ id: q.id, title: q.title, closesOn: q.closesOn })).sort((a, b) => a.closesOn.localeCompare(b.closesOn)),
     opening: approved.filter((q) => q.opensOn > today && q.opensOn <= next).map((q) => ({ id: q.id, title: q.title, opensOn: q.opensOn })).sort((a, b) => a.opensOn.localeCompare(b.opensOn)),
-    settled: lines.filter((l) => (l.kind === 'settled' || l.kind === 'unresolvable' || l.kind === 'decision' || l.kind === 'withdrawn') && l.at.slice(0, 10) > last && l.at.slice(0, 10) <= today).map((l) => ({ id: l.questId, title: title(l.questId), result: describeOutcome(l) })),
+    settled: lines.filter((l) => (l.kind === 'settled' || l.kind === 'unresolvable' || l.kind === 'decision' || l.kind === 'withdrawn') && l.at.slice(0, 10) > last && l.at.slice(0, 10) <= today).map((l) => ({ id: l.questId, title: title(l.questId), result: describeOutcome(l), line: l })),
     due: approved.filter((q) => q.type === 'forecast' && q.closesOn < today && questSettlesOn(q) <= today && resultState(lines, q.id, q.version).state === 'none').map((q) => ({ id: q.id, title: q.title, settlesOn: questSettlesOn(q) })),
   };
 }

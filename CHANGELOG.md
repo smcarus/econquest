@@ -20,6 +20,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
   (`econquest.yourPrices.v1`), never sent, never in Backup or For people. Four languages; new UI
   journey. Docs: user manual, guide and features in four languages, How it works, methodology 1.12
   (section 5.8), data sources, privacy, `.env.example`, roadmap.
+- Quests (still switched off): the whole Quests screen in Spanish, French and Brazilian Portuguese
+  (roadmap QL1, part 2). Tabs, buttons, tables, scores, the rule that settles a Quest, its result, and
+  the reasons, notes and errors the server sends are all shown in the chosen language; the rule and
+  result are built in that language from the same parts as the English, so they read as whole
+  sentences. The public board page and the Quest files stay in English.
 - Quests (still switched off): translated Quest text (roadmap QL1, part 1). A Quest's title, question,
   known limits and positions can be read in Spanish, French and Brazilian Portuguese, from separate
   files in `quests/translations/` so an approved Quest's fingerprint never changes. `npm run

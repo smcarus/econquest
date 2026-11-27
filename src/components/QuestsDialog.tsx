@@ -11,16 +11,19 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Compass, X } from 'lucide-react';
 import type { DebateQuest, Quest, QuestHorizon, QuestStatus, QuestType, ReplicationQuest, SignalQuest } from '../utils/quests';
 import { SIGNAL_FLOOR, SIGNAL_METHODS, SIGNAL_TEMPLATE, signalTestProblems, type SignalTest } from '../utils/questSignal';
-import { describeOutcome, type QuestResultState, type ResolutionDraft, type ResolutionLine } from '../utils/questResolve';
+import { describeOutcome, OUTCOME_WORDS, type OutcomeWords, type QuestResultState, type ResolutionDraft, type ResolutionLine } from '../utils/questResolve';
 import type { BoardRow, ContributorStats, Gated, QuestStats } from '../utils/questStats';
 import type { OnTimeState, QuestHealth } from '../utils/questHealth';
 import type { LiveWatchlistItem } from '../types/council';
 import { newFileUrl, type PublicEntry } from '../utils/questPublicEntries';
 import { profileFileText, profilePath, stancesProblems, stanceWords, type StanceAxis, type StanceProfile, type Stances, type StanceValue } from '../utils/questStances';
 import { ARGUMENT_MIN } from '../utils/questEntries';
-import { questTextIn, type QuestTranslationLang, type QuestText, type QuestTranslationMap } from '../utils/questTranslations';
-import { useLang, useT } from '../i18n/useLang';
+import { questSeriesDef } from '../utils/questSeries';
+import { describeRule, RULE_WORDS, type QuestRule, type RuleWords } from '../utils/questRules';
+import { questTextIn, questTitleIn, type QuestTranslationLang, type QuestText, type QuestTranslationMap } from '../utils/questTranslations';
+import { useLang, useT, useTx } from '../i18n/useLang';
 import { QUESTS } from '../i18n/messages/quests';
+import { readLang, translateText } from '../i18n/lang';
 import { checkArgument, evidenceMap, evidenceMarkdown, type ArgumentCheck, type DebateBrief, type EvidenceMap } from '../utils/questDebate';
 
 type Summary = {
@@ -44,14 +47,25 @@ type Figure = { country: string; series: string; label: string; value?: number; 
 type ListReply = { enabled: false; reason: string } | { enabled: true; quests: Summary[]; translations?: QuestTranslationMap };
 type Detail = { enabled: true; quest: Quest; summary: Summary; file: string; rule?: string; fallback?: string; figures: Figure[]; result?: QuestResultState; translations?: Partial<Record<QuestTranslationLang, QuestText>>; brief?: { brief: DebateBrief; hashOk: boolean } | null; related?: EvidenceMap['related'] };
 
-const TYPE_LABEL: Record<QuestType, string> = { forecast: 'Forecast', signal: 'Signal', replication: 'Replication', debate: 'Debate' };
-const STATUS_LABEL: Record<QuestStatus, string> = { draft: 'Draft', upcoming: 'Opens soon', open: 'Open', closed: 'Closed to entries', due: 'Result due' };
-const HOW_IT_ENDS: Record<QuestType, string> = {
-  forecast: 'Settled from the feed by the rule below. Scored against the base rate and a no-change forecast.',
-  signal: 'Entries are pre-registered tests. Each is run once and badged under the signal standard; a failed test is recorded and never re-tuned.',
-  replication: 'Solved when a script reproduces the app\'s figure within the tolerance, or shows where the app is wrong.',
-  debate: 'Debate, not a tested signal. Not scored; it closes with an evidence map of the positions and the figures each cites.',
-};
+const QUEST_TYPE_LIST: QuestType[] = ['forecast', 'signal', 'replication', 'debate'];
+type T = (key: keyof typeof QUESTS.en, vars?: Record<string, string | number>) => string;
+
+/** A rule and a result in the chosen language, from the same parts the English is built from. */
+function useQuestWords() {
+  const t = useT(QUESTS);
+  const tx = useTx();
+  const pick = <W extends Record<string, string>>(en: W) => Object.fromEntries(Object.keys(en).map((k) => [k, t(k as keyof typeof QUESTS.en)])) as W;
+  return {
+    rule: (r: QuestRule) => describeRule(r, pick<RuleWords>(RULE_WORDS), tx),
+    /** A series' name with its country, e.g. "Policy rate (BRA)", in the chosen language. */
+    series: (series: string, country: string) => {
+      const label = tx(questSeriesDef(series)?.label ?? series);
+      return country === 'WLD' ? label : `${label} (${country})`;
+    },
+    unit: (series: string) => tx(questSeriesDef(series)?.unit ?? ''),
+    outcome: (l: Parameters<typeof describeOutcome>[0]) => describeOutcome(l, pick<OutcomeWords>(OUTCOME_WORDS), tx),
+  };
+}
 
 export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; items?: LiveWatchlistItem[] }) {
   const closeRef = useRef<HTMLButtonElement | null>(null);
@@ -68,6 +82,9 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
   const [english, setEnglish] = useState(false);
   const shownLang = english ? 'en' : lang;
   const listTr = list && list.enabled ? list.translations : undefined;
+  const tx = useTx();
+  const words = useQuestWords();
+  const titleOf = useCallback((id: string, english: string) => questTitleIn(id, english, shownLang, listTr), [shownLang, listTr]);
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -106,72 +123,72 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
       <div role="dialog" aria-modal="true" aria-labelledby="quests-title" className="w-full max-w-3xl max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl" data-quests>
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
           <h2 id="quests-title" className="ui-title inline-flex items-center gap-2">
-            <Compass className="w-4 h-4" aria-hidden /> Quests
+            <Compass className="w-4 h-4" aria-hidden /> {t('title')}
           </h2>
-          <button ref={closeRef} type="button" onClick={onClose} aria-label="Close Quests" className="ui-btn ui-btn-ghost">
+          <button ref={closeRef} type="button" onClick={onClose} aria-label={t('close')} className="ui-btn ui-btn-ghost">
             <X className="w-4 h-4" />
           </button>
         </div>
         <div className="p-4 space-y-4 overflow-y-auto ui-body">
-          {error && <p className="text-sm text-rose-700 dark:text-rose-400">Quests did not load: {error}</p>}
+          {error && <p className="text-sm text-rose-700 dark:text-rose-400">{t('loadFailed', { error })}</p>}
           {list && !list.enabled && <p className="text-sm text-slate-600 dark:text-slate-300">{list.reason}</p>}
           {list && list.enabled && !openId && (
             <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800" role="tablist">
               {(
                 [
-                  ['quests', 'Quests'],
-                  ['mine', 'My entries'],
-                  ['class', 'Class table'],
-                  ['results', 'Results'],
-                  ['board', 'Scoreboard'],
-                  ['stances', 'Stances'],
-                  ['health', 'Health'],
+                  'quests',
+                  'mine',
+                  'class',
+                  'results',
+                  'board',
+                  'stances',
+                  'health',
                 ] as const
-              ).map(([k, label]) => (
+              ).map((k) => (
                 <button key={k} type="button" role="tab" aria-selected={view === k} onClick={() => setView(k)} className={`px-3 py-1.5 text-sm ${view === k ? 'border-b-2 border-blue-600 text-slate-900 dark:text-white' : 'text-slate-500'}`} data-quests-tab={k}>
-                  {label}
+                  {t(`tab_${k}`)}
                 </button>
               ))}
             </div>
           )}
-          {list && list.enabled && !openId && view === 'mine' && <MyEntries />}
+          {list && list.enabled && !openId && view === 'mine' && <MyEntries titleOf={titleOf} />}
           {list && list.enabled && !openId && view === 'class' && <ClassTable />}
-          {list && list.enabled && !openId && view === 'results' && <Results />}
+          {list && list.enabled && !openId && view === 'results' && <Results titleOf={titleOf} />}
           {list && list.enabled && !openId && view === 'board' && <Scoreboard />}
           {list && list.enabled && !openId && view === 'stances' && <StancesView />}
-          {list && list.enabled && !openId && view === 'health' && <Health />}
+          {list && list.enabled && !openId && view === 'health' && <Health titleOf={titleOf} />}
           {list && list.enabled && !openId && view === 'quests' && (
             <>
-              <ThisWeek onOpen={open} />
+              <ThisWeek onOpen={open} titleOf={titleOf} />
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Open questions anyone can answer, argue and check. Each Quest states the rule that settles it, and every figure shown is read live from a feed. Forecasts you log here stay on this computer; nothing is published.
+                {t('intro')}
               </p>
               <div className="flex flex-wrap gap-2">
                 <label className="text-xs inline-flex items-center gap-1">
-                  <span>Type</span>
+                  <span>{t('filterType')}</span>
                   <select className={field} value={type} onChange={(e) => setType(e.target.value as QuestType | '')} data-quests-type>
-                    <option value="">All</option>
-                    {(Object.keys(TYPE_LABEL) as QuestType[]).map((t) => (
-                      <option key={t} value={t}>
-                        {TYPE_LABEL[t]}
+                    <option value="">{t('all')}</option>
+                    {QUEST_TYPE_LIST.map((k) => (
+                      <option key={k} value={k}>
+                        {t(`type_${k}`)}
                       </option>
                     ))}
                   </select>
                 </label>
                 <label className="text-xs inline-flex items-center gap-1">
-                  <span>Result due</span>
+                  <span>{t('filterDue')}</span>
                   <select className={field} value={horizon} onChange={(e) => setHorizon(e.target.value as QuestHorizon | '')} data-quests-horizon>
-                    <option value="">Any time</option>
-                    <option value="week">Within a week</option>
-                    <option value="month">Within a month</option>
-                    <option value="quarter">Within a quarter</option>
-                    <option value="year">Within a year</option>
-                    <option value="multi_year">More than a year</option>
+                    <option value="">{t('anyTime')}</option>
+                    {(['week', 'month', 'quarter', 'year', 'multi_year'] as const).map((h) => (
+                      <option key={h} value={h}>
+                        {t(`h_${h}`)}
+                      </option>
+                    ))}
                   </select>
                 </label>
               </div>
               {quests.length === 0 ? (
-                <p className="text-sm text-slate-500 dark:text-slate-400">No Quests match.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{t('noMatch')}</p>
               ) : (
                 <ul className="divide-y divide-slate-200 dark:divide-slate-800 border border-slate-200 dark:border-slate-800">
                   {quests.map((q) => (
@@ -179,8 +196,8 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
                       <button type="button" onClick={() => open(q.id)} className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800" data-quest-row={q.id}>
                         <div className="text-sm text-slate-900 dark:text-white">{questTextIn({ ...q, summary: '', knownLimits: [] }, shownLang, listTr).title}</div>
                         <div className="text-xs text-slate-500 dark:text-slate-400">
-                          {TYPE_LABEL[q.type]} · {q.approved ? STATUS_LABEL[q.status] : 'Draft'} · {q.horizonLabel} · result due {q.settlesOn}
-                          {q.tutorial ? ' · Tutorial' : ''}
+                          {t('rowMeta', { type: t(`type_${q.type}`), status: t(q.approved ? `status_${q.status}` : 'status_draft'), horizon: t(`h_${q.horizon}`), date: q.settlesOn })}
+                          {q.tutorial ? ` · ${t('tutorial')}` : ''}
                         </div>
                       </button>
                     </li>
@@ -192,10 +209,10 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
           {openId && (
             <div className="space-y-3">
               <button type="button" className="ui-btn ui-btn-ghost text-xs" onClick={() => setOpenId(null)}>
-                Back to all Quests
+                {t('back')}
               </button>
-              {detailError && <p className="text-sm text-rose-700 dark:text-rose-400">This Quest did not load: {detailError}</p>}
-              {!detail && !detailError && <p className="text-sm text-slate-500">Loading…</p>}
+              {detailError && <p className="text-sm text-rose-700 dark:text-rose-400">{t('detailFailed', { error: detailError })}</p>}
+              {!detail && !detailError && <p className="text-sm text-slate-500">{t('loading')}</p>}
               {detail && (() => {
                 const qd = detail.quest as Quest & { positions?: string[]; hypothesis?: string; target?: string };
                 const tr = questTextIn(qd, lang, detail.translations ? { [`${qd.id}@${qd.version}`]: detail.translations } : undefined);
@@ -212,20 +229,24 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
                     </p>
                   )}
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {TYPE_LABEL[detail.quest.type]} · {detail.summary.approved ? STATUS_LABEL[detail.summary.status] : 'Draft, not yet approved'} · opens {detail.quest.opensOn}, entries close {detail.quest.closesOn}, result due {detail.summary.settlesOn}
+                    {t('detailMeta', { type: t(`type_${detail.quest.type}`), status: detail.summary.approved ? t(`status_${detail.summary.status}`) : t('draftNotApproved'), opens: detail.quest.opensOn, closes: detail.quest.closesOn, due: detail.summary.settlesOn })}
                   </p>
                   <p className="text-sm">{text.summary}</p>
-                  <p className="text-xs text-slate-600 dark:text-slate-300">{HOW_IT_ENDS[detail.quest.type]}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-300">{t(`end_${detail.quest.type}`)}</p>
                   {detail.rule && (
                     <div className="border border-slate-200 dark:border-slate-800 p-3 space-y-1">
-                      <div className="text-xs text-slate-500">Rule</div>
-                      <p className="text-sm">{detail.rule}</p>
-                      {detail.fallback && <p className="text-xs text-slate-500 dark:text-slate-400">{detail.fallback}</p>}
+                      <div className="text-xs text-slate-500">{t('rule')}</div>
+                      <p className="text-sm">{detail.quest.type === 'forecast' ? words.rule(detail.quest.rule) : tx(detail.rule)}</p>
+                      {detail.quest.type === 'forecast' && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {detail.quest.fallback === 'unresolvable' ? t('fallbackNone') : t('fallbackRule', { rule: words.rule(detail.quest.fallback.rule) })}
+                        </p>
+                      )}
                     </div>
                   )}
                   {detail.quest.type === 'debate' && (
                     <div className="space-y-1">
-                      <div className="text-xs text-slate-500">Positions</div>
+                      <div className="text-xs text-slate-500">{t('positions')}</div>
                       <ul className="list-disc pl-5 text-sm">
                         {(text.positions ?? detail.quest.positions).map((p) => (
                           <li key={p}>{p}</li>
@@ -235,24 +256,24 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
                   )}
                   {detail.quest.type === 'replication' && (
                     <p className="text-sm">
-                      Reproduce: {text.target ?? detail.quest.target} Tolerance: {detail.quest.tolerance}.
+                      {t('reproduce', { target: text.target ?? detail.quest.target, tolerance: detail.quest.tolerance })}
                     </p>
                   )}
-                  {detail.quest.type === 'signal' && <p className="text-sm">Idea to test: {text.hypothesis ?? detail.quest.hypothesis}</p>}
+                  {detail.quest.type === 'signal' && <p className="text-sm">{t('ideaToTest', { text: text.hypothesis ?? detail.quest.hypothesis })}</p>}
                   {detail.figures.length > 0 && (
                     <table className="w-full text-sm" data-quest-figures>
                       <thead>
                         <tr className="text-xs text-slate-500 text-left">
-                          <th className="py-1 pr-2 font-normal">Series</th>
-                          <th className="py-1 pr-2 font-normal">Latest</th>
-                          <th className="py-1 font-normal">Source</th>
+                          <th className="py-1 pr-2 font-normal">{t('colSeries')}</th>
+                          <th className="py-1 pr-2 font-normal">{t('colLatest')}</th>
+                          <th className="py-1 font-normal">{t('colSource')}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {detail.figures.map((f) => (
                           <tr key={`${f.country}-${f.series}`} className="border-t border-slate-200 dark:border-slate-800">
-                            <td className="py-1 pr-2">{f.label}</td>
-                            <td className="py-1 pr-2 tabular-nums">{f.missing ? `Missing: ${f.missing}` : `${f.value} ${f.unit ?? ''} (${f.date})`}</td>
+                            <td className="py-1 pr-2">{words.series(f.series, f.country)}</td>
+                            <td className="py-1 pr-2 tabular-nums">{f.missing ? t('missingFig', { reason: tx(f.missing) }) : `${f.value} ${f.unit ?? ''} (${f.date})`}</td>
                             <td className="py-1 text-xs text-slate-500">{f.source ?? ''}</td>
                           </tr>
                         ))}
@@ -261,7 +282,7 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
                   )}
                   {text.knownLimits.length > 0 && (
                     <div className="space-y-1">
-                      <div className="text-xs text-slate-500">Known limits</div>
+                      <div className="text-xs text-slate-500">{t('knownLimits')}</div>
                       <ul className="list-disc pl-5 text-xs text-slate-600 dark:text-slate-300">
                         {text.knownLimits.map((k) => (
                           <li key={k}>{k}</li>
@@ -298,12 +319,12 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
                     </>
                   )}
                   <p className="text-xs text-slate-500">
-                    File: {detail.file}
+                    {t('file', { file: detail.file })}
                     {detail.quest.discussion ? (
                       <>
                         {' · '}
                         <a className="underline" href={detail.quest.discussion} target="_blank" rel="noreferrer">
-                          Discussion
+                          {t('discussion')}
                         </a>
                       </>
                     ) : null}
@@ -333,11 +354,13 @@ function Box({ title, children }: { title: string; children: ReactNode }) {
 async function send(url: string, body?: unknown) {
   const r = await fetch(url, body === undefined ? undefined : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const j = await r.json().catch(() => ({}));
-  if (!r.ok || j.error) throw new Error(j?.error || `HTTP ${r.status}`);
+  // The server's reasons are English; shown in the chosen language where known.
+  if (!r.ok || j.error) throw new Error(j?.error ? translateText(j.error, readLang()) : `HTTP ${r.status}`);
   return j;
 }
 
 function LogPrivately({ quest }: { quest: Quest }) {
+  const t = useT(QUESTS);
   const level = quest.type === 'forecast' && quest.rule.kind === 'level';
   const [value, setValue] = useState('');
   const [rationale, setRationale] = useState('');
@@ -349,29 +372,29 @@ function LogPrivately({ quest }: { quest: Quest }) {
       const n = Number(value);
       const answer = level ? { level: n } : { probability: n / 100 };
       const j = await send(`/api/quests/${encodeURIComponent(quest.id)}/private`, { answer, rationale, ...(group ? { group } : {}) });
-      setMsg(`Logged on this computer at ${String(j.entry.loggedAt).slice(0, 16).replace('T', ' ')} UTC. Hash ${String(j.entry.hash).slice(0, 12)}…. You can log again until entries close; the last one counts.`);
+      setMsg(t('loggedHash', { time: String(j.entry.loggedAt).slice(0, 16).replace('T', ' '), hash: String(j.entry.hash).slice(0, 12) }));
     } catch (e: any) {
       setMsg(e?.message || String(e));
     }
   };
   return (
-    <Box title="Log privately">
+    <Box title={t('logPrivately')}>
       <div className="flex flex-wrap gap-2 items-end">
         <label className="text-xs space-y-1">
-          <span className="block">{level ? 'Your forecast (number)' : 'Probability of yes (%)'}</span>
+          <span className="block">{level ? t('yourForecast') : t('probYes')}</span>
           <input className={`${fieldCls} w-32`} inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} data-quest-answer />
         </label>
         <label className="text-xs space-y-1">
-          <span className="block">Class code (optional)</span>
+          <span className="block">{t('classCode')}</span>
           <input className={`${fieldCls} w-36`} value={group} onChange={(e) => setGroup(e.target.value)} />
         </label>
       </div>
       <label className="text-xs space-y-1 block">
-        <span className="block">Why (optional)</span>
+        <span className="block">{t('why')}</span>
         <textarea className={`${fieldCls} w-full`} rows={2} maxLength={2000} value={rationale} onChange={(e) => setRationale(e.target.value)} />
       </label>
       <button type="button" className="ui-btn" onClick={submit} disabled={!value.trim()} data-quest-log>
-        Log on this computer
+        {t('logHere')}
       </button>
       {msg && <p className="text-xs text-slate-600 dark:text-slate-300">{msg}</p>}
     </Box>
@@ -379,7 +402,10 @@ function LogPrivately({ quest }: { quest: Quest }) {
 }
 
 function Practice({ questId }: { questId: string }) {
-  const [q, setQ] = useState<{ token: string; question: string } | null>(null);
+  const t = useT(QUESTS);
+  const tx = useTx();
+  const words = useQuestWords();
+  const [q, setQ] = useState<{ token: string; question: string; start?: { date: string; value: number }; endDate?: string; ref?: { country: string; series: string }; op?: 'higher' | 'lower' } | null>(null);
   const [p, setP] = useState('50');
   const [result, setResult] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -396,10 +422,11 @@ function Practice({ questId }: { questId: string }) {
     if (!q) return;
     try {
       const r = await send(`/api/quests/practice/${q.token}`, { probability: Number(p) / 100 });
+      const vars = { start: r.start.value, startDate: r.start.date, end: r.end.value, endDate: r.end.date, brier: r.brier.toFixed(3) };
       setResult(
-        `It ${r.happened ? 'did' : 'did not'} happen: ${r.start.value} on ${r.start.date}, ${r.end.value} on ${r.end.date}. Your Brier score ${r.brier.toFixed(3)}` +
-          (r.baseBrier === null ? ' (too little earlier history for a base rate).' : `; base rate ${(r.baseRate * 100).toFixed(0)}% scores ${r.baseBrier.toFixed(3)}, so your skill is ${r.skill.toFixed(3)}.`) +
-          ' Practice only: not saved.',
+        t(r.happened ? 'practiceDid' : 'practiceDidNot', vars) +
+          (r.baseBrier === null ? ` ${t('practiceNoBase')}` : t('practiceBase', { rate: `${(r.baseRate * 100).toFixed(0)}%`, base: r.baseBrier.toFixed(3), skill: r.skill.toFixed(3) })) +
+          ` ${t('practiceOnly')}`,
       );
       setQ(null);
     } catch (e: any) {
@@ -407,21 +434,25 @@ function Practice({ questId }: { questId: string }) {
     }
   };
   return (
-    <Box title="Practise on the past">
+    <Box title={t('practice')}>
       {!q && (
         <button type="button" className="ui-btn ui-btn-ghost" onClick={ask} data-quest-practice>
-          New practice question
+          {t('practiceNew')}
         </button>
       )}
       {q && (
         <div className="space-y-2">
-          <p className="text-sm">{q.question}</p>
+          <p className="text-sm">
+            {q.ref && q.start && q.endDate && q.op
+              ? t(q.op === 'lower' ? 'practiceQLower' : 'practiceQHigher', { date: q.start.date, name: words.series(q.ref.series, q.ref.country), value: q.start.value, unit: words.unit(q.ref.series), end: q.endDate })
+              : tx(q.question)}
+          </p>
           <label className="text-xs inline-flex items-center gap-2">
-            <span>Probability (%)</span>
+            <span>{t('probability')}</span>
             <input className={`${fieldCls} w-24`} inputMode="decimal" value={p} onChange={(e) => setP(e.target.value)} />
           </label>
           <button type="button" className="ui-btn" onClick={answer}>
-            Check
+            {t('check')}
           </button>
         </div>
       )}
@@ -433,39 +464,39 @@ function Practice({ questId }: { questId: string }) {
 
 type ScoredEntry = { entry: { id: string; questId: string; loggedAt: string; answer: { probability?: number; level?: number; position?: number; value?: number }; group?: string }; title: string; counted: boolean; hashOk: boolean; score: { status: string; note?: string; brier?: number; error?: number; skill?: number | null } };
 
-function MyEntries() {
+function MyEntries({ titleOf }: { titleOf: (id: string, english: string) => string }) {
+  const t = useT(QUESTS);
+  const tx = useTx();
   const [data, setData] = useState<{ author: string; entries: ScoredEntry[] } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
     send('/api/quests/private').then(setData).catch((e) => setErr(e?.message || String(e)));
   }, []);
   if (err) return <p className="text-sm text-rose-700 dark:text-rose-400">{err}</p>;
-  if (!data) return <p className="text-sm text-slate-500">Loading…</p>;
-  if (!data.entries.length) return <p className="text-sm text-slate-500">No entries logged on this computer yet. Open a forecast Quest and use Log privately, or argue a Debate Quest.</p>;
+  if (!data) return <p className="text-sm text-slate-500">{t('loading')}</p>;
+  if (!data.entries.length) return <p className="text-sm text-slate-500">{t('mineNone')}</p>;
   return (
     <table className="w-full text-sm" data-quest-mine>
       <thead>
         <tr className="text-xs text-slate-500 text-left">
-          <th className="py-1 pr-2 font-normal">Quest</th>
-          <th className="py-1 pr-2 font-normal">Answer</th>
-          <th className="py-1 font-normal">Result</th>
+          <th className="py-1 pr-2 font-normal">{t('colQuest')}</th>
+          <th className="py-1 pr-2 font-normal">{t('colAnswer')}</th>
+          <th className="py-1 font-normal">{t('colResult')}</th>
         </tr>
       </thead>
       <tbody>
         {data.entries.map((e) => (
           <tr key={e.entry.id} className="border-t border-slate-200 dark:border-slate-800 align-top">
             <td className="py-1 pr-2">
-              {e.title}
+              {titleOf(e.entry.questId, e.title)}
               <div className="text-xs text-slate-500">
-                {e.entry.loggedAt.slice(0, 10)} · {e.counted ? 'counts' : 'replaced by a later entry'}
-                {e.hashOk ? '' : ' · hash does not match'}
+                {e.entry.loggedAt.slice(0, 10)} · {e.counted ? t('counts') : t('replaced')}
+                {e.hashOk ? '' : ` · ${t('hashBad')}`}
               </div>
             </td>
-            <td className="py-1 pr-2 tabular-nums">{e.entry.answer.value !== undefined ? e.entry.answer.value : e.entry.answer.position !== undefined ? `Position ${e.entry.answer.position}` : e.entry.answer.level !== undefined ? e.entry.answer.level : `${Math.round((e.entry.answer.probability ?? 0) * 100)}%`}</td>
+            <td className="py-1 pr-2 tabular-nums">{e.entry.answer.value !== undefined ? e.entry.answer.value : e.entry.answer.position !== undefined ? t('positionN', { n: e.entry.answer.position }) : e.entry.answer.level !== undefined ? e.entry.answer.level : `${Math.round((e.entry.answer.probability ?? 0) * 100)}%`}</td>
             <td className="py-1 text-xs">
-              {e.score.status === 'settled'
-                ? `${e.score.brier !== undefined ? `Brier ${e.score.brier.toFixed(3)}` : `Error ${e.score.error}`}; skill ${e.score.skill === null || e.score.skill === undefined ? 'no baseline' : e.score.skill.toFixed(3)}`
-                : e.score.note}
+              {e.score.status === 'settled' ? scoreLine(t, e.score) : tx(e.score.note ?? '')}
             </td>
           </tr>
         ))}
@@ -474,7 +505,15 @@ function MyEntries() {
   );
 }
 
+/** "Brier 0.120; skill 0.050" (or Error for a number forecast) in the chosen language. */
+function scoreLine(t: T, s: { brier?: number; error?: number; skill?: number | null }): string {
+  const first = s.brier !== undefined ? t('scoreBrier', { v: s.brier.toFixed(3) }) : t('scoreError', { v: String(s.error) });
+  return `${first}; ${t('skillIs', { v: s.skill === null || s.skill === undefined ? t('noBaseline') : s.skill.toFixed(3) })}`;
+}
+
 function ClassTable() {
+  const t = useT(QUESTS);
+  const tx = useTx();
   const [code, setCode] = useState('');
   const [data, setData] = useState<{ rows: Array<{ author: string; entries: number; settled: number; probabilitySkill: number | null; levelSkill: number | null }>; note: string } | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -488,23 +527,23 @@ function ClassTable() {
   };
   return (
     <div className="space-y-2">
-      <p className="text-xs text-slate-500 dark:text-slate-400">For a class running its own server: everyone logs privately with the same class code, and the table shows each person's counted entries. It never leaves this server.</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">{t('classIntro')}</p>
       <div className="flex gap-2">
-        <input className={`${fieldCls} w-40`} placeholder="Class code" value={code} onChange={(e) => setCode(e.target.value)} data-quest-class-code />
+        <input className={`${fieldCls} w-40`} placeholder={t('classPlaceholder')} value={code} onChange={(e) => setCode(e.target.value)} data-quest-class-code />
         <button type="button" className="ui-btn" onClick={load} disabled={!code.trim()}>
-          Show
+          {t('show')}
         </button>
       </div>
       {err && <p className="text-sm text-rose-700 dark:text-rose-400">{err}</p>}
-      {data && (data.rows.length === 0 ? <p className="text-sm text-slate-500">No entries with that code.</p> : (
+      {data && (data.rows.length === 0 ? <p className="text-sm text-slate-500">{t('classNone')}</p> : (
         <table className="w-full text-sm">
           <thead>
             <tr className="text-xs text-slate-500 text-left">
-              <th className="py-1 pr-2 font-normal">Person</th>
-              <th className="py-1 pr-2 font-normal">Entries</th>
-              <th className="py-1 pr-2 font-normal">Settled</th>
-              <th className="py-1 pr-2 font-normal">Skill vs base rate</th>
-              <th className="py-1 font-normal">Skill vs no change</th>
+              <th className="py-1 pr-2 font-normal">{t('colPerson')}</th>
+              <th className="py-1 pr-2 font-normal">{t('colEntries')}</th>
+              <th className="py-1 pr-2 font-normal">{t('colSettled')}</th>
+              <th className="py-1 pr-2 font-normal">{t('colSkillBase')}</th>
+              <th className="py-1 font-normal">{t('colSkillNoChange')}</th>
             </tr>
           </thead>
           <tbody>
@@ -513,31 +552,31 @@ function ClassTable() {
                 <td className="py-1 pr-2">{r.author}</td>
                 <td className="py-1 pr-2">{r.entries}</td>
                 <td className="py-1 pr-2">{r.settled}</td>
-                <td className="py-1 pr-2">{r.probabilitySkill ?? 'none yet'}</td>
-                <td className="py-1">{r.levelSkill ?? 'none yet'}</td>
+                <td className="py-1 pr-2">{r.probabilitySkill ?? t('noneYet')}</td>
+                <td className="py-1">{r.levelSkill ?? t('noneYet')}</td>
               </tr>
             ))}
           </tbody>
         </table>
       ))}
-      {data && <p className="text-xs text-slate-500">{data.note}</p>}
+      {data && <p className="text-xs text-slate-500">{tx(data.note)}</p>}
     </div>
   );
 }
 
-const STATE_LABEL: Record<Exclude<QuestResultState['state'], 'none'>, string> = { settled: 'Settled', unresolvable: 'Unresolvable', withdrawn: 'Withdrawn' };
-
 /** One Quest's recorded result, with the decision on a dispute when there was one. */
 function ResultBox({ state }: { state: Exclude<QuestResultState, { state: 'none' }> }) {
+  const t = useT(QUESTS);
+  const words = useQuestWords();
   const decision = 'decision' in state ? state.decision : undefined;
   return (
-    <Box title={`Result: ${STATE_LABEL[state.state]}`}>
+    <Box title={t('resultTitle', { state: t(`state_${state.state}`) })}>
       <p className="text-sm" data-quest-result={state.state}>
-        {describeOutcome(state.line)}
+        {words.outcome(state.line)}
       </p>
-      {decision && <p className="text-sm">{describeOutcome(decision)}</p>}
+      {decision && <p className="text-sm">{words.outcome(decision)}</p>}
       <p className="text-xs text-slate-500">
-        Recorded {state.line.at.slice(0, 10)} by {state.line.by}, line {state.line.seq} of quests/resolutions.jsonl. A recorded result is never changed; a dispute adds a decision below it.
+        {t('recorded', { date: state.line.at.slice(0, 10), who: state.line.by, n: state.line.seq })}
       </p>
     </Box>
   );
@@ -547,7 +586,10 @@ type ResultsReply = { chain: string; badLines: number; lines: ResolutionLine[]; 
 type DueReply = { today: string; due: Array<{ questId: string; title: string; approved: boolean; settlesOn: string; result: ResolutionDraft | null; waiting?: string }> };
 
 /** The public record of results, and a preview of what the feeds give for Quests now due. */
-function Results() {
+function Results({ titleOf }: { titleOf: (id: string, english: string) => string }) {
+  const t = useT(QUESTS);
+  const words = useQuestWords();
+  const tx = useTx();
   const [data, setData] = useState<ResultsReply | null>(null);
   const [due, setDue] = useState<DueReply | null>(null);
   const [busy, setBusy] = useState(false);
@@ -569,41 +611,41 @@ function Results() {
   return (
     <div className="space-y-3" data-quest-results>
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        When a Quest's date has passed, its answer is read from the feed exactly as its rule says and written to a public file, quests/resolutions.jsonl, one line per result. Each line carries a fingerprint (a SHA-256 hash) of the line before it, so if anyone changes or deletes an old line, the check below fails. A result is never edited: if someone disputes it, a maintainer adds a decision underneath, and both stay visible. Yearly figures such as government debt are read as the source first published them after the date, because sources often revise them later.
+        {t('resultsIntro')}
       </p>
       {err && <p className="text-sm text-rose-700 dark:text-rose-400">{err}</p>}
       {data && (
         <p className={`text-sm ${data.chain === 'holds' ? '' : 'text-rose-700 dark:text-rose-400'}`} data-quest-chain>
-          Check of the record: {data.chain === 'holds' ? `every line is intact (${data.lines.length} line${data.lines.length === 1 ? '' : 's'})` : `the record is ${data.chain}; results after that line cannot be trusted until it is restored`}
-          {data.badLines ? `; ${data.badLines} unreadable line(s)` : ''}.
+          {data.chain === 'holds' ? t('chainIntact', { n: data.lines.length }) : t('chainBroken', { state: tx(data.chain) })}
+          {data.badLines ? `; ${t('badLines', { n: data.badLines })}` : ''}.
         </p>
       )}
-      {data && data.quests.length === 0 && <p className="text-sm text-slate-500">No results recorded yet.</p>}
+      {data && data.quests.length === 0 && <p className="text-sm text-slate-500">{t('noResults')}</p>}
       {data && data.quests.length > 0 && (
         <ul className="space-y-2">
           {data.quests.map((q) => (
             <li key={`${q.questId}-${q.state}`} className="border-t border-slate-200 dark:border-slate-800 pt-2 text-sm">
-              <div className="font-medium">{q.title}</div>
-              {q.state !== 'none' && <div>{describeOutcome(q.line)}</div>}
-              {q.state !== 'none' && 'decision' in q && q.decision && <div>{describeOutcome(q.decision)}</div>}
+              <div className="font-medium">{titleOf(q.questId, q.title)}</div>
+              {q.state !== 'none' && <div>{words.outcome(q.line)}</div>}
+              {q.state !== 'none' && 'decision' in q && q.decision && <div>{words.outcome(q.decision)}</div>}
             </li>
           ))}
         </ul>
       )}
       <div className="space-y-2">
         <button type="button" className="ui-btn" onClick={check} disabled={busy} data-quest-check-due>
-          {busy ? 'Reading the feeds…' : 'Preview what is due now'}
+          {busy ? t('readingFeeds') : t('previewDue')}
         </button>
         <p className="text-xs text-slate-500">
-          A preview only: it shows what the feeds give today for Quests past their date. Nothing is recorded until a maintainer runs npm run quests:resolve, and drafts are never recorded.
+          {t('previewNote')}
         </p>
-        {due && due.due.length === 0 && <p className="text-sm text-slate-500">No Quest is past its date without a result.</p>}
+        {due && due.due.length === 0 && <p className="text-sm text-slate-500">{t('noneDue')}</p>}
         {due && due.due.length > 0 && (
           <ul className="space-y-1 text-sm">
             {due.due.map((d) => (
               <li key={d.questId}>
-                <span className="font-medium">{d.title}</span>
-                {d.approved ? '' : ' (draft)'}: {d.result ? describeOutcome(d.result) : d.waiting}
+                <span className="font-medium">{titleOf(d.questId, d.title)}</span>
+                {d.approved ? '' : ` ${t('draftParen')}`}: {d.result ? words.outcome(d.result) : tx(d.waiting ?? '')}
               </li>
             ))}
           </ul>
@@ -624,6 +666,8 @@ const readLogin = () => {
 
 /** Enter on the public repository: the app fills in the entry file and opens GitHub's prefilled page. */
 function EnterPublicly({ quest }: { quest: Quest }) {
+  const t = useT(QUESTS);
+  const tx = useTx();
   const level = quest.type === 'forecast' && quest.rule.kind === 'level';
   const [login, setLogin] = useState(readLogin);
   const [value, setValue] = useState('');
@@ -647,41 +691,41 @@ function EnterPublicly({ quest }: { quest: Quest }) {
     }
   };
   return (
-    <Box title="Enter publicly">
+    <Box title={t('enterPublicly')}>
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        A public entry goes on the project's GitHub page under your GitHub name, so your score can count on the public tables. You need a free GitHub account. Your forecast, your reason and your name are public and stay in the project's history for good. You can replace your entry until entries close; every entry is kept, and the last one counts.
+        {t('publicIntro')}
       </p>
       <div className="flex flex-wrap gap-2 items-end">
         <label className="text-xs space-y-1">
-          <span className="block">GitHub name</span>
+          <span className="block">{t('githubName')}</span>
           <input className={`${fieldCls} w-40`} value={login} onChange={(e) => setLogin(e.target.value)} autoComplete="username" data-quest-login />
         </label>
         <label className="text-xs space-y-1">
-          <span className="block">{level ? 'Your forecast (number)' : 'Probability of yes (%)'}</span>
+          <span className="block">{level ? t('yourForecast') : t('probYes')}</span>
           <input className={`${fieldCls} w-32`} inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} data-quest-public-answer />
         </label>
       </div>
       <label className="text-xs space-y-1 block">
-        <span className="block">Why (optional, public)</span>
+        <span className="block">{t('whyPublic')}</span>
         <textarea className={`${fieldCls} w-full`} rows={2} maxLength={2000} value={rationale} onChange={(e) => setRationale(e.target.value)} />
       </label>
       <button type="button" className="ui-btn" onClick={make} disabled={!value.trim() || !login.trim()} data-quest-draft-entry>
-        Prepare entry
+        {t('prepareEntry')}
       </button>
       {err && <p className="text-xs text-rose-700 dark:text-rose-400">{err}</p>}
       {draft && (
         <div className="space-y-1 text-xs" data-quest-draft>
           <p>
-            {draft.replaces ? `This replaces your entry ${draft.replaces}; both are kept. ` : ''}File: {draft.path}
+            {draft.replaces ? `${t('replaces', { n: draft.replaces })} ` : ''}{t('file', { file: draft.path })}
           </p>
           <pre className="p-2 bg-slate-50 dark:bg-slate-950 overflow-x-auto">{draft.text}</pre>
-          <p>{draft.note}</p>
+          <p>{tx(draft.note)}</p>
           <a className="ui-btn inline-block" href={draft.url} target="_blank" rel="noreferrer">
-            Open on GitHub
+            {t('openGithub')}
           </a>
         </div>
       )}
-      <p className="text-xs text-slate-500">No GitHub, or GitHub is blocked where you are? See the project's contributing guide: a maintainer can post an entry you email before entries close.</p>
+      <p className="text-xs text-slate-500">{t('noGithub')}</p>
     </Box>
   );
 }
@@ -692,35 +736,42 @@ type PublicReply =
 
 /** Public entries: hidden until close, then each counted entry with its score and the spread. */
 function PublicEntries({ questId }: { questId: string }) {
+  const t = useT(QUESTS);
+  const tx = useTx();
   const [data, setData] = useState<PublicReply | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
     send(`/api/quests/${encodeURIComponent(questId)}/entries`).then(setData).catch((e) => setErr(e?.message || String(e)));
   }, [questId]);
-  if (err) return <p className="text-xs text-rose-700 dark:text-rose-400">Public entries did not load: {err}</p>;
+  if (err) return <p className="text-xs text-rose-700 dark:text-rose-400">{t('publicFailed', { error: err })}</p>;
   if (!data) return null;
   const show = (a: { probability?: number; level?: number }) => (a.level !== undefined ? String(a.level) : `${Math.round((a.probability ?? 0) * 100)}%`);
   return (
-    <Box title={`Public entries (${data.count})`}>
+    <Box title={t('publicTitle', { n: data.count })}>
       {data.open ? (
         <p className="text-xs text-slate-600 dark:text-slate-300" data-quest-entries-hidden>
-          {data.note}
+          {tx(data.note)}
         </p>
       ) : data.entries.length === 0 ? (
-        <p className="text-xs text-slate-500">No public entries.</p>
+        <p className="text-xs text-slate-500">{t('noPublic')}</p>
       ) : (
         <>
           {data.spread && (
             <p className="text-sm" data-quest-spread>
-              The middle answer was {data.answer === 'level' ? data.spread.median : `${Math.round(data.spread.median * 100)}%`}; half of the {data.spread.n} entries were between {data.answer === 'level' ? data.spread.low : `${Math.round(data.spread.low * 100)}%`} and {data.answer === 'level' ? data.spread.high : `${Math.round(data.spread.high * 100)}%`}.
+              {t('spread', {
+                median: data.answer === 'level' ? data.spread.median : `${Math.round(data.spread.median * 100)}%`,
+                n: data.spread.n,
+                low: data.answer === 'level' ? data.spread.low : `${Math.round(data.spread.low * 100)}%`,
+                high: data.answer === 'level' ? data.spread.high : `${Math.round(data.spread.high * 100)}%`,
+              })}
             </p>
           )}
           <table className="w-full text-sm">
             <thead>
               <tr className="text-xs text-slate-500 text-left">
-                <th className="py-1 pr-2 font-normal">Who</th>
-                <th className="py-1 pr-2 font-normal">Answer</th>
-                <th className="py-1 font-normal">Result</th>
+                <th className="py-1 pr-2 font-normal">{t('colWho')}</th>
+                <th className="py-1 pr-2 font-normal">{t('colAnswer')}</th>
+                <th className="py-1 font-normal">{t('colResult')}</th>
               </tr>
             </thead>
             <tbody>
@@ -728,15 +779,13 @@ function PublicEntries({ questId }: { questId: string }) {
                 <tr key={e.login} className="border-t border-slate-200 dark:border-slate-800 align-top">
                   <td className="py-1 pr-2">
                     {e.login}
-                    {e.n > 1 ? <span className="text-xs text-slate-500"> (entry {e.n})</span> : null}
-                    {e.via === 'email' ? <span className="text-xs text-slate-500"> (emailed)</span> : null}
+                    {e.n > 1 ? <span className="text-xs text-slate-500"> {t('entryN', { n: e.n })}</span> : null}
+                    {e.via === 'email' ? <span className="text-xs text-slate-500"> {t('emailed')}</span> : null}
                     {e.rationale && <div className="text-xs text-slate-500">{e.rationale}</div>}
                   </td>
                   <td className="py-1 pr-2 tabular-nums">{show(e.answer)}</td>
                   <td className="py-1 text-xs">
-                    {e.score.status === 'settled'
-                      ? `${e.score.brier !== undefined ? `Brier ${e.score.brier.toFixed(3)}` : `Error ${e.score.error}`}; skill ${e.score.skill === null || e.score.skill === undefined ? 'no baseline' : e.score.skill.toFixed(3)}`
-                      : e.score.note}
+                    {e.score.status === 'settled' ? scoreLine(t, e.score) : tx(e.score.note ?? '')}
                   </td>
                 </tr>
               ))}
@@ -752,21 +801,23 @@ const fmt = (x: number) => (x > 0 ? `+${x.toFixed(3)}` : x.toFixed(3));
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 
 /** A gated figure: the value, or how many more cases it needs. */
-function G<T>({ g, show }: { g: Gated<T>; show: (v: T) => ReactNode }) {
-  return 'value' in g ? <>{show(g.value)} <span className="text-xs text-slate-500">({g.n})</span></> : <span className="text-xs text-slate-500">needs {g.needs} more ({g.n} so far)</span>;
+function G<V>({ g, show }: { g: Gated<V>; show: (v: V) => ReactNode }) {
+  const t = useT(QUESTS);
+  return 'value' in g ? <>{show(g.value)} <span className="text-xs text-slate-500">({g.n})</span></> : <span className="text-xs text-slate-500">{t('needsMore', { needs: g.needs, n: g.n })}</span>;
 }
 
 function BoardTable({ rows, onPick }: { rows: BoardRow[]; onPick: (login: string) => void }) {
-  if (!rows.length) return <p className="text-sm text-slate-500">Nobody has enough settled forecasts to be ranked yet.</p>;
+  const t = useT(QUESTS);
+  if (!rows.length) return <p className="text-sm text-slate-500">{t('boardNone')}</p>;
   return (
     <table className="w-full text-sm" data-quest-board>
       <thead>
         <tr className="text-xs text-slate-500 text-left">
           <th className="py-1 pr-2 font-normal">#</th>
-          <th className="py-1 pr-2 font-normal">Who</th>
-          <th className="py-1 pr-2 font-normal">Skill</th>
-          <th className="py-1 pr-2 font-normal">90% range</th>
-          <th className="py-1 font-normal">Forecasts</th>
+          <th className="py-1 pr-2 font-normal">{t('colWho')}</th>
+          <th className="py-1 pr-2 font-normal">{t('colSkill')}</th>
+          <th className="py-1 pr-2 font-normal">{t('colRange')}</th>
+          <th className="py-1 font-normal">{t('colForecasts')}</th>
         </tr>
       </thead>
       <tbody>
@@ -780,7 +831,7 @@ function BoardTable({ rows, onPick }: { rows: BoardRow[]; onPick: (login: string
             </td>
             <td className="py-1 pr-2">{fmt(r.score)}</td>
             <td className="py-1 pr-2 text-xs">
-              {fmt(r.low)} to {fmt(r.high)}
+              {t('rangeTo', { low: fmt(r.low), high: fmt(r.high) })}
             </td>
             <td className="py-1">{r.n}</td>
           </tr>
@@ -792,6 +843,7 @@ function BoardTable({ rows, onPick }: { rows: BoardRow[]; onPick: (login: string
 
 /** The public scoreboard and each contributor's page, recomputed from entries and recorded results. */
 function Scoreboard() {
+  const t = useT(QUESTS);
   const [data, setData] = useState<QuestStats | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [table, setTable] = useState('all');
@@ -800,7 +852,7 @@ function Scoreboard() {
     send('/api/quests/stats').then(setData).catch((e) => setErr(e?.message || String(e)));
   }, []);
   if (err) return <p className="text-sm text-rose-700 dark:text-rose-400">{err}</p>;
-  if (!data) return <p className="text-sm text-slate-500">Loading…</p>;
+  if (!data) return <p className="text-sm text-slate-500">{t('loading')}</p>;
   const person = who ? data.contributors.find((c) => c.login === who) : null;
   if (person) return <Contributor c={person} onBack={() => setWho(null)} />;
 
@@ -808,31 +860,31 @@ function Scoreboard() {
   return (
     <div className="space-y-3" data-quest-scoreboard>
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        People are ranked on one thing: skill, meaning how much better their probabilities were than just using the base rate (how often the same thing happened in the past). Plus means better than the base rate, minus means worse, and 0 means no better. The 90% range shows how sure we can be: if two people's ranges overlap, they may not really differ. To be ranked, a person needs at least {data.minimums.skill} settled forecasts, so one lucky call cannot top the table, and a GitHub account that was at least {data.accountDays} days old when the first Quest they entered closed. Nobody is ranked on how many Quests they enter. Everything here is worked out from the public entries and the recorded results, so anyone can check it.
+        {t('boardIntro', { skill: data.minimums.skill, days: data.accountDays })}
       </p>
       <label className="text-xs inline-flex items-center gap-1">
-        <span>Table</span>
+        <span>{t('table')}</span>
         <select className={fieldCls} value={table} onChange={(e) => setTable(e.target.value)} data-quest-board-table>
-          <option value="all">All time</option>
+          <option value="all">{t('allTime')}</option>
           {Object.keys(data.board.seasons).map((y) => (
             <option key={y} value={`season:${y}`}>
-              Season {y}
+              {t('season', { year: y })}
             </option>
           ))}
           {Object.keys(data.board.fields).map((f) => (
             <option key={f} value={`field:${f}`}>
-              {f} only (needs {data.minimums.field} in the field)
+              {t('fieldOnly', { field: f, n: data.minimums.field })}
             </option>
           ))}
         </select>
       </label>
       <BoardTable rows={rows} onPick={setWho} />
       <p className="text-sm">
-        The crowd (the middle answer on each Quest) against the base rate: <G g={data.crowd} show={(v) => fmt(v)} />
+        {t('crowd')} <G g={data.crowd} show={(v) => fmt(v)} />
       </p>
       {data.contributors.length > 0 && (
         <div className="space-y-1">
-          <div className="text-xs text-slate-500">Everyone who has entered</div>
+          <div className="text-xs text-slate-500">{t('everyone')}</div>
           <ul className="text-sm flex flex-wrap gap-x-3 gap-y-1">
             {data.contributors.map((c) => (
               <li key={c.login}>
@@ -844,41 +896,40 @@ function Scoreboard() {
           </ul>
         </div>
       )}
-      {data.contributors.length === 0 && <p className="text-sm text-slate-500">No public entries yet.</p>}
+      {data.contributors.length === 0 && <p className="text-sm text-slate-500">{t('noPublicYet')}</p>}
     </div>
   );
 }
 
-const ON_TIME_LABEL: Record<OnTimeState, string> = { on_time: 'On time', late: 'Recorded late', overdue: 'Overdue', waiting: 'Due, inside the grace period' };
-
 /** Health: the few measures that show whether Quests are working, for the six-month review. */
-function Health() {
+function Health({ titleOf }: { titleOf: (id: string, english: string) => string }) {
+  const t = useT(QUESTS);
   const [h, setH] = useState<QuestHealth | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
     send('/api/quests/health').then(setH).catch((e) => setErr(e?.message || String(e)));
   }, []);
   if (err) return <p className="text-sm text-rose-700 dark:text-rose-400">{err}</p>;
-  if (!h) return <p className="text-sm text-slate-500">Loading…</p>;
+  if (!h) return <p className="text-sm text-slate-500">{t('loading')}</p>;
   const th = 'text-left font-normal text-slate-500 py-1 pr-3';
   const td = 'py-1 pr-3 border-t border-slate-200 dark:border-slate-800';
   return (
     <div className="space-y-4" data-quest-health>
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        Is it working? These measures answer that from the public files alone: how many people take part, how many answers each Quest gets, whether results are recorded when they are due, and whether the crowd does better than just using the base rate. They are looked at together {h.reviewOn ? <>at the six-month review on <strong>{h.reviewOn}</strong> (six months after the first Quest opened on {h.firstOpened})</> : 'six months after the first Quest opens'}, to decide whether to keep going, change things or stop.
+        {t('healthIntroA', { when: h.reviewOn ? t('healthReviewOn', { date: h.reviewOn, first: h.firstOpened ?? '' }) : t('healthReviewLater') })}
       </p>
-      {!h.approved && <p className="text-sm text-slate-500">No approved Quests yet, so there is nothing to measure.</p>}
+      {!h.approved && <p className="text-sm text-slate-500">{t('healthNone')}</p>}
       {h.approved > 0 && (
         <>
           <p className="text-sm">
-            {h.approved} approved Quest{h.approved === 1 ? '' : 's'}, {h.closed} closed to entries{h.closedEmpty ? ` (${h.closedEmpty} with no entries)` : ''}. {h.totalEntries} counted entr{h.totalEntries === 1 ? 'y' : 'ies'} from {h.totalPeople} {h.totalPeople === 1 ? 'person' : 'people'}; {h.returning} came back in more than one month.
+            {t('healthSummary', { approved: h.approved, closed: h.closed, empty: h.closedEmpty ? t('healthEmpty', { n: h.closedEmpty }) : '', entries: h.totalEntries, people: h.totalPeople, returning: h.returning })}
           </p>
-          <Box title="People taking part, by month">
-            <p className="text-xs text-slate-500">Counted by the month each Quest closed, since entry files carry no date of their own. A replacement entry replaces the earlier one, so each person counts once per Quest.</p>
+          <Box title={t('peopleByMonth')}>
+            <p className="text-xs text-slate-500">{t('monthsNote')}</p>
             {h.months.length ? (
               <table className="w-full text-sm">
                 <thead>
-                  <tr><th className={th}>Month</th><th className={th}>Quests closed</th><th className={th}>Entries</th><th className={th}>People</th></tr>
+                  <tr><th className={th}>{t('colMonth')}</th><th className={th}>{t('colQuestsClosed')}</th><th className={th}>{t('colEntries')}</th><th className={th}>{t('colPeople')}</th></tr>
                 </thead>
                 <tbody>
                   {h.months.map((m) => (
@@ -887,35 +938,35 @@ function Health() {
                 </tbody>
               </table>
             ) : (
-              <p className="text-sm text-slate-500">No Quest has closed yet.</p>
+              <p className="text-sm text-slate-500">{t('noneClosed')}</p>
             )}
           </Box>
-          <Box title="Entries per Quest">
-            <p className="text-xs text-slate-500">The middle Quest had {h.medianEntries === null ? 'no figure yet' : `${h.medianEntries} entr${h.medianEntries === 1 ? 'y' : 'ies'}`}. A crowd figure needs several answers to mean much, so Quests with very few show where more people are needed.</p>
+          <Box title={t('entriesPerQuest')}>
+            <p className="text-xs text-slate-500">{t('medianNote', { n: h.medianEntries === null ? t('medianNone') : h.medianEntries })}</p>
             {h.perQuest.length > 0 && (
               <ul className="text-sm space-y-0.5">
                 {h.perQuest.map((q) => (
-                  <li key={q.id}>{q.title} <span className="text-xs text-slate-500">({TYPE_LABEL[q.type]}, closed {q.closesOn})</span>: {q.entries}</li>
+                  <li key={q.id}>{titleOf(q.id, q.title)} <span className="text-xs text-slate-500">({t('closedOn', { type: t(`type_${q.type}`), date: q.closesOn })})</span>: {q.entries}</li>
                 ))}
               </ul>
             )}
           </Box>
-          <Box title="Results recorded on time">
-            <p className="text-xs text-slate-500">A result counts as on time when it is recorded within {h.onTime.graceDays} days of the day it was due. Late results usually mean a feed was slow or the maintainer was away. Debate Quests have no result, a withdrawn Quest is left out, and a Signal Quest with no tests entered has nothing to run.</p>
+          <Box title={t('onTimeTitle')}>
+            <p className="text-xs text-slate-500">{t('onTimeNote', { days: h.onTime.graceDays })}</p>
             <p className="text-sm">
-              {h.onTime.share === null ? 'No result has been due long enough to judge yet.' : `${pct(h.onTime.share)} on time: ${h.onTime.onTime} of ${h.onTime.due} (${h.onTime.late} recorded late, ${h.onTime.overdue} overdue).`}
-              {h.onTime.waiting ? ` ${h.onTime.waiting} more ${h.onTime.waiting === 1 ? 'is' : 'are'} due and still inside the grace period.` : ''}
+              {h.onTime.share === null ? t('onTimeNone') : t('onTimeShare', { share: pct(h.onTime.share), on: h.onTime.onTime, due: h.onTime.due, late: h.onTime.late, overdue: h.onTime.overdue })}
+              {h.onTime.waiting ? ` ${t('onTimeWaiting', { n: h.onTime.waiting })}` : ''}
             </p>
             {h.onTime.quests.length > 0 && (
               <ul className="text-sm space-y-0.5">
                 {h.onTime.quests.map((q) => (
-                  <li key={q.id}>{q.title} <span className="text-xs text-slate-500">(due {q.settlesOn}{q.recordedOn ? `, recorded ${q.recordedOn}` : ''})</span>: {ON_TIME_LABEL[q.state]}</li>
+                  <li key={q.id}>{titleOf(q.id, q.title)} <span className="text-xs text-slate-500">({t('dueOn', { date: q.settlesOn })}{q.recordedOn ? t('recordedOn', { date: q.recordedOn }) : ''})</span>: {t(q.state as OnTimeState)}</li>
                 ))}
               </ul>
             )}
           </Box>
           <p className="text-sm">
-            The crowd (the middle answer on each Quest) against the base rate: <G g={h.crowd} show={(v) => fmt(v)} />. Plus means the crowd did better than just using how often the thing happened in the past.
+            {t('crowd')} <G g={h.crowd} show={(v) => fmt(v)} />. {t('crowdPlus')}
           </p>
         </>
       )}
@@ -924,6 +975,8 @@ function Health() {
 }
 
 function Contributor({ c, onBack }: { c: ContributorStats; onBack: () => void }) {
+  const t = useT(QUESTS);
+  const tx = useTx();
   const row = (label: string, value: ReactNode, help: string) => (
     <tr className="border-t border-slate-200 dark:border-slate-800 align-top">
       <td className="py-1 pr-2">
@@ -936,42 +989,42 @@ function Contributor({ c, onBack }: { c: ContributorStats; onBack: () => void })
   return (
     <div className="space-y-3" data-quest-contributor-page>
       <button type="button" className="ui-btn ui-btn-ghost" onClick={onBack}>
-        Back to the scoreboard
+        {t('backBoard')}
       </button>
       <h3 className="ui-title">
         {c.login}
-        {c.emailed ? <span className="text-xs text-slate-500"> (entries emailed to a maintainer)</span> : null}
+        {c.emailed ? <span className="text-xs text-slate-500"> {t('emailedEntries')}</span> : null}
       </h3>
       <p className="text-sm">
-        {c.entered} Quest{c.entered === 1 ? '' : 's'} entered: {c.settled} settled, {c.unresolvable} unresolvable or withdrawn, {c.waiting} waiting for a result.
+        {t('contribSummary', { entered: c.entered, settled: c.settled, unres: c.unresolvable, waiting: c.waiting })}
       </p>
-      {c.unranked && <p className="text-xs text-slate-500">Not on the scoreboard: {c.unranked}.</p>}
+      {c.unranked && <p className="text-xs text-slate-500">{t('notRanked', { why: tx(c.unranked) })}</p>}
       <ProfileStances login={c.login} />
       <table className="w-full text-sm">
         <tbody>
-          {row('Skill', <G g={c.skill} show={(v) => `${fmt(v.score)} (90% range ${fmt(v.low)} to ${fmt(v.high)})`} />, 'Better (+) or worse (-) than the base rate, averaged over settled probability forecasts.')}
-          {row('Beat no change', <G g={c.beatNoChange} show={(v) => pct(v)} />, 'Share of number forecasts that were closer than assuming nothing moves.')}
-          {row('Sharpness', <G g={c.sharpness} show={(v) => v.toFixed(2)} />, '0 = always said 50%; 1 = always said 0% or 100%. Being sharp only helps if you are also right.')}
-          {row('Calibration gap', <G g={c.calibration} show={(v) => pct(v.gap)} />, 'How far, on average, what was said was from what happened (0% = when they said 70%, it happened 70% of the time).')}
-          {row('Against the crowd', <G g={c.contrarian} show={(v) => fmt(v)} />, 'Skill on Quests where they called the other outcome from the crowd\'s middle answer.')}
-          {row('Streak', <G g={c.streak} show={(v) => String(v)} />, 'Settled Quests in a row with positive skill, latest first. Shown, never ranked.')}
+          {row(t('r_skill'), <G g={c.skill} show={(v) => t('skillRange', { score: fmt(v.score), low: fmt(v.low), high: fmt(v.high) })} />, t('r_skillHelp'))}
+          {row(t('r_beat'), <G g={c.beatNoChange} show={(v) => pct(v)} />, t('r_beatHelp'))}
+          {row(t('r_sharp'), <G g={c.sharpness} show={(v) => v.toFixed(2)} />, t('r_sharpHelp'))}
+          {row(t('r_cal'), <G g={c.calibration} show={(v) => pct(v.gap)} />, t('r_calHelp'))}
+          {row(t('r_contra'), <G g={c.contrarian} show={(v) => fmt(v)} />, t('r_contraHelp'))}
+          {row(t('r_streak'), <G g={c.streak} show={(v) => String(v)} />, t('r_streakHelp'))}
         </tbody>
       </table>
       {'value' in c.calibration && (
         <table className="w-full text-xs" data-quest-calibration>
           <thead>
             <tr className="text-slate-500 text-left">
-              <th className="py-1 pr-2 font-normal">They said</th>
-              <th className="py-1 pr-2 font-normal">On average</th>
-              <th className="py-1 pr-2 font-normal">It happened</th>
-              <th className="py-1 font-normal">Forecasts</th>
+              <th className="py-1 pr-2 font-normal">{t('colSaid')}</th>
+              <th className="py-1 pr-2 font-normal">{t('colAvg')}</th>
+              <th className="py-1 pr-2 font-normal">{t('colHappened')}</th>
+              <th className="py-1 font-normal">{t('colForecasts')}</th>
             </tr>
           </thead>
           <tbody>
             {c.calibration.value.bins.map((b) => (
               <tr key={b.from} className="border-t border-slate-200 dark:border-slate-800 tabular-nums">
                 <td className="py-1 pr-2">
-                  {pct(b.from)} to {pct(b.to)}
+                  {t('rangeTo', { low: pct(b.from), high: pct(b.to) })}
                 </td>
                 <td className="py-1 pr-2">{pct(b.said)}</td>
                 <td className="py-1 pr-2">{pct(b.happened)}</td>
@@ -983,11 +1036,11 @@ function Contributor({ c, onBack }: { c: ContributorStats; onBack: () => void })
       )}
       {c.fields.length > 0 && (
         <div className="space-y-1">
-          <div className="text-xs text-slate-500">Skill by field (each needs 8 settled forecasts in the field)</div>
+          <div className="text-xs text-slate-500">{t('byField')}</div>
           <ul className="text-sm">
             {c.fields.map((f) => (
               <li key={`${f.kind}-${f.field}`}>
-                {f.field}: <G g={f.stat} show={(v) => fmt(v)} />
+                {tx(f.field)}: <G g={f.stat} show={(v) => fmt(v)} />
               </li>
             ))}
           </ul>
@@ -995,39 +1048,39 @@ function Contributor({ c, onBack }: { c: ContributorStats; onBack: () => void })
       )}
       {c.proposed.length > 0 && (
         <p className="text-sm">
-          Quests proposed: {c.proposed.map((p) => `${p.questId} (${p.entries} entr${p.entries === 1 ? 'y' : 'ies'})`).join(', ')}
+          {t('proposed', { list: c.proposed.map((p) => t('proposedItem', { id: p.questId, n: p.entries })).join(', ') })}
         </p>
       )}
       {c.tests?.length > 0 && (
         <p className="text-sm" data-quest-tests>
-          Tests proposed (never ranked): {c.tests.map((t) => `${t.title} (${t.verdict === null ? 'not run yet' : t.verdict.replace(/_/g, ' ')})`).join('; ')}
+          {t('testsProposed', { list: c.tests.map((x) => `${x.title} (${x.verdict === null ? t('notRun') : tx(x.verdict.replace(/_/g, ' '))})`).join('; ') })}
         </p>
       )}
       {c.replications?.length > 0 && (
         <p className="text-sm" data-quest-replications>
-          Replications (never ranked): {c.replications.map((r) => `${r.title} (${r.matched === null ? 'waiting for the app\'s figure' : r.matched ? 'reproduced' : 'did not match'})`).join('; ')}
+          {t('replicationsList', { list: c.replications.map((r) => `${r.title} (${r.matched === null ? t('waitingApp') : r.matched ? t('reproduced') : t('notMatch')})`).join('; ') })}
         </p>
       )}
       {c.debates?.length > 0 && (
         <p className="text-sm" data-quest-debates>
-          Debates argued (never scored or ranked): {c.debates.map((d) => d.title).join('; ')}
+          {t('debatesArgued', { list: c.debates.map((d) => d.title).join('; ') })}
         </p>
       )}
       {c.entries.length > 0 && (
         <table className="w-full text-sm">
           <thead>
             <tr className="text-xs text-slate-500 text-left">
-              <th className="py-1 pr-2 font-normal">Settled Quest</th>
-              <th className="py-1 pr-2 font-normal">Answer</th>
-              <th className="py-1 font-normal">Score</th>
+              <th className="py-1 pr-2 font-normal">{t('colSettledQuest')}</th>
+              <th className="py-1 pr-2 font-normal">{t('colAnswer')}</th>
+              <th className="py-1 font-normal">{t('colScore')}</th>
             </tr>
           </thead>
           <tbody>
             {c.entries.map((e) => (
               <tr key={e.questId} className="border-t border-slate-200 dark:border-slate-800 align-top">
                 <td className="py-1 pr-2">{e.title}</td>
-                <td className="py-1 pr-2 tabular-nums">{e.answer === 'probability' ? `${pct(e.p ?? 0)}, ${e.happened ? 'it happened' : 'it did not'}` : ''}</td>
-                <td className="py-1 text-xs">{e.answer === 'probability' ? `Brier ${e.brier?.toFixed(3)}; skill ${e.skill === null || e.skill === undefined ? 'no base rate' : fmt(e.skill)}` : `Error ${e.error}; ${e.beatNoChange === null ? 'no no-change baseline' : e.beatNoChange ? 'beat no change' : 'did not beat no change'}`}</td>
+                <td className="py-1 pr-2 tabular-nums">{e.answer === 'probability' ? `${pct(e.p ?? 0)}, ${e.happened ? t('happened') : t('didNot')}` : ''}</td>
+                <td className="py-1 text-xs">{e.answer === 'probability' ? `${t('scoreBrier', { v: e.brier?.toFixed(3) ?? '' })}; ${t('skillIs', { v: e.skill === null || e.skill === undefined ? t('noBaseRate') : fmt(e.skill) })}` : `${t('scoreError', { v: String(e.error) })}; ${e.beatNoChange === null ? t('noNoChange') : e.beatNoChange ? t('beatNC') : t('notBeatNC')}`}</td>
               </tr>
             ))}
           </tbody>
@@ -1037,10 +1090,13 @@ function Contributor({ c, onBack }: { c: ContributorStats; onBack: () => void })
   );
 }
 
-type DigestReply = { closingSoon: Array<{ id: string; title: string; closesOn: string }>; opening: Array<{ id: string; title: string; opensOn: string }>; settled: Array<{ id: string; title: string; result: string }> };
+type DigestReply = { closingSoon: Array<{ id: string; title: string; closesOn: string }>; opening: Array<{ id: string; title: string; opensOn: string }>; settled: Array<{ id: string; title: string; result: string; line?: ResolutionLine }> };
 
 /** This week: Quests closing soon, opening, and results recorded in the last 7 days. Hidden when there is nothing. */
-function ThisWeek({ onOpen }: { onOpen: (id: string) => void }) {
+function ThisWeek({ onOpen, titleOf }: { onOpen: (id: string) => void; titleOf: (id: string, english: string) => string }) {
+  const t = useT(QUESTS);
+  const tx = useTx();
+  const words = useQuestWords();
   const [d, setD] = useState<DigestReply | null>(null);
   useEffect(() => {
     send('/api/quests/digest').then(setD).catch(() => setD(null));
@@ -1049,30 +1105,30 @@ function ThisWeek({ onOpen }: { onOpen: (id: string) => void }) {
   const item = (id: string, title: string, note: string) => (
     <li key={id}>
       <button type="button" className="underline text-left" onClick={() => onOpen(id)}>
-        {title}
+        {titleOf(id, title)}
       </button>{' '}
       <span className="text-xs text-slate-500">{note}</span>
     </li>
   );
   return (
-    <Box title="This week">
+    <Box title={t('thisWeek')}>
       <div className="text-sm space-y-2" data-quest-this-week>
         {d.closingSoon.length > 0 && (
           <div>
-            <div className="text-xs text-slate-500">Closing soon</div>
-            <ul>{d.closingSoon.map((x) => item(x.id, x.title, `closes ${x.closesOn}`))}</ul>
+            <div className="text-xs text-slate-500">{t('closingSoon')}</div>
+            <ul>{d.closingSoon.map((x) => item(x.id, x.title, t('closes', { date: x.closesOn })))}</ul>
           </div>
         )}
         {d.opening.length > 0 && (
           <div>
-            <div className="text-xs text-slate-500">Opening</div>
-            <ul>{d.opening.map((x) => item(x.id, x.title, `opens ${x.opensOn}`))}</ul>
+            <div className="text-xs text-slate-500">{t('opening')}</div>
+            <ul>{d.opening.map((x) => item(x.id, x.title, t('opens', { date: x.opensOn })))}</ul>
           </div>
         )}
         {d.settled.length > 0 && (
           <div>
-            <div className="text-xs text-slate-500">Results recorded</div>
-            <ul>{d.settled.map((x) => item(x.id, x.title, x.result))}</ul>
+            <div className="text-xs text-slate-500">{t('resultsRecorded')}</div>
+            <ul>{d.settled.map((x) => item(x.id, x.title, x.line ? words.outcome(x.line) : tx(x.result)))}</ul>
           </div>
         )}
       </div>
@@ -1090,12 +1146,14 @@ const VERDICT_TONE: Record<string, string> = {
 };
 
 function Checks({ checks, empty }: { checks: ArgumentCheck[]; empty: string }) {
+  const t = useT(QUESTS);
+  const tx = useTx();
   if (!checks.length) return <p className="text-xs text-slate-500">{empty}</p>;
   return (
     <ul className="space-y-1 text-xs" data-quest-claims>
       {checks.map((c, i) => (
         <li key={i}>
-          <span className={`font-medium ${VERDICT_TONE[c.verdict] ?? 'text-slate-600 dark:text-slate-300'}`}>{c.verdict}</span>: {c.reading}
+          <span className={`font-medium ${VERDICT_TONE[c.verdict] ?? 'text-slate-600 dark:text-slate-300'}`}>{t(`v_${c.verdict}` as keyof typeof QUESTS.en) ?? c.verdict}</span>: {tx(c.reading)}
         </li>
       ))}
     </ul>
@@ -1104,18 +1162,20 @@ function Checks({ checks, empty }: { checks: ArgumentCheck[]; empty: string }) {
 
 /** The opening brief written once by the app's AI model, or why there is none. */
 function BriefBox({ brief, quest }: { brief: { brief: DebateBrief; hashOk: boolean } | null; quest: DebateQuest }) {
+  const t = useT(QUESTS);
+  const tx = useTx();
   if (!brief)
     return (
-      <Box title="Opening brief">
-        <p className="text-xs text-slate-500">No opening brief has been recorded for this Debate yet. A maintainer writes it once, before entries open, with the app's AI model.</p>
+      <Box title={t('briefTitle')}>
+        <p className="text-xs text-slate-500">{t('briefNone')}</p>
       </Box>
     );
   const b = brief.brief;
   return (
-    <Box title="Opening brief">
+    <Box title={t('briefTitle')}>
       <p className="text-xs text-amber-800 dark:text-amber-300" data-quest-brief-label>
-        {b.label} Model: {b.model}, written {b.writtenAt.slice(0, 10)}.
-        {!brief.hashOk && ' Warning: the file no longer matches the hash it was saved with, so it may have been edited.'}
+        {tx(b.label)} {t('briefModel', { model: b.model, date: b.writtenAt.slice(0, 10) })}
+        {!brief.hashOk && ` ${t('briefWarn')}`}
       </p>
       {b.positions.map((p) => (
         <div key={p.position} className="space-y-1">
@@ -1123,15 +1183,15 @@ function BriefBox({ brief, quest }: { brief: { brief: DebateBrief; hashOk: boole
             {p.position}. {quest.positions[p.position - 1]}
           </div>
           <p className="text-xs">
-            <span className="text-slate-500">Strongest case: </span>
+            <span className="text-slate-500">{t('strongest')} </span>
             {p.strongest}
           </p>
           <p className="text-xs">
-            <span className="text-slate-500">Weakest point: </span>
+            <span className="text-slate-500">{t('weakest')} </span>
             {p.weakest}
           </p>
           <p className="text-xs">
-            <span className="text-slate-500">Figures to check: </span>
+            <span className="text-slate-500">{t('figuresCheck')} </span>
             {p.check}
           </p>
         </div>
@@ -1142,6 +1202,8 @@ function BriefBox({ brief, quest }: { brief: { brief: DebateBrief; hashOk: boole
 
 /** Pick a position and argue it; Claim Check reads the argument as it is written. */
 function Argue({ quest, items }: { quest: DebateQuest; items: LiveWatchlistItem[] }) {
+  const t = useT(QUESTS);
+  const tx = useTx();
   const [position, setPosition] = useState(0);
   const [argument, setArgument] = useState('');
   const [login, setLogin] = useState(readLogin);
@@ -1153,7 +1215,7 @@ function Argue({ quest, items }: { quest: DebateQuest; items: LiveWatchlistItem[
     setMsg(null);
     try {
       const j = await send(`/api/quests/${encodeURIComponent(quest.id)}/private`, { answer: { position }, rationale: argument });
-      setMsg(`Logged on this computer at ${String(j.entry.loggedAt).slice(0, 16).replace('T', ' ')} UTC. You can log again until entries close; the last one counts.`);
+      setMsg(t('logged', { time: String(j.entry.loggedAt).slice(0, 16).replace('T', ' ') }));
     } catch (e: any) {
       setMsg(e?.message || String(e));
     }
@@ -1174,11 +1236,11 @@ function Argue({ quest, items }: { quest: DebateQuest; items: LiveWatchlistItem[
     }
   };
   return (
-    <Box title="Argue a position">
+    <Box title={t('argueTitle')}>
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        Pick the position you find most convincing and say why in your own words, using the figures the app shows. Nobody is scored: the Debate ends with an evidence map of every argument. Claim Check reads your argument as you type and compares each figure you state with the app's figure, so you can fix a figure before you send it.
+        {t('argueIntro')}
       </p>
-      <div className="space-y-1" role="radiogroup" aria-label="Position">
+      <div className="space-y-1" role="radiogroup" aria-label={t('positionAria')}>
         {quest.positions.map((p, i) => (
           <label key={p} className="flex items-start gap-2 text-sm">
             <input type="radio" name={`pos-${quest.id}`} checked={position === i + 1} onChange={() => setPosition(i + 1)} data-quest-position={i + 1} />
@@ -1189,37 +1251,37 @@ function Argue({ quest, items }: { quest: DebateQuest; items: LiveWatchlistItem[
         ))}
       </div>
       <label className="text-xs space-y-1 block">
-        <span className="block">Your argument (at least {ARGUMENT_MIN} characters; public if you enter publicly)</span>
+        <span className="block">{t('argumentLabel', { n: ARGUMENT_MIN })}</span>
         <textarea className={`${fieldCls} w-full`} rows={4} maxLength={2000} value={argument} onChange={(e) => setArgument(e.target.value)} data-quest-argument />
       </label>
       {argument.trim().length >= ARGUMENT_MIN && (
         <div className="space-y-1">
-          <div className="text-xs text-slate-500">Claim Check</div>
-          <Checks checks={checks} empty="No figure or ranking found that Claim Check can compare with the app's figures (it reads the policy rate, inflation, government debt, primary balance, reserves and growth)." />
+          <div className="text-xs text-slate-500">{t('claimCheck')}</div>
+          <Checks checks={checks} empty={t('claimNone')} />
         </div>
       )}
       <div className="flex flex-wrap gap-2 items-end">
         <button type="button" className="ui-btn" onClick={logPrivately} disabled={!ready} data-quest-argue-log>
-          Log on this computer
+          {t('logHere')}
         </button>
         <label className="text-xs space-y-1">
-          <span className="block">GitHub name</span>
+          <span className="block">{t('githubName')}</span>
           <input className={`${fieldCls} w-40`} value={login} onChange={(e) => setLogin(e.target.value)} autoComplete="username" />
         </label>
         <button type="button" className="ui-btn" onClick={preparePublic} disabled={!ready || !login.trim()} data-quest-argue-public>
-          Prepare public entry
+          {t('preparePublic')}
         </button>
       </div>
       {msg && <p className="text-xs text-slate-600 dark:text-slate-300">{msg}</p>}
       {draft && (
         <div className="space-y-1 text-xs" data-quest-draft>
           <p>
-            {draft.replaces ? `This replaces your entry ${draft.replaces}; both are kept. ` : ''}File: {draft.path}
+            {draft.replaces ? `${t('replaces', { n: draft.replaces })} ` : ''}{t('file', { file: draft.path })}
           </p>
           <pre className="p-2 bg-slate-50 dark:bg-slate-950 overflow-x-auto whitespace-pre-wrap">{draft.text}</pre>
-          <p>{draft.note}</p>
+          <p>{tx(draft.note)}</p>
           <a className="ui-btn inline-block" href={draft.url} target="_blank" rel="noreferrer">
-            Open on GitHub
+            {t('openGithub')}
           </a>
         </div>
       )}
@@ -1231,18 +1293,21 @@ type DebateReply = { open: true; count: number; note: string } | { open: false; 
 
 /** After close: who argued what, each argument with its Claim Check readings, and related results. */
 function EvidenceMapBox({ quest, items, brief, related }: { quest: DebateQuest; items: LiveWatchlistItem[]; brief: DebateBrief | null; related: EvidenceMap['related'] }) {
+  const t = useT(QUESTS);
+  const tx = useTx();
+  const words = useQuestWords();
   const [data, setData] = useState<DebateReply | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
     send(`/api/quests/${encodeURIComponent(quest.id)}/entries`).then(setData).catch((e) => setErr(e?.message || String(e)));
   }, [quest.id]);
-  if (err) return <p className="text-xs text-rose-700 dark:text-rose-400">Entries did not load: {err}</p>;
+  if (err) return <p className="text-xs text-rose-700 dark:text-rose-400">{t('entriesFailed', { error: err })}</p>;
   if (!data) return null;
   if (data.open)
     return (
-      <Box title={`Evidence map (${data.count} ${data.count === 1 ? 'argument' : 'arguments'} so far)`}>
+      <Box title={t('mapSoFar', { n: data.count })}>
         <p className="text-xs text-slate-600 dark:text-slate-300" data-quest-entries-hidden>
-          {data.note} The evidence map appears here once entries close.
+          {tx(data.note)} {t('mapAppears')}
         </p>
       </Box>
     );
@@ -1258,17 +1323,17 @@ function EvidenceMapBox({ quest, items, brief, related }: { quest: DebateQuest; 
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   return (
-    <Box title={`Evidence map (${map.total} ${map.total === 1 ? 'argument' : 'arguments'})`}>
+    <Box title={t('mapTitle', { n: map.total })}>
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        Not scored: no position is marked right or wrong. For each position, how many people argued it, and how many of the figures they stated match or differ from the app's figures today. Read the arguments and the related results and judge for yourself.
+        {t('mapIntro')}
       </p>
       <table className="w-full text-sm" data-quest-map>
         <thead>
           <tr className="text-xs text-slate-500 text-left">
-            <th className="py-1 pr-2 font-normal">Position</th>
-            <th className="py-1 pr-2 font-normal">Argued by</th>
-            <th className="py-1 pr-2 font-normal">Figures that match</th>
-            <th className="py-1 font-normal">Figures that differ</th>
+            <th className="py-1 pr-2 font-normal">{t('colPosition')}</th>
+            <th className="py-1 pr-2 font-normal">{t('colArguedBy')}</th>
+            <th className="py-1 pr-2 font-normal">{t('colMatch')}</th>
+            <th className="py-1 font-normal">{t('colDiffer')}</th>
           </tr>
         </thead>
         <tbody>
@@ -1296,10 +1361,10 @@ function EvidenceMapBox({ quest, items, brief, related }: { quest: DebateQuest; 
                 <div key={a.login} className="space-y-1">
                   <div className="text-xs text-slate-500">
                     {a.login}
-                    {a.via === 'email' ? ' (emailed)' : ''}
+                    {a.via === 'email' ? ` ${t('emailed')}` : ''}
                   </div>
                   <p className="text-sm whitespace-pre-wrap">{a.argument}</p>
-                  <Checks checks={a.checks} empty="Claim Check found no figure or ranking it could compare." />
+                  <Checks checks={a.checks} empty={t('claimNoneShort')} />
                 </div>
               ))}
             </div>
@@ -1307,20 +1372,20 @@ function EvidenceMapBox({ quest, items, brief, related }: { quest: DebateQuest; 
         ))}
       {map.related.length > 0 && (
         <div className="space-y-1">
-          <div className="text-xs text-slate-500">What related Forecast Quests found</div>
+          <div className="text-xs text-slate-500">{t('relatedFound')}</div>
           <ul className="list-disc pl-5 text-xs">
             {map.related.map((r) => (
               <li key={r.questId}>
-                {r.title}: {r.result}
+                {r.title}: {r.line ? words.outcome(r.line) : tx(r.result)}
               </li>
             ))}
           </ul>
         </div>
       )}
       <button type="button" className="ui-btn" onClick={exportMd} disabled={!map.total} data-quest-map-export>
-        Export evidence map (Markdown)
+        {t('exportMap')}
       </button>
-      <p className="text-xs text-slate-500">Claim Check compares figures with the app's figures as they are today, which may be newer than when an argument was written. It is a check against the app, not a verdict on the truth.</p>
+      <p className="text-xs text-slate-500">{t('mapNote')}</p>
     </Box>
   );
 }
@@ -1329,6 +1394,8 @@ function EvidenceMapBox({ quest, items, brief, related }: { quest: DebateQuest; 
 
 /** Enter a replication: the figure the script produced and where the script is. */
 function Replicate({ quest }: { quest: ReplicationQuest }) {
+  const t = useT(QUESTS);
+  const tx = useTx();
   const [value, setValue] = useState('');
   const [code, setCode] = useState('');
   const [notes, setNotes] = useState('');
@@ -1340,7 +1407,7 @@ function Replicate({ quest }: { quest: ReplicationQuest }) {
     setMsg(null);
     try {
       const j = await send(`/api/quests/${encodeURIComponent(quest.id)}/private`, { answer: { value: Number(value) }, code: code.trim(), rationale: notes });
-      setMsg(`Logged on this computer at ${String(j.entry.loggedAt).slice(0, 16).replace('T', ' ')} UTC.`);
+      setMsg(t('loggedShort', { time: String(j.entry.loggedAt).slice(0, 16).replace('T', ' ') }));
     } catch (e: any) {
       setMsg(e?.message || String(e));
     }
@@ -1361,46 +1428,46 @@ function Replicate({ quest }: { quest: ReplicationQuest }) {
     }
   };
   return (
-    <Box title="Enter a replication">
+    <Box title={t('replTitle')}>
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        Write a script in any language (R, Python, Stata, a spreadsheet with its formulas) that rebuilds the figure from the same public data, put it somewhere anyone can read it (a GitHub repository or gist), and enter the figure it gives. After entries close, the maintainer records the app's own figure; your entry reproduces it if it is within {quest.tolerance} of it. If your script shows the app is wrong, say why in the notes: that solves the Quest too, and the app gets fixed.
+        {t('replIntro', { tolerance: quest.tolerance })}
       </p>
       <div className="flex flex-wrap gap-2 items-end">
         <label className="text-xs space-y-1">
-          <span className="block">Your script's figure</span>
+          <span className="block">{t('scriptFigure')}</span>
           <input className={`${fieldCls} w-32`} inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} data-quest-replication-value />
         </label>
         <label className="text-xs space-y-1 grow">
-          <span className="block">Where the script is (https address)</span>
+          <span className="block">{t('scriptWhere')}</span>
           <input className={`${fieldCls} w-full`} value={code} onChange={(e) => setCode(e.target.value)} placeholder="https://github.com/you/repo/blob/main/bohn.R" data-quest-replication-code />
         </label>
       </div>
       <label className="text-xs space-y-1 block">
-        <span className="block">Notes (optional): data vintage, settings, and any difference you found</span>
+        <span className="block">{t('replNotes')}</span>
         <textarea className={`${fieldCls} w-full`} rows={2} maxLength={2000} value={notes} onChange={(e) => setNotes(e.target.value)} />
       </label>
       <div className="flex flex-wrap gap-2 items-end">
         <button type="button" className="ui-btn" onClick={logPrivately} disabled={!ready}>
-          Log on this computer
+          {t('logHere')}
         </button>
         <label className="text-xs space-y-1">
-          <span className="block">GitHub name</span>
+          <span className="block">{t('githubName')}</span>
           <input className={`${fieldCls} w-40`} value={login} onChange={(e) => setLogin(e.target.value)} autoComplete="username" />
         </label>
         <button type="button" className="ui-btn" onClick={preparePublic} disabled={!ready || !login.trim()} data-quest-replication-public>
-          Prepare public entry
+          {t('preparePublic')}
         </button>
       </div>
       {msg && <p className="text-xs text-slate-600 dark:text-slate-300">{msg}</p>}
       {draft && (
         <div className="space-y-1 text-xs" data-quest-draft>
           <p>
-            {draft.replaces ? `This replaces your entry ${draft.replaces}; both are kept. ` : ''}File: {draft.path}
+            {draft.replaces ? `${t('replaces', { n: draft.replaces })} ` : ''}{t('file', { file: draft.path })}
           </p>
           <pre className="p-2 bg-slate-50 dark:bg-slate-950 overflow-x-auto whitespace-pre-wrap">{draft.text}</pre>
-          <p>{draft.note}</p>
+          <p>{tx(draft.note)}</p>
           <a className="ui-btn inline-block" href={draft.url} target="_blank" rel="noreferrer">
-            Open on GitHub
+            {t('openGithub')}
           </a>
         </div>
       )}
@@ -1414,28 +1481,30 @@ type ReplicationReply =
 
 /** Replication entries: hidden until close, then each figure and script, matched against the app's recorded figure. */
 function ReplicationEntries({ questId }: { questId: string }) {
+  const t = useT(QUESTS);
+  const tx = useTx();
   const [data, setData] = useState<ReplicationReply | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
     send(`/api/quests/${encodeURIComponent(questId)}/entries`).then(setData).catch((e) => setErr(e?.message || String(e)));
   }, [questId]);
-  if (err) return <p className="text-xs text-rose-700 dark:text-rose-400">Entries did not load: {err}</p>;
+  if (err) return <p className="text-xs text-rose-700 dark:text-rose-400">{t('entriesFailed', { error: err })}</p>;
   if (!data) return null;
   return (
-    <Box title={`Replications (${data.count})`}>
+    <Box title={t('replsTitle', { n: data.count })}>
       {data.open ? (
         <p className="text-xs text-slate-600 dark:text-slate-300" data-quest-entries-hidden>
-          {data.note}
+          {tx(data.note)}
         </p>
       ) : data.entries.length === 0 ? (
-        <p className="text-xs text-slate-500">No replications were entered.</p>
+        <p className="text-xs text-slate-500">{t('replNone')}</p>
       ) : (
         <table className="w-full text-sm" data-quest-replications-table>
           <thead>
             <tr className="text-xs text-slate-500 text-left">
-              <th className="py-1 pr-2 font-normal">Who</th>
-              <th className="py-1 pr-2 font-normal">Figure</th>
-              <th className="py-1 font-normal">Against the app</th>
+              <th className="py-1 pr-2 font-normal">{t('colWho')}</th>
+              <th className="py-1 pr-2 font-normal">{t('colFigure')}</th>
+              <th className="py-1 font-normal">{t('colAgainst')}</th>
             </tr>
           </thead>
           <tbody>
@@ -1443,18 +1512,18 @@ function ReplicationEntries({ questId }: { questId: string }) {
               <tr key={e.login} className="border-t border-slate-200 dark:border-slate-800 align-top">
                 <td className="py-1 pr-2">
                   {e.login}
-                  {e.via === 'email' ? <span className="text-xs text-slate-500"> (emailed)</span> : null}
+                  {e.via === 'email' ? <span className="text-xs text-slate-500"> {t('emailed')}</span> : null}
                   {e.code && (
                     <div className="text-xs">
                       <a className="underline" href={e.code} target="_blank" rel="noreferrer noopener">
-                        Script
+                        {t('script')}
                       </a>
                     </div>
                   )}
                   {e.rationale && <div className="text-xs text-slate-500">{e.rationale}</div>}
                 </td>
                 <td className="py-1 pr-2 tabular-nums">{e.answer.value}</td>
-                <td className={`py-1 text-xs ${e.score.status === 'replicated' ? (e.score.matched ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400') : ''}`}>{e.score.note}</td>
+                <td className={`py-1 text-xs ${e.score.status === 'replicated' ? (e.score.matched ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400') : ''}`}>{tx(e.score.note ?? '')}</td>
               </tr>
             ))}
           </tbody>
@@ -1468,6 +1537,8 @@ function ReplicationEntries({ questId }: { questId: string }) {
 
 /** Propose a test: a pre-registered test file, entered in public so it is fixed before it runs. */
 function ProposeTest({ quest }: { quest: SignalQuest }) {
+  const t = useT(QUESTS);
+  const tx = useTx();
   const start: SignalTest = quest.methods?.length && !quest.methods.includes(SIGNAL_TEMPLATE.method) ? { ...SIGNAL_TEMPLATE, method: quest.methods[0] as SignalTest['method'], params: Object.fromEntries(SIGNAL_METHODS[quest.methods[0] as SignalTest['method']].params.map((k) => [k, 0])) } : SIGNAL_TEMPLATE;
   const [text, setText] = useState(() => JSON.stringify(start, null, 2));
   const [login, setLogin] = useState(readLogin);
@@ -1478,7 +1549,7 @@ function ProposeTest({ quest }: { quest: SignalQuest }) {
   try {
     parsed = JSON.parse(text);
   } catch (e: any) {
-    parseError = `Not valid JSON yet: ${e?.message || e}`;
+    parseError = t('notJson', { error: String(e?.message || e) });
   }
   const problems = parseError ? [parseError] : signalTestProblems(parsed, quest.methods);
   const methods = (quest.methods?.length ? quest.methods : Object.keys(SIGNAL_METHODS)) as SignalTest['method'][];
@@ -1498,58 +1569,58 @@ function ProposeTest({ quest }: { quest: SignalQuest }) {
     }
   };
   return (
-    <Box title="Propose a test">
+    <Box title={t('testTitle')}>
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        A test asks whether a rule would have beaten the simplest guess (how often the same thing happened after any month or week) on past data, using only figures that had been published at the time. You write the whole test down before anything is run: the rule, every setting, the years to use and the pass mark. Once entries close, the maintainer runs every test once. Its verdict is recorded and never changed: a failed test stays failed and is never re-tuned. Every test tried also makes the bar higher for all the others (the Holm correction), so propose a test you believe in, not many variations.
+        {t('testIntro')}
       </p>
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        Pass mark floor: at least {SIGNAL_FLOOR.minCases} cases over at least {SIGNAL_FLOOR.minYears} years, a p of {SIGNAL_FLOOR.maxPValue} or less with whole years resampled, and at least {SIGNAL_FLOOR.minLiftPts} point better than the base rate. You may ask for more, never less. Tests are entered in public (a pull request, or by email to the maintainer), so they are fixed in the open.
+        {t('testFloor', { cases: SIGNAL_FLOOR.minCases, years: SIGNAL_FLOOR.minYears, p: SIGNAL_FLOOR.maxPValue, lift: SIGNAL_FLOOR.minLiftPts })}
       </p>
       <div className="text-xs space-y-1" data-quest-test-methods>
-        <div className="text-slate-500">Rules a test can use</div>
+        <div className="text-slate-500">{t('testRules')}</div>
         <ul className="list-disc pl-5">
           {methods.map((m) => (
             <li key={m}>
-              <code>{m}</code>: {SIGNAL_METHODS[m].label}. Settings: {SIGNAL_METHODS[m].params.join(', ')}.{SIGNAL_METHODS[m].local ? ' Reads files on the maintainer\'s computer.' : ''}
+              <code>{m}</code>: {tx(SIGNAL_METHODS[m].label)}. {t('testSettings', { list: SIGNAL_METHODS[m].params.join(', ') })}{SIGNAL_METHODS[m].local ? ` ${t('testLocal')}` : ''}
             </li>
           ))}
         </ul>
-        <p className="text-slate-500">A test that needs a rule or data the app does not have yet starts with a code pull request that adds it.</p>
+        <p className="text-slate-500">{t('testNeedsCode')}</p>
       </div>
       <label className="text-xs space-y-1 block">
-        <span className="block">Your test (start from the example and change it)</span>
+        <span className="block">{t('testYour')}</span>
         <textarea className={`${fieldCls} w-full font-mono`} rows={14} value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} data-quest-test-text />
       </label>
       {problems.length > 0 ? (
         <ul className="list-disc pl-5 text-xs text-rose-700 dark:text-rose-400" data-quest-test-problems>
           {problems.map((p) => (
-            <li key={p}>{p}</li>
+            <li key={p}>{tx(p)}</li>
           ))}
         </ul>
       ) : (
         <p className="text-xs text-emerald-700 dark:text-emerald-400" data-quest-test-ok>
-          The test can be run as written.
+          {t('testOk')}
         </p>
       )}
       <div className="flex flex-wrap gap-2 items-end">
         <label className="text-xs space-y-1">
-          <span className="block">GitHub name</span>
+          <span className="block">{t('githubName')}</span>
           <input className={`${fieldCls} w-40`} value={login} onChange={(e) => setLogin(e.target.value)} autoComplete="username" />
         </label>
         <button type="button" className="ui-btn" onClick={preparePublic} disabled={problems.length > 0 || !login.trim()} data-quest-test-public>
-          Prepare public entry
+          {t('preparePublic')}
         </button>
       </div>
       {msg && <p className="text-xs text-slate-600 dark:text-slate-300">{msg}</p>}
       {draft && (
         <div className="space-y-1 text-xs" data-quest-draft>
           <p>
-            {draft.replaces ? `This replaces your entry ${draft.replaces}; both are kept, and only the newest is run. ` : ''}File: {draft.path}
+            {draft.replaces ? `${t('replacesRun', { n: draft.replaces })} ` : ''}{t('file', { file: draft.path })}
           </p>
           <pre className="p-2 bg-slate-50 dark:bg-slate-950 overflow-x-auto whitespace-pre-wrap">{draft.text}</pre>
-          <p>{draft.note}</p>
+          <p>{tx(draft.note)}</p>
           <a className="ui-btn inline-block" href={draft.url} target="_blank" rel="noreferrer">
-            Open on GitHub
+            {t('openGithub')}
           </a>
         </div>
       )}
@@ -1571,45 +1642,47 @@ const GRADE_CLS: Record<string, string> = {
 
 /** The tests entered: hidden until close, then each with its verdict and its reading after the Holm correction. */
 function SignalEntries({ questId }: { questId: string }) {
+  const t = useT(QUESTS);
+  const tx = useTx();
   const [data, setData] = useState<SignalReply | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
     send(`/api/quests/${encodeURIComponent(questId)}/entries`).then(setData).catch((e) => setErr(e?.message || String(e)));
   }, [questId]);
-  if (err) return <p className="text-xs text-rose-700 dark:text-rose-400">Tests did not load: {err}</p>;
+  if (err) return <p className="text-xs text-rose-700 dark:text-rose-400">{t('testsFailed', { error: err })}</p>;
   if (!data) return null;
   return (
-    <Box title={`Tests proposed (${data.count})`}>
+    <Box title={t('testsTitle', { n: data.count })}>
       <p className="text-xs text-slate-600 dark:text-slate-300" data-quest-entries-hidden={data.open ? '' : undefined}>
-        {data.note}
+        {tx(data.note)}
       </p>
-      {!data.open && data.error && <p className="text-xs text-rose-700 dark:text-rose-400">{data.error}</p>}
-      {!data.open && data.entries.length === 0 && <p className="text-xs text-slate-500">No tests were proposed.</p>}
+      {!data.open && data.error && <p className="text-xs text-rose-700 dark:text-rose-400">{tx(data.error)}</p>}
+      {!data.open && data.entries.length === 0 && <p className="text-xs text-slate-500">{t('testsNone')}</p>}
       {!data.open &&
         data.entries.map((e) => (
           <div key={e.login} className="border-t border-slate-200 dark:border-slate-800 pt-2 space-y-1" data-quest-test-entry>
             <div className="text-sm">
               {e.login}
-              {e.via === 'email' ? <span className="text-xs text-slate-500"> (emailed)</span> : null}
-              {e.answer.test ? <span className="text-xs text-slate-500"> · {SIGNAL_METHODS[e.answer.test.method]?.label ?? e.answer.test.method}</span> : null}
+              {e.via === 'email' ? <span className="text-xs text-slate-500"> {t('emailed')}</span> : null}
+              {e.answer.test ? <span className="text-xs text-slate-500"> · {tx(SIGNAL_METHODS[e.answer.test.method]?.label ?? e.answer.test.method)}</span> : null}
             </div>
             {e.answer.test && <p className="text-sm">{e.answer.test.hypothesis}</p>}
             {e.verdict ? (
               <p className={`text-xs ${GRADE_CLS[e.verdict.label] ?? ''}`} data-quest-test-verdict>
-                <strong>{e.verdict.label}.</strong> {e.verdict.text}
+                <strong>{tx(e.verdict.label)}.</strong> {tx(e.verdict.text)}
               </p>
             ) : (
-              <p className="text-xs text-slate-500">Not run yet.</p>
+              <p className="text-xs text-slate-500">{t('notRunYet')}</p>
             )}
             {e.answer.test && (
               <details className="text-xs">
-                <summary className="cursor-pointer text-slate-500">The test as entered</summary>
+                <summary className="cursor-pointer text-slate-500">{t('testAsEntered')}</summary>
                 <pre className="p-2 bg-slate-50 dark:bg-slate-950 overflow-x-auto whitespace-pre-wrap">{JSON.stringify(e.answer.test, null, 2)}</pre>
               </details>
             )}
           </div>
         ))}
-      <p className="text-xs text-slate-500">Results on past data are hypothetical: they show how a rule would have done, not money made. Passing does not mean a rule will work in future.</p>
+      <p className="text-xs text-slate-500">{t('hypothetical')}</p>
     </Box>
   );
 }
@@ -1630,6 +1703,8 @@ const STANCE_STEPS: StanceValue[] = [-2, -1, 0, 1, 2];
 
 /** A contributor's own profile, when they signed up for one on GitHub. */
 function ProfileStances({ login }: { login: string }) {
+  const t = useT(QUESTS);
+  const tx = useTx();
   const [data, setData] = useState<StancesReply | null>(null);
   useEffect(() => {
     send('/api/quests/stances').then(setData).catch(() => setData(null));
@@ -1638,11 +1713,11 @@ function ProfileStances({ login }: { login: string }) {
   if (!data || !p) return null;
   return (
     <div className="space-y-1" data-quest-profile-stances>
-      <div className="text-xs text-slate-500">Stances {login} chose to show (since {p.shownSince}; self-declared, never worked out by the app)</div>
+      <div className="text-xs text-slate-500">{t('stancesSince', { login, date: p.shownSince })}</div>
       <ul className="text-sm list-disc pl-5">
         {data.axes.filter((a) => p.axes[a.id] !== undefined).map((a) => (
           <li key={a.id}>
-            {a.question} {stanceWords(a, p.axes[a.id])}
+            {tx(a.question)} {tx(stanceWords(a, p.axes[a.id]))}
           </li>
         ))}
       </ul>
@@ -1652,6 +1727,8 @@ function ProfileStances({ login }: { login: string }) {
 
 /** Stances: set your own (kept in this browser), sign up with a profile on GitHub if you want one, and see who has. */
 function StancesView() {
+  const t = useT(QUESTS);
+  const tx = useTx();
   const [data, setData] = useState<StancesReply | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [mine, setMine] = useState<Stances>(readStances);
@@ -1672,7 +1749,7 @@ function StancesView() {
     }
   };
   if (err) return <p className="text-sm text-rose-700 dark:text-rose-400">{err}</p>;
-  if (!data) return <p className="text-sm text-slate-500">Loading…</p>;
+  if (!data) return <p className="text-sm text-slate-500">{t('loading')}</p>;
   const problems = stancesProblems(mine);
   const today = new Date().toISOString().slice(0, 10);
   const profile: StanceProfile = { login: login.trim(), axes: mine, shownSince: today };
@@ -1681,55 +1758,55 @@ function StancesView() {
   return (
     <div className="space-y-3" data-quest-stances>
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        Eight questions economists disagree on. Each is a scale between two positions; leave any you would rather not answer. These are about economics, not parties: there is no left or right label and no answer is marked right. The app never works out anyone's stance from their forecasts or arguments. What you set here stays in this browser.
+        {t('stancesIntro')}
       </p>
       <div className="space-y-3">
         {data.axes.map((a) => (
           <fieldset key={a.id} className="border border-slate-200 dark:border-slate-800 p-2 space-y-1" data-quest-stance-axis={a.id}>
-            <legend className="text-sm px-1">{a.question}</legend>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{a.explain}</p>
+            <legend className="text-sm px-1">{tx(a.question)}</legend>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{tx(a.explain)}</p>
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="w-40 text-right">{a.first}</span>
+              <span className="w-40 text-right">{tx(a.first)}</span>
               {STANCE_STEPS.map((v) => (
                 <label key={v} className="inline-flex flex-col items-center">
-                  <input type="radio" name={`stance-${a.id}`} checked={mine[a.id] === v} onChange={() => set(a.id, v)} aria-label={stanceWords(a, v)} />
+                  <input type="radio" name={`stance-${a.id}`} checked={mine[a.id] === v} onChange={() => set(a.id, v)} aria-label={tx(stanceWords(a, v))} />
                 </label>
               ))}
-              <span className="w-40">{a.second}</span>
+              <span className="w-40">{tx(a.second)}</span>
               <button type="button" className="ui-btn ui-btn-ghost text-xs" onClick={() => set(a.id, undefined)} disabled={mine[a.id] === undefined}>
-                Leave out
+                {t('leaveOut')}
               </button>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300">{stanceWords(a, mine[a.id])}</p>
+            <p className="text-xs text-slate-600 dark:text-slate-300">{tx(stanceWords(a, mine[a.id]))}</p>
           </fieldset>
         ))}
       </div>
-      <Box title="Sign up with a profile (optional)">
+      <Box title={t('signUpTitle')}>
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          If you want your stances on your public contributor page, add them as a file on GitHub by your own pull request. Only you can add or change your file. Be sure first: a stance tied to your name is a public statement of your views, and git keeps every version of the file for good, even after you remove it. Nobody has to do this, and it changes nothing about how your forecasts are scored.
+          {t('signUpIntro')}
         </p>
-        <p className="text-xs text-slate-500 dark:text-slate-400">Tables of stance against forecasting skill for groups of people are not shown: doing that safely needs a way to collect stances without names, which the project does not have.</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{t('noGroupTables')}</p>
         <label className="text-xs inline-flex items-center gap-2">
           <input type="checkbox" checked={understood} onChange={(e) => setUnderstood(e.target.checked)} data-quest-stance-understood />
-          <span>I understand my stances will be public under my GitHub name, and git keeps them.</span>
+          <span>{t('understood')}</span>
         </label>
         <div className="flex flex-wrap gap-2 items-end">
           <label className="text-xs space-y-1">
-            <span className="block">GitHub name</span>
+            <span className="block">{t('githubName')}</span>
             <input className={`${fieldCls} w-40`} value={login} onChange={(e) => setLogin(e.target.value)} autoComplete="username" />
           </label>
           {canSignUp ? (
             <a className="ui-btn inline-block" href={newFileUrl(data.repo!, 'main', profilePath(profile.login), text)} target="_blank" rel="noreferrer" data-quest-stance-signup>
-              Open on GitHub
+              {t('openGithub')}
             </a>
           ) : (
             <button type="button" className="ui-btn" disabled>
-              Open on GitHub
+              {t('openGithub')}
             </button>
           )}
         </div>
-        {!data.repo && <p className="text-xs text-slate-500">Profiles are not set up on this copy: QUESTS_REPO (the public repository) is not set.</p>}
-        {problems.length > 0 && <p className="text-xs text-slate-500">Set at least one stance first.</p>}
+        {!data.repo && <p className="text-xs text-slate-500">{t('noRepo')}</p>}
+        {problems.length > 0 && <p className="text-xs text-slate-500">{t('setOne')}</p>}
         {!problems.length && login.trim() && (
           <pre className="p-2 text-xs bg-slate-50 dark:bg-slate-950 overflow-x-auto whitespace-pre-wrap" data-quest-stance-file>
             {profilePath(profile.login)}
@@ -1737,21 +1814,21 @@ function StancesView() {
             {text}
           </pre>
         )}
-        <p className="text-xs text-slate-500">To change your profile later, edit your file on GitHub (keep its shownSince date) and open a pull request. To remove it, delete the file by pull request, or ask a maintainer.</p>
+        <p className="text-xs text-slate-500">{t('changeLater')}</p>
       </Box>
       <div className="space-y-1">
-        <div className="text-xs text-slate-500">People who signed up with a profile ({data.profiles.length})</div>
+        <div className="text-xs text-slate-500">{t('signedUp', { n: data.profiles.length })}</div>
         {data.profiles.length === 0 ? (
-          <p className="text-sm text-slate-500">Nobody yet.</p>
+          <p className="text-sm text-slate-500">{t('nobody')}</p>
         ) : (
           <ul className="text-sm space-y-2">
             {data.profiles.map((p) => (
               <li key={p.login} data-quest-stance-profile={p.login}>
-                <strong>{p.login}</strong> <span className="text-xs text-slate-500">since {p.shownSince}</span>
+                <strong>{p.login}</strong> <span className="text-xs text-slate-500">{t('since', { date: p.shownSince })}</span>
                 <ul className="list-disc pl-5 text-xs">
                   {data.axes.filter((a) => p.axes[a.id] !== undefined).map((a) => (
                     <li key={a.id}>
-                      {a.question} {stanceWords(a, p.axes[a.id])}
+                      {tx(a.question)} {tx(stanceWords(a, p.axes[a.id]))}
                     </li>
                   ))}
                 </ul>
