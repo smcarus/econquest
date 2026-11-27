@@ -137,7 +137,7 @@ import { debtStructureFromSnapshot } from './src/utils/debtStructure';
 import { licDebtReading, type LicDebtReading } from './src/utils/lowIncomeDebt';
 import { aiddataData } from './src/utils/aiddataStore';
 import { investorBaseData } from './src/utils/investorBaseStore';
-import { fiscalRulesData } from './src/utils/fiscalRulesStore';
+import { fiscalRulesData, fiscalRulesInput } from './src/utils/fiscalRulesStore';
 import { dpiData, dpiInput } from './src/utils/dpiStore';
 import { investorBaseReading } from './src/utils/investorBase';
 import { politicsFromSnapshot } from './src/utils/politicsEvents';
@@ -4230,7 +4230,16 @@ async function startServer() {
       res.status(500).json({ error: `Could not save the workspace file (${error?.code || error?.message || 'unknown error'}).` });
     }
   });
-  registerReviewRoutes(app, { refuseRemoteChange, signedIn, archivedSnapshot: (iso3, date) => archivedSnapshot(iso3, date), seriesFor, fetchLiveOpenDataSnapshot, reviewOptionsStep, withModelFigures, allHistories, politicalInputs: (iso3) => ({ dpi: dpiInput(DATA_DIR), gdelt: gdeltDailySeries(DATA_DIR, iso3) }) });
+  registerReviewRoutes(app, { refuseRemoteChange, signedIn, archivedSnapshot: (iso3, date) => archivedSnapshot(iso3, date), seriesFor, fetchLiveOpenDataSnapshot, reviewOptionsStep, withModelFigures, allHistories, politicalInputs: (iso3) => ({ dpi: dpiInput(DATA_DIR), gdelt: gdeltDailySeries(DATA_DIR, iso3) }), eventFiles: () => {
+    const fx = fxRegimeData(DATA_DIR);
+    const fr = fiscalRulesInput(DATA_DIR);
+    const ci = chinnItoData(DATA_DIR);
+    const reasons: Record<string, string> = {};
+    if (!fx.ok) reasons.fxRegime = fx.reason;
+    if (!fr.table) reasons.fiscalRules = fr.reason || 'no IMF Fiscal Rules workbook in data/local/imf-fiscal-rules/';
+    if (!ci.ok) reasons.chinnIto = ci.reason;
+    return { fxRegime: fx.ok ? fx.table : null, fiscalRules: fr.table, chinnIto: ci.ok ? ci.table : null, reasons };
+  } });
   // Pre-registered backtests: the tests as registered (with their hashes) and the latest verdicts.
   app.get('/api/validation', (_req, res) => res.json(validationReplyNow()));
   registerUserTestRoutes(app, { dataDir: DATA_DIR, specDir: SPEC_DIR, refuseRemoteChange, signedIn, local: backtestLocal, audit: (summary, detail) => appendAudit(AUDIT_FILES, { kind: 'validation', summary, detail }) });

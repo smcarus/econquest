@@ -5,6 +5,15 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- What happened after (SC2): `src/utils/policyEvents.ts` lists the years a country made a change,
+  each labelled with where it came from. Found by a rule on the figures: the primary balance moving
+  1.5% of GDP or more in a year, and large devaluations (Frankel and Rose 1996). From files you saved:
+  exchange rate regime changes (IRR), the first year of each national fiscal rule now in force (IMF
+  Fiscal Rules) and Chinn-Ito capital account moves. Your own events with a source link, saved in
+  `data/local/policy-events.json`. Countries with the same kind of change in the window are left out
+  of the twin. Routes `/api/reviews/:id/events` (list, add your own) and
+  `/api/reviews/:id/what-happened`. Policy rate moves are not used: the saved policy rate history
+  covers about two years.
 - What happened after (SC1): `src/utils/syntheticControl.ts` builds a "twin" for a country that
   made a change, a weighted mix of other countries whose yearly path of one outcome matched it in the
   ten years before (synthetic control, Abadie, Diamond and Hainmueller 2010, with the Abadie and
