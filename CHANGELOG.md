@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- README in four languages: a short *Why use EconQuest* section after *Why it exists* (traceable
+  figures, tests published with their failures, AI never supplies figures, lower-income coverage, policy
+  review to brief, on your own computer, four languages and help levels) with what it does not do.
 - Docs brought up to date with main through #721: README and features in four languages (What
   happened after in the policy bullet and as done item 25, roadmap date, the Mac check waiting on
   `npm run synth:validate`); `npm run mac:validate` and `npm run synth:validate` in the commands

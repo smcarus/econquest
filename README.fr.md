@@ -26,6 +26,7 @@ n'existent qu'en anglais.
 ## Sommaire
 
 - [Pourquoi ce projet](#pourquoi-ce-projet)
+- [Pourquoi utiliser EconQuest](#pourquoi-utiliser-econquest)
 - [Gratuit, ouvert et indépendant](#gratuit-ouvert-et-indépendant)
 - [La règle : uniquement des chiffres réels](#la-règle--uniquement-des-chiffres-réels)
 - [Ce que vous pouvez en faire](#ce-que-vous-pouvez-en-faire)
@@ -60,6 +61,30 @@ avec chaque méthode écrite pour que chacun puisse la vérifier.
 centrales, des ministères des finances et des institutions internationales, investisseurs macro et
 change, équipes de risque pays, enseignants et étudiants, journalistes, et toute personne qui veut
 comprendre ce qui arrive à une économie et pourquoi.
+
+---
+
+## Pourquoi utiliser EconQuest
+
+- **Chaque nombre peut être retracé.** Chaque chiffre indique sa source et sa date ; un manque
+  s'affiche comme « Manquant », jamais comme une estimation.
+- **Des tests publics, échecs compris.** Chaque règle de signal et de prévision est écrite avant
+  d'être testée, et chaque résultat reste consigné ([historique](docs/TRACK_RECORD.md), en anglais).
+- **L'IA explique, elle ne fournit jamais de chiffres.** Les réponses sont vérifiées par rapport aux
+  chiffres de l'application et étiquetées. Chaque chiffre, graphique et test fonctionne sans IA.
+- **Conçue aussi pour les pays à faible revenu.** Envois de fonds, aide, prix alimentaires,
+  catastrophes et les 59 pays de la liste des pays à faible revenu du FMI et de la Banque mondiale, à
+  côté du G20.
+- **De la question à la note de politique.** Une revue de politique va du problème aux options, aux
+  précédents, à une note et à un résumé d'une page pour les non-économistes.
+- **À vous, sur votre ordinateur.** Pas de compte, pas de frais, pas de suivi. Vos clés et vos
+  recherches restent chez vous.
+- **Quatre langues, quatre niveaux d'aide.** Anglais, espagnol, français et portugais du Brésil, avec
+  une aide en langage clair.
+
+**Ce qu'elle ne fait pas.** Elle n'a pas de données de marché payantes, sauf si vous utilisez votre
+propre compte ; les notations de crédit et le consensus des analystes s'affichent comme « Manquant ».
+C'est un logiciel de recherche et d'enseignement, pas un conseil en investissement.
 
 ---
 

@@ -26,6 +26,7 @@ existem só em inglês.
 ## Conteúdo
 
 - [Por que existe](#por-que-existe)
+- [Por que usar o EconQuest](#por-que-usar-o-econquest)
 - [Gratuito, aberto e independente](#gratuito-aberto-e-independente)
 - [A regra: só números reais](#a-regra-só-números-reais)
 - [O que você pode fazer com ele](#o-que-você-pode-fazer-com-ele)
@@ -60,6 +61,29 @@ pessoa possa conferir.
 centrais, ministérios da fazenda e instituições internacionais, investidores macro e de câmbio, equipes
 de risco-país, professores e estudantes, jornalistas e qualquer pessoa que queira entender o que está
 acontecendo com uma economia e por quê.
+
+---
+
+## Por que usar o EconQuest
+
+- **Cada número pode ser rastreado.** Cada valor mostra sua fonte e data; uma lacuna aparece como
+  "Ausente", nunca como uma estimativa.
+- **Testado em público, falhas incluídas.** Cada regra de sinal e de previsão é escrita antes de ser
+  testada, e cada resultado fica registrado ([histórico](docs/TRACK_RECORD.md), em inglês).
+- **A IA explica, nunca fornece números.** As respostas são conferidas com os números do próprio app
+  e identificadas. Todos os números, gráficos e testes funcionam sem nenhuma IA.
+- **Feito também para países de renda mais baixa.** Remessas, ajuda externa, preços de alimentos,
+  desastres e os 59 países da lista de baixa renda do FMI e do Banco Mundial, ao lado do G20.
+- **Da pergunta ao resumo de política.** Uma revisão de políticas vai do problema às opções, aos
+  precedentes, a um memorando e a um resumo de uma página para quem não é economista.
+- **Seu, no seu computador.** Sem conta, sem pagamento, sem rastreamento. Suas chaves e sua pesquisa
+  ficam com você.
+- **Quatro idiomas, quatro níveis de ajuda.** Inglês, espanhol, francês e português do Brasil, com
+  ajuda em linguagem simples.
+
+**O que ele não faz.** Não tem dados de mercado pagos, a menos que você use sua própria conta;
+ratings de crédito e o consenso de analistas aparecem como "Ausente". É um software de pesquisa e
+ensino, não uma recomendação de investimento.
 
 ---
 

@@ -26,6 +26,7 @@ solo están en inglés.
 ## Contenido
 
 - [Por qué existe](#por-qué-existe)
+- [Por qué usar EconQuest](#por-qué-usar-econquest)
 - [Gratuito, abierto e independiente](#gratuito-abierto-e-independiente)
 - [La regla: solo cifras reales](#la-regla-solo-cifras-reales)
 - [Qué puede hacer con él](#qué-puede-hacer-con-él)
@@ -60,6 +61,29 @@ escrito para que cualquiera pueda comprobarlo.
 centrales, ministerios de finanzas e instituciones internacionales, inversores macro y de divisas,
 equipos de riesgo país, docentes y estudiantes, periodistas y cualquier persona que quiera entender qué
 le pasa a una economía y por qué.
+
+---
+
+## Por qué usar EconQuest
+
+- **Cada número se puede rastrear.** Cada cifra indica su fuente y su fecha; un hueco aparece como
+  «Falta», nunca como una estimación.
+- **Pruebas en público, también las fallidas.** Cada regla de señal y de previsión se escribe antes de
+  probarla, y cada resultado queda registrado ([historial](docs/TRACK_RECORD.md), en inglés).
+- **La IA explica, nunca aporta cifras.** Las respuestas se comprueban con los números de la propia
+  aplicación y llevan su etiqueta. Todas las cifras, gráficos y pruebas funcionan sin ninguna IA.
+- **Pensado también para los países de menores ingresos.** Remesas, ayuda, precios de los alimentos,
+  desastres y los 59 países de la lista de bajos ingresos del FMI y el Banco Mundial, junto al G20.
+- **De la pregunta a la nota de política.** Una revisión de políticas va del problema a las opciones,
+  los precedentes, un memorando y una nota de una página para quien no es economista.
+- **Suya, en su ordenador.** Sin cuenta, sin pagos, sin seguimiento. Sus claves y su investigación se
+  quedan con usted.
+- **Cuatro idiomas, cuatro niveles de ayuda.** Inglés, español, francés y portugués de Brasil, con
+  ayuda en lenguaje claro.
+
+**Lo que no hace.** No tiene datos de mercado de pago, salvo que usted use su propia cuenta; las
+calificaciones crediticias y el consenso de analistas aparecen como «Falta». Es software de
+investigación y enseñanza, no asesoramiento de inversión.
 
 ---
 
