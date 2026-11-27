@@ -65,6 +65,8 @@ export const SHELL_ES: Messages<typeof SHELL> = {
   about: 'Acerca de y licencias de datos',
   manual: 'Manual de usuario',
   worked: 'Ejemplos resueltos',
+  yours: 'Qué significa para usted',
+  yoursTitle: 'Su propia tasa de inflación según lo que gasta, y lo que un cambio de tipos hace a la cuota de su préstamo, para el país en pantalla.',
   menuSetUp: 'Configurar',
   menuCheck: 'Revisar los datos',
   menuLearn: 'Aprender',

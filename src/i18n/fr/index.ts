@@ -20,6 +20,7 @@ import { WATCHLIST_FR } from './watchlist';
 import { OWN_DATA_FR } from './ownData';
 import { GAP_MODEL_FR } from './gapModel';
 import { SYNTH_FR } from './synth';
+import { YOUR_PRICES_FR } from './yourPrices';
 import { YOUR_TESTS_FR } from './yourTests';
 import { TOOLS_FR } from './tools';
 import { TOOL_TEXT_FR } from './toolText';
@@ -46,6 +47,7 @@ export const FR: Record<string, Record<string, string>> = {
   ownData: OWN_DATA_FR,
   gapModel: GAP_MODEL_FR,
   synth: SYNTH_FR,
+  yourPrices: YOUR_PRICES_FR,
   yourTests: YOUR_TESTS_FR,
   tools: TOOLS_FR,
   menu: MENU_FR,

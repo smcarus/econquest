@@ -96,6 +96,7 @@ import {
   ShieldCheck,
   GraduationCap,
   ListChecks,
+  Wallet,
   ScrollText,
   Activity,
   Search,
@@ -171,6 +172,7 @@ const OwnSeriesDialog = lazyNamed(() => import('./components/OwnSeriesDialog'), 
 const AboutDialog = lazyNamed(() => import('./components/AboutDialog'), 'AboutDialog');
 const ShortcutsDialog = lazyNamed(() => import('./components/ShortcutsDialog'), 'ShortcutsDialog');
 const WorkedExamplesDialog = lazyNamed(() => import('./components/WorkedExamplesDialog'), 'WorkedExamplesDialog');
+const YourPricesDialog = lazyNamed(() => import('./components/YourPricesDialog'), 'YourPricesDialog');
 const AddCountryDialog = lazyNamed(() => import('./components/AddCountryDialog'), 'AddCountryDialog');
 const QuestsDialog = lazyNamed(() => import('./components/QuestsDialog'), 'QuestsDialog');
 const ModelRegisterDialog = lazyNamed(() => import('./components/ModelRegisterDialog'), 'ModelRegisterDialog');
@@ -522,6 +524,7 @@ export default function App() {
     useState<boolean>(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState<boolean>(false);
   const [isWorkedOpen, setIsWorkedOpen] = useState<boolean>(false);
+  const [isYourPricesOpen, setIsYourPricesOpen] = useState<boolean>(false);
   const [isRuntimeModalOpen, setIsRuntimeModalOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
@@ -1668,6 +1671,15 @@ export default function App() {
                         onClick: () => setIsWorkedOpen(true),
                         className: '',
                       },
+                      {
+                        key: 'yours',
+                        icon: <Wallet className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: t('yours'),
+                        hint: '',
+                        title: t('yoursTitle'),
+                        onClick: () => setIsYourPricesOpen(true),
+                        className: '',
+                      },
                     ]
                   )
                     // The audit log is for admins once accounts exist (src/utils/permissions.ts).
@@ -2139,6 +2151,7 @@ export default function App() {
           />
         )}
       </Suspense>
+      <Suspense fallback={null}>{isYourPricesOpen && <YourPricesDialog iso3={run.iso3} countryName={run.countryName} onClose={() => setIsYourPricesOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isOwnDataOpen && <OwnSeriesDialog onClose={() => setIsOwnDataOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isQuestsOpen && questsOn && <QuestsDialog items={liveWatchlistItems} onClose={() => setIsQuestsOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}</Suspense>

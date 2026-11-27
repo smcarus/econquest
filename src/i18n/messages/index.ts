@@ -16,5 +16,6 @@ import { COMMON } from './common';
 import { GAP_MODEL } from './gapModel';
 import { YOUR_TESTS } from './yourTests';
 import { SYNTH } from './synth';
+import { YOUR_PRICES } from './yourPrices';
 
-export const ALL_CATALOGS: Catalog[] = [SHELL as Catalog, COUNCIL as Catalog, OWN_DATA as Catalog, WORKSPACE as Catalog, WATCHLIST as Catalog, RESEARCH as Catalog, BRIEF as Catalog, PANELS as Catalog, COMMON as Catalog, TOOLS as Catalog, MENU as Catalog, CHAT as Catalog, REPORTS as Catalog, GAP_MODEL as Catalog, YOUR_TESTS as Catalog, SYNTH as Catalog];
+export const ALL_CATALOGS: Catalog[] = [SHELL as Catalog, COUNCIL as Catalog, OWN_DATA as Catalog, WORKSPACE as Catalog, WATCHLIST as Catalog, RESEARCH as Catalog, BRIEF as Catalog, PANELS as Catalog, COMMON as Catalog, TOOLS as Catalog, MENU as Catalog, CHAT as Catalog, REPORTS as Catalog, GAP_MODEL as Catalog, YOUR_TESTS as Catalog, SYNTH as Catalog, YOUR_PRICES as Catalog];

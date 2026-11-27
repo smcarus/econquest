@@ -21,6 +21,7 @@ const GROUP: Record<string, MenuGroup> = {
   register: 'check',
   audit: 'check',
   ideas: 'check',
+  yours: 'learn',
   manual: 'learn',
   worked: 'learn',
   about: 'learn',

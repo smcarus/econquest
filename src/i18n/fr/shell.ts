@@ -65,6 +65,8 @@ export const SHELL_FR: Messages<typeof SHELL> = {
   about: 'À propos et licences des données',
   manual: "Manuel d'utilisation",
   worked: 'Exemples guidés',
+  yours: 'Ce que cela signifie pour vous',
+  yoursTitle: 'Votre propre taux d\'inflation selon vos dépenses, et l\'effet d\'une variation des taux sur la mensualité de votre prêt, pour le pays affiché.',
   menuSetUp: 'Configurer',
   menuCheck: 'Vérifier les données',
   menuLearn: 'Apprendre',

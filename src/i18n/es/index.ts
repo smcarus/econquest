@@ -7,6 +7,7 @@ import { COUNCIL_ES } from './council';
 import { OWN_DATA_ES } from './ownData';
 import { GAP_MODEL_ES } from './gapModel';
 import { SYNTH_ES } from './synth';
+import { YOUR_PRICES_ES } from './yourPrices';
 import { YOUR_TESTS_ES } from './yourTests';
 import { WORKSPACE_ES } from './workspace';
 import { WATCHLIST_ES } from './watchlist';
@@ -37,6 +38,7 @@ export const ES: Record<string, Record<string, string>> = {
   ownData: OWN_DATA_ES,
   gapModel: GAP_MODEL_ES,
   synth: SYNTH_ES,
+  yourPrices: YOUR_PRICES_ES,
   yourTests: YOUR_TESTS_ES,
   workspace: WORKSPACE_ES,
   watchlist: WATCHLIST_ES,
