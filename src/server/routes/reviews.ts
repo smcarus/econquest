@@ -34,9 +34,10 @@ import type { DiagnosisFigure } from '../../utils/reviewDiagnosis';
 import { CONSENTS, expertCsv, expertSummaryMarkdown, parseExpertForm } from '../../utils/expertReview';
 import { findPrecedents, parseFeatures, type HistoryInput } from '../../utils/precedentFinder';
 import { syntheticControl, parseOutcome } from '../../utils/syntheticControl';
-import { EVENT_RULE, DEFAULT_OUTCOME, eventsFor, excludedFor, fileEvents, ownEvents, parseOwnEvent, ruleEvents, type PolicyEvent } from '../../utils/policyEvents';
+import { EVENT_KINDS, EVENT_RULE, DEFAULT_OUTCOME, eventsFor, excludedFor, fileEvents, ownEvents, parseOwnEvent, ruleEvents, type PolicyEvent } from '../../utils/policyEvents';
 import { addOwnEvent, loadOwnEvents, policyEventFile } from '../../utils/policyEventStore';
 import { isOutcome, keptFrom, withKept, withoutKept } from '../../utils/synthKeep';
+import { pooledGaps } from '../../utils/synthPooled';
 import type { FxRegimeTable } from '../../utils/fxRegime';
 import type { FiscalRulesTable } from '../../utils/fiscalRules';
 import type { ChinnItoTable } from '../../utils/chinnIto';
@@ -445,6 +446,21 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
     const { histories, pulledAt } = allHistories();
     const result = syntheticControl({ iso3: frame.iso3, eventYear: event.year, asOf: frame.asOf, outcome, histories, exclude: excludedFor(event, events) });
     res.json({ ...result, event, rule: EVENT_RULE[event.kind], historyPulledAt: pulledAt, folder: 'data/history/' });
+  });
+  // SC6: every country that made one kind of change before the As of year, each against its twin, pooled.
+  app.get('/api/reviews/:id/what-happened/pooled', (req, res) => {
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const frame = frameOf(r);
+    if (!frame) return res.status(400).json({ error: 'Save the frame first.' });
+    const kind = String(req.query.kind || '');
+    if (!(EVENT_KINDS as readonly string[]).includes(kind) || kind === 'own') return res.status(400).json({ error: 'Pick a kind of change found by a rule or a file; your own events are not pooled.' });
+    if (req.query.outcome !== undefined && !isOutcome(req.query.outcome)) return res.status(400).json({ error: 'Unknown figure to compare.' });
+    const outcome = (req.query.outcome as string | undefined) ?? DEFAULT_OUTCOME[kind as keyof typeof DEFAULT_OUTCOME];
+    const lastYear = Number(frame.asOf.slice(0, 4));
+    const { histories, pulledAt } = allHistories();
+    const result = pooledGaps({ kind: kind as Exclude<PolicyEvent['kind'], 'own'>, outcome: outcome as Parameters<typeof pooledGaps>[0]['outcome'], asOf: frame.asOf, events: allEvents(lastYear), histories });
+    res.json({ ...result, rule: EVENT_RULE[kind as keyof typeof EVENT_RULE], historyPulledAt: pulledAt });
   });
   // SC5: keep a result for the policy brief. The twin is worked out again here, never taken from the browser.
   app.post('/api/reviews/:id/what-happened/keep', (req, res) => {

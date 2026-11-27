@@ -981,6 +981,12 @@ test('policy reviews: a frame starts a review, a bad one is refused, and both ar
   assert.equal(wh.methodVersion, 'synth-v1');
   assert.ok(wh.missing || wh.path.length, JSON.stringify(wh).slice(0, 200));
   assert.equal((await fetch(`${base}/api/reviews/${review.id}/what-happened?event=nope`)).status, 404);
+  // SC6: the pooled view for one kind of change; your own events are not pooled.
+  assert.equal((await fetch(`${base}/api/reviews/${review.id}/what-happened/pooled?kind=own`)).status, 400);
+  const pooled = await fetch(`${base}/api/reviews/${review.id}/what-happened/pooled?kind=devaluation&outcome=cpi_imf`);
+  assert.equal(pooled.status, 200);
+  const pj = await pooled.json();
+  assert.ok(Array.isArray(pj.years) && typeof pj.used === 'number', JSON.stringify(pj).slice(0, 200));
   // SC5: keeping for the brief works the twin out again; a Missing twin has nothing to keep.
   const keepIt = await fetch(`${base}/api/reviews/${review.id}/what-happened/keep`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event: event.id, outcome: 'cpi_imf' }) });
   assert.equal(keepIt.status, wh.missing ? 400 : 200);

@@ -1002,12 +1002,12 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **Says:** For a country that made a change in some year (a big budget swing, a devaluation, a new exchange rate regime or fiscal rule, or an event you enter), how its figures moved afterwards compared with a "twin": a mix of other countries that matched it in the ten years before and did not make that change.
 - **Rule:** Synthetic control (Abadie, Diamond and Hainmueller 2010) on one yearly outcome: non-negative weights summing to 1 that best match the ten years before, with the Abadie and L'Hour (2021) penalty (0.1) so there is one answer; gap = country minus twin for the change year and up to five more. Placebo in space over every donor (p-value = share with an after/before ratio at least the country's), leave-one-out, and a placebo three years early. Missing when fewer than 8 years before or 10 donors, the country lies outside every donor's range, or the fit before is looser than half the country's own standard deviation.
 - **Reads:** IMF WEO and Fiscal Monitor, World Bank (saved yearly histories); events from the IMF primary balance and World Bank exchange rate (rules), your IRR, IMF Fiscal Rules and Chinn-Ito files, and your own entries
-- **Shows in:** Policy review > Precedents step (What happened after)
+- **Shows in:** Policy review > Precedents step (What happened after; also every country that made the same kind of change, pooled; and the policy brief when a result is kept)
 - **Use:** Research
 - **Status:** Not validated
 - **How it is tested:** Pre-registered false-alarm test (docs/validation/models/synthetic_control.json, npm run synth:validate): on 100 country-years per outcome (inflation, growth, debt) where the rules found no event, the placebo p-value is at or below 0.10 in 5% to 15% of cases. Power with a made-up jump of one standard deviation is reported. Not run yet: it needs the saved yearly histories on a computer that reaches the IMF and World Bank.
-- **Limits:** Yearly figures only; one country against a constructed comparison, not proof that the same change would work elsewhere. Changes that spread to neighbours bias the twin. Small states often read Missing. Events found by a rule are not checked by a historian.
-- **Code:** `src/utils/syntheticControl.ts, src/utils/policyEvents.ts, src/utils/synthCheck.ts, scripts/synth-validate.ts`
+- **Limits:** Yearly figures only; one country against a constructed comparison, not proof that the same change would work elsewhere. Changes that spread to neighbours bias the twin. Small states often read Missing. Events found by a rule are not checked by a historian. The pooled view (every country with the same kind of change) shows the middle gap and the spread across changes, fitted without placebo runs; it is not a test that the middle gap is more than chance.
+- **Code:** `src/utils/syntheticControl.ts, src/utils/policyEvents.ts, src/utils/synthCheck.ts, src/utils/synthKeep.ts, src/utils/synthPooled.ts, scripts/synth-validate.ts`
 
 ### Quant desk (outside research tools, Council chat only)
 
