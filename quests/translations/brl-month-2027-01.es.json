@@ -1,0 +1,11 @@
+{
+  "quest": "brl-month-2027-01",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "¿Estará el real brasileño más débil frente al dólar un mes después del cierre?",
+  "summary": "Indique la probabilidad de que los reales por dólar estadounidense (tipos de referencia del BCE cruzados con el dólar) sean más altos, es decir, un real más débil, alrededor de un mes después del cierre de participaciones que el día del cierre.",
+  "knownLimits": [
+    "El BCE no fija tipos en los festivos de TARGET; se usa la primera fijación en o después de cada fecha."
+  ]
+}

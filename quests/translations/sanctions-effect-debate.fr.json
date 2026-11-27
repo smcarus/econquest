@@ -1,0 +1,17 @@
+{
+  "quest": "sanctions-effect-debate",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "Les sanctions financières changent-elles la trajectoire macroéconomique d'un pays, ou seulement ses circuits ?",
+  "summary": "Défendez l'idée que des sanctions financières étendues changent de façon mesurable la croissance, l'inflation et les réserves de l'économie visée, ou qu'elles détournent surtout le commerce et les paiements. Utilisez les outils de sanctions de l'application, les séries officielles et des études citées.",
+  "knownLimits": [
+    "Débat, pas un signal testé.",
+    "Les données officielles des pays sanctionnés sont rares et parfois retenues ; dites quand un chiffre manque."
+  ],
+  "positions": [
+    "Elles changent la trajectoire macroéconomique",
+    "Elles détournent surtout le commerce et les paiements",
+    "Cela dépend des exportations de matières premières du pays visé"
+  ]
+}

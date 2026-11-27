@@ -33,4 +33,6 @@ Stance profiles go in `profiles/<GitHub name>.json`, each added or changed only 
 
 Public forecast entries go in `entries/<quest id>/<GitHub name>.<n>.json`, one file per entry, added by pull request and checked by `npm run quests:entries` (see [docs/QUESTS.md](../docs/QUESTS.md#public-entries)). An entry is never changed or removed; a replacement is the next number.
 
-Quest text, entries and evidence maps are licensed under CC BY 4.0.
+Translations of a Quest's text go in `translations/<Quest file name without .json>.<es|fr|pt>.json`, for example `translations/arg-debt-2026.es.json` (see [docs/QUESTS.md](../docs/QUESTS.md#translations)). They sit apart from the Quest file, so an approved Quest's fingerprint never changes when one is added or corrected. The English Quest is always the rule.
+
+Quest text, translations, entries and evidence maps are licensed under CC BY 4.0.

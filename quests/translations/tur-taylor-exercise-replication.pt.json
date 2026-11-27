@@ -1,0 +1,12 @@
+{
+  "quest": "tur-taylor-exercise-replication",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "Reproduza o gabarito da regra de Taylor para a Turquia",
+  "summary": "Ferramentas > Exercícios traz uma questão de regra de Taylor com resposta resolvida a partir das séries do aplicativo. Reproduza o gabarito para a Turquia na data que você escolher e confira as contas do aplicativo.",
+  "knownLimits": [
+    "O exercício não tem termo de hiato do produto quando nenhum é publicado; informe os dados que você usou."
+  ],
+  "target": "Exercícios, questão de regra de Taylor para a Turquia em um mês indicado: a taxa dada pela regra e seus dados."
+}

@@ -1,0 +1,12 @@
+{
+  "quest": "bra-reserves-2026",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "As reservas do Brasil vão cobrir mais meses de importações em 2026 do que em 2025?",
+  "summary": "Dê a probabilidade de que as reservas do Brasil em meses de importações, segundo o Banco Mundial, sejam maiores em 2026 do que em 2025, ambas lidas pela primeira vez em 1 de setembro de 2027 ou depois.",
+  "knownLimits": [
+    "O Banco Mundial pode não ter publicado 2026 até a data de resolução; nesse caso a Quest não pode ser resolvida.",
+    "Os dois anos são lidos do mesmo download, então uma revisão de 2025 conta."
+  ]
+}

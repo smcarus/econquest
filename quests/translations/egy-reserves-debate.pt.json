@@ -1,0 +1,18 @@
+{
+  "quest": "egy-reserves-debate",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "O que reconstruiria com mais segurança as reservas internacionais do Egito?",
+  "summary": "Argumente qual caminho reconstruiria com mais segurança as reservas do Egito nos próximos dois anos. Cite os números do aplicativo (reservas, conta corrente, dívida externa, dívida de curto prazo) para cada afirmação; a Verificação de números marca os que não conferem.",
+  "knownLimits": [
+    "Debate, não um sinal testado: nenhuma posição é considerada certa ou errada.",
+    "O BIS não tem uma taxa básica diária para o Egito."
+  ],
+  "positions": [
+    "Um câmbio mais flexível",
+    "Financiamento do Golfo e de instituições financeiras internacionais, com receitas de privatização",
+    "Crescimento das exportações e do turismo",
+    "Nenhuma dessas sem alívio da dívida"
+  ]
+}

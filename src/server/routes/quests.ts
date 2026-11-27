@@ -2,7 +2,8 @@
  * Quests (src/utils/quests.ts): read-only routes for Menu > Quests. Off unless QUESTS_ENABLED=on
  * (docs/QUESTS.md); while off, every route answers { enabled: false } and nothing else.
  *
- *   GET /api/quests        every valid Quest (approved first, then drafts) with status and horizon
+ *   GET /api/quests        every valid Quest (approved first, then drafts) with status and horizon,
+ *                          and their translated text (quests/translations/, roadmap QL1)
  *   GET /api/quests/:id    one Quest, its rule in words, and the latest value of each series it
  *                          reads, from the same feeds as Country Research > History & data
  *
@@ -55,7 +56,8 @@ import type { SeriesSet } from '../../utils/seriesHistory';
 import { questHorizon, questSeriesRefs, questSettlesOn, questStatus, questsEnabled, QUESTS_OFF_REASON, HORIZON_LABEL, type DebateQuest, type ForecastQuest, type Quest } from '../../utils/quests';
 import { describeRule, type QuestSeriesRef as QuestSeriesRefLike } from '../../utils/questRules';
 import { questSeriesDef } from '../../utils/questSeries';
-import { loadQuests } from '../../utils/questStore';
+import { loadQuests, loadTranslations } from '../../utils/questStore';
+import { translationKey } from '../../utils/questTranslations';
 import { answerFor, classTable, countedEntries, entryProblems, replicationScore, practiceWindow, scoreEntry, scorePractice, type QuestEntry, type QuestEntryInput } from '../../utils/questEntries';
 import { appendEntry, entryFilePath, loadEntries } from '../../utils/questEntryStore';
 import { scoreLevel, scoreProbability, type Point } from '../../utils/questScoring';
@@ -158,8 +160,9 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
   app.get('/api/quests', (_req, res) => {
     if (!enabled()) return off(res);
     const today = todayIso();
-    const quests = loadQuests(dir).map((x) => summary(x.quest, x.approved, today));
-    res.json({ enabled: true, quests });
+    const loaded = loadQuests(dir);
+    const quests = loaded.map((x) => summary(x.quest, x.approved, today));
+    res.json({ enabled: true, quests, translations: loadTranslations(dir, loaded) });
   });
 
   const entryFile = deps.entryFile ?? entryFilePath(DATA_DIR);
@@ -527,6 +530,7 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
       fallback: q.type === 'forecast' ? (q.fallback === 'unresolvable' ? 'If the series has no value, the Quest is Unresolvable.' : `If the series has no value: ${describeRule(q.fallback.rule)}`) : undefined,
       figures,
       result: resultState(loadResolutions(resultsFile).lines, q.id, q.version),
+      translations: loadTranslations(dir, [found])[translationKey(q.id, q.version)] ?? {},
       ...(q.type === 'debate' ? debateExtras(q) : {}),
     });
   });

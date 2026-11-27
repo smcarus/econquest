@@ -1,0 +1,12 @@
+{
+  "quest": "usa-policy-2027h1",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "A taxa básica dos EUA vai estar mais baixa em 30 de junho de 2027 do que no encerramento?",
+  "summary": "Dê a probabilidade de que a taxa básica diária do BIS para os Estados Unidos (a meta dos fed funds) em 30 de junho de 2027 fique abaixo do valor no dia do encerramento das participações.",
+  "knownLimits": [
+    "O BIS informa o ponto médio da faixa da meta para os Estados Unidos.",
+    "Os dados diários do BIS podem atrasar alguns dias em relação a uma decisão."
+  ]
+}

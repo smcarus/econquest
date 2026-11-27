@@ -1,0 +1,11 @@
+{
+  "quest": "tur-policy-2027h1",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "A taxa básica da Turquia vai estar mais baixa em 30 de junho de 2027 do que no encerramento?",
+  "summary": "Dê a probabilidade de que a taxa básica diária do BIS para a Turquia em 30 de junho de 2027 fique abaixo do valor no dia do encerramento das participações.",
+  "knownLimits": [
+    "Os dados diários do BIS podem atrasar alguns dias em relação a uma decisão."
+  ]
+}

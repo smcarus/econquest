@@ -1,0 +1,17 @@
+{
+  "quest": "sanctions-effect-debate",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "¿Cambian las sanciones financieras la trayectoria macroeconómica de un país, o solo sus rutas?",
+  "summary": "Argumente si las sanciones financieras amplias cambian de forma medible el crecimiento, la inflación y las reservas de la economía sancionada, o si sobre todo desvían el comercio y los pagos. Use las herramientas de sanciones de la aplicación, las series oficiales y estudios citados.",
+  "knownLimits": [
+    "Debate, no una señal probada.",
+    "Los datos oficiales de los países sancionados son escasos y a veces se retienen; diga cuándo una cifra falta."
+  ],
+  "positions": [
+    "Cambian la trayectoria macroeconómica",
+    "Sobre todo desvían el comercio y los pagos",
+    "Depende de las exportaciones de materias primas del país"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "quest": "usa-policy-2027h1",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "¿Estará el tipo de interés oficial de EE. UU. más bajo el 30 de junio de 2027 que al cierre?",
+  "summary": "Indique la probabilidad de que el tipo de interés oficial diario del BPI para Estados Unidos (el objetivo de los fondos federales) el 30 de junio de 2027 sea inferior a su valor el día del cierre de participaciones.",
+  "knownLimits": [
+    "El BPI informa el punto medio del rango objetivo para Estados Unidos.",
+    "Los datos diarios del BPI pueden ir unos días por detrás de una decisión."
+  ]
+}
