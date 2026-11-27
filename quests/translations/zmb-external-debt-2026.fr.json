@@ -1,0 +1,13 @@
+{
+  "quest": "zmb-external-debt-2026",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "La dette extérieure de la Zambie sera-t-elle plus faible, rapportée au revenu national, en 2026 qu’en 2025 ?",
+  "summary": "Indiquez la probabilité que l’encours de la dette extérieure de la Zambie selon la Banque mondiale, en % du revenu national brut, soit plus bas pour 2026 que pour 2025, les deux selon la première lecture à partir du 15 janvier 2028 (après le rapport annuel sur la dette de la Banque mondiale).",
+  "knownLimits": [
+    "La Banque mondiale n’aura peut-être pas publié 2026 à la date de règlement ; la quête est alors non tranchable.",
+    "La restructuration de la dette de la Zambie et les mouvements du kwacha modifient le ratio autant que les nouveaux emprunts.",
+    "La Zambie doit figurer dans votre liste de suivi pour que son dernier chiffre s’affiche sur cette page ; le résultat est tranché d’après la série publiée dans tous les cas."
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "quest": "gha-debt-2026",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "Le ratio de dette publique du Ghana baissera-t-il en 2026 ?",
+  "summary": "Indiquez la probabilité que la dette brute des administrations publiques du Ghana selon le WEO du FMI, en % du PIB, soit plus basse pour 2026 que pour 2025, les deux selon la première lecture à partir du 1er mai 2027 (après le WEO d’avril 2027).",
+  "knownLimits": [
+    "Le chiffre 2026 du WEO d’avril 2027 reste une estimation du FMI et peut être révisé plus tard ; la première lecture fait foi.",
+    "La restructuration de la dette du Ghana modifie le ratio autant par les conditions convenues avec les créanciers que par le budget.",
+    "Le Ghana doit figurer dans votre liste de suivi pour que son dernier chiffre s’affiche sur cette page ; le résultat est tranché d’après la série publiée dans tous les cas."
+  ]
+}

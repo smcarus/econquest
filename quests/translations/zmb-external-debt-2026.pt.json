@@ -1,0 +1,13 @@
+{
+  "quest": "zmb-external-debt-2026",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "A dívida externa da Zâmbia será menor, em relação à renda nacional, em 2026 do que em 2025?",
+  "summary": "Informe a probabilidade de o estoque da dívida externa da Zâmbia segundo o Banco Mundial, em % da renda nacional bruta, ser menor em 2026 do que em 2025, ambos conforme a primeira leitura a partir de 15 de janeiro de 2028 (depois do relatório anual de dívida do Banco Mundial).",
+  "knownLimits": [
+    "O Banco Mundial pode não ter publicado 2026 até a data de resolução; nesse caso a Quest fica sem solução.",
+    "A reestruturação da dívida da Zâmbia e as oscilações do kwacha mudam a relação tanto quanto novos empréstimos.",
+    "A Zâmbia precisa estar na sua lista de acompanhamento para o último número aparecer nesta página; o resultado é resolvido pela série publicada de qualquer forma."
+  ]
+}

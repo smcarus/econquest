@@ -1,0 +1,12 @@
+{
+  "quest": "ind-current-account-2026",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "O saldo em conta corrente da Índia vai melhorar em 2026 em relação a 2025?",
+  "summary": "Informe a probabilidade de o saldo em conta corrente da Índia segundo o Banco Mundial, em % do PIB, ser maior (um déficit menor ou um superávit maior) em 2026 do que em 2025, ambos conforme a primeira leitura a partir de 1º de setembro de 2027.",
+  "knownLimits": [
+    "O Banco Mundial pode não ter publicado 2026 até a data de resolução; nesse caso a Quest fica sem solução.",
+    "Os preços do petróleo movem a conta de importações da Índia, e portanto esse saldo, mais do que quase qualquer outra coisa."
+  ]
+}

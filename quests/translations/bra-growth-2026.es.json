@@ -1,0 +1,12 @@
+{
+  "quest": "bra-growth-2026",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "¿Crecerá la economía de Brasil más deprisa en 2026 que en 2025?",
+  "summary": "Indique la probabilidad de que el crecimiento del PIB real de Brasil según el WEO del FMI sea mayor en 2026 que en 2025, ambos según la primera lectura a partir del 1 de mayo de 2027 (después del WEO de abril de 2027).",
+  "knownLimits": [
+    "La cifra de 2026 del WEO de abril de 2027 sigue siendo una estimación del FMI y puede revisarse después; vale la primera lectura.",
+    "Una cosecha especialmente buena o mala en cualquiera de los dos años mueve mucho la comparación."
+  ]
+}

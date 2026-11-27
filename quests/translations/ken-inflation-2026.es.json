@@ -1,0 +1,12 @@
+{
+  "quest": "ken-inflation-2026",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "¿Será la inflación de Kenia más baja en 2026 que en 2025?",
+  "summary": "Indique la probabilidad de que la inflación media de precios al consumo de Kenia según el WEO del FMI sea más baja en 2026 que en 2025, ambas según la primera lectura a partir del 1 de mayo de 2027 (después del WEO de abril de 2027). Los precios de los alimentos y del combustible pesan mucho en los precios al consumo de Kenia.",
+  "knownLimits": [
+    "La cifra de 2026 del WEO de abril de 2027 sigue siendo una estimación del FMI y puede revisarse después; vale la primera lectura.",
+    "Kenia debe estar en su lista de seguimiento para que su último dato aparezca en esta página; el resultado se resuelve con la serie publicada en cualquier caso."
+  ]
+}

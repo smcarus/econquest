@@ -1,0 +1,11 @@
+{
+  "quest": "zar-month-2027-01",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "¿Estará el rand sudafricano más débil frente al dólar un mes después del cierre?",
+  "summary": "Indique la probabilidad de que los rands por dólar estadounidense (tipos de referencia del BCE cruzados con el dólar) sean más altos, es decir, un rand más débil, alrededor de un mes después del cierre de las respuestas que el día del cierre. Puede practicar antes este tipo de pregunta con datos pasados.",
+  "knownLimits": [
+    "El BCE no fija tipos en los festivos de TARGET; se usa la primera fijación en o después de cada fecha."
+  ]
+}

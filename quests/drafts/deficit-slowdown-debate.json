@@ -1,0 +1,33 @@
+{
+  "id": "deficit-slowdown-debate",
+  "version": 1,
+  "registeredOn": "2026-11-27",
+  "opensOn": "2026-12-01",
+  "author": "smcarus",
+  "type": "debate",
+  "title": "When growth slows, should a government with high debt cut its deficit or keep spending?",
+  "summary": "Argue what a government with high debt and slowing growth, such as Brazil, South Africa or India, should do with its budget over the next two years. Cite the app's figures (debt, primary balance, growth, interest rates) for every claim; Claim Check marks figures that do not match.",
+  "positions": [
+    "Cut the deficit now to steady the debt",
+    "Keep spending until growth recovers",
+    "Cut slowly, with a rule written into law",
+    "Change what is spent and taxed, not the total"
+  ],
+  "countries": [
+    "BRA",
+    "ZAF",
+    "IND"
+  ],
+  "topics": [
+    "fiscal",
+    "debt",
+    "growth"
+  ],
+  "region": "Global",
+  "closesOn": "2027-02-28",
+  "settlesOn": "2027-03-15",
+  "knownLimits": [
+    "Debate, not a tested signal: no position is scored right or wrong.",
+    "The Debt sustainability page shows how each path changes the debt ratio under the IMF inputs."
+  ]
+}

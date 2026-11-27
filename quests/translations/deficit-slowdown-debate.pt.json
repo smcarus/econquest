@@ -1,0 +1,18 @@
+{
+  "quest": "deficit-slowdown-debate",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "Quando o crescimento desacelera, um governo muito endividado deve cortar o déficit ou continuar gastando?",
+  "summary": "Defenda o que um governo com dívida alta e crescimento em desaceleração, como Brasil, África do Sul ou Índia, deveria fazer com o orçamento nos próximos dois anos. Cite os números do aplicativo (dívida, resultado primário, crescimento, juros) em cada afirmação; a Verificação de números marca os que não conferem.",
+  "knownLimits": [
+    "Debate, não um sinal testado: nenhuma posição é pontuada como certa ou errada.",
+    "A página de sustentabilidade da dívida mostra como cada caminho muda a relação dívida/PIB com os dados do FMI."
+  ],
+  "positions": [
+    "Cortar o déficit agora para estabilizar a dívida",
+    "Continuar gastando até o crescimento voltar",
+    "Cortar aos poucos, com uma regra fixada em lei",
+    "Mudar o que se gasta e se tributa, não o total"
+  ]
+}

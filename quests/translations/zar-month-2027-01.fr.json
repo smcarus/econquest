@@ -1,0 +1,11 @@
+{
+  "quest": "zar-month-2027-01",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "Le rand sud-africain sera-t-il plus faible face au dollar un mois après la clôture ?",
+  "summary": "Indiquez la probabilité que le nombre de rands par dollar américain (taux de référence de la BCE croisés avec le dollar) soit plus élevé, c’est-à-dire un rand plus faible, environ un mois après la fermeture des réponses que le jour de la fermeture. Vous pouvez d’abord vous entraîner sur ce type de question avec des données passées.",
+  "knownLimits": [
+    "La BCE ne fixe pas de cours les jours fériés TARGET ; le premier cours à partir de chaque date est utilisé."
+  ]
+}

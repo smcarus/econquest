@@ -1,0 +1,12 @@
+{
+  "quest": "ind-current-account-2026",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "¿Mejorará en 2026 el saldo por cuenta corriente de la India respecto a 2025?",
+  "summary": "Indique la probabilidad de que el saldo por cuenta corriente de la India según el Banco Mundial, en % del PIB, sea mayor (un déficit menor o un superávit mayor) en 2026 que en 2025, ambos según la primera lectura a partir del 1 de septiembre de 2027.",
+  "knownLimits": [
+    "Puede que el Banco Mundial no haya publicado 2026 en la fecha de resolución; entonces el reto queda sin resolver.",
+    "Los precios del petróleo mueven la factura de importaciones de la India, y por tanto este saldo, más que casi cualquier otra cosa."
+  ]
+}

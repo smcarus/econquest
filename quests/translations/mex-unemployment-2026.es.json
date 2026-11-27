@@ -1,0 +1,12 @@
+{
+  "quest": "mex-unemployment-2026",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "¿Será la tasa de desempleo de México más baja en 2026 que en 2025?",
+  "summary": "Indique la probabilidad de que la tasa de desempleo de México según el WEO del FMI sea más baja en 2026 que en 2025, ambas según la primera lectura a partir del 1 de mayo de 2027 (después del WEO de abril de 2027).",
+  "knownLimits": [
+    "La cifra de 2026 del WEO de abril de 2027 sigue siendo una estimación del FMI y puede revisarse después; vale la primera lectura.",
+    "Mucha gente en México trabaja en la informalidad; la tasa de desempleo no muestra cuántos tienen empleos de mala calidad."
+  ]
+}

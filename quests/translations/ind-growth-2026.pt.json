@@ -1,0 +1,12 @@
+{
+  "quest": "ind-growth-2026",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "A economia da Índia vai crescer mais em 2026 do que em 2025?",
+  "summary": "Informe a probabilidade de o crescimento do PIB real da Índia no WEO do FMI ser maior em 2026 do que em 2025, ambos conforme a primeira leitura a partir de 1º de maio de 2027 (depois do WEO de abril de 2027).",
+  "knownLimits": [
+    "O número de 2026 no WEO de abril de 2027 ainda é uma estimativa do FMI e pode ser revisado depois; vale a primeira leitura.",
+    "O FMI apresenta a Índia por ano fiscal (de abril a março); usa-se o número do WEO como publicado."
+  ]
+}

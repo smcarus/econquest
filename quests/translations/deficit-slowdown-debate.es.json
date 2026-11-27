@@ -1,0 +1,18 @@
+{
+  "quest": "deficit-slowdown-debate",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "Cuando el crecimiento se frena, ¿debe un gobierno muy endeudado reducir su déficit o seguir gastando?",
+  "summary": "Argumente qué debería hacer con su presupuesto en los próximos dos años un gobierno con mucha deuda y un crecimiento que se frena, como Brasil, Sudáfrica o la India. Cite las cifras de la aplicación (deuda, saldo primario, crecimiento, tipos de interés) en cada afirmación; la Verificación de cifras marca las que no coinciden.",
+  "knownLimits": [
+    "Debate, no una señal probada: ninguna posición se califica como correcta o incorrecta.",
+    "La página de sostenibilidad de la deuda muestra cómo cambia la proporción de deuda con cada camino según los datos del FMI."
+  ],
+  "positions": [
+    "Reducir el déficit ya para estabilizar la deuda",
+    "Seguir gastando hasta que se recupere el crecimiento",
+    "Reducir poco a poco, con una regla fijada por ley",
+    "Cambiar en qué se gasta y qué se grava, no el total"
+  ]
+}

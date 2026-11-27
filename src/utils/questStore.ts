@@ -7,6 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { collectionProblems, questProblems, type Quest } from './quests';
 import { translationKey, translationProblems, translationText, type QuestTranslation, type QuestTranslationMap } from './questTranslations';
+import { packProblems, type QuestPack } from './questPacks';
 
 export const MANIFEST_NOTE =
   'SHA-256 of each approved Quest file. An approved Quest is fixed: a changed file fails the check, so a change is a new version (a new file), and a Quest is withdrawn by a resolution line, never deleted.';
@@ -79,6 +80,7 @@ export function checkQuests(questsDir: string, manifest = readManifest(questsDir
   const c = collectionProblems(files, manifest);
   if (c.length) problems.collection = c;
   Object.assign(problems, checkTranslations(questsDir, files));
+  Object.assign(problems, checkPacks(questsDir, files));
   return { files, problems, ok: Object.keys(problems).length === 0 };
 }
 
@@ -146,4 +148,48 @@ export function loadTranslations(questsDir: string, quests: Array<{ quest: Quest
     (map[translationKey(j.quest, j.version)] ??= {})[j.lang] = translationText(j);
   }
   return map;
+}
+
+/** quests/packs/*.json: named sets of Quests grouped by topic (src/utils/questPacks.ts). */
+export function readPackFiles(questsDir: string): TranslationFile[] {
+  const dir = path.join(questsDir, 'packs');
+  let names: string[] = [];
+  try {
+    names = fs.readdirSync(dir).filter((n) => n.endsWith('.json')).sort();
+  } catch {
+    return [];
+  }
+  return names.map((name) => {
+    const rel = `quests/packs/${name}`;
+    try {
+      return { name, rel, json: JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8')) };
+    } catch (e) {
+      return { name, rel, json: null, parseError: (e as Error).message };
+    }
+  });
+}
+
+/** Problems in each pack file, checked against the Quests on file. */
+export function checkPacks(questsDir: string, files = readQuestFiles(questsDir)): Record<string, string[]> {
+  const ids = new Set(files.map((f) => (f.json as Quest | null)?.id).filter((x): x is string => typeof x === 'string'));
+  const problems: Record<string, string[]> = {};
+  for (const f of readPackFiles(questsDir)) {
+    const p = f.parseError ? [`not valid JSON: ${f.parseError}`] : packProblems(f.json, f.name, ids);
+    if (p.length) problems[f.rel] = p;
+  }
+  return problems;
+}
+
+/** The packs that pass, each listing only the Quests served (a draft drops out when drafts are not served). */
+export function loadPacks(questsDir: string, quests: Array<{ quest: Quest }>): QuestPack[] {
+  const all = new Set(readQuestFiles(questsDir).map((f) => (f.json as Quest | null)?.id).filter((x): x is string => typeof x === 'string'));
+  const served = new Set(quests.map((x) => x.quest.id));
+  const out: QuestPack[] = [];
+  for (const f of readPackFiles(questsDir)) {
+    if (f.parseError || packProblems(f.json, f.name, all).length) continue;
+    const p = f.json as QuestPack;
+    const groups = p.groups.map((g) => ({ ...g, quests: g.quests.filter((id) => served.has(id)) })).filter((g) => g.quests.length);
+    if (groups.length) out.push({ ...p, groups });
+  }
+  return out;
 }

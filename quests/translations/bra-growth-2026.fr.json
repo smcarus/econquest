@@ -1,0 +1,12 @@
+{
+  "quest": "bra-growth-2026",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "L’économie du Brésil croîtra-t-elle plus vite en 2026 qu’en 2025 ?",
+  "summary": "Indiquez la probabilité que la croissance du PIB réel du Brésil selon le WEO du FMI soit plus élevée pour 2026 que pour 2025, les deux selon la première lecture à partir du 1er mai 2027 (après le WEO d’avril 2027).",
+  "knownLimits": [
+    "Le chiffre 2026 du WEO d’avril 2027 reste une estimation du FMI et peut être révisé plus tard ; la première lecture fait foi.",
+    "Une récolte exceptionnellement bonne ou mauvaise l’une ou l’autre année pèse beaucoup sur la comparaison."
+  ]
+}

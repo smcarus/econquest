@@ -35,4 +35,6 @@ Public forecast entries go in `entries/<quest id>/<GitHub name>.<n>.json`, one f
 
 Translations of a Quest's text go in `translations/<Quest file name without .json>.<es|fr|pt>.json`, for example `translations/arg-debt-2026.es.json` (see [docs/QUESTS.md](../docs/QUESTS.md#translations)). They sit apart from the Quest file, so an approved Quest's fingerprint never changes when one is added or corrected. The English Quest is always the rule.
 
-Quest text, translations, entries and evidence maps are licensed under CC BY 4.0.
+Packs go in `packs/<id>.json`: a named list of Quest ids grouped by topic, with titles in English, Spanish, French and Portuguese (see [docs/QUESTS.md](../docs/QUESTS.md#packs)). `packs/starter.json` is the starter pack.
+
+Quest text, translations, packs, entries and evidence maps are licensed under CC BY 4.0.

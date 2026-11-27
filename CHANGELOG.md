@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Quests (still switched off): a starter pack of 25 economic and policy problems by topic (Start
+  here, inflation and interest rates, debt and budgets, currencies, growth and jobs, trade and
+  commodities, lower-income countries), with 11 new draft Quests (Turkey and Kenya inflation, Ghana
+  debt, Zambia external debt, the rand, Brazil and India growth, Mexico unemployment, India's current
+  account, and debates on lower-income central banks and on deficits in a slowdown), all translated.
+  Packs live in `quests/packs/`, are checked by `npm run quests:check`, and show on Menu > Quests
+  under a Pack choice; Quests you can practise at once are marked "Practice now".
 - Quests (still switched off): the whole Quests screen in Spanish, French and Brazilian Portuguese
   (roadmap QL1, part 2). Tabs, buttons, tables, scores, the rule that settles a Quest, its result, and
   the reasons, notes and errors the server sends are all shown in the chosen language; the rule and

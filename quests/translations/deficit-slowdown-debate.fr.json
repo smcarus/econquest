@@ -1,0 +1,18 @@
+{
+  "quest": "deficit-slowdown-debate",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "Quand la croissance ralentit, un gouvernement très endetté doit-il réduire son déficit ou continuer à dépenser ?",
+  "summary": "Défendez ce que devrait faire de son budget au cours des deux prochaines années un gouvernement très endetté dont la croissance ralentit, comme le Brésil, l’Afrique du Sud ou l’Inde. Citez les chiffres de l’application (dette, solde primaire, croissance, taux d’intérêt) pour chaque affirmation ; la Vérification des chiffres signale ceux qui ne correspondent pas.",
+  "knownLimits": [
+    "Débat, pas un signal testé : aucune position n’est notée juste ou fausse.",
+    "La page Soutenabilité de la dette montre comment chaque trajectoire modifie le ratio de dette avec les données du FMI."
+  ],
+  "positions": [
+    "Réduire le déficit maintenant pour stabiliser la dette",
+    "Continuer à dépenser jusqu’à la reprise",
+    "Réduire lentement, avec une règle inscrite dans la loi",
+    "Changer ce qui est dépensé et taxé, pas le total"
+  ]
+}
