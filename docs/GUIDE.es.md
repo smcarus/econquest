@@ -404,6 +404,13 @@ Para revisar una política:
    una comprobación conductual, reglas fiscales y viabilidad política, el memorando de recomendación, un
    **resumen de una página** en PDF para no economistas, y el seguimiento de resultados, que compara la
    revisión con lo ocurrido a los 12 y 24 meses. Cada paso se guarda con su huella digital.
+   En precedentes, **Qué pasó después** elige un cambio que hizo el país (un gran giro presupuestario,
+   una devaluación, un nuevo régimen cambiario o regla fiscal, o uno que usted añade con su fuente) y
+   compara el país con un «gemelo»: una mezcla de otros países que se movieron como él en los diez años
+   anteriores y no hicieron ese cambio. Dice cuánto se separaron tres años después, qué tan raro es eso
+   entre países que no hicieron ningún cambio, y puede mostrar todos los países que hicieron el mismo tipo
+   de cambio. Un resultado puede guardarse para el resumen de una página. Está marcado como sin validar
+   hasta que pase su prueba registrada de antemano.
 
 ![Pares en una revisión de políticas: las cifras del diagnóstico de Brasil junto a México, India, Indonesia, Sudáfrica y Turquía, con la mediana de los pares y el puesto](images/20-peers.png)
 

@@ -411,6 +411,13 @@ Pour examiner une politique :
    contrôle comportemental, règles budgétaires et faisabilité politique, la note de recommandation, une
    **synthèse d'une page** en PDF pour les non-économistes, et le suivi des résultats, qui compare la revue
    à ce qui s'est passé à 12 et 24 mois. Chaque étape est enregistrée avec son empreinte.
+   Dans les précédents, **Ce qui s'est passé ensuite** choisit un changement fait par le pays (un grand
+   virage budgétaire, une dévaluation, un nouveau régime de change ou une règle budgétaire, ou un
+   changement que vous ajoutez avec sa source) et compare le pays à un « jumeau » : un mélange d'autres
+   pays qui ont évolué comme lui pendant les dix années précédentes sans faire ce changement. Il indique
+   l'écart trois ans après, à quel point c'est inhabituel parmi les pays sans changement, et peut montrer
+   tous les pays qui ont fait le même type de changement. Un résultat peut être gardé pour la synthèse
+   d'une page. Il est marqué non validé tant que son test enregistré à l'avance n'est pas passé.
 
 ![Pairs dans une revue de politique : les chiffres du diagnostic du Brésil à côté du Mexique, de l'Inde, de l'Indonésie, de l'Afrique du Sud et de la Turquie, avec la médiane des pairs et le rang](images/20-peers.png)
 

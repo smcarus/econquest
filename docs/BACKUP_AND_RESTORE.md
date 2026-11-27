@@ -4,7 +4,7 @@ There are two kinds of backup. Use the first for what you made, the second for t
 
 | | Backup file (Menu > Settings > Backup) | Data folder copy |
 |---|---|---|
-| Holds | saved research (briefs, documents, notebooks, teaching episodes), policy reviews, answer snapshots, watch alerts, holdings, watchlists, countries you added, AI model settings | everything the app saved: the above plus saved feed data, history, pull archive, audit log, data health history, **and your keys** |
+| Holds | saved research (briefs, documents, notebooks, teaching episodes), policy reviews, the changes you added for What happened after (`data/local/policy-events.json`), answer snapshots, watch alerts, holdings, watchlists, countries you added, AI model settings | everything the app saved: the above plus saved feed data, history, pull archive, audit log, data health history, **and your keys** |
 | Keys | never; any key, secret or token is removed before the file is written | yes (`data/local/settings.json`) |
 | Safe to email or keep in cloud storage | yes | no, keep it private |
 | Restore | Menu > Settings > Backup > Restore | copy the folder back while the app is stopped |

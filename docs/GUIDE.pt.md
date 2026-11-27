@@ -394,6 +394,13 @@ Para revisar uma política:
    uma checagem comportamental, regras fiscais e viabilidade política, o memorando de recomendação, um
    **resumo de uma página** em PDF para quem não é economista, e o acompanhamento dos resultados, que
    compara a revisão com o que aconteceu em 12 e 24 meses. Cada passo é salvo com sua impressão digital.
+   Em precedentes, **O que aconteceu depois** escolhe uma mudança que o país fez (uma grande virada
+   orçamentária, uma desvalorização, um novo regime cambial ou regra fiscal, ou uma que você adiciona
+   com a fonte) e compara o país com um "gêmeo": uma mistura de outros países que se moveram como ele
+   nos dez anos anteriores e não fizeram essa mudança. Diz o quanto se afastaram três anos depois, o
+   quão incomum isso é entre países que não fizeram nenhuma mudança, e pode mostrar todos os países que
+   fizeram o mesmo tipo de mudança. Um resultado pode ser guardado para o resumo de uma página. Fica
+   marcado como não validado até passar no seu teste registrado de antemão.
 
 ![Pares em uma revisão de política: os números do diagnóstico do Brasil ao lado de México, Índia, Indonésia, África do Sul e Turquia, com a mediana dos pares e a posição](images/20-peers.png)
 

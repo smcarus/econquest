@@ -398,6 +398,18 @@ own. Instead of a measure, you can weigh what an event means for one market (the
 government bonds): the app copies in its own market figures as they stood on the review's date. None
 of this is a forecast. It lays out the case so that someone else can check every step.
 
+**What happened after: a country against its twin.** In a policy review's Precedents step you can
+pick a change the country made, such as a big budget swing, a devaluation or a new fiscal rule, and
+a figure such as inflation. The app builds a "twin": a mix of other countries whose figure moved like
+this country's in the ten years before, and that did not make the change. After the change, the gap
+between the country and its twin is how differently it went. To judge whether that gap is unusual,
+the app does the same for every country in the twin as if it had made the change (a "placebo"), and
+says how many showed a gap at least as large. Too few years or countries, or a twin that never
+matched well, reads Missing with the reason. It can also line up every country that made the same
+kind of change. This describes what happened in one country against a constructed comparison; it
+does not show that the same change would work elsewhere, and it is marked Not validated until its
+false-alarm test, registered before any run, passes.
+
 ## 13. Weather, disasters and insurance, explained
 
 Droughts, floods and storms hit food prices, farm incomes and government budgets hardest in the

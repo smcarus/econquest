@@ -5,6 +5,22 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Docs for What happened after (SC1 to SC6): Methodology 1.10 with a new section 5.7 (changes,
+  twin, checks, Missing, pooled view, brief, pre-registered test) and references for synthetic
+  control and devaluations; user manual, Policy review page, guide and features in four languages,
+  backup page and roadmap rows.
+- What happened after (SC6): *Show every country that made this kind of change* fits a twin for each
+  change of the same kind before the As of year (the newest 300, without placebo runs) and shows the
+  middle gap with the 10th to 90th percentile across changes, year by year, with a table and how many
+  were left out as Missing (`src/utils/synthPooled.ts`, `/api/reviews/:id/what-happened/pooled`).
+  Your own changes are not pooled. Not validated: the band shows how much countries differ.
+- What happened after (SC5): *Keep for the policy brief* saves the result on the review after the
+  server works it out again (up to five, `src/utils/synthKeep.ts`); the one-page brief adds a section
+  for them, worded in its language, with a Not validated line until the test passes. *Cite* on the
+  card. *What happened when others did this* on the scenario card under a what-if answer starts a
+  policy review on the question; the council's prompts and answers do not change.
+- Backup: the changes you added for What happened after (`data/local/policy-events.json`) go in the
+  backup file and come back on restore; an older backup without them leaves them alone.
 - What happened after (SC4): a card in Policy review > Precedents. Pick a change the country made
   (listed with where it came from) and a figure; the card shows the country against its twin with a
   plain sentence (the gap three years on, and how many placebo countries showed a gap that large),
