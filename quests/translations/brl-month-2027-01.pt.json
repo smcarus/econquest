@@ -1,0 +1,11 @@
+{
+  "quest": "brl-month-2027-01",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "O real vai estar mais fraco frente ao dólar um mês depois do encerramento?",
+  "summary": "Dê a probabilidade de que os reais por dólar americano (taxas de referência do BCE cruzadas com o dólar) sejam maiores, ou seja, um real mais fraco, cerca de um mês depois do encerramento das participações do que no dia do encerramento.",
+  "knownLimits": [
+    "O BCE não fixa taxas nos feriados do TARGET; usa-se a primeira fixação na data ou depois dela."
+  ]
+}

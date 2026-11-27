@@ -167,7 +167,7 @@ Two small follow-ons, added in November 2026:
 
 | # | Change |
 | --- | --- |
-| QL1 | Spanish and French titles and questions in Quest files, shown in the chosen language; community translations of Quests open with it |
+| QL1 | Spanish, French and Brazilian Portuguese titles and questions for Quests, shown in the chosen language, and the Quests screen in the same languages (widened by the maintainer on 27 November); community translations of Quests open with it. Part 1, the Quest text in `quests/translations/`, built 27 November |
 | L3a | Settled Quest forecasts served by the researcher data API and its R, Python and Stata helpers, answering only when Quests are switched on |
 
 After the build comes a one-term pilot with two professors (one in an underserved country), then

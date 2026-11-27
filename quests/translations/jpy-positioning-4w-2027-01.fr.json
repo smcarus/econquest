@@ -1,0 +1,11 @@
+{
+  "quest": "jpy-positioning-4w-2027-01",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "Les fonds à effet de levier seront-ils plus acheteurs de yens quatre semaines après la clôture ?",
+  "summary": "Donnez la probabilité que la position nette des fonds à effet de levier sur les contrats à terme sur le yen selon la CFTC, en part des positions ouvertes, soit plus élevée dans le premier rapport hebdomadaire à la date de règlement ou après que dans le premier rapport à la date de clôture ou après.",
+  "knownLimits": [
+    "Les rapports de la CFTC sont datés du mardi et publiés le vendredi ; une fermeture de l'administration américaine peut les retarder."
+  ]
+}

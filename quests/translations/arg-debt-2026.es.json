@@ -1,0 +1,12 @@
+{
+  "quest": "arg-debt-2026",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "¿Bajará en 2026 la relación de deuda pública de Argentina?",
+  "summary": "Indique la probabilidad de que la deuda bruta del gobierno general de Argentina según el WEO del FMI, en % del PIB, sea menor en 2026 que en 2025, ambas leídas por primera vez el 1 de mayo de 2027 o después (tras el WEO de abril de 2027).",
+  "knownLimits": [
+    "La cifra de 2026 en el WEO de abril de 2027 sigue siendo una estimación del FMI y puede revisarse después; vale la primera lectura.",
+    "Un movimiento fuerte del peso cambia la relación a través de la deuda en moneda extranjera tanto como a través del presupuesto."
+  ]
+}

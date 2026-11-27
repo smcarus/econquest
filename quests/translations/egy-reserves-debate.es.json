@@ -1,0 +1,18 @@
+{
+  "quest": "egy-reserves-debate",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "¿Qué reconstruiría con más seguridad las reservas internacionales de Egipto?",
+  "summary": "Argumente qué vía reconstruiría con más seguridad las reservas de Egipto en los próximos dos años. Cite las cifras de la aplicación (reservas, cuenta corriente, deuda externa, deuda a corto plazo) para cada afirmación; la Verificación de cifras marca las que no coinciden.",
+  "knownLimits": [
+    "Debate, no una señal probada: ninguna posición se califica como correcta o incorrecta.",
+    "El BPI no tiene un tipo de interés oficial diario para Egipto."
+  ],
+  "positions": [
+    "Un tipo de cambio más flexible",
+    "Financiación del Golfo y de instituciones financieras internacionales, con ingresos por privatizaciones",
+    "Crecimiento de las exportaciones y del turismo",
+    "Ninguna de estas sin alivio de la deuda"
+  ]
+}

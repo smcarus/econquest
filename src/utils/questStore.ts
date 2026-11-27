@@ -6,6 +6,7 @@ import { createHash } from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { collectionProblems, questProblems, type Quest } from './quests';
+import { translationKey, translationProblems, translationText, type QuestTranslation, type QuestTranslationMap } from './questTranslations';
 
 export const MANIFEST_NOTE =
   'SHA-256 of each approved Quest file. An approved Quest is fixed: a changed file fails the check, so a change is a new version (a new file), and a Quest is withdrawn by a resolution line, never deleted.';
@@ -77,6 +78,7 @@ export function checkQuests(questsDir: string, manifest = readManifest(questsDir
   }
   const c = collectionProblems(files, manifest);
   if (c.length) problems.collection = c;
+  Object.assign(problems, checkTranslations(questsDir, files));
   return { files, problems, ok: Object.keys(problems).length === 0 };
 }
 
@@ -87,4 +89,61 @@ export function loadQuests(questsDir: string): Array<{ quest: Quest; approved: b
     .filter((f) => !f.parseError && questProblems(f.json, { approved: f.approved, fileName: f.name }).length === 0)
     .filter((f) => !f.approved || manifest[f.name] === f.hash)
     .map((f) => ({ quest: f.json as Quest, approved: f.approved, hash: f.hash, file: f.rel }));
+}
+
+export interface TranslationFile {
+  name: string;
+  rel: string;
+  json: unknown;
+  parseError?: string;
+}
+
+/** quests/translations/*.json (roadmap QL1): translated Quest text, kept apart from the hashed Quest files. */
+export function readTranslationFiles(questsDir: string): TranslationFile[] {
+  const dir = path.join(questsDir, 'translations');
+  let names: string[] = [];
+  try {
+    names = fs.readdirSync(dir).filter((n) => n.endsWith('.json')).sort();
+  } catch {
+    return [];
+  }
+  return names.map((name) => {
+    const rel = `quests/translations/${name}`;
+    try {
+      return { name, rel, json: JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8')) };
+    } catch (e) {
+      return { name, rel, json: null, parseError: (e as Error).message };
+    }
+  });
+}
+
+/** Problems in each translation file, checked against the Quest file it translates. */
+export function checkTranslations(questsDir: string, files = readQuestFiles(questsDir)): Record<string, string[]> {
+  const quests = new Map<string, Quest>();
+  for (const f of files) {
+    const q = f.json as Quest | null;
+    if (q && typeof q.id === 'string' && typeof q.version === 'number') quests.set(translationKey(q.id, q.version), q);
+  }
+  const problems: Record<string, string[]> = {};
+  for (const t of readTranslationFiles(questsDir)) {
+    const j = t.json as Partial<QuestTranslation> | null;
+    const quest = j && typeof j.quest === 'string' && typeof j.version === 'number' ? quests.get(translationKey(j.quest, j.version)) : undefined;
+    const p = t.parseError ? [`not valid JSON: ${t.parseError}`] : translationProblems(t.json, quest, t.name);
+    if (p.length) problems[t.rel] = p;
+  }
+  return problems;
+}
+
+/** The translations that pass, for the Quests served: "id@version" to each language's text. */
+export function loadTranslations(questsDir: string, quests: Array<{ quest: Quest }>): QuestTranslationMap {
+  const byKey = new Map(quests.map((x) => [translationKey(x.quest.id, x.quest.version), x.quest]));
+  const map: QuestTranslationMap = {};
+  for (const t of readTranslationFiles(questsDir)) {
+    if (t.parseError) continue;
+    const j = t.json as QuestTranslation;
+    const quest = j && typeof j.quest === 'string' ? byKey.get(translationKey(j.quest, j.version)) : undefined;
+    if (!quest || translationProblems(j, quest, t.name).length) continue;
+    (map[translationKey(j.quest, j.version)] ??= {})[j.lang] = translationText(j);
+  }
+  return map;
 }

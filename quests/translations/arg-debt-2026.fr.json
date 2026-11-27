@@ -1,0 +1,12 @@
+{
+  "quest": "arg-debt-2026",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "Le ratio de dette publique de l'Argentine baissera-t-il en 2026 ?",
+  "summary": "Donnez la probabilité que la dette brute des administrations publiques de l'Argentine selon le WEO du FMI, en % du PIB, soit plus faible pour 2026 que pour 2025, les deux lues pour la première fois le 1 mai 2027 ou après (après le WEO d'avril 2027).",
+  "knownLimits": [
+    "Le chiffre 2026 du WEO d'avril 2027 reste une estimation du FMI et peut être révisé plus tard ; la première lecture fait foi.",
+    "Un fort mouvement du peso change le ratio par la dette en devises autant que par le budget."
+  ]
+}

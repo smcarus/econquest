@@ -1,0 +1,13 @@
+{
+  "quest": "bra-bohn-replication",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "Reproduzca la estimación de reacción fiscal de Bohn para Brasil",
+  "summary": "Investigación por país > Historia y datos muestra una estimación de reacción fiscal de Bohn: cómo responde el saldo primario a la deuda del año anterior. Reproduzca el coeficiente de la aplicación para Brasil en R, Python o Stata con las mismas series del FMI y explique cualquier diferencia.",
+  "knownLimits": [
+    "El FMI revisa su historia en cada edición del WEO; use la edición que indica la aplicación y diga cuál usó.",
+    "Un script que muestre que la aplicación se equivoca también resuelve el reto."
+  ],
+  "target": "Brasil, panel de reacción fiscal de Bohn: el coeficiente de la deuda rezagada, con los años de la muestra y los ajustes que indica el panel."
+}

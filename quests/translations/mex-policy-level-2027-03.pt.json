@@ -1,0 +1,11 @@
+{
+  "quest": "mex-policy-level-2027-03",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "Qual será a taxa básica de juros do México em 31 de março de 2027?",
+  "summary": "Faça a previsão da taxa básica diária do BIS para o México em 31 de março de 2027, em porcentagem. A nota é pelo erro absoluto, comparado a uma previsão sem mudança.",
+  "knownLimits": [
+    "Os dados diários do BIS podem atrasar alguns dias em relação a uma decisão."
+  ]
+}

@@ -142,3 +142,23 @@ test('while off, the private and practice routes say only that Quests are off', 
     await s.close();
   }
 });
+
+test('the list and each Quest carry their translations (QL1)', async () => {
+  const s = await serve(true, async (i) => set(i));
+  try {
+    const list = await (await fetch(`${s.base}/api/quests`)).json();
+    assert.ok(list.translations['tur-policy-2027h1@1'].es.title.includes('Turquía'));
+    const tur = await (await fetch(`${s.base}/api/quests/tur-policy-2027h1`)).json();
+    assert.ok(tur.translations.pt.title.includes('Turquia'));
+    assert.equal(tur.translations.fr.translator, 'smcarus');
+    const off = await serve(false, async (i) => set(i));
+    try {
+      const j = await (await fetch(`${off.base}/api/quests`)).json();
+      assert.equal(j.translations, undefined);
+    } finally {
+      await off.close();
+    }
+  } finally {
+    await s.close();
+  }
+});

@@ -1,0 +1,17 @@
+{
+  "quest": "sanctions-effect-debate",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "As sanções financeiras mudam a trajetória macroeconômica de um país, ou só suas rotas?",
+  "summary": "Argumente se sanções financeiras amplas mudam de forma mensurável o crescimento, a inflação e as reservas da economia sancionada, ou se sobretudo desviam o comércio e os pagamentos. Use as ferramentas de sanções do aplicativo, as séries oficiais e estudos citados.",
+  "knownLimits": [
+    "Debate, não um sinal testado.",
+    "Os dados oficiais dos países sancionados são escassos e às vezes retidos; diga quando um número está faltando."
+  ],
+  "positions": [
+    "Mudam a trajetória macroeconômica",
+    "Sobretudo desviam o comércio e os pagamentos",
+    "Depende das exportações de commodities do país"
+  ]
+}

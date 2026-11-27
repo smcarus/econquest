@@ -1,0 +1,11 @@
+{
+  "quest": "ind-inflation-2026",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "Quelle sera l'inflation de l'Inde en 2026, telle que le FMI la publiera d'abord après l'année ?",
+  "summary": "Prévoyez l'inflation moyenne des prix à la consommation de l'Inde pour 2026 selon le WEO du FMI, en pourcentage, lue pour la première fois le 1 mai 2027 ou après.",
+  "knownLimits": [
+    "Pour certaines séries, le FMI présente l'Inde par exercice budgétaire (d'avril à mars) ; le chiffre du WEO tel que publié est utilisé."
+  ]
+}

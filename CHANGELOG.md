@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Quests (still switched off): translated Quest text (roadmap QL1, part 1). A Quest's title, question,
+  known limits and positions can be read in Spanish, French and Brazilian Portuguese, from separate
+  files in `quests/translations/` so an approved Quest's fingerprint never changes. `npm run
+  quests:check` checks each translation against its Quest and refuses any number the English does not
+  have. The Quest page names the translator, says the English is the rule and offers the English. All
+  14 draft Quests are translated into the three languages.
 - Docs for the Trading Economics and EODHD connections (#724): user manual (Your subscriptions:
   three services, one at a time, what each key is, example codes, CDS refused, check your own
   agreement); guide in four languages (Your data subscription in the menu list); README and features
