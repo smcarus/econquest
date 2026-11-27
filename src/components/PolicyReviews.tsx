@@ -18,6 +18,7 @@ import { REPORTS } from '../i18n/messages/reports';
 import { RESEARCH } from '../i18n/messages/research';
 import { BehaviouralCheck } from './BehaviouralCheck';
 import { PrecedentFinder } from './PrecedentFinder';
+import { WhatHappenedAfter } from './WhatHappenedAfter';
 import { ReviewPeers } from './ReviewPeers';
 import { ReviewCompare } from './ReviewCompare';
 import { PoliticalFeasibility } from './PoliticalFeasibility';
@@ -997,6 +998,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; otherCountries?: C
                 <h4 className="ui-section-title">2b. {t('pc_title')}</h4>
                 <p className="ui-label">{t('pc_hint')}</p>
                 <PrecedentFinder review={r} countryName={name(frame.iso3)} />
+                <WhatHappenedAfter review={r} countryName={name(frame.iso3)} />
               </section>
             )}
 

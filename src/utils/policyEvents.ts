@@ -67,6 +67,8 @@ export interface PolicyEvent {
   value?: number;
   /** For your own events: the link you gave. */
   sourceUrl?: string;
+  /** The pieces of the label, so the screen can word it in the chosen language. */
+  parts?: Record<string, string | number>;
 }
 
 export interface OwnEvent {
@@ -90,14 +92,14 @@ export function ruleEvents(histories: SynthHistory[], lastYear: number): PolicyE
       const prev = pb.get(y - 1);
       if (prev === undefined) continue;
       const d = v - prev;
-      if (d >= FISCAL_MOVE) out.push({ id: `fiscal_tightening:${h.iso3}:${y}`, iso3: h.iso3, year: y, kind: 'fiscal_tightening', origin: 'rule', label: `Primary balance ${sign(d)} points of GDP`, value: round(d, 2) });
-      else if (d <= -FISCAL_MOVE) out.push({ id: `fiscal_loosening:${h.iso3}:${y}`, iso3: h.iso3, year: y, kind: 'fiscal_loosening', origin: 'rule', label: `Primary balance ${sign(d)} points of GDP`, value: round(d, 2) });
+      if (d >= FISCAL_MOVE) out.push({ id: `fiscal_tightening:${h.iso3}:${y}`, iso3: h.iso3, year: y, kind: 'fiscal_tightening', origin: 'rule', label: `Primary balance ${sign(d)} points of GDP`, value: round(d, 2), parts: { v: sign(d) } });
+      else if (d <= -FISCAL_MOVE) out.push({ id: `fiscal_loosening:${h.iso3}:${y}`, iso3: h.iso3, year: y, kind: 'fiscal_loosening', origin: 'rule', label: `Primary balance ${sign(d)} points of GDP`, value: round(d, 2), parts: { v: sign(d) } });
     }
     const fx = outcomeYears(h, 'currency_change', lastYear);
     for (const [y, v] of fx) {
       const prev = fx.get(y - 1);
       if (prev === undefined || v < DEVALUATION_MIN || v - prev < DEVALUATION_STEP) continue;
-      out.push({ id: `devaluation:${h.iso3}:${y}`, iso3: h.iso3, year: y, kind: 'devaluation', origin: 'rule', label: `Currency down: ${round(v)}% more local currency per US dollar`, value: round(v, 2) });
+      out.push({ id: `devaluation:${h.iso3}:${y}`, iso3: h.iso3, year: y, kind: 'devaluation', origin: 'rule', label: `Currency down: ${round(v)}% more local currency per US dollar`, value: round(v, 2), parts: { v: round(v) } });
     }
   }
   return out;
@@ -119,7 +121,7 @@ export function fileEvents(files: { fxRegime?: FxRegimeTable | null; fiscalRules
         const a = dec(y - 1);
         const b = dec(y);
         if (a === undefined || b === undefined || a === b || a > 4 || b > 4) continue;
-        out.push({ id: `regime_change:${iso3}:${y}`, iso3, year: y, kind: 'regime_change', origin: 'file', label: `Exchange rate class ${a} to ${b} (1 peg, 4 floating)`, value: b - a });
+        out.push({ id: `regime_change:${iso3}:${y}`, iso3, year: y, kind: 'regime_change', origin: 'file', label: `Exchange rate class ${a} to ${b} (1 peg, 4 floating)`, value: b - a, parts: { from: a, to: b } });
       }
     }
   }
@@ -130,7 +132,7 @@ export function fileEvents(files: { fxRegime?: FxRegimeTable | null; fiscalRules
         const since = rules.since[k];
         // A run that starts in the file's first year may have started earlier: its start is unknown.
         if (!rules.has[k] || since === undefined || since <= fr.firstYear || since >= lastYear) continue;
-        out.push({ id: `fiscal_rule:${iso3}:${since}:${k}`, iso3, year: since, kind: 'fiscal_rule', origin: 'file', label: `Fiscal rule: ${RULE_KIND_NAME[k]}` });
+        out.push({ id: `fiscal_rule:${iso3}:${since}:${k}`, iso3, year: since, kind: 'fiscal_rule', origin: 'file', label: `Fiscal rule: ${RULE_KIND_NAME[k]}`, parts: { rule: k } });
       }
     }
   }
@@ -142,8 +144,8 @@ export function fileEvents(files: { fxRegime?: FxRegimeTable | null; fiscalRules
         const b = rows[i];
         if (b.year >= lastYear || b.year !== a.year + 1 || a.kaopen === null || b.kaopen === null) continue;
         const d = b.kaopen - a.kaopen;
-        if (d >= KAOPEN_MOVE) out.push({ id: `capital_opening:${iso3}:${b.year}`, iso3, year: b.year, kind: 'capital_opening', origin: 'file', label: `Capital account openness ${sign(d)}`, value: round(d, 2) });
-        else if (d <= -KAOPEN_MOVE) out.push({ id: `capital_closing:${iso3}:${b.year}`, iso3, year: b.year, kind: 'capital_closing', origin: 'file', label: `Capital account openness ${sign(d)}`, value: round(d, 2) });
+        if (d >= KAOPEN_MOVE) out.push({ id: `capital_opening:${iso3}:${b.year}`, iso3, year: b.year, kind: 'capital_opening', origin: 'file', label: `Capital account openness ${sign(d)}`, value: round(d, 2), parts: { v: sign(d) } });
+        else if (d <= -KAOPEN_MOVE) out.push({ id: `capital_closing:${iso3}:${b.year}`, iso3, year: b.year, kind: 'capital_closing', origin: 'file', label: `Capital account openness ${sign(d)}`, value: round(d, 2), parts: { v: sign(d) } });
       }
     }
   }

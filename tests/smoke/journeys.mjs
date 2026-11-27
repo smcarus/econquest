@@ -7,6 +7,8 @@
  * Your tests: Menu > Models & validation > Your tests registers a test, which is then frozen.
  * 3. One country: each of the four sections opens; History & data holds the forecast panel and the
  *    small gap model, which runs only on typed numbers.
+ * Policy review: the What happened after card takes your own change and, with no saved histories,
+ *    says why it shows no twin.
  * 4. Settings > Free data keys: save a key, see it masked, check it is not in the keys reply or
  *    the audit log, then remove it.
  * 5. Sign-in: create the first admin account; the app then asks everyone to sign in; a wrong
@@ -186,6 +188,27 @@ try {
   });
 
   const fakeKey = 'abcdef0123456789abcdef0123456789';
+  await step('policy review: What happened after shows its card, takes your own change and gives a reason', async () => {
+    await page.keyboard.press('Escape');
+    const made = await page.request.post(`${base}/api/reviews`, { data: { frame: { iso3: 'BRA', problem: 'Inflation is above target and growth is slowing.', goal: { indicator: 'Headline inflation', direction: 'lower' }, constraints: [], asOf: new Date().toISOString().slice(0, 10) } } });
+    if (!made.ok()) throw new Error(`the review was not saved: ${made.status()}`);
+    await page.locator('[data-nav-policy="true"]').first().click();
+    await page.locator('text=BRA: lower Headline inflation').first().click();
+    const card = page.locator('[data-review-part="what-happened"]');
+    await card.waitFor({ timeout: 15_000 });
+    await card.locator('summary', { hasText: 'Add your own change' }).click();
+    const boxes = card.locator('input');
+    await boxes.nth(0).fill('2015');
+    await boxes.nth(1).fill('New central bank law');
+    await boxes.nth(2).fill('https://example.org/law');
+    await card.getByRole('button', { name: 'Save', exact: true }).click();
+    await card.locator('text=Saved.').waitFor({ timeout: 15_000 });
+    await card.getByRole('button', { name: 'Show what happened after' }).click();
+    // No saved yearly histories offline, so the card says why instead of a number.
+    await card.locator('[data-missing="true"]').waitFor({ timeout: 15_000 });
+    await noCrash(page);
+  });
+
   await step('settings: save, mask and remove a key', async () => {
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Menu', exact: true }).click();

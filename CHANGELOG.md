@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- What happened after (SC4): a card in Policy review > Precedents. Pick a change the country made
+  (listed with where it came from) and a figure; the card shows the country against its twin with a
+  plain sentence (the gap three years on, and how many placebo countries showed a gap that large),
+  the chart with Show the numbers, what the twin is made of, a one-country warning, who was left
+  out, the checks and the method, or Missing with the reason. Add your own change with a source
+  link. English, Spanish, French and Portuguese; a glossary entry for synthetic control; a UI
+  journey step.
 - What happened after (SC3): a pre-registered false-alarm test,
   `docs/validation/models/synthetic_control.json` (hash in the models manifest), run by
   `npm run synth:validate` and by `npm run mac:validate` (step synth). On 100 country-years per
