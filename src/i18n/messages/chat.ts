@@ -127,6 +127,8 @@ export const CHAT = defineMessages('chat', {
   wi_keptLabel: "What-if: {line} cut by {pct}%, {use}",
   // Scenario read from a what-if question (WI1)
   sc_read: "Scenario read from your question",
+  sc_others: "What happened when others did this",
+  sc_othersTitle: "Starts a policy review on this question. Its Precedents step shows countries that made a change like this and how they went against a twin.",
   sc_noSize: "size not stated",
   sc_atUsd: "at ${value} a barrel",
   sc_toLevel: "to {value}%",

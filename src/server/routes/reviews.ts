@@ -36,6 +36,7 @@ import { findPrecedents, parseFeatures, type HistoryInput } from '../../utils/pr
 import { syntheticControl, parseOutcome } from '../../utils/syntheticControl';
 import { EVENT_RULE, DEFAULT_OUTCOME, eventsFor, excludedFor, fileEvents, ownEvents, parseOwnEvent, ruleEvents, type PolicyEvent } from '../../utils/policyEvents';
 import { addOwnEvent, loadOwnEvents, policyEventFile } from '../../utils/policyEventStore';
+import { isOutcome, keptFrom, withKept, withoutKept } from '../../utils/synthKeep';
 import type { FxRegimeTable } from '../../utils/fxRegime';
 import type { FiscalRulesTable } from '../../utils/fiscalRules';
 import type { ChinnItoTable } from '../../utils/chinnIto';
@@ -444,6 +445,36 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
     const { histories, pulledAt } = allHistories();
     const result = syntheticControl({ iso3: frame.iso3, eventYear: event.year, asOf: frame.asOf, outcome, histories, exclude: excludedFor(event, events) });
     res.json({ ...result, event, rule: EVENT_RULE[event.kind], historyPulledAt: pulledAt, folder: 'data/history/' });
+  });
+  // SC5: keep a result for the policy brief. The twin is worked out again here, never taken from the browser.
+  app.post('/api/reviews/:id/what-happened/keep', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const frame = frameOf(r);
+    if (!frame) return res.status(400).json({ error: 'Save the frame first.' });
+    const lastYear = Number(frame.asOf.slice(0, 4));
+    const events = allEvents(lastYear);
+    const event = events.find((e) => e.id === String(req.body?.event || '') && e.iso3 === frame.iso3);
+    if (!event) return res.status(404).json({ error: 'No such event for this country before the As of year.' });
+    if (req.body?.outcome !== undefined && !isOutcome(req.body.outcome)) return res.status(400).json({ error: 'Unknown figure to compare.' });
+    const outcome = req.body?.outcome ?? DEFAULT_OUTCOME[event.kind];
+    const { histories, pulledAt } = allHistories();
+    const result = syntheticControl({ iso3: frame.iso3, eventYear: event.year, asOf: frame.asOf, outcome, histories, exclude: excludedFor(event, events) });
+    const kept = keptFrom(result, event, new Date(), pulledAt);
+    if ('error' in kept) return res.status(400).json({ error: kept.error });
+    const review = { ...r, updatedAt: kept.keptAt, whatHappened: withKept(r.whatHappened, kept) };
+    if (!writeReview(res, review)) return;
+    res.json({ review, states: stepStates(review) });
+  });
+  app.delete('/api/reviews/:id/what-happened/keep', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const list = withoutKept(r.whatHappened, String(req.query.event || ''), String(req.query.outcome || ''));
+    const review = { ...r, updatedAt: new Date().toISOString(), whatHappened: list };
+    if (!writeReview(res, review)) return;
+    res.json({ review, states: stepStates(review) });
   });
   // Behavioural check (G33): the flags are worked out in the browser from the saved options; only the
   // effect sizes the user enters, each with its source, are saved here, beside the steps.

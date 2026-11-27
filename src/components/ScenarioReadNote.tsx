@@ -13,6 +13,10 @@ import { CHAT } from '../i18n/messages/chat';
  * The card can be edited (WI6): change a size or a level, take a change out, and ask again; the new
  * question is written in plain words so it is read back the same way. Debt paths the Scenario Agent
  * worked out can be kept for the trade-off chart under Debt sustainability.
+ *
+ * "What happened when others did this" (SC5) starts a policy review on the question; its Precedents
+ * step shows the countries that made a change like it and how they went against a twin. It changes
+ * nothing in the council's answer.
  */
 
 const sgn = (v: number) => `${v > 0 ? '+' : ''}${v}`;
@@ -64,10 +68,12 @@ export const ScenarioReadNote: React.FC<{
   /** The countries the answer covered, named in a question asked again. */
   countries?: string[];
   keep?: AgentAnswer['keep'];
+  /** Starts a policy review on this question, whose Precedents step has What happened after. */
+  onOthers?: () => void;
   /** Sends a question to the council; the card is read-only without it. */
   onAsk?: (question: string) => void;
   busy?: boolean;
-}> = ({ scenario, countries = [], keep = [], onAsk, busy }) => {
+}> = ({ scenario, countries = [], keep = [], onOthers, onAsk, busy }) => {
   const tr = useT(CHAT);
   const tx = useTx();
   const [editing, setEditing] = useState(false);
@@ -156,6 +162,13 @@ export const ScenarioReadNote: React.FC<{
       {scenario.needsSize.length > 0 && !editing && (
         <p className="text-amber-700 dark:text-amber-400" data-scenario-needs-size="true">
           {tr('sc_askSize')}
+        </p>
+      )}
+      {onOthers && !editing && (
+        <p className="pt-1">
+          <button type="button" className="text-blue-700 dark:text-blue-300 hover:underline" title={tr('sc_othersTitle')} data-scenario-others="true" onClick={onOthers}>
+            {tr('sc_others')}
+          </button>
         </p>
       )}
       {keep.length > 0 && (

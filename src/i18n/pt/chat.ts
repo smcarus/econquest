@@ -121,6 +121,8 @@ export const CHAT_PT: Messages<typeof CHAT> = {
   wi_keptLabel: "Simulação: {line} cortado em {pct}%, {use}",
   // Scenario read from a what-if question (WI1)
   sc_read: "Cenário lido da sua pergunta",
+  sc_others: "O que aconteceu quando outros fizeram isso",
+  sc_othersTitle: "Inicia uma revisão de política com esta pergunta. A etapa Precedentes mostra países que fizeram uma mudança assim e como foram contra um gêmeo.",
   sc_noSize: "tamanho não informado",
   sc_atUsd: "a US$ {value} o barril",
   sc_toLevel: "para {value}%",

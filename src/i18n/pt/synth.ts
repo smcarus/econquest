@@ -83,5 +83,12 @@ export const SYNTH_PT: Messages<typeof SYNTH> = {
   rule_capital_opening: 'Do arquivo Chinn-Ito: o índice de abertura da conta de capital subiu 1 ponto ou mais em um ano.',
   rule_capital_closing: 'Do arquivo Chinn-Ito: o índice de abertura da conta de capital caiu 1 ponto ou mais em um ano.',
   rule_own: 'Sua própria mudança, com a fonte que você informou.',
+  keep: 'Guardar para a nota de política',
+  keptNote: 'Guardado para a nota de política. Ela comporta até {max}; o mais antigo sai primeiro.',
+  keptTitle: 'Guardados para a nota de política',
+  unkeep: 'Retirar',
+  briefHeading: 'O que aconteceu depois: o país contra um gêmeo',
+  briefLine: '{event}. {sentence} Gêmeo: {twin}. Números: {source}.',
+  briefNotValidated: 'Não validado: este método ainda não passou no seu teste de alarmes falsos registrado de antemão.',
   notAdvice: 'Isto descreve um país contra uma comparação construída. Não mostra que a mesma mudança funcionaria em outro lugar.',
 };

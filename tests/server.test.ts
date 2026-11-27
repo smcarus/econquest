@@ -981,6 +981,13 @@ test('policy reviews: a frame starts a review, a bad one is refused, and both ar
   assert.equal(wh.methodVersion, 'synth-v1');
   assert.ok(wh.missing || wh.path.length, JSON.stringify(wh).slice(0, 200));
   assert.equal((await fetch(`${base}/api/reviews/${review.id}/what-happened?event=nope`)).status, 404);
+  // SC5: keeping for the brief works the twin out again; a Missing twin has nothing to keep.
+  const keepIt = await fetch(`${base}/api/reviews/${review.id}/what-happened/keep`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event: event.id, outcome: 'cpi_imf' }) });
+  assert.equal(keepIt.status, wh.missing ? 400 : 200);
+  assert.equal((await fetch(`${base}/api/reviews/${review.id}/what-happened/keep`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event: event.id, outcome: 'nope' }) })).status, 400);
+  const unkept = await fetch(`${base}/api/reviews/${review.id}/what-happened/keep?event=${encodeURIComponent(event.id)}&outcome=cpi_imf`, { method: 'DELETE' });
+  assert.equal(unkept.status, 200);
+  assert.deepEqual((await unkept.json()).review.whatHappened, []);
   const audit = await (await fetch(`${base}/api/audit`)).json();
   assert.ok(JSON.stringify(audit).includes('Started policy review'));
   // Policy council (PK2): refused without a measure in the frame; saved with sources once there is one.

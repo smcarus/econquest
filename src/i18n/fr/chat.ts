@@ -125,6 +125,8 @@ export const CHAT_FR: Messages<typeof CHAT> = {
   wi_keptLabel: "Simulation : {line} réduit de {pct} %, {use}",
   // Scenario read from a what-if question (WI1)
   sc_read: "Scénario lu dans votre question",
+  sc_others: "Ce qui s'est passé quand d'autres l'ont fait",
+  sc_othersTitle: "Lance une revue de politique sur cette question. Son étape Précédents montre les pays qui ont fait un changement de ce type et leur évolution face à un jumeau.",
   sc_noSize: "ampleur non précisée",
   sc_atUsd: "à {value} $ le baril",
   sc_toLevel: "à {value} %",

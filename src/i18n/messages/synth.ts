@@ -82,5 +82,12 @@ export const SYNTH = defineMessages('synth', {
   rule_capital_opening: 'From the Chinn-Ito file: the capital account openness index rose 1 point or more in one year.',
   rule_capital_closing: 'From the Chinn-Ito file: the capital account openness index fell 1 point or more in one year.',
   rule_own: 'Your own change, with the source you gave.',
+  keep: 'Keep for the policy brief',
+  keptNote: 'Kept for the policy brief. It holds up to {max}; the oldest goes first.',
+  keptTitle: 'Kept for the policy brief',
+  unkeep: 'Take out',
+  briefHeading: 'What happened after: the country against a twin',
+  briefLine: '{event}. {sentence} Twin: {twin}. Figures: {source}.',
+  briefNotValidated: 'Not validated: this method has not yet passed its pre-registered false-alarm test.',
   notAdvice: 'This describes one country against a constructed comparison. It does not show that the same change would work elsewhere.',
 });
