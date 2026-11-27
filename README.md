@@ -22,6 +22,7 @@ This is research and teaching software, not investment advice.
 ## Contents
 
 - [Why it exists](#why-it-exists)
+- [Why use EconQuest](#why-use-econquest)
 - [Free, open and independent](#free-open-and-independent)
 - [The one rule: only real figures](#the-one-rule-only-real-figures)
 - [What you can do with it](#what-you-can-do-with-it)
@@ -50,6 +51,27 @@ built on free official data, with every method written down so anyone can check 
 banks, finance ministries and international institutions, macro and currency investors, country-risk
 teams, teachers and students, journalists, and anyone who wants to understand what is happening to an
 economy and why.
+
+---
+
+## Why use EconQuest
+
+- **Every number can be traced.** Each figure names its source and date; a gap reads Missing, never
+  an estimate.
+- **Tested in public, failures included.** Each signal and forecast rule is written down before it is
+  tested, and every result stays on record ([track record](docs/TRACK_RECORD.md)).
+- **AI explains, it never supplies figures.** Answers are checked against the app's own numbers and
+  labelled. Every figure, chart and test works with no AI at all.
+- **Built for lower-income countries too.** Remittances, aid, food prices, disasters and the 59
+  countries on the IMF and World Bank low-income list sit beside the G20.
+- **From question to policy brief.** A policy review runs from the problem to options, precedents, a
+  memo and a one-page brief for non-economists.
+- **Yours, on your computer.** No account, no fees, no tracking. Your keys and research stay with you.
+- **Four languages, four help levels.** English, Spanish, French and Brazilian Portuguese, with
+  plain-language help.
+
+**What it does not do.** It has no paid market data unless you bring your own account; credit ratings
+and analyst consensus read Missing. It is research and teaching software, not investment advice.
 
 ---
 
