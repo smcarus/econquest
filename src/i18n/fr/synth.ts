@@ -83,5 +83,12 @@ export const SYNTH_FR: Messages<typeof SYNTH> = {
   rule_capital_opening: 'Du fichier Chinn-Ito : l\'indice d\'ouverture du compte de capital a augmenté d\'1 point ou plus en un an.',
   rule_capital_closing: 'Du fichier Chinn-Ito : l\'indice d\'ouverture du compte de capital a baissé d\'1 point ou plus en un an.',
   rule_own: 'Votre propre changement, avec la source que vous avez donnée.',
+  keep: 'Garder pour la note de politique',
+  keptNote: 'Gardé pour la note de politique. Elle en contient {max} au plus ; le plus ancien part en premier.',
+  keptTitle: 'Gardés pour la note de politique',
+  unkeep: 'Retirer',
+  briefHeading: 'Ce qui s\'est passé ensuite : le pays face à un jumeau',
+  briefLine: '{event}. {sentence} Jumeau : {twin}. Chiffres : {source}.',
+  briefNotValidated: 'Non validé : cette méthode n\'a pas encore passé son test de fausses alertes enregistré à l\'avance.',
   notAdvice: 'Ceci décrit un pays face à une comparaison construite. Cela ne montre pas que le même changement marcherait ailleurs.',
 };

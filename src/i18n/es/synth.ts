@@ -83,5 +83,12 @@ export const SYNTH_ES: Messages<typeof SYNTH> = {
   rule_capital_opening: 'Del archivo Chinn-Ito: el índice de apertura de la cuenta de capital subió 1 punto o más en un año.',
   rule_capital_closing: 'Del archivo Chinn-Ito: el índice de apertura de la cuenta de capital bajó 1 punto o más en un año.',
   rule_own: 'Su propio cambio, con la fuente que usted indicó.',
+  keep: 'Guardar para la nota de política',
+  keptNote: 'Guardado para la nota de política. Admite hasta {max}; el más antiguo sale primero.',
+  keptTitle: 'Guardados para la nota de política',
+  unkeep: 'Quitar',
+  briefHeading: 'Qué pasó después: el país frente a un gemelo',
+  briefLine: '{event}. {sentence} Gemelo: {twin}. Cifras: {source}.',
+  briefNotValidated: 'Sin validar: este método todavía no ha superado su prueba de falsas alarmas registrada de antemano.',
   notAdvice: 'Esto describe un país frente a una comparación construida. No demuestra que el mismo cambio funcionaría en otro lugar.',
 };

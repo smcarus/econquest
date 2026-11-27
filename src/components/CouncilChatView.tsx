@@ -173,6 +173,7 @@ export const AskCouncilPanel: React.FC<{
             scenario={t.asked.plan.scenario}
             countries={t.asked.plan.countries.slice(0, 4).map((c) => c.countryName)}
             keep={t.asked.answers.find((a) => a.id === 'scenario')?.keep}
+            onOthers={() => startPolicyReview({ iso3: t.asked.plan.countries.length === 1 ? t.asked.plan.countries[0].iso3 : undefined, problem: t.asked.question })}
             onAsk={(q) => void ask(q, 'followup')}
             busy={busy}
           />

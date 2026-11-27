@@ -16,6 +16,7 @@
  * (data/local/reviews.json) are in policyReviewStore.ts, which only the server imports.
  */
 
+import type { KeptSynth } from './synthKeep';
 import type { OutcomeCheck } from './outcomeChecks';
 import type { BehaviourRecord } from './behaviouralCheck';
 import type { CouncilParts } from './policyCouncil';
@@ -143,6 +144,8 @@ export interface PolicyReview {
   councilParts?: CouncilParts;
   /** Expert review round (P4, src/utils/expertReview.ts): forms filled by pilot economists and professors for the memo, oldest first, hash chained. */
   expertReviews?: ExpertReview[];
+  /** What happened after (SC5, src/utils/synthKeep.ts): results kept for the policy brief, worked out again by the server when kept. */
+  whatHappened?: KeptSynth[];
 }
 
 export type StepState = 'not_started' | 'done' | 'out_of_date';

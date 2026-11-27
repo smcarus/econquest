@@ -94,7 +94,7 @@ test('the PDF is one page; very long text shrinks, then is cut with a note, the 
 test('wiring: Policy review memo step has the one-page brief button, with text in every language', () => {
   const ui = readFileSync('src/components/PolicyReviews.tsx', 'utf8');
   assert.match(ui, /data-review-brief="true"/);
-  assert.match(ui, /plainBriefPdf\(plainBrief\(r, memo\.inputs, asBriefLang\(lang\), pp\)/);
+  assert.match(ui, /plainBriefPdf\(plainBrief\(r, memo\.inputs, asBriefLang\(lang\), pp, wh\)/);
   assert.ok('pr_brief' in REPORTS.en && 'pr_briefTitle' in REPORTS.en);
 });
 

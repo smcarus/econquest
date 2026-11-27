@@ -125,6 +125,8 @@ export const CHAT_ES: Partial<Record<Keys, string>> = {
   wi_keptLabel: "Hipótesis: {line} recortado un {pct}%, {use}",
   // Scenario read from a what-if question (WI1)
   sc_read: "Escenario leído de su pregunta",
+  sc_others: "Qué pasó cuando otros lo hicieron",
+  sc_othersTitle: "Inicia una revisión de política con esta pregunta. Su paso Precedentes muestra países que hicieron un cambio así y cómo les fue frente a un gemelo.",
   sc_noSize: "tamaño no indicado",
   sc_atUsd: "a {value} $ por barril",
   sc_toLevel: "hasta el {value}%",

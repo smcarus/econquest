@@ -998,7 +998,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; otherCountries?: C
                 <h4 className="ui-section-title">2b. {t('pc_title')}</h4>
                 <p className="ui-label">{t('pc_hint')}</p>
                 <PrecedentFinder review={r} countryName={name(frame.iso3)} />
-                <WhatHappenedAfter review={r} countryName={name(frame.iso3)} />
+                <WhatHappenedAfter review={r} countryName={name(frame.iso3)} onSaved={apply} />
               </section>
             )}
 
@@ -1113,11 +1113,13 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; otherCountries?: C
                       title={t('pr_briefTitle')}
                       onClick={() =>
                         run('brief', async () => {
-                          const [{ plainBrief, plainBriefFileName, asBriefLang }, { plainBriefPdf }, { peopleSummary }] = await Promise.all([import('../utils/plainBrief'), import('../utils/plainBriefPdf'), import('../utils/peopleSummary')]);
+                          const [{ plainBrief, plainBriefFileName, asBriefLang }, { plainBriefPdf }, { peopleSummary }, { synthBrief }, { registerEntry }] = await Promise.all([import('../utils/plainBrief'), import('../utils/plainBriefPdf'), import('../utils/peopleSummary'), import('../utils/synthKeep'), import('../data/modelRegister')]);
                           // R7: the people section goes in when its figures can be read; the brief is made without it otherwise.
                           const extras = await api<PeopleExtras>(`/api/reviews/${encodeURIComponent(r.id)}/people`).catch(() => null);
                           const pp = extras ? peopleSummary(r, memo.inputs, extras, asBriefLang(lang), tx) : undefined;
-                          const pdf = await plainBriefPdf(plainBrief(r, memo.inputs, asBriefLang(lang), pp), r.steps.memo!.savedAt, r.steps.memo!.hash);
+                          // SC5: the What happened after results kept on this review, if any.
+                          const wh = synthBrief(r.whatHappened, asBriefLang(lang), registerEntry('synthetic_control')?.status === 'passed');
+                          const pdf = await plainBriefPdf(plainBrief(r, memo.inputs, asBriefLang(lang), pp, wh), r.steps.memo!.savedAt, r.steps.memo!.hash);
                           saveFile(plainBriefFileName(r.title, asBriefLang(lang)), pdf.bytes, 'application/pdf');
                         })
                       }

@@ -255,6 +255,8 @@ export interface PlainBrief {
   council?: { heading: string; lines: string[] };
   /** R7: what this means for people (src/utils/peopleSummary.ts), when it was worked out. */
   people?: { heading: string; lines: string[] };
+  /** SC5: What happened after, the results kept on the review (src/utils/synthKeep.ts). */
+  whatHappened?: { heading: string; lines: string[] };
 }
 
 const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k) => String(v[k] ?? ''));
@@ -344,7 +346,7 @@ export function councilBrief(review: Pick<PolicyReview, 'steps' | 'councilParts'
   return { heading: market ? L.councilMarket : L.councilPolicy, lines };
 }
 
-export function plainBrief(review: Pick<PolicyReview, 'title' | 'steps'> & Partial<Pick<PolicyReview, 'councilParts'>>, inputs: MemoInputs, lang: BriefLang, people?: PlainBrief['people']): PlainBrief {
+export function plainBrief(review: Pick<PolicyReview, 'title' | 'steps'> & Partial<Pick<PolicyReview, 'councilParts'>>, inputs: MemoInputs, lang: BriefLang, people?: PlainBrief['people'], whatHappened?: PlainBrief['whatHappened']): PlainBrief {
   const L = BRIEF_TEXT[lang];
   const frame = review.steps.frame!.content as ReviewFrame;
   const d = review.steps.diagnose!.content as Diagnosis;
@@ -378,6 +380,7 @@ export function plainBrief(review: Pick<PolicyReview, 'title' | 'steps'> & Parti
     researchOnly: e.researchOnly,
     ...(frame.council ? { council: councilBrief(review, lang) } : {}),
     ...(people ? { people } : {}),
+    ...(whatHappened ? { whatHappened } : {}),
   };
 }
 
@@ -413,6 +416,11 @@ export function briefLines(b: PlainBrief): BriefLine[] {
   if (b.people) {
     out.push({ text: b.people.heading, kind: 'heading' });
     for (const l of b.people.lines) out.push({ text: l, kind: 'bullet' });
+  }
+  // SC5: what happened after in countries compared with a twin, kept on the review.
+  if (b.whatHappened) {
+    out.push({ text: b.whatHappened.heading, kind: 'heading' });
+    for (const l of b.whatHappened.lines) out.push({ text: l, kind: 'bullet' });
   }
   // PK8: the council parts come last, so a long brief cuts them before the option and what to watch.
   if (b.council) {

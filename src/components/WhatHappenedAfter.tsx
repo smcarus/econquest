@@ -3,7 +3,9 @@ import { History } from 'lucide-react';
 import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { SYNTH_OUTCOMES, SYNTH_SOURCES, type SynthOutcome, type SynthResult } from '../utils/syntheticControl';
 import type { EventKind, PolicyEvent } from '../utils/policyEvents';
-import { frameOf, type PolicyReview } from '../utils/policyReview';
+import { frameOf, type PolicyReview, type ReviewStep, type StepState } from '../utils/policyReview';
+import { MAX_KEPT_SYNTH, OUTCOME_KEY, synthEventLabel, synthSentence } from '../utils/synthKeep';
+import { CiteButton } from './CiteButton';
 import { ValidationBadge } from './ValidationBadge';
 import { ChartNumbers } from './ChartNumbers';
 import { useHelpLevel } from './HelpLevel';
@@ -15,7 +17,8 @@ import { SYNTH } from '../i18n/messages/synth';
  * Policy review > Precedents > What happened after (plan step SC4). The review country's changes
  * (src/utils/policyEvents.ts: rules on the figures, your files, your own entries) and, for the one
  * picked, the country against its twin (synthetic control, src/utils/syntheticControl.ts), worked out
- * on request by the server from the saved yearly histories. Nothing is saved except your own events.
+ * on request by the server from the saved yearly histories. Nothing is saved except your own events
+ * and, when you press "Keep for the policy brief" (SC5), the result, worked out again by the server.
  * Not validated until the pre-registered false-alarm test passes (npm run synth:validate).
  */
 
@@ -28,16 +31,6 @@ interface EventsAnswer {
 }
 type Answer = SynthResult & { event: PolicyEvent; historyPulledAt?: string };
 
-const OUTCOME_KEY = {
-  cpi_imf: 'o_cpi_imf',
-  gdp_growth: 'o_gdp_growth',
-  debt_gdp: 'o_debt_gdp',
-  primary_balance: 'o_primary_balance',
-  current_account: 'o_current_account',
-  reserves_months: 'o_reserves_months',
-  currency_change: 'o_currency_change',
-} as const satisfies Record<SynthOutcome, string>;
-
 const FILE_KEY = { fxRegime: 'fileFx', fiscalRules: 'fileFr', chinnIto: 'fileCi' } as const;
 const f2 = (v: number | null | undefined) => (v === null || v === undefined ? '—' : v.toFixed(2));
 
@@ -48,7 +41,12 @@ async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
-export const WhatHappenedAfter: React.FC<{ review: PolicyReview; countryName: string }> = ({ review, countryName }) => {
+export const WhatHappenedAfter: React.FC<{
+  review: PolicyReview;
+  countryName: string;
+  /** Called with the saved review after a result is kept for the brief or taken out. */
+  onSaved?: (out: { review: PolicyReview; states: Record<ReviewStep, StepState> }) => Promise<void>;
+}> = ({ review, countryName, onSaved }) => {
   const t = useT(SYNTH);
   const tx = useTx();
   const guides = showGuides(useHelpLevel());
@@ -60,6 +58,7 @@ export const WhatHappenedAfter: React.FC<{ review: PolicyReview; countryName: st
   const [error, setError] = useState('');
   const [own, setOwn] = useState({ year: '', label: '', sourceUrl: '' });
   const [ownNote, setOwnNote] = useState('');
+  const [keepNote, setKeepNote] = useState('');
   const base = `/api/reviews/${encodeURIComponent(review.id)}`;
   const year = Number(frameOf(review)?.asOf.slice(0, 4));
 
@@ -83,12 +82,7 @@ export const WhatHappenedAfter: React.FC<{ review: PolicyReview; countryName: st
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [review.id, review.steps.frame?.hash]);
 
-  const eventLabel = (e: PolicyEvent) => {
-    if (e.kind === 'own') return e.label;
-    const parts = { ...(e.parts || {}) };
-    if (e.kind === 'fiscal_rule' && typeof parts.rule === 'string') parts.rule = t(`fr_${parts.rule}` as 'fr_er');
-    return t(`ev_${e.kind}` as 'ev_devaluation', parts);
-  };
+  const eventLabel = (e: Pick<PolicyEvent, 'kind' | 'label' | 'parts'>) => synthEventLabel(e, t);
   const originLabel = (e: PolicyEvent) => t(`origin_${e.origin}` as 'origin_rule');
   const figure = (o: SynthOutcome) => t(OUTCOME_KEY[o]);
 
@@ -125,9 +119,22 @@ export const WhatHappenedAfter: React.FC<{ review: PolicyReview; countryName: st
     const after = a.path.filter((p) => p.k >= 0);
     const at = after.find((p) => p.k === 3) ?? after[after.length - 1];
     if (!at || !a.placebo) return '';
-    const dir = at.gap > 0 ? t('above') : at.gap < 0 ? t('below') : t('same');
-    return t('sentence', { k: at.k, year: a.eventYear, figure: figure(a.outcome).replace(/ \(.*\)$/, '').toLowerCase(), gap: Math.abs(at.gap).toFixed(2), dir, actual: at.actual.toFixed(2), twin: at.twin.toFixed(2), rank: a.placebo.rank, runs: a.placebo.runs, p: a.placebo.p.toFixed(2) });
+    return synthSentence({ k: at.k, eventYear: a.eventYear, outcome: a.outcome, gap: at.gap, actual: at.actual, twin: at.twin, rank: a.placebo.rank, runs: a.placebo.runs, p: a.placebo.p }, t);
   };
+  // SC5: keep the result on the review for the policy brief; the server works it out again.
+  const keep = async (body: { event: string; outcome: SynthOutcome } | null, remove?: { event: string; outcome: string }) => {
+    setKeepNote('');
+    try {
+      const out = remove
+        ? await getJson<{ review: PolicyReview; states: Record<ReviewStep, StepState> }>(`${base}/what-happened/keep?event=${encodeURIComponent(remove.event)}&outcome=${encodeURIComponent(remove.outcome)}`, { method: 'DELETE' })
+        : await getJson<{ review: PolicyReview; states: Record<ReviewStep, StepState> }>(`${base}/what-happened/keep`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (!remove) setKeepNote(t('keptNote', { max: MAX_KEPT_SYNTH }));
+      await onSaved?.(out);
+    } catch (err) {
+      setKeepNote(t('error', { why: (err as Error).message }));
+    }
+  };
+  const kept = review.whatHappened ?? [];
 
   const current = events?.events.find((e) => e.id === picked);
   const chart = answer && !answer.missing ? answer.path.map((p) => ({ k: p.k, year: p.year, actual: p.actual, twin: p.twin })) : [];
@@ -256,6 +263,32 @@ export const WhatHappenedAfter: React.FC<{ review: PolicyReview; countryName: st
             <p className="mt-1">{t('sources', { source: SYNTH_SOURCES[answer.outcome], date: answer.historyPulledAt?.slice(0, 10) ?? '—' })}</p>
           </details>
           <p className="text-xs text-slate-500 dark:text-slate-400">{t('notAdvice')}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {onSaved && (
+              <button type="button" className="ui-btn" onClick={() => keep({ event: answer.event.id, outcome: answer.outcome })} data-synth-keep="true">
+                {t('keep')}
+              </button>
+            )}
+            <CiteButton kind="chart" title={t('caption', { figure: figure(answer.outcome), country: countryName })} sources={[SYNTH_SOURCES[answer.outcome]]} asOf={answer.historyPulledAt?.slice(0, 10)} />
+          </div>
+          {keepNote && <p className="text-xs">{keepNote}</p>}
+        </div>
+      )}
+      {kept.length > 0 && (
+        <div className="text-xs space-y-1" data-synth-kept="true">
+          <p className="ui-label">{t('keptTitle')}</p>
+          <ul className="list-disc pl-4 space-y-1">
+            {kept.map((x) => (
+              <li key={`${x.eventId}-${x.outcome}`}>
+                {x.eventYear}: {eventLabel({ kind: x.kind, label: x.eventLabel, parts: x.parts })}, {figure(x.outcome)}{' '}
+                {onSaved && (
+                  <button type="button" className="ui-btn ui-btn-ghost text-xs" onClick={() => keep(null, { event: x.eventId, outcome: x.outcome })}>
+                    {t('unkeep')}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
       <details className="text-xs">
