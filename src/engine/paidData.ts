@@ -17,15 +17,17 @@
  *   same answer. The council's AI model is never sent them.
  *
  * This file is the frame. The code that signs in to a vendor and fetches a mapped series (an
- * "adapter") is per vendor: Macrobond (G5, src/engine/macrobond.ts), then Haver (G14) and Moody's
- * (G15, memory only: its figures are never saved to disk). Until a vendor's adapter exists, its
- * mapped series read Missing with that reason.
+ * "adapter") is per vendor: Macrobond (G5, src/engine/macrobond.ts), Trading Economics
+ * (src/engine/tradingEconomics.ts) and EODHD (src/engine/eodhd.ts) are built; Haver (G14) and
+ * Moody's (G15, memory only: its figures are never saved to disk) wait for a subscriber's API
+ * documents. Until a vendor's adapter exists, its mapped series read Missing with that reason.
  *
  * Shared engine: runs on the server, the phone and in tests; reaches files only through Platform.
  */
 import type { Platform } from '../platform/types';
+import { CDS_HIDDEN } from './cdsHidden';
 
-export type PaidVendorId = 'macrobond' | 'haver' | 'moodys';
+export type PaidVendorId = 'macrobond' | 'tradingeconomics' | 'eodhd' | 'haver' | 'moodys';
 export type PaidFreq = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual';
 export const PAID_FREQS: readonly PaidFreq[] = ['daily', 'weekly', 'monthly', 'quarterly', 'annual'];
 
@@ -44,8 +46,53 @@ export interface PaidVendor {
   codeExample: string;
 }
 
+/** What a fetch did for one mapped series: counts and dates only, never a figure. */
+export interface PaidStep {
+  id: string;
+  code: string;
+  ok: boolean;
+  note: string;
+}
+
+/** What one fetch from a vendor did, for the daily log and Data health: no figures, no keys. */
+export interface PaidPull {
+  ok: boolean;
+  signedIn: boolean;
+  note: string;
+  steps: PaidStep[];
+}
+
+/** A vendor date (ISO 8601, YYYY-MM-DD first) as the app's period for the series' frequency. */
+export function paidPeriod(iso: string, freq: PaidFreq): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+  if (!m) return null;
+  const [, y, mo, d] = m;
+  if (freq === 'annual') return y!;
+  if (freq === 'quarterly') return `${y}-Q${Math.floor((Number(mo) - 1) / 3) + 1}`;
+  if (freq === 'monthly') return `${y}-${mo}`;
+  return `${y}-${mo}-${d}`;
+}
+
+/**
+ * Dated values as points for the mapping's frequency, oldest first. Missing values are skipped,
+ * never filled; two dates in one period keep the later one.
+ */
+export function paidPoints(rows: Array<{ date: string; value: unknown }>, freq: PaidFreq): PaidPoint[] {
+  const byPeriod = new Map<string, { at: string; value: number }>();
+  for (const r of rows) {
+    const period = paidPeriod(r.date, freq);
+    const v = r.value;
+    if (!period || typeof v !== 'number' || !Number.isFinite(v)) continue;
+    const had = byPeriod.get(period);
+    if (!had || had.at <= r.date) byPeriod.set(period, { at: r.date, value: v });
+  }
+  return [...byPeriod.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([date, p]) => ({ date, value: p.value }));
+}
+
 export const PAID_VENDORS: readonly PaidVendor[] = [
   { id: 'macrobond', name: 'Macrobond', plannedIn: 'G5', adapterBuilt: true, memoryOnly: false, credentialIds: ['MACROBOND_CLIENT_ID', 'MACROBOND_CLIENT_SECRET'], codeExample: 'usgdp' },
+  { id: 'tradingeconomics', name: 'Trading Economics', plannedIn: 'P1', adapterBuilt: true, memoryOnly: false, credentialIds: ['TRADINGECONOMICS_API_KEY'], codeExample: 'GHGDPYY' },
+  { id: 'eodhd', name: 'EODHD', plannedIn: 'P2', adapterBuilt: true, memoryOnly: false, credentialIds: ['EODHD_API_TOKEN'], codeExample: 'GSPC.INDX' },
   { id: 'haver', name: 'Haver Analytics', plannedIn: 'G14', adapterBuilt: false, memoryOnly: false, credentialIds: [], codeExample: 'GDPH@USECON' },
   { id: 'moodys', name: "Moody's Analytics", plannedIn: 'G15', adapterBuilt: false, memoryOnly: true, credentialIds: [], codeExample: 'FGDP$.IUSA' },
 ];
@@ -128,16 +175,23 @@ export function checkPaidMapping(input: unknown, now: Date, isCountry: (iso3: st
   const code = typeof o.code === 'string' ? o.code.trim() : '';
   if (!code) problems.push("Type the vendor's own series code.");
   else if (code.length > PAID_CODE_MAX || /\s/.test(code)) problems.push(`A series code has no spaces and at most ${PAID_CODE_MAX} characters.`);
+  else if (CDS_HIDDEN && looksLikeCds(code)) problems.push('Credit default swap (CDS) series are hidden in this app for now, so they cannot be mapped.');
   const iso3 = clean(o.iso3, 3).toUpperCase();
   if (!/^[A-Z]{3}$/.test(iso3) || (iso3 !== 'WLD' && !isCountry(iso3))) problems.push('Pick a country (or "Not about one country").');
   const label = clean(o.label, PAID_TEXT_MAX);
   if (!label) problems.push('Say what the series is, for example "US real GDP".');
+  else if (CDS_HIDDEN && looksLikeCds(label) && !problems.some((p) => p.startsWith('Credit default'))) problems.push('Credit default swap (CDS) series are hidden in this app for now, so they cannot be mapped.');
   const unit = clean(o.unit, PAID_TEXT_MAX);
   if (!unit) problems.push('Give its unit, for example "% y/y" or "USD billions".');
   const freq = PAID_FREQS.find((f) => f === o.freq);
   if (!freq) problems.push('Pick how often it comes out.');
   if (problems.length || !vendor || !freq) return { problems };
   return { mapping: { id: paidSeriesId(vendor.id, code, iso3), vendor: vendor.id, code, iso3, label, unit, freq, addedAt: now.toISOString() } };
+}
+
+/** True for a code or label naming a credit default swap (CDS is hidden: src/utils/cdsHidden.ts). */
+export function looksLikeCds(text: string): boolean {
+  return /(^|[^a-z]|\dy)cds([^a-z]|$)|credit[\s_-]*default/i.test(text);
 }
 
 function readMappings(text: string | null): PaidMapping[] {

@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Your data subscription: Trading Economics and EODHD connections are built in next to Macrobond
+  (`src/engine/tradingEconomics.ts`, `src/engine/eodhd.ts`). Pick the vendor under Menu > Settings >
+  Your subscriptions, enter your own key (`TRADINGECONOMICS_API_KEY` or `EODHD_API_TOKEN`) and map
+  the series you want. Off unless switched on; without a key mapped series read Missing with the
+  reason; figures stay on this computer as for Macrobond. The connection check reads the first mapped
+  series and reports counts and dates only. Licence register rows for both. A mapping that names a
+  CDS is refused while CDS is hidden. Not yet tried against a live key.
+
 - Docs brought up to date with main through #721: README and features in four languages (What
   happened after in the policy bullet and as done item 25, roadmap date, the Mac check waiting on
   `npm run synth:validate`); `npm run mac:validate` and `npm run synth:validate` in the commands

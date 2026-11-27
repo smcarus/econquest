@@ -211,6 +211,8 @@ const SubscriptionSeries: React.FC<{ canEdit: boolean; vendorSetting?: string }>
           <label>
             {t('sub_code')}
             <input className={field} value={form.code} placeholder={example} onChange={(e) => setForm({ ...form, code: e.target.value })} required maxLength={120} />
+            {form.vendor === 'tradingeconomics' && <span className="mt-0.5 block text-xs text-slate-600 dark:text-slate-400">{t('sub_codeHelpTe')}</span>}
+            {form.vendor === 'eodhd' && <span className="mt-0.5 block text-xs text-slate-600 dark:text-slate-400">{t('sub_codeHelpEodhd')}</span>}
           </label>
           <label>
             {t('sub_country')}

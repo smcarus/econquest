@@ -584,6 +584,8 @@ want ("Your series"). The same switch can be set in `.env` as `PAID_DATA_VENDOR`
 | Vendor | Status | Settings |
 | --- | --- | --- |
 | Macrobond | Fetching works (data plan G5); not yet tried against a live licence | `PAID_DATA_VENDOR="macrobond"`, `MACROBOND_CLIENT_ID`, `MACROBOND_CLIENT_SECRET` (Web API client credentials; the API licence is separate from the desktop app) |
+| Trading Economics | Fetching works; not yet tried against a live key | `PAID_DATA_VENDOR="tradingeconomics"`, `TRADINGECONOMICS_API_KEY` (any paid plan includes the API) |
+| EODHD | Fetching works; not yet tried against a live token | `PAID_DATA_VENDOR="eodhd"`, `EODHD_API_TOKEN` (personal plans: your own non-commercial use) |
 | Haver Analytics | Planned, G14, once a subscriber shares the API documentation | `PAID_DATA_VENDOR="haver"` |
 | Moody's Analytics | Planned, G15, memory only (figures never saved to disk) | `PAID_DATA_VENDOR="moodys"` |
 
@@ -602,10 +604,38 @@ public copy refuses to include. Fetching happens in the daily run (step "Your da
 and dates, never a figure. Before relying on it, check that your Macrobond licence lets you keep a
 local copy of the series you fetch.
 
+**Trading Economics.** Good for lower-income and frontier countries: Trading Economics covers 196
+countries, including bond yields and stock indices the free sources lack. Plans in November 2026
+were about $149 to $199 a month (Standard) and $299 to $399 (Professional); published figures
+differ, so check the vendor's page. You map either a Trading Economics ticker for an economic series
+(the code Trading Economics shows for it, for example `GHGDPYY`), read from
+`api.tradingeconomics.com/historical/ticker/<ticker>`, or a market symbol with a colon (for example
+`ngseindx:ind`), read from `api.tradingeconomics.com/markets/historical/<symbol>` from 2000 onwards,
+keeping the closing value. The key goes in the request header, never in an address. One series per
+request, a quarter of a second apart (the limit is 5 a second). Trading Economics publishes no API
+terms page; redistribution is listed only for Enterprise plans. Check your own agreement allows a
+copy on your computer.
+
+**EODHD.** The cheapest of the three: All-in-One was $99.99 a month or $999.90 a year in November
+2026, sold for personal use. You map a daily price code as `SYMBOL.EXCHANGE` (for example
+`GSPC.INDX` for a stock index or `EURUSD.FOREX`), read from `eodhd.com/api/eod/<code>` from 1990
+onwards, keeping the close, or `macro:` and an EODHD indicator name (for example
+`macro:inflation_consumer_prices_annual`), read for the country you mapped from
+`eodhd.com/api/macro-indicator/<ISO3>`. The macro indicators are World Bank figures the app already
+reads free; they are there so one token covers everything you map. EODHD only takes the token in the
+address, so the app never logs or reports an address. Fetching stops for the day when EODHD refuses
+the token (401) or says the day's allowance is used up (402). EODHD's terms let a personal user
+"store, manipulate, and analyze the data for private, non-commercial purposes" and bar displaying
+it to or sharing it with others, which is how the app keeps the figures.
+
+**CDS stays hidden.** While CDS is hidden (`src/utils/cdsHidden.ts`), a mapping whose code or label
+names a CDS or credit default swap is refused for every vendor.
+
 The connection check (row `paid_data`, also in `npm run check:data`) says whether the subscription
 is on, whether its sign-in details are set and how many series are mapped. For Macrobond it also
-signs in and reads the first mapped series, showing only how many values came back and their first
-and last dates. It never shows a figure or a sign-in detail.
+signs in and reads the first mapped series, and for Trading Economics and EODHD it reads the first
+mapped series with your key, showing only how many values came back and their first and last
+dates. It never shows a figure or a sign-in detail.
 
 ## AI model
 

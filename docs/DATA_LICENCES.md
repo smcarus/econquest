@@ -70,6 +70,8 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | Bank of Canada and Bank of England Sovereign Default Database (BoC-BoE) | Allowed with conditions | Free sharing allowed | Allowed: the Bank lets anyone use, copy and distribute its website content, crediting the Bank and saying if anything was changed, without suggesting the Bank endorses the use. | Not limited by the terms for the Bank's own content; a paid product that includes it must tell buyers the content is free on the Bank's website. | Source: Bank of Canada and Bank of England, BoC-BoE Sovereign Default Database (<edition>), Bank of Canada Valet API; figures as published, US$ millions. |
 | IMF PortWatch (daily chokepoint transits and port activity, ArcGIS feature layers) | Terms not confirmed | Sharing unclear | The PortWatch terms page did not give its text to an automated reader, and the layers carry no licence or copyright text. | Not confirmed. | Source: IMF PortWatch (portwatch.imf.org), daily port and chokepoint data and preliminary trade volume estimates. |
 | Your own paid data (CDS file, LSEG account) | Terms not confirmed | Do not pass on | Set by your own licence with the vendor. Market data licences usually limit display to licensed users. | Set by your own licence. | As your vendor contract requires. |
+| Your own Trading Economics subscription (off unless you switch it on) | Terms not confirmed | Do not pass on | No published API terms found (27 November 2026). Redistribution is listed only for Enterprise plans. | Set by your own agreement with Trading Economics. | Source: Trading Economics (your subscription). |
+| Your own EODHD subscription (off unless you switch it on) | Allowed with conditions | Do not pass on | Personal plans: your own private, non-commercial use only; no displaying to or sharing with others. | Needs an EODHD commercial plan. | Source: EODHD (your subscription). |
 | AidData Global Chinese Development Finance Dataset, version 3.0 | Open with attribution | Free sharing allowed | Allowed: the AidData dataset is under the Open Data Commons Attribution License (ODC-By). | ODC-By sets no commercial limit; the pages read do not mention commercial use. | AidData. 2023. Global Chinese Development Finance Dataset, Version 3.0. |
 | IMF list of low-income country debt sustainability analyses | Terms not confirmed | Sharing unclear | Not stated: the one-page list has no terms of use. The ratings are shown as facts with the source, the list date and the day it was read. | Not stated. | Source: International Monetary Fund, List of IMF/WBG LIC DSAs for PRGT-Eligible Countries, as of September 30, 2026. |
 | ILOSTAT (International Labour Organization) | Open with attribution | Free sharing allowed | Allowed: ILO databases and datasets published from 3 May 2023 are under CC BY 4.0. | Allowed (CC BY 4.0 sets no commercial limit). | Source: ILOSTAT, International Labour Organization (ILO). |
@@ -778,6 +780,38 @@ From the terms:
 - **Credit:** As your vendor contract requires.
 - **Open question:** Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.
 
+### Your own Trading Economics subscription (off unless you switch it on)
+
+- **Used for:** Series you map under Menu > Settings > Your subscriptions: economic tickers and market symbols (bond yields, stock indices, currencies), shown only on this computer
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Do not pass on. Your subscription data: never shared by the app.
+- **Terms read:** [Trading Economics API plans](https://tradingeconomics.com/analytics/pricing.aspx); [Trading Economics API page](https://tradingeconomics.com/analytics/api.aspx) (checked 2026-11-27)
+- **Show to others:** No published API terms found (27 November 2026). Redistribution is listed only for Enterprise plans.
+- **Commercial use:** Set by your own agreement with Trading Economics.
+- **Credit:** Source: Trading Economics (your subscription).
+- **Open question:** Check your own Trading Economics agreement allows keeping a copy on your computer. The app never passes the figures on: downloads, backups, shared copies and the council leave them out.
+
+From the terms:
+
+> The API subscription pricing is adjusted accordingly to the features you use, to your volume of requests and to the distribution you make.
+
+### Your own EODHD subscription (off unless you switch it on)
+
+- **Used for:** Series you map under Menu > Settings > Your subscriptions: daily prices (stock indices, currencies, listed shares) and EODHD macro indicators, shown only on this computer
+- **Status:** Allowed with conditions
+- **Free non-commercial sharing:** Do not pass on. Your subscription data: never shared by the app.
+- **Terms read:** [EODHD terms and conditions](https://eodhd.com/financial-apis/terms-conditions); [EODHD plans](https://eodhd.com/pricing) (checked 2026-11-27)
+- **Show to others:** Personal plans: your own private, non-commercial use only; no displaying to or sharing with others.
+- **Commercial use:** Needs an EODHD commercial plan.
+- **Credit:** Source: EODHD (your subscription).
+- **Open question:** Personal plans fit personal research on your own computer, which is how the app keeps the figures. EODHD sovereign credit risk (CDS) is hidden in this app.
+
+From the terms:
+
+> Non-Professional Users are permitted to store, manipulate, and analyze the data for private, non-commercial purposes.
+>
+> Selling, reselling, retransmitting, redistributing, displaying, or granting access to the Information
+
 ### AidData Global Chinese Development Finance Dataset, version 3.0
 
 - **Used for:** Official loan commitments from China by borrowing country, 2000-2021: per-country sums of version 3.0 shipped in datasets/aiddata/, or a newer file the user puts in data/local/aiddata/ (issuer brief, Fiscal & Debt Agent)
@@ -1116,13 +1150,15 @@ From the terms:
 27. **Bank of Canada and Bank of England Sovereign Default Database (BoC-BoE)** (Allowed with conditions): The database is compiled from published sources (IMF, World Bank, Paris Club and others); the Bank's terms withhold permission for third-party content unless stated, and no database-specific licence was found. The Valet API must not be queried around its request limits: the app reads the file at most once a day.
 28. **IMF PortWatch (daily chokepoint transits and port activity, ArcGIS feature layers)** (Terms not confirmed): Read the PortWatch terms in a browser (portwatch.imf.org/pages/terms) and update this row. PortWatch is an IMF site, so the IMF Copyright and Usage terms may apply, but the AIS ship data come from partners and may carry their own terms.
 29. **Your own paid data (CDS file, LSEG account)** (Terms not confirmed): Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.
-30. **IMF list of low-income country debt sustainability analyses** (Terms not confirmed): The list itself states no terms (copy read 2026-11-11, given by the maintainer). The general IMF copyright and usage page did not load from the build computer; the question is in the email to copyright@imf.org.
-31. **Our World in Data energy file (Energy Institute Statistical Review of World Energy)** (Permission needed for client or commercial use): The energy mix shares come from the Energy Institute, whose website terms allow private, non-commercial use only. The maintainer chose (2026-11-11, personal non-commercial use) to have each computer download the file itself and never ship it. Do not show these figures to others or use them commercially without the Energy Institute's permission; ask the Energy Institute before any wider use.
-32. **IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies (Arslanalp and Tsuda)** (Permission needed for client or commercial use): The workbook (version of 6 November 2026, read 2026-11-11, given by the maintainer) and the working paper state no terms; the paper PDF is marked "Not for Redistribution", so neither is shipped with the app. The general IMF statistical data terms are taken to apply (publish with credit; commercial reuse needs permission). Confirm with copyright@imf.org with the other IMF questions.
-33. **IMF Fiscal Rules Dataset, 1985-2024** (Terms not confirmed): The page gives a citation but no terms. Read only from the workbook the user downloads and saves (G35, built 12 November 2026 on the maintainer's choice); nothing from it is shipped. Probably under the general IMF statistical data terms; confirm with copyright@imf.org with the other IMF questions.
-34. **Survey of Professional Forecasters, median forecasts (Federal Reserve Bank of Philadelphia)** (Terms not confirmed): Read only from your file (CG2, built 23 November 2026). Ask the Bank about reuse before figures are shown to others.
-35. **Global Data Lab subnational Human Development Index (Radboud University)** (Allowed with conditions): Non-commercial only, so the file is read from data/local/gdl/ and never shipped or downloaded by the app (R6, built 17 November 2026).
-36. **Database of Political Institutions 2020 (Inter-American Development Bank)** (Terms not confirmed): The IDB page has no licence or data link. Read only from the file the user downloads and saves (G36, built 13 November 2026); nothing from it is shipped. Find the download page in a browser and read its licence before anything built from it is shared.
-37. **EM-DAT, the international disaster database (CRED, UCLouvain)** (Terms not confirmed): Read only from the file each user downloads with their own account (PA6, built 13 November 2026); nothing from it is shipped or fetched. Each user must check that their own use fits the account terms. Re-read the terms page in a browser and add quotes.
-38. **FAOSTAT Consumer Price Indices (FAO)** (Terms not confirmed): This table is built from IMF, OECD and national figures, so FAO's default CC BY 4.0 may not cover it. Read only from the file the user saves (PA2, built 13 November 2026); nothing from it is shipped. Confirm the terms for this table before anything built from it is shared.
-39. **DSSI and Common Framework status (World Bank, Paris Club)** (Terms not confirmed): Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.
+30. **Your own Trading Economics subscription (off unless you switch it on)** (Terms not confirmed): Check your own Trading Economics agreement allows keeping a copy on your computer. The app never passes the figures on: downloads, backups, shared copies and the council leave them out.
+31. **Your own EODHD subscription (off unless you switch it on)** (Allowed with conditions): Personal plans fit personal research on your own computer, which is how the app keeps the figures. EODHD sovereign credit risk (CDS) is hidden in this app.
+32. **IMF list of low-income country debt sustainability analyses** (Terms not confirmed): The list itself states no terms (copy read 2026-11-11, given by the maintainer). The general IMF copyright and usage page did not load from the build computer; the question is in the email to copyright@imf.org.
+33. **Our World in Data energy file (Energy Institute Statistical Review of World Energy)** (Permission needed for client or commercial use): The energy mix shares come from the Energy Institute, whose website terms allow private, non-commercial use only. The maintainer chose (2026-11-11, personal non-commercial use) to have each computer download the file itself and never ship it. Do not show these figures to others or use them commercially without the Energy Institute's permission; ask the Energy Institute before any wider use.
+34. **IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies (Arslanalp and Tsuda)** (Permission needed for client or commercial use): The workbook (version of 6 November 2026, read 2026-11-11, given by the maintainer) and the working paper state no terms; the paper PDF is marked "Not for Redistribution", so neither is shipped with the app. The general IMF statistical data terms are taken to apply (publish with credit; commercial reuse needs permission). Confirm with copyright@imf.org with the other IMF questions.
+35. **IMF Fiscal Rules Dataset, 1985-2024** (Terms not confirmed): The page gives a citation but no terms. Read only from the workbook the user downloads and saves (G35, built 12 November 2026 on the maintainer's choice); nothing from it is shipped. Probably under the general IMF statistical data terms; confirm with copyright@imf.org with the other IMF questions.
+36. **Survey of Professional Forecasters, median forecasts (Federal Reserve Bank of Philadelphia)** (Terms not confirmed): Read only from your file (CG2, built 23 November 2026). Ask the Bank about reuse before figures are shown to others.
+37. **Global Data Lab subnational Human Development Index (Radboud University)** (Allowed with conditions): Non-commercial only, so the file is read from data/local/gdl/ and never shipped or downloaded by the app (R6, built 17 November 2026).
+38. **Database of Political Institutions 2020 (Inter-American Development Bank)** (Terms not confirmed): The IDB page has no licence or data link. Read only from the file the user downloads and saves (G36, built 13 November 2026); nothing from it is shipped. Find the download page in a browser and read its licence before anything built from it is shared.
+39. **EM-DAT, the international disaster database (CRED, UCLouvain)** (Terms not confirmed): Read only from the file each user downloads with their own account (PA6, built 13 November 2026); nothing from it is shipped or fetched. Each user must check that their own use fits the account terms. Re-read the terms page in a browser and add quotes.
+40. **FAOSTAT Consumer Price Indices (FAO)** (Terms not confirmed): This table is built from IMF, OECD and national figures, so FAO's default CC BY 4.0 may not cover it. Read only from the file the user saves (PA2, built 13 November 2026); nothing from it is shipped. Confirm the terms for this table before anything built from it is shared.
+41. **DSSI and Common Framework status (World Bank, Paris Club)** (Terms not confirmed): Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.

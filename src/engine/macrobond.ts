@@ -22,7 +22,7 @@
  * Shared engine: reaches the network only through Platform.http.
  */
 import type { Platform } from '../platform/types';
-import { listPaidMappings, savePaidPoints, type PaidFreq, type PaidMapping, type PaidPoint } from './paidData';
+import { listPaidMappings, paidPeriod, savePaidPoints, type PaidFreq, type PaidMapping, type PaidPoint, type PaidPull, type PaidStep } from './paidData';
 
 export const MACROBOND_AUTH_URL = 'https://apiauth.macrobondfinancial.com/mbauth/';
 export const MACROBOND_API_URL = 'https://api.macrobondfinancial.com/';
@@ -82,15 +82,7 @@ export function readMacrobondToken(status: number, text: string, nowMs: number, 
 }
 
 /** A date from Macrobond (ISO 8601) as the app's period for the series' frequency. */
-export function macrobondPeriod(iso: string, freq: PaidFreq): string | null {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
-  if (!m) return null;
-  const [, y, mo, d] = m;
-  if (freq === 'annual') return y!;
-  if (freq === 'quarterly') return `${y}-Q${Math.floor((Number(mo) - 1) / 3) + 1}`;
-  if (freq === 'monthly') return `${y}-${mo}`;
-  return `${y}-${mo}-${d}`;
-}
+export const macrobondPeriod = paidPeriod;
 
 export type MacrobondRead = { points: PaidPoint[] } | { error: string };
 
@@ -147,21 +139,8 @@ async function signIn(platform: Platform, c: MacrobondCredentials, timeoutMs: nu
   }
 }
 
-export interface MacrobondStep {
-  id: string;
-  code: string;
-  ok: boolean;
-  /** Counts and dates only, never a figure. */
-  note: string;
-}
-
-export interface MacrobondPull {
-  ok: boolean;
-  signedIn: boolean;
-  /** One line for the daily log and Data health: no figures, no credentials. */
-  note: string;
-  steps: MacrobondStep[];
-}
+export type MacrobondStep = PaidStep;
+export type MacrobondPull = PaidPull;
 
 /**
  * Fetches every Macrobond mapping (or only `onlyIds`) and keeps what came back with savePaidPoints.
