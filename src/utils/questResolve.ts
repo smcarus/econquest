@@ -20,7 +20,7 @@
  */
 import type { HistoryRevision } from './officialHistory';
 import type { ForecastQuest } from './quests';
-import { evaluateRule, type QuestObservation, type QuestRule, type QuestSeriesRef, type RuleReading } from './questRules';
+import { evaluateRule, fillWords, type QuestObservation, type QuestRule, type QuestSeriesRef, type RuleReading } from './questRules';
 import { questSeriesDef } from './questSeries';
 import { daysBetween, directionBaseRate, firstOnOrAfter, type Point } from './questScoring';
 
@@ -165,18 +165,47 @@ export function resolveForecast(quest: ForecastQuest, questHash: string, dataFor
   return { ...base, kind: 'settled', via, readings: out.readings, outcome: { answer: 'probability', happened: out.happened, baseRate } };
 }
 
-/** A result in plain words, for the script and the Quests page. */
-export function describeOutcome(l: Pick<ResolutionLine, 'kind' | 'outcome' | 'readings' | 'via' | 'reason' | 'decision'>): string {
-  if (l.kind === 'unresolvable') return `Unresolvable: ${l.reason ?? 'no reason given'}.`;
-  if (l.kind === 'withdrawn') return `Withdrawn: ${l.reason ?? 'no reason given'}.`;
-  if (l.kind === 'note') return `Note: ${l.reason ?? ''}`;
-  if (l.kind === 'decision') return l.decision === 'unresolvable' ? `Decision on a dispute: Unresolvable after all. ${l.reason ?? ''}`.trim() : `Decision on a dispute: the result stands. ${l.reason ?? ''}`.trim();
-  const read = (l.readings || []).map((r) => `${r.value} on ${r.date}`).join(', then ');
-  const fb = l.via === 'fallback' ? ' (from the fallback rule, because the main series had no value)' : '';
+/**
+ * The words describeOutcome puts together, in English. The Quests screen passes the same keys in the
+ * chosen language (keys starting out_ in src/i18n/messages/quests.ts).
+ */
+export const OUTCOME_WORDS = {
+  out_unresolvable: 'Unresolvable: {reason}.',
+  out_withdrawn: 'Withdrawn: {reason}.',
+  out_noReason: 'no reason given',
+  out_note: 'Note: {reason}',
+  out_decisionUnresolvable: 'Decision on a dispute: Unresolvable after all. {reason}',
+  out_decisionStands: 'Decision on a dispute: the result stands. {reason}',
+  out_reading: '{value} on {date}',
+  out_then: ', then ',
+  out_fallback: ' (from the fallback rule, because the main series had no value)',
+  out_settled: 'Settled.',
+  out_replication: "The app's figure is {value} ({from}); an entry within {tolerance} of it reproduces it.",
+  out_level: 'The value was {value}{read}{fallback}.',
+  out_noChange: ' On the day entries closed it was {value}.',
+  out_baseRate: ' In past periods of the same length this happened {pct}% of the time.',
+  out_yes: 'Yes, it happened{read}{fallback}.',
+  out_no: 'No, it did not happen{read}{fallback}.',
+};
+export type OutcomeWords = typeof OUTCOME_WORDS;
+
+/**
+ * A result in plain words, for the script and the Quests page. `w` and `text` let the Quests screen
+ * show it in the chosen language (`text` translates a reason written in English); defaults are English.
+ */
+export function describeOutcome(l: Pick<ResolutionLine, 'kind' | 'outcome' | 'readings' | 'via' | 'reason' | 'decision'>, w: OutcomeWords = OUTCOME_WORDS, text: (english: string) => string = (x) => x): string {
+  const reason = l.reason ? text(l.reason) : '';
+  if (l.kind === 'unresolvable') return fillWords(w.out_unresolvable, { reason: reason || w.out_noReason });
+  if (l.kind === 'withdrawn') return fillWords(w.out_withdrawn, { reason: reason || w.out_noReason });
+  if (l.kind === 'note') return fillWords(w.out_note, { reason });
+  if (l.kind === 'decision') return fillWords(l.decision === 'unresolvable' ? w.out_decisionUnresolvable : w.out_decisionStands, { reason }).trim();
+  const readList = (l.readings || []).map((r) => fillWords(w.out_reading, { value: r.value, date: r.date })).join(w.out_then);
+  const read = readList ? ` (${readList})` : '';
+  const fallback = l.via === 'fallback' ? w.out_fallback : '';
   const o = l.outcome;
-  if (!o) return 'Settled.';
-  if (o.answer === 'replication') return `The app's figure is ${o.value} (${o.from}); an entry within ${o.tolerance} of it reproduces it.`;
-  if (o.answer === 'level') return `The value was ${o.value}${read ? ` (${read})` : ''}${fb}.${o.noChange !== null ? ` On the day entries closed it was ${o.noChange}.` : ''}`;
-  const rate = o.baseRate === null ? '' : ` In past periods of the same length this happened ${Math.round(o.baseRate * 100)}% of the time.`;
-  return `${o.happened ? 'Yes, it happened' : 'No, it did not happen'}${read ? ` (${read})` : ''}${fb}.${rate}`;
+  if (!o) return w.out_settled;
+  if (o.answer === 'replication') return fillWords(w.out_replication, { value: o.value, from: text(o.from), tolerance: o.tolerance });
+  if (o.answer === 'level') return fillWords(w.out_level, { value: o.value, read, fallback }) + (o.noChange !== null ? fillWords(w.out_noChange, { value: o.noChange }) : '');
+  const rate = o.baseRate === null ? '' : fillWords(w.out_baseRate, { pct: Math.round(o.baseRate * 100) });
+  return fillWords(o.happened ? w.out_yes : w.out_no, { read, fallback }) + rate;
 }

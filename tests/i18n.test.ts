@@ -4,10 +4,12 @@ import { attachLanguage, defineMessages, LANGS, nextLang, parseLang, placeholder
 import { ALL_CATALOGS } from '../src/i18n/messages';
 import { ES } from '../src/i18n/es';
 
+/** Words spelled the same in Spanish and English; anything else left identical is untranslated. */
+const SAME_IN_SPANISH = new Set(['Debate', 'Tutorial', 'Error {v}', 'Script', 'Brier {v}']);
 /** Words spelled the same in Portuguese and English; anything else left identical is untranslated. */
-const SAME_IN_PORTUGUESE = new Set(['Menu', 'Offline', 'Quests', 'Markdown', 'Bootstrap', 'Cascade', 'Instrument', 'AI: Gemini', '{n} pt', '{n} pts', '{value} pts', 'BIS ({name}), {date}', 'carry', 'macro', 'Hash', 'Fiscal', 'Spread', 'Backtest', 'CDS (credit default swap)', ' · hash ']);
+const SAME_IN_PORTUGUESE = new Set(['Debate', 'Tutorial', 'Quest', 'Script', 'Brier {v}', 'Menu', 'Offline', 'Quests', 'Markdown', 'Bootstrap', 'Cascade', 'Instrument', 'AI: Gemini', '{n} pt', '{n} pts', '{value} pts', 'BIS ({name}), {date}', 'carry', 'macro', 'Hash', 'Fiscal', 'Spread', 'Backtest', 'CDS (credit default swap)', ' · hash ']);
 /** Words spelled the same in French and English; anything else left identical is untranslated. */
-const SAME_IN_FRENCH = new Set(['Inflation (%)', 'Distance', 'Question {n}', 'momentum', 'macro', 'Document', '1 question', '{n} questions', 'Stable', '{n} pts', 'Sections', 'Markdown', 'Bootstrap', 'Notes', 'Communication', 'stable', 'Concentration', 'Options', 'Instrument', 'Type', 'Date', 'Sanctions', 'Question', 'Menu', 'Agents', '1 position', '{n} positions', '1 document', '{n} documents', 'Inflation', 'Cycle', 'Question', 'Instructions', '{n} pages, ', '1 page, ', 'Tests', 'Image', 'Documents', '{num} passages', '1 passage', 'Cascade',
+const SAME_IN_FRENCH = new Set(['Signal', 'Positions', 'Position', 'Position {n}', 'Source', 'Score', 'Script', 'Brier {v}', 'Inflation (%)', 'Distance', 'Question {n}', 'momentum', 'macro', 'Document', '1 question', '{n} questions', 'Stable', '{n} pts', 'Sections', 'Markdown', 'Bootstrap', 'Notes', 'Communication', 'stable', 'Concentration', 'Options', 'Instrument', 'Type', 'Date', 'Sanctions', 'Question', 'Menu', 'Agents', '1 position', '{n} positions', '1 document', '{n} documents', 'Inflation', 'Cycle', 'Question', 'Instructions', '{n} pages, ', '1 page, ', 'Tests', 'Image', 'Documents', '{num} passages', '1 passage', 'Cascade',
   'Articles', 'Coefficient', 'Date', 'Excel', 'Inflation {inf}, {basis}{gap}', 'Option', 'Point', 'Programmes', 'Sanctions', 'Sources',
   'Violence', 'Violence (%)', 'violence', '{n} points', '{n} pt', '{n} pts', '{value} pts', 'Population', 'projection',
   ' · notes', 'Client', 'Duration', 'Inflation, %', 'Instrument', 'Long', 'long', 'Record', 'Source', 'Type', 'taylor', 'CDS (protection)',
@@ -51,7 +53,7 @@ test('every message file is complete in Spanish and keeps every placeholder', ()
       assert.ok(es && es.trim(), `${c.area}.${key} has no Spanish`);
       assert.deepEqual(placeholders(es), placeholders(en), `${c.area}.${key} changes the placeholders`);
       // Short labels such as "EN" may read the same; anything longer must be translated.
-      if (en.length > 3) assert.notEqual(es, en, `${c.area}.${key} is still English`);
+      if (en.length > 3 && !SAME_IN_SPANISH.has(en)) assert.notEqual(es, en, `${c.area}.${key} is still English`);
     }
     for (const key of Object.keys(spanish)) assert.ok(key in c.en, `${c.area}.${key} is in Spanish only`);
   }

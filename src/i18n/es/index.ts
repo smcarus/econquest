@@ -29,6 +29,7 @@ import { CHAT_ES } from './chat';
 import { CHAT_TEXT_ES } from './chatText';
 import { REPORTS_ES } from './reports';
 import { REPORTS_TEXT_ES } from './reportsText';
+import { QUEST_TEXT_ES } from './questText';
 import { DEFINITIONS_TEXT_ES } from './definitionsText';
 import { WORKED_TEXT_ES } from './workedText';
 
@@ -53,4 +54,4 @@ export const ES: Record<string, Record<string, string>> = {
 };
 
 /** Sentences built in English elsewhere and swapped at display time (translateText in ../lang.ts). */
-export const ES_TEXT: Record<string, string> = { ...WORKED_TEXT_ES, ...DEFINITIONS_TEXT_ES, ...COMPARE_TEXT_ES, ...MISSING_ES, ...BRIEF_TEXT_ES, ...PANEL_TEXT_ES, ...TOOL_TEXT_ES, ...TOOLS_CATALOG_ES, ...KEY_FIELDS_ES, ...GLOSSARY_ES, ...CHAT_TEXT_ES, ...REPORTS_TEXT_ES };
+export const ES_TEXT: Record<string, string> = { ...QUEST_TEXT_ES, ...WORKED_TEXT_ES, ...DEFINITIONS_TEXT_ES, ...COMPARE_TEXT_ES, ...MISSING_ES, ...BRIEF_TEXT_ES, ...PANEL_TEXT_ES, ...TOOL_TEXT_ES, ...TOOLS_CATALOG_ES, ...KEY_FIELDS_ES, ...GLOSSARY_ES, ...CHAT_TEXT_ES, ...REPORTS_TEXT_ES };

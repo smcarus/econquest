@@ -135,20 +135,49 @@ export function evaluateRule(rule: QuestRule, closesOn: string, read: (ref: Ques
   return { status: 'settled', answer: 'probability', happened, readings: [x] };
 }
 
-/** The rule in plain words, for the Quest page and the checker's output. */
-export function describeRule(rule: QuestRule): string {
+/**
+ * The words describeRule puts together, in English. The Quests screen passes the same keys in the
+ * chosen language (src/i18n/messages/quests.ts, keys starting rule_), so a rule reads as a whole
+ * sentence in each language rather than a patchwork.
+ */
+export const RULE_WORDS = {
+  rule_obsPeriod: 'for {period} (as first published on or after {on})',
+  rule_obsFirst: 'on the first value published on or after {on}',
+  rule_obsClose: 'on the first value published on or after the day entries close',
+  rule_threshold_above: 'Yes if {name} {obs} is above {value}{unit}.',
+  rule_threshold_below: 'Yes if {name} {obs} is below {value}{unit}.',
+  rule_between: 'Yes if {name} {obs} is between {low} and {high}{unit}, inclusive.',
+  rule_direction_higher: 'Yes if {name} {to} is higher than {from}.',
+  rule_direction_lower: 'Yes if {name} {to} is lower than {from}.',
+  rule_level: 'Forecast {name}{unitIn} {obs}.',
+  rule_unitIn: ', in {unit},',
+};
+export type RuleWords = typeof RULE_WORDS;
+
+/** Fills {name} placeholders. */
+export function fillWords(text: string, vars: Record<string, string | number>): string {
+  return text.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
+}
+
+/**
+ * The rule in plain words, for the Quest page and the checker's output. `w` and `label` let the
+ * Quests screen show it in the chosen language; the defaults are English.
+ */
+export function describeRule(rule: QuestRule, w: RuleWords = RULE_WORDS, label: (english: string) => string = (x) => x): string {
   const def = questSeriesDef(rule.ref.series);
-  const name = `${def?.label ?? rule.ref.series}${rule.ref.country === 'WLD' ? '' : ` (${rule.ref.country})`}`;
-  const unit = def?.unit ? ` ${def.unit}` : '';
-  const obs = (o: QuestObservation) => (o.period ? `for ${o.period} (as first published on or after ${o.on})` : `on the first value published on or after ${o.on}`);
+  const series = label(def?.label ?? rule.ref.series);
+  const name = rule.ref.country === 'WLD' ? series : `${series} (${rule.ref.country})`;
+  const unitWord = def?.unit ? label(def.unit) : '';
+  const unit = unitWord ? ` ${unitWord}` : '';
+  const obs = (o: QuestObservation) => (o.period ? fillWords(w.rule_obsPeriod, { period: o.period, on: o.on }) : fillWords(w.rule_obsFirst, { on: o.on }));
   switch (rule.kind) {
     case 'threshold':
-      return `Yes if ${name} ${obs(rule.at)} is ${rule.op} ${rule.value}${unit}.`;
+      return fillWords(rule.op === 'above' ? w.rule_threshold_above : w.rule_threshold_below, { name, obs: obs(rule.at), value: rule.value, unit });
     case 'between':
-      return `Yes if ${name} ${obs(rule.at)} is between ${rule.low} and ${rule.high}${unit}, inclusive.`;
+      return fillWords(w.rule_between, { name, obs: obs(rule.at), low: rule.low, high: rule.high, unit });
     case 'direction':
-      return `Yes if ${name} ${obs(rule.to)} is ${rule.op} than ${rule.from === 'closesOn' ? 'on the first value published on or after the day entries close' : obs(rule.from)}.`;
+      return fillWords(rule.op === 'higher' ? w.rule_direction_higher : w.rule_direction_lower, { name, to: obs(rule.to), from: rule.from === 'closesOn' ? w.rule_obsClose : obs(rule.from) });
     case 'level':
-      return `Forecast ${name}${unit ? `, in${unit},` : ''} ${obs(rule.at)}.`;
+      return fillWords(w.rule_level, { name, unitIn: unitWord ? fillWords(w.rule_unitIn, { unit: unitWord }) : '', obs: obs(rule.at) });
   }
 }
