@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- What happened after (SC1): `src/utils/syntheticControl.ts` builds a "twin" for a country that
+  made a change, a weighted mix of other countries whose yearly path of one outcome matched it in the
+  ten years before (synthetic control, Abadie, Diamond and Hainmueller 2010, with the Abadie and
+  L'Hour 2021 penalty so there is one answer), and reads the gap for up to five years after. Placebo
+  checks on every donor give a p-value; leave-one-out and a placebo three years early check it. It
+  reads Missing, with the reason, when there are too few years or donors, the country lies outside
+  every donor's range, or the fit before the change is loose. Exact active-set solver, no new package.
 - Docs brought up to date with #712 and the tester round: a new page for testers, `docs/TESTING.md`
   (installing from the code at github.com/smcarus/econquest in light mode, what to try, how to report
   a problem), linked from the four READMEs, INSTALL, HOW_IT_WORKS, the roadmap and the Next list in
