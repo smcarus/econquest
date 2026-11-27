@@ -55,6 +55,7 @@ import { formatQuarter, parseQna, qnaReading, qnaUrl } from './oecdQna';
 import { BCB_IBCBR_SA, bcbSgsSinceUrl, eurostatIpUrl, parseEurostatIp, parseIbcBr } from './monthlyActivity';
 import { EU_PRICE_EXPECTATIONS, EU_SURVEY_INDICATORS, euSurveyUrl, parseEuSurvey } from './euSurveys';
 import { driversMinrUrl } from './inflationDrivers';
+import { COICOP2018, groupsWeightsUrl, parseEurostatByCategory, weightsFor } from './priceGroups';
 import { PWT_EDITION, PWT_URL } from './growthAccounting';
 import { OECD_HEADERS, isBotCheck } from './oecdSdmx';
 import { CHECK_RETRY, NO_RETRY, pauseBefore, retryAfterMs, sleep, slowHostTimeout, worthRetrying, type RetryPlan } from './retryPolicy';
@@ -424,6 +425,7 @@ export const SOURCE_IDS = [
   'eu_surveys',
   'eu_price_expectations',
   'eurostat_hicp_parts',
+  'eurostat_hicp_groups',
   'pwt',
   'comtrade',
   'fred_csv',
@@ -1694,6 +1696,21 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       },
       {},
       'Eurostat answered, but prc_hicp_minr has no coicop18 TOT_X_NRG_FOOD series; the panel falls back to prc_hicp_manr, which stopped at December 2025.'
+    )
+  );
+
+  add('eurostat_hicp_groups', () =>
+    httpCheck(
+      { id: 'eurostat_hicp_groups', name: 'Eurostat HICP by main group (COICOP 2018) and item weights', group: 'free', feeds: 'The price groups and official weights for EU members (What this means for you)' },
+      fetchFn,
+      groupsWeightsUrl('coicop2018', 'DE', year - 1),
+      T,
+      (r) => {
+        const w = weightsFor(parseEurostatByCategory(parseJson(r.text), 'coicop18'), Object.keys(COICOP2018), year);
+        return w ? `Germany item weights for ${w.year}: transport ${fmt(w.pct.CP07, 1)}%, food ${fmt(w.pct.CP01, 1)}% of the basket` : null;
+      },
+      {},
+      'Eurostat answered, but prc_hicp_inw has no 2018-classification (coicop18) weights for all 13 groups; What this means for you then starts with an empty split for EU members.'
     )
   );
 
