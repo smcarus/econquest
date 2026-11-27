@@ -20,6 +20,7 @@ import { WATCHLIST_PT } from './watchlist';
 import { OWN_DATA_PT } from './ownData';
 import { GAP_MODEL_PT } from './gapModel';
 import { SYNTH_PT } from './synth';
+import { YOUR_PRICES_PT } from './yourPrices';
 import { QUESTS_PT } from './quests';
 import { YOUR_TESTS_PT } from './yourTests';
 import { TOOLS_PT } from './tools';
@@ -47,6 +48,7 @@ export const PT: Record<string, Record<string, string>> = {
   ownData: OWN_DATA_PT,
   gapModel: GAP_MODEL_PT,
   synth: SYNTH_PT,
+  yourPrices: YOUR_PRICES_PT,
   quests: QUESTS_PT,
   yourTests: YOUR_TESTS_PT,
   tools: TOOLS_PT,

@@ -65,6 +65,8 @@ export const SHELL_PT: Messages<typeof SHELL> = {
   about: "Sobre e licenças de dados",
   manual: "Manual do usuário",
   worked: "Exemplos resolvidos",
+  yours: 'O que isso significa para você',
+  yoursTitle: 'Sua própria taxa de inflação a partir do que você gasta, e o que uma mudança de juros faz com a parcela do seu empréstimo, para o país em exibição.',
   menuSetUp: "Configurar",
   menuCheck: "Verificar os dados",
   menuLearn: "Aprender",

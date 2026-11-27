@@ -66,6 +66,8 @@ export const SHELL = defineMessages(
     kbNote: '/ and ? do nothing while you are typing in a box.',
     manual: 'User manual',
     worked: 'Worked examples',
+    yours: 'What this means for you',
+    yoursTitle: 'Your own inflation rate from what you spend, and what a rate change does to your loan payment, for the country in view.',
     menuSetUp: 'Set up',
     menuCheck: 'Check the data',
     menuLearn: 'Learn',

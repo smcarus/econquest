@@ -147,6 +147,28 @@ try {
     await noCrash(page);
   });
 
+  await step('what this means for you: your rate and your loan, kept in this browser only', async () => {
+    await page.getByRole('button', { name: 'Menu', exact: true }).click();
+    await page.getByRole('menuitem', { name: /^What this means for you/ }).first().click();
+    const box = page.locator('[data-your-prices]');
+    await box.waitFor({ timeout: 15_000 });
+    // The groups answer or say why not (offline here); either way nothing crashes.
+    await page.waitForFunction(() => !document.querySelector('[data-your-prices]')?.textContent?.includes('Reading the price groups'), null, { timeout: 30_000 });
+    await box.locator('[data-loan-field="balance"]').fill('200000');
+    await box.locator('[data-loan-field="ratePct"]').fill('6');
+    await box.locator('[data-loan-field="years"]').fill('30');
+    await box.locator('[data-loan-result]').waitFor({ timeout: 5000 });
+    const text = await box.locator('[data-loan-result]').innerText();
+    if (!/1,199\.10/.test(text)) throw new Error(`the payment reads "${text.split('\n')[0]}", expected 1,199.10`);
+    if (!(await box.locator('[data-loan-cb], [data-loan-cb-missing]').count())) throw new Error('no central bank line and no Missing reason');
+    const kept = await page.evaluate(() => window.localStorage.getItem('econquest.yourPrices.v1'));
+    if (!kept || !kept.includes('200000')) throw new Error('the loan was not kept in this browser');
+    await box.locator('[data-your-prices-clear]').click();
+    if (await page.evaluate(() => window.localStorage.getItem('econquest.yourPrices.v1'))) throw new Error('Clear what I entered left something behind');
+    await noCrash(page);
+    await page.keyboard.press('Escape');
+  });
+
   await step('your tests: register, freeze and run one', async () => {
     await page.getByRole('button', { name: 'Menu', exact: true }).click();
     await page.getByRole('menuitem', { name: /^Models & validation/ }).first().click();
