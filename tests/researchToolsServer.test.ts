@@ -51,9 +51,14 @@ before(async () => {
   }
 });
 
-after(() => {
-  server?.kill();
-  if (work) rmSync(work, { recursive: true, force: true });
+after(async () => {
+  // Wait for the server to exit before removing its folder: it may still be writing the audit log.
+  if (server && server.exitCode === null) {
+    const gone = new Promise((r) => server!.once('exit', r));
+    server.kill();
+    await Promise.race([gone, new Promise((r) => setTimeout(r, 10_000))]);
+  }
+  if (work) rmSync(work, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 });
 
 const send = (method: string, p: string, body?: unknown) => fetch(`${base}${p}`, { method, headers: { 'Content-Type': 'application/json' }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
