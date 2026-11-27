@@ -208,7 +208,7 @@ export const MENU = defineMessages('menu', {
   ai_advancedLink: 'Advanced AI set-up',
   // Settings > Backup
   bk_unknownDate: 'an unknown date',
-  bk_intro: 'One file with your saved research (briefs, documents, notebooks, teaching episodes), policy reviews, council answer snapshots, watch alerts, holdings, watchlists, countries you added and AI model settings. Your API keys are never in it. Use it to move to another computer or to keep a copy.',
+  bk_intro: 'One file with your saved research (briefs, documents, notebooks, teaching episodes), policy reviews, council answer snapshots, changes you added in What happened after, watch alerts, holdings, watchlists, countries you added and AI model settings. Your API keys are never in it. Use it to move to another computer or to keep a copy.',
   bk_download: 'Download a backup',
   bk_now: 'On this computer now: {list}.',
   bk_downloadBtn: 'Download backup',
@@ -237,6 +237,8 @@ export const MENU = defineMessages('menu', {
   bk_reviewsN: '{n} policy reviews',
   bk_snapshots1: '{n} answer snapshot',
   bk_snapshotsN: '{n} answer snapshots',
+  bk_policyEvents1: '{n} change you added',
+  bk_policyEventsN: '{n} changes you added',
   bk_ws_holdings: 'holdings',
   bk_ws_watchlists: 'watchlists',
   bk_ws_added: 'countries you added',

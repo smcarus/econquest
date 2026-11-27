@@ -1,7 +1,7 @@
 /**
  * Your own events for "What happened after" (SC2): data/local/policy-events.json, a list of
- * { id, iso3, year, label, sourceUrl, savedAt }. Read and written by the server only. Not in the
- * Backup file (Settings > Backup) yet; copy data/local/ to keep it. Server and scripts only.
+ * { id, iso3, year, label, sourceUrl, savedAt }. Read and written by the server only; included in
+ * the Backup file (Settings > Backup). Server and scripts only.
  */
 import fs from 'fs';
 import path from 'path';

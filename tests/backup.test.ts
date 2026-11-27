@@ -126,6 +126,26 @@ test('policy reviews go in the backup and come back; an older backup without the
   assert.equal(loadReviews(withReviews.reviews).reviews.length, 0);
 });
 
+test('your own changes for What happened after go in the backup; an older backup without them leaves them alone', async () => {
+  const { addOwnEvent, loadOwnEvents, policyEventFile } = await import('../src/utils/policyEventStore.ts');
+  const { dir, files } = setup();
+  const withEvents = { ...files, policyEvents: policyEventFile(dir) };
+  addOwnEvent(withEvents.policyEvents, { iso3: 'BRA', year: 2015, label: 'New spending ceiling', sourceUrl: 'https://example.org/law' });
+  const backup = currentBackup(withEvents);
+  assert.equal(backup.contents.policyEvents?.length, 1);
+  const parsed = parseBackup(JSON.stringify(backup));
+  assert.ok(parsed.ok);
+  if (parsed.ok) assert.match(describeBackup(parsed.summary), /1 change you added/);
+  const old = JSON.parse(JSON.stringify(backup));
+  delete old.contents.policyEvents;
+  const oldParsed = parseBackup(old);
+  assert.ok(oldParsed.ok);
+  if (oldParsed.ok) restoreBackup(withEvents, oldParsed.backup);
+  assert.equal(loadOwnEvents(withEvents.policyEvents).length, 1);
+  if (parsed.ok) restoreBackup(withEvents, { ...parsed.backup, contents: { ...parsed.backup.contents, policyEvents: [] } });
+  assert.equal(loadOwnEvents(withEvents.policyEvents).length, 0);
+});
+
 test('answer snapshots go in the backup; restore adds the missing ones and never changes one already here', async () => {
   const { buildSnapshot, saveSnapshot, listSnapshotIds, loadSnapshot, snapshotDir } = await import('../src/utils/answerSnapshotStore.ts');
   const { dir, files } = setup();
