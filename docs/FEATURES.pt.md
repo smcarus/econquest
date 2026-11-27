@@ -287,7 +287,7 @@ O método completo está em [docs/METHODOLOGY.md](./METHODOLOGY.md) (em inglês)
 
 ## Roteiro
 
-Situação em 26 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./ROADMAP.md), em inglês):
+Situação em 27 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./ROADMAP.md), em inglês):
 
 **Feito**
 
@@ -400,6 +400,13 @@ Situação em 26 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./ROADMAP.md
     assinada em cada versão; acessibilidade verificada pela WCAG 2.2, com uma passagem pelo teclado;
     o ajuste "reduzir movimento" do computador é respeitado; e uma declaração de acessibilidade
     ([docs/ACCESSIBILITY.md](./ACCESSIBILITY.md), em inglês).
+25. **O que aconteceu depois** (27 de novembro): em Revisão de políticas > Precedentes, escolha uma
+    mudança que um país fez (uma grande virada no orçamento, uma desvalorização, um novo regime
+    cambial ou regra fiscal, ou uma que você adicione com a fonte) e veja o país contra um "gêmeo" de
+    países que não a fizeram, com testes de quão incomum é a diferença; guarde um resultado para o
+    resumo de uma página, cite-o ou compare todos os países que fizeram o mesmo tipo de mudança.
+    Marcado como Não validado até que seu teste de alarmes falsos, registrado com antecedência, rode
+    num computador que alcance o FMI e o Banco Mundial.
 
 **Próximo**
 
@@ -426,6 +433,7 @@ Situação em 26 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./ROADMAP.md
   usuário responderam lá em 17 de novembro. As taxas de câmbio, taxas básicas e taxas do mercado
   local mensais do FMI responderam lá em 18 e 19 de novembro. As previsões oficiais, as edições em
   tempo real da OCDE e a busca nos catálogos (linhas `wb_gep`, `oecd_eo`, `oecd_rtd` e `catalogues`)
-  aguardam o primeiro teste lá. A mesa quantitativa espera um primeiro teste com um servidor
+  aguardam o primeiro teste lá. O que aconteceu depois aguarda lá
+  seu primeiro teste de alarmes falsos (`npm run synth:validate`). A mesa quantitativa espera um primeiro teste com um servidor
   real de ferramentas de pesquisa, e as surpresas nos dados precisam de algumas semanas de downloads
   diários para se acumular.

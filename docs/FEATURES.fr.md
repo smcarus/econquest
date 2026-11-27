@@ -293,7 +293,7 @@ La méthode complète est dans [docs/METHODOLOGY.md](./METHODOLOGY.md) (en angla
 
 ## Feuille de route
 
-Où en est le projet au 26 novembre 2026 (détail dans [docs/ROADMAP.md](./ROADMAP.md), en anglais) :
+Où en est le projet au 27 novembre 2026 (détail dans [docs/ROADMAP.md](./ROADMAP.md), en anglais) :
 
 **Fait**
 
@@ -413,6 +413,13 @@ Où en est le projet au 26 novembre 2026 (détail dans [docs/ROADMAP.md](./ROADM
     signée avec chaque version ; accessibilité vérifiée selon WCAG 2.2, avec un passage au clavier ;
     respect du réglage « réduire les animations » de l'ordinateur ; et une déclaration
     d'accessibilité ([docs/ACCESSIBILITY.md](./ACCESSIBILITY.md), en anglais).
+25. **Ce qui s'est passé ensuite** (27 novembre) : dans Revue de politique > Précédents, choisissez un
+    changement qu'un pays a fait (un grand virage budgétaire, une dévaluation, un nouveau régime de
+    change ou une règle budgétaire, ou un changement que vous ajoutez avec sa source) et voyez le pays
+    face à un « jumeau » de pays qui ne l'ont pas fait, avec des contrôles sur le caractère inhabituel
+    de l'écart ; gardez un résultat pour la note d'une page, citez-le, ou alignez tous les pays qui ont
+    fait le même type de changement. Marqué Non validé tant que son test de fausses alertes, enregistré
+    à l'avance, n'a pas tourné sur un ordinateur qui atteint le FMI et la Banque mondiale.
 
 **Ensuite**
 
@@ -440,6 +447,7 @@ Où en est le projet au 26 novembre 2026 (détail dans [docs/ROADMAP.md](./ROADM
   sources des cinq profils d'utilisateur y ont répondu le 17 novembre. Les taux de change, taux
   directeurs et taux du marché local mensuels du FMI y ont répondu les 18 et 19 novembre. Les
   prévisions officielles, les éditions en temps réel de l'OCDE et la recherche dans les catalogues
-  (lignes `wb_gep`, `oecd_eo`, `oecd_rtd` et `catalogues`) y attendent leur premier contrôle. Le desk quantitatif attend un
+  (lignes `wb_gep`, `oecd_eo`, `oecd_rtd` et `catalogues`) y attendent leur premier contrôle. Ce qui s'est passé ensuite y attend
+  son premier test de fausses alertes (`npm run synth:validate`). Le desk quantitatif attend un
   premier essai avec un vrai serveur d'outils de recherche, et les surprises dans les données ont besoin
   de quelques semaines de téléchargements quotidiens pour s'accumuler.

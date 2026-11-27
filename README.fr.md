@@ -104,7 +104,8 @@ les Réglages, et ne sont jamais transmises dans les téléchargements ou les co
 - **Comparer des pays** côte à côte, en commençant par le G20 ou par les 15 plus grands pays à faible
   revenu.
 - **Tester un choix de politique** dans Revue de politique, du problème à une note et à un résumé
-  d'une page pour les non-économistes.
+  d'une page pour les non-économistes, et voyez comment les pays ont évolué après le même type de
+  changement.
 - **Rédiger un rapport** en Markdown ou en PDF, avec chaque source et chaque date.
 - **Apprendre en chemin** avec quatre niveaux d'aide, un glossaire en langage clair et cinq exemples
   guidés.

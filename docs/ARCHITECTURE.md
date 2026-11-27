@@ -168,6 +168,15 @@ The policy council (`src/utils/policyCouncil.ts`) and the Policy review steps
 (`src/server/routes/reviews.ts`) follow the same pattern: figures in, model text out, every number
 checked.
 
+**What happened after** in the Precedents step uses no AI model. The changes a country made come
+from `src/utils/policyEvents.ts` (rules on the saved series and files) and
+`src/utils/policyEventStore.ts` (the user's own, in `data/local/policy-events.json`); the twin and its
+checks are worked out in `src/utils/syntheticControl.ts`, the pooled view in `src/utils/synthPooled.ts`
+and the results kept for the brief in `src/utils/synthKeep.ts`. The routes are
+`/api/reviews/:id/events` and `/api/reviews/:id/what-happened` (with `/pooled` and `/keep`); the card is
+`src/components/WhatHappenedAfter.tsx`. The pre-registered false-alarm test is
+`src/utils/synthCheck.ts`, run by `npm run synth:validate`.
+
 ## 6. AI model calls
 
 Every model call goes through `src/server/ai.ts`. It picks the model for each step from Menu >

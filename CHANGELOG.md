@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Docs brought up to date with main through #721: README and features in four languages (What
+  happened after in the policy bullet and as done item 25, roadmap date, the Mac check waiting on
+  `npm run synth:validate`); `npm run mac:validate` and `npm run synth:validate` in the commands
+  table; the user manual's list of `mac:validate` steps now includes `synth`; testing guide (try What
+  happened after); data API (Added on 27 November: no new addresses, how to rebuild it from the
+  series, your own changes file and METHODS.md); architecture notes (the What happened after files
+  and routes); How it works 1.10 (a twin is not proof); methodology header through #721; roadmap
+  rows with PR numbers #717 to #721.
 - Docs for What happened after (SC1 to SC6): Methodology 1.10 with a new section 5.7 (changes,
   twin, checks, Missing, pooled view, brief, pre-registered test) and references for synthetic
   control and devaluations; user manual, Policy review page, guide and features in four languages,

@@ -91,7 +91,7 @@ in downloads or shared copies.
   back years, forecasts with ranges, and tools for debt, inflation, the currency, weather and disasters.
 - **Compare countries** side by side, starting with the G20 or the 15 largest lower-income countries.
 - **Test a policy choice** in Policy review, from the problem to a memo and a one-page brief for
-  non-economists.
+  non-economists, and see how countries went after making the same kind of change.
 - **Write a report** as Markdown or PDF, with every source and date.
 - **Learn as you go** with four help levels, a plain-language glossary and five worked examples.
 - **Use the figures in R, Python, Stata or Excel**, or connect another program to the app.
