@@ -102,7 +102,8 @@ repassados em downloads ou cópias compartilhadas.
   anos, previsões com margens e ferramentas de dívida, inflação, moeda, clima e desastres.
 - **Comparar países** lado a lado, começando pelo G20 ou pelos 15 maiores países de baixa renda.
 - **Testar uma decisão de política** em Revisão de políticas, do problema a um memorando e a um resumo
-  de uma página para quem não é economista.
+  de uma página para quem não é economista, e veja como os países se saíram depois de fazer o mesmo
+  tipo de mudança.
 - **Escrever um relatório** em Markdown ou PDF, com cada fonte e data.
 - **Aprender no caminho** com quatro níveis de ajuda, um glossário em linguagem simples e cinco
   exemplos guiados.

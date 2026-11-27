@@ -1,6 +1,6 @@
 # EconQuest Terminal: Methodology
 
-**Version 1.10, 27 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of the main branch on 27 November 2026 (after release 0.3.0, through pull request #713), plus What happened after (5.7).
+**Version 1.10, 27 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of the main branch on 27 November 2026 (after release 0.3.0, through pull request #721).
 Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not validated advice.
 
 This document sets out how the EconQuest Terminal sources its data, how its council of agents

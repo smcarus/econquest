@@ -1,6 +1,6 @@
 # How EconQuest works, in plain words
 
-**Version 1.9, 26 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
+**Version 1.10, 27 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
 validated advice.
 
 This guide explains, without jargon, where EconQuest's figures come from, what its AI does and does
@@ -648,6 +648,9 @@ other.
 - **The World Bank models are old teaching copies.** Only six countries' models are public, their
   figures are years out of date, and the app runs one change at a time. A result is what the model
   says, not what the World Bank forecasts.
+- **A twin is not proof.** What happened after compares one country with a mix of others that did
+  not make the same change. Something else that happened in the same years can explain the gap, and
+  a result for one country does not show the change would work the same way elsewhere.
 - **Crisis replays are rough.** They use monthly averages and the simplest bond arithmetic, so they
   understate the worst days of a crisis.
 - **The log can be checked, not made unbreakable.** Every entry in the app's log is linked to the one
@@ -656,5 +659,5 @@ other.
 
 ---
 
-*How EconQuest works, version 1.9 (26 November 2026). Text licensed under CC BY 4.0: you may share and
+*How EconQuest works, version 1.10 (27 November 2026). Text licensed under CC BY 4.0: you may share and
 adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*

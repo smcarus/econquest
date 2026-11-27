@@ -247,6 +247,22 @@ Sierra Leone `SLE`, Haiti `HTI`, Nepal `NPL` and the others in `src/data/lowInco
 asked for by alpha-2 or alpha-3 code like any other country. Saved history for one of them starts the
 day it goes on a watchlist; see *Country snapshot* below.
 
+## Added on 27 November
+
+No new addresses. **What happened after** (Policy review > Precedents) is a calculation the screen
+makes on request from the saved yearly histories, so it is not served here, and the routes it uses
+under `/api/reviews/` may change between versions. To rebuild it in your own code:
+
+- take the yearly series from the addresses above (`/api/series/:iso3` or `/api/export/panel.csv`);
+- the changes you added yourself are in `data/local/policy-events.json` (country, year, what changed
+  and the source link); the changes found by rules are worked out from the same series (primary
+  balance, exchange rate), from the exchange rate regime and fiscal rules files you saved, and from
+  the Chinn-Ito capital account file the daily download keeps;
+- follow the rule written down in [METHODS.md](./METHODS.md) under *What happened after (synthetic
+  control)*: the weights, the penalty, the placebo checks and when a result reads Missing.
+
+The result is marked Not validated until its pre-registered false-alarm test passes.
+
 ## How fast, and how often
 
 The addresses answer from the app's saved copies first; a first download that is slow finishes in

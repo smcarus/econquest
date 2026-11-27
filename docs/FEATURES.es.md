@@ -290,7 +290,7 @@ El método completo está en [docs/METHODOLOGY.md](./METHODOLOGY.md) (en inglés
 
 ## Hoja de ruta
 
-Situación al 26 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./ROADMAP.md), en inglés):
+Situación al 27 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./ROADMAP.md), en inglés):
 
 **Hecho**
 
@@ -408,6 +408,13 @@ Situación al 26 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./ROADMAP.md
     prueba de compilación firmada con cada versión; accesibilidad comprobada con WCAG 2.2 y un repaso
     con el teclado; se respeta el ajuste «reducir movimiento» del ordenador; y una declaración de
     accesibilidad ([docs/ACCESSIBILITY.md](./ACCESSIBILITY.md), en inglés).
+25. **Qué pasó después** (27 de noviembre): en Revisión de políticas > Precedentes, elija un cambio que
+    hizo un país (un gran giro presupuestario, una devaluación, un nuevo régimen cambiario o regla
+    fiscal, o uno que usted añada con su fuente) y vea el país frente a un «gemelo» de países que no lo
+    hicieron, con pruebas de lo inusual que es la diferencia; guarde un resultado para la nota de una
+    página, cítelo o compare todos los países que hicieron el mismo tipo de cambio. Marcado como No
+    validado hasta que su prueba de falsas alarmas, registrada de antemano, se ejecute en un ordenador
+    que llegue al FMI y al Banco Mundial.
 
 **Siguiente**
 
@@ -435,6 +442,7 @@ Situación al 26 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./ROADMAP.md
   los cinco perfiles de usuario respondieron allí el 17 de noviembre. Los tipos de cambio, tipos
   oficiales y tipos del mercado local mensuales del FMI respondieron allí el 18 y el 19 de noviembre.
   Las previsiones oficiales, las ediciones en tiempo real de la OCDE y la búsqueda en catálogos (filas
-  `wb_gep`, `oecd_eo`, `oecd_rtd` y `catalogues`) esperan su primera prueba allí. La mesa cuantitativa espera una
+  `wb_gep`, `oecd_eo`, `oecd_rtd` y `catalogues`) esperan su primera prueba allí. Qué pasó después espera allí
+  su primera prueba de falsas alarmas (`npm run synth:validate`). La mesa cuantitativa espera una
   primera prueba con un servidor real de herramientas de investigación, y las sorpresas en los datos
   necesitan unas semanas de descargas diarias para acumularse.

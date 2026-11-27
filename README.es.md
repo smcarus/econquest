@@ -103,7 +103,8 @@ y nunca se transmiten en descargas ni copias compartidas.
 - **Comparar países** uno al lado del otro, empezando por el G20 o por los 15 mayores países de
   ingresos bajos.
 - **Poner a prueba una decisión de política** en Revisión de políticas, desde el problema hasta un
-  memorando y una nota de una página para quien no es economista.
+  memorando y una nota de una página para quien no es economista, y vea cómo les fue a los países
+  después de hacer el mismo tipo de cambio.
 - **Escribir un informe** en Markdown o PDF, con cada fuente y fecha.
 - **Aprender sobre la marcha** con cuatro niveles de ayuda, un glosario en lenguaje claro y cinco
   ejemplos guiados.

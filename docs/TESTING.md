@@ -48,7 +48,8 @@ Pick what interests you:
 3. **What-if.** Ask Council chat a what-if question (for example "What if the Fed raises rates by 1
    point?"), and look at Debt sustainability for one country.
 4. **Policy review.** Press **Policy review** in the header, then **New policy review**. Walk through
-   one review and make the one-page PDF brief.
+   one review and make the one-page PDF brief. In the Precedents step, try **What happened after**:
+   pick a change the country made and see how it went against countries that did not make it.
 5. **Compare** two or three neighbouring or similar countries.
 6. **Help level.** Press the **?** button and try Key help and Full help. Is the wording right for
    your students or readers?

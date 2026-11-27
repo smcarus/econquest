@@ -306,6 +306,8 @@ The full method is in [docs/METHODOLOGY.md](./METHODOLOGY.md); the same in plain
 | `npm run check:data` | Live check of every source from this computer |
 | `npm run replays:pull` | Save the monthly history the past-crisis replays use (also part of the daily download) |
 | `npm run chinn-ito:pull` | Save the Chinn-Ito capital account openness file (also part of the daily download, at most once every 30 days) |
+| `npm run mac:validate` | Run every check that needs the live feeds or the saved files, one after the other, and write one report (data sources, backtests, IMF editions, forecasts, currency signals, World Bank models, What happened after, council) |
+| `npm run synth:validate` | Run the pre-registered false-alarm test for What happened after on the saved yearly histories |
 | `npm run forecast:evaluate` | Re-run the pre-registered forecast tests (nowcasts, forecasts, GARCH, quantile bands, tests on figures as first published) |
 | `npm run track-record:import` | Copy verdicts and forward-record counts from a real run into docs/validation/ and rebuild the track record |
 | `npm run oecd:vintages` | Save the OECD's monthly real-time editions (only new ones on later runs) |
@@ -317,7 +319,7 @@ The full method is in [docs/METHODOLOGY.md](./METHODOLOGY.md); the same in plain
 
 ## Roadmap
 
-Where things stand on 26 November 2026 (details and status in [docs/ROADMAP.md](./ROADMAP.md)):
+Where things stand on 27 November 2026 (details and status in [docs/ROADMAP.md](./ROADMAP.md)):
 
 **Done**
 
@@ -416,6 +418,12 @@ Where things stand on 26 November 2026 (details and status in [docs/ROADMAP.md](
     lists, checksums and a signed build proof with each release; accessibility checked against WCAG
     2.2 with a keyboard pass; the computer's reduce motion setting followed; and an accessibility
     statement ([docs/ACCESSIBILITY.md](./ACCESSIBILITY.md)).
+25. **What happened after** (27 November): in Policy review > Precedents, pick a change a country
+    made (a big budget swing, a devaluation, a new exchange rate regime or fiscal rule, or one you add
+    with a source) and see the country against a "twin" of countries that did not make it, with
+    checks on how unusual the gap is; keep a result for the one-page brief, cite it, or line up every
+    country that made the same kind of change. Marked Not validated until its pre-registered
+    false-alarm test runs on a computer that reaches the IMF and World Bank.
 
 **Next**
 
@@ -440,7 +448,8 @@ Where things stand on 26 November 2026 (details and status in [docs/ROADMAP.md](
   each one. The sources for the five user roles answered there on 17 November. The IMF monthly exchange
   rates, policy rates and local market rates answered there on 18 and 19 November. The official
   forecasts, the OECD real-time editions and the catalogue search (rows `wb_gep`, `oecd_eo`,
-  `oecd_rtd` and `catalogues`) wait for their first check there. The Quant desk waits
+  `oecd_rtd` and `catalogues`) wait for their first check there. What happened after waits
+  for its first false-alarm test there (`npm run synth:validate`). The Quant desk waits
   for a first check against a real research-tools server, and data surprises need some weeks of daily
   downloads to build up.
 
