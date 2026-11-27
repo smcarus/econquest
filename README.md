@@ -101,7 +101,8 @@ figure, it says so rather than guess.
 
 Paid data (for example credit default swap prices, LSEG, EPFR, credit ratings or analyst consensus) is
 used only from your own account or your own file, behind a switch in Settings, and is never passed on
-in downloads or shared copies.
+in downloads or shared copies. If you already pay for Macrobond, Trading Economics or EODHD, you can
+connect it with your own key and pick the series you want; those figures stay on your computer.
 
 ---
 

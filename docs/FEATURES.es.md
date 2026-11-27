@@ -260,6 +260,12 @@ Todas son gratuitas. Algunas necesitan una clave gratuita, que se añade en Men�
 | Países de menores ingresos | Banco Mundial (remesas y su costo de envío, cuentas de Global Findex, ayuda recibida según la publica de nuevo a partir de la OCDE, seguridad alimentaria, peso de las materias primas en el comercio y términos de intercambio); dos archivos que usted guarda: precios al consumidor de FAOSTAT para la inflación de alimentos, y desastres naturales de EM-DAT, descargados con su propia cuenta gratuita de EM-DAT (sus condiciones no permiten que la aplicación los incluya) |
 | Clima y amenazas naturales | NASA POWER (temperatura y lluvia mensuales en cada capital desde 1981), Portal de Conocimiento sobre Cambio Climático del Banco Mundial (promedios por país de CRU TS desde 1901, CC BY 4.0), trayectorias de ciclones tropicales IBTrACS de NOAA desde 1980 (se descargan solo cuando usted pulsa el botón, o se leen de un archivo que usted guarda) |
 
+**De pago, solo con su propia suscripción.** Si usted ya paga Macrobond, Trading Economics (196
+países, con rendimientos de bonos y índices bursátiles de mercados frontera) o EODHD (precios diarios
+de índices, divisas y materias primas), Menú > Configuración > Sus suscripciones conecta uno de ellos
+con su propia clave. Usted elige las series; sus cifras se quedan en su ordenador y nunca se envían al
+modelo de IA.
+
 La lista completa está en [docs/DATA_SOURCES.md](./DATA_SOURCES.md) y lo que permite cada fuente en
 [docs/DATA_LICENCES.md](./DATA_LICENCES.md) (en inglés).
 
@@ -415,6 +421,11 @@ Situación al 27 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./ROADMAP.md
     página, cítelo o compare todos los países que hicieron el mismo tipo de cambio. Marcado como No
     validado hasta que su prueba de falsas alarmas, registrada de antemano, se ejecute en un ordenador
     que llegue al FMI y al Banco Mundial.
+
+26. **Su suscripción de datos: dos servicios más** (27 de noviembre): Trading Economics y EODHD se
+    suman a Macrobond en Menú > Configuración > Sus suscripciones, cada uno solo con su propia clave y
+    uno a la vez; las cifras se quedan en su ordenador, y una serie que nombra un CDS se rechaza
+    mientras los CDS estén ocultos. Aún no probados con una clave real.
 
 **Siguiente**
 

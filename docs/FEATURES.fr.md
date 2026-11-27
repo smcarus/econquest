@@ -262,6 +262,12 @@ Toutes sont gratuites. Quelques-unes demandent une clé gratuite, à ajouter dan
 | Pays à revenu plus faible | Banque mondiale (envois de fonds et leur coût d'envoi, comptes Global Findex, aide reçue telle que republiée à partir de l'OCDE, sécurité alimentaire, part des matières premières dans les échanges et termes de l’échange) ; deux fichiers que vous enregistrez vous-même : les prix à la consommation de FAOSTAT pour l'inflation alimentaire, et les catastrophes naturelles d'EM-DAT, téléchargées avec votre propre compte EM-DAT gratuit (ses conditions ne permettent pas à l'application de les fournir) |
 | Météo et aléas naturels | NASA POWER (température et pluie mensuelles dans chaque capitale depuis 1981), portail climatique de la Banque mondiale (moyennes par pays de CRU TS depuis 1901, CC BY 4.0), trajectoires des cyclones tropicaux IBTrACS de la NOAA depuis 1980 (téléchargées seulement quand vous appuyez sur le bouton, ou lues dans un fichier que vous enregistrez) |
 
+**Payant, uniquement avec votre propre abonnement.** Si vous payez déjà Macrobond, Trading Economics
+(196 pays, dont les rendements obligataires et indices boursiers des marchés frontières) ou EODHD
+(cours quotidiens d'indices, de devises et de matières premières), Menu > Réglages > Vos abonnements
+en connecte un avec votre propre clé. Vous choisissez les séries ; leurs chiffres restent sur votre
+ordinateur et ne sont jamais envoyés au modèle d'IA.
+
 La liste complète est dans [docs/DATA_SOURCES.md](./DATA_SOURCES.md) et ce que permet chaque source
 dans [docs/DATA_LICENCES.md](./DATA_LICENCES.md) (en anglais).
 
@@ -420,6 +426,11 @@ Où en est le projet au 27 novembre 2026 (détail dans [docs/ROADMAP.md](./ROADM
     de l'écart ; gardez un résultat pour la note d'une page, citez-le, ou alignez tous les pays qui ont
     fait le même type de changement. Marqué Non validé tant que son test de fausses alertes, enregistré
     à l'avance, n'a pas tourné sur un ordinateur qui atteint le FMI et la Banque mondiale.
+
+26. **Votre abonnement de données : deux services de plus** (27 novembre) : Trading Economics et EODHD
+    rejoignent Macrobond dans Menu > Réglages > Vos abonnements, chacun uniquement avec votre propre
+    clé, un à la fois ; les chiffres restent sur votre ordinateur, et une série qui nomme un CDS est
+    refusée tant que les CDS sont masqués. Pas encore essayés avec une vraie clé.
 
 **Ensuite**
 

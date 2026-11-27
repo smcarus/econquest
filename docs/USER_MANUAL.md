@@ -1288,17 +1288,25 @@ hold no figures of their own; the handout reads them from the app's series when 
   (CDS source Off, My CSV or My LSEG), and the Gemini key. Each key has a Test button. Keys are
   saved on this computer, shown masked, and can be changed only from this computer.
 - **Your subscriptions** (Settings > Your subscriptions; off unless you switch it on): for a data
-  service you already pay for (Macrobond first; Haver and Moody's later). Pick the service, enter
-  your sign-in details, then under *Your series* map each series you want: the vendor's own code,
+  service you already pay for: Macrobond, Trading Economics or EODHD (Haver and Moody's later). One
+  service at a time. Pick the service, enter your sign-in details (Macrobond: Web API client ID and
+  secret; Trading Economics: API key; EODHD: API token), then under *Your series* map each series you
+  want: the vendor's own code,
   the country (or WLD), what it is, its unit and how often it comes out. Mapped series show under
   Research > One country > History labelled "Your subscription: <vendor>", next to the free ones.
   Their figures stay on this computer: downloads, backups, sharing mode and the public copy say
   "Withheld: your subscription data", the History page offers no download or Publish chart for them,
-  and the council's AI model is never sent them. For Macrobond the app fetches your mapped series in
-  the daily run, or straight away with *Fetch now*; the note under the switch says when it last
-  fetched, how many series it read, and which ones Macrobond could not give (those keep their last
-  saved copy). Haver and Moody's are not built yet, so their mapped series read Missing with that
-  reason.
+  and the council's AI model is never sent them. The app fetches your mapped series in the daily run,
+  or straight away with *Fetch now*; the note under the switch says when it last fetched, how many
+  series it read, and which ones the service could not give (those keep their last saved copy).
+  Codes look like this: for Trading Economics, a ticker for an economic series (for example
+  `GHGDPYY`) or a market symbol with a colon for a bond yield, stock index or currency (for example
+  `ngseindx:ind`); for EODHD, a daily price code as `SYMBOL.EXCHANGE` (for example `GSPC.INDX` or
+  `EURUSD.FOREX`) or `macro:` and an EODHD indicator name for the country you pick. A code or label
+  that names a credit default swap (CDS) is refused while CDS is hidden. Without a key, mapped
+  series read Missing with the reason. Haver and Moody's are not built yet, so their mapped series
+  read Missing with that reason. Check that your own agreement with the service lets you keep a copy
+  on your computer; [DATA_LICENCES.md](./DATA_LICENCES.md) quotes each one's terms.
 - **AI model**: Ollama (local), Gemini, hybrid, or an OpenAI-compatible server such as LM Studio.
 - **API tokens** (Settings > API tokens): lets another program, such as a portfolio console, use the
   app over HTTP without your password. Give each token a name, tick only what it may do (read figures

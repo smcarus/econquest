@@ -520,6 +520,11 @@ Le **Menu** rassemble tout ce qui n'est pas une page, en trois groupes après **
 - **Vos données** : chargez vos propres séries depuis un fichier CSV.
 - **Chercher des données** : une recherche dans les catalogues gratuits (DBnomics, le FMI, la Banque
   mondiale et Eurostat), chaque résultat avec son fournisseur et un lien.
+- **Réglages > Vos abonnements > Votre abonnement de données** : si vous payez déjà Macrobond,
+  Trading Economics ou EODHD, activez-le, saisissez votre propre clé et associez les séries voulues
+  (le code du service, le pays, ce que c'est). Elles apparaissent dans Historique et données avec l'étiquette
+  « Votre abonnement » et ne quittent jamais votre ordinateur : les téléchargements, les sauvegardes
+  et les copies partagées indiquent « Retenu ». Désactivé par défaut.
 - **Réglages > Vos abonnements > Vos cours du courtier** : cours en direct des contrats que vous
   indiquez, depuis votre propre compte Interactive Brokers, via l’IBKR Client Portal Gateway que vous
   lancez et auquel vous vous connectez sur votre ordinateur. Désactivé par défaut ; affichés à l’écran

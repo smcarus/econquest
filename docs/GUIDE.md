@@ -472,6 +472,10 @@ data* and *Learn*. Items worth knowing first:
 - **Your data**: load your own series from a CSV file.
 - **Find data**: one search across the free catalogues (DBnomics, the IMF, the World Bank and
   Eurostat), each result with its provider and a link to it.
+- **Settings > Your subscriptions > Your data subscription**: if you already pay for Macrobond,
+  Trading Economics or EODHD, switch it on, enter your own key and map the series you want (the
+  service's code, the country, what it is). They show under History & data labelled "Your subscription" and
+  never leave your computer: downloads, backups and shared copies say "Withheld". Off by default.
 - **Settings > Your subscriptions > Your broker prices**: live prices for contracts you list from
   your own Interactive Brokers account, through the IBKR Client Portal Gateway you run and sign in to
   on your computer. Off by default; shown on screen only and never saved.

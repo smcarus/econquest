@@ -256,6 +256,12 @@ Todas são gratuitas. Algumas precisam de uma chave gratuita, adicionada em Menu
 | Países de renda mais baixa | Banco Mundial (remessas e o custo de enviá-las, contas do Global Findex, ajuda recebida como republicada a partir da OCDE, segurança alimentar, peso das commodities no comércio e termos de troca); dois arquivos que você mesmo salva: preços ao consumidor da FAOSTAT para a inflação de alimentos, e desastres naturais do EM-DAT, baixados com sua própria conta gratuita do EM-DAT (os termos não permitem que o app os inclua) |
 | Clima e ameaças naturais | NASA POWER (temperatura e chuva mensais em cada capital desde 1981), Portal de Conhecimento sobre Mudança do Clima do Banco Mundial (médias por país do CRU TS desde 1901, CC BY 4.0), trajetórias de ciclones tropicais IBTrACS da NOAA desde 1980 (baixadas só quando você clica no botão, ou lidas de um arquivo que você salva) |
 
+**Pago, só com a sua própria assinatura.** Se você já paga Macrobond, Trading Economics (196 países,
+incluindo rendimentos de títulos e índices de ações de mercados de fronteira) ou EODHD (preços diários
+de índices, moedas e commodities), Menu > Configurações > Suas assinaturas conecta um deles com sua
+própria chave. Você escolhe as séries; os números ficam no seu computador e nunca são enviados ao
+modelo de IA.
+
 A lista completa está em [docs/DATA_SOURCES.md](./DATA_SOURCES.md) e o que cada fonte permite em
 [docs/DATA_LICENCES.md](./DATA_LICENCES.md) (em inglês).
 
@@ -407,6 +413,11 @@ Situação em 27 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./ROADMAP.md
     resumo de uma página, cite-o ou compare todos os países que fizeram o mesmo tipo de mudança.
     Marcado como Não validado até que seu teste de alarmes falsos, registrado com antecedência, rode
     num computador que alcance o FMI e o Banco Mundial.
+
+26. **Sua assinatura de dados: mais dois serviços** (27 de novembro): Trading Economics e EODHD se
+    juntam ao Macrobond em Menu > Configurações > Suas assinaturas, cada um só com a sua própria chave,
+    um de cada vez; os números ficam no seu computador, e uma série que cita um CDS é recusada enquanto
+    os CDS estiverem ocultos. Ainda não testados com uma chave real.
 
 **Próximo**
 

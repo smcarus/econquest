@@ -113,7 +113,9 @@ não conhece um número, ele diz isso em vez de chutar.
 
 Dados pagos (por exemplo preços de CDS, LSEG, EPFR, ratings de crédito ou consenso de analistas) só são
 usados a partir da sua própria conta ou arquivo, atrás de uma chave nas Configurações, e nunca são
-repassados em downloads ou cópias compartilhadas.
+repassados em downloads ou cópias compartilhadas. Se você já paga Macrobond, Trading Economics ou
+EODHD, pode conectá-lo com sua própria chave e escolher as séries que quiser; esses números ficam no
+seu computador.
 
 ---
 

@@ -255,6 +255,11 @@ All of these are free. A few need a free key, which you add in Menu > Settings.
 | Lower-income countries | World Bank (remittances and the cost of sending them, Global Findex accounts, aid received as republished from the OECD, food security, commodity trade shares and terms of trade); two files you save yourself: FAOSTAT consumer prices for food price inflation, and EM-DAT natural disasters, downloaded with your own free EM-DAT account (its terms do not allow the app to ship it) |
 | Weather and hazards | NASA POWER (monthly temperature and rainfall at each capital since 1981), World Bank Climate Change Knowledge Portal (CRU TS country averages since 1901, CC BY 4.0), NOAA IBTrACS tropical cyclone tracks since 1980 (downloaded only when you press the button, or read from a file you save) |
 
+**Paid, only with your own subscription.** If you already pay for Macrobond, Trading Economics
+(196 countries, including frontier bond yields and stock indices) or EODHD (daily prices for indices,
+currencies and commodities), Menu > Settings > Your subscriptions connects one of them with your own
+key. You pick the series; their figures stay on your computer and are never sent to the AI model.
+
 The full list, with what each source fills and how often it is fetched, is in
 [docs/DATA_SOURCES.md](./DATA_SOURCES.md). What each source's terms allow (showing figures to
 others, commercial use, credit) is in [docs/DATA_LICENCES.md](./DATA_LICENCES.md).
@@ -424,6 +429,11 @@ Where things stand on 27 November 2026 (details and status in [docs/ROADMAP.md](
     checks on how unusual the gap is; keep a result for the one-page brief, cite it, or line up every
     country that made the same kind of change. Marked Not validated until its pre-registered
     false-alarm test runs on a computer that reaches the IMF and World Bank.
+
+26. **Your data subscription: two more services** (27 November): Trading Economics and EODHD join
+    Macrobond under Menu > Settings > Your subscriptions, each used only with your own key, one at a
+    time; figures stay on your computer, and a series that names a CDS is refused while CDS is
+    hidden. Not yet tried against a live key.
 
 **Next**
 
