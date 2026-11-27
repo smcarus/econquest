@@ -19,7 +19,10 @@ import {
   PAID_VENDORS,
   removePaidMapping,
 } from '../../engine/paidData';
-import { macrobondCredentials, pullMacrobond, type MacrobondStep } from '../../engine/macrobond';
+import { macrobondCredentials, pullMacrobond } from '../../engine/macrobond';
+import { pullTradingEconomics, teKey } from '../../engine/tradingEconomics';
+import { eodhdToken, pullEodhd } from '../../engine/eodhd';
+import type { PaidStep } from '../../engine/paidData';
 import { brokerQuotes, type GatewayGet } from '../brokerGateway';
 import { BROKER_WITHHELD } from '../../engine/brokerPrices';
 
@@ -28,7 +31,7 @@ export interface SubscriptionFetch {
   at: string;
   ok: boolean;
   note: string;
-  steps: MacrobondStep[];
+  steps: PaidStep[];
 }
 let lastFetch: SubscriptionFetch | null = null;
 /** Tests only. */
@@ -49,6 +52,20 @@ export async function fetchSubscription(platform: Platform, env: Record<string, 
     const creds = macrobondCredentials(env);
     if (!creds) return { at, ok: false, note: 'Your subscription is Macrobond, but the client ID and secret are not both set (Menu > Settings > Your subscriptions)', steps: [] };
     const pull = await pullMacrobond(platform, creds, { onlyIds });
+    lastFetch = { at, ok: pull.ok, note: pull.note, steps: pull.steps };
+    return lastFetch;
+  }
+  if (vendor.id === 'tradingeconomics') {
+    const key = teKey(env);
+    if (!key) return { at, ok: false, note: 'Your subscription is Trading Economics, but the API key is not set (Menu > Settings > Your subscriptions)', steps: [] };
+    const pull = await pullTradingEconomics(platform, key, { onlyIds });
+    lastFetch = { at, ok: pull.ok, note: pull.note, steps: pull.steps };
+    return lastFetch;
+  }
+  if (vendor.id === 'eodhd') {
+    const token = eodhdToken(env);
+    if (!token) return { at, ok: false, note: 'Your subscription is EODHD, but the API token is not set (Menu > Settings > Your subscriptions)', steps: [] };
+    const pull = await pullEodhd(platform, token, { onlyIds });
     lastFetch = { at, ok: pull.ok, note: pull.note, steps: pull.steps };
     return lastFetch;
   }

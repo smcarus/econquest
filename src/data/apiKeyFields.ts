@@ -249,10 +249,13 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     choices: [
       { value: 'off', label: 'Off' },
       { value: 'macrobond', label: 'Macrobond (your API licence)' },
+      { value: 'tradingeconomics', label: 'Trading Economics (your API key)' },
+      { value: 'eodhd', label: 'EODHD (your API token)' },
       { value: 'haver', label: 'Haver Analytics (planned)' },
       { value: 'moodys', label: "Moody's Analytics (planned)" },
     ],
-    validate: (v) => (['off', 'macrobond', 'haver', 'moodys'].includes(v) ? null : "Pick Off, Macrobond, Haver Analytics or Moody's Analytics."),
+    validate: (v) =>
+      ['off', 'macrobond', 'tradingeconomics', 'eodhd', 'haver', 'moodys'].includes(v) ? null : "Pick Off, Macrobond, Trading Economics, EODHD, Haver Analytics or Moody's Analytics.",
   },
   {
     id: 'MACROBOND_CLIENT_ID',
@@ -279,6 +282,34 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     checkId: 'paid_data',
     section: 'subscription',
     validate: (v) => (/^\S{8,400}$/.test(v) ? null : 'A client secret has no spaces. Check it was copied in full.'),
+  },
+  {
+    id: 'TRADINGECONOMICS_API_KEY',
+    placeholder: 'API key from Trading Economics',
+    label: 'Trading Economics API key',
+    provider: 'Trading Economics (your API key)',
+    feeds:
+      'Sent only to Trading Economics, in the request header. Lets you map Trading Economics tickers (economic series, for example GHGDPYY) and market symbols (bond yields, stock indices, currencies, for example ngseindx:ind). Never shown, logged or put in the connection check.',
+    withoutIt: 'Needed when your subscription is Trading Economics.',
+    getKeyUrl: 'https://tradingeconomics.com/analytics/api.aspx',
+    getKeySteps: 'Every paid Trading Economics plan includes the API. Sign in, open your account page and copy the API key.',
+    checkId: 'paid_data',
+    section: 'subscription',
+    validate: (v) => (/^\S{6,200}$/.test(v) ? null : 'An API key has no spaces. Check it was copied in full.'),
+  },
+  {
+    id: 'EODHD_API_TOKEN',
+    placeholder: 'API token from EODHD',
+    label: 'EODHD API token',
+    provider: 'EODHD (your API token)',
+    feeds:
+      'Sent only to EODHD. Lets you map daily prices (stock indices, currencies, listed shares, for example GSPC.INDX) and EODHD macro indicators (for example macro:inflation_consumer_prices_annual). Never shown, logged or put in the connection check.',
+    withoutIt: 'Needed when your subscription is EODHD.',
+    getKeyUrl: 'https://eodhd.com/pricing',
+    getKeySteps: 'Sign in to EODHD, open Settings in your dashboard and copy the API token. Personal plans are for your own non-commercial use.',
+    checkId: 'paid_data',
+    section: 'subscription',
+    validate: (v) => (/^\S{6,200}$/.test(v) ? null : 'An API token has no spaces. Check it was copied in full.'),
   },
   // ---- Your broker prices (gap CG9, src/engine/brokerPrices.ts): off unless you switch it on ----
   {

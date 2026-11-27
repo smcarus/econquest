@@ -56,6 +56,8 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['banxico', /Banxico|Banco de México|\bSIE\b/],
   ['acled', /\bACLED\b/],
   ['evds', /\bEVDS\b|\bTCMB\b/],
+  ['own_tradingeconomics', /Your subscription: Trading Economics/i],
+  ['own_eodhd', /Your subscription: EODHD/i],
   ['own', /\byour (own|holdings|connector)\b|\bLSEG\b|\byour \S+ data\b/i],
   ['imf_investor_base', /Investor Base/i],
   ['imf_fiscal_rules', /Fiscal Rules Dataset/i],

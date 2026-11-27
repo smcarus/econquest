@@ -7,4 +7,4 @@
  * the screens, settings, connection list and council prompts leave CDS out instead of showing
  * "5Y CDS: Missing".
  */
-export const CDS_HIDDEN = true;
+export { CDS_HIDDEN } from '../engine/cdsHidden';

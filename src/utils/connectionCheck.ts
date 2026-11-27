@@ -82,6 +82,8 @@ import {
 } from './officialYields';
 import { lsegSnapshotUrl, lsegTokenRequest, ownCdsSettings, parseLsegSnapshot, parseOwnCdsCsv } from './ownCds';
 import { paidVendorFromEnv, parsePaidMappings } from '../engine/paidData';
+import { readTeSeries, teKey, teRefusal, teRequest, TE_HOST } from '../engine/tradingEconomics';
+import { eodhdRefusal, eodhdToken, eodhdUrl, EODHD_HOST, readEodhdSeries } from '../engine/eodhd';
 import { brokerConfigFromEnv } from '../engine/brokerPrices';
 import { mfmodConfigFromEnv } from '../server/mfmod';
 import { macrobondCredentials, macrobondFetchUrl, macrobondTokenBody, MACROBOND_AUTH_URL, readMacrobondSeries, readMacrobondToken } from '../engine/macrobond';
@@ -2295,7 +2297,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
   add('paid_data', async () => {
     const def: Def = {
       id: 'paid_data',
-      name: 'Your data subscription (Macrobond, Haver, Moody\'s)',
+      name: 'Your data subscription (Macrobond, Trading Economics, EODHD, Haver, Moody\'s)',
       group: 'own_account',
       feeds: 'Series you map from a paid data service you already subscribe to; never passed on',
       setup: 'Menu > Settings > Your subscriptions, or PAID_DATA_VENDOR in .env with the vendor\'s sign-in details. Then map the vendor series codes you want there.',
@@ -2303,7 +2305,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     const vendor = paidVendorFromEnv(env);
     const raw = (env.PAID_DATA_VENDOR || '').trim().toLowerCase();
     if (!vendor) {
-      if (raw && raw !== 'off') return setRow(def, 'needs_setup', `PAID_DATA_VENDOR is "${raw}"; it must be off, macrobond, haver or moodys.`, 'your subscription');
+      if (raw && raw !== 'off') return setRow(def, 'needs_setup', `PAID_DATA_VENDOR is "${raw}"; it must be off, macrobond, tradingeconomics, eodhd, haver or moodys.`, 'your subscription');
       return setRow(def, 'off', 'Off. The app uses free sources only.', 'your subscription');
     }
     const mapped = parsePaidMappings(opts.paidMappingsText?.() ?? null).filter((m) => m.vendor === vendor.id).length;
@@ -2312,6 +2314,30 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     if (missingCreds.length) return setRow(def, 'needs_setup', `Switched on for ${vendor.name} (${series}), but ${missingCreds.join(' and ')} ${missingCreds.length > 1 ? 'are' : 'is'} not set.`, 'your subscription');
     if (!vendor.adapterBuilt)
       return setRow(def, 'needs_setup', `Switched on for ${vendor.name} (${series}), but the app cannot fetch from ${vendor.name} yet: that part is planned as data plan change ${vendor.plannedIn}. Nothing is fetched until then.`, 'your subscription');
+    // Trading Economics and EODHD (one key each): read the first mapped series. Only counts and
+    // dates are reported: never a figure or the key (EODHD's token is in its address, so the
+    // address is never reported either).
+    if (vendor.id === 'tradingeconomics' || vendor.id === 'eodhd') {
+      const first = parsePaidMappings(opts.paidMappingsText?.() ?? null).find((m) => m.vendor === vendor.id);
+      const te = vendor.id === 'tradingeconomics';
+      const host = te ? TE_HOST : EODHD_HOST;
+      if (!first) return setRow(def, 'needs_setup', `The ${te ? 'API key' : 'API token'} is set, but no series are mapped yet. Map them under Menu > Settings > Your subscriptions.`, host);
+      const req = te ? teRequest(first.code, teKey(env)!) : { url: eodhdUrl(first, eodhdToken(env)!), headers: { Accept: 'application/json' } };
+      const got = await probe(fetchFn, req.url, T, { headers: req.headers });
+      const token = te ? '' : eodhdToken(env)!;
+      if (got.networkError) return { ...setRow(def, 'no_answer', `${vendor.name}: ${token ? got.networkError.split(token).join('…') : got.networkError}`, host), latencyMs: got.latencyMs };
+      if (!got.ok) {
+        const st = got.status ?? 0;
+        return { ...setRow(def, st === 401 || st === 403 ? 'needs_setup' : 'refused', `Series ${first.code}: ${te ? teRefusal(st) : eodhdRefusal(st)}.`, host), httpStatus: got.status };
+      }
+      const body = parseJson(got.text);
+      const read = te ? readTeSeries(first.code, body, first.freq) : readEodhdSeries(first.code, body, first.freq);
+      if ('error' in read) return setRow(def, 'bad_reply', `Series ${first.code}: ${read.error}.`, host);
+      return {
+        ...setRow(def, 'connected', `${vendor.name} answered with your key; ${series}. The figures stay on this computer.`, host),
+        sample: `${first.code}: ${read.points.length} values, ${read.points[0]!.date} to ${read.points[read.points.length - 1]!.date} (figures not shown)`,
+      };
+    }
     // Macrobond (src/engine/macrobond.ts): sign in, then read the first mapped series. Only counts
     // and dates are reported: never a figure, the client ID or the secret.
     const creds = macrobondCredentials(env)!;

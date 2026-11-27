@@ -46,6 +46,8 @@ test('off by default: no vendor unless the switch names one', () => {
   // The frame ships no adapter: every vendor says which change will add it.
   assert.deepEqual(PAID_VENDORS.map((v) => [v.id, v.adapterBuilt, v.plannedIn]), [
     ['macrobond', true, 'G5'],
+    ['tradingeconomics', true, 'P1'],
+    ['eodhd', true, 'P2'],
     ['haver', false, 'G14'],
     ['moodys', false, 'G15'],
   ]);
@@ -56,6 +58,8 @@ test('off by default: no vendor unless the switch names one', () => {
     ['PAID_DATA_VENDOR', false],
     ['MACROBOND_CLIENT_ID', true],
     ['MACROBOND_CLIENT_SECRET', true],
+    ['TRADINGECONOMICS_API_KEY', true],
+    ['EODHD_API_TOKEN', true],
     ['BROKER_PRICES', false],
     ['IBKR_GATEWAY_URL', false],
     ['IBKR_CONIDS', false],
