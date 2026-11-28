@@ -23,6 +23,7 @@ import { describeRule, RULE_WORDS, type QuestRule, type RuleWords } from '../uti
 import { packText, type QuestPack } from '../utils/questPacks';
 import { questTextIn, questTitleIn, type QuestTranslationLang, type QuestText, type QuestTranslationMap } from '../utils/questTranslations';
 import { useLang, useT, useTx } from '../i18n/useLang';
+import { ClassesView } from './ClassesView';
 import { questDataProblemUrl } from '../utils/problemReport';
 import { APP_CITATION } from '../utils/citation';
 import { versionWithCommit } from '../utils/buildInfo';
@@ -72,7 +73,7 @@ function useQuestWords() {
   };
 }
 
-export function QuestsDialog({ onClose, items = [], focusId = null }: { onClose: () => void; items?: LiveWatchlistItem[]; focusId?: string | null }) {
+export function QuestsDialog({ onClose, items = [], focusId = null, classesOn = false }: { onClose: () => void; items?: LiveWatchlistItem[]; focusId?: string | null; classesOn?: boolean }) {
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const [list, setList] = useState<ListReply | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +83,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null }: { onClose:
   const [openId, setOpenId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
-  const [view, setView] = useState<'quests' | 'mine' | 'class' | 'results' | 'board' | 'stances' | 'health' | 'maint'>('quests');
+  const [view, setView] = useState<'quests' | 'mine' | 'class' | 'results' | 'board' | 'stances' | 'health' | 'maint' | 'classes'>('quests');
   const lang = useLang();
   const t = useT(QUESTS);
   const [english, setEnglish] = useState(false);
@@ -157,6 +158,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null }: { onClose:
         <div className="p-4 space-y-4 overflow-y-auto ui-body">
           {error && <p className="text-sm text-rose-700 dark:text-rose-400">{t('loadFailed', { error })}</p>}
           {list && !list.enabled && <p className="text-sm text-slate-600 dark:text-slate-300">{list.reason}</p>}
+          {list && !list.enabled && classesOn && <ClassesView />}
           {list && list.enabled && !openId && (
             <div className="flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-800" role="tablist">
               {(
@@ -169,6 +171,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null }: { onClose:
                   'stances',
                   'health',
                   'maint',
+                  ...(classesOn ? (['classes'] as const) : []),
                 ] as const
               ).map((k) => (
                 <button key={k} type="button" role="tab" aria-selected={view === k} onClick={() => setView(k)} className={`px-3 py-1.5 text-sm ${view === k ? 'border-b-2 border-blue-600 text-slate-900 dark:text-white' : 'text-slate-500'}`} data-quests-tab={k}>
@@ -184,6 +187,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null }: { onClose:
           {list && list.enabled && !openId && view === 'stances' && <StancesView />}
           {list && list.enabled && !openId && view === 'health' && <Health titleOf={titleOf} />}
           {list && list.enabled && !openId && view === 'maint' && <Maintainer />}
+          {list && list.enabled && !openId && view === 'classes' && <ClassesView />}
           {list && list.enabled && !openId && view === 'quests' && (
             <>
               <ThisWeek onOpen={open} titleOf={titleOf} />

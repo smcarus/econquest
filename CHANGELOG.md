@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Classes (Quests in the classroom, step Q1; off unless `CLASSES_ENABLED=on`, needs sign-in): a
+  Classes tab on Menu > Quests. An Analyst or Admin makes a class for a term and becomes its teacher;
+  students join with an eight-character code; the teacher adds markers and students, makes student
+  accounts from nicknames (passwords shown once), changes the code and archives the class. Spanish,
+  French and Portuguese wording included.
 - Quests (still switched off): `npm run quests:live-check` for the maintainer's computer: with the app
   running, it lists what every Quest page shows (a live figure, or Missing with its reason), tries a
   practice question on each Forecast Quest, and downloads the Bohn rows and runs the Python, R and

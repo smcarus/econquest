@@ -281,6 +281,18 @@ Planned, to build before Quests are switched on for everyone (added November 202
 - [ ] A monthly round-up Action
 - [x] One first replication challenge, on a paper the maintainer picks: Bohn (1998), `bra-bohn-replication`, with the guide and starters in `quests/replications/bohn/`
 
+## Classes (Quests in the classroom)
+
+Built step by step from the classroom plan (docs/ROADMAP.md, Phase 5). Classes have their own switch, `CLASSES_ENABLED=on`, so a school can start before Quests open to everyone, and they need sign-in, because a role in a class belongs to an account. With the switch on, Menu > Quests opens even while Quests are off and shows a **Classes** tab.
+
+**Q1, built 28 November: roles and join codes.** An Analyst or Admin account makes a class for a term (a name, a term label and its first and last day) and becomes its teacher. The class gets an eight-character join code with no look-alike letters (ABCD-EFGH). Inside a class each member has one role:
+
+- **Teacher**: sees the code, makes a new one (the old one stops working), adds an existing account as marker or student, takes someone out (a class keeps at least one teacher), archives or restores the class, and makes student accounts from a list of nicknames. Those are Viewer accounts; each password is shown once, and each student changes it in Menu > Account.
+- **Marker**: sees the members. Marking comes with the feedback step (Q6).
+- **Student**: joins with the code (any signed-in account may, including a Viewer), and sees the class name, the term, who teaches it and how many members it has, but not the other students or the code.
+
+An archived class takes no new members. Classes are kept in `data/local/classes.json` (readable by the app's user only), and each change is written to the audit log. Account roles (Viewer, Analyst, Admin) still decide what an account may do in the rest of the app. The app never grades; the teacher does.
+
 ## Rules Quests keep
 
 - No data figures in a Quest file; every figure is read live from a feed, and a missing one reads Missing with the reason.

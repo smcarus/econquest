@@ -27,6 +27,7 @@ import { registerOwnSeriesRoutes } from './src/server/routes/ownSeries';
 import { registerBudgetExecutionRoutes } from './src/server/routes/budgetExecution';
 import { ownSeriesViewsFor, OWN_NO_COUNTRY } from './src/engine/ownSeries';
 import { registerQuestRoutes } from './src/server/routes/quests';
+import { registerClassRoutes } from './src/server/routes/classes';
 import { forwardByMonth, forwardSummary } from './src/utils/forwardRecord';
 import { SPIKE_METHOD, spikeMonths, spikeSentence } from './src/utils/unrestSpikes';
 import { forwardFilePath, loadForward } from './src/utils/forwardRecordStore';
@@ -4609,6 +4610,19 @@ async function startServer() {
     return { series: [], missing: [...got.series, ...got.missing].map((x) => ({ id: x.id, label: x.label, reason: PAID_WITHHELD_REASON })) };
   };
   registerQuestRoutes(app, { seriesFor, refuseRemoteChange, signedIn, loadOfficialHistory });
+  registerClassRoutes(app, {
+    signedIn,
+    authRequired: () => currentMode() === 'required',
+    accountById: (id) => auth.byId(id),
+    accountByUsername: (u) => auth.byUsername(u),
+    makeStudent: (username, displayName) => {
+      const password = randomPassword();
+      const account = newAccount({ username, displayName, role: 'viewer', password });
+      auth.add(account);
+      return { account, password };
+    },
+    audit: (summary) => appendAudit(AUDIT_FILES, { kind: 'access', summary }),
+  });
   registerAnalysisRoutes(app, {
     quick,
     seriesFor,

@@ -368,12 +368,19 @@ export default function App() {
     window.addEventListener(OPEN_QUESTS_EVENT, go);
     return () => window.removeEventListener(OPEN_QUESTS_EVENT, go);
   }, []);
+  // Classes (Quests in the classroom) have their own switch, so Menu > Quests opens for a class even
+  // while Quests are off for everyone (src/server/routes/classes.ts).
+  const [classesOn, setClassesOn] = useState(false);
   useEffect(() => {
     let live = true;
     fetch('/api/quests')
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => live && setQuestsOn(Boolean(j?.enabled)))
       .catch(() => live && setQuestsOn(false));
+    fetch('/api/classes')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => live && setClassesOn(Boolean(j?.enabled)))
+      .catch(() => live && setClassesOn(false));
     return () => {
       live = false;
     };
@@ -1623,16 +1630,16 @@ export default function App() {
                       },
                       {
                         key: 'quests',
-                        icon: <Compass className={`w-3.5 h-3.5 ${questsOn ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`} />,
+                        icon: <Compass className={`w-3.5 h-3.5 ${questsOn || classesOn ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`} />,
                         label: t('quests'),
-                        hint: questsOn ? '' : t('notYet'),
-                        title: questsOn ? t('questsOnTitle') : t('questsOffTitle'),
-                        disabled: !questsOn,
+                        hint: questsOn || classesOn ? '' : t('notYet'),
+                        title: questsOn || classesOn ? t('questsOnTitle') : t('questsOffTitle'),
+                        disabled: !(questsOn || classesOn),
                         onClick: () => {
                           setQuestFocus(null);
                           setIsQuestsOpen(true);
                         },
-                        className: questsOn ? '' : 'opacity-60 cursor-not-allowed',
+                        className: questsOn || classesOn ? '' : 'opacity-60 cursor-not-allowed',
                       },
                       {
                         key: 'share',
@@ -2167,7 +2174,7 @@ export default function App() {
       </Suspense>
       <Suspense fallback={null}>{isYourPricesOpen && <YourPricesDialog iso3={run.iso3} countryName={run.countryName} onClose={() => setIsYourPricesOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isOwnDataOpen && <OwnSeriesDialog onClose={() => setIsOwnDataOpen(false)} />}</Suspense>
-      <Suspense fallback={null}>{isQuestsOpen && questsOn && <QuestsDialog items={liveWatchlistItems} focusId={questFocus} onClose={() => { setIsQuestsOpen(false); setQuestFocus(null); }} />}</Suspense>
+      <Suspense fallback={null}>{isQuestsOpen && (questsOn || classesOn) && <QuestsDialog items={liveWatchlistItems} focusId={questFocus} classesOn={classesOn} onClose={() => { setIsQuestsOpen(false); setQuestFocus(null); }} />}</Suspense>
       <Suspense fallback={null}>{registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} questsOn={Boolean(questsOn)} onClose={() => setRegisterFocus(undefined)} />}</Suspense>
       <Suspense fallback={null}>{isUsersOpen && me && <UsersDialog me={me} onClose={() => setIsUsersOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isAccountOpen && <AccountDialog onClose={() => setIsAccountOpen(false)} />}</Suspense>
