@@ -17,6 +17,8 @@
  *    password is refused; the right one opens the app.
  * Quests on (a second copy with QUESTS_ENABLED=on): the list, the starter pack, one Quest, and the
  *    Quests view in Models & validation with its chain check.
+ * Classes on (a third copy with CLASSES_ENABLED=on, Quests off, sign-in): a teacher makes a class at
+ *    phone width and makes student accounts from nicknames.
  *
  * Run after `npm run build`:  npm run test:journeys
  */
@@ -49,6 +51,7 @@ function startServer(env = {}) {
       GEMINI_API_KEY: '',
       ECONQUEST_SECRET_KEY: '',
       QUESTS_ENABLED: '',
+      CLASSES_ENABLED: '',
       ...env,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -74,6 +77,7 @@ const first = startServer();
 const server = first.proc;
 const base = first.base;
 let questsServer;
+let classesServer;
 
 const failures = [];
 const passed = [];
@@ -327,7 +331,7 @@ try {
 
   // Quests switched on: a second copy of the app with QUESTS_ENABLED=on and its own data folder.
   await step('quests on: the list, a pack, one Quest, the Quests view in Models & validation, and a link from a country page', async () => {
-    questsServer = startServer({ QUESTS_ENABLED: 'on', DATA_DIR: mkdtempSync(path.join(tmpdir(), 'econquest-journeys-quests-')) });
+    questsServer = startServer({ QUESTS_ENABLED: 'on', CLASSES_ENABLED: 'on', DATA_DIR: mkdtempSync(path.join(tmpdir(), 'econquest-journeys-quests-')) });
     await waitUp(questsServer);
     const qp = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     watch(qp);
@@ -340,6 +344,9 @@ try {
     await box.locator('[data-quests-tab="maint"]').click();
     await box.locator('[data-quest-maintainer-counts]').waitFor({ timeout: 15_000 });
     if (!(await box.locator('[data-quest-maintainer-item="draftsToApprove"]').count())) throw new Error('the maintainer dashboard does not list the drafts ready to approve');
+    // Classes are on in this copy, but sign-in is off: the tab says classes need accounts.
+    await box.locator('[data-quests-tab="classes"]').click();
+    await box.locator('[data-classes-off]').waitFor({ timeout: 15_000 });
     await box.locator('[data-quests-tab="quests"]').click();
     await box.locator('[data-quests-pack]').selectOption('starter');
     await box.locator('[data-quest-pack-group]').first().waitFor({ timeout: 5000 });
@@ -369,12 +376,44 @@ try {
     await noCrash(qp);
     await qp.close();
   });
+
+  // Classes on, Quests off, with sign-in: Menu > Quests opens on the Classes tab alone.
+  await step('classes: with Quests off, a teacher makes a class and student accounts', async () => {
+    classesServer = startServer({ CLASSES_ENABLED: 'on', DATA_DIR: mkdtempSync(path.join(tmpdir(), 'econquest-journeys-classes-')) });
+    await waitUp(classesServer);
+    const password = 'a long journey test passphrase';
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const cp = await ctx.newPage();
+    watch(cp);
+    const made = await cp.request.post(`${classesServer.base}/api/auth/setup`, { data: { username: 'prof', displayName: 'Professor', password } });
+    if (!made.ok()) throw new Error(`could not create the first account: HTTP ${made.status()}`);
+    // Making the first account signs this browser in.
+    await cp.goto(classesServer.base, { waitUntil: 'networkidle', timeout: 90_000 });
+    await cp.getByRole('button', { name: 'Menu', exact: true }).click();
+    await cp.getByRole('menuitem', { name: /^Quests/ }).first().click();
+    const box = cp.locator('[data-quests]');
+    await box.locator('[data-classes]').waitFor({ timeout: 15_000 });
+    await box.locator('[data-classes-name]').fill('Macro 101');
+    await box.locator('[data-classes-term]').fill('Spring 2027');
+    await box.locator('[data-classes-starts]').fill('2027-01-11');
+    await box.locator('[data-classes-ends]').fill('2027-05-07');
+    await box.locator('[data-classes-make]').click();
+    const code = (await box.locator('[data-class-code]').first().textContent({ timeout: 15_000 })) || '';
+    if (!/^[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(code.trim())) throw new Error(`the join code looks wrong: "${code}"`);
+    await box.locator('[data-class-nicknames]').fill('José\nAmina');
+    await box.locator('[data-class-make-students]').click();
+    await box.locator('[data-class-created]').waitFor({ timeout: 15_000 });
+    await box.locator('[data-class-member="jose"]').waitFor({ timeout: 15_000 });
+    await noCrash(cp);
+    await ctx.close();
+  });
 } catch (err) {
   failures.push(`journeys failed to run: ${err?.stack || err}`);
 } finally {
   await browser?.close();
   server.kill();
   questsServer?.proc.kill();
+  classesServer?.proc.kill();
 }
 
 if (failures.length) {

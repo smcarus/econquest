@@ -22,6 +22,6 @@ test('the country page and Council chat load the links lazily, and App opens the
   assert.match(chat, /<QuestLinks iso3s=\{t\.asked\.plan\.countries\.map/);
   assert.match(app, /OPEN_QUESTS_EVENT/);
   assert.match(app, /focusId=\{questFocus\}/);
-  // Nothing opens while Quests are off: the dialog renders only with questsOn.
-  assert.match(app, /isQuestsOpen && questsOn && <QuestsDialog/);
+  // Nothing opens while Quests are off, unless classes are on (then only the Classes tab shows).
+  assert.match(app, /isQuestsOpen && \(questsOn \|\| classesOn\) && <QuestsDialog/);
 });

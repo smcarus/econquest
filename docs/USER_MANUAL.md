@@ -1331,6 +1331,11 @@ hold no figures of their own; the handout reads them from the app's series when 
   - *Maintainer* (for whoever runs the project's Quests): what needs doing now, such as results due
     to record, drafts ready to approve, files with problems or missing translations, each with the
     command that does it. With sign-in on, only administrators see it.
+  - *Classes* (only when the administrator turns classes on with `CLASSES_ENABLED=on`, and only with
+    sign-in): join a class with the code your teacher gives you, or, with an Analyst or Admin account,
+    make a class for a term. The teacher sees the join code, adds markers and students, makes student
+    accounts from nicknames (each password is shown once) and archives the class. Students see the
+    class, its term and who teaches it, not the other students.
   - Country pages and Council chat answers show up to three *Quests about this country*; a link
     opens that Quest. Researchers can read settled forecasts and their scores from R, Python or Stata
     ([DATA_API.md](./DATA_API.md)).
