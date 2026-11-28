@@ -79,7 +79,7 @@ export function ClassGradebook({ cls }: { cls: ClassView }) {
               {t('gbSaveWeights')}
             </button>
           </form>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t('gbTitle')}>
             <table className="w-full" data-class-gradebook-rows>
               <caption className="sr-only">{t('gbTitle')}</caption>
               <thead>

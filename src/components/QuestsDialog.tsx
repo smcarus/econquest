@@ -25,6 +25,7 @@ import { questTextIn, questTitleIn, type QuestTranslationLang, type QuestText, t
 import { useLang, useT, useTx } from '../i18n/useLang';
 import { ClassesView } from './ClassesView';
 import { SealedHandInTab } from './ClassHandInFile';
+import { useFocusTrap } from './useFocusTrap';
 import { QuestReplays } from './QuestReplays';
 import { questDataProblemUrl } from '../utils/problemReport';
 import { APP_CITATION } from '../utils/citation';
@@ -78,6 +79,8 @@ function useQuestWords() {
 
 export function QuestsDialog({ onClose, items = [], focusId = null, classesOn = false }: { onClose: () => void; items?: LiveWatchlistItem[]; focusId?: string | null; classesOn?: boolean }) {
   const closeRef = useRef<HTMLButtonElement | null>(null);
+  const boxRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(boxRef);
   const [list, setList] = useState<ListReply | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [type, setType] = useState<QuestType | ''>('');
@@ -151,7 +154,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null, classesOn = 
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div role="dialog" aria-modal="true" aria-labelledby="quests-title" className="w-full max-w-3xl max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl" data-quests>
+      <div ref={boxRef} role="dialog" aria-modal="true" aria-labelledby="quests-title" className="w-full max-w-3xl max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl" data-quests>
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
           <h2 id="quests-title" className="ui-title inline-flex items-center gap-2">
             <Compass className="w-4 h-4" aria-hidden /> {t('title')}

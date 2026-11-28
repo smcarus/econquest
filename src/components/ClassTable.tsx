@@ -101,9 +101,9 @@ export function ClassTable({ cls }: { cls: ClassView }) {
           <p className="text-slate-500">{t('ctExplain')}</p>
           {data.sensitiveLeftOut && <p className="text-slate-500">{t('ctSensitiveOut')}</p>}
           {teacher && (
-            <label className="inline-flex items-center gap-1">
+            <label className="flex flex-wrap items-center gap-1 max-w-full">
               <span>{t('ctViewLabel')}</span>
-              <select className={fieldCls} value={data.tableView} onChange={(e) => void act(() => call(`${base}/table-settings`, 'POST', { tableView: e.target.value }))} data-class-table-view>
+              <select className={`${fieldCls} max-w-full`} value={data.tableView} onChange={(e) => void act(() => call(`${base}/table-settings`, 'POST', { tableView: e.target.value }))} data-class-table-view>
                 <option value="own">{t('ctView_own')}</option>
                 <option value="nicknames">{t('ctView_nicknames')}</option>
                 <option value="numbers">{t('ctView_numbers')}</option>
@@ -114,7 +114,7 @@ export function ClassTable({ cls }: { cls: ClassView }) {
           {data.rows.length === 0 ? (
             <p className="text-slate-500">{t('ctNone')}</p>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t('ctTitle')}>
               <table className="w-full" data-class-table-rows>
                 <caption className="sr-only">{t('ctTitle')}</caption>
                 {head(t('classesColName'))}
@@ -137,7 +137,7 @@ export function ClassTable({ cls }: { cls: ClassView }) {
             </div>
           )}
           {data.teams.length > 0 && (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t('ctTeams')}>
               <table className="w-full" data-class-team-rows>
                 <caption className="text-left font-medium">{t('ctTeams')}</caption>
                 {head(t('ctColTeam'))}
@@ -299,7 +299,7 @@ function StudentReport({ base, who, onClose, teacherView }: { base: string; who:
         {r.entries.length === 0 ? (
           <p className="text-slate-500">{t('ctNoEntries')}</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t('ctEntries')}>
             <table className="w-full" data-class-report-entries>
               <caption className="sr-only">{t('ctEntries')}</caption>
               <thead>

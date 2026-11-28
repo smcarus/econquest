@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Classes (step Q10): the classroom screens are in the accessibility check at phone width (teacher
+  and student, WCAG 2.2 A and AA, keyboard focus, 320-pixel reflow). The keyboard focus now stays
+  inside the Quests window, and three classroom screens fit 320 pixels.
 - Classes (step Q9): sealed hand-in files for students on their own copy of the app. The teacher
   downloads a hand-in sheet for an assignment; the student opens it under Menu > Quests > Hand in,
   answers and seals the file in the browser (AES-256-GCM, key locked with the class's RSA-OAEP

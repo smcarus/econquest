@@ -60,9 +60,9 @@ export function TeacherHandIns({ aBase, archived, onLoaded }: { aBase: string; a
           {t('hiDownloadSheet')}
         </a>
         {!archived && (
-          <label className="inline-flex items-center gap-1">
+          <label className="flex flex-wrap items-center gap-1 max-w-full">
             <span>{t('hiLoadFiles')}</span>
-            <input type="file" accept=".json,application/json" multiple className="text-xs" onChange={(e) => void load(e.target.files).then(() => (e.target.value = ''))} data-class-load-sealed />
+            <input type="file" accept=".json,application/json" multiple className="text-xs max-w-full" onChange={(e) => void load(e.target.files).then(() => (e.target.value = ''))} data-class-load-sealed />
           </label>
         )}
       </div>
@@ -139,7 +139,7 @@ export function SealedHandInTab() {
       <p className="text-slate-600 dark:text-slate-300">{t('hiStudentIntro')}</p>
       <label className="block space-y-1">
         <span className="block text-xs">{t('hiOpenSheet')}</span>
-        <input type="file" accept=".json,application/json" className="text-xs" onChange={(e) => void open(e.target.files?.[0])} data-hand-in-sheet />
+        <input type="file" accept=".json,application/json" className="text-xs max-w-full" onChange={(e) => void open(e.target.files?.[0])} data-hand-in-sheet />
       </label>
       {err && (
         <p className="text-rose-700 dark:text-rose-400" role="alert">

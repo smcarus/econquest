@@ -23,6 +23,11 @@ phone width, with every data feed switched off:
 - **A keyboard pass** on the Workspace, Research and phone pages: moving with the Tab key, every
   control must show a visible focus ring (2.4.7) and must not be hidden behind a fixed bar or panel
   (2.4.11).
+- **The classroom screens** (when Quests and classes are on), at phone width: a teacher's class card
+  with entries, feedback, class table, report, gradebook and hand-in files; a student's card with the
+  hand-in form, feedback and report; and the Hand in tab. Each gets the rule set, the keyboard pass
+  and a reflow check: at 320 pixels wide nothing may need sideways scrolling (1.4.10), except a data
+  table inside its own frame. The Quests window keeps the keyboard focus inside it while it is open.
 - **Keyboard journeys** (`npm run test:journeys`): the "Skip to content" link, Council chat, the
   country sections and the keyboard shortcuts.
 
