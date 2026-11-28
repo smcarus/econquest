@@ -35,5 +35,6 @@
   "knownLimits": [
     "The World Bank may not have published 2026 by the settle date; then the Quest is Unresolvable.",
     "Both years are read from the same download, so a revision to 2025 counts."
-  ]
+  ],
+  "approvedBy": "smcarus"
 }

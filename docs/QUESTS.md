@@ -36,7 +36,7 @@ Quests stay off until every box in the checklist below is ticked. Only the proje
 | Health measures for the six-month review: people per month, entries per Quest, results recorded on time, crowd against the base rate (Health tab, `/api/quests/health`, and on the public board) | Built and tested, switched off |
 | Yearly open dataset (`npm run quests:dataset -- --year <YYYY>`): CSV tables of Quests, entries, results, test verdicts and scores with a README, citation file and checksums, ready to deposit for a DOI; stance profiles left out | Built and tested; no dataset released yet |
 | Settled forecasts for scripts: `GET /api/quests/settled` and `GET /api/export/quests/forecasts.csv` (also .xlsx), one row per counted public entry with the recorded result and its score, read by the Python, R and Stata helpers in `scripts/data-api/` ([DATA_API.md](./DATA_API.md)); answers only with Quests on | Built and tested |
-| Translated Quest text: each Quest's title, question, known limits and positions (or idea to test, or figure to reproduce) in Spanish, French and Brazilian Portuguese, from separate files in `quests/translations/`, checked by `npm run quests:check`; the Quest page says it is a translation and offers the English, which is the rule. All 14 drafts are translated | Built and tested, switched off |
+| Translated Quest text: each Quest's title, question, known limits and positions (or idea to test, or figure to reproduce) in Spanish, French and Brazilian Portuguese, from separate files in `quests/translations/`, checked by `npm run quests:check`; the Quest page says it is a translation and offers the English, which is the rule. Every Quest on file is translated | Built and tested, switched off |
 
 ## How a Quest is settled
 
@@ -139,7 +139,7 @@ A pack is a ready list of Quests grouped by topic, so a newcomer has a set of ec
 - **Checked.** `npm run quests:check` checks each pack: the file name matches the id, every Quest it lists is on file, no Quest is listed twice, and English is present. A Quest that is not served (a draft, before drafts are shown) drops out of the pack on screen.
 - **Practice now.** A Quest you can practise on past data straight away (a daily or weekly series, higher or lower after close) is marked "Practice now" in the list.
 
-**The starter pack** (`quests/packs/starter.json`, 25 Quests, all drafts until approved): Start here (the Brent tutorial); Inflation and interest rates; Debt and budgets (including the Bohn 1998 replication); Currencies; Growth and jobs; Trade and commodities; Lower-income countries (Kenya, Ghana, Zambia and a debate on what their central banks should aim at). It mixes forecasts settled from the IMF, World Bank, BIS, ECB, CFTC and EIA series, debates checked by Claim Check, a Signal Quest and two replications. Every forecast compares one published value with another (higher or lower), so no figure is typed into a Quest file.
+**The starter pack** (`quests/packs/starter.json`, 25 Quests, approved by the maintainer on 28 November 2026): Start here (the Brent tutorial); Inflation and interest rates; Debt and budgets (including the Bohn 1998 replication); Currencies; Growth and jobs; Trade and commodities; Lower-income countries (Kenya, Ghana, Zambia and a debate on what their central banks should aim at). It mixes forecasts settled from the IMF, World Bank, BIS, ECB, CFTC and EIA series, debates checked by Claim Check, a Signal Quest and two replications. Every forecast compares one published value with another (higher or lower), so no figure is typed into a Quest file.
 
 ## Making new Quests
 
@@ -148,7 +148,7 @@ A steady flow of Quests keeps people coming back, so the app drafts routine ones
 - **Weekly**: Brent crude, and seven currencies against the US dollar (Brazilian real, Mexican peso, South African rand, Turkish lira, Indian rupee, Indonesian rupiah, Japanese yen): higher or lower one week after entries close. Entries open a week before they close, on a Friday.
 - **Monthly**: whether eleven central banks (the United States, Brazil, Mexico, Chile, Colombia, South Africa, Turkey, Poland, Hungary, India, Indonesia) will have cut their policy rate by the end of the next month. Entries open two weeks before the end of the month.
 
-Drafts for the spring 2027 term are on file: a one-week Brent Quest closing each Friday from 15 January to 7 May 2027, a four-week Brent Quest each week (and an eight-week one each month), and monthly policy-rate Quests for the eleven central banks, 93 in all, each in four languages. A class can set them as soon as they are on file; they become public Quests when the maintainer approves them.
+Quests for the spring 2027 term are on file and approved (28 November 2026): a one-week Brent Quest closing each Friday from 15 January to 7 May 2027, a four-week Brent Quest each week (and an eight-week one each month), and monthly policy-rate Quests for the eleven central banks, 93 in all, each in four languages. Setting one weekly and one four-week Quest from week 3 gives each student the 10 settled answers the calibration chart needs by about week 10.
 
 Every generated Quest asks "higher or lower than on the day entries close", so no figure is ever written into a Quest file, and each passes the same checker as a hand-written Quest. The app has no calendar of data releases or central-bank meetings yet; when it gets one, Quests dated to those events can be added here.
 
@@ -240,7 +240,7 @@ Several boxes below are checked on the maintainer's computer. `npm run quests:li
 Working properly:
 
 - [ ] `npm run quests:check` passes on every Quest file
-- [ ] At least 10 Quests approved by the maintainer, with real dates, moved from `quests/drafts/` to `quests/` and hashed (`npm run quests:generate` and `quests:approve` help)
+- [x] At least 10 Quests approved by the maintainer, with real dates, moved from `quests/drafts/` to `quests/` and hashed (done 28 November 2026: 118 Quests, the starter pack and the spring 2027 term)
 - [ ] Someone posts the weekly digest (`npm run quests:digest`) in Discussions, or a scheduled job does
 - [ ] Every approved Forecast Quest shows a live figure (or Missing with a reason) for each series it reads, checked on the maintainer's computer with all keys set (`npm run quests:live-check`)
 - [ ] The resolver settles a past test Quest correctly from each source used (BIS, ECB, CFTC, EIA, IMF, World Bank), and a missing value gives Unresolvable

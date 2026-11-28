@@ -29,5 +29,6 @@
   "fallback": "unresolvable",
   "knownLimits": [
     "The IMF reports India on a fiscal-year basis (April to March) for some series; the WEO figure as published is used."
-  ]
+  ],
+  "approvedBy": "smcarus"
 }

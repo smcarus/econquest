@@ -9,6 +9,7 @@ import { aiProblems, assignmentsIcs, dueFor, dueProblems, entriesVisibleToStuden
 import { registerClassRoutes } from '../src/server/routes/classes';
 import { requiredRole } from '../src/utils/permissions';
 import type { Account, Role } from '../src/utils/auth';
+import { repoQuest } from './repoQuest';
 
 test('due times: a local time in the class time zone becomes the right instant, summer time included', () => {
   assert.equal(zonedToUtc('2027-01-15T23:59', 'America/Chicago'), '2027-01-16T05:59:00.000Z');
@@ -51,7 +52,7 @@ test('routes: set a Quest, hand in, hidden entries, extension, reveal, copy to n
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'classasg-'));
   const qdir = path.join(dir, 'quests');
   fs.mkdirSync(path.join(qdir, 'drafts'), { recursive: true });
-  const brent = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'quests', 'drafts', 'tutorial-brent-week.json'), 'utf8'));
+  const brent = repoQuest('tutorial-brent-week.json');
   fs.writeFileSync(path.join(qdir, 'drafts', 'tutorial-brent-week.json'), JSON.stringify({ ...brent, registeredOn: '2026-11-01', opensOn: '2026-11-02', closesOn: '2027-06-30', rule: { ...brent.rule, to: { on: '2027-07-01' } }, fallback: brent.fallback === 'unresolvable' ? 'unresolvable' : { ...brent.fallback, rule: { ...brent.fallback.rule, to: { on: '2027-07-01' } } } }, null, 2));
   fs.writeFileSync(path.join(qdir, 'manifest.json'), '{}\n');
   const accounts = new Map<string, Account>(['prof', 's1', 's2'].map((id) => [id, acct(id, id === 'prof' ? 'analyst' : 'viewer')]));

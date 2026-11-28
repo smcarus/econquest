@@ -344,7 +344,7 @@ try {
     await box.locator('[data-quest-row]').first().waitFor({ timeout: 15_000 });
     await box.locator('[data-quests-tab="maint"]').click();
     await box.locator('[data-quest-maintainer-counts]').waitFor({ timeout: 15_000 });
-    if (!(await box.locator('[data-quest-maintainer-item="draftsToApprove"]').count())) throw new Error('the maintainer dashboard does not list the drafts ready to approve');
+    if (!(await box.locator('[data-quest-maintainer-item], [data-quest-maintainer-clear]').count())) throw new Error('the maintainer dashboard lists neither work to do nor that all is clear');
     // Replays (Q5): four packs, week by week; with the feeds down a try says why, never a made-up figure.
     await box.locator('[data-quests-tab="replay"]').click();
     await box.locator('[data-quest-replay-week="4"]').waitFor({ timeout: 15_000 });

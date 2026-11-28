@@ -5,8 +5,9 @@ import { maintainerSummary } from '../src/utils/questMaintainer';
 import { checkQuests, loadQuests, loadTranslations } from '../src/utils/questStore';
 import type { ForecastQuest, Quest } from '../src/utils/quests';
 import fs from 'fs';
+import { repoQuest } from './repoQuest';
 
-const brent: ForecastQuest = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'quests', 'drafts', 'tutorial-brent-week.json'), 'utf8'));
+const brent: ForecastQuest = repoQuest('tutorial-brent-week.json');
 
 test('the dashboard lists results due, drafts ready, missing translations and a broken chain, with the command for each', () => {
   const approved = { ...brent, approvedBy: 'smcarus', registeredOn: '2026-11-01', opensOn: '2026-11-02', closesOn: '2026-11-10' } as Quest;
@@ -30,6 +31,8 @@ test('on the files in quests/ today: no file problems, every draft is ready to a
   const quests = loadQuests(dir);
   const s = maintainerSummary({ quests, fileProblems: checkQuests(dir).problems, lines: [], brokenAt: -1, entries: [], translations: loadTranslations(dir, quests), testsRun: new Set(), today: '2026-11-28' });
   assert.equal(s.items.find((i) => i.kind === 'fileProblems'), undefined);
-  assert.equal(s.items.find((i) => i.kind === 'draftsToApprove')?.n, quests.filter((x) => !x.approved).length);
-  assert.ok(s.items.find((i) => i.kind === 'draftsToApprove')!.ids.length <= 20, 'at most 20 listed');
+  const drafts = quests.filter((x) => !x.approved).length;
+  const item = s.items.find((i) => i.kind === 'draftsToApprove');
+  assert.equal(item?.n ?? 0, drafts, 'every draft is listed as ready to approve (none listed when there are no drafts)');
+  assert.ok((item?.ids.length ?? 0) <= 20, 'at most 20 listed');
 });

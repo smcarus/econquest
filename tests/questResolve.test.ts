@@ -12,11 +12,12 @@ import { readQuestFiles, writeManifest } from '../src/utils/questStore';
 import type { ForecastQuest } from '../src/utils/quests';
 import type { QuestEntry } from '../src/utils/questEntries';
 import type { SeriesSet } from '../src/utils/seriesHistory';
+import { repoQuest } from './repoQuest';
 
 const tmp = (p: string) => fs.mkdtempSync(path.join(os.tmpdir(), p));
 
-const brent: ForecastQuest = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'quests', 'drafts', 'tutorial-brent-week.json'), 'utf8'));
-const argDebt: ForecastQuest = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'quests', 'drafts', 'arg-debt-2026.json'), 'utf8'));
+const brent: ForecastQuest = repoQuest('tutorial-brent-week.json');
+const argDebt: ForecastQuest = repoQuest('arg-debt-2026.json');
 
 /** Daily points from `from` for `n` days, value = start + i * step. */
 function daily(from: string, n: number, start: number, step: number) {
@@ -125,7 +126,7 @@ test('routes: results and due are off with the switch; due lists approved Quests
   fs.mkdirSync(path.join(dir, 'drafts'));
   const approved = { ...brent, registeredOn: '2026-11-01', opensOn: '2026-11-02', closesOn: '2026-12-11', approvedBy: 'smcarus' };
   fs.writeFileSync(path.join(dir, 'tutorial-brent-week.json'), `${JSON.stringify(approved, null, 2)}\n`);
-  fs.copyFileSync(path.join(process.cwd(), 'quests', 'drafts', 'usa-policy-2027h1.json'), path.join(dir, 'drafts', 'usa-policy-2027h1.json'));
+  fs.writeFileSync(path.join(dir, 'drafts', 'usa-policy-2027h1.json'), `${JSON.stringify(repoQuest('usa-policy-2027h1.json'), null, 2)}\n`);
   writeManifest(dir, Object.fromEntries(readQuestFiles(dir).filter((f) => f.approved).map((f) => [f.name, f.hash])));
   const pts = daily('2026-01-01', 360, 60, 0.05);
   const seriesFor = async (iso3: string): Promise<SeriesSet> => ({ iso3, series: [{ id: 'commodity_eia_rbrte', label: 'Brent', unit: '$/bbl', freq: 'daily', source: 'EIA', points: pts }], missing: [] });

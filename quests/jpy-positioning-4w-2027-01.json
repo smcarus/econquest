@@ -31,5 +31,6 @@
   "fallback": "unresolvable",
   "knownLimits": [
     "CFTC reports are dated Tuesday and published on Friday; a US government shutdown can delay them."
-  ]
+  ],
+  "approvedBy": "smcarus"
 }

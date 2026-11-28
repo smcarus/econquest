@@ -16,7 +16,13 @@ import type { SeriesSet } from '../src/utils/seriesHistory';
 function draftsOnlyDir(): string {
   const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'qd-')), 'quests');
   fs.cpSync(path.join(process.cwd(), 'quests'), dir, { recursive: true });
-  for (const f of fs.readdirSync(dir)) if (f.endsWith('.json') && f !== 'levels.json') fs.rmSync(path.join(dir, f));
+  for (const f of fs.readdirSync(dir)) {
+    if (!f.endsWith('.json') || ['manifest.json', 'levels.json', 'stats.json', 'accounts.json', 'test-verdicts.json'].includes(f)) continue;
+    const q = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+    delete q.approvedBy;
+    fs.writeFileSync(path.join(dir, 'drafts', f), `${JSON.stringify(q, null, 2)}\n`);
+    fs.rmSync(path.join(dir, f));
+  }
   fs.writeFileSync(path.join(dir, 'manifest.json'), '{}\n');
   return dir;
 }

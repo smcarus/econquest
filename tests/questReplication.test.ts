@@ -13,8 +13,9 @@ import { readQuestFiles, writeManifest } from '../src/utils/questStore';
 import { computeStats } from '../src/utils/questStats';
 import type { ReplicationQuest } from '../src/utils/quests';
 import { registerQuestRoutes } from '../src/server/routes/quests';
+import { repoQuest } from './repoQuest';
 
-const rep: ReplicationQuest = { ...JSON.parse(fs.readFileSync(path.join(process.cwd(), 'quests', 'drafts', 'bra-bohn-replication.json'), 'utf8')), approvedBy: 'smcarus' };
+const rep: ReplicationQuest = { ...repoQuest('bra-bohn-replication.json'), approvedBy: 'smcarus' };
 const CODE = 'https://github.com/alice/bohn/blob/main/bohn.R';
 const entry = (login: string, value: number, extra: Partial<PublicEntry> = {}): PublicEntry => ({ questId: rep.id, questVersion: 1, questHash: 'h', login, n: 1, answer: { value }, code: CODE, via: 'pull-request', ...extra });
 

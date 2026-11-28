@@ -16,8 +16,9 @@ import { runQuestTests } from '../src/utils/questTestRun';
 import { questProblems, type SignalQuest } from '../src/utils/quests';
 import { trackRecordMarkdown, trackRows } from '../src/utils/trackRecordDoc';
 import { registerQuestRoutes } from '../src/server/routes/quests';
+import { repoQuest } from './repoQuest';
 
-const sig: SignalQuest = { ...JSON.parse(fs.readFileSync(path.join(process.cwd(), 'quests', 'drafts', 'credit-gap-crisis-signal.json'), 'utf8')), approvedBy: 'smcarus' };
+const sig: SignalQuest = { ...repoQuest('credit-gap-crisis-signal.json'), approvedBy: 'smcarus' };
 const t = (over: Partial<SignalTest> = {}): SignalTest => ({ ...SIGNAL_TEMPLATE, ...over });
 const entry = (login: string, test: SignalTest, extra: Partial<PublicEntry> = {}): PublicEntry => ({ questId: sig.id, questVersion: 1, questHash: 'h', login, n: 1, answer: { test }, via: 'pull-request', ...extra });
 

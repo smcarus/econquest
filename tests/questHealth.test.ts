@@ -15,8 +15,9 @@ import type { ResolutionLine } from '../src/utils/questResolve';
 import type { DebateQuest, ForecastQuest, ReplicationQuest, SignalQuest } from '../src/utils/quests';
 import type { QuestTestVerdict } from '../src/utils/questSignal';
 import { RESEARCH_NOTICE } from '../src/utils/disclaimer';
+import { repoQuest } from './repoQuest';
 
-const read = (f: string) => JSON.parse(fs.readFileSync(path.join(process.cwd(), 'quests', 'drafts', f), 'utf8'));
+const read = (f: string) => repoQuest(f);
 // tutorial: closes 2026-12-11, due 2026-12-18; tur: closes 2026-12-31, due 2027-06-30
 const brent: ForecastQuest = { ...read('tutorial-brent-week.json'), approvedBy: 'smcarus' };
 const tur: ForecastQuest = { ...read('tur-policy-2027h1.json'), approvedBy: 'smcarus' };

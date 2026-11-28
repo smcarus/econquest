@@ -12,8 +12,9 @@ import type { ForecastQuest } from '../src/utils/quests';
 import { questProblems } from '../src/utils/quests';
 import { readQuestFiles } from '../src/utils/questStore';
 import { registerQuestRoutes } from '../src/server/routes/quests';
+import { repoQuest } from './repoQuest';
 
-const brent: ForecastQuest = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'quests', 'drafts', 'tutorial-brent-week.json'), 'utf8'));
+const brent: ForecastQuest = repoQuest('tutorial-brent-week.json');
 
 /** n approved Quests, closing a week apart from 2027-01-10, each settled with "happened" alternating and base rate 0.5. */
 function world(n: number, topicsFor = (i: number) => (i % 2 ? ['fx'] : ['commodities'])) {

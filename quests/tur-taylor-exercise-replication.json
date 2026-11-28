@@ -22,5 +22,6 @@
   "settlesOn": "2027-03-15",
   "knownLimits": [
     "The exercise has no output gap term when none is published; state the inputs you used."
-  ]
+  ],
+  "approvedBy": "smcarus"
 }

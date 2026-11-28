@@ -29,5 +29,6 @@
   "knownLimits": [
     "Debate, not a tested signal: no position is scored right or wrong.",
     "The Debt sustainability page shows how each path changes the debt ratio under the IMF inputs."
-  ]
+  ],
+  "approvedBy": "smcarus"
 }

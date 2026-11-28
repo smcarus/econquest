@@ -15,8 +15,9 @@ import { computeStats } from '../src/utils/questStats';
 import { EXPORT_NOTICE } from '../src/utils/disclaimer';
 import { registerQuestRoutes } from '../src/server/routes/quests';
 import type { LiveWatchlistItem } from '../src/types/council';
+import { repoQuest } from './repoQuest';
 
-const read = (f: string) => JSON.parse(fs.readFileSync(path.join(process.cwd(), 'quests', 'drafts', f), 'utf8'));
+const read = (f: string) => repoQuest(f);
 const debate: DebateQuest = { ...read('egy-reserves-debate.json'), approvedBy: 'smcarus', related: ['tutorial-brent-week'] };
 const brent: ForecastQuest = { ...read('tutorial-brent-week.json'), approvedBy: 'smcarus' };
 const ARG = 'Reserves only recover when the exchange rate can move, as the past two years show clearly.';

@@ -7,8 +7,9 @@ import { computeStats } from '../src/utils/questStats';
 import type { PublicEntry } from '../src/utils/questPublicEntries';
 import type { ReplicationQuest, DebateQuest } from '../src/utils/quests';
 import { RESEARCH_NOTICE } from '../src/utils/disclaimer';
+import { repoQuest } from './repoQuest';
 
-const read = (f: string) => JSON.parse(fs.readFileSync(path.join(process.cwd(), 'quests', 'drafts', f), 'utf8'));
+const read = (f: string) => repoQuest(f);
 const rep: ReplicationQuest = { ...read('bra-bohn-replication.json'), approvedBy: 'smcarus', title: 'Rebuild <b>Bohn</b> & check' };
 const deb: DebateQuest = { ...read('egy-reserves-debate.json'), approvedBy: 'smcarus' };
 const e = (questId: string, login: string, answer: PublicEntry['answer'], extra: Partial<PublicEntry> = {}): PublicEntry => ({ questId, questVersion: 1, questHash: 'h', login, n: 1, answer, via: 'pull-request', ...extra });

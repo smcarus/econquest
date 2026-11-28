@@ -1,25 +1,25 @@
 {
-  "id": "ind-growth-2026",
+  "id": "mex-unemployment-2026",
   "version": 1,
   "registeredOn": "2026-11-27",
   "opensOn": "2026-12-01",
   "author": "smcarus",
   "type": "forecast",
-  "title": "Will India's economy grow faster in 2026 than in 2025?",
-  "summary": "Give the probability that IMF WEO real GDP growth for India is higher for 2026 than for 2025, both as first read on or after 1 May 2027 (after the April 2027 WEO).",
+  "title": "Will Mexico's unemployment rate be lower in 2026 than in 2025?",
+  "summary": "Give the probability that the IMF WEO unemployment rate for Mexico is lower for 2026 than for 2025, both as first read on or after 1 May 2027 (after the April 2027 WEO).",
   "countries": [
-    "IND"
+    "MEX"
   ],
   "topics": [
     "growth"
   ],
-  "region": "Asia-Pacific",
+  "region": "Americas",
   "closesOn": "2027-01-31",
   "rule": {
     "kind": "direction",
     "ref": {
-      "country": "IND",
-      "series": "gdp_growth"
+      "country": "MEX",
+      "series": "unemployment"
     },
     "from": {
       "period": "2025",
@@ -29,11 +29,12 @@
       "period": "2026",
       "on": "2027-05-01"
     },
-    "op": "higher"
+    "op": "lower"
   },
   "fallback": "unresolvable",
   "knownLimits": [
     "The 2026 figure in the April 2027 WEO is still an IMF estimate and may be revised later; the first reading stands.",
-    "The IMF reports India on a fiscal-year basis (April to March); the WEO figure as published is used."
-  ]
+    "Many people in Mexico work informally; the unemployment rate does not show how many are in poor-quality jobs."
+  ],
+  "approvedBy": "smcarus"
 }
