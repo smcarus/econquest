@@ -44,6 +44,10 @@
  * Stance profiles (step 11): GET /api/quests/stances gives the axes and the profiles people signed
  * up with by their own pull request (quests/profiles/). Stances being set stay in the browser.
  *
+ * Data API (roadmap L3a, docs/DATA_API.md), settled Forecast Quests with each counted public entry:
+ *   GET  /api/quests/settled                 as JSON
+ *   GET  /api/export/quests/forecasts.csv    as a table (also .xlsx); 404 QUESTS_OFF while Quests are off
+ *
  * Digest (step 8):
  *   GET  /api/quests/digest           this week: closing soon, opening, results recorded, results due
  */
@@ -77,6 +81,9 @@ import { loadTestRecord, testRecordPath } from '../../utils/questTestStore';
 import { trackRowsFromRepo } from '../../utils/trackRecordDocNode';
 import { STANCE_AXES } from '../../utils/questStances';
 import { loadProfiles } from '../../utils/questStanceStore';
+import { questForecastRows, QUEST_FORECAST_HEADER } from '../../utils/questDataApi';
+import { toCsv } from '../../utils/csvExport';
+import { tableWorkbook } from '../../utils/xlsxExport';
 
 export const QUESTS_DIR = path.join(APP_ROOT, 'quests');
 
@@ -284,6 +291,35 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
       lines: rec.lines,
       quests: keys.map((l) => ({ questId: l.questId, questVersion: l.questVersion, title: titles.get(l.questId) ?? l.questId, ...resultState(rec.lines, l.questId, l.questVersion) })),
     });
+  });
+
+  // Settled forecasts for scripts (roadmap L3a, docs/DATA_API.md): the recorded result and each
+  // counted public entry with its score. Never private entries or practice answers.
+  const settledRows = (): { rows: ReturnType<typeof questForecastRows> } | { error: string } => {
+    const rec = loadResolutions(resultsFile);
+    if (rec.brokenAt !== -1) return { error: `The results record is broken at line ${rec.brokenAt + 1}, so no settled forecasts are served until it is restored` };
+    return { rows: questForecastRows(loadQuests(dir), loadPublicEntries(dir), rec.lines) };
+  };
+  app.get('/api/quests/settled', (_req, res) => {
+    if (!enabled()) return off(res);
+    const r = settledRows();
+    if ('error' in r) return res.status(409).json({ enabled: true, error: r.error });
+    res.json({ enabled: true, header: QUEST_FORECAST_HEADER, rows: r.rows.map((row) => Object.fromEntries(QUEST_FORECAST_HEADER.map((h, i) => [h, row[i] ?? null]))) });
+  });
+  app.get('/api/export/quests/forecasts.:fmt(csv|xlsx)', (req, res) => {
+    if (!enabled()) return res.status(404).json({ error: 'QUESTS_OFF', message: QUESTS_OFF_REASON });
+    const r = settledRows();
+    if ('error' in r) return res.status(409).json({ error: 'RESULTS_BROKEN', message: r.error });
+    if (req.params.fmt === 'xlsx') {
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.attachment('econquest-quest-forecasts.xlsx');
+      return res.send(Buffer.from(tableWorkbook('econquest-quest-forecasts', QUEST_FORECAST_HEADER, r.rows)));
+    }
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.attachment('econquest-quest-forecasts.csv');
+    // Same rule as the other downloads: the data helpers ask for the file without the byte order mark.
+    const forScript = req.query.bom === '0' || /^econquest-(python|r)-helper/.test(String(req.headers['user-agent'] ?? ''));
+    res.send(toCsv(QUEST_FORECAST_HEADER, r.rows, { bom: !forScript }));
   });
 
   app.get('/api/quests/stats', (_req, res) => {

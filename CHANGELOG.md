@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Quests (still switched off): settled Quest forecasts in the data API for scripts. `GET /api/quests/settled`
+  (JSON) and `GET /api/export/quests/forecasts.csv` (also .xlsx) give one row per counted public entry
+  on a settled Forecast Quest, with the recorded result, the benchmark and the score; new helpers
+  `quest_forecasts()` (Python), `eq_quest_forecasts()` (R) and `econquest_quests` (Stata). Answer only
+  while Quests are switched on; never private entries or practice answers (docs/DATA_API.md).
 - Quests (still switched off): the first replication challenge, Bohn (1998) on Brazil. The Fiscal
   reaction panel can download the exact rows it used (CSV, with the method on each row);
   `quests/replications/bohn/` has a step-by-step guide in four languages and R, Python and Stata

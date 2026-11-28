@@ -38,7 +38,7 @@ test('the guide lists exactly the data addresses, and each one is a route on the
   const guide = readFileSync(path.join(root, 'docs/DATA_API.md'), 'utf8');
   const documented = [...guide.matchAll(/`GET (\/api\/[^`?\s]+)`/g)].map((m) => m[1]);
   assert.deepEqual([...documented].sort(), DATA_API.map((a) => a.path).sort());
-  const server = readFileSync(path.join(root, 'server.ts'), 'utf8');
+  const server = readFileSync(path.join(root, 'server.ts'), 'utf8') + readFileSync(path.join(root, 'src/server/routes/quests.ts'), 'utf8');
   const routes = new Set([...server.matchAll(/app\.get\('([^']+)'/g)].map((m) => m[1].replace('.:fmt(csv|xlsx)', '.csv')));
   for (const p of documented) assert.ok(routes.has(p), `no route for ${p}`);
 });

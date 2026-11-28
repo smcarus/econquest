@@ -170,7 +170,7 @@ Two small follow-ons, added in November 2026:
 | # | Change |
 | --- | --- |
 | QL1 | Spanish, French and Brazilian Portuguese titles and questions for Quests, shown in the chosen language, and the Quests screen in the same languages (widened by the maintainer on 27 November); community translations of Quests open with it. Part 1, the Quest text in `quests/translations/`, merged 27 November (#728); part 2, the whole Quests screen, built 27 November |
-| L3a | Settled Quest forecasts served by the researcher data API and its R, Python and Stata helpers, answering only when Quests are switched on |
+| L3a | Settled Quest forecasts served by the researcher data API and its R, Python and Stata helpers, answering only when Quests are switched on. Built 28 November |
 
 After the build comes a one-term pilot with two professors (one in an underserved country), then
 outreach to economics departments.
