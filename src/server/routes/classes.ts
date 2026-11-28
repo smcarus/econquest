@@ -22,6 +22,12 @@
  *   GET    /api/classes/:id/assignments/:aid/entries        teacher and markers: all; students: their own until the last due time
  *   POST   /api/classes/:id/copy                            teacher: copy assignments from another class, dates moved by the term gap
  *   GET    /api/classes/:id/calendar.ics                    the due times as a calendar file
+ * Feedback (Q6; src/utils/classFeedback.ts), in data/local/class-feedback.jsonl and class-reviews.jsonl:
+ *   POST   /api/classes/:id/assignments/:aid/settings       teacher: peer review and the sensitive-topic switch
+ *   GET    /api/classes/:id/assignments/:aid/feedback       teacher and markers: all feedback; students: on their own entry
+ *   POST   /api/classes/:id/assignments/:aid/feedback       teacher and markers: comment on one entry (by its ref), with an optional mark
+ *   GET    /api/classes/:id/assignments/:aid/peer           students: the arguments to review and reviews of their own; teacher and markers: all reviews
+ *   POST   /api/classes/:id/assignments/:aid/peer           student: review a classmate's argument (by its ref), after the last due time
  * Class Quests (Q4; src/utils/classQuests.ts), kept in data/local/class-quests/<class id>/:
  *   GET    /api/classes/:id/class-quests                    teacher and markers: the class's own Quests
  *   POST   /api/classes/:id/class-quests                    teacher: write a Forecast or Debate Quest for the class
@@ -36,14 +42,17 @@ import type express from 'express';
 import { APP_ROOT, DATA_DIR } from '../config';
 import type { Account } from '../../utils/auth';
 import { CLASSES_NEED_SIGNIN, CLASSES_OFF_REASON, classesEnabled, classesFor, classProblems, classView, joinCodeFrom, nicknameProblems, normaliseJoinCode, roleIn, studentUsername, type ClassRole, type SchoolClass } from '../../utils/classes';
-import { appendClassEntry, changeClasses, classEntriesPath, classesPath, classQuestsDir, loadClassEntries, loadClasses, loadClassQuests, removeClassQuest, saveClassQuest } from '../../utils/classStore';
+import { appendClassEntry, appendJsonl, changeClasses, classEntriesPath, classesPath, classFeedbackPath, classQuestsDir, classReviewsPath, loadClassEntries, loadClasses, loadClassQuests, loadJsonl, removeClassQuest, saveClassQuest } from '../../utils/classStore';
+import { entryRef, feedbackProblems, latestBy, peerAllocation, reviewProblems, type ClassFeedback, type ClassReview } from '../../utils/classFeedback';
 import { CLASS_QUESTS_MAX, classQuestFileProblems, classQuestFrom, classQuestId, shiftClassQuest, type ClassQuestInput } from '../../utils/classQuests';
 import { questLevel } from '../../utils/questLevels';
-import { AI_RULES, INSTRUCTIONS_MAX, aiProblems, assignmentsIcs, daysBetween, dueFor, dueProblems, entriesVisibleToStudents, latestEntries, shiftLocal, validTimeZone, zonedToUtc, type AiRule, type ClassAssignment, type ClassEntry } from '../../utils/classAssignments';
+import { AI_RULES, INSTRUCTIONS_MAX, aiProblems, assignmentsIcs, daysBetween, dueFor, dueProblems, entriesVisibleToStudents, lastDueUtc, latestEntries, shiftLocal, validTimeZone, zonedToUtc, type AiRule, type ClassAssignment, type ClassEntry } from '../../utils/classAssignments';
 import { loadLevels, loadQuests } from '../../utils/questStore';
 import { answerFor, entryProblems, type EntryQuest } from '../../utils/questEntries';
 import { questFileName, type Quest } from '../../utils/quests';
 import { RateLimiter, type Bucket } from '../../utils/requestLimits';
+
+const PEER_DEBATES_ONLY = 'Peer review is for Debate Quests, where students write an argument';
 
 /** Class calls per caller: the app-wide limit applies too; joining is tighter, so codes cannot be guessed. */
 export const CLASS_LIMITS: Record<'read' | 'write' | 'join', Bucket> = {
@@ -76,6 +85,8 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
   const enabled = deps.enabled ?? (() => classesEnabled(process.env.CLASSES_ENABLED));
   const file = deps.file ?? classesPath(DATA_DIR);
   const entriesFile = deps.entriesFile ?? classEntriesPath(DATA_DIR);
+  const feedbackFile = classFeedbackPath(entriesFile);
+  const reviewsFile = classReviewsPath(entriesFile);
   const questsDir = deps.questsDir ?? path.join(APP_ROOT, 'quests');
   const now = () => (deps.now ? deps.now() : new Date()).toISOString();
   const audit = deps.audit ?? (() => {});
@@ -156,6 +167,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
         createdBy: a.id,
         timeZone: validTimeZone((req.body as { timeZone?: unknown })?.timeZone) ? String((req.body as { timeZone?: unknown }).timeZone) : 'UTC',
         members: [{ accountId: a.id, role: 'teacher', joinedAt: now() }],
+        refSecret: crypto.randomBytes(32).toString('hex'),
       };
       classes.push(c);
       return c;
@@ -339,6 +351,8 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
       open: nowIso <= mine.dueUtc,
       entriesVisible: role !== 'student' || entriesVisibleToStudents(x, nowIso),
       revealed: Boolean(x.revealedAt),
+      peerReview: Boolean(x.peerReview),
+      sensitive: Boolean(x.sensitive),
       ...(myEntry ? { myEntry: { answer: myEntry.answer, rationale: myEntry.rationale ?? '', at: myEntry.at } } : {}),
       ...(role === 'student'
         ? {}
@@ -395,13 +409,16 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
   app.post('/api/classes/:id/assignments', classRateLimit('write'), (req, res) => {
     const a = me(res);
     if (!a) return;
-    const body = (req.body || {}) as { questId?: unknown; due?: unknown; aiRule?: unknown; instructions?: unknown };
+    const body = (req.body || {}) as { questId?: unknown; due?: unknown; aiRule?: unknown; instructions?: unknown; peerReview?: unknown; sensitive?: unknown };
     const found = questFor(String(body.questId || ''), String(req.params.id));
     if (!found) return res.status(400).json({ enabled: true, error: 'Pick a Quest on file (Signal Quests are entered in public, so they cannot be set for a class)' });
     const aiRule = body.aiRule as AiRule;
     if (!AI_RULES.includes(aiRule)) return res.status(400).json({ enabled: true, error: 'Choose a rule on AI use' });
     const instructions = typeof body.instructions === 'string' ? body.instructions.trim() : '';
     if (instructions.length > INSTRUCTIONS_MAX) return res.status(400).json({ enabled: true, error: `Instructions: at most ${INSTRUCTIONS_MAX} characters` });
+    const peerReview = body.peerReview === true;
+    const sensitive = body.sensitive === true;
+    if (peerReview && found.quest.type !== 'debate') return res.status(400).json({ enabled: true, error: PEER_DEBATES_ONLY });
     let sent = false;
     const cls = changeClasses(file, (classes) => {
       const c = asTeacher(classes, String(req.params.id), a, res);
@@ -412,7 +429,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
         res.status(400).json({ enabled: true, error: problems.join('; ') });
         return (sent = true), null;
       }
-      const x: ClassAssignment = { id: crypto.randomUUID(), questId: found.quest.id, questVersion: found.quest.version, title: found.quest.title, due: String(body.due), dueUtc: zonedToUtc(String(body.due), tz)!, aiRule, ...(instructions ? { instructions } : {}), extensions: [], createdAt: now() };
+      const x: ClassAssignment = { id: crypto.randomUUID(), questId: found.quest.id, questVersion: found.quest.version, title: found.quest.title, due: String(body.due), dueUtc: zonedToUtc(String(body.due), tz)!, aiRule, ...(instructions ? { instructions } : {}), extensions: [], createdAt: now(), ...(peerReview ? { peerReview } : {}), ...(sensitive ? { sensitive } : {}) };
       c.assignments = [...(c.assignments ?? []), x];
       return c;
     });
@@ -534,21 +551,190 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     let latest = latestEntries(all, x.id);
     if (role === 'student' && !entriesVisibleToStudents(x, now())) latest = latest.filter((e) => e.accountId === a.id);
     const replaced = (accountId: string) => all.filter((e) => e.assignmentId === x.id && e.accountId === accountId).length - 1;
+    const hide = namesHidden(x, role);
+    const secret = role === 'student' ? '' : secretOf(cls.id);
+    const hidden = hiddenNames(latest.map((e) => e.accountId), x.id, role === 'student' ? 'Classmate' : 'Student');
     res.json({
       enabled: true,
       hiddenUntilDue: role === 'student' && !entriesVisibleToStudents(x, now()),
+      namesHidden: hide,
       entries: latest
         .map((e) => ({
-          name: nameOf(e.accountId)?.displayName ?? '(account removed)',
+          name: e.accountId === a.id ? nameOf(e.accountId)?.displayName ?? '(account removed)' : hide ? hidden.get(e.accountId)! : nameOf(e.accountId)?.displayName ?? '(account removed)',
           mine: e.accountId === a.id,
+          ...(role === 'student' ? {} : { ref: entryRef(secret, x.id, e.accountId) }),
           answer: e.answer,
           rationale: e.rationale ?? '',
           code: e.code ?? '',
           at: e.at,
-          ...(role === 'student' ? {} : { username: nameOf(e.accountId)?.username ?? '', ai: e.ai, replaced: replaced(e.accountId), late: e.at > dueFor(x, e.accountId).dueUtc }),
+          ...(role === 'student' ? {} : { username: hide ? '' : nameOf(e.accountId)?.username ?? '', ai: e.ai, replaced: replaced(e.accountId), late: e.at > dueFor(x, e.accountId).dueUtc }),
         }))
-        .sort((p, q) => p.name.localeCompare(q.name)),
+        .sort((p, q) => p.name.localeCompare(q.name, undefined, { numeric: true })),
     });
+  });
+
+  // ---- Feedback, peer review and sensitive topics (Q6) ---------------------------------------
+  /** Names are hidden from students and markers on a sensitive assignment (the teacher sees them). */
+  const namesHidden = (x: ClassAssignment, role: ClassRole) => Boolean(x.sensitive) && role !== 'teacher';
+  /** "Student 1", "Student 2"... in a fixed order that does not follow names. */
+  const hiddenNames = (accountIds: string[], assignmentId: string, word: string) => {
+    const order = [...peerAllocation(assignmentId, accountIds, 0).keys()];
+    return new Map(order.map((id, i) => [id, `${word} ${i + 1}`]));
+  };
+  /** The class's key for entry references, made the first time an older class needs one. */
+  const secretOf = (classId: string): string => {
+    const have = loadClasses(file).find((c) => c.id === classId)?.refSecret;
+    if (have) return have;
+    return changeClasses(file, (classes) => {
+      const c = classes.find((y) => y.id === classId)!;
+      c.refSecret = c.refSecret ?? crypto.randomBytes(32).toString('hex');
+      return c.refSecret;
+    });
+  };
+  /** The student whose entry a ref points at, among those who handed in. */
+  const studentByRef = (cls: SchoolClass, x: ClassAssignment, ref: unknown): string | undefined => {
+    if (typeof ref !== 'string' || !/^[0-9a-f]{16}$/.test(ref)) return undefined;
+    const secret = secretOf(cls.id);
+    return latestEntries(loadClassEntries(entriesFile), x.id).find((e) => e.classId === cls.id && entryRef(secret, x.id, e.accountId) === ref)?.accountId;
+  };
+  /** The class and assignment for a feedback call, if I am in the class; otherwise the reply already sent. */
+  const memberAndAssignment = (req: express.Request, res: express.Response, a: Account) => {
+    const cls = asMember(loadClasses(file), String(req.params.id), a, res);
+    if (!cls) return null;
+    const x = (cls.assignments ?? []).find((y) => y.id === req.params.aid);
+    if (!x) {
+      res.status(404).json({ enabled: true, error: 'No assignment with that id in this class' });
+      return null;
+    }
+    return { cls, x, role: roleIn(cls, a.id)! };
+  };
+
+  app.post('/api/classes/:id/assignments/:aid/settings', classRateLimit('write'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const body = (req.body || {}) as { peerReview?: unknown; sensitive?: unknown };
+    changeAssignment(req, res, a, (c, x) => {
+      if (typeof body.peerReview === 'boolean') {
+        if (body.peerReview && questFor(x.questId, c.id)?.quest.type !== 'debate') return PEER_DEBATES_ONLY;
+        if (body.peerReview) x.peerReview = true;
+        else delete x.peerReview;
+      }
+      if (typeof body.sensitive === 'boolean') {
+        const handedIn = loadClassEntries(entriesFile).some((e) => e.classId === c.id && e.assignmentId === x.id);
+        if (!body.sensitive && x.sensitive && handedIn) return 'Entries are in, so this assignment stays a sensitive topic: the students handed in on that promise';
+        if (body.sensitive) x.sensitive = true;
+        else delete x.sensitive;
+      }
+      return null;
+    }, `changed the feedback settings on ${req.params.aid}`);
+  });
+
+  app.get('/api/classes/:id/assignments/:aid/feedback', classRateLimit('read'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const m = memberAndAssignment(req, res, a);
+    if (!m) return;
+    const { cls, x, role } = m;
+    const rows = latestBy(
+      loadJsonl<ClassFeedback>(feedbackFile).filter((f) => f.classId === cls.id && f.assignmentId === x.id),
+      (f) => `${f.accountId}:${f.by}`,
+    );
+    const by = (f: ClassFeedback) => nameOf(f.by)?.displayName ?? '(account removed)';
+    if (role === 'student') return res.json({ enabled: true, feedback: rows.filter((f) => f.accountId === a.id).map((f) => ({ by: by(f), text: f.text, mark: f.mark ?? '', at: f.at })) });
+    const secret = secretOf(cls.id);
+    const hide = namesHidden(x, role);
+    const hidden = hiddenNames(latestEntries(loadClassEntries(entriesFile), x.id).filter((e) => e.classId === cls.id).map((e) => e.accountId), x.id, 'Student');
+    res.json({
+      enabled: true,
+      feedback: rows.map((f) => ({ ref: entryRef(secret, x.id, f.accountId), student: hide ? hidden.get(f.accountId) ?? 'Student' : nameOf(f.accountId)?.displayName ?? '(account removed)', by: by(f), mine: f.by === a.id, text: f.text, mark: f.mark ?? '', at: f.at })),
+    });
+  });
+
+  app.post('/api/classes/:id/assignments/:aid/feedback', classRateLimit('write'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const m = memberAndAssignment(req, res, a);
+    if (!m) return;
+    const { cls, x, role } = m;
+    if (role === 'student') return res.status(403).json({ enabled: true, error: 'Only the teacher and markers write feedback' });
+    if (cls.archivedAt) return res.status(400).json({ enabled: true, error: 'This class is archived' });
+    const problems = feedbackProblems(req.body?.text, req.body?.mark);
+    if (problems.length) return res.status(400).json({ enabled: true, error: problems.join('; ') });
+    const student = studentByRef(cls, x, req.body?.ref);
+    if (!student) return res.status(404).json({ enabled: true, error: 'No entry with that reference on this assignment' });
+    const mark = typeof req.body?.mark === 'string' ? req.body.mark.trim() : '';
+    const row: ClassFeedback = { id: crypto.randomUUID(), classId: cls.id, assignmentId: x.id, accountId: student, by: a.id, text: String(req.body.text).trim(), ...(mark ? { mark } : {}), at: now() };
+    appendJsonl(feedbackFile, row);
+    audit(`${who(a)} wrote feedback on an entry for ${x.id} in the class "${cls.name}"`);
+    res.json({ enabled: true, ok: true });
+  });
+
+  /** Peer review opens once nobody can hand in any more. */
+  const peerOpen = (x: ClassAssignment) => Boolean(x.peerReview) && now() > lastDueUtc(x);
+  const peerAuthors = (cls: SchoolClass, x: ClassAssignment) => latestEntries(loadClassEntries(entriesFile).filter((e) => e.classId === cls.id), x.id);
+
+  app.get('/api/classes/:id/assignments/:aid/peer', classRateLimit('read'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const m = memberAndAssignment(req, res, a);
+    if (!m) return;
+    const { cls, x, role } = m;
+    if (!x.peerReview) return res.status(400).json({ enabled: true, error: 'Peer review is not on for this assignment' });
+    const open = peerOpen(x);
+    const reviews = latestBy(
+      loadJsonl<ClassReview>(reviewsFile).filter((r) => r.classId === cls.id && r.assignmentId === x.id),
+      (r) => `${r.reviewerId}:${r.authorId}`,
+    );
+    const entries = peerAuthors(cls, x);
+    const allocation = peerAllocation(x.id, entries.map((e) => e.accountId));
+    if (role === 'student') {
+      const secret = secretOf(cls.id);
+      const toReview = open
+        ? (allocation.get(a.id) ?? []).map((authorId, i) => {
+            const e = entries.find((y) => y.accountId === authorId)!;
+            const mine = reviews.find((r) => r.reviewerId === a.id && r.authorId === authorId);
+            return { ref: entryRef(secret, x.id, authorId), label: `Classmate ${String.fromCharCode(65 + i)}`, answer: e.answer, rationale: e.rationale ?? '', myReview: mine?.text ?? '' };
+          })
+        : [];
+      return res.json({
+        enabled: true,
+        open,
+        opensAt: lastDueUtc(x),
+        handedIn: allocation.has(a.id),
+        toReview,
+        aboutMine: open ? reviews.filter((r) => r.authorId === a.id).map((r) => ({ text: r.text, at: r.at })) : [],
+      });
+    }
+    const hide = namesHidden(x, role);
+    const hidden = hiddenNames(entries.map((e) => e.accountId), x.id, 'Student');
+    const name = (id: string) => (hide ? hidden.get(id) ?? 'Student' : nameOf(id)?.displayName ?? '(account removed)');
+    res.json({
+      enabled: true,
+      open,
+      opensAt: lastDueUtc(x),
+      expected: [...allocation.values()].reduce((n, l) => n + l.length, 0),
+      reviews: reviews.map((r) => ({ author: name(r.authorId), reviewer: name(r.reviewerId), text: r.text, at: r.at })),
+    });
+  });
+
+  app.post('/api/classes/:id/assignments/:aid/peer', classRateLimit('write'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const m = memberAndAssignment(req, res, a);
+    if (!m) return;
+    const { cls, x, role } = m;
+    if (role !== 'student') return res.status(403).json({ enabled: true, error: 'Only students of this class write peer reviews' });
+    if (cls.archivedAt) return res.status(400).json({ enabled: true, error: 'This class is archived' });
+    if (!x.peerReview) return res.status(400).json({ enabled: true, error: 'Peer review is not on for this assignment' });
+    if (!peerOpen(x)) return res.status(400).json({ enabled: true, error: 'Peer review opens when everyone’s due time has passed' });
+    const problems = reviewProblems(req.body?.text);
+    if (problems.length) return res.status(400).json({ enabled: true, error: problems.join('; ') });
+    const author = studentByRef(cls, x, req.body?.ref);
+    const allocation = peerAllocation(x.id, peerAuthors(cls, x).map((e) => e.accountId));
+    if (!author || !(allocation.get(a.id) ?? []).includes(author)) return res.status(404).json({ enabled: true, error: 'That argument is not one of the two given to you to review' });
+    const row: ClassReview = { id: crypto.randomUUID(), classId: cls.id, assignmentId: x.id, authorId: author, reviewerId: a.id, text: String(req.body.text).trim(), at: now() };
+    appendJsonl(reviewsFile, row);
+    res.json({ enabled: true, ok: true });
   });
 
   app.post('/api/classes/:id/copy', classRateLimit('write'), (req, res) => {
@@ -591,7 +777,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
           skipped.push(`${x.title}: ${problems[0]}`);
           continue;
         }
-        to.assignments = [...(to.assignments ?? []), { id: crypto.randomUUID(), questId: x.questId, questVersion: q!.quest.version, title: q!.quest.title, due, dueUtc: zonedToUtc(due, tz)!, aiRule: x.aiRule, ...(x.instructions ? { instructions: x.instructions } : {}), extensions: [], createdAt: now() }];
+        to.assignments = [...(to.assignments ?? []), { id: crypto.randomUUID(), questId: x.questId, questVersion: q!.quest.version, title: q!.quest.title, due, dueUtc: zonedToUtc(due, tz)!, aiRule: x.aiRule, ...(x.instructions ? { instructions: x.instructions } : {}), extensions: [], createdAt: now(), ...(x.peerReview ? { peerReview: true } : {}), ...(x.sensitive ? { sensitive: true } : {}) }];
         copied.push(x.title);
       }
       for (const q of pendingQuests) saveClassQuest(classQuestsDir(file, to.id), q);

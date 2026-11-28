@@ -40,8 +40,8 @@ export function classEntriesPath(dataDir: string): string {
   return path.join(dataDir, 'local', 'class-entries.jsonl');
 }
 
-/** Every class entry, oldest first (one JSON object per line; a broken line is skipped). */
-export function loadClassEntries(file: string): ClassEntry[] {
+/** Every row of a class log, oldest first (one JSON object per line; a broken line is skipped). */
+export function loadJsonl<T>(file: string): T[] {
   let text = '';
   try {
     text = fs.readFileSync(file, 'utf8');
@@ -51,16 +51,27 @@ export function loadClassEntries(file: string): ClassEntry[] {
   return text.split('\n').flatMap((line) => {
     if (!line.trim()) return [];
     try {
-      return [JSON.parse(line) as ClassEntry];
+      return [JSON.parse(line) as T];
     } catch {
       return [];
     }
   });
 }
 
-export function appendClassEntry(file: string, entry: ClassEntry): void {
+export function appendJsonl(file: string, row: unknown): void {
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.appendFileSync(file, `${JSON.stringify(entry)}\n`, { mode: 0o600 });
+  fs.appendFileSync(file, `${JSON.stringify(row)}\n`, { mode: 0o600 });
+}
+
+export const loadClassEntries = (file: string): ClassEntry[] => loadJsonl<ClassEntry>(file);
+export const appendClassEntry = (file: string, entry: ClassEntry): void => appendJsonl(file, entry);
+
+/** Feedback and peer reviews (Q6), next to the entries file. */
+export function classFeedbackPath(entriesFile: string): string {
+  return path.join(path.dirname(entriesFile), 'class-feedback.jsonl');
+}
+export function classReviewsPath(entriesFile: string): string {
+  return path.join(path.dirname(entriesFile), 'class-reviews.jsonl');
 }
 
 /** A class's own Quests (Q4): data/local/class-quests/<class id>/, next to classes.json. */

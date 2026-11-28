@@ -35,6 +35,10 @@ export interface ClassAssignment {
   revealedAt?: string;
   extensions: Extension[];
   createdAt: string;
+  /** Q6: students review two classmates' arguments without names once the last due time passes (debates only). */
+  peerReview?: boolean;
+  /** Q6: a sensitive topic. Names are hidden from students and markers, and the entries never leave this copy. */
+  sensitive?: boolean;
 }
 
 export interface ClassEntry {

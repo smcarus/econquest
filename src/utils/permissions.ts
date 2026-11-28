@@ -38,7 +38,7 @@ const ADMIN_WRITE: RegExp[] = [
 ];
 
 /** Changes a viewer may still make: their own sign-in, password and workspace (own lists and holdings), joining a class with its code, and handing in a class assignment. */
-const VIEWER_WRITE: RegExp[] = [/^\/api\/auth\//, /^\/api\/workspace\//, /^\/api\/comments(\/|$)/, /^\/api\/classes\/join$/, /^\/api\/classes\/[^/]+\/assignments\/[^/]+\/entries$/, /^\/api\/quests\/replays\/answer\/[^/]+$/];
+const VIEWER_WRITE: RegExp[] = [/^\/api\/auth\//, /^\/api\/workspace\//, /^\/api\/comments(\/|$)/, /^\/api\/classes\/join$/, /^\/api\/classes\/[^/]+\/assignments\/[^/]+\/(entries|feedback|peer)$/, /^\/api\/quests\/replays\/answer\/[^/]+$/];
 
 const WRITE = new Set(['POST', 'PUT', 'DELETE', 'PATCH']);
 
