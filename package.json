@@ -58,6 +58,7 @@
     "quests:run-tests": "tsx scripts/quests-run-tests.ts",
     "quests:board": "tsx scripts/quests-board.ts",
     "quests:dataset": "tsx scripts/quests-dataset.ts",
+    "quests:live-check": "tsx scripts/quests-live-check.ts",
     "council:time": "tsx scripts/council-time.ts",
     "docs:methods": "tsx scripts/docs-methods.ts",
     "docs:track-record": "tsx scripts/docs-track-record.ts",
