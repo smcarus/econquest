@@ -1,0 +1,12 @@
+{
+  "quest": "ind-current-account-2026",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "Le solde courant de l’Inde s’améliorera-t-il en 2026 par rapport à 2025 ?",
+  "summary": "Indiquez la probabilité que le solde du compte courant de l’Inde selon la Banque mondiale, en % du PIB, soit plus élevé (un déficit plus faible ou un excédent plus fort) pour 2026 que pour 2025, les deux selon la première lecture à partir du 1er septembre 2027.",
+  "knownLimits": [
+    "La Banque mondiale n’aura peut-être pas publié 2026 à la date de règlement ; la quête est alors non tranchable.",
+    "Les prix du pétrole font varier la facture des importations de l’Inde, et donc ce solde, plus que presque tout le reste."
+  ]
+}

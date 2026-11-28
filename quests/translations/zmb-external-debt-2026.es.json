@@ -1,0 +1,13 @@
+{
+  "quest": "zmb-external-debt-2026",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "¿Será la deuda externa de Zambia más pequeña, en relación con la renta nacional, en 2026 que en 2025?",
+  "summary": "Indique la probabilidad de que la deuda externa de Zambia según el Banco Mundial, en % del ingreso nacional bruto, sea más baja en 2026 que en 2025, ambas según la primera lectura a partir del 15 de enero de 2028 (después del informe anual de deuda del Banco Mundial).",
+  "knownLimits": [
+    "Puede que el Banco Mundial no haya publicado 2026 en la fecha de resolución; entonces el reto queda sin resolver.",
+    "La reestructuración de la deuda de Zambia y los movimientos del kwacha cambian la proporción tanto como los nuevos préstamos.",
+    "Zambia debe estar en su lista de seguimiento para que su último dato aparezca en esta página; el resultado se resuelve con la serie publicada en cualquier caso."
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": "lic-inflation-target-debate",
+  "version": 1,
+  "registeredOn": "2026-11-27",
+  "opensOn": "2026-12-01",
+  "author": "smcarus",
+  "type": "debate",
+  "title": "What should a lower-income country's central bank aim at: inflation or the exchange rate?",
+  "summary": "Argue which aim would serve countries such as Kenya, Ghana, Zambia and Uganda best over the next few years. Cite the app's figures (inflation, policy rate, exchange rate, reserves, external debt) for every claim; Claim Check marks figures that do not match.",
+  "positions": [
+    "An inflation target with a floating currency",
+    "A fixed or tightly managed exchange rate",
+    "A crawling peg or a band",
+    "Targets for the amount of money in the economy"
+  ],
+  "countries": [
+    "KEN",
+    "GHA",
+    "ZMB",
+    "UGA"
+  ],
+  "topics": [
+    "monetary",
+    "inflation",
+    "fx"
+  ],
+  "region": "EMEA",
+  "closesOn": "2027-02-28",
+  "settlesOn": "2027-03-15",
+  "knownLimits": [
+    "Debate, not a tested signal: no position is scored right or wrong.",
+    "Policy rates for these countries come from the IMF's monthly figures, not BIS daily rates.",
+    "Add the countries to your watchlist to see their figures."
+  ]
+}

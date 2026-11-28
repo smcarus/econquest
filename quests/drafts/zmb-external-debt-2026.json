@@ -1,0 +1,41 @@
+{
+  "id": "zmb-external-debt-2026",
+  "version": 1,
+  "registeredOn": "2026-11-27",
+  "opensOn": "2026-12-01",
+  "author": "smcarus",
+  "type": "forecast",
+  "title": "Will Zambia's external debt be smaller, against national income, in 2026 than in 2025?",
+  "summary": "Give the probability that World Bank external debt stocks for Zambia, in % of gross national income, are lower for 2026 than for 2025, both as first read on or after 15 January 2028 (after the World Bank's yearly debt report).",
+  "countries": [
+    "ZMB"
+  ],
+  "topics": [
+    "debt",
+    "external"
+  ],
+  "region": "EMEA",
+  "closesOn": "2027-01-31",
+  "rule": {
+    "kind": "direction",
+    "ref": {
+      "country": "ZMB",
+      "series": "external_debt"
+    },
+    "from": {
+      "period": "2025",
+      "on": "2028-01-15"
+    },
+    "to": {
+      "period": "2026",
+      "on": "2028-01-15"
+    },
+    "op": "lower"
+  },
+  "fallback": "unresolvable",
+  "knownLimits": [
+    "The World Bank may not have published 2026 by the settle date; then the Quest is Unresolvable.",
+    "Zambia's debt restructuring and moves in the kwacha change the ratio as much as new borrowing does.",
+    "Zambia must be on your watchlist for its latest figure to show on this page; the result is settled from the published series either way."
+  ]
+}

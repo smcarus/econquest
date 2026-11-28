@@ -125,6 +125,16 @@ A Quest can be read in Spanish (usted), French (vous) and Brazilian Portuguese (
 
 The translations are not yet checked by native speakers, like the rest of the app's Spanish, French and Portuguese.
 
+## Packs
+
+A pack is a ready list of Quests grouped by topic, so a newcomer has a set of economic and policy problems to work through. Menu > Quests has a **Pack** choice above the list; pick a pack to see its Quests under their topic headings.
+
+- **Where.** `quests/packs/<id>.json` holds the pack's `id`, its `title` and `summary`, and its `groups`, each with an `id`, a `title` and the Quest ids in order. Titles and summaries carry English (required) and Spanish, French and Portuguese. A pack only lists Quest ids, so it never changes a Quest or its fingerprint.
+- **Checked.** `npm run quests:check` checks each pack: the file name matches the id, every Quest it lists is on file, no Quest is listed twice, and English is present. A Quest that is not served (a draft, before drafts are shown) drops out of the pack on screen.
+- **Practice now.** A Quest you can practise on past data straight away (a daily or weekly series, higher or lower after close) is marked "Practice now" in the list.
+
+**The starter pack** (`quests/packs/starter.json`, 25 Quests, all drafts until approved): Start here (the Brent tutorial); Inflation and interest rates; Debt and budgets (including the Bohn 1998 replication); Currencies; Growth and jobs; Trade and commodities; Lower-income countries (Kenya, Ghana, Zambia and a debate on what their central banks should aim at). It mixes forecasts settled from the IMF, World Bank, BIS, ECB, CFTC and EIA series, debates checked by Claim Check, a Signal Quest and two replications. Every forecast compares one published value with another (higher or lower), so no figure is typed into a Quest file.
+
 ## Making new Quests
 
 A steady flow of Quests keeps people coming back, so the app drafts routine ones for the maintainer to approve in a batch (`src/utils/questGenerator.ts`):

@@ -1,0 +1,119 @@
+{
+  "id": "starter",
+  "title": {
+    "en": "Starter pack",
+    "es": "Paquete de inicio",
+    "fr": "Pack de départ",
+    "pt": "Pacote inicial"
+  },
+  "summary": {
+    "en": "Economic and policy problems to work through, by topic: forecasts settled from public data, questions you can practise on past data and see scored at once, policy debates where Claim Check tests every figure, and a published study to reproduce. Start with the Brent tutorial.",
+    "es": "Problemas económicos y de política para resolver, por tema: pronósticos resueltos con datos públicos, preguntas que puede practicar con datos pasados y ver puntuadas al momento, debates de política donde la Verificación de cifras comprueba cada cifra y un estudio publicado para reproducir. Empiece por el tutorial del Brent.",
+    "fr": "Des problèmes économiques et de politique à résoudre, par thème : des prévisions tranchées d’après des données publiques, des questions sur lesquelles vous pouvez vous entraîner avec des données passées et voir votre note tout de suite, des débats de politique où la Vérification des chiffres contrôle chaque chiffre, et une étude publiée à reproduire. Commencez par le tutoriel sur le Brent.",
+    "pt": "Problemas econômicos e de política para resolver, por tema: previsões resolvidas com dados públicos, perguntas que você pode praticar com dados passados e ver a nota na hora, debates de política em que a Verificação de números confere cada número, e um estudo publicado para reproduzir. Comece pelo tutorial do Brent."
+  },
+  "groups": [
+    {
+      "id": "start",
+      "title": {
+        "en": "Start here",
+        "es": "Empiece aquí",
+        "fr": "Commencez ici",
+        "pt": "Comece aqui"
+      },
+      "quests": [
+        "tutorial-brent-week"
+      ]
+    },
+    {
+      "id": "inflation",
+      "title": {
+        "en": "Inflation and interest rates",
+        "es": "Inflación y tipos de interés",
+        "fr": "Inflation et taux d’intérêt",
+        "pt": "Inflação e juros"
+      },
+      "quests": [
+        "ind-inflation-2026",
+        "tur-inflation-2026",
+        "usa-policy-2027h1",
+        "tur-policy-2027h1",
+        "mex-policy-level-2027-03",
+        "tur-taylor-exercise-replication"
+      ]
+    },
+    {
+      "id": "debt",
+      "title": {
+        "en": "Debt and budgets",
+        "es": "Deuda y presupuestos",
+        "fr": "Dette et budgets",
+        "pt": "Dívida e orçamento"
+      },
+      "quests": [
+        "arg-debt-2026",
+        "bra-bohn-replication",
+        "deficit-slowdown-debate"
+      ]
+    },
+    {
+      "id": "currency",
+      "title": {
+        "en": "Currencies",
+        "es": "Monedas",
+        "fr": "Monnaies",
+        "pt": "Moedas"
+      },
+      "quests": [
+        "brl-month-2027-01",
+        "zar-month-2027-01",
+        "jpy-positioning-4w-2027-01",
+        "egy-reserves-debate",
+        "credit-gap-crisis-signal"
+      ]
+    },
+    {
+      "id": "growth",
+      "title": {
+        "en": "Growth and jobs",
+        "es": "Crecimiento y empleo",
+        "fr": "Croissance et emploi",
+        "pt": "Crescimento e emprego"
+      },
+      "quests": [
+        "bra-growth-2026",
+        "ind-growth-2026",
+        "mex-unemployment-2026"
+      ]
+    },
+    {
+      "id": "trade",
+      "title": {
+        "en": "Trade and commodities",
+        "es": "Comercio y materias primas",
+        "fr": "Commerce et matières premières",
+        "pt": "Comércio e matérias-primas"
+      },
+      "quests": [
+        "bra-reserves-2026",
+        "ind-current-account-2026",
+        "sanctions-effect-debate"
+      ]
+    },
+    {
+      "id": "lower-income",
+      "title": {
+        "en": "Lower-income countries",
+        "es": "Países de ingreso bajo",
+        "fr": "Pays à faible revenu",
+        "pt": "Países de baixa renda"
+      },
+      "quests": [
+        "ken-inflation-2026",
+        "gha-debt-2026",
+        "zmb-external-debt-2026",
+        "lic-inflation-target-debate"
+      ]
+    }
+  ]
+}

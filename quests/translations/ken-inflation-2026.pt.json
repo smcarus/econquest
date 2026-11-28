@@ -1,0 +1,12 @@
+{
+  "quest": "ken-inflation-2026",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "A inflação do Quênia será menor em 2026 do que em 2025?",
+  "summary": "Informe a probabilidade de a inflação média ao consumidor do Quênia no WEO do FMI ser menor em 2026 do que em 2025, ambas conforme a primeira leitura a partir de 1º de maio de 2027 (depois do WEO de abril de 2027). Os preços de alimentos e combustíveis pesam muito nos preços ao consumidor do Quênia.",
+  "knownLimits": [
+    "O número de 2026 no WEO de abril de 2027 ainda é uma estimativa do FMI e pode ser revisado depois; vale a primeira leitura.",
+    "O Quênia precisa estar na sua lista de acompanhamento para o último número aparecer nesta página; o resultado é resolvido pela série publicada de qualquer forma."
+  ]
+}

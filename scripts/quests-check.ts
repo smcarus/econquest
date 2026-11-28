@@ -6,13 +6,14 @@
  *                                   quests/manifest.json (new files only; an existing entry is
  *                                   never changed, so an edited approved Quest still fails)
  *
- * Translations in quests/translations/ are checked too (src/utils/questTranslations.ts).
+ * Translations in quests/translations/ are checked too (src/utils/questTranslations.ts), and packs in
+ * quests/packs/ (src/utils/questPacks.ts).
  */
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { questSettlesOn, questHorizon, HORIZON_LABEL, type Quest } from '../src/utils/quests.ts';
 import { describeRule } from '../src/utils/questRules.ts';
-import { checkQuests, readManifest, readQuestFiles, readTranslationFiles, writeManifest } from '../src/utils/questStore.ts';
+import { checkQuests, readManifest, readQuestFiles, readPackFiles, readTranslationFiles, writeManifest } from '../src/utils/questStore.ts';
 
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'quests');
 
@@ -50,5 +51,13 @@ for (const t of translations) {
     for (const line of p) console.log(`     - ${line}`);
   } else console.log(`ok   ${t.rel}`);
 }
-console.log(result.ok ? `\n${result.files.length} Quest file(s) and ${translations.length} translation(s) pass.` : '\nQuest check failed.');
+const packs = readPackFiles(dir);
+for (const f of packs) {
+  const p = result.problems[f.rel];
+  if (p) {
+    console.log(`FAIL ${f.rel}`);
+    for (const line of p) console.log(`     - ${line}`);
+  } else console.log(`ok   ${f.rel}`);
+}
+console.log(result.ok ? `\n${result.files.length} Quest file(s), ${translations.length} translation(s) and ${packs.length} pack(s) pass.` : '\nQuest check failed.');
 process.exit(result.ok ? 0 : 1);

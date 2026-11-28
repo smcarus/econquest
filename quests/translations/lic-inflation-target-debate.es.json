@@ -1,0 +1,19 @@
+{
+  "quest": "lic-inflation-target-debate",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "¿A qué debe apuntar el banco central de un país de ingreso bajo: a la inflación o al tipo de cambio?",
+  "summary": "Argumente qué objetivo serviría mejor a países como Kenia, Ghana, Zambia y Uganda en los próximos años. Cite las cifras de la aplicación (inflación, tipo oficial, tipo de cambio, reservas, deuda externa) en cada afirmación; la Verificación de cifras marca las que no coinciden.",
+  "knownLimits": [
+    "Debate, no una señal probada: ninguna posición se califica como correcta o incorrecta.",
+    "Los tipos oficiales de estos países proceden de las cifras mensuales del FMI, no de los tipos diarios del BPI.",
+    "Añada los países a su lista de seguimiento para ver sus cifras."
+  ],
+  "positions": [
+    "Una meta de inflación con moneda flotante",
+    "Un tipo de cambio fijo o muy gestionado",
+    "Una paridad móvil o una banda",
+    "Metas para la cantidad de dinero en la economía"
+  ]
+}

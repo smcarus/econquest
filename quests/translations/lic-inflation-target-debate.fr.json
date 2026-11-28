@@ -1,0 +1,19 @@
+{
+  "quest": "lic-inflation-target-debate",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "Que doit viser la banque centrale d’un pays à faible revenu : l’inflation ou le taux de change ?",
+  "summary": "Défendez l’objectif qui servirait le mieux des pays comme le Kenya, le Ghana, la Zambie et l’Ouganda dans les prochaines années. Citez les chiffres de l’application (inflation, taux directeur, taux de change, réserves, dette extérieure) pour chaque affirmation ; la Vérification des chiffres signale ceux qui ne correspondent pas.",
+  "knownLimits": [
+    "Débat, pas un signal testé : aucune position n’est notée juste ou fausse.",
+    "Les taux directeurs de ces pays proviennent des chiffres mensuels du FMI, pas des taux quotidiens de la BRI.",
+    "Ajoutez ces pays à votre liste de suivi pour voir leurs chiffres."
+  ],
+  "positions": [
+    "Une cible d’inflation avec une monnaie flottante",
+    "Un taux de change fixe ou étroitement géré",
+    "Une parité glissante ou une bande",
+    "Des objectifs pour la quantité de monnaie dans l’économie"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "quest": "tur-inflation-2026",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "L’inflation de la Turquie sera-t-elle plus basse en 2026 qu’en 2025 ?",
+  "summary": "Indiquez la probabilité que l’inflation moyenne des prix à la consommation de la Turquie selon le WEO du FMI soit plus basse pour 2026 que pour 2025, les deux selon la première lecture à partir du 1er mai 2027 (après le WEO d’avril 2027).",
+  "knownLimits": [
+    "Le chiffre 2026 du WEO d’avril 2027 reste une estimation du FMI et peut être révisé plus tard ; la première lecture fait foi.",
+    "Il s’agit de la moyenne de l’année, pas de la variation de décembre à décembre."
+  ]
+}

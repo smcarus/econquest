@@ -9,6 +9,9 @@ export const QUESTS = defineMessages('quests', {
   ...OUTCOME_WORDS,
   fallbackNone: 'If the series has no value, the Quest is Unresolvable.',
   fallbackRule: 'If the series has no value: {rule}',
+  filterPack: 'Pack',
+  allQuests: 'All Quests',
+  practiceNow: 'Practice now',
   practiceQHigher: 'On {date}, {name} was {value} {unit}. What was the probability it would be higher on the first value published on or after {end}?',
   practiceQLower: 'On {date}, {name} was {value} {unit}. What was the probability it would be lower on the first value published on or after {end}?',
 

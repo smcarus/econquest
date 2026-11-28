@@ -1,0 +1,39 @@
+{
+  "id": "bra-growth-2026",
+  "version": 1,
+  "registeredOn": "2026-11-27",
+  "opensOn": "2026-12-01",
+  "author": "smcarus",
+  "type": "forecast",
+  "title": "Will Brazil's economy grow faster in 2026 than in 2025?",
+  "summary": "Give the probability that IMF WEO real GDP growth for Brazil is higher for 2026 than for 2025, both as first read on or after 1 May 2027 (after the April 2027 WEO).",
+  "countries": [
+    "BRA"
+  ],
+  "topics": [
+    "growth"
+  ],
+  "region": "Americas",
+  "closesOn": "2027-01-31",
+  "rule": {
+    "kind": "direction",
+    "ref": {
+      "country": "BRA",
+      "series": "gdp_growth"
+    },
+    "from": {
+      "period": "2025",
+      "on": "2027-05-01"
+    },
+    "to": {
+      "period": "2026",
+      "on": "2027-05-01"
+    },
+    "op": "higher"
+  },
+  "fallback": "unresolvable",
+  "knownLimits": [
+    "The 2026 figure in the April 2027 WEO is still an IMF estimate and may be revised later; the first reading stands.",
+    "A harvest that is unusually good or bad in either year moves the comparison a lot."
+  ]
+}

@@ -20,6 +20,7 @@ import { profileFileText, profilePath, stancesProblems, stanceWords, type Stance
 import { ARGUMENT_MIN } from '../utils/questEntries';
 import { questSeriesDef } from '../utils/questSeries';
 import { describeRule, RULE_WORDS, type QuestRule, type RuleWords } from '../utils/questRules';
+import { packText, type QuestPack } from '../utils/questPacks';
 import { questTextIn, questTitleIn, type QuestTranslationLang, type QuestText, type QuestTranslationMap } from '../utils/questTranslations';
 import { useLang, useT, useTx } from '../i18n/useLang';
 import { QUESTS } from '../i18n/messages/quests';
@@ -42,9 +43,10 @@ type Summary = {
   opensOn: string;
   closesOn: string;
   settlesOn: string;
+  practice?: boolean;
 };
 type Figure = { country: string; series: string; label: string; value?: number; date?: string; unit?: string; source?: string; missing?: string };
-type ListReply = { enabled: false; reason: string } | { enabled: true; quests: Summary[]; translations?: QuestTranslationMap };
+type ListReply = { enabled: false; reason: string } | { enabled: true; quests: Summary[]; translations?: QuestTranslationMap; packs?: QuestPack[] };
 type Detail = { enabled: true; quest: Quest; summary: Summary; file: string; rule?: string; fallback?: string; figures: Figure[]; result?: QuestResultState; translations?: Partial<Record<QuestTranslationLang, QuestText>>; brief?: { brief: DebateBrief; hashOk: boolean } | null; related?: EvidenceMap['related'] };
 
 const QUEST_TYPE_LIST: QuestType[] = ['forecast', 'signal', 'replication', 'debate'];
@@ -73,6 +75,7 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
   const [error, setError] = useState<string | null>(null);
   const [type, setType] = useState<QuestType | ''>('');
   const [horizon, setHorizon] = useState<QuestHorizon | ''>('');
+  const [packId, setPackId] = useState('');
   const [openId, setOpenId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
@@ -117,6 +120,20 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
 
   const field = 'px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white';
   const quests = list && list.enabled ? list.quests.filter((q) => (!type || q.type === type) && (!horizon || q.horizon === horizon)) : [];
+  const packs = (list && list.enabled && list.packs) || [];
+  const pack = packs.find((p) => p.id === packId);
+  const row = (q: Summary) => (
+    <li key={q.id}>
+      <button type="button" onClick={() => open(q.id)} className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800" data-quest-row={q.id}>
+        <div className="text-sm text-slate-900 dark:text-white">{questTextIn({ ...q, summary: '', knownLimits: [] }, shownLang, listTr).title}</div>
+        <div className="text-xs text-slate-500 dark:text-slate-400">
+          {t('rowMeta', { type: t(`type_${q.type}`), status: t(q.approved ? `status_${q.status}` : 'status_draft'), horizon: t(`h_${q.horizon}`), date: q.settlesOn })}
+          {q.tutorial ? ` · ${t('tutorial')}` : ''}
+          {q.practice ? ` · ${t('practiceNow')}` : ''}
+        </div>
+      </button>
+    </li>
+  );
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
@@ -164,6 +181,19 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
                 {t('intro')}
               </p>
               <div className="flex flex-wrap gap-2">
+                {packs.length > 0 && (
+                  <label className="text-xs inline-flex items-center gap-1">
+                    <span>{t('filterPack')}</span>
+                    <select className={field} value={packId} onChange={(e) => setPackId(e.target.value)} data-quests-pack>
+                      <option value="">{t('allQuests')}</option>
+                      {packs.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {packText(p.title, lang)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 <label className="text-xs inline-flex items-center gap-1">
                   <span>{t('filterType')}</span>
                   <select className={field} value={type} onChange={(e) => setType(e.target.value as QuestType | '')} data-quests-type>
@@ -187,23 +217,26 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
                   </select>
                 </label>
               </div>
-              {quests.length === 0 ? (
-                <p className="text-sm text-slate-500 dark:text-slate-400">{t('noMatch')}</p>
-              ) : (
-                <ul className="divide-y divide-slate-200 dark:divide-slate-800 border border-slate-200 dark:border-slate-800">
-                  {quests.map((q) => (
-                    <li key={q.id}>
-                      <button type="button" onClick={() => open(q.id)} className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800" data-quest-row={q.id}>
-                        <div className="text-sm text-slate-900 dark:text-white">{questTextIn({ ...q, summary: '', knownLimits: [] }, shownLang, listTr).title}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
-                          {t('rowMeta', { type: t(`type_${q.type}`), status: t(q.approved ? `status_${q.status}` : 'status_draft'), horizon: t(`h_${q.horizon}`), date: q.settlesOn })}
-                          {q.tutorial ? ` · ${t('tutorial')}` : ''}
-                        </div>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+              {pack && (
+                <div className="space-y-3" data-quest-pack={pack.id}>
+                  <p className="text-sm">{packText(pack.summary, lang)}</p>
+                  {pack.groups.map((g) => {
+                    const inGroup = g.quests.map((id) => quests.find((q) => q.id === id)).filter((q): q is Summary => Boolean(q));
+                    return inGroup.length ? (
+                      <div key={g.id} className="space-y-1" data-quest-pack-group={g.id}>
+                        <h3 className="text-xs font-medium text-slate-600 dark:text-slate-300">{packText(g.title, lang)}</h3>
+                        <ul className="divide-y divide-slate-200 dark:divide-slate-800 border border-slate-200 dark:border-slate-800">{inGroup.map(row)}</ul>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
               )}
+              {!pack &&
+                (quests.length === 0 ? (
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{t('noMatch')}</p>
+                ) : (
+                  <ul className="divide-y divide-slate-200 dark:divide-slate-800 border border-slate-200 dark:border-slate-800">{quests.map(row)}</ul>
+                ))}
             </>
           )}
           {openId && (

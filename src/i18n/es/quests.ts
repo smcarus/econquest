@@ -330,4 +330,7 @@ export const QUESTS_ES: Messages<typeof QUESTS> = {
   fallbackRule: 'Si la serie no tiene valor: {rule}',
   practiceQHigher: 'El {date}, {name} era {value} {unit}. ¿Qué probabilidad había de que fuera mayor en el primer valor publicado a partir del {end}?',
   practiceQLower: 'El {date}, {name} era {value} {unit}. ¿Qué probabilidad había de que fuera menor en el primer valor publicado a partir del {end}?',
+  filterPack: 'Paquete',
+  allQuests: 'Todos los retos',
+  practiceNow: 'Practique ya',
 };

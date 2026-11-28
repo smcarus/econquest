@@ -1,0 +1,19 @@
+{
+  "quest": "lic-inflation-target-debate",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "O que o banco central de um país de baixa renda deve mirar: a inflação ou a taxa de câmbio?",
+  "summary": "Defenda qual objetivo serviria melhor a países como Quênia, Gana, Zâmbia e Uganda nos próximos anos. Cite os números do aplicativo (inflação, taxa básica, taxa de câmbio, reservas, dívida externa) em cada afirmação; a Verificação de números marca os que não conferem.",
+  "knownLimits": [
+    "Debate, não um sinal testado: nenhuma posição é pontuada como certa ou errada.",
+    "As taxas básicas desses países vêm dos números mensais do FMI, não das taxas diárias do BIS.",
+    "Adicione os países à sua lista de acompanhamento para ver os números deles."
+  ],
+  "positions": [
+    "Uma meta de inflação com câmbio flutuante",
+    "Uma taxa de câmbio fixa ou muito administrada",
+    "Uma banda ou um câmbio com desvalorização gradual",
+    "Metas para a quantidade de dinheiro na economia"
+  ]
+}

@@ -56,7 +56,7 @@ import type { SeriesSet } from '../../utils/seriesHistory';
 import { questHorizon, questSeriesRefs, questSettlesOn, questStatus, questsEnabled, QUESTS_OFF_REASON, HORIZON_LABEL, type DebateQuest, type ForecastQuest, type Quest } from '../../utils/quests';
 import { describeRule, type QuestSeriesRef as QuestSeriesRefLike } from '../../utils/questRules';
 import { questSeriesDef } from '../../utils/questSeries';
-import { loadQuests, loadTranslations } from '../../utils/questStore';
+import { loadPacks, loadQuests, loadTranslations } from '../../utils/questStore';
 import { translationKey } from '../../utils/questTranslations';
 import { answerFor, classTable, countedEntries, entryProblems, replicationScore, practiceWindow, scoreEntry, scorePractice, type QuestEntry, type QuestEntryInput } from '../../utils/questEntries';
 import { appendEntry, entryFilePath, loadEntries } from '../../utils/questEntryStore';
@@ -147,6 +147,8 @@ function summary(q: Quest, approved: boolean, today: string) {
     opensOn: q.opensOn,
     closesOn: q.closesOn,
     settlesOn: questSettlesOn(q),
+    /** Can be practised on past data now (a daily or weekly series, higher or lower after close). */
+    practice: q.type === 'forecast' && q.rule.kind === 'direction' && q.rule.from === 'closesOn' && questSeriesDef(q.rule.ref.series)?.freq !== 'annual',
   };
 }
 
@@ -162,7 +164,7 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     const today = todayIso();
     const loaded = loadQuests(dir);
     const quests = loaded.map((x) => summary(x.quest, x.approved, today));
-    res.json({ enabled: true, quests, translations: loadTranslations(dir, loaded) });
+    res.json({ enabled: true, quests, translations: loadTranslations(dir, loaded), packs: loadPacks(dir, loaded) });
   });
 
   const entryFile = deps.entryFile ?? entryFilePath(DATA_DIR);

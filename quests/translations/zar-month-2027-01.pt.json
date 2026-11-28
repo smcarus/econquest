@@ -1,0 +1,11 @@
+{
+  "quest": "zar-month-2027-01",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "O rand sul-africano estará mais fraco frente ao dólar um mês depois do fechamento?",
+  "summary": "Informe a probabilidade de a quantidade de rands por dólar americano (taxas de referência do BCE cruzadas com o dólar) ser maior, ou seja, um rand mais fraco, cerca de um mês depois do fechamento das respostas do que no dia do fechamento. Você pode praticar antes esse tipo de pergunta com dados passados.",
+  "knownLimits": [
+    "O BCE não fixa taxas nos feriados do TARGET; usa-se a primeira fixação em ou depois de cada data."
+  ]
+}

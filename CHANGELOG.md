@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Quests (still switched off): a starter pack of 25 economic and policy problems by topic (Start
+  here, inflation and interest rates, debt and budgets, currencies, growth and jobs, trade and
+  commodities, lower-income countries), with 11 new draft Quests (Turkey and Kenya inflation, Ghana
+  debt, Zambia external debt, the rand, Brazil and India growth, Mexico unemployment, India's current
+  account, and debates on lower-income central banks and on deficits in a slowdown), all translated.
+  Packs live in `quests/packs/`, are checked by `npm run quests:check`, and show on Menu > Quests
+  under a Pack choice; Quests you can practise at once are marked "Practice now".
 - What this means for you (Menu > Learn): your own inflation rate from how your spending splits over
   the official price groups, against headline, and what a rate change does to your loan payment.
   Price groups from Eurostat HICP for EU members (COICOP 2018, 13 groups, else the older 12, with

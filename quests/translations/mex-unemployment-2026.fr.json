@@ -1,0 +1,12 @@
+{
+  "quest": "mex-unemployment-2026",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "Le taux de chômage du Mexique sera-t-il plus bas en 2026 qu’en 2025 ?",
+  "summary": "Indiquez la probabilité que le taux de chômage du Mexique selon le WEO du FMI soit plus bas pour 2026 que pour 2025, les deux selon la première lecture à partir du 1er mai 2027 (après le WEO d’avril 2027).",
+  "knownLimits": [
+    "Le chiffre 2026 du WEO d’avril 2027 reste une estimation du FMI et peut être révisé plus tard ; la première lecture fait foi.",
+    "Beaucoup de personnes au Mexique travaillent de manière informelle ; le taux de chômage ne montre pas combien occupent des emplois de mauvaise qualité."
+  ]
+}
