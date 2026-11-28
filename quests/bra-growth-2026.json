@@ -1,26 +1,25 @@
 {
-  "id": "arg-debt-2026",
+  "id": "bra-growth-2026",
   "version": 1,
-  "registeredOn": "2026-11-07",
+  "registeredOn": "2026-11-27",
   "opensOn": "2026-12-01",
   "author": "smcarus",
   "type": "forecast",
-  "title": "Will Argentina's government debt ratio fall in 2026?",
-  "summary": "Give the probability that IMF WEO general government gross debt for Argentina, in % of GDP, is lower for 2026 than for 2025, both as first read on or after 1 May 2027 (after the April 2027 WEO).",
+  "title": "Will Brazil's economy grow faster in 2026 than in 2025?",
+  "summary": "Give the probability that IMF WEO real GDP growth for Brazil is higher for 2026 than for 2025, both as first read on or after 1 May 2027 (after the April 2027 WEO).",
   "countries": [
-    "ARG"
+    "BRA"
   ],
   "topics": [
-    "debt",
-    "fiscal"
+    "growth"
   ],
   "region": "Americas",
   "closesOn": "2027-01-31",
   "rule": {
     "kind": "direction",
     "ref": {
-      "country": "ARG",
-      "series": "debt_gdp"
+      "country": "BRA",
+      "series": "gdp_growth"
     },
     "from": {
       "period": "2025",
@@ -30,11 +29,12 @@
       "period": "2026",
       "on": "2027-05-01"
     },
-    "op": "lower"
+    "op": "higher"
   },
   "fallback": "unresolvable",
   "knownLimits": [
     "The 2026 figure in the April 2027 WEO is still an IMF estimate and may be revised later; the first reading stands.",
-    "A large peso move changes the ratio through foreign-currency debt as much as through the budget."
-  ]
+    "A harvest that is unusually good or bad in either year moves the comparison a lot."
+  ],
+  "approvedBy": "smcarus"
 }

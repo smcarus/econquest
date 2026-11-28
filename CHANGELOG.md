@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Quests: all 118 Quests on file are approved (the starter pack, the Bohn replication and the
+  spring 2027 term). Drafts now take private entries no longer, under the existing rule. Tests
+  build their own draft fixtures instead of relying on which Quests are approved.
 - Quests: `npm run quests:generate` takes `--from` (draft a later term) and `--kinds` (brent,
   brent-long, fx, policy), and writes Spanish, French and Portuguese text beside each draft. 93
   drafts for a January to May 2027 term are on file: weekly and four-week Brent Quests and monthly

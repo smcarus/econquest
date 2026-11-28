@@ -1,25 +1,26 @@
 {
-  "id": "mex-unemployment-2026",
+  "id": "arg-debt-2026",
   "version": 1,
-  "registeredOn": "2026-11-27",
+  "registeredOn": "2026-11-07",
   "opensOn": "2026-12-01",
   "author": "smcarus",
   "type": "forecast",
-  "title": "Will Mexico's unemployment rate be lower in 2026 than in 2025?",
-  "summary": "Give the probability that the IMF WEO unemployment rate for Mexico is lower for 2026 than for 2025, both as first read on or after 1 May 2027 (after the April 2027 WEO).",
+  "title": "Will Argentina's government debt ratio fall in 2026?",
+  "summary": "Give the probability that IMF WEO general government gross debt for Argentina, in % of GDP, is lower for 2026 than for 2025, both as first read on or after 1 May 2027 (after the April 2027 WEO).",
   "countries": [
-    "MEX"
+    "ARG"
   ],
   "topics": [
-    "growth"
+    "debt",
+    "fiscal"
   ],
   "region": "Americas",
   "closesOn": "2027-01-31",
   "rule": {
     "kind": "direction",
     "ref": {
-      "country": "MEX",
-      "series": "unemployment"
+      "country": "ARG",
+      "series": "debt_gdp"
     },
     "from": {
       "period": "2025",
@@ -34,6 +35,7 @@
   "fallback": "unresolvable",
   "knownLimits": [
     "The 2026 figure in the April 2027 WEO is still an IMF estimate and may be revised later; the first reading stands.",
-    "Many people in Mexico work informally; the unemployment rate does not show how many are in poor-quality jobs."
-  ]
+    "A large peso move changes the ratio through foreign-currency debt as much as through the budget."
+  ],
+  "approvedBy": "smcarus"
 }

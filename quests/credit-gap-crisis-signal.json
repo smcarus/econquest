@@ -20,5 +20,6 @@
   "settlesOn": "2027-04-30",
   "knownLimits": [
     "Each proposed test is run once after it is merged and joins the family of tests corrected for multiple testing; a failed test is recorded and never re-tuned."
-  ]
+  ],
+  "approvedBy": "smcarus"
 }

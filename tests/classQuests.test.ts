@@ -12,6 +12,7 @@ import { questProblems, type ForecastQuest } from '../src/utils/quests';
 import { registerClassRoutes } from '../src/server/routes/classes';
 import { requiredRole } from '../src/utils/permissions';
 import type { Account, Role } from '../src/utils/auth';
+import { repoQuest } from './repoQuest';
 
 test('levels: a Quest’s own level wins over the map; the repo map names only Quests on file', () => {
   assert.equal(questLevel({ id: 'a', level: 'advanced' }, { a: 'intro' }), 'advanced');
@@ -28,7 +29,7 @@ test('levels: a Quest’s own level wins over the map; the repo map names only Q
 test('checkLevels lists a Quest with no level and reads quests/levels.json', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'levels-'));
   fs.mkdirSync(path.join(dir, 'drafts'));
-  const brent = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'quests', 'drafts', 'tutorial-brent-week.json'), 'utf8'));
+  const brent = repoQuest('tutorial-brent-week.json');
   fs.writeFileSync(path.join(dir, 'drafts', 'tutorial-brent-week.json'), JSON.stringify(brent));
   assert.match(checkLevels(dir).levels[0], /^tutorial-brent-week: no level/);
   fs.writeFileSync(path.join(dir, 'levels.json'), JSON.stringify({ levels: { 'tutorial-brent-week': 'intro' } }));

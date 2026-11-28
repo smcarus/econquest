@@ -45,5 +45,6 @@
   "knownLimits": [
     "EIA publishes daily spot prices with a lag of a few days; the Quest settles when the value for the date is out.",
     "If Brent is missing, WTI decides the Quest instead."
-  ]
+  ],
+  "approvedBy": "smcarus"
 }

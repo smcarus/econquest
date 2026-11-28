@@ -1,24 +1,24 @@
 {
-  "id": "usa-policy-2027h1",
+  "id": "tur-policy-2027h1",
   "version": 1,
   "registeredOn": "2026-11-07",
   "opensOn": "2026-12-01",
   "author": "smcarus",
   "type": "forecast",
-  "title": "Will the US policy rate be lower on 30 June 2027 than when entries close?",
-  "summary": "Give the probability that the BIS daily policy rate for the United States (the federal funds target) on 30 June 2027 is below its value on the day entries close.",
+  "title": "Will Turkey's policy rate be lower on 30 June 2027 than when entries close?",
+  "summary": "Give the probability that the BIS daily policy rate for Turkey on 30 June 2027 is below its value on the day entries close.",
   "countries": [
-    "USA"
+    "TUR"
   ],
   "topics": [
     "monetary"
   ],
-  "region": "Americas",
+  "region": "EMEA",
   "closesOn": "2026-12-31",
   "rule": {
     "kind": "direction",
     "ref": {
-      "country": "USA",
+      "country": "TUR",
       "series": "policy_rate"
     },
     "from": "closesOn",
@@ -29,7 +29,7 @@
   },
   "fallback": "unresolvable",
   "knownLimits": [
-    "BIS reports the midpoint of the target range for the United States.",
     "BIS daily data can lag a decision by a few days."
-  ]
+  ],
+  "approvedBy": "smcarus"
 }

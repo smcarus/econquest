@@ -30,5 +30,6 @@
   "fallback": "unresolvable",
   "knownLimits": [
     "The ECB does not fix on TARGET holidays; the first fixing on or after each date is used."
-  ]
+  ],
+  "approvedBy": "smcarus"
 }

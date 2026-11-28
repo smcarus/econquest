@@ -27,5 +27,6 @@
   "knownLimits": [
     "Debate, not a tested signal.",
     "Official data for sanctioned countries are sparse and sometimes withheld; say when a figure is Missing."
-  ]
+  ],
+  "approvedBy": "smcarus"
 }

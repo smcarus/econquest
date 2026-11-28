@@ -11,8 +11,9 @@ import { loadQuests, readQuestFiles, writeManifest } from '../src/utils/questSto
 import { questsRepo, registerQuestRoutes } from '../src/server/routes/quests';
 import type { ForecastQuest } from '../src/utils/quests';
 import type { SeriesSet } from '../src/utils/seriesHistory';
+import { repoQuest } from './repoQuest';
 
-const brent: ForecastQuest = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'quests', 'drafts', 'tutorial-brent-week.json'), 'utf8'));
+const brent: ForecastQuest = repoQuest('tutorial-brent-week.json');
 const quest = { ...brent, registeredOn: '2026-11-01', opensOn: '2026-11-02', closesOn: '2026-12-11', approvedBy: 'smcarus' } as ForecastQuest;
 const HASH = 'a'.repeat(64);
 const qFor = (id: string) => (id === quest.id ? { quest, hash: HASH, approved: true } : undefined);

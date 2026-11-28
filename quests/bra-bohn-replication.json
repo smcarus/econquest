@@ -23,5 +23,6 @@
   "knownLimits": [
     "The IMF revises its history each WEO edition; use the vintage the app states and say which you used.",
     "A script that shows the app is wrong also solves the Quest."
-  ]
+  ],
+  "approvedBy": "smcarus"
 }

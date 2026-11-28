@@ -28,5 +28,6 @@
   "fallback": "unresolvable",
   "knownLimits": [
     "BIS daily data can lag a decision by a few days."
-  ]
+  ],
+  "approvedBy": "smcarus"
 }
