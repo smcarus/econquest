@@ -1337,7 +1337,7 @@ hold no figures of their own; the handout reads them from the app's series when 
     "no change" for a number). Your results are kept on this computer.
   - *Classes* (only when the administrator turns classes on in *Menu > Settings > Quests and classes*
     or with `CLASSES_ENABLED=on`, and only with
-    sign-in): join a class with the code your teacher gives you, or, with an Analyst or Admin account,
+    sign-in, which starts when the first administrator account is made in *Menu > Account*): join a class with the code your teacher gives you, or, with an Analyst or Admin account,
     make a class for a term. The teacher sees the join code, adds markers and students, makes student
     accounts from nicknames (each password is shown once) and archives the class. Students see the
     class, its term and who teaches it, not the other students.
@@ -1560,9 +1560,12 @@ hold no figures of their own; the handout reads them from the app's series when 
   reads *Changed after sign-off* until reviewed again. While you are the only user the approval says
   "self-approved, no second reviewer". An approved report cannot be deleted until the approval is
   withdrawn. Steps are kept in `data/local/signoffs.json` and in the audit log.
-- **Account**: with sign-in off it says so and how to turn it on (`docs/HOME_SERVER.md`); with
-  sign-in on it shows your name, user name and role (admin, analyst or viewer), sign-out and a
-  password change. If the server is set
+- **Account**: with sign-in off it says so and, on the computer running the app, offers to make the
+  first administrator account; from then on everyone signs in (`docs/HOME_SERVER.md`). Classes need
+  this account. A password must be at least 12 characters (a short sentence is easiest to remember),
+  may not contain the user name and must use at least 5 different characters. With sign-in on it
+  shows your name, user name and role (admin, analyst or viewer), sign-out and a password change
+  (changing it signs you out in every other browser). If the server is set
   up for single sign-on, the sign-in page shows *Sign in with* and the provider's name (Google,
   Microsoft, Okta, Keycloak or another OpenID Connect provider) above the password form, and such users
   are listed with their email and have no password in the app (`docs/SECURITY.md`).

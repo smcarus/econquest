@@ -35,7 +35,9 @@ with the project, and no fee.
 ## Accounts and sign-in
 
 `npm run class:setup` turns classes on (`CLASSES_ENABLED=on` in `.env`) and opens the app to the
-network (`HOST=0.0.0.0`). From then on everyone must sign in. The professor holds the administrator
+network (`HOST=0.0.0.0`). From then on everyone must sign in. An administrator can also switch
+classes on or off in Menu > Settings > Quests and classes, with no restart; that choice is kept in
+`data/local/features.json`, wins over `.env` and is written to the audit log. The professor holds the administrator
 account and makes student accounts from nicknames; students can also join a class with a code.
 Accounts are local to that computer: passwords are stored only as salted scrypt hashes, sessions
 end after 12 hours without use, and sign-in through the school's own OpenID Connect provider

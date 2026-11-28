@@ -1,6 +1,6 @@
 # How EconQuest works, in plain words
 
-**Version 1.11, 27 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
+**Version 1.12, 28 November 2026.** Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not
 validated advice.
 
 This guide explains, without jargon, where EconQuest's figures come from, what its AI does and does
@@ -32,7 +32,7 @@ Any term you don't know is explained in the [Glossary](./GLOSSARY.md).
 15. [Tools for the people who run and judge policy](#15-tools-for-the-people-who-run-and-judge-policy)
 16. [Newer forecasting methods, and how they did](#16-newer-forecasting-methods-and-how-they-did)
 17. [When a source does not answer, and what leaves your computer](#17-when-a-source-does-not-answer-and-what-leaves-your-computer)
-18. [Quests: coming later](#18-quests-coming-later)
+18. [Quests: questions you answer, and classes](#18-quests-questions-you-answer-and-classes)
 19. [How much the app explains](#19-how-much-the-app-explains)
 20. [What it cannot do](#20-what-it-cannot-do)
 
@@ -605,19 +605,37 @@ for each control, and when the computer's "reduce motion" setting is on, nothing
 spins. Each change is checked against the WCAG 2.2 accessibility guidelines; what still does not work
 is listed in [ACCESSIBILITY.md](./ACCESSIBILITY.md).
 
-## 18. Quests: coming later
+## 18. Quests: questions you answer, and classes
 
-Quests are built but **switched off**: you can't use them yet. When they go live, a Quest will be an
-open question that anyone can answer, for example "Will Brazil's policy rate be above 14% on 31
-March?". Each one states in advance exactly which official figure will settle it. When the date comes,
-the app reads that figure and records the result in a file where any later change would show. People's
-forecasts are scored on how much better they did than the simplest guess, and nobody is ranked until
-they have at least twelve settled forecasts.
+Quests are built and tested, but **switched off for everyone** until the project goes public. You can
+turn them on for your own copy in Menu > Settings > Quests and classes; nothing is sent anywhere
+until you choose to enter in public.
+
+A Quest is an open question that anyone can answer, for example "Will Brazil's policy rate be lower
+on 31 March?". Each one states in advance exactly which official figure will settle it. When the date
+comes, the app reads that figure and records the result in a file where any later change would show.
+People's forecasts are scored on how much better they did than the simplest guess (how often the thing
+happened before, or "nothing changes"), and nobody is ranked until they have at least twelve settled
+forecasts.
+
+Real questions take weeks to settle, so there are ways to practise now. *Practise on the past* asks
+the same kind of question about an earlier period with the answer hidden, and scores you at once.
+*Replays* are packs of past questions for the first weeks of a course. A Starter pack of 25 problems,
+grouped by topic and marked intro, intermediate or advanced, is the place to begin. One Quest asks you
+to reproduce a published study, Bohn's 1998 test of whether a government's budget responds to its
+debt, for Brazil, with your own R, Python or Stata script; the app gives the data and a starting script
+that only loads it, so the working is yours.
 
 Some questions have no single right answer ("What would most reliably rebuild Egypt's foreign
 reserves?"). These are **Debate Quests**: people argue a position, the app checks every figure they
 quote against its own, and nobody is ever scored or declared right. An AI model writes a short opening
 brief on each side; it is labelled as AI-written and is not allowed to state any figure of its own.
+
+**Classes.** A teacher can run Quests with a class on one computer that students open in their
+browser. Classes need sign-in, because each person has a role (teacher, marker or student), so the
+teacher first makes an administrator account, then switches Classes on. The teacher sets Quests with a
+due time, writes feedback and downloads a gradebook. The app scores forecasts by the same fixed rule as
+everywhere else; it never grades students. Marks are the teacher's.
 
 ## 19. How much the app explains
 
@@ -671,5 +689,5 @@ other.
 
 ---
 
-*How EconQuest works, version 1.11 (27 November 2026). Text licensed under CC BY 4.0: you may share and
+*How EconQuest works, version 1.12 (28 November 2026). Text licensed under CC BY 4.0: you may share and
 adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*

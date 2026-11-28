@@ -480,7 +480,7 @@ Qué modelo conviene a cada ordenador y los ajustes que usa la aplicación está
 
 ## 9. Herramientas, comprobación de datos y el menú
 
-![Menú abierto en tres grupos: Configurar (Configuración con IA: sin configurar, Cuenta, Datos sin conexión, Sus datos, Modo para compartir, Modo examen, Buscar datos), Revisar los datos (Estado de los datos, Modelos y validación, Registro de auditoría, Diario de ideas) y Aprender (Manual de usuario, Ejemplos resueltos, Acerca de y licencias de datos, Informar de un problema, Retos en gris)](images/16-menu.png)
+![Menú abierto en tres grupos: Configurar (Configuración con IA: sin configurar, Cuenta, Datos sin conexión, Sus datos, Modo para compartir, Modo examen, Buscar datos), Revisar los datos (Estado de los datos, Modelos y validación, Registro de auditoría, Diario de ideas) y Aprender (Qué significa para usted, Manual de usuario, Ejemplos resueltos, Acerca de y licencias de datos, Informar de un problema, Retos en gris)](images/16-menu.png)
 
 El **Menú** reúne todo lo que no es una página, en tres grupos después de **Herramientas**:
 *Configurar*, *Revisar los datos* y *Aprender*. Lo primero que conviene conocer:
@@ -534,7 +534,10 @@ El **Menú** reúne todo lo que no es una página, en tres grupos después de **
 - **Atajos de teclado**: pulse **?** para ver la lista. **/** va al cuadro de pregunta del consejo,
   **Cmd+K** (Ctrl+K en Windows) busca en las herramientas, **Cmd+,** abre la configuración y **Esc**
   cierra una ventana. / y ? no hacen nada mientras escribe en un cuadro.
-- **Retos**: en gris, «Aún no disponible» ([sección 12](#12-probar-los-retos)).
+- **Retos**: en gris, «Aún no disponible», hasta que los active en **Configuración > Retos y clases**
+  ([sección 12](#12-probar-los-retos)).
+- **Cuenta**: cree aquí la primera cuenta de administrador cuando comparta la aplicación o dirija una
+  clase; a partir de entonces todos inician sesión.
 
 ![Menú > Herramientas: herramientas agrupadas por tarea y después Configurar, con Conexiones de datos y su recuento de fuentes](images/14-data-connections.png)
 
@@ -612,21 +615,67 @@ ordenador que ejecuta EconQuest debe permitirlo (`HOST="0.0.0.0"` y `ALLOWED_HOS
 
 ## 12. Probar los Retos
 
-![Ventana de Retos con QUESTS_ENABLED=on: pestañas Quests, My entries, Class table, Results, Scoreboard, Stances, Health, y una lista de Retos en borrador](images/18-quests.png)
+![Ventana de Retos: pestañas Retos, Repeticiones, Mis respuestas, Tabla de la clase, Resultados, Clasificación, Posturas, Estado, Mantenimiento, Clases y Entregar, con el Paquete de inicio elegido (captura en inglés)](images/18-quests.png)
 
-Los Retos están desactivados para todos hasta que se complete la lista de lanzamiento de
-[QUESTS.md](./QUESTS.md). Para probarlos en su ordenador:
+Los Retos son preguntas abiertas sobre economías que usted responde y comprueba con cifras reales,
+por ejemplo «¿Estará más baja la tasa de política monetaria de Brasil el 31 de marzo?». Están
+desactivados para todos hasta que se complete la lista de lanzamiento de [QUESTS.md](./QUESTS.md),
+pero puede activarlos en su propia copia cuando quiera:
 
-1. Abra **Menú > Configuración > Retos y clases** y elija *Activado* para los retos (sin reiniciar). O
-   añada `QUESTS_ENABLED=on` al archivo `.env` de su carpeta de EconQuest y reinicie la aplicación.
-2. Abra **Menú > Retos**. La ventana de Retos está en inglés por ahora. La lista muestra la pregunta de
-   cada Reto, su tipo (Forecast, Debate, Replication o Signal), si es un borrador y cuándo se espera su
-   resultado. Filtre por tipo o por fecha.
-3. Abra un Reto para ver su regla, las cifras en vivo con las que se resolverá y sus límites conocidos.
-4. **Log privately** guarda su respuesta solo en este ordenador; **Practice** responde a preguntas
-   pasadas y le puntúa al momento; **My entries** muestra lo que guardó y cómo puntuó.
-5. **Results**, **Scoreboard**, **Stances** y **Health** muestran los Retos resueltos, las estadísticas
-   de los participantes, las preguntas opcionales de postura económica y si el sistema funciona.
+1. Abra **Menú > Configuración > Retos y clases** y elija *Activado* para los retos. El cambio es
+   inmediato, sin reiniciar. (La forma anterior sigue funcionando: añada `QUESTS_ENABLED=on` al
+   archivo `.env` de su carpeta de EconQuest y reinicie.) Solo el ordenador donde se ejecuta la
+   aplicación, o un administrador cuando el inicio de sesión está activado, puede cambiarlo.
 
-Cuando los Retos sean públicos, **Enter publicly** le preparará una solicitud de cambios al repositorio
-público. La página Funciones y detalles explica [cómo funciona el juego](./FEATURES.es.md#retos-quests-soluciones-económicas-entre-muchos).
+   ![Configuración > Retos y clases: Activado, Desactivado o Seguir .env para los retos y para las clases (captura en inglés)](images/23-settings-quests.png)
+
+2. Abra **Menú > Retos**. La ventana está en español, inglés, francés y portugués, como el resto de
+   la aplicación. Cada fila muestra la pregunta, su tipo (Pronóstico, Debate, Replicación o Señal), su
+   nivel (inicial, intermedio o avanzado) y cuándo se espera su resultado. Filtre por tipo, nivel,
+   fecha o paquete.
+3. ¿Es nuevo en esto? Elija el **Paquete de inicio** en *Paquete*: 25 problemas agrupados por tema,
+   desde un tutorial breve sobre el petróleo Brent hasta inflación, deuda, monedas, empleo, comercio y
+   países de menores ingresos. Las filas marcadas *Practique ya* se pueden probar al momento con cifras
+   pasadas.
+4. Abra un Reto para leer su regla en palabras, la última cifra de cada serie con la que se resolverá
+   (o «Falta» con el motivo) y lo que no puede decirle.
+5. Responda de una de tres maneras:
+   - **Practicar con el pasado** le da un periodo pasado de la misma duración con la respuesta oculta
+     y le puntúa al momento. No se guarda nada.
+   - **Registrar en privado** guarda su pronóstico solo en este ordenador, sellado con una huella para
+     que no se pueda cambiar después. **Mis respuestas** lo muestra, con su puntuación cuando llegue el
+     resultado.
+   - **Participar en público** prepara una respuesta para el repositorio público. Necesita una cuenta
+     gratuita de GitHub y contará cuando los Retos sean públicos.
+6. Las **Repeticiones** son preguntas sobre el pasado en paquetes de cuatro semanas. Pulse *Intentar*,
+   responda y vea al momento lo que pasó y cómo le fue frente a la suposición más simple.
+7. **Resultados** muestra cada resultado registrado y comprueba que el registro no se ha cambiado. La
+   misma vista está junto al historial de resultados en **Menú > Modelos y validación**.
+   **Clasificación**, **Posturas** y **Estado** muestran las estadísticas de los participantes, las
+   preguntas opcionales de postura económica y si el sistema de Retos funciona.
+
+Los Retos también le llegan a usted: la página de un país y cada respuesta del chat del Consejo
+muestran hasta tres *Retos sobre este país*, y un enlace abre ese Reto.
+
+**Reproducir un estudio publicado.** El Reto de replicación *Reproduzca la estimación de reacción fiscal de
+Bohn para Brasil* le pide rehacer, con su propio programa, la estimación de la aplicación sobre cómo
+responde el presupuesto de Brasil a su deuda (Bohn, 1998). La página
+del Reto enlaza la descarga de datos, una guía en cuatro idiomas y programas de inicio para R, Python
+y Stata en `quests/replications/bohn/`. Los programas solo cargan los datos; el cálculo le toca a usted.
+
+**Dirigir una clase.** Un profesor puede usar los Retos con una clase en un solo ordenador que los
+estudiantes abren en su navegador. Las clases necesitan cuentas, para que cada persona tenga su propia
+función:
+
+1. En el ordenador donde se ejecuta la aplicación, abra **Menú > Cuenta** y cree la primera cuenta de
+   administrador. La contraseña debe tener al menos 12 caracteres (una frase corta es lo más fácil de
+   recordar) y no puede contener el nombre de usuario. A partir de entonces todos inician sesión.
+2. En **Menú > Configuración > Retos y clases**, elija *Activado* para las clases.
+3. En **Menú > Retos > Clases**, dé a la clase un nombre, una zona horaria y las fechas del curso y
+   pulse *Crear la clase*. La tarjeta de la clase muestra un código para unirse; pegue una lista de
+   apodos en *Crear cuentas de estudiante* para crear todas sus cuentas de una vez.
+
+`npm run class:setup` hace los pasos 1 y 2 con una sola orden y abre la aplicación a la red del
+centro. El curso completo, desde asignar Retos con hora de entrega hasta los comentarios, la tabla de
+la clase y el libro de calificaciones, está en la [guía para docentes](./TEACHING.es.md). La página
+Funciones y detalles explica [cómo funciona el juego](./FEATURES.es.md#retos-quests-soluciones-económicas-entre-muchos).

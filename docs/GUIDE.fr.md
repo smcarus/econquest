@@ -489,7 +489,7 @@ Quel modèle pour quel ordinateur, et les réglages utilisés par l'application,
 
 ## 9. Outils, vérification des données et menu
 
-![Menu ouvert en trois groupes : Configurer (Réglages avec IA : non configurée, Compte, Données hors ligne, Vos données, Mode partage, Mode examen, Chercher des données), Vérifier les données (État des données, Modèles et validation, Journal d'audit, Journal d'idées) et Apprendre (Manuel d'utilisation, Exemples guidés, À propos et licences des données, Signaler un problème, Quêtes grisé)](images/16-menu.png)
+![Menu ouvert en trois groupes : Configurer (Réglages avec IA : non configurée, Compte, Données hors ligne, Vos données, Mode partage, Mode examen, Chercher des données), Vérifier les données (État des données, Modèles et validation, Journal d'audit, Journal d'idées) et Apprendre (Ce que cela signifie pour vous, Manuel d'utilisation, Exemples guidés, À propos et licences des données, Signaler un problème, Quêtes grisé)](images/16-menu.png)
 
 Le **Menu** rassemble tout ce qui n'est pas une page, en trois groupes après **Outils** : *Configurer*,
 *Vérifier les données* et *Apprendre*. À connaître d'abord :
@@ -545,7 +545,10 @@ Le **Menu** rassemble tout ce qui n'est pas une page, en trois groupes après **
 - **Raccourcis clavier** : appuyez sur **?** pour la liste. **/** va à la zone de question du conseil,
   **Cmd+K** (Ctrl+K sous Windows) cherche dans les outils, **Cmd+,** ouvre les réglages et **Échap**
   ferme une fenêtre. / et ? ne font rien pendant que vous écrivez dans une zone.
-- **Quêtes** : grisé, « Pas encore disponible » ([section 12](#12-essayer-les-quêtes)).
+- **Quêtes** : grisé, « Pas encore disponible », tant que vous ne les activez pas dans **Réglages >
+  Quêtes et classes** ([section 12](#12-essayer-les-quêtes)).
+- **Compte** : créez ici le premier compte administrateur quand vous partagez l'application ou animez
+  une classe ; ensuite, tout le monde se connecte.
 
 ![Menu > Outils : outils regroupés par tâche, puis Configurer, avec Connexions de données et son nombre de sources](images/14-data-connections.png)
 
@@ -626,23 +629,69 @@ voir [HOME_SERVER.md](./HOME_SERVER.md), et activez d'abord la connexion par com
 
 ## 12. Essayer les Quêtes
 
-![Fenêtre des Quêtes avec QUESTS_ENABLED=on : onglets Quests, My entries, Class table, Results, Scoreboard, Stances, Health, et une liste de Quêtes en brouillon](images/18-quests.png)
+![Fenêtre des Quêtes : onglets Quêtes, Rejeux, Mes réponses, Tableau de la classe, Résultats, Classement, Positions, Santé, Maintenance, Classes et Remettre, avec le Pack de départ choisi (capture en anglais)](images/18-quests.png)
 
-Les Quêtes sont désactivées pour tous tant que la liste de lancement de [QUESTS.md](./QUESTS.md) n'est pas
-terminée. Pour les essayer sur votre ordinateur :
+Les Quêtes sont des questions ouvertes sur les économies, auxquelles vous répondez et que vous
+vérifiez avec des chiffres réels, par exemple « Le taux directeur du Brésil sera-t-il plus bas le
+31 mars ? ». Elles sont désactivées pour tous tant que la liste de lancement de [QUESTS.md](./QUESTS.md)
+n'est pas terminée, mais vous pouvez les activer sur votre propre copie quand vous voulez :
 
-1. Ouvrez **Menu > Réglages > Quêtes et classes** et choisissez *Activé* pour les quêtes (sans
-   redémarrer). Ou ajoutez `QUESTS_ENABLED=on` au fichier `.env` de votre dossier EconQuest et
-   redémarrez l'application.
-2. Ouvrez **Menu > Quêtes**. La fenêtre des Quêtes est en anglais pour l'instant. La liste montre la
-   question de chaque Quête, son type (Forecast, Debate, Replication ou Signal), si c'est un brouillon et
-   quand son résultat est attendu. Filtrez par type ou par date.
-3. Ouvrez une Quête pour voir sa règle, les chiffres en direct sur lesquels elle sera réglée et ses
-   limites connues.
-4. **Log privately** garde votre réponse sur cet ordinateur seulement ; **Practice** répond à des questions
-   passées et vous note tout de suite ; **My entries** liste ce que vous avez enregistré et votre score.
-5. **Results**, **Scoreboard**, **Stances** et **Health** montrent les Quêtes réglées, les statistiques
-   des participants, les questions facultatives de positionnement économique et si le système fonctionne.
+1. Ouvrez **Menu > Réglages > Quêtes et classes** et choisissez *Activé* pour les quêtes. Le
+   changement est immédiat, sans redémarrage. (L'ancienne méthode fonctionne toujours : ajoutez
+   `QUESTS_ENABLED=on` au fichier `.env` de votre dossier EconQuest et redémarrez.) Seul l'ordinateur
+   qui fait tourner l'application, ou un administrateur quand la connexion est activée, peut le changer.
 
-Quand les Quêtes seront publiques, **Enter publicly** préparera pour vous une demande de modification vers
-le dépôt public. La page Fonctions et détails explique [comment fonctionne le jeu](./FEATURES.fr.md#quêtes--des-solutions-économiques-à-plusieurs).
+   ![Réglages > Quêtes et classes : Activé, Désactivé ou Suivre .env pour les quêtes et pour les classes (capture en anglais)](images/23-settings-quests.png)
+
+2. Ouvrez **Menu > Quêtes**. La fenêtre est en français, en anglais, en espagnol et en portugais,
+   comme le reste de l'application. Chaque ligne montre la question, son type (Prévision, Débat,
+   Réplication ou Signal), son niveau (initiation, intermédiaire ou avancé) et la date attendue de son
+   résultat. Filtrez par type, niveau, date ou pack.
+3. Vous débutez ? Choisissez le **Pack de départ** sous *Pack* : 25 problèmes classés par thème, d'un
+   court tutoriel sur le pétrole Brent à l'inflation, la dette, les monnaies, l'emploi, le commerce et
+   les pays à faible revenu. Les lignes marquées *Entraînement possible* se font tout de suite sur des
+   chiffres passés.
+4. Ouvrez une Quête pour lire sa règle en mots, le dernier chiffre de chaque série sur laquelle elle
+   sera réglée (ou « Manquant » avec la raison) et ce qu'elle ne peut pas vous dire.
+5. Répondez de l'une de trois façons :
+   - **S'entraîner sur le passé** vous donne une période passée de même durée, réponse cachée, et vous
+     note tout de suite. Rien n'est enregistré.
+   - **Enregistrer en privé** garde votre prévision sur cet ordinateur seulement, scellée par une
+     empreinte pour qu'elle ne puisse plus être changée. **Mes réponses** l'affiche, avec son score une
+     fois le résultat connu.
+   - **Participer en public** prépare une réponse pour le dépôt public. Il faut un compte GitHub
+     gratuit, et elle comptera quand les Quêtes seront publiques.
+6. Les **Rejeux** sont des questions sur le passé, en packs de quatre semaines. Appuyez sur *Essayer*,
+   répondez et voyez tout de suite ce qui s'est passé et comment vous vous situez face à l'hypothèse la
+   plus simple.
+7. **Résultats** liste chaque résultat enregistré et vérifie que le registre n'a pas été modifié. La
+   même vue se trouve à côté du bilan des résultats dans **Menu > Modèles et validation**.
+   **Classement**, **Positions** et **Santé** montrent les statistiques des participants, les questions
+   facultatives de positionnement économique et si le système des Quêtes fonctionne.
+
+Les Quêtes viennent aussi à vous : la page d'un pays et chaque réponse du chat du Conseil montrent
+jusqu'à trois *Quêtes sur ce pays*, et un lien ouvre cette Quête.
+
+**Reproduire une étude publiée.** La Quête de réplication *Reproduisez l'estimation de réaction
+budgétaire de Bohn pour le Brésil* vous demande de refaire, avec votre propre programme, l'estimation
+de l'application sur la façon dont le budget du Brésil réagit à sa dette (Bohn, 1998). La page de la Quête renvoie au téléchargement des données, à un guide en quatre langues et à des
+programmes de départ pour R, Python et Stata dans `quests/replications/bohn/`. Les programmes ne font
+que charger les données ; le calcul vous revient.
+
+**Animer une classe.** Un enseignant peut utiliser les Quêtes avec une classe sur un seul ordinateur
+que les élèves ouvrent dans leur navigateur. Les classes demandent des comptes, pour que chacun ait
+son propre rôle :
+
+1. Sur l'ordinateur qui fait tourner l'application, ouvrez **Menu > Compte** et créez le premier compte
+   administrateur. Le mot de passe doit compter au moins 12 caractères (une courte phrase est le plus
+   facile à retenir) et ne peut pas contenir le nom d'utilisateur. Ensuite, tout le monde se connecte.
+2. Dans **Menu > Réglages > Quêtes et classes**, choisissez *Activé* pour les classes.
+3. Dans **Menu > Quêtes > Classes**, donnez à la classe un nom, un fuseau horaire et les dates du
+   trimestre, puis appuyez sur *Créer la classe*. La carte de la classe montre un code pour la
+   rejoindre ; collez une liste de pseudonymes sous *Créer des comptes étudiants* pour créer tous leurs
+   comptes d'un coup.
+
+`npm run class:setup` fait les étapes 1 et 2 en une seule commande et ouvre l'application au réseau de
+l'établissement. Le trimestre entier, de la pose de Quêtes avec une heure de remise aux commentaires,
+au tableau de la classe et au carnet de notes, est dans le [guide de l'enseignant](./TEACHING.fr.md).
+La page Fonctions et détails explique [comment fonctionne le jeu](./FEATURES.fr.md#quêtes--des-solutions-économiques-à-plusieurs).

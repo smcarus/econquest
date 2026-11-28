@@ -59,6 +59,13 @@ Use the last day of your term after `--until`. This:
 Then start the app as usual (`npm run go` on a Mac, `npm run dev` on any computer). Add
 `--local` to try it on your own computer first.
 
+Prefer not to use the command line? On the computer running the app, make your administrator account
+in **Menu > Account** (a password of at least 12 characters that does not contain your username),
+then choose *On* for Classes in **Menu > Settings > Quests and classes**. Both take effect at once.
+Students on other devices can reach the app only once it is open to the school network
+(`HOST="0.0.0.0"` in `.env`, see [HOME_SERVER.md](./HOME_SERVER.md)), which `npm run class:setup`
+does for you.
+
 ### 3. Make the class
 
 Sign in, open **Menu > Quests** and choose the **Classes** tab.
@@ -222,6 +229,7 @@ nothing that needs sideways scrolling at 320 pixels wide. See [ACCESSIBILITY.md]
 | What you see | What to do |
 | --- | --- |
 | Students cannot open the address | Check that the app is running and that the computer and students are on the same network. If the school Wi-Fi isolates devices, ask IT to allow port 3000 to this computer (see SCHOOL_IT.md). |
+| There is no Classes tab, or Menu > Quests is greyed out | Classes are switched off. An administrator chooses *On* for Classes in Menu > Settings > Quests and classes; no restart is needed. Classes also need sign-in: make the first administrator account in Menu > Account. |
 | A figure says Missing | The data source did not answer, or has not published yet. The reason is shown. The Quest settles once the figure arrives. |
 | A student forgot their password | An administrator resets it in Menu > Users; the new password is shown once. |
 | "Too many class requests" | A person pressed very quickly; wait a few seconds. |

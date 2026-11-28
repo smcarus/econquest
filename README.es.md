@@ -136,6 +136,9 @@ su ordenador.
   de tipos hace a la cuota de su préstamo, guardado solo en su navegador.
 - **Aprender sobre la marcha** con cuatro niveles de ayuda, un glosario en lenguaje claro y cinco
   ejemplos guiados.
+- **Practicar pronósticos con los Retos**: preguntas abiertas que se resuelven con cifras reales, un
+  paquete de inicio de 25 problemas y clases para docentes (se activan en Menú > Configuración > Retos
+  y clases).
 - **Usar las cifras en R, Python, Stata o Excel**, o conectar otro programa a la aplicación.
 
 Cada cifra, gráfico y prueba funciona sin ningún modelo de IA. La lista completa de tareas y
@@ -157,8 +160,8 @@ y los niveles de ayuda, las herramientas de clima y seguros, el uso en el teléf
 | ![Comparar países: pistas para la lista del G20](docs/images/10-compare.png) **Compare países.** Pistas y discrepancias entre mercados y datos. | ![Página Revisión de políticas con el formulario de nueva revisión](docs/images/12-policy-review.png) **Revise una política.** Del problema al memorando. |
 | ![Configuración > Modelo de IA con Ollama](docs/images/13-settings-ai.png) **Elija un modelo de IA.** Modelo rápido para las mesas, modelo grande para el árbitro. | ![Página de Investigación en español](docs/images/17-research-es.png) **Cambie de idioma.** Botón EN / ES / FR / PT en la cabecera. |
 
-Las capturas se tomaron el 24 de noviembre de 2026 (dos de la guía, Retos y Pares, son del 13 de
-noviembre) de una compilación local de la rama principal, que
+Las capturas se tomaron el 24 de noviembre de 2026 (el menú, Retos y Configuración > Retos y clases
+el 28 de noviembre; Pares el 13 de noviembre) de una compilación local de la rama principal, que
 reproducía respuestas de las fuentes grabadas el 5 de noviembre de 2026, solo de las fuentes cuyos
 términos permiten transmitir los datos. Por eso muchas cifras aparecen como «Falta»; en un ordenador que
 llega a las fuentes se rellenan más. La mayoría están en inglés; la última muestra la aplicación en

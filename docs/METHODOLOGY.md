@@ -1,6 +1,6 @@
 # EconQuest Terminal: Methodology
 
-**Version 1.12, 27 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of the main branch on 27 November 2026 (after release 0.3.0, through pull request #725, with What this means for you).
+**Version 1.13, 28 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of the main branch on 28 November 2026 (after release 0.3.0, through pull request #758, with Quests ready to try and Quests in the classroom).
 Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not validated advice.
 
 This document sets out how the EconQuest Terminal sources its data, how its council of agents
@@ -67,7 +67,7 @@ where the two seem to differ, this one governs.
 9. [Evidence grades](#9-evidence-grades)
 10. [The forward record](#10-the-forward-record)
 11. [Results on record](#11-results-on-record)
-12. [Quests (built, switched off)](#12-quests-built-switched-off)
+12. [Quests (built, off by default)](#12-quests-built-off-by-default)
 13. [Reproducibility](#13-reproducibility)
 14. [Limitations and what stays Missing](#14-limitations-and-what-stays-missing)
 15. [Changing the methodology](#15-changing-the-methodology)
@@ -1088,12 +1088,17 @@ from mostly advanced and large emerging economies may not carry over to smaller 
 The 59 low-income countries added to the lists on 25 November 2026 (section 3.3) are in no recorded
 test; a test that covers them needs a new pre-registration.
 
-## 12. Quests (built, switched off)
+## 12. Quests (built, off by default)
 
-**Status: built and tested, but switched off.** Quests are not available to users yet. The menu shows
-"Quests: Not yet available", greyed out, and they stay off until every item on the go-live checklist
-in [QUESTS.md](./QUESTS.md) is ticked. They are described here because their method is fixed in code
-and should be open to criticism before launch.
+**Status: built and tested, off by default.** Quests are not open to the public yet: they stay off for
+everyone until every item on the go-live checklist in [QUESTS.md](./QUESTS.md) is ticked. Whoever runs
+a copy can turn them on for that copy in Menu > Settings > Quests and classes (only the computer
+running the app, or an administrator when sign-in is on; the choice is kept in
+`data/local/features.json`, wins over `QUESTS_ENABLED` in `.env`, and is written to the audit log).
+While they are off, the menu item is greyed and every Quests route answers only that they are off.
+They are described here because their method is fixed in code and should be open to criticism before
+launch. As of 28 November 2026, 118 Quests are on file and all are approved, each with its text in
+English, Spanish, French and Brazilian Portuguese (the English is the rule).
 
 A Quest is an open question about an economy, a sovereign or geopolitical risk that anyone can answer,
 argue and check, for example "Will Brazil's policy rate be above 14% on 31 March?". Each Quest is one
@@ -1125,6 +1130,29 @@ advance exactly which feed and which value will settle it.
   the strongest case and the weakest point of each position. The script refuses any brief that states
   a number not already in the Quest, so no figure comes from a model. The brief is saved with its model
   and settings and never replaced.
+- **Practice is scored the same way, on what was known then.** *Practise on the past* and the
+  *Replays* packs (`quests/replays/`) pick a past start date with at least 30 weeks of history before
+  it, hide the outcome, and score the answer at once: a probability by its Brier score against the base
+  rate from windows that ended before the start date, a number by its error against "no change".
+  Practice is never counted on the scoreboard.
+- **Replication Quests give the data and no answer.** The Bohn (1998) fiscal reaction Quest for Brazil
+  ships a download of the rows the app used, a guide and R, Python and Stata starter scripts
+  (`quests/replications/bohn/`) that only load the data. An entry reproduces the app's coefficient if
+  it falls within the Quest's stated tolerance.
+- **Settled results are open to scripts.** `GET /api/quests/settled` and the CSV and Excel export give
+  one row per counted public entry with the recorded result and its score, read by the R, Python and
+  Stata helpers ([DATA_API.md](./DATA_API.md)); they answer only while Quests are on.
+- **Classes: the app scores, the teacher grades.** Classes have their own switch and need sign-in,
+  because each role (teacher, marker, student) belongs to an account. A class's entries are scored from
+  the same feeds and recorded results as every other Quest. The gradebook combines four parts out of
+  100 (participation, the share of assignments handed in; accuracy, 100 × (1 − average Brier score),
+  where always saying 50% gives 75; calibration, once a student has 10 settled probability answers; and
+  the teacher's and markers' own marks) with weights the teacher sets; a part with no figure yet shares
+  out its weight. Withdrawn or unresolvable Quests drop out of the marks, and Quests on a sensitive
+  topic never leave the class's copy. Sealed hand-in files for students on their own copy lock the
+  answer in the browser (AES-256-GCM, with the key sealed by the class's RSA-OAEP public key); the time
+  inside comes from the student's computer and the screen says so. Details: QUESTS.md, Classes, and
+  [TEACHING.md](./TEACHING.md).
 
 ## 13. Reproducibility
 
@@ -1341,8 +1369,9 @@ Per-model references are given in the [Methods note](./METHODS.md).
 | 1.10 | 27 November 2026 | What happened after (5.7): a country against a synthetic twin after a change it made, the changes found by rules, files and the user, placebo and other checks, the pooled view, the brief section and the pre-registered false-alarm test; references for synthetic control and devaluations |
 | 1.11 | 27 November 2026 | Paid data behind the user's own account (3.5): the data subscription with Macrobond, Trading Economics and EODHD, each off by default and used only with the user's own key; figures kept on the user's computer; CDS mappings refused while CDS is hidden |
 | 1.12 | 27 November 2026 | What this means for you (5.8): your own inflation rate from your split over the official price groups (Eurostat main groups and weights in one classification, food, energy and the rest elsewhere, IMF groups after a check), the gap to headline and its part that comes from the method, loan payments with your own rate change and the central bank's last move, and entries kept only in the browser; the limits of the personal rate (14) |
+| 1.13 | 28 November 2026 | Quests (12): the switch in Settings that turns Quests and Classes on for one copy, all 118 Quests approved and translated, practice and replays scored on what was known then, the Bohn replication with data and starter scripts only, settled results for scripts, and classes (roles, the gradebook's four parts, sealed hand-in files) |
 
 ---
 
-*EconQuest Terminal methodology, version 1.11 (27 November 2026). Text licensed under CC BY 4.0: you may
+*EconQuest Terminal methodology, version 1.13 (28 November 2026). Text licensed under CC BY 4.0: you may
 share and adapt it with credit to "EconQuest Terminal contributors". Research, not validated advice.*

@@ -138,6 +138,9 @@ choisir les séries voulues ; ces chiffres restent sur votre ordinateur.
   d'une variation des taux sur la mensualité de votre prêt, conservé uniquement dans votre navigateur.
 - **Apprendre en chemin** avec quatre niveaux d'aide, un glossaire en langage clair et cinq exemples
   guidés.
+- **S'exercer à la prévision avec les Quêtes** : des questions ouvertes réglées par des chiffres réels,
+  un pack de départ de 25 problèmes et des classes pour les enseignants (à activer dans Menu > Réglages
+  > Quêtes et classes).
 - **Utiliser les chiffres dans R, Python, Stata ou Excel**, ou y connecter un autre programme.
 
 Chaque chiffre, graphique et test fonctionne sans aucun modèle d'IA. La liste complète des tâches et
@@ -159,7 +162,8 @@ l'usage sur téléphone et l'essai des Quêtes.
 | ![Comparer des pays : pistes pour la liste du G20](docs/images/10-compare.png) **Comparez des pays.** Pistes et écarts entre marchés et données. | ![Page Revue de politique avec le formulaire de nouvelle revue](docs/images/12-policy-review.png) **Examinez une politique.** Du problème à la note. |
 | ![Réglages > Modèle d'IA avec Ollama](docs/images/13-settings-ai.png) **Choisissez un modèle d'IA.** Modèle rapide pour les bureaux, grand modèle pour l'arbitre. | ![Page Recherche en français](docs/images/17-research-fr.png) **Changez de langue.** Bouton EN / ES / FR / PT dans l'en-tête. |
 
-Les captures ont été prises le 24 novembre 2026 (deux du guide, Quêtes et Pairs, datent du 13 novembre)
+Les captures ont été prises le 24 novembre 2026 (le menu, les Quêtes et Réglages > Quêtes et classes
+le 28 novembre ; Pairs le 13 novembre)
 sur une version locale de la branche principale, qui
 rejouait des réponses enregistrées le 5 novembre 2026, uniquement des sources dont les conditions
 permettent de transmettre les données. C'est pourquoi beaucoup de chiffres s'affichent « Manquant » ; sur

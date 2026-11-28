@@ -135,6 +135,8 @@ seu computador.
   que uma mudança de juros faz com a parcela do seu empréstimo, guardado apenas no seu navegador.
 - **Aprender no caminho** com quatro níveis de ajuda, um glossário em linguagem simples e cinco
   exemplos guiados.
+- **Praticar previsões com as Quests**: perguntas abertas resolvidas com números reais, um pacote
+  inicial de 25 problemas e turmas para professores (ligue em Menu > Configurações > Quests e turmas).
 - **Usar os números em R, Python, Stata ou Excel**, ou conectar outro programa ao app.
 
 Cada número, gráfico e teste funciona sem nenhum modelo de IA. A lista completa de tarefas e
@@ -156,8 +158,8 @@ níveis de ajuda, as ferramentas de clima e seguros, uso no celular e como exper
 | ![Comparar países: pautas para a lista do G20](docs/images/10-compare.png) **Compare países.** Pautas e onde mercados e dados discordam. | ![Página Revisão de políticas com o formulário de nova revisão](docs/images/12-policy-review.png) **Revise uma política.** Do problema ao memorando. |
 | ![Configurações > Modelo de IA com Ollama](docs/images/13-settings-ai.png) **Escolha um modelo de IA.** Modelo rápido para as mesas, modelo grande para o árbitro. | ![Página de Pesquisa em português](docs/images/17-research-pt.png) **Troque o idioma.** Botão EN / ES / FR / PT no cabeçalho. |
 
-As capturas foram feitas em 24 de novembro de 2026 (duas do guia, Quests e Pares, são de 13 de
-novembro) a partir de uma compilação local do branch principal,
+As capturas foram feitas em 24 de novembro de 2026 (o menu, as Quests e Configurações > Quests e
+turmas em 28 de novembro; Pares em 13 de novembro) a partir de uma compilação local do branch principal,
 reproduzindo respostas gravadas em 5 de novembro de 2026, apenas das fontes cujos termos permitem repassar
 os dados. Por isso muitos números aparecem como "Ausente"; num computador que alcança as fontes, mais
 números são preenchidos. A maioria está em inglês; a última mostra o app em português.

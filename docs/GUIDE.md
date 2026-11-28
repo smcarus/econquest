@@ -445,7 +445,7 @@ Which model fits which computer, and the settings the app uses, are in Features 
 
 ## 9. Tools, data checks and the menu
 
-![Menu open in three groups: Set up (Settings with AI: not set, Account, Offline data, Your data, Sharing mode, Exam mode, Find data), Check the data (Data health, Models & validation, Audit log, Idea journal) and Learn (User manual, Worked examples, About & data licences, Report a problem, Quests greyed out)](images/16-menu.png)
+![Menu open in three groups: Set up (Settings with AI: not set, Account, Offline data, Your data, Sharing mode, Exam mode, Find data), Check the data (Data health, Models & validation, Audit log, Idea journal) and Learn (What this means for you, User manual, Worked examples, About & data licences, Report a problem, Quests greyed out)](images/16-menu.png)
 
 **Menu** holds everything that is not a page, in three groups after **Tools**: *Set up*, *Check the
 data* and *Learn*. Items worth knowing first:
@@ -494,7 +494,10 @@ data* and *Learn*. Items worth knowing first:
 - **Keyboard shortcuts**: press **?** for the list. **/** jumps to the council question box,
   **Cmd+K** (Ctrl+K on Windows) searches the tools, **Cmd+,** opens Settings and **Esc** closes a
   window. / and ? do nothing while you type in a box.
-- **Quests**: greyed out, "Not yet available" ([section 12](#12-try-quests)).
+- **Quests**: greyed out, "Not yet available", until you switch them on in **Settings > Quests and
+  classes** ([section 12](#12-try-quests)).
+- **Account**: make the first administrator account here when you share the app or run a class;
+  from then on everyone signs in.
 
 ![Menu > Tools: tools grouped by task, then Set up with Data connections and its source count](images/14-data-connections.png)
 
@@ -571,21 +574,63 @@ see [HOME_SERVER.md](./HOME_SERVER.md), and turn on sign-in first).
 
 ## 12. Try Quests
 
-![Quests window with QUESTS_ENABLED=on: tabs Quests, My entries, Class table, Results, Scoreboard, Stances, Health, and a list of draft Quests](images/18-quests.png)
+![Quests window: tabs Quests, Replays, My entries, Class table, Results, Scoreboard, Stances, Health, Maintainer, Classes and Hand in, with the Starter pack chosen](images/18-quests.png)
 
-Quests are switched off for everyone until the launch checklist in [QUESTS.md](./QUESTS.md) is done.
-To try them on your own computer:
+Quests are open questions about economies that you answer and check against real figures, for
+example "Will Brazil's policy rate be lower on 31 March?". They are switched off for everyone until
+the launch checklist in [QUESTS.md](./QUESTS.md) is done, but you can turn them on for your own copy
+at any time:
 
-1. Open **Menu > Settings > Quests and classes** and choose *On* for Quests (no restart). Or add
-   `QUESTS_ENABLED=on` to the `.env` file in your EconQuest folder and restart the app.
-2. Open **Menu > Quests**. The list shows each Quest's question, its kind (Forecast, Debate,
-   Replication or Signal), whether it is a draft, and when its result is due. Filter by kind or due
-   date.
-3. Open a Quest to see its rule, the live figures it will be settled on and its known limits.
-4. **Log privately** keeps your answer on this computer only; **Practice** answers past questions and
-   scores you at once; **My entries** lists what you logged and how it scored.
-5. **Results**, **Scoreboard**, **Stances** and **Health** show settled Quests, contributor
-   statistics, the optional economics stance questions and whether the Quest system is working.
+1. Open **Menu > Settings > Quests and classes** and choose *On* for Quests. It takes effect at
+   once, with no restart. (The old way still works: add `QUESTS_ENABLED=on` to the `.env` file in
+   your EconQuest folder and restart.) Only the computer running the app, or an administrator when
+   sign-in is on, can change this.
 
-When Quests go public, **Enter publicly** will prepare a pull request to the public repository for
-you. Features and details explains [how the game works](./FEATURES.md#quests-crowdsourcing-answers-to-economic-questions).
+   ![Settings > Quests and classes: On, Off or Follow .env for Quests and for Classes](images/23-settings-quests.png)
+
+2. Open **Menu > Quests**. The screen is in English, Spanish, French and Portuguese, like the rest
+   of the app. Each row shows the question, its kind (Forecast, Debate, Replication or Signal), its
+   level (intro, intermediate or advanced) and when its result is due. Filter by kind, level, due
+   date or pack.
+3. New to this? Choose the **Starter pack** under *Pack*: 25 problems grouped by topic, from a short
+   Brent oil tutorial to inflation, debt, currencies, jobs, trade and lower-income countries. Rows
+   marked *Practice now* can be tried at once on past figures.
+4. Open a Quest to read its rule in words, the latest figure of each series it will be settled on
+   (or Missing with the reason) and what it cannot tell you.
+5. Answer in one of three ways:
+   - **Practise on the past** gives you a past window of the same length with the answer hidden and
+     scores you at once. Nothing is saved.
+   - **Log privately** keeps your forecast on this computer only, locked with a fingerprint so it
+     cannot be changed later. **My entries** shows it, and its score once the result is in.
+   - **Enter publicly** prepares an entry for the public repository. It needs a free GitHub account
+     and will count once Quests go public.
+6. **Replays** are questions about the past in four-week packs. Press *Try*, answer, and see at once
+   what happened and how you did against the simple guess.
+7. **Results** lists every recorded result and checks that the record has not been changed. The same
+   view sits beside Track record in **Menu > Models & validation**. **Scoreboard**, **Stances** and
+   **Health** show contributor statistics, the optional economics stance questions and whether the
+   Quest system is working.
+
+Quests also come to you: a country page and each Council chat answer show up to three *Quests about
+this country*, and a link opens that Quest.
+
+**Reproduce a published study.** The Replication Quest *Reproduce the Bohn fiscal reaction estimate for
+Brazil* asks you to redo, with your own script, the app's estimate of how Brazil's budget responds to
+its debt (Bohn, 1998). The Quest page links
+to the data download, a guide in four languages and starter scripts for R, Python and Stata in
+`quests/replications/bohn/`. The scripts only load the data; the working is yours.
+
+**Run a class.** A teacher can run Quests with a class on one computer that students open in their
+browser. Classes need accounts, so that each person has their own role:
+
+1. On the computer running the app, open **Menu > Account** and make the first administrator
+   account. The password must be at least 12 characters (a short sentence is easiest) and may not
+   contain the username. From then on everyone signs in.
+2. In **Menu > Settings > Quests and classes**, choose *On* for Classes.
+3. In **Menu > Quests > Classes**, give the class a name, time zone and term dates and press *Make
+   the class*. The class card shows a join code; paste a list of nicknames under *Make student
+   accounts* to make their accounts at once.
+
+`npm run class:setup` does steps 1 and 2 in one command and opens the app to the school network.
+The full term, from setting Quests with due times to feedback, the class table and the gradebook, is
+in the [teacher guide](./TEACHING.md). Features and details explains [how the game works](./FEATURES.md#quests-crowdsourcing-answers-to-economic-questions).

@@ -37,6 +37,7 @@ qu'en anglais.
 | Rédiger un rapport | **Rapports** (onglets : Rédiger une note, Documents du conseil, Carnets, Enseignement) | Notes pays et émetteur, évaluations de soutenabilité, revues de portefeuille et synthèses du conseil, en Markdown ou PDF avec sources et dates |
 | Rédiger un document de travail | Graphiques du **Chat du conseil**, **Rapports > Carnets** | Épinglez un graphique dans un carnet de recherche avec la date jusqu'à laquelle vont ses chiffres et une empreinte des chiffres ; téléchargez le carnet en un seul zip (brouillon, données, scripts Python, R et Stata, fichier de citation) ; plus tard, *Vérifier que cela tient* dit si chaque chiffre est identique, révisé ou disparu |
 | Apprendre en chemin | Boutons de l'en-tête, **Menu > Manuel d'utilisation**, **Menu > Exemples guidés** | Quatre niveaux d'aide (Aide désactivée, Aide essentielle, Aide complète, Expert), un glossaire en langage clair, cinq cas guidés, des séquences pédagogiques et un mode examen |
+| S'exercer à la prévision, animer une classe | **Menu > Quêtes**, **Menu > Réglages > Quêtes et classes** | Des questions ouvertes réglées par des chiffres réels et notées face à l'hypothèse la plus simple, un Pack de départ de 25 problèmes, des rejeux de questions passées, une étude publiée à reproduire, et des classes avec heure de remise, commentaires et carnet de notes ([comment les essayer](./GUIDE.fr.md#12-essayer-les-quêtes), [guide de l'enseignant](./TEACHING.fr.md)). Désactivées tant que vous ne les activez pas |
 | Voir ce que cela signifie pour vous | **Menu > Ce que cela signifie pour vous** | Votre propre taux d'inflation selon la répartition de vos dépenses entre les groupes de prix officiels (en partant des pondérations officielles du panier quand la source les publie), face au taux d'ensemble, et l'effet d'une variation des taux sur la mensualité de votre prêt, y compris le dernier mouvement de la banque centrale pour un prêt à taux variable. Ce que vous saisissez reste uniquement dans votre navigateur |
 | Utiliser vos propres données et tests | **Menu > Vos données**, **Menu > Modèles et validation** | Chargez vos propres séries CSV ; enregistrez votre propre test de signal ou de modèle selon les mêmes règles strictes que ceux de l'application |
 | Utiliser les chiffres dans R, Python ou Stata | [docs/DATA_API.md](./DATA_API.md) (en anglais) | Les mêmes séries, panels et tableaux qu'à l'écran, avec source et date pour chaque valeur |
@@ -201,7 +202,7 @@ liste de [docs/QUESTS.md](./QUESTS.md) soit coché et que le projet soit public.
 votre ordinateur, activez-les dans Menu > Réglages > Quêtes et classes, ou ajoutez `QUESTS_ENABLED=on`
 à `.env` et redémarrez.
 
-![Menu > Quêtes avec QUESTS_ENABLED=on : liste de Quêtes en brouillon avec leur type et leur date de résultat](./images/18-quests.png)
+![Menu > Quêtes activées : le Pack de départ, avec le type, le niveau et la date de résultat de chaque Quête (capture en anglais)](./images/18-quests.png)
 
 **Ce qu'est une Quête.** Un fichier dans `quests/` avec une question et une règle écrite qui dit comment
 elle se règle à partir des sources de l'application. Il en existe quatre types :
@@ -237,12 +238,28 @@ elle se règle à partir des sources de l'application. Il en existe quatre types
   prévision ne se règlent que sur des sources dont les conditions permettent le partage avec attribution ;
   les questions sur les conflits, les troubles ou les victimes ne se posent qu'en Débats ; ni mises ni
   prix. Les Quêtes ne sont pas un marché de paris.
-- **En classe.** Les enseignants peuvent utiliser les Quêtes avec un code de classe et un tableau de
-  classe privé ; un pilote d'un semestre avec deux professeurs est prévu.
+- **Par où commencer.** Le Pack de départ réunit 25 problèmes par thème, d'un tutoriel sur le pétrole
+  Brent aux pays à faible revenu, chacun avec son niveau (initiation, intermédiaire ou avancé). Les
+  Rejeux sont des questions sur le passé en packs de quatre semaines, notées dès que vous répondez. La
+  Quête de réplication sur la réaction budgétaire de Bohn (1998) pour le Brésil est fournie avec un
+  téléchargement des données, un guide en quatre langues et des programmes de départ en R, Python et
+  Stata qui ne font que charger les données.
+- **Là où vous êtes déjà.** Les pages pays et les réponses du chat du Conseil renvoient à trois Quêtes
+  au plus sur ce pays, et les résultats enregistrés figurent à côté du bilan des résultats dans
+  Menu > Modèles et validation. Les chercheurs peuvent lire les prévisions réglées et leurs scores
+  depuis R, Python ou Stata ([DATA_API.md](./DATA_API.md)).
+- **En classe.** Avec les classes activées (Menu > Réglages > Quêtes et classes) et la connexion par
+  compte en place, un enseignant crée une classe avec un code pour la rejoindre, pose des Quêtes avec
+  une heure de remise dans le fuseau de la classe et une règle sur les outils d'IA, écrit des
+  commentaires, organise une relecture anonyme entre élèves sur les débats et télécharge un carnet de
+  notes pondéré. Les élèves qui travaillent sur leur propre copie remettent des fichiers scellés. Le
+  [guide de l'enseignant](./TEACHING.fr.md) suit un trimestre entier ; un pilote d'un semestre avec
+  deux professeurs est prévu.
 
-Quatorze Quêtes en brouillon se trouvent dans `quests/drafts/` ; aucune n'est encore approuvée. Les règles
-complètes, les étapes du responsable et la liste de lancement sont dans [docs/QUESTS.md](./QUESTS.md)
-(en anglais).
+118 Quêtes sont enregistrées, toutes approuvées : le Pack de départ, la réplication de Bohn, les débats
+et 93 Quêtes de prévision pour un trimestre de janvier à mai 2027, chacune en français, anglais,
+espagnol et portugais. Les règles complètes, les étapes du responsable et la liste de lancement sont
+dans [docs/QUESTS.md](./QUESTS.md) (en anglais).
 
 ---
 
@@ -301,7 +318,7 @@ La méthode complète est dans [docs/METHODOLOGY.md](./METHODOLOGY.md) (en angla
 
 ## Feuille de route
 
-Où en est le projet au 27 novembre 2026 (détail dans [docs/ROADMAP.md](./ROADMAP.md), en anglais) :
+Où en est le projet au 28 novembre 2026 (détail dans [docs/ROADMAP.md](./ROADMAP.md), en anglais) :
 
 **Fait**
 
@@ -439,6 +456,24 @@ Où en est le projet au 27 novembre 2026 (détail dans [docs/ROADMAP.md](./ROADM
     énergie et le reste ailleurs), face au taux d'ensemble, et l'effet d'une variation des taux sur la
     mensualité de votre prêt, fixe ou variable, avec le dernier mouvement de la banque centrale et sa
     date. Ce que vous saisissez reste uniquement dans votre navigateur.
+28. **Les Quêtes prêtes à essayer dans l'application** (27 et 28 novembre) : toute la fenêtre des
+    Quêtes et le texte de chaque Quête en espagnol, français et portugais ; un Pack de départ de 25
+    problèmes par thème ; le défi de réplication de Bohn (1998) avec téléchargement des données, guide
+    et programmes de départ en R, Python et Stata ; les prévisions réglées dans l'API de données pour
+    chercheurs ; les résultats à côté du bilan des résultats ; des liens depuis les pages pays et le
+    chat du Conseil ; un onglet Maintenance ; et les 118 Quêtes enregistrées approuvées, dont un
+    trimestre de janvier à mai 2027. Toujours désactivées pour tous jusqu'à la publication ; activez-les
+    sur votre propre copie dans Menu > Réglages > Quêtes et classes.
+29. **Les Quêtes en classe** (28 novembre) : des classes avec un code pour les rejoindre et des rôles
+    d'enseignant, de correcteur et d'élève ; une installation en une commande (`npm run class:setup`) ;
+    des Quêtes posées avec une heure de remise, une règle sur les outils d'IA et des délais
+    supplémentaires ; des Quêtes de classe écrites par l'enseignant, avec niveaux ; des rejeux et des
+    packs par trimestre ; des commentaires, une relecture anonyme entre élèves et une option pour les
+    sujets sensibles ; le tableau de la classe, des équipes et un rapport d'une page par élève ; un
+    carnet de notes pondéré ; des fichiers de remise scellés ; un contrôle d'accessibilité des écrans
+    de classe à la largeur d'un téléphone ; un test de charge pour 40 élèves ; et un guide de
+    l'enseignant en anglais, espagnol et français ([TEACHING.fr.md](./TEACHING.fr.md)). Les classes
+    demandent la connexion par compte ; activez-les dans Menu > Réglages > Quêtes et classes.
 
 **Ensuite**
 
@@ -455,8 +490,11 @@ Où en est le projet au 27 novembre 2026 (détail dans [docs/ROADMAP.md](./ROADM
 
 **En attente**
 
-- **Les Quêtes en classe** : le plan est complet (13 petites modifications, puis un pilote d’un semestre
-  avec deux professeurs) ; la construction commence quand le responsable du projet le décide.
+- **Les Quêtes en classe** : construites, sauf les liens avec la communauté sur GitHub, qui attendent
+  le dépôt public. Vient ensuite un pilote d’un semestre avec deux professeurs.
+- **Les Quêtes sur l'ordinateur du responsable** : `npm run quests:live-check` (les chiffres en direct
+  et l'entraînement de chaque Quête, le téléchargement de Bohn et ses programmes de départ) attend sa
+  première exécution là-bas.
 - **Arabe et swahili** : prévus, mis en pause par le responsable du projet.
 - **L’application mobile** : en pause jusqu’après la publication.
 - **Vérifications sur l’ordinateur du responsable** : certaines sources (météo, trajectoires des
