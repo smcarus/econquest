@@ -232,12 +232,14 @@ Stance profiles are left out: a person can remove their profile from the reposit
 
 ## Checklist before Quests are switched on
 
+Several boxes below are checked on the maintainer's computer. `npm run quests:live-check` does the first pass in one go: with the app running and `QUESTS_ENABLED=on`, it asks the app what every Quest page shows (drafts included), asks for a practice question on each Forecast Quest, downloads the Bohn rows for Brazil into `data/local/quests-check/` and runs the Python, R and Stata starters on them where they are installed. It writes nothing in `quests/` and logs no entry. Paste its output back to tick the boxes.
+
 Working properly:
 
 - [ ] `npm run quests:check` passes on every Quest file
 - [ ] At least 10 Quests approved by the maintainer, with real dates, moved from `quests/drafts/` to `quests/` and hashed (`npm run quests:generate` and `quests:approve` help)
 - [ ] Someone posts the weekly digest (`npm run quests:digest`) in Discussions, or a scheduled job does
-- [ ] Every approved Forecast Quest shows a live figure (or Missing with a reason) for each series it reads, checked on the maintainer's computer with all keys set
+- [ ] Every approved Forecast Quest shows a live figure (or Missing with a reason) for each series it reads, checked on the maintainer's computer with all keys set (`npm run quests:live-check`)
 - [ ] The resolver settles a past test Quest correctly from each source used (BIS, ECB, CFTC, EIA, IMF, World Bank), and a missing value gives Unresolvable
 - [ ] Entries can be made and are checked (opened before close, one per GitHub login): one test entry by pull request on the public repository passes, one after close fails
 - [ ] `QUESTS_REPO` set in `.env.example`, and on the public repository: Actions on, branch protection requiring the `Quest entries` check, the `QUESTS_MAINTAINERS` variable set
@@ -246,7 +248,7 @@ Working properly:
 - [ ] A test Signal Quest run with `npm run quests:run-tests` on the maintainer's computer, its verdicts checked against `npm run backtest` run on the same test files, and docs/TRACK_RECORD.md regenerated
 - [ ] An opening brief written with `npm run quests:brief` on the maintainer's computer for a test Debate Quest, read by the maintainer, and an evidence map exported after a test close
 - [x] Private entries on drafts are refused once Quests go live (built 28 November, the maintainer's choice: a draft takes private entries only until the first Quest is approved; after that only approved Quests do)
-- [ ] Practice questions checked on the maintainer's computer for every daily and weekly series
+- [ ] Practice questions checked on the maintainer's computer for every daily and weekly series (`npm run quests:live-check`)
 - [x] The UI journey tests cover the Quests page with Quests on and off (tests/smoke/journeys.mjs starts a second copy with QUESTS_ENABLED=on)
 - [ ] A test Quest of each kind settled with `npm run quests:resolve` on the maintainer's computer, and the record checked with `--verify`
 - [x] A Quests tab on Menu > Models & validation (beside Track record) shows the recorded results and the chain check

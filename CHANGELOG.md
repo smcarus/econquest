@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Quests (still switched off): `npm run quests:live-check` for the maintainer's computer: with the app
+  running, it lists what every Quest page shows (a live figure, or Missing with its reason), tries a
+  practice question on each Forecast Quest, and downloads the Bohn rows and runs the Python, R and
+  Stata starters on them where installed. It writes nothing in quests/.
 - Quests (still switched off): a Maintainer tab on Menu > Quests listing what needs doing now (file
   problems, a broken results record, results due, Signal tests to run, drafts ready to approve,
   missing translations), each with its command; administrators only when sign-in is on.
