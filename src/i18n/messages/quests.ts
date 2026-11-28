@@ -12,6 +12,9 @@ export const QUESTS = defineMessages('quests', {
   filterPack: 'Pack',
   allQuests: 'All Quests',
   practiceNow: 'Practice now',
+  linksCountry: 'Quests about this country:',
+  linksCouncil: 'Quests on this:',
+  linksAll: 'See all Quests',
   practiceQHigher: 'On {date}, {name} was {value} {unit}. What was the probability it would be higher on the first value published on or after {end}?',
   practiceQLower: 'On {date}, {name} was {value} {unit}. What was the probability it would be lower on the first value published on or after {end}?',
 

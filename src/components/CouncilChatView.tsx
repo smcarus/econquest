@@ -39,6 +39,8 @@ import { EXAMPLES, VERDICT, fullCouncilPhase, time, toMarkdown, toSaved, useCoun
 const CouncilChartCard = lazyNamed(() => import('./CouncilChart'), 'CouncilChartCard');
 const WhatIfCard = lazyNamed(() => import('./WhatIfCard'), 'WhatIfCard');
 const QuantDeskCard = lazyNamed(() => import('./QuantDeskCard'), 'QuantDeskCard');
+// Links to Quests about the answer's countries, only while Quests are switched on.
+const QuestLinks = lazyNamed(() => import('./QuestLinks'), 'QuestLinks');
 
 export const AskCouncilPanel: React.FC<{
   onOpenCountry: (item: LiveWatchlistItem) => void;
@@ -562,6 +564,11 @@ export const AskCouncilPanel: React.FC<{
                 </div>
               </details>
             </div>
+            {t.asked.plan.countries.length > 0 && (
+              <React.Suspense fallback={null}>
+                <QuestLinks iso3s={t.asked.plan.countries.map((c) => c.iso3)} where="council" />
+              </React.Suspense>
+            )}
             <p className="text-xs text-slate-500 dark:text-slate-400">{tr('footer')}</p>
           </div>
         </details>

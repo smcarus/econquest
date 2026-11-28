@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Quests (still switched off): links to Quests about a country under the country header and under
+  each Council chat answer (up to three, open ones first, and See all Quests); a link opens the Quests
+  screen on that Quest. Spanish, French and Portuguese wording included.
 - Quests (still switched off): a Quests view in Menu > Models & validation, beside Track record, with
   the recorded results and the chain check; shown only while Quests are on. The UI journeys now start
   a second copy with Quests on and check the list, the starter pack, one Quest and this view, and

@@ -333,4 +333,7 @@ export const QUESTS_ES: Messages<typeof QUESTS> = {
   filterPack: 'Paquete',
   allQuests: 'Todos los retos',
   practiceNow: 'Practique ya',
+  linksCountry: 'Retos sobre este país:',
+  linksCouncil: 'Retos sobre este tema:',
+  linksAll: 'Ver todos los retos',
 };

@@ -69,7 +69,7 @@ function useQuestWords() {
   };
 }
 
-export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; items?: LiveWatchlistItem[] }) {
+export function QuestsDialog({ onClose, items = [], focusId = null }: { onClose: () => void; items?: LiveWatchlistItem[]; focusId?: string | null }) {
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const [list, setList] = useState<ListReply | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -117,6 +117,11 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
       setDetailError(e?.message || String(e));
     }
   }, []);
+
+  // Opened from a link on a country page or under a Council chat answer: straight to that Quest.
+  useEffect(() => {
+    if (focusId) void open(focusId);
+  }, [focusId, open]);
 
   const field = 'px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white';
   const quests = list && list.enabled ? list.quests.filter((q) => (!type || q.type === type) && (!horizon || q.horizon === horizon)) : [];

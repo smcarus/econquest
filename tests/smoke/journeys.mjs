@@ -302,6 +302,7 @@ try {
     await page.getByRole('menuitem', { name: /^Models & validation/ }).first().click();
     await page.locator('[data-test-ledger-toggle]').waitFor({ timeout: 15_000 });
     if (await page.locator('[data-quest-record-toggle]').count()) throw new Error('Models & validation shows a Quests view while Quests are off');
+    if (await page.locator('[data-quest-links]').count()) throw new Error('a link to Quests shows while Quests are off');
     await page.keyboard.press('Escape');
   });
 
@@ -325,7 +326,7 @@ try {
   });
 
   // Quests switched on: a second copy of the app with QUESTS_ENABLED=on and its own data folder.
-  await step('quests on: the list, a pack, one Quest, and the Quests view in Models & validation', async () => {
+  await step('quests on: the list, a pack, one Quest, the Quests view in Models & validation, and a link from a country page', async () => {
     questsServer = startServer({ QUESTS_ENABLED: 'on', DATA_DIR: mkdtempSync(path.join(tmpdir(), 'econquest-journeys-quests-')) });
     await waitUp(questsServer);
     const qp = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -348,6 +349,17 @@ try {
     await qp.getByRole('menuitem', { name: /^Models & validation/ }).first().click();
     await qp.locator('[data-quest-record-toggle]').click();
     await qp.locator('[data-quest-track-record] [data-quest-chain]').waitFor({ timeout: 15_000 });
+    await noCrash(qp);
+    await qp.keyboard.press('Escape');
+    // A country page links to the Quests about that country; the link opens the Quest.
+    await qp.getByRole('button', { name: 'Research', exact: true }).first().click();
+    await qp.locator('[data-research-scope] button[data-scope="country"]').click();
+    await qp.waitForSelector('[data-country-page]', { timeout: 15_000 });
+    await qp.locator('#country-select').selectOption('BRA');
+    const link = qp.locator('[data-quest-links="country"] [data-quest-link]').first();
+    await link.waitFor({ timeout: 15_000 });
+    await link.click();
+    await qp.locator('[data-quests]').getByRole('button', { name: 'Back to all Quests' }).waitFor({ timeout: 15_000 });
     await noCrash(qp);
     await qp.close();
   });

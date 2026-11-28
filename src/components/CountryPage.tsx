@@ -28,6 +28,7 @@ const HistoryPanel = lazyNamed(() => import('./HistoryPanel'), 'HistoryPanel');
 const AsOfPanel = lazyNamed(() => import('./AsOfPanel'), 'AsOfPanel');
 const DecisionReplayPanel = lazyNamed(() => import('./DecisionReplayPanel'), 'DecisionReplayPanel');
 const TrackRecordPanel = lazyNamed(() => import('./TrackRecordPanel'), 'TrackRecordPanel');
+const QuestLinks = lazyNamed(() => import('./QuestLinks'), 'QuestLinks');
 const GdeltEventsPanel = lazyNamed(() => import('./GdeltEventsPanel'), 'GdeltEventsPanel');
 const GdeltHistoryPanel = lazyNamed(() => import('./GdeltHistoryPanel'), 'GdeltHistoryPanel');
 const OutputGapPanel = lazyNamed(() => import('./OutputGapPanel'), 'OutputGapPanel');
@@ -305,6 +306,12 @@ export const CountryPage: React.FC<{
             </button>
           </div>
         </div>
+        {/* Quests about this country, only while Quests are switched on (nothing shows otherwise). */}
+        <React.Suspense fallback={null}>
+          <div className="mt-2 empty:hidden">
+            <QuestLinks iso3s={[run.iso3]} where="country" />
+          </div>
+        </React.Suspense>
 
         {/* Sections: the same four as Compare and My holdings */}
         <ResearchSectionNav
