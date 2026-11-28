@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Docs: a Quests section in PRIVACY.md (what is public with a public entry, including the GitHub
+  account's creation date; what stays on the computer; git history is permanent) and a Quests entry
+  in the user manual (Menu), for when Quests are switched on.
 - Quests (still switched off): links to Quests about a country under the country header and under
   each Council chat answer (up to three, open ones first, and See all Quests); a link opens the Quests
   screen on that Quest. Spanish, French and Portuguese wording included.
