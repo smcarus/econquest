@@ -91,3 +91,23 @@ test('safe-pull: nothing changed locally means a plain pull and no backup folder
     done();
   }
 });
+
+test('safe-pull: a release pinned for the term keeps the code until its last day, then pulls again', { skip: !hasBash }, () => {
+  const { up, mac, done } = setup();
+  try {
+    write(up, 'README.md', 'readme v2\n');
+    git(up, 'commit', '-qam', 'two');
+    const later = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    write(mac, 'data/local/class-release.json', JSON.stringify({ version: '0.3.0', commit: 'abc', pinnedOn: '2026-11-28', until: later }));
+    const pinned = spawnSync('bash', ['scripts/safe-pull.sh'], { cwd: mac, encoding: 'utf8', env: { ...process.env, DATA_DIR: '' } });
+    assert.equal(pinned.status, 0, pinned.stdout + pinned.stderr);
+    assert.match(pinned.stdout, new RegExp(`Pinned for the term \\(until ${later}\\)`));
+    assert.equal(fs.readFileSync(path.join(mac, 'README.md'), 'utf8'), 'readme v1\n', 'no pull while pinned');
+    write(mac, 'data/local/class-release.json', JSON.stringify({ version: '0.3.0', commit: 'abc', pinnedOn: '2026-01-01', until: '2026-01-31' }));
+    const lapsed = spawnSync('bash', ['scripts/safe-pull.sh'], { cwd: mac, encoding: 'utf8', env: { ...process.env, DATA_DIR: '' } });
+    assert.equal(lapsed.status, 0, lapsed.stdout + lapsed.stderr);
+    assert.equal(fs.readFileSync(path.join(mac, 'README.md'), 'utf8'), 'readme v2\n', 'the pin lapsed: pulled');
+  } finally {
+    done();
+  }
+});

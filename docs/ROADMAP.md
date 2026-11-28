@@ -150,7 +150,7 @@ professor does.
 | # | Change |
 | --- | --- |
 | Q1 | Teacher, marker and student roles; classes by term with a join code. Built 28 November (Classes tab on Menu > Quests, behind `CLASSES_ENABLED=on`, needs sign-in) |
-| Q2 | One-command class setup, a release pinned for the whole term, and a page for school IT staff |
+| Q2 | One-command class setup, a release pinned for the whole term, and a page for school IT staff. Built 28 November (`npm run class:setup`, docs/SCHOOL_IT.md) |
 | Q3 | Assignments: dates in local time, an AI rule, private extensions, entries hidden until close, copy last term |
 | Q4 | Professor-written class Quests with intro, intermediate and advanced tags |
 | Q5 | Replay Quests and four ready-made term packs |

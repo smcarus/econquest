@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Classes (step Q2): `npm run class:setup` turns classes on, opens the app to the school network, makes
+  the first administrator and pins the version in use until the last day of the term (`npm run go`
+  and `npm run update` keep it until then); docs/SCHOOL_IT.md is a one-page guide for school IT staff.
 - Classes (Quests in the classroom, step Q1; off unless `CLASSES_ENABLED=on`, needs sign-in): a
   Classes tab on Menu > Quests. An Analyst or Admin makes a class for a term and becomes its teacher;
   students join with an eight-character code; the teacher adds markers and students, makes student

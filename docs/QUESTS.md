@@ -293,6 +293,8 @@ Built step by step from the classroom plan (docs/ROADMAP.md, Phase 5). Classes h
 
 An archived class takes no new members. Classes are kept in `data/local/classes.json` (readable by the app's user only), and each change is written to the audit log. Account roles (Viewer, Analyst, Admin) still decide what an account may do in the rest of the app. The app never grades; the teacher does.
 
+**Q2, built 28 November: class setup in one command.** `npm run class:setup -- --until <last day of term> --admin <username>` turns classes on in `.env`, opens the app to the school network (`HOST=0.0.0.0`; `--local` keeps it on this computer), makes the first administrator when there is none (the password is printed once), pins the version in use for the term in `data/local/class-release.json` (until that day `npm run go` and `npm run update` keep this version and say so; `--unpin` ends it early, `--status` shows what is set), and prints the address students open. [SCHOOL_IT.md](./SCHOOL_IT.md) is the one page for school IT staff: port 3000, outgoing requests only to public data sources, what is stored, sign-in, updates during a term.
+
 ## Rules Quests keep
 
 - No data figures in a Quest file; every figure is read live from a feed, and a missing one reads Missing with the reason.
