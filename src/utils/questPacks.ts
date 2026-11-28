@@ -8,6 +8,7 @@
  * Browser-safe, pure.
  */
 import { QUEST_TRANSLATION_LANGS } from './questTranslations';
+import { QUEST_LEVELS, type QuestLevel } from './quests';
 
 export type PackText = { en: string } & Partial<Record<(typeof QUEST_TRANSLATION_LANGS)[number], string>>;
 
@@ -21,6 +22,8 @@ export interface QuestPack {
   id: string;
   title: PackText;
   summary: PackText;
+  /** Who the pack is for: intro, intermediate or advanced (classroom step Q4). */
+  level: QuestLevel;
   groups: QuestPackGroup[];
 }
 
@@ -44,10 +47,11 @@ export function packProblems(raw: unknown, fileName: string, questIds: ReadonlyS
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return ['a pack is a JSON object'];
   const p = raw as Partial<QuestPack> & Record<string, unknown>;
   const out: string[] = [];
-  for (const k of Object.keys(p)) if (!['id', 'title', 'summary', 'groups'].includes(k)) out.push(`${k}: not a pack field`);
+  for (const k of Object.keys(p)) if (!['id', 'title', 'summary', 'level', 'groups'].includes(k)) out.push(`${k}: not a pack field`);
   if (typeof p.id !== 'string' || !ID.test(p.id)) out.push('id: lower-case letters, digits and -');
   else if (fileName !== `${p.id}.json`) out.push(`file name must be ${p.id}.json`);
   out.push(...textProblems(p.title, 'title'), ...textProblems(p.summary, 'summary'));
+  if (!QUEST_LEVELS.includes(p.level as QuestLevel)) out.push(`level: one of ${QUEST_LEVELS.join(', ')}`);
   if (!Array.isArray(p.groups) || !p.groups.length) return [...out, 'groups: one or more groups'];
   const seen = new Set<string>();
   const groupIds = new Set<string>();

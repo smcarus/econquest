@@ -35,7 +35,9 @@ Public forecast entries go in `entries/<quest id>/<GitHub name>.<n>.json`, one f
 
 Translations of a Quest's text go in `translations/<Quest file name without .json>.<es|fr|pt>.json`, for example `translations/arg-debt-2026.es.json` (see [docs/QUESTS.md](../docs/QUESTS.md#translations)). They sit apart from the Quest file, so an approved Quest's fingerprint never changes when one is added or corrected. The English Quest is always the rule.
 
-Packs go in `packs/<id>.json`: a named list of Quest ids grouped by topic, with titles in English, Spanish, French and Portuguese (see [docs/QUESTS.md](../docs/QUESTS.md#packs)). `packs/starter.json` is the starter pack.
+Packs go in `packs/<id>.json`: a named list of Quest ids grouped by topic, a `level` (`intro`, `intermediate` or `advanced`) and titles in English, Spanish, French and Portuguese (see [docs/QUESTS.md](../docs/QUESTS.md#packs)). `packs/starter.json` is the starter pack.
+
+Every Quest has a level: `intro`, `intermediate` or `advanced`. A new Quest puts `"level"` in its own file. An approved Quest cannot change, so the Quests approved before levels existed take theirs from `levels.json`, a map from Quest id to level. `npm run quests:check` lists any Quest with no level.
 
 Guides and starter scripts for Replication Quests go in `replications/<name>/`; `replications/bohn/` is the Bohn (1998) challenge.
 

@@ -9,7 +9,7 @@
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Compass, X } from 'lucide-react';
-import type { DebateQuest, Quest, QuestHorizon, QuestStatus, QuestType, ReplicationQuest, SignalQuest } from '../utils/quests';
+import { QUEST_LEVELS, type DebateQuest, type Quest, type QuestHorizon, type QuestLevel, type QuestStatus, type QuestType, type ReplicationQuest, type SignalQuest } from '../utils/quests';
 import { SIGNAL_FLOOR, SIGNAL_METHODS, SIGNAL_TEMPLATE, signalTestProblems, type SignalTest } from '../utils/questSignal';
 import { describeOutcome, OUTCOME_WORDS, type OutcomeWords, type QuestResultState, type ResolutionDraft, type ResolutionLine } from '../utils/questResolve';
 import type { BoardRow, ContributorStats, Gated, QuestStats } from '../utils/questStats';
@@ -41,6 +41,7 @@ type Summary = {
   region: string;
   approved: boolean;
   tutorial: boolean;
+  level?: QuestLevel | null;
   status: QuestStatus;
   horizon: QuestHorizon;
   horizonLabel: string;
@@ -79,6 +80,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null, classesOn = 
   const [error, setError] = useState<string | null>(null);
   const [type, setType] = useState<QuestType | ''>('');
   const [horizon, setHorizon] = useState<QuestHorizon | ''>('');
+  const [level, setLevel] = useState<QuestLevel | ''>('');
   const [packId, setPackId] = useState('');
   const [openId, setOpenId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
@@ -128,7 +130,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null, classesOn = 
   }, [focusId, open]);
 
   const field = 'px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white';
-  const quests = list && list.enabled ? list.quests.filter((q) => (!type || q.type === type) && (!horizon || q.horizon === horizon)) : [];
+  const quests = list && list.enabled ? list.quests.filter((q) => (!type || q.type === type) && (!horizon || q.horizon === horizon) && (!level || q.level === level)) : [];
   const packs = (list && list.enabled && list.packs) || [];
   const pack = packs.find((p) => p.id === packId);
   const row = (q: Summary) => (
@@ -137,6 +139,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null, classesOn = 
         <div className="text-sm text-slate-900 dark:text-white">{questTextIn({ ...q, summary: '', knownLimits: [] }, shownLang, listTr).title}</div>
         <div className="text-xs text-slate-500 dark:text-slate-400">
           {t('rowMeta', { type: t(`type_${q.type}`), status: t(q.approved ? `status_${q.status}` : 'status_draft'), horizon: t(`h_${q.horizon}`), date: q.settlesOn })}
+          {q.level ? ` · ${t(`level_${q.level}`)}` : ''}
           {q.tutorial ? ` · ${t('tutorial')}` : ''}
           {q.practice ? ` · ${t('practiceNow')}` : ''}
         </div>
@@ -220,6 +223,17 @@ export function QuestsDialog({ onClose, items = [], focusId = null, classesOn = 
                   </select>
                 </label>
                 <label className="text-xs inline-flex items-center gap-1">
+                  <span>{t('filterLevel')}</span>
+                  <select className={field} value={level} onChange={(e) => setLevel(e.target.value as QuestLevel | '')} data-quests-level>
+                    <option value="">{t('anyLevel')}</option>
+                    {QUEST_LEVELS.map((k) => (
+                      <option key={k} value={k}>
+                        {t(`level_${k}`)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-xs inline-flex items-center gap-1">
                   <span>{t('filterDue')}</span>
                   <select className={field} value={horizon} onChange={(e) => setHorizon(e.target.value as QuestHorizon | '')} data-quests-horizon>
                     <option value="">{t('anyTime')}</option>
@@ -234,6 +248,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null, classesOn = 
               {pack && (
                 <div className="space-y-3" data-quest-pack={pack.id}>
                   <p className="text-sm">{packText(pack.summary, lang)}</p>
+                  {pack.level && <p className="text-xs text-slate-500 dark:text-slate-400" data-quest-pack-level>{t('packLevel', { level: t(`level_${pack.level}`) })}</p>}
                   {pack.groups.map((g) => {
                     const inGroup = g.quests.map((id) => quests.find((q) => q.id === id)).filter((q): q is Summary => Boolean(q));
                     return inGroup.length ? (

@@ -22,6 +22,10 @@
  *   GET    /api/classes/:id/assignments/:aid/entries        teacher and markers: all; students: their own until the last due time
  *   POST   /api/classes/:id/copy                            teacher: copy assignments from another class, dates moved by the term gap
  *   GET    /api/classes/:id/calendar.ics                    the due times as a calendar file
+ * Class Quests (Q4; src/utils/classQuests.ts), kept in data/local/class-quests/<class id>/:
+ *   GET    /api/classes/:id/class-quests                    teacher and markers: the class's own Quests
+ *   POST   /api/classes/:id/class-quests                    teacher: write a Forecast or Debate Quest for the class
+ *   DELETE /api/classes/:id/class-quests/:qid               teacher: remove one no assignment uses
  *
  * Account roles (Viewer, Analyst, Admin; src/utils/permissions.ts) still decide what an account may
  * do in the rest of the app. A class role only decides what it may do in that class.
@@ -32,11 +36,13 @@ import type express from 'express';
 import { APP_ROOT, DATA_DIR } from '../config';
 import type { Account } from '../../utils/auth';
 import { CLASSES_NEED_SIGNIN, CLASSES_OFF_REASON, classesEnabled, classesFor, classProblems, classView, joinCodeFrom, nicknameProblems, normaliseJoinCode, roleIn, studentUsername, type ClassRole, type SchoolClass } from '../../utils/classes';
-import { appendClassEntry, changeClasses, classEntriesPath, classesPath, loadClassEntries, loadClasses } from '../../utils/classStore';
+import { appendClassEntry, changeClasses, classEntriesPath, classesPath, classQuestsDir, loadClassEntries, loadClasses, loadClassQuests, removeClassQuest, saveClassQuest } from '../../utils/classStore';
+import { CLASS_QUESTS_MAX, classQuestFileProblems, classQuestFrom, classQuestId, shiftClassQuest, type ClassQuestInput } from '../../utils/classQuests';
+import { questLevel } from '../../utils/questLevels';
 import { AI_RULES, INSTRUCTIONS_MAX, aiProblems, assignmentsIcs, daysBetween, dueFor, dueProblems, entriesVisibleToStudents, latestEntries, shiftLocal, validTimeZone, zonedToUtc, type AiRule, type ClassAssignment, type ClassEntry } from '../../utils/classAssignments';
-import { loadQuests } from '../../utils/questStore';
+import { loadLevels, loadQuests } from '../../utils/questStore';
 import { answerFor, entryProblems, type EntryQuest } from '../../utils/questEntries';
-import type { Quest } from '../../utils/quests';
+import { questFileName, type Quest } from '../../utils/quests';
 import { RateLimiter, type Bucket } from '../../utils/requestLimits';
 
 /** Class calls per caller: the app-wide limit applies too; joining is tighter, so codes cannot be guessed. */
@@ -293,9 +299,17 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
 
   // ---- Assignments (Q3) ----------------------------------------------------------------------
   /** Quests a class can be set: any Quest on file but Signal Quests (entered in public only), still taking entries. */
-  const settable = (today: string) =>
-    loadQuests(questsDir).filter((x) => x.quest.type !== 'signal' && x.quest.closesOn >= today);
-  const questFor = (id: string) => loadQuests(questsDir).find((x) => x.quest.id === id && x.quest.type !== 'signal');
+  const classQuestsOf = (classId: string) => loadClassQuests(classQuestsDir(file, classId));
+  type Found = { quest: Quest; approved: boolean; classQuest: boolean; hash: string };
+  /** A class Quest's fingerprint: SHA-256 of the file as the app writes it. */
+  const classHash = (q: Quest) => crypto.createHash('sha256').update(`${JSON.stringify(q, null, 2)}\n`).digest('hex');
+  /** The class's own Quests, then the Quests on file. */
+  const questsFor = (classId: string): Found[] => [
+    ...classQuestsOf(classId).map((quest) => ({ quest, approved: true, classQuest: true, hash: classHash(quest) })),
+    ...loadQuests(questsDir).map((x) => ({ quest: x.quest, approved: x.approved, classQuest: false, hash: x.hash })),
+  ];
+  const settable = (today: string, classId: string) => questsFor(classId).filter((x) => x.quest.type !== 'signal' && x.quest.closesOn >= today);
+  const questFor = (id: string, classId: string): Found | undefined => questsFor(classId).find((x) => x.quest.id === id && x.quest.type !== 'signal');
   const answerKind = (q: Quest) => (q.type === 'debate' ? 'position' : q.type === 'replication' ? 'value' : q.type === 'forecast' && q.rule.kind === 'level' ? 'level' : 'probability');
   /** The class, if I am in it; otherwise the reply already sent. */
   const asMember = (classes: SchoolClass[], id: string, a: Account, res: express.Response): SchoolClass | null => {
@@ -342,9 +356,10 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     const cls = asTeacher(loadClasses(file), String(req.params.id), a, res);
     if (!cls) return;
     const today = now().slice(0, 10);
+    const levels = loadLevels(questsDir);
     res.json({
       enabled: true,
-      quests: settable(today).map((x) => ({ id: x.quest.id, title: x.quest.title, type: x.quest.type, closesOn: x.quest.closesOn, approved: x.approved })),
+      quests: settable(today, cls.id).map((x) => ({ id: x.quest.id, title: x.quest.title, type: x.quest.type, closesOn: x.quest.closesOn, approved: x.approved, classQuest: x.classQuest, level: questLevel(x.quest, levels) ?? null })),
     });
   });
 
@@ -356,12 +371,23 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     const entries = loadClassEntries(entriesFile).filter((e) => e.classId === cls.id);
     const nowIso = now();
     const list = (cls.assignments ?? []).slice().sort((x, y) => x.dueUtc.localeCompare(y.dueUtc));
+    const levels = loadLevels(questsDir);
     res.json({
       enabled: true,
       timeZone: cls.timeZone || 'UTC',
       assignments: list.map((x) => {
-        const q = questFor(x.questId)?.quest;
-        return { ...assignmentView(cls, x, a, entries, nowIso), answerKind: q ? answerKind(q) : 'probability', positions: q?.type === 'debate' ? q.positions : undefined, questMissing: !q };
+        const found = questFor(x.questId, cls.id);
+        const q = found?.quest;
+        return {
+          ...assignmentView(cls, x, a, entries, nowIso),
+          answerKind: q ? answerKind(q) : 'probability',
+          positions: q?.type === 'debate' ? q.positions : undefined,
+          questMissing: !q,
+          classQuest: Boolean(found?.classQuest),
+          summary: q?.summary ?? '',
+          rule: q?.type === 'forecast' ? q.rule : undefined,
+          level: q ? questLevel(q, levels) ?? null : null,
+        };
       }),
     });
   });
@@ -370,7 +396,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     const a = me(res);
     if (!a) return;
     const body = (req.body || {}) as { questId?: unknown; due?: unknown; aiRule?: unknown; instructions?: unknown };
-    const found = questFor(String(body.questId || ''));
+    const found = questFor(String(body.questId || ''), String(req.params.id));
     if (!found) return res.status(400).json({ enabled: true, error: 'Pick a Quest on file (Signal Quests are entered in public, so they cannot be set for a class)' });
     const aiRule = body.aiRule as AiRule;
     if (!AI_RULES.includes(aiRule)) return res.status(400).json({ enabled: true, error: 'Choose a rule on AI use' });
@@ -428,7 +454,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
         x.extensions = x.extensions.filter((e) => e.accountId !== target.id);
         return null;
       }
-      const q = questFor(x.questId);
+      const q = questFor(x.questId, c.id);
       if (!q) return 'The Quest is no longer on file';
       const tz = c.timeZone || 'UTC';
       const problems = dueProblems(req.body?.due, tz, q.quest.closesOn, now());
@@ -466,7 +492,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     if (!x) return res.status(404).json({ enabled: true, error: 'No assignment with that id in this class' });
     const nowIso = now();
     if (nowIso > dueFor(x, a.id).dueUtc) return res.status(400).json({ enabled: true, error: 'This assignment is past its due time' });
-    const found = questFor(x.questId);
+    const found = questFor(x.questId, cls.id);
     if (!found) return res.status(400).json({ enabled: true, error: 'The Quest is no longer on file' });
     const body = (req.body || {}) as { answer?: Record<string, unknown>; rationale?: unknown; code?: unknown; aiNote?: unknown; aiDeclaredNone?: unknown };
     const quest = found.quest as EntryQuest;
@@ -543,9 +569,22 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
       const tz = to.timeZone || 'UTC';
       const copied: string[] = [];
       const skipped: string[] = [];
+      const pendingQuests: Quest[] = [];
       for (const x of from.assignments ?? []) {
         const due = shiftLocal(x.due, shift);
-        const q = questFor(x.questId);
+        let q = questFor(x.questId, from.id);
+        if (q?.classQuest) {
+          // A class Quest moves with its class: same id, dates moved by the term gap, checked again.
+          const existing = classQuestsOf(to.id).find((y) => y.id === x.questId);
+          const moved = existing ?? shiftClassQuest(q.quest, shift, today);
+          const p = existing ? [] : classQuestFileProblems(moved, questFileName(moved));
+          if (p.length) {
+            skipped.push(`${x.title}: ${p[0]}`);
+            continue;
+          }
+          if (!existing) pendingQuests.push(moved);
+          q = { quest: moved, approved: true, classQuest: true, hash: classHash(moved) };
+        }
         const problems = q ? dueProblems(due, tz, q.quest.closesOn, now()) : ['The Quest is no longer on file'];
         if (q && q.quest.closesOn < today) problems.unshift(`The Quest closed on ${q.quest.closesOn}`);
         if (problems.length) {
@@ -555,11 +594,72 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
         to.assignments = [...(to.assignments ?? []), { id: crypto.randomUUID(), questId: x.questId, questVersion: q!.quest.version, title: q!.quest.title, due, dueUtc: zonedToUtc(due, tz)!, aiRule: x.aiRule, ...(x.instructions ? { instructions: x.instructions } : {}), extensions: [], createdAt: now() }];
         copied.push(x.title);
       }
+      for (const q of pendingQuests) saveClassQuest(classQuestsDir(file, to.id), q);
       return { to, from, copied, skipped };
     });
     if (sent || !out) return;
     audit(`${who(a)} copied ${out.copied.length} assignment(s) from "${out.from.name}" to "${out.to.name}"`);
     res.json({ enabled: true, copied: out.copied, skipped: out.skipped });
+  });
+
+  // ---- Class Quests (Q4) ---------------------------------------------------------------------
+  app.get('/api/classes/:id/class-quests', classRateLimit('read'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const cls = asMember(loadClasses(file), String(req.params.id), a, res);
+    if (!cls) return;
+    if (roleIn(cls, a.id) === 'student') return res.status(403).json({ enabled: true, error: 'Students see a class Quest when it is set for the class' });
+    const used = new Set((cls.assignments ?? []).map((x) => x.questId));
+    res.json({
+      enabled: true,
+      quests: classQuestsOf(cls.id).map((q) => ({
+        id: q.id,
+        type: q.type,
+        title: q.title,
+        summary: q.summary,
+        level: q.level ?? null,
+        opensOn: q.opensOn,
+        closesOn: q.closesOn,
+        rule: q.type === 'forecast' ? q.rule : undefined,
+        positions: q.type === 'debate' ? q.positions : undefined,
+        author: q.author,
+        used: used.has(q.id),
+      })),
+    });
+  });
+
+  app.post('/api/classes/:id/class-quests', classRateLimit('write'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const cls = asTeacher(loadClasses(file), String(req.params.id), a, res);
+    if (!cls) return;
+    if (cls.archivedAt) return res.status(400).json({ enabled: true, error: 'This class is archived' });
+    const dir = classQuestsDir(file, cls.id);
+    const mine = classQuestsOf(cls.id);
+    if (mine.length >= CLASS_QUESTS_MAX) return res.status(400).json({ enabled: true, error: `A class holds at most ${CLASS_QUESTS_MAX} Quests` });
+    const body = (req.body || {}) as ClassQuestInput;
+    const title = typeof body.title === 'string' ? body.title : '';
+    const taken = new Set(questsFor(cls.id).map((x) => x.quest.id));
+    let id = classQuestId(title, crypto.randomBytes(3).toString('hex'));
+    while (taken.has(id)) id = classQuestId(title, crypto.randomBytes(3).toString('hex'));
+    const { quest, problems } = classQuestFrom(body, { id, author: a.username, today: now().slice(0, 10) });
+    if (!quest) return res.status(400).json({ enabled: true, error: problems.join('; ') });
+    saveClassQuest(dir, quest);
+    audit(`${who(a)} wrote the class Quest ${quest.id} for the class "${cls.name}"`);
+    res.json({ enabled: true, id: quest.id });
+  });
+
+  app.delete('/api/classes/:id/class-quests/:qid', classRateLimit('write'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const cls = asTeacher(loadClasses(file), String(req.params.id), a, res);
+    if (!cls) return;
+    const q = classQuestsOf(cls.id).find((y) => y.id === req.params.qid);
+    if (!q) return res.status(404).json({ enabled: true, error: 'No class Quest with that id in this class' });
+    if ((cls.assignments ?? []).some((x) => x.questId === q.id)) return res.status(400).json({ enabled: true, error: 'This Quest is set for the class. Remove the assignment first' });
+    removeClassQuest(classQuestsDir(file, cls.id), q);
+    audit(`${who(a)} removed the class Quest ${q.id} from the class "${cls.name}"`);
+    res.json({ enabled: true, ok: true });
   });
 
   app.get('/api/classes/:id/calendar.ics', classRateLimit('read'), (req, res) => {

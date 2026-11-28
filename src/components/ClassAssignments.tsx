@@ -7,7 +7,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { QUESTS } from '../i18n/messages/quests';
 import { readLang, translateText } from '../i18n/lang';
-import { useT } from '../i18n/useLang';
+import { useT, useTx } from '../i18n/useLang';
+import { describeRule, RULE_WORDS, type QuestRule, type RuleWords } from '../utils/questRules';
+import type { QuestLevel } from '../utils/quests';
 import type { ClassView } from '../utils/classes';
 import type { AiRule } from '../utils/classAssignments';
 
@@ -27,6 +29,10 @@ type Assignment = {
   revealed: boolean;
   answerKind: 'probability' | 'level' | 'position' | 'value';
   positions?: string[];
+  classQuest?: boolean;
+  summary?: string;
+  rule?: QuestRule;
+  level?: QuestLevel | null;
   questMissing: boolean;
   myEntry?: { answer: Answer; rationale: string; at: string };
   entryCount?: number;
@@ -35,9 +41,9 @@ type Assignment = {
 };
 type EntryRow = { name: string; mine: boolean; answer: Answer; rationale: string; code: string; at: string; username?: string; ai?: { rule: AiRule; note?: string; declaredNone?: boolean }; replaced?: number; late?: boolean };
 
-const fieldCls = 'px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white';
+export const fieldCls = 'px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white';
 
-async function call(url: string, method = 'GET', body?: unknown) {
+export async function call(url: string, method = 'GET', body?: unknown) {
   const r = await fetch(url, { method, headers: body === undefined ? undefined : { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok || j.error) throw new Error(j?.error ? translateText(j.error, readLang()) : `HTTP ${r.status}`);
@@ -49,6 +55,14 @@ function whenText(local: string, utc: string, tz: string) {
   const mine = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const own = new Date(utc).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
   return { classTime: `${local.replace('T', ' ')} (${tz})`, own: mine === tz ? '' : own };
+}
+
+/** A settle rule in the chosen language, built from the same parts as on a Quest page. */
+export function useRuleText() {
+  const t = useT(QUESTS);
+  const tx = useTx();
+  const words = Object.fromEntries(Object.keys(RULE_WORDS).map((k) => [k, t(k as keyof typeof QUESTS.en)])) as RuleWords;
+  return (r: QuestRule) => describeRule(r, words, tx);
 }
 
 function answerText(a: Answer, positions?: string[]) {
@@ -133,7 +147,8 @@ export function ClassAssignments({ cls, otherTeaching }: { cls: ClassView; other
 function NewAssignment({ base, act }: { base: string; act: (fn: () => Promise<unknown>) => Promise<void> }) {
   const t = useT(QUESTS);
   const [open, setOpen] = useState(false);
-  const [quests, setQuests] = useState<Array<{ id: string; title: string; type: string; closesOn: string; approved: boolean }>>([]);
+  const [quests, setQuests] = useState<Array<{ id: string; title: string; type: string; closesOn: string; approved: boolean; classQuest?: boolean; level?: QuestLevel | null }>>([]);
+  const [level, setLevel] = useState<QuestLevel | ''>('');
   const [questId, setQuestId] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('23:59');
@@ -164,15 +179,28 @@ function NewAssignment({ base, act }: { base: string; act: (fn: () => Promise<un
       }}
       data-class-assignment-form
     >
+      <label className="text-xs inline-flex items-center gap-1">
+        <span>{t('filterLevel')}</span>
+        <select className={fieldCls} value={level} onChange={(e) => setLevel(e.target.value as QuestLevel | '')} data-class-assignment-level>
+          <option value="">{t('anyLevel')}</option>
+          {(['intro', 'intermediate', 'advanced'] as const).map((k) => (
+            <option key={k} value={k}>
+              {t(`level_${k}`)}
+            </option>
+          ))}
+        </select>
+      </label>
       <label className="text-xs block space-y-1">
         <span className="block">{t('asgQuest')}</span>
         <select className={`${fieldCls} w-full`} value={questId} onChange={(e) => setQuestId(e.target.value)} data-class-assignment-quest>
           <option value="">—</option>
-          {quests.map((x) => (
-            <option key={x.id} value={x.id}>
-              {x.title} ({t(`type_${x.type}` as keyof typeof QUESTS.en)}{x.approved ? '' : `, ${t('status_draft')}`})
-            </option>
-          ))}
+          {quests
+            .filter((x) => !level || x.level === level || x.id === questId)
+            .map((x) => (
+              <option key={x.id} value={x.id}>
+                {x.title} ({[t(`type_${x.type}` as keyof typeof QUESTS.en), x.level ? t(`level_${x.level}` as keyof typeof QUESTS.en) : '', x.approved ? '' : t('status_draft'), x.classQuest ? t('cqMarker') : ''].filter(Boolean).join(', ')})
+              </option>
+            ))}
         </select>
       </label>
       {q && <p className="text-xs text-slate-500">{t('asgClosesOn', { date: q.closesOn })}</p>}
@@ -215,6 +243,7 @@ function AssignmentItem({ a, cls, base, act }: { a: Assignment; cls: ClassView; 
   const teacher = cls.myRole === 'teacher';
   const student = cls.myRole === 'student';
   const when = whenText(a.due, a.dueUtc, cls.timeZone);
+  const ruleText = useRuleText();
   const [entries, setEntries] = useState<{ rows: EntryRow[]; hidden: boolean } | null>(null);
   const [extUser, setExtUser] = useState('');
   const [extDate, setExtDate] = useState('');
@@ -233,6 +262,13 @@ function AssignmentItem({ a, cls, base, act }: { a: Assignment; cls: ClassView; 
         {a.extended ? ` · ${t('asgExtended')}` : ''}
         {` · ${a.open ? t('asgOpen') : t('asgClosed')}`}
       </div>
+      {(a.level || a.classQuest) && (
+        <div className="text-slate-500">
+          {[a.level ? t(`level_${a.level}` as keyof typeof QUESTS.en) : '', a.classQuest ? t('cqMarker') : ''].filter(Boolean).join(' · ')}
+        </div>
+      )}
+      {a.summary && <p className="whitespace-pre-wrap" data-class-assignment-summary>{a.summary}</p>}
+      {a.rule && <p className="text-slate-600 dark:text-slate-300">{t('cqSettledBy', { rule: ruleText(a.rule) })}</p>}
       <div className="text-slate-500">{t(`asgAiShown_${a.aiRule}` as keyof typeof QUESTS.en)}</div>
       {a.instructions && <p className="whitespace-pre-wrap">{a.instructions}</p>}
       {a.questMissing && <p className="text-rose-700 dark:text-rose-400">{t('asgQuestMissing')}</p>}

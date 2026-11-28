@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Classes (step Q4): a teacher writes class Quests (a Forecast from the fixed rule types, or a Debate)
+  for one class, with a level; they are kept with the class in data/local/class-quests/ and can be set
+  like any other Quest. Every Quest and pack now has a level (intro, intermediate or advanced), with a
+  Level filter on Menu > Quests; quests/levels.json holds the levels of Quests approved earlier.
 - Classes (step Q3): a teacher sets a Quest for the class with a due date and time in the class's
   time zone, a rule on AI tools and optional instructions; students hand in before their due time;
   private extensions for single students; entries hidden from other students until the last due

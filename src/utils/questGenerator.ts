@@ -65,7 +65,7 @@ const fridayOnOrAfter = (d: string) => {
 };
 
 function draft(base: { id: string; title: string; summary: string; countries: string[]; topics: QuestTopic[]; region: QuestRegion; registeredOn: string; opensOn: string; closesOn: string; rule: ForecastQuest['rule']; knownLimits: string[]; author: string; tutorial?: boolean }): ForecastQuest {
-  return { id: base.id, version: 1, registeredOn: base.registeredOn, opensOn: base.opensOn, author: base.author, type: 'forecast', title: base.title, summary: base.summary, countries: base.countries, topics: base.topics, region: base.region, closesOn: base.closesOn, rule: base.rule, fallback: 'unresolvable', knownLimits: base.knownLimits } as ForecastQuest;
+  return { id: base.id, version: 1, registeredOn: base.registeredOn, opensOn: base.opensOn, author: base.author, type: 'forecast', title: base.title, summary: base.summary, countries: base.countries, topics: base.topics, region: base.region, closesOn: base.closesOn, rule: base.rule, fallback: 'unresolvable', level: 'intro', knownLimits: base.knownLimits } as ForecastQuest;
 }
 
 export interface GenerateOptions {

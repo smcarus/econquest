@@ -122,7 +122,7 @@ test('an approved Quest is fixed by the manifest, and never deleted', () => {
 test('store reads approved files and drafts and checks them together', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'quests-'));
   fs.mkdirSync(path.join(dir, 'drafts'));
-  const approved = { ...forecast, approvedBy: 'smcarus' };
+  const approved = { ...forecast, approvedBy: 'smcarus', level: 'intro' };
   fs.writeFileSync(path.join(dir, 'tur-policy-test.json'), JSON.stringify(approved));
   fs.writeFileSync(path.join(dir, 'drafts', 'bad.json'), '{not json');
   const files = readQuestFiles(dir);

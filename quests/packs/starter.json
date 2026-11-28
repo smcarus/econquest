@@ -12,6 +12,7 @@
     "fr": "Des problèmes économiques et de politique à résoudre, par thème : des prévisions tranchées d’après des données publiques, des questions sur lesquelles vous pouvez vous entraîner avec des données passées et voir votre note tout de suite, des débats de politique où la Vérification des chiffres contrôle chaque chiffre, et une étude publiée à reproduire. Commencez par le tutoriel sur le Brent.",
     "pt": "Problemas econômicos e de política para resolver, por tema: previsões resolvidas com dados públicos, perguntas que você pode praticar com dados passados e ver a nota na hora, debates de política em que a Verificação de números confere cada número, e um estudo publicado para reproduzir. Comece pelo tutorial do Brent."
   },
+  "level": "intro",
   "groups": [
     {
       "id": "start",

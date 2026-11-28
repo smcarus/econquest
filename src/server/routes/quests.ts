@@ -61,10 +61,11 @@ import path from 'path';
 import type { Account } from '../../utils/auth';
 import { APP_ROOT, DATA_DIR } from '../config';
 import type { SeriesSet } from '../../utils/seriesHistory';
-import { questHorizon, questSeriesRefs, questSettlesOn, questStatus, questsEnabled, QUESTS_OFF_REASON, HORIZON_LABEL, type DebateQuest, type ForecastQuest, type Quest } from '../../utils/quests';
+import { questHorizon, questSeriesRefs, questSettlesOn, questStatus, questsEnabled, QUESTS_OFF_REASON, HORIZON_LABEL, type DebateQuest, type ForecastQuest, type Quest, type QuestLevel } from '../../utils/quests';
 import { describeRule, type QuestSeriesRef as QuestSeriesRefLike } from '../../utils/questRules';
 import { questSeriesDef } from '../../utils/questSeries';
-import { checkQuests, loadPacks, loadQuests, loadTranslations } from '../../utils/questStore';
+import { checkQuests, loadLevels, loadPacks, loadQuests, loadTranslations } from '../../utils/questStore';
+import { questLevel } from '../../utils/questLevels';
 import { maintainerSummary } from '../../utils/questMaintainer';
 import { translationKey } from '../../utils/questTranslations';
 import { answerFor, classTable, countedEntries, entryProblems, replicationScore, practiceWindow, scoreEntry, scorePractice, type QuestEntry, type QuestEntryInput } from '../../utils/questEntries';
@@ -142,7 +143,7 @@ const PRACTICE_MAX = 2000;
 const WORLD_SET = 'USA';
 const FEED_DOWN = 'The feed did not answer';
 
-function summary(q: Quest, approved: boolean, today: string) {
+function summary(q: Quest, approved: boolean, today: string, levels: Record<string, QuestLevel>) {
   return {
     id: q.id,
     version: q.version,
@@ -153,6 +154,7 @@ function summary(q: Quest, approved: boolean, today: string) {
     region: q.region,
     approved,
     tutorial: Boolean(q.tutorial),
+    level: questLevel(q, levels) ?? null,
     status: questStatus(q, today),
     horizon: questHorizon(q),
     horizonLabel: HORIZON_LABEL[questHorizon(q)],
@@ -175,7 +177,7 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     if (!enabled()) return off(res);
     const today = todayIso();
     const loaded = loadQuests(dir);
-    const quests = loaded.map((x) => summary(x.quest, x.approved, today));
+    const quests = loaded.map((x) => summary(x.quest, x.approved, today, loadLevels(dir)));
     res.json({ enabled: true, quests, translations: loadTranslations(dir, loaded), packs: loadPacks(dir, loaded) });
   });
 
@@ -595,7 +597,7 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     res.json({
       enabled: true,
       quest: q,
-      summary: summary(q, found.approved, today),
+      summary: summary(q, found.approved, today, loadLevels(dir)),
       file: found.file,
       rule: q.type === 'forecast' ? describeRule(q.rule) : undefined,
       fallback: q.type === 'forecast' ? (q.fallback === 'unresolvable' ? 'If the series has no value, the Quest is Unresolvable.' : `If the series has no value: ${describeRule(q.fallback.rule)}`) : undefined,
