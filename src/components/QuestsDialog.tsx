@@ -82,7 +82,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null }: { onClose:
   const [openId, setOpenId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
-  const [view, setView] = useState<'quests' | 'mine' | 'class' | 'results' | 'board' | 'stances' | 'health'>('quests');
+  const [view, setView] = useState<'quests' | 'mine' | 'class' | 'results' | 'board' | 'stances' | 'health' | 'maint'>('quests');
   const lang = useLang();
   const t = useT(QUESTS);
   const [english, setEnglish] = useState(false);
@@ -158,7 +158,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null }: { onClose:
           {error && <p className="text-sm text-rose-700 dark:text-rose-400">{t('loadFailed', { error })}</p>}
           {list && !list.enabled && <p className="text-sm text-slate-600 dark:text-slate-300">{list.reason}</p>}
           {list && list.enabled && !openId && (
-            <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800" role="tablist">
+            <div className="flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-800" role="tablist">
               {(
                 [
                   'quests',
@@ -168,6 +168,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null }: { onClose:
                   'board',
                   'stances',
                   'health',
+                  'maint',
                 ] as const
               ).map((k) => (
                 <button key={k} type="button" role="tab" aria-selected={view === k} onClick={() => setView(k)} className={`px-3 py-1.5 text-sm ${view === k ? 'border-b-2 border-blue-600 text-slate-900 dark:text-white' : 'text-slate-500'}`} data-quests-tab={k}>
@@ -182,6 +183,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null }: { onClose:
           {list && list.enabled && !openId && view === 'board' && <Scoreboard />}
           {list && list.enabled && !openId && view === 'stances' && <StancesView />}
           {list && list.enabled && !openId && view === 'health' && <Health titleOf={titleOf} />}
+          {list && list.enabled && !openId && view === 'maint' && <Maintainer />}
           {list && list.enabled && !openId && view === 'quests' && (
             <>
               <ThisWeek onOpen={open} titleOf={titleOf} />
@@ -740,6 +742,37 @@ export function QuestTrackRecord() {
       <h3 className="ui-section-title">{t('title')}</h3>
       <Results titleOf={titleOf} />
     </section>
+  );
+}
+
+type MaintainerReply = { today: string; counts: { approved: number; drafts: number; openNow: number; publicEntries: number; results: number }; items: Array<{ kind: string; n: number; ids: string[]; command?: string }> };
+
+/** Maintainer dashboard: what needs doing now, worked out from the files on every call. */
+function Maintainer() {
+  const t = useT(QUESTS);
+  const [data, setData] = useState<MaintainerReply | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    send('/api/quests/maintainer').then(setData).catch((e) => setErr(e?.message || String(e)));
+  }, []);
+  return (
+    <div className="space-y-3" data-quest-maintainer>
+      <p className="text-xs text-slate-500 dark:text-slate-400">{t('maintIntro')}</p>
+      {err && <p className="text-sm text-rose-700 dark:text-rose-400">{err}</p>}
+      {data && <p className="text-sm" data-quest-maintainer-counts>{t('maintCounts', data.counts)}</p>}
+      {data && data.items.length === 0 && <p className="text-sm text-emerald-700 dark:text-emerald-400" data-quest-maintainer-clear>{t('maintClear')}</p>}
+      {data && data.items.length > 0 && (
+        <ul className="space-y-2">
+          {data.items.map((it) => (
+            <li key={it.kind} className="border-t border-slate-200 dark:border-slate-800 pt-2 text-sm" data-quest-maintainer-item={it.kind}>
+              <div className="font-medium">{t(`maint_${it.kind}` as keyof typeof QUESTS.en, { n: it.n })}</div>
+              <div className="text-xs text-slate-500 break-words">{it.ids.join(', ')}{it.n > it.ids.length ? ` ${t('maintMore', { n: it.n - it.ids.length })}` : ''}</div>
+              {it.command && <code className="text-xs">{it.command}</code>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

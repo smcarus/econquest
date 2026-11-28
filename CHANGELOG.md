@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Quests (still switched off): a Maintainer tab on Menu > Quests listing what needs doing now (file
+  problems, a broken results record, results due, Signal tests to run, drafts ready to approve,
+  missing translations), each with its command; administrators only when sign-in is on.
 - Quests (still switched off): a draft Quest takes private entries only until the first Quest is
   approved; after that, Log privately works only on approved Quests and says why on a draft.
 - Quests (still switched off): Report a data problem on every Quest page opens a new GitHub issue
