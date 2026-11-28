@@ -59,6 +59,7 @@
     "quests:board": "tsx scripts/quests-board.ts",
     "quests:dataset": "tsx scripts/quests-dataset.ts",
     "quests:live-check": "tsx scripts/quests-live-check.ts",
+    "class:load": "tsx scripts/class-load.ts",
     "class:setup": "tsx scripts/class-setup.ts",
     "council:time": "tsx scripts/council-time.ts",
     "docs:methods": "tsx scripts/docs-methods.ts",

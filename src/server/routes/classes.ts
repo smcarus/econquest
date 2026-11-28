@@ -84,10 +84,12 @@ import { RateLimiter, type Bucket } from '../../utils/requestLimits';
 const PEER_DEBATES_ONLY = 'Peer review is for Debate Quests, where students write an argument';
 
 /** Class calls per caller: the app-wide limit applies too; joining is tighter, so codes cannot be guessed. */
-export const CLASS_LIMITS: Record<'read' | 'write' | 'join', Bucket> = {
+export const CLASS_LIMITS: Record<'read' | 'write' | 'join' | 'handIn', Bucket> = {
   read: { burst: 120, perMinute: 120 },
   write: { burst: 30, perMinute: 30 },
   join: { burst: 10, perMinute: 5 },
+  /** Q11: a teacher loads a whole class's sealed files at once. */
+  handIn: { burst: 200, perMinute: 200 },
 };
 
 export interface ClassDeps {
@@ -830,10 +832,37 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     }
   };
   /** Every counted entry of the class (the latest per student and assignment), scored. */
-  const scoreClass = async (cls: SchoolClass): Promise<ScoredClassEntry[]> => {
+  /**
+   * Q11: a class of 40 opens the class table every few seconds. The scores are kept for a minute
+   * and shared by everyone asking at the same time, and start again at once when an entry, a
+   * recorded result, an assignment or a Quest changes.
+   */
+  const scoreCache = new Map<string, { key: string; at: number; scores: Promise<ScoredClassEntry[]>; refreshing?: boolean }>();
+  const SCORE_KEEP_MS = 60_000;
+  const scoreClass = (cls: SchoolClass): Promise<ScoredClassEntry[]> => {
     const all = loadClassEntries(entriesFile).filter((e) => e.classId === cls.id);
     const recorded = loadResolutions(resultsFile).lines;
     const today = now().slice(0, 10);
+    const key = [today, all.length, all.at(-1)?.at ?? '', recorded.length, ...(cls.assignments ?? []).map((x) => `${x.id}:${x.questId}:${questFor(x.questId, cls.id)?.quest.version ?? '-'}`)].join('|');
+    const kept = scoreCache.get(cls.id);
+    if (kept && kept.key === key) {
+      if (Date.now() - kept.at < SCORE_KEEP_MS || kept.refreshing) return kept.scores;
+      // Nothing changed but the minute is up: answer with the kept scores while new ones are read,
+      // so nobody waits on a slow feed.
+      kept.refreshing = true;
+      const next = scoreClassNow(cls, all, recorded, today);
+      next.then(
+        () => scoreCache.set(cls.id, { key, at: Date.now(), scores: next }),
+        () => (kept.refreshing = false),
+      );
+      return kept.scores;
+    }
+    const scores = scoreClassNow(cls, all, recorded, today);
+    scoreCache.set(cls.id, { key, at: Date.now(), scores });
+    scores.catch(() => scoreCache.delete(cls.id));
+    return scores;
+  };
+  const scoreClassNow = async (cls: SchoolClass, all: ClassEntry[], recorded: ReturnType<typeof loadResolutions>['lines'], today: string): Promise<ScoredClassEntry[]> => {
     const cache = new Map<string, Promise<Point[] | { reason: string }>>();
     const get = (ref: { country: string; series: string }) => {
       const k = `${ref.country}|${ref.series}`;
@@ -856,6 +885,8 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     return out;
   };
   const scoreForecast = async (like: QuestEntry, q: ForecastQuest, get: (ref: { country: string; series: string }) => Promise<Point[] | { reason: string }>, today: string): Promise<EntryScore> => {
+    // Still open: nothing to read yet, so no feed is asked.
+    if (today <= q.closesOn) return scoreEntry(like, q, () => ({ reason: 'Not read before the Quest closes' }), today);
     const pts = new Map<string, Point[] | { reason: string }>();
     for (const r of [q.rule, ...(q.fallback !== 'unresolvable' ? [q.fallback.rule] : [])]) pts.set(`${r.ref.country}|${r.ref.series}`, await get(r.ref));
     return scoreEntry(like, q, (rule) => pts.get(`${rule.ref.country}|${rule.ref.series}`) ?? { reason: 'No series' }, today);
@@ -1185,7 +1216,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     res.json(sheet);
   });
 
-  app.post('/api/classes/:id/assignments/:aid/hand-ins', classRateLimit('write'), (req, res) => {
+  app.post('/api/classes/:id/assignments/:aid/hand-ins', classRateLimit('handIn'), (req, res) => {
     const a = me(res);
     if (!a) return;
     const cls = asTeacher(loadClasses(file), String(req.params.id), a, res);
