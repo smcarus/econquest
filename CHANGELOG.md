@@ -5,6 +5,8 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Quests (still switched off): a draft Quest takes private entries only until the first Quest is
+  approved; after that, Log privately works only on approved Quests and says why on a draft.
 - Quests (still switched off): Report a data problem on every Quest page opens a new GitHub issue
   with the Quest and the figures its page showed filled in; you read it and send it yourself.
 - Docs: a Quests section in PRIVACY.md (what is public with a public entry, including the GitHub

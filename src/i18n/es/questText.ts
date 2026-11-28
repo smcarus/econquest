@@ -78,6 +78,7 @@ export const QUEST_TEXT_ES: Record<string, string> = {
   "This practice question has expired; ask for a new one": "Esta pregunta de práctica ha caducado; pida una nueva",
   "A probability from 0 to 1": "Una probabilidad de 0 a 1",
   "No forecast Quest with that id": "No hay ningún reto de pronóstico con ese identificador",
+  "This Quest is a draft. Drafts take private entries only until the first Quest is approved, and one has been, so log your forecast on an approved Quest": "Este reto es un borrador. Los borradores aceptan respuestas privadas solo hasta que se aprueba el primer reto, y ya se ha aprobado uno; registre su previsión en un reto aprobado",
   "No Quest with that id": "No hay ningún reto con ese identificador",
   "A Signal Quest test is entered in public (by pull request or email), so it is fixed in the open before it runs. Use \"Prepare a public entry\".": "La prueba de un reto de señal se presenta en público (por pull request o correo), para que quede fijada a la vista antes de ejecutarse. Use \"Preparar una respuesta pública\".",
   "Practice is for Quests that ask whether a series will be higher or lower after entries close": "La práctica es para retos que preguntan si una serie estará más alta o más baja tras el cierre de las respuestas",

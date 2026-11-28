@@ -1318,6 +1318,8 @@ hold no figures of their own; the handout reads them from the app's series when 
   - *Log privately*: keeps your forecast on this computer only (`data/local/quest-entries.jsonl`),
     with a fingerprint so it cannot be changed later; *My entries* shows them with their scores once
     the result is in.
+    A draft Quest takes private entries only until the first Quest is approved; after that only
+    approved Quests do.
   - *Enter publicly*: prepares an entry file and opens GitHub's ready-made page, so your score can
     count on the public tables. It needs a free GitHub account and is public for good (see
     [PRIVACY.md](./PRIVACY.md#quests)).
