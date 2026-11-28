@@ -257,8 +257,8 @@ Documented:
 
 - [ ] This page lists what works and what does not, with no "Not built" item that users can reach
 - [ ] `CONTRIBUTING.md` has the Quests section: how to propose, enter, dispute, and access from countries GitHub blocks
-- [ ] A privacy notice says what is public (login, entries, rationales, scores, the GitHub account's creation date, and stance profiles for people who sign up with one) and that git history is permanent
-- [ ] The user manual has a Quests section
+- [x] A privacy notice says what is public (login, entries, rationales, scores, the GitHub account's creation date, and stance profiles for people who sign up with one) and that git history is permanent ([PRIVACY.md](./PRIVACY.md#quests), and *Enter publicly* on each Quest)
+- [x] The user manual has a Quests section (USER_MANUAL.md, section 5 Menu)
 - [ ] The public repository has a Quests category in GitHub Discussions, linked from each approved Quest
 
 Planned, to build before Quests are switched on for everyone (added November 2026; see docs/ROADMAP.md):

@@ -1300,6 +1300,37 @@ hold no figures of their own; the handout reads them from the app's series when 
   working and space for your own answers: *Copy* or *Download (.md)*, then write the conclusion in
   your own words. To work an example for another country, open that country in Research first. In
   English, Spanish, French and Portuguese.
+- **Quests** (switched off until the maintainer turns them on with `QUESTS_ENABLED=on`; until then
+  the item is greyed and reads *Not yet available*): open economics and policy questions anyone can
+  answer, argue and check, in English, Spanish, French and Portuguese. There are four kinds:
+  *Forecast* (will a published figure be higher or lower, above or below a line, or what will it
+  be, on a date fixed in advance), *Debate* (pick a position and give your argument; never scored),
+  *Replication* (reproduce a figure the app shows with your own script, for example the Bohn (1998)
+  fiscal reaction estimate for Brazil, with a guide and starter scripts in `quests/replications/bohn/`)
+  and *Signal* (propose a test of one of the app's rules, run once after entries close). How to use it:
+  - *Pack*: choose *Starter pack* to see 25 problems grouped by topic (Start here, inflation and
+    interest rates, debt and budgets, currencies, growth and jobs, trade and commodities,
+    lower-income countries). Quests marked *Practice now* can be tried at once on past data.
+  - Open a Quest to read the question, the rule that settles it in words, the latest figure of each
+    series it reads (or Missing with the reason), and what it cannot tell you.
+  - *Practice*: a past window of the same length with the answer hidden; your answer is scored at
+    once against how often that happened before, and nothing is saved.
+  - *Log privately*: keeps your forecast on this computer only (`data/local/quest-entries.jsonl`),
+    with a fingerprint so it cannot be changed later; *My entries* shows them with their scores once
+    the result is in.
+  - *Enter publicly*: prepares an entry file and opens GitHub's ready-made page, so your score can
+    count on the public tables. It needs a free GitHub account and is public for good (see
+    [PRIVACY.md](./PRIVACY.md#quests)).
+  - *Results* shows every recorded result and whether the record of results is intact; the same view
+    is in Models & validation, beside Track record. *Scoreboard*, *Health* and *Stances* follow the
+    rules in [QUESTS.md](./QUESTS.md).
+  - Country pages and Council chat answers show up to three *Quests about this country*; a link
+    opens that Quest. Researchers can read settled forecasts and their scores from R, Python or Stata
+    ([DATA_API.md](./DATA_API.md)).
+  A forecast is scored with the Brier score (a probability; lower is better) or the distance from the
+  outcome (a number), against a benchmark: how often it happened in past periods of the same length,
+  or no change from the last value. Results come only from the published figures named in the rule;
+  a figure that never comes makes the Quest Unresolvable, never a guess.
 - **Tools**: opens the Tools page (section 4). Opening a tool goes to it.
 - **Settings** (⌘, or Ctrl+,): free keys (FRED, EIA, UN Comtrade, Turkey EVDS), your own paid data
   (CDS source Off, My CSV or My LSEG), and the Gemini key. Each key has a Test button. Keys are
