@@ -378,7 +378,7 @@ try {
   });
 
   // Classes on, Quests off, with sign-in: Menu > Quests opens on the Classes tab alone.
-  await step('classes: with Quests off, a teacher makes a class and student accounts', async () => {
+  await step('classes: with Quests off, a teacher makes a class, student accounts and a class Quest', async () => {
     classesServer = startServer({ CLASSES_ENABLED: 'on', DATA_DIR: mkdtempSync(path.join(tmpdir(), 'econquest-journeys-classes-')) });
     await waitUp(classesServer);
     const password = 'a long journey test passphrase';
@@ -407,6 +407,18 @@ try {
       await box.locator('[data-class-make-students]').click();
       await box.locator('[data-class-created]').waitFor({ timeout: 15_000 });
       await box.locator('[data-class-member="jose"]').waitFor({ timeout: 15_000 });
+      // Q4: a class Quest from the fixed rule types, with a level.
+      const day = (n) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+      await box.locator('[data-class-quest-new]').click();
+      await box.locator('[data-class-quest-level]').selectOption('intermediate');
+      await box.locator('[data-class-quest-title]').fill('Will Brazil’s policy rate be lower at the end of term?');
+      await box.locator('[data-class-quest-summary]').fill('The central bank meets twice before the end of term.');
+      await box.locator('[data-class-quest-closes]').fill(day(14));
+      await box.locator('[data-class-quest-country]').fill('BRA');
+      await box.locator('[data-class-quest-op]').selectOption('lower');
+      await box.locator('[data-class-quest-on]').fill(day(40));
+      await box.locator('[data-class-quest-save]').click();
+      await box.locator('[data-class-quest]').first().waitFor({ timeout: 15_000 });
     } catch (err) {
       // Say on one line what the screen showed, so a failure on a CI machine can be read from the log.
       const alerts = await box.locator('[role="alert"]').allTextContents().catch(() => []);

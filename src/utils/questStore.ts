@@ -5,7 +5,8 @@
 import { createHash } from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { collectionProblems, questProblems, type Quest } from './quests';
+import { collectionProblems, questProblems, QUEST_LEVELS, type Quest, type QuestLevel } from './quests';
+import { levelsFileProblems, questsWithoutLevel } from './questLevels';
 import { translationKey, translationProblems, translationText, type QuestTranslation, type QuestTranslationMap } from './questTranslations';
 import { packProblems, type QuestPack } from './questPacks';
 
@@ -23,7 +24,7 @@ export interface QuestFile {
 }
 
 /** JSON files in quests/ that are not Quests: the manifest, contributor statistics, account ages, and Signal Quest verdicts. */
-export const NOT_QUESTS = new Set(['manifest.json', 'stats.json', 'accounts.json', 'test-verdicts.json']);
+export const NOT_QUESTS = new Set(['manifest.json', 'stats.json', 'accounts.json', 'test-verdicts.json', 'levels.json']);
 
 const sha256 = (buf: Buffer) => createHash('sha256').update(buf).digest('hex');
 
@@ -81,6 +82,7 @@ export function checkQuests(questsDir: string, manifest = readManifest(questsDir
   if (c.length) problems.collection = c;
   Object.assign(problems, checkTranslations(questsDir, files));
   Object.assign(problems, checkPacks(questsDir, files));
+  Object.assign(problems, checkLevels(questsDir, files));
   return { files, problems, ok: Object.keys(problems).length === 0 };
 }
 
@@ -192,4 +194,45 @@ export function loadPacks(questsDir: string, quests: Array<{ quest: Quest }>): Q
     if (groups.length) out.push({ ...p, groups });
   }
   return out;
+}
+
+/** quests/levels.json: levels for Quests approved before files carried one (src/utils/questLevels.ts). */
+export function levelsPath(questsDir: string): string {
+  return path.join(questsDir, 'levels.json');
+}
+
+function readLevelsFile(questsDir: string): { json: unknown; parseError?: string } | null {
+  try {
+    const text = fs.readFileSync(levelsPath(questsDir), 'utf8');
+    try {
+      return { json: JSON.parse(text) };
+    } catch (e) {
+      return { json: null, parseError: (e as Error).message };
+    }
+  } catch {
+    return null;
+  }
+}
+
+/** Problems in quests/levels.json, and every Quest on file with no level. */
+export function checkLevels(questsDir: string, files = readQuestFiles(questsDir)): Record<string, string[]> {
+  const quests = files.map((f) => f.json as Quest | null).filter((q): q is Quest => Boolean(q && typeof q.id === 'string'));
+  const f = readLevelsFile(questsDir);
+  const out: Record<string, string[]> = {};
+  if (f) {
+    const p = f.parseError ? [`not valid JSON: ${f.parseError}`] : levelsFileProblems(f.json, new Set(quests.map((q) => q.id)));
+    if (p.length) out['quests/levels.json'] = p;
+  }
+  const missing = questsWithoutLevel(quests, loadLevels(questsDir));
+  if (missing.length) out.levels = missing.map((id) => `${id}: no level; add "level": "intro", "intermediate" or "advanced" to a draft, or the id to quests/levels.json for an approved Quest`);
+  return out;
+}
+
+/** The level map, or an empty one when the file is missing or broken. */
+export function loadLevels(questsDir: string): Record<string, QuestLevel> {
+  const f = readLevelsFile(questsDir);
+  if (!f || f.parseError || !f.json || typeof f.json !== 'object') return {};
+  const levels = (f.json as { levels?: unknown }).levels;
+  if (!levels || typeof levels !== 'object' || Array.isArray(levels)) return {};
+  return Object.fromEntries(Object.entries(levels as Record<string, unknown>).filter(([, v]) => QUEST_LEVELS.includes(v as QuestLevel))) as Record<string, QuestLevel>;
 }

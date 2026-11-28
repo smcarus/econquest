@@ -7,7 +7,7 @@ import { packProblems, packText } from '../src/utils/questPacks';
 import { checkPacks, checkQuests, loadPacks, loadQuests } from '../src/utils/questStore';
 
 const ids = new Set(['a-quest', 'b-quest']);
-const good = { id: 'starter', title: { en: 'Starter pack', es: 'Paquete de inicio' }, summary: { en: 'Problems to work through.' }, groups: [{ id: 'one', title: { en: 'One' }, quests: ['a-quest', 'b-quest'] }] };
+const good = { id: 'starter', title: { en: 'Starter pack', es: 'Paquete de inicio' }, summary: { en: 'Problems to work through.' }, level: 'intro', groups: [{ id: 'one', title: { en: 'One' }, quests: ['a-quest', 'b-quest'] }] };
 
 test('a pack lists Quests on file, once each, with English titles', () => {
   assert.deepEqual(packProblems(good, 'starter.json', ids), []);
@@ -17,6 +17,8 @@ test('a pack lists Quests on file, once each, with English titles', () => {
   assert.match(packProblems({ ...good, title: { es: 'Solo español' } }, 'starter.json', ids).join(), /English is required/);
   assert.match(packProblems({ ...good, title: { en: 'x', de: 'y' } }, 'starter.json', ids).join(), /not a language/);
   assert.match(packProblems({ ...good, extra: 1 }, 'starter.json', ids).join(), /not a pack field/);
+  assert.match(packProblems({ ...good, level: 'expert' }, 'starter.json', ids).join(), /level: one of intro, intermediate, advanced/);
+  assert.match(packProblems({ ...good, level: undefined }, 'starter.json', ids).join(), /level/);
   assert.equal(packText(good.title, 'es'), 'Paquete de inicio');
   assert.equal(packText(good.title, 'fr'), 'Starter pack');
 });

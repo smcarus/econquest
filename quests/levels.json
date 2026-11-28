@@ -1,0 +1,30 @@
+{
+  "note": "Levels for Quests approved before Quest files carried a level (classroom step Q4). A new Quest puts \"level\" in its own file; this map is only for files that can no longer change.",
+  "levels": {
+    "arg-debt-2026": "intermediate",
+    "bra-bohn-replication": "advanced",
+    "bra-growth-2026": "intro",
+    "bra-reserves-2026": "intermediate",
+    "brl-month-2027-01": "intro",
+    "credit-gap-crisis-signal": "advanced",
+    "deficit-slowdown-debate": "intro",
+    "egy-reserves-debate": "intermediate",
+    "gha-debt-2026": "intermediate",
+    "ind-current-account-2026": "intermediate",
+    "ind-growth-2026": "intro",
+    "ind-inflation-2026": "intermediate",
+    "jpy-positioning-4w-2027-01": "intermediate",
+    "ken-inflation-2026": "intro",
+    "lic-inflation-target-debate": "intermediate",
+    "mex-policy-level-2027-03": "intermediate",
+    "mex-unemployment-2026": "intro",
+    "sanctions-effect-debate": "intermediate",
+    "tur-inflation-2026": "intro",
+    "tur-policy-2027h1": "intermediate",
+    "tur-taylor-exercise-replication": "intermediate",
+    "tutorial-brent-week": "intro",
+    "usa-policy-2027h1": "intro",
+    "zar-month-2027-01": "intro",
+    "zmb-external-debt-2026": "intermediate"
+  }
+}

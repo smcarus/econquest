@@ -27,6 +27,10 @@ export type QuestType = (typeof QUEST_TYPES)[number];
 export const QUEST_TOPICS = ['monetary', 'fiscal', 'fx', 'external', 'debt', 'growth', 'inflation', 'commodities', 'positioning', 'geopolitics'] as const;
 export type QuestTopic = (typeof QUEST_TOPICS)[number];
 
+/** How much a Quest asks of the person answering it (classroom step Q4). */
+export const QUEST_LEVELS = ['intro', 'intermediate', 'advanced'] as const;
+export type QuestLevel = (typeof QUEST_LEVELS)[number];
+
 export const QUEST_REGIONS = ['Americas', 'EMEA', 'Asia-Pacific', 'Global'] as const;
 export type QuestRegion = (typeof QUEST_REGIONS)[number];
 
@@ -56,6 +60,8 @@ export interface QuestBase {
   author: string;
   /** GitHub login of the maintainer who approved it; absent on a draft. */
   approvedBy?: string;
+  /** intro, intermediate or advanced. A Quest approved before levels existed takes its level from quests/levels.json. */
+  level?: QuestLevel;
   /** Set only for the beginner Quest that settles within a week. */
   tutorial?: boolean;
   /** Link to the GitHub Discussion, added when it is opened. */
@@ -152,7 +158,11 @@ export interface QuestCheckOptions {
   approved: boolean;
   /** The file's name, checked against id and version. */
   fileName?: string;
+  /** A class Quest (data/local/class-quests/): author and approver are account usernames on this server, not GitHub logins. */
+  classQuest?: boolean;
 }
+
+const USERNAME = /^[a-z0-9][a-z0-9._-]{1,39}$/;
 
 /** Everything wrong with a Quest file; empty when it passes. */
 export function questProblems(raw: unknown, opts: QuestCheckOptions): string[] {
@@ -160,7 +170,7 @@ export function questProblems(raw: unknown, opts: QuestCheckOptions): string[] {
   const q = raw as Partial<Quest> & Record<string, unknown>;
   const out: string[] = [];
   if (typeof q.id !== 'string' || !ID.test(q.id) || q.id.length > 60) out.push('id: lower-case words joined by hyphens, at most 60 characters');
-  else if (['manifest', 'stats', 'accounts', 'entries', 'drafts', 'resolutions', 'briefs', 'test-verdicts', 'profiles', 'translations', 'packs', 'replications'].includes(q.id)) out.push(`id: "${q.id}" is the name of a file or folder in quests/; choose another`);
+  else if (['manifest', 'stats', 'accounts', 'entries', 'drafts', 'resolutions', 'briefs', 'test-verdicts', 'profiles', 'translations', 'packs', 'replications', 'levels'].includes(q.id)) out.push(`id: "${q.id}" is the name of a file or folder in quests/; choose another`);
   if (!Number.isInteger(q.version) || (q.version as number) < 1) out.push('version: a whole number from 1');
   if (opts.fileName && typeof q.id === 'string' && Number.isInteger(q.version) && opts.fileName !== questFileName(q as Quest)) out.push(`file name: must be ${questFileName(q as Quest)}`);
   if (!QUEST_TYPES.includes(q.type as QuestType)) out.push(`type: one of ${QUEST_TYPES.join(', ')}`);
@@ -169,8 +179,11 @@ export function questProblems(raw: unknown, opts: QuestCheckOptions): string[] {
   if (!Array.isArray(q.countries) || !q.countries.length || !q.countries.every((c) => typeof c === 'string' && /^[A-Z]{3}$/.test(c))) out.push('countries: at least one ISO3 code (WLD for the world)');
   if (!Array.isArray(q.topics) || !q.topics.length || !q.topics.every((t) => QUEST_TOPICS.includes(t as QuestTopic))) out.push(`topics: one or more of ${QUEST_TOPICS.join(', ')}`);
   if (!QUEST_REGIONS.includes(q.region as QuestRegion)) out.push(`region: one of ${QUEST_REGIONS.join(', ')}`);
-  if (typeof q.author !== 'string' || !LOGIN.test(q.author)) out.push('author: a GitHub login');
-  if (q.approvedBy !== undefined && (typeof q.approvedBy !== 'string' || !LOGIN.test(q.approvedBy))) out.push('approvedBy: a GitHub login');
+  const who = opts.classQuest ? USERNAME : LOGIN;
+  const whoName = opts.classQuest ? 'an account username' : 'a GitHub login';
+  if (typeof q.author !== 'string' || !who.test(q.author)) out.push(`author: ${whoName}`);
+  if (q.approvedBy !== undefined && (typeof q.approvedBy !== 'string' || !who.test(q.approvedBy))) out.push(`approvedBy: ${whoName}`);
+  if (q.level !== undefined && !QUEST_LEVELS.includes(q.level as QuestLevel)) out.push(`level: one of ${QUEST_LEVELS.join(', ')}`);
   if (opts.approved && !q.approvedBy) out.push('approvedBy: an approved Quest names the maintainer who approved it');
   if (!opts.approved && q.approvedBy) out.push('approvedBy: a draft has no approver; move the file to quests/ when it is approved');
   if (q.discussion !== undefined && (typeof q.discussion !== 'string' || !/^https:\/\/github\.com\/[^/]+\/[^/]+\/discussions\/\d+$/.test(q.discussion))) out.push('discussion: a https://github.com/<owner>/<repo>/discussions/<n> link');

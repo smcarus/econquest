@@ -1340,6 +1340,9 @@ hold no figures of their own; the handout reads them from the app's series when 
     rule on AI tools; students hand in a forecast before their due time and see the others' entries
     only after the last due time. The teacher can give one student more time, show entries early and
     copy last term's assignments; *Add the due times to your calendar* downloads a calendar file.
+    The teacher can also *Write a class Quest* for that class only: a forecast settled by the app
+    from a public series, or a debate, with a level (intro, intermediate or advanced). The Quest list
+    has a *Level* filter.
   - Country pages and Council chat answers show up to three *Quests about this country*; a link
     opens that Quest. Researchers can read settled forecasts and their scores from R, Python or Stata
     ([DATA_API.md](./DATA_API.md)).
