@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Classes (step Q3): a teacher sets a Quest for the class with a due date and time in the class's
+  time zone, a rule on AI tools and optional instructions; students hand in before their due time;
+  private extensions for single students; entries hidden from other students until the last due
+  time (or until the teacher shows them); copy last term's assignments with the dates moved; a
+  calendar file of due times. Spanish, French and Portuguese wording included.
 - Classes (step Q2): `npm run class:setup` turns classes on, opens the app to the school network, makes
   the first administrator and pins the version in use until the last day of the term (`npm run go`
   and `npm run update` keep it until then); docs/SCHOOL_IT.md is a one-page guide for school IT staff.

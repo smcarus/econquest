@@ -8,6 +8,7 @@ import { QUESTS } from '../i18n/messages/quests';
 import { readLang, translateText } from '../i18n/lang';
 import { useT } from '../i18n/useLang';
 import type { ClassView } from '../utils/classes';
+import { ClassAssignments } from './ClassAssignments';
 
 type ListReply = { enabled: boolean; reason?: string; needSignIn?: boolean; classes: ClassView[]; canCreate: boolean };
 type Created = { nickname: string; username: string; password: string };
@@ -28,6 +29,7 @@ export function ClassesView() {
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [term, setTerm] = useState({ label: '', starts: '', ends: '' });
+  const [timeZone, setTimeZone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
   const [created, setCreated] = useState<{ classId: string; rows: Created[] } | null>(null);
 
   const load = useCallback(() => {
@@ -69,7 +71,7 @@ export function ClassesView() {
       {data.classes.length === 0 && <p className="text-sm text-slate-600 dark:text-slate-300" data-classes-none>{t('classesNone')}</p>}
       <ul className="space-y-3">
         {data.classes.map((c) => (
-          <ClassCard key={c.id} cls={c} act={act} created={created?.classId === c.id ? created.rows : null} onCreated={(rows) => setCreated({ classId: c.id, rows })} />
+          <ClassCard key={c.id} cls={c} act={act} created={created?.classId === c.id ? created.rows : null} onCreated={(rows) => setCreated({ classId: c.id, rows })} otherTeaching={data.classes.filter((x) => x.myRole === 'teacher' && x.id !== c.id)} />
         ))}
       </ul>
 
@@ -78,7 +80,7 @@ export function ClassesView() {
           className="space-y-2 border-t border-slate-200 dark:border-slate-800 pt-3"
           onSubmit={(e) => {
             e.preventDefault();
-            void act(() => call('/api/classes', 'POST', { name, term }).then(() => {
+            void act(() => call('/api/classes', 'POST', { name, term, timeZone }).then(() => {
               setName('');
               setTerm({ label: '', starts: '', ends: '' });
             }));
@@ -103,6 +105,10 @@ export function ClassesView() {
               <span className="block">{t('classesEnds')}</span>
               <input type="date" className={fieldCls} value={term.ends} onChange={(e) => setTerm({ ...term, ends: e.target.value })} data-classes-ends />
             </label>
+            <label className="text-xs space-y-1">
+              <span className="block">{t('classesTimeZone')}</span>
+              <input className={`${fieldCls} w-44`} value={timeZone} onChange={(e) => setTimeZone(e.target.value)} data-classes-tz />
+            </label>
             <button type="submit" className="ui-btn" data-classes-make>
               {t('classesMake')}
             </button>
@@ -113,7 +119,7 @@ export function ClassesView() {
   );
 }
 
-function ClassCard({ cls, act, created, onCreated }: { cls: ClassView; act: (fn: () => Promise<unknown>) => Promise<void>; created: Created[] | null; onCreated: (rows: Created[]) => void }) {
+function ClassCard({ cls, act, created, onCreated, otherTeaching }: { cls: ClassView; act: (fn: () => Promise<unknown>) => Promise<void>; created: Created[] | null; onCreated: (rows: Created[]) => void; otherTeaching: ClassView[] }) {
   const t = useT(QUESTS);
   const [username, setUsername] = useState('');
   const [role, setRole] = useState<'marker' | 'student'>('marker');
@@ -126,7 +132,7 @@ function ClassCard({ cls, act, created, onCreated }: { cls: ClassView; act: (fn:
         <div>
           <div className="text-sm font-medium text-slate-900 dark:text-white">{cls.name}</div>
           <div className="text-xs text-slate-500 dark:text-slate-400">
-            {t('classesMeta', { term: cls.term.label, starts: cls.term.starts, ends: cls.term.ends, role: t(`classRole_${cls.myRole}`), n: cls.memberCount })}
+            {t('classesMeta', { term: cls.term.label, starts: cls.term.starts, ends: cls.term.ends, role: t(`classRole_${cls.myRole}`), n: cls.memberCount })} · {cls.timeZone}
             {cls.archived ? ` · ${t('classesArchived')}` : ''}
           </div>
           <div className="text-xs text-slate-500 dark:text-slate-400">{t('classesTeachers', { names: cls.teachers.join(', ') })}</div>
@@ -255,6 +261,7 @@ function ClassCard({ cls, act, created, onCreated }: { cls: ClassView; act: (fn:
           </table>
         </div>
       )}
+      <ClassAssignments cls={cls} otherTeaching={otherTeaching} />
     </li>
   );
 }
