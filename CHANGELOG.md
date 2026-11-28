@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Classes (step Q11): `npm run class:load` plays a lesson for 40 students on its own copy of the app
+  and reports reply times, errors, memory and processor use. Fixes from the first run: the class
+  table no longer waits on slow feeds (open Quests ask no feed; scores are kept for a minute and
+  shared), and a teacher can load a whole class's sealed files at once.
 - Classes (step Q10): the classroom screens are in the accessibility check at phone width (teacher
   and student, WCAG 2.2 A and AA, keyboard focus, 320-pixel reflow). The keyboard focus now stays
   inside the Quests window, and three classroom screens fit 320 pixels.

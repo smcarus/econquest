@@ -256,6 +256,7 @@ there rather than into `server.ts`. Every address an outside program may call is
 | `npm run test:smoke` | Opens every page of the built app (run `npm run build` first) in Chromium with every feed down, and fails on a crash or a blocked request |
 | `npm run test:journeys` | The main tasks, click by click |
 | `npm run test:a11y` | WCAG 2.2 A and AA rules on the main pages and the classroom screens, a keyboard focus pass on Workspace, Research, the phone layout and the classroom screens, and a 320-pixel reflow check of the classroom screens |
+| `npm run class:load` | Class load test: a lesson for 40 students on its own copy of the app (`-- --cores 2` holds it to two processor cores on Linux); reports reply times, errors, memory and processor use |
 
 How the network is replaced in tests:
 

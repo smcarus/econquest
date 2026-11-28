@@ -159,7 +159,7 @@ professor does.
 | Q8 | Gradebook file, voided Quests left out of marks, archived classes deleted after a period the professor sets. Built 28 November (weighted gradebook CSV, student record, archive read-only, deletion after the keeping period with a 30-day warning) |
 | Q9 | Sealed hand-in files for students working on their own copies. Built 28 November (hand-in sheet with the class's public key; the answer sealed in the browser with AES-256-GCM and RSA-OAEP; loaded once by the teacher, shown late by the student's own clock, same fingerprint on both screens) |
 | Q10 | Accessibility review of the classroom screens (WCAG 2.2 AA, as the rest of the app is checked since 26 November), designed for phone width first. Built 28 November (classroom screens added to `npm run test:a11y` at phone width for teacher and student, plus a 320-pixel reflow check; the keyboard focus now stays inside the Quests window; three screens fixed to fit 320 pixels) |
-| Q11 | Load test: 40 students on one modest laptop |
+| Q11 | Load test: 40 students on one modest laptop. Built 28 November (`npm run class:load`; 40 students pass on 2 processor cores and on 1, peak memory about 330 MB; the class table's scores are now kept for a minute and shared, and a teacher can load a whole class's sealed files at once) |
 | Q12 | Community links on GitHub (publish an entry, class tags, packs), after the public release |
 | Q13 | Teacher guide (English, then Spanish and French) and a Teaching page on the website |
 
