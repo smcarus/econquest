@@ -5,6 +5,8 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Quests (still switched off): Report a data problem on every Quest page opens a new GitHub issue
+  with the Quest and the figures its page showed filled in; you read it and send it yourself.
 - Docs: a Quests section in PRIVACY.md (what is public with a public entry, including the GitHub
   account's creation date; what stays on the computer; git history is permanent) and a Quests entry
   in the user manual (Menu), for when Quests are switched on.

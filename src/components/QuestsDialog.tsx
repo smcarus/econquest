@@ -23,6 +23,9 @@ import { describeRule, RULE_WORDS, type QuestRule, type RuleWords } from '../uti
 import { packText, type QuestPack } from '../utils/questPacks';
 import { questTextIn, questTitleIn, type QuestTranslationLang, type QuestText, type QuestTranslationMap } from '../utils/questTranslations';
 import { useLang, useT, useTx } from '../i18n/useLang';
+import { questDataProblemUrl } from '../utils/problemReport';
+import { APP_CITATION } from '../utils/citation';
+import { versionWithCommit } from '../utils/buildInfo';
 import { QUESTS } from '../i18n/messages/quests';
 import { readLang, translateText } from '../i18n/lang';
 import { checkArgument, evidenceMap, evidenceMarkdown, type ArgumentCheck, type DebateBrief, type EvidenceMap } from '../utils/questDebate';
@@ -318,6 +321,24 @@ export function QuestsDialog({ onClose, items = [], focusId = null }: { onClose:
                       </tbody>
                     </table>
                   )}
+                  <p className="text-xs">
+                    <a
+                      className="underline text-slate-600 dark:text-slate-300"
+                      href={questDataProblemUrl({
+                        version: versionWithCommit(APP_CITATION.version),
+                        questId: detail.quest.id,
+                        questVersion: detail.quest.version,
+                        title: detail.quest.title,
+                        figures: detail.figures.map((f) => ({ series: `${f.label} (${f.country})`, shown: f.missing ? `Missing: ${f.missing}` : `${f.value} ${f.unit ?? ''} (${f.date})`.replace(/\s+/g, ' '), source: f.source })),
+                      })}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-quest-report-data
+                    >
+                      {t('reportData')}
+                    </a>{' '}
+                    <span className="text-slate-500">{t('reportDataNote')}</span>
+                  </p>
                   {text.knownLimits.length > 0 && (
                     <div className="space-y-1">
                       <div className="text-xs text-slate-500">{t('knownLimits')}</div>

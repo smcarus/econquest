@@ -60,3 +60,32 @@ export function blankProblemUrl(version: string): string {
   const body = ['**What happened:** ', '', '**What I expected:** ', '', '**Steps to see it:** ', '', `- App version: ${version}`].join('\n');
   return issueLink('Problem: ', body);
 }
+
+export interface QuestDataProblem {
+  version: string;
+  questId: string;
+  questVersion: number;
+  title: string;
+  /** The figures the Quest page shows: the series in words, what it showed (a value or Missing) and the source. */
+  figures: Array<{ series: string; shown: string; source?: string }>;
+}
+
+/**
+ * "Report a data problem" on every Quest (Quests go-live checklist): a new issue naming the Quest and
+ * the figures its page showed, for a wrong value, a source that changed, or a rule that reads the
+ * wrong series. The person adds what is wrong and sends it themselves.
+ */
+export function questDataProblemUrl(d: QuestDataProblem): string {
+  const lines = d.figures.length ? d.figures.map((f) => `- ${f.series}: ${f.shown}${f.source ? ` (${f.source})` : ''}`) : ['- (this Quest reads no series)'];
+  const body = [
+    '**What looks wrong:** ',
+    '',
+    '**Where the right figure is published (a link, if you have one):** ',
+    '',
+    `- Quest: ${d.questId} v${d.questVersion}, "${d.title.slice(0, 200)}"`,
+    '- What the Quest page showed:',
+    ...lines.slice(0, 12).map((l) => `  ${l}`),
+    `- App version: ${d.version}`,
+  ].join('\n');
+  return issueLink(`Quest data problem: ${d.questId}`.slice(0, 120), body);
+}
