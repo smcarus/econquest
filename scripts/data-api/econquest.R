@@ -5,6 +5,7 @@
 #   every  <- eq_country_series("BRA")                  # every series for Brazil
 #   panel  <- eq_panel(c("BRA", "MEX"), c("policy_rate", "cpi_monthly"), mode = "history")
 #   past   <- eq_figures("BRA", as_of = "2026-06-30")   # figures as saved that day
+#   quests <- eq_quest_forecasts()                      # settled Quest forecasts with scores (Quests on)
 #
 # Every row keeps the unit, source and dates. Settings (or pass base= / key=):
 #   ECONQUEST_URL  where the app runs, default http://localhost:3000 (Docker: http://localhost:3737)
@@ -47,3 +48,9 @@ eq_panel <- function(countries, figures = NULL, mode = "latest", base = NULL, ke
 
 eq_figures <- function(iso3, as_of = NULL, base = NULL, key = NULL)
   eq_get_csv(paste0("/api/export/", eq_code(iso3), "/figures.csv"), list(asOf = as_of), base = base, key = key)
+
+# Settled Forecast Quests, one row per counted public entry, with the recorded result and the entry's
+# score (Brier for a probability, absolute error for a level). Only while Quests are switched on;
+# otherwise the app answers 404 QUESTS_OFF.
+eq_quest_forecasts <- function(base = NULL, key = NULL)
+  eq_get_csv("/api/export/quests/forecasts.csv", base = base, key = key)

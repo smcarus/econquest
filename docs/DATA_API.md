@@ -27,6 +27,7 @@ every = eq.country_series("BRA")                    # every series for Brazil, o
 panel = eq.panel(["BRA", "MEX"], ["policy_rate", "cpi_monthly"], mode="history")
 past = eq.figures("BRA", as_of="2026-06-30")        # the figures as the app saved them that day
 listing = eq.series_list("BRA")                     # what exists, and what is Missing and why
+settled = eq.quest_forecasts()                      # settled Quest forecasts (only with Quests on)
 
 import pandas as pd                                 # optional
 df = pd.DataFrame(rate)
@@ -39,6 +40,7 @@ source("econquest.R")             # scripts/data-api/econquest.R
 rate  <- eq_series("BRA", "policy_rate")
 panel <- eq_panel(c("BRA", "MEX"), c("policy_rate", "cpi_monthly"), mode = "history")
 past  <- eq_figures("BRA", as_of = "2026-06-30")
+quests <- eq_quest_forecasts()    # only with Quests on
 ```
 
 ## Stata
@@ -48,6 +50,7 @@ do econquest.do                   // scripts/data-api/econquest.do
 econquest_series BRA policy_rate
 econquest_panel BRA,MEX policy_rate,cpi_monthly history
 econquest_figures BRA 2026-06-30
+econquest_quests                  // only with Quests on
 ```
 
 Each Stata command replaces the data in memory. Values arrive as text and the `value` column is
@@ -262,6 +265,42 @@ under `/api/reviews/` may change between versions. To rebuild it in your own cod
   control)*: the weights, the penalty, the placebo checks and when a result reads Missing.
 
 The result is marked Not validated until its pre-registered false-alarm test passes.
+
+## Added on 28 November: settled Quest forecasts
+
+These two addresses answer only while Quests are switched on (`QUESTS_ENABLED=on`, see
+[QUESTS.md](./QUESTS.md)). While Quests are off, the JSON address answers `{ "enabled": false }` with
+the reason and the table answers `404 QUESTS_OFF`.
+
+- `GET /api/quests/settled`: settled Forecast Quests with each counted public entry and its score, as JSON.
+- `GET /api/export/quests/forecasts.csv`: the same rows as a table (also `.xlsx`).
+
+There is one row for each counted public entry (a person's latest entry on that Quest) on an approved
+Forecast Quest that has a result in `quests/resolutions.jsonl`. Scores come from that recorded result,
+never from today's feeds, so they match the Quests screen and the scoreboard. Entries kept on your own
+computer and practice answers are never included. If the results record has been changed by hand so
+its chain of fingerprints no longer holds, both addresses answer `409` and serve nothing until it is
+restored.
+
+| Column | Meaning |
+| --- | --- |
+| `quest_id`, `quest_version`, `title` | Which Quest, and its English title |
+| `countries`, `series_id` | The countries it is about (separated by `;`) and the series it reads |
+| `rule` | The rule that settles it, in words |
+| `answer_type` | `probability` (a yes or no question) or `level` (a number) |
+| `closes_on`, `settles_on` | When entries closed and when the result was due |
+| `result` | `settled`, `unresolvable` or `withdrawn` |
+| `settled_via`, `readings` | Whether the main rule or the fallback settled it, and the values it read with their dates |
+| `happened` | For a yes or no question: 1 if it happened, 0 if not |
+| `outcome_value` | For a number: the value that settled it |
+| `benchmark`, `benchmark_kind` | What a forecast is compared with: the `base_rate` (how often this happened in past periods of the same length) or `no_change` (the last value before entries closed) |
+| `login`, `entry_n`, `entered_via` | Who entered (a GitHub name, or a name starting with `~` for an emailed entry), which of their entries counts, and how it came in |
+| `forecast` | The probability or the number they entered |
+| `score_kind`, `score` | `brier` (lower is better, 0 to 1) or `abs_error` (the distance from the outcome) |
+| `benchmark_score`, `skill` | The benchmark's own score, and how much better the entry did than the benchmark (above 0 is better) |
+
+`score`, `benchmark_score` and `skill` are empty when the Quest was unresolvable or withdrawn, or when
+there is no benchmark.
 
 ## How fast, and how often
 

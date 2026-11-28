@@ -5,6 +5,7 @@
 *   econquest_country BRA                       // every series for Brazil
 *   econquest_panel BRA,MEX policy_rate,cpi_monthly history
 *   econquest_figures BRA 2026-06-30            // figures as saved that day (leave the date off for latest)
+*   econquest_quests                            // settled Quest forecasts with scores (Quests on)
 *
 * Each command replaces the data in memory (clear first if you need to keep it).
 * Where the app runs: global ECONQUEST_URL, default http://localhost:3000 (Docker: http://localhost:3737).
@@ -56,4 +57,14 @@ program define econquest_figures
   local q ""
   if "`asof'" != "" local q "?asOf=`asof'"
   econquest_get "/api/export/`=upper("`iso3'")'/figures.csv`q'"
+end
+
+* Settled Forecast Quests, one row per counted public entry, with the recorded result and the entry's
+* score. Only while Quests are switched on; otherwise the app answers 404 QUESTS_OFF.
+capture program drop econquest_quests
+program define econquest_quests
+  econquest_get "/api/export/quests/forecasts.csv"
+  foreach v in quest_version happened outcome_value benchmark entry_n forecast score benchmark_score skill {
+    capture destring `v', replace
+  }
 end

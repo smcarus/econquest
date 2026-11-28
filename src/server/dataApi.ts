@@ -30,6 +30,8 @@ export const DATA_API: DataApiAddress[] = [
   { path: '/api/export/world/series.csv', what: 'World series as a table (also .xlsx).' },
   { path: '/api/export/panel.csv', what: 'The panel as a table, same query as /api/panel; mode=history gives every date (also .xlsx).' },
   { path: '/api/export/:iso3/figures.csv', what: 'The latest figures for one country with source and period; ?asOf=YYYY-MM-DD gives them as saved on a past day (also .xlsx).' },
+  { path: '/api/quests/settled', what: 'Settled Forecast Quests with each counted public entry and its score, as JSON; only while Quests are switched on.' },
+  { path: '/api/export/quests/forecasts.csv', what: 'The same settled Quest forecasts as a table (also .xlsx); answers 404 QUESTS_OFF while Quests are off.' },
 ];
 
 const SEG = '[A-Za-z0-9_.-]+';
@@ -41,6 +43,8 @@ const READ_PATTERNS: RegExp[] = [
   new RegExp(`^/api/export/${SEG}/series/${SEG}\\.(csv|xlsx)$`),
   /^\/api\/export\/panel\.(csv|xlsx)$/,
   new RegExp(`^/api/export/${SEG}/figures\\.(csv|xlsx)$`),
+  /^\/api\/quests\/settled$/,
+  /^\/api\/export\/quests\/forecasts\.(csv|xlsx)$/,
 ];
 
 /** True for a GET or HEAD on one of the data addresses above. */

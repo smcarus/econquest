@@ -7,6 +7,7 @@ EconQuest data helper for Python (docs/DATA_API.md). Standard library only: no p
     panel = eq.panel(["BRA", "MEX"], ["policy_rate", "cpi_monthly"], mode="history")
     figures = eq.figures("BRA", as_of="2026-06-30") # figures as the app saved them that day
     listing = eq.series_list("BRA")                 # what exists, and what is Missing and why
+    settled = eq.quest_forecasts()                  # settled Quest forecasts with scores (Quests on)
 
 Each row keeps the app's unit, source and dates, so nothing is cut loose from where it came from.
 The value column comes back as a number (None where the figure is Missing, with the reason in its row).
@@ -23,7 +24,7 @@ import os
 import urllib.parse
 import urllib.request
 
-__all__ = ["series_list", "series", "country_series", "world_series", "panel", "figures"]
+__all__ = ["series_list", "series", "country_series", "world_series", "panel", "figures", "quest_forecasts"]
 
 
 def _base(base=None):
@@ -102,3 +103,18 @@ def panel(countries, figures=None, mode="latest", base=None, key=None):
 def figures(iso3, as_of=None, base=None, key=None):
     """The latest figures for one country, or as saved on a past day (as_of="YYYY-MM-DD")."""
     return _rows(_get(f"/api/export/{_code(iso3)}/figures.csv", {"asOf": as_of}, base=base, key=key))
+
+
+_QUEST_NUMBERS = ("quest_version", "happened", "outcome_value", "benchmark", "entry_n", "forecast", "score", "benchmark_score", "skill")
+
+
+def quest_forecasts(base=None, key=None):
+    """Settled Forecast Quests, one row per counted public entry, with the recorded result and the
+    entry's score (Brier for a probability, absolute error for a level). Only while Quests are switched
+    on; otherwise the app answers 404 QUESTS_OFF. Empty cells (no result to score against) are None."""
+    rows = list(csv.DictReader(io.StringIO(_get("/api/export/quests/forecasts.csv", base=base, key=key))))
+    for r in rows:
+        for k in _QUEST_NUMBERS:
+            if k in r:
+                r[k] = _number(r[k])
+    return rows
