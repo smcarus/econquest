@@ -134,6 +134,8 @@ choisir les séries voulues ; ces chiffres restent sur votre ordinateur.
   d'une page pour les non-économistes, et voyez comment les pays ont évolué après le même type de
   changement.
 - **Rédiger un rapport** en Markdown ou en PDF, avec chaque source et chaque date.
+- **Voir ce que cela signifie pour vous** : votre propre taux d'inflation selon vos dépenses, et l'effet
+  d'une variation des taux sur la mensualité de votre prêt, conservé uniquement dans votre navigateur.
 - **Apprendre en chemin** avec quatre niveaux d'aide, un glossaire en langage clair et cinq exemples
   guidés.
 - **Utiliser les chiffres dans R, Python, Stata ou Excel**, ou y connecter un autre programme.

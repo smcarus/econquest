@@ -264,6 +264,14 @@ Notes from the first check on Sam's Mac (2026-11-05):
   saves the IMF copy (`data/live/imf-cpi.json`). Menu > Data health > Inflation lists each
   country's source and age, flags any figure more than 90 days old, and says when an old OECD copy
   is in use.
+- **Consumer price groups** (Menu > What this means for you): for EU members, Eurostat HICP annual
+  rates by main group (`prc_hicp_minr`, COICOP 2018, 13 groups; `prc_hicp_manr`, the older 12, only
+  when the newer one does not answer) and the item weights (`prc_hicp_inw`) in the same
+  classification (`npm run check:data`, row eurostat_hicp_groups). Elsewhere, food, energy and the
+  rest from the inflation drivers sources (BLS via FRED, OECD via DBnomics). The IMF CPI dataset's
+  groups are found by name in its structure and read only with `IMF_CPI_GROUPS=on` in `.env`, after
+  `npm run check:imf` shows what matched. The central bank's last move comes from the BIS policy
+  rates, else the IMF monthly policy rate.
 - **IMF monthly policy rates** come from the MFS_IR dataset on api.imf.org, found by name: the
   code named "Monetary policy-related interest rate" or "policy rate", monthly, other dimensions
   open (`IMF_POLICY_KEY` in `.env` overrides it; `npm run check:data`, row imf_policy, shows what

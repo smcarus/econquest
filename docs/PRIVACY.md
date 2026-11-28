@@ -37,6 +37,7 @@ no adverts and no tracking. This page says what stays on your computer, what lea
 | Downloaded figures and their history | `data/live/` and `data/local/` | Public figures, plus any files you added yourself |
 | Your flags and ratings | `data/local/feedback.jsonl` | Never sent by the app |
 | Screen choices (language, dark mode, layout, last session) | Your browser's own storage for this site | Stays in that browser |
+| What this means for you (your spending split and your loan) | Your browser's own storage for this site | Never sent to the app's server; not in Backup, the audit log or For people. *Clear what I entered* removes it |
 | Audit log | `data/local/` | Each council question with the figures used, and each save, delete, export, settings or key change (never keys, passwords, uploaded document text or holdings amounts). With accounts on, only admins can read it |
 
 On a shared server (home server, team or class), the person who runs it can read everything the
