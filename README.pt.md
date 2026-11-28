@@ -242,6 +242,7 @@ As chaves ficam em `data/local/settings.json` (nunca no git, nos backups ou no l
 
 - [docs/FEATURES.pt.md](./docs/FEATURES.pt.md): tudo o que o app faz, em detalhe, em português
 - [docs/GUIDE.pt.md](./docs/GUIDE.pt.md): guia passo a passo com capturas, em português
+- Ensinar com Quests em uma turma (em inglês, espanhol e francês): [TEACHING.md](./docs/TEACHING.md), [TEACHING.es.md](./docs/TEACHING.es.md), [TEACHING.fr.md](./docs/TEACHING.fr.md)
 - Em inglês: [INSTALL.md](./docs/INSTALL.md) (instalação), [USER_MANUAL.md](./docs/USER_MANUAL.md)
   (manual), [GLOSSARY.md](./docs/GLOSSARY.md) (glossário; também dentro do app em português),
   [METHODOLOGY.md](./docs/METHODOLOGY.md), [HOW_IT_WORKS.md](./docs/HOW_IT_WORKS.md), [METHODS.md](./docs/METHODS.md),

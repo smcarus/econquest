@@ -248,6 +248,7 @@ log) and take effect without a restart.
 | [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) | Running it as a service for another system: reverse proxy and TLS, service tokens, health checks, the daily-download deadline |
 | [docs/POLICY_REVIEW.md](./docs/POLICY_REVIEW.md) | The policy review steps |
 | [docs/QUESTS.md](./docs/QUESTS.md) | Quests, their rules and the checklist before they are turned on |
+| [docs/TEACHING.md](./docs/TEACHING.md) | Teaching a class with Quests, one term from setup to the gradebook (also [ES](./docs/TEACHING.es.md), [FR](./docs/TEACHING.fr.md)); [docs/SCHOOL_IT.md](./docs/SCHOOL_IT.md) for school IT staff |
 | [docs/ROADMAP.md](./docs/ROADMAP.md) | What is planned next, in order |
 | [docs/MAINTENANCE.md](./docs/MAINTENANCE.md) | The upkeep routine and what happens when a source ends |
 | [docs/RISK_AND_COMPLIANCE.md](./docs/RISK_AND_COMPLIANCE.md) | Audit log, model register, report sign-off |

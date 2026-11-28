@@ -628,4 +628,5 @@ export const QUESTS_FR: Messages<typeof QUESTS> = {
   hiSealNote: "L'heure du fichier vient de cet ordinateur. Votre enseignant la voit, ainsi que l'heure d'arrivée du fichier.",
   hiSeal: "Sceller et enregistrer le fichier",
   hiSealed: "Scellé {at}. Empreinte {fp} : votre enseignant verra la même empreinte en chargeant le fichier. Envoyez le fichier enregistré à votre enseignant.",
+  classesGuide: "Guide de l'enseignant : un semestre, de l'installation au carnet de notes (s'ouvre sur GitHub)",
 };

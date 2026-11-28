@@ -421,6 +421,8 @@ try {
     const box = cp.locator('[data-quests]');
     try {
       await box.locator('[data-classes]').waitFor({ timeout: 15_000 });
+      // Q13: the teacher guide is linked from the Classes tab.
+      if (!/docs\/TEACHING\.md$/.test((await box.locator('[data-classes-guide]').getAttribute('href')) || '')) throw new Error('the Classes tab does not link the teacher guide');
       await box.locator('[data-classes-name]').fill('Macro 101');
       // Name the zone, so the class does not depend on the browser's own time zone.
       await box.locator('[data-classes-tz]').fill('America/Chicago');

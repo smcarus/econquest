@@ -621,4 +621,5 @@ export const QUESTS = defineMessages('quests', {
   hiSealNote: "The time on the file comes from this computer. Your teacher sees it, and when the file arrived.",
   hiSeal: "Seal and save the file",
   hiSealed: "Sealed {at}. Fingerprint {fp}: your teacher sees the same fingerprint when the file is loaded. Send the saved file to your teacher.",
+  classesGuide: "Teacher guide: one term, from setup to the gradebook (opens on GitHub)",
 });

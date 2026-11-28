@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Classes (step Q13): a teacher guide for one term, from setup to the gradebook, in English, Spanish
+  and French (docs/TEACHING.md, TEACHING.es.md, TEACHING.fr.md), linked from the READMEs and from
+  the Classes tab.
 - Classes (step Q11): `npm run class:load` plays a lesson for 40 students on its own copy of the app
   and reports reply times, errors, memory and processor use. Fixes from the first run: the class
   table no longer waits on slow feeds (open Quests ask no feed; scores are kept for a minute and
