@@ -96,14 +96,18 @@ export function roleIn(cls: SchoolClass, accountId: string): ClassRole | null {
 
 /** A username for a student account made from a nickname: lower case, no accents, unique. */
 export function studentUsername(nickname: string, taken: (username: string) => boolean): string {
-  let base = nickname
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, '-')
-    .replace(/^[^a-z0-9]+/, '')
-    .replace(/-+$/, '')
-    .slice(0, 30);
+  // Character by character, so a long run of dashes costs nothing (no backtracking regex).
+  let base = '';
+  for (const ch of nickname.slice(0, 80).normalize('NFKD').toLowerCase()) {
+    const code = ch.codePointAt(0)!;
+    if (code >= 0x300 && code <= 0x36f) continue;
+    const ok = /[a-z0-9._-]/.test(ch) ? ch : '-';
+    if (!base && !/[a-z0-9]/.test(ok)) continue;
+    if (ok === '-' && base.endsWith('-')) continue;
+    base += ok;
+  }
+  base = base.slice(0, 30);
+  while (base.endsWith('-')) base = base.slice(0, -1);
   if (base.length < 2) base = 'student';
   if (!taken(base)) return base;
   for (let n = 2; n < 10000; n++) if (!taken(`${base}-${n}`)) return `${base}-${n}`;

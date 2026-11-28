@@ -145,3 +145,15 @@ test('routes: off, sign-in needed, make, join, add a marker, make student accoun
     await new Promise((r) => server.close(r));
   }
 });
+
+test('usernames: a long run of dashes or symbols is cheap and collapses', () => {
+  assert.equal(studentUsername(`a${'-'.repeat(50)}b`, () => false), 'a-b');
+  assert.equal(studentUsername(`a${'-'.repeat(50000)}b`, () => false), 'student', 'only the first 80 characters are read');
+  assert.equal(studentUsername('Mary  O’Brien!!', () => false), 'mary-o-brien');
+  assert.equal(studentUsername('--xy--', () => false), 'xy');
+});
+
+test('class calls are rate limited per account; joining most tightly', async () => {
+  const { CLASS_LIMITS } = await import('../src/server/routes/classes');
+  assert.ok(CLASS_LIMITS.join.perMinute < CLASS_LIMITS.write.perMinute && CLASS_LIMITS.write.perMinute < CLASS_LIMITS.read.perMinute);
+});

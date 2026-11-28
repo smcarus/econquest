@@ -21,6 +21,14 @@ import { DATA_DIR } from '../config';
 import type { Account } from '../../utils/auth';
 import { CLASSES_NEED_SIGNIN, CLASSES_OFF_REASON, classesEnabled, classesFor, classProblems, classView, joinCodeFrom, nicknameProblems, normaliseJoinCode, roleIn, studentUsername, type ClassRole, type SchoolClass } from '../../utils/classes';
 import { changeClasses, classesPath, loadClasses } from '../../utils/classStore';
+import { RateLimiter, type Bucket } from '../../utils/requestLimits';
+
+/** Class calls per caller: the app-wide limit applies too; joining is tighter, so codes cannot be guessed. */
+export const CLASS_LIMITS: Record<'read' | 'write' | 'join', Bucket> = {
+  read: { burst: 120, perMinute: 120 },
+  write: { burst: 30, perMinute: 30 },
+  join: { burst: 10, perMinute: 5 },
+};
 
 export interface ClassDeps {
   /** Defaults to process.env.CLASSES_ENABLED. */
@@ -48,6 +56,17 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     return a ? { username: a.username, displayName: a.displayName } : undefined;
   };
   const who = (a: Account) => `${a.displayName} (${a.username})`;
+  const limiter = new RateLimiter();
+  /** Rate limit for class calls, by signed-in account (or address), on top of the app-wide one. */
+  const classRateLimit = (kind: keyof typeof CLASS_LIMITS): express.RequestHandler => (req, res, next) => {
+    const caller = deps.signedIn(res)?.id ?? req.socket.remoteAddress ?? 'unknown';
+    const wait = limiter.take(`${caller}:${kind}`, CLASS_LIMITS[kind]);
+    if (wait > 0) {
+      res.setHeader('Retry-After', String(wait));
+      return res.status(429).json({ enabled: true, error: `Too many class requests; try again in ${wait} seconds` });
+    }
+    next();
+  };
 
   /** The signed-in account, or the reply already sent. */
   const me = (res: express.Response): Account | null => {
@@ -83,14 +102,14 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
   };
   const viewReply = (cls: SchoolClass, a: Account) => ({ enabled: true, class: classView(cls, a.id, nameOf) });
 
-  app.get('/api/classes', (_req, res) => {
+  app.get('/api/classes', classRateLimit('read'), (_req, res) => {
     if (!enabled()) return res.json({ enabled: false, reason: CLASSES_OFF_REASON });
     const a = deps.authRequired() ? deps.signedIn(res) : null;
     if (!a) return res.json({ enabled: true, needSignIn: true, reason: CLASSES_NEED_SIGNIN, classes: [], canCreate: false });
     res.json({ enabled: true, classes: classesFor(loadClasses(file), a.id, nameOf), canCreate: a.role !== 'viewer' });
   });
 
-  app.post('/api/classes', (req, res) => {
+  app.post('/api/classes', classRateLimit('write'), (req, res) => {
     const a = me(res);
     if (!a) return;
     if (a.role === 'viewer') return res.status(403).json({ enabled: true, error: 'A Viewer account cannot make a class. Ask your administrator for an Analyst account' });
@@ -114,7 +133,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     res.json(viewReply(cls, a));
   });
 
-  app.post('/api/classes/join', (req, res) => {
+  app.post('/api/classes/join', classRateLimit('join'), (req, res) => {
     const a = me(res);
     if (!a) return;
     const code = normaliseJoinCode(req.body?.code);
@@ -132,7 +151,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     res.json(viewReply(out.cls!, a));
   });
 
-  app.get('/api/classes/:id', (req, res) => {
+  app.get('/api/classes/:id', classRateLimit('read'), (req, res) => {
     const a = me(res);
     if (!a) return;
     const cls = loadClasses(file).find((c) => c.id === req.params.id);
@@ -140,7 +159,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     res.json(viewReply(cls, a));
   });
 
-  app.post('/api/classes/:id/members', (req, res) => {
+  app.post('/api/classes/:id/members', classRateLimit('write'), (req, res) => {
     const a = me(res);
     if (!a) return;
     const role = req.body?.role as ClassRole;
@@ -165,7 +184,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     res.json(viewReply(cls, a));
   });
 
-  app.delete('/api/classes/:id/members/:accountId', (req, res) => {
+  app.delete('/api/classes/:id/members/:accountId', classRateLimit('write'), (req, res) => {
     const a = me(res);
     if (!a) return;
     let sent = false;
@@ -189,7 +208,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     res.json(viewReply(out.c, a));
   });
 
-  app.post('/api/classes/:id/students', (req, res) => {
+  app.post('/api/classes/:id/students', classRateLimit('write'), (req, res) => {
     const a = me(res);
     if (!a) return;
     const nicknames = Array.isArray(req.body?.nicknames) ? (req.body.nicknames as unknown[]).map((n) => (typeof n === 'string' ? n.trim() : n)).filter((n) => n !== '') : req.body?.nicknames;
@@ -215,7 +234,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     res.json({ ...viewReply(cls, a), created: created.map(({ nickname, username, password }) => ({ nickname, username, password })), note: 'Each password is shown this once. Hand them out; each student changes theirs in Menu > Account.' });
   });
 
-  app.post('/api/classes/:id/code', (req, res) => {
+  app.post('/api/classes/:id/code', classRateLimit('write'), (req, res) => {
     const a = me(res);
     if (!a) return;
     let sent = false;
@@ -230,7 +249,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     res.json(viewReply(cls, a));
   });
 
-  app.post('/api/classes/:id/archive', (req, res) => {
+  app.post('/api/classes/:id/archive', classRateLimit('write'), (req, res) => {
     const a = me(res);
     if (!a) return;
     const archived = req.body?.archived !== false;
