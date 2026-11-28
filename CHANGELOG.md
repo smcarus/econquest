@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Quests (still switched off): a Quests view in Menu > Models & validation, beside Track record, with
+  the recorded results and the chain check; shown only while Quests are on. The UI journeys now start
+  a second copy with Quests on and check the list, the starter pack, one Quest and this view, and
+  check that everything stays hidden with Quests off.
 - Quests (still switched off): settled Quest forecasts in the data API for scripts. `GET /api/quests/settled`
   (JSON) and `GET /api/export/quests/forecasts.csv` (also .xlsx) give one row per counted public entry
   on a settled Forecast Quest, with the recorded result, the benchmark and the score; new helpers

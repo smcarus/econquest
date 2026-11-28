@@ -11,8 +11,12 @@
  *    says why it shows no twin.
  * 4. Settings > Free data keys: save a key, see it masked, check it is not in the keys reply or
  *    the audit log, then remove it.
+ * Quests off: Menu > Quests is greyed, the settled forecasts table answers 404, Models & validation
+ *    has no Quests view.
  * 5. Sign-in: create the first admin account; the app then asks everyone to sign in; a wrong
  *    password is refused; the right one opens the app.
+ * Quests on (a second copy with QUESTS_ENABLED=on): the list, the starter pack, one Quest, and the
+ *    Quests view in Models & validation with its chain check.
  *
  * Run after `npm run build`:  npm run test:journeys
  */
@@ -28,26 +32,48 @@ if (!existsSync(path.join(root, 'dist/index.html'))) {
   console.error('Build first: npm run build');
   process.exit(1);
 }
-const port = 4800 + Math.floor(Math.random() * 400);
-const base = `http://127.0.0.1:${port}`;
 const dataDir = mkdtempSync(path.join(tmpdir(), 'econquest-journeys-'));
 let log = '';
-const server = spawn(process.execPath, ['--import', 'tsx', path.join(root, 'server.ts')], {
-  cwd: root,
-  env: {
-    ...process.env,
-    NODE_OPTIONS: `--import ${pathToFileURL(path.join(root, 'tests/helpers/offline-fetch.mjs')).href}`,
-    NODE_ENV: 'production',
-    PORT: String(port),
-    DATA_DIR: dataDir,
-    SCHEDULE_BACKTESTS: 'off',
-    GEMINI_API_KEY: '',
-    ECONQUEST_SECRET_KEY: '',
-  },
-  stdio: ['ignore', 'pipe', 'pipe'],
-});
-server.stdout.on('data', (d) => (log += d));
-server.stderr.on('data', (d) => (log += d));
+/** The built app on a free port, every feed down; `env` adds settings (QUESTS_ENABLED for the Quests run). */
+function startServer(env = {}) {
+  const port = 4800 + Math.floor(Math.random() * 400);
+  const proc = spawn(process.execPath, ['--import', 'tsx', path.join(root, 'server.ts')], {
+    cwd: root,
+    env: {
+      ...process.env,
+      NODE_OPTIONS: `--import ${pathToFileURL(path.join(root, 'tests/helpers/offline-fetch.mjs')).href}`,
+      NODE_ENV: 'production',
+      PORT: String(port),
+      DATA_DIR: env.DATA_DIR ?? dataDir,
+      SCHEDULE_BACKTESTS: 'off',
+      GEMINI_API_KEY: '',
+      ECONQUEST_SECRET_KEY: '',
+      QUESTS_ENABLED: '',
+      ...env,
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  proc.stdout.on('data', (d) => (log += d));
+  proc.stderr.on('data', (d) => (log += d));
+  return { proc, base: `http://127.0.0.1:${port}` };
+}
+async function waitUp({ proc, base }) {
+  const deadline = Date.now() + 60_000;
+  for (;;) {
+    if (proc.exitCode !== null) throw new Error(`server exited early:\n${log}`);
+    try {
+      if ((await fetch(`${base}/api/ai/runtime-defaults`)).ok) return;
+    } catch {
+      // not listening yet
+    }
+    if (Date.now() > deadline) throw new Error(`server did not start:\n${log}`);
+    await new Promise((r) => setTimeout(r, 300));
+  }
+}
+const first = startServer();
+const server = first.proc;
+const base = first.base;
+let questsServer;
 
 const failures = [];
 const passed = [];
@@ -78,17 +104,7 @@ const step = async (name, fn) => {
 };
 
 try {
-  const deadline = Date.now() + 60_000;
-  for (;;) {
-    if (server.exitCode !== null) throw new Error(`server exited early:\n${log}`);
-    try {
-      if ((await fetch(`${base}/api/ai/runtime-defaults`)).ok) break;
-    } catch {
-      // not listening yet
-    }
-    if (Date.now() > deadline) throw new Error(`server did not start:\n${log}`);
-    await new Promise((r) => setTimeout(r, 300));
-  }
+  await waitUp(first);
   browser = await chromium.launch(process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {});
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   watch(page);
@@ -275,6 +291,20 @@ try {
     await page.getByRole('button', { name: 'Research', exact: true }).first().waitFor({ timeout: 10_000 });
   });
 
+  await step('quests off: greyed in the menu, no Quests view in Models & validation', async () => {
+    await page.getByRole('button', { name: 'Menu', exact: true }).click();
+    const item = page.getByRole('menuitem', { name: /^Quests/ }).first();
+    if (!(await item.isDisabled())) throw new Error('Menu > Quests can be opened while Quests are off');
+    await page.keyboard.press('Escape');
+    if ((await (await page.request.get(`${base}/api/quests`)).json()).enabled !== false) throw new Error('/api/quests says Quests are on');
+    if ((await page.request.get(`${base}/api/export/quests/forecasts.csv`)).status() !== 404) throw new Error('the settled forecasts table answered while Quests are off');
+    await page.getByRole('button', { name: 'Menu', exact: true }).click();
+    await page.getByRole('menuitem', { name: /^Models & validation/ }).first().click();
+    await page.locator('[data-test-ledger-toggle]').waitFor({ timeout: 15_000 });
+    if (await page.locator('[data-quest-record-toggle]').count()) throw new Error('Models & validation shows a Quests view while Quests are off');
+    await page.keyboard.press('Escape');
+  });
+
   await step('sign-in: first account, then everyone signs in', async () => {
     const password = 'a long journey test passphrase';
     const made = await page.request.post(`${base}/api/auth/setup`, { data: { username: 'tester', displayName: 'Journey Test', password } });
@@ -293,11 +323,40 @@ try {
     await p.getByRole('button', { name: 'Menu', exact: true }).waitFor({ timeout: 30_000 });
     await ctx.close();
   });
+
+  // Quests switched on: a second copy of the app with QUESTS_ENABLED=on and its own data folder.
+  await step('quests on: the list, a pack, one Quest, and the Quests view in Models & validation', async () => {
+    questsServer = startServer({ QUESTS_ENABLED: 'on', DATA_DIR: mkdtempSync(path.join(tmpdir(), 'econquest-journeys-quests-')) });
+    await waitUp(questsServer);
+    const qp = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    watch(qp);
+    await qp.goto(questsServer.base, { waitUntil: 'networkidle', timeout: 90_000 });
+    await qp.getByRole('button', { name: 'Menu', exact: true }).click();
+    await qp.getByRole('menuitem', { name: /^Quests/ }).first().click();
+    const box = qp.locator('[data-quests]');
+    await box.waitFor({ timeout: 15_000 });
+    await box.locator('[data-quest-row]').first().waitFor({ timeout: 15_000 });
+    await box.locator('[data-quests-pack]').selectOption('starter');
+    await box.locator('[data-quest-pack-group]').first().waitFor({ timeout: 5000 });
+    await box.locator('[data-quest-row]').first().click();
+    await box.locator('[data-quest-figures], [data-quest-log], [data-quest-argument]').first().waitFor({ timeout: 15_000 });
+    await noCrash(qp);
+    await qp.keyboard.press('Escape');
+    const settled = await (await qp.request.get(`${questsServer.base}/api/quests/settled`)).json();
+    if (settled.enabled !== true || !Array.isArray(settled.rows)) throw new Error('/api/quests/settled did not answer with Quests on');
+    await qp.getByRole('button', { name: 'Menu', exact: true }).click();
+    await qp.getByRole('menuitem', { name: /^Models & validation/ }).first().click();
+    await qp.locator('[data-quest-record-toggle]').click();
+    await qp.locator('[data-quest-track-record] [data-quest-chain]').waitFor({ timeout: 15_000 });
+    await noCrash(qp);
+    await qp.close();
+  });
 } catch (err) {
   failures.push(`journeys failed to run: ${err?.stack || err}`);
 } finally {
   await browser?.close();
   server.kill();
+  questsServer?.proc.kill();
 }
 
 if (failures.length) {
