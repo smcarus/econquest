@@ -1354,6 +1354,9 @@ hold no figures of their own; the handout reads them from the app's series when 
     *Class table* shows how each student's forecasts scored; the teacher chooses what students see
     of it and makes teams of 3 to 5 that share a row. *Report* opens a printable page for one
     student (students press *My report*), with a calibration chart after 10 settled answers.
+    *Gradebook* (teacher) sets the weights and downloads the marks as a CSV file; students use
+    *Download my record*. A class is archived 30 days after its term ends and deleted after the
+    keeping period the teacher sets; everyone sees the deletion day, with a warning 30 days before.
   - Country pages and Council chat answers show up to three *Quests about this country*; a link
     opens that Quest. Researchers can read settled forecasts and their scores from R, Python or Stata
     ([DATA_API.md](./DATA_API.md)).

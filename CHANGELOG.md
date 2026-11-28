@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Classes (step Q8): a gradebook with the teacher's weights (participation, accuracy, calibration,
+  marks) as a CSV download; each student downloads their own record; withdrawn or unresolvable
+  Quests drop out of the marks and sensitive topics never leave the copy. A class is archived and
+  read-only 30 days after its term, and deleted after a keeping period the teacher sets, with a
+  warning in its last 30 days.
 - Classes (step Q7): a scored class table on each class card; the teacher chooses whether students
   see only their own row, classmates by nickname or as numbers, and makes teams of 3 to 5 that share
   a row. A one-page printable report per student with a calibration chart after 10 settled answers,
