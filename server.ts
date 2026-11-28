@@ -4612,6 +4612,7 @@ async function startServer() {
   registerQuestRoutes(app, { seriesFor, refuseRemoteChange, signedIn, loadOfficialHistory });
   registerClassRoutes(app, {
     signedIn,
+    seriesFor,
     authRequired: () => currentMode() === 'required',
     accountById: (id) => auth.byId(id),
     accountByUsername: (u) => auth.byUsername(u),

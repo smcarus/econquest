@@ -155,7 +155,7 @@ professor does.
 | Q4 | Professor-written class Quests with intro, intermediate and advanced tags. Built 28 November (class Quests in data/local/class-quests/, quests/levels.json, Level filter) |
 | Q5 | Replay Quests and four ready-made term packs. Built 28 November (Replays tab, quests/replays/, four- and eight-week Brent Quests in the generator) |
 | Q6 | Feedback, optional anonymous peer review, a switch for sensitive topics. Built 28 November (feedback with a mark, peer review on debates, names hidden on sensitive topics) |
-| Q7 | Class table settings and a one-page student report |
+| Q7 | Class table settings and a one-page student report. Built 28 November (table views, teams of 3 to 5, report with calibration chart and coach) |
 | Q8 | Gradebook file, voided Quests left out of marks, archived classes deleted after a period the professor sets |
 | Q9 | Sealed hand-in files for students working on their own copies |
 | Q10 | Accessibility review of the classroom screens (WCAG 2.2 AA, as the rest of the app is checked since 26 November), designed for phone width first |
