@@ -108,3 +108,31 @@ test('the Python, R and Stata helpers read the settled Quest forecasts', () => {
   assert.match(fs.readFileSync(path.join(root, 'scripts/data-api/econquest.R'), 'utf8'), /eq_quest_forecasts <- function[\s\S]*"\/api\/export\/quests\/forecasts\.csv"/);
   assert.match(fs.readFileSync(path.join(root, 'scripts/data-api/econquest.do'), 'utf8'), /program define econquest_quests[\s\S]*"\/api\/export\/quests\/forecasts\.csv"/);
 });
+
+test('drafts take private entries only until the first Quest is approved (maintainer, 28 November)', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qdraft-'));
+  fs.mkdirSync(path.join(dir, 'drafts'));
+  const draft = { ...brent, id: 'draft-brent-week', registeredOn: '2026-11-01', opensOn: '2026-11-02', closesOn: '2026-12-11' } as ForecastQuest;
+  fs.writeFileSync(path.join(dir, 'drafts', 'draft-brent-week.json'), `${JSON.stringify(draft, null, 2)}\n`);
+  writeManifest(dir, {});
+  const seriesFor = async (iso3: string): Promise<SeriesSet> => ({ iso3, series: [], missing: [] });
+  const app = express();
+  app.use(express.json());
+  registerQuestRoutes(app, { seriesFor, enabled: () => true, dir, entryFile: path.join(dir, 'e.jsonl'), today: () => '2026-12-01' });
+  const server = app.listen(0);
+  await new Promise((r) => server.once('listening', r));
+  const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  const log = (id: string) => fetch(`${base}/api/quests/${id}/private`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ answer: { probability: 0.6 } }) });
+  try {
+    assert.equal((await log(draft.id)).status, 200, 'no Quest approved yet: the draft takes it');
+    // Approve one Quest: the draft now refuses, the approved one takes it.
+    fs.writeFileSync(path.join(dir, 'tutorial-brent-week.json'), `${JSON.stringify(quest, null, 2)}\n`);
+    writeManifest(dir, Object.fromEntries(readQuestFiles(dir).filter((f) => f.approved).map((f) => [f.name, f.hash])));
+    const refused = await log(draft.id);
+    assert.equal(refused.status, 400);
+    assert.match((await refused.json()).error, /Drafts take private entries only until the first Quest is approved/);
+    assert.equal((await log(quest.id)).status, 200);
+  } finally {
+    await new Promise((r) => server.close(r));
+  }
+});

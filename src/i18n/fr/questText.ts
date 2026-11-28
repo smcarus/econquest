@@ -78,6 +78,7 @@ export const QUEST_TEXT_FR: Record<string, string> = {
   "This practice question has expired; ask for a new one": "Cette question d’entraînement a expiré ; demandez-en une nouvelle",
   "A probability from 0 to 1": "Une probabilité de 0 à 1",
   "No forecast Quest with that id": "Aucune quête de prévision avec cet identifiant",
+  "This Quest is a draft. Drafts take private entries only until the first Quest is approved, and one has been, so log your forecast on an approved Quest": "Cette quête est un brouillon. Les brouillons acceptent des réponses privées seulement jusqu’à l’approbation de la première quête, et une l’a été ; enregistrez votre prévision sur une quête approuvée",
   "No Quest with that id": "Aucune quête avec cet identifiant",
   "A Signal Quest test is entered in public (by pull request or email), so it is fixed in the open before it runs. Use \"Prepare a public entry\".": "Le test d’une quête de signal se dépose en public (par pull request ou courriel), afin d’être fixé au vu de tous avant d’être lancé. Utilisez « Préparer une réponse publique ».",
   "Practice is for Quests that ask whether a series will be higher or lower after entries close": "L’entraînement concerne les quêtes qui demandent si une série sera plus haute ou plus basse après la fermeture des réponses",

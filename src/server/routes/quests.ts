@@ -497,6 +497,9 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     if (deps.refuseRemoteChange?.(req, res)) return;
     const found = entryQuestById(req.params.id);
     if (!found) return res.status(404).json({ enabled: true, error: 'No Quest with that id' });
+    // Drafts take private entries so they can be tried, but only until the first Quest is approved
+    // (maintainer's choice, 28 November 2026; docs/QUESTS.md).
+    if (!found.approved && loadQuests(dir).some((x) => x.approved)) return res.status(400).json({ enabled: true, error: 'This Quest is a draft. Drafts take private entries only until the first Quest is approved, and one has been, so log your forecast on an approved Quest' });
     if (found.quest.type === 'signal') return res.status(400).json({ enabled: true, error: 'A Signal Quest test is entered in public (by pull request or email), so it is fixed in the open before it runs. Use "Prepare a public entry".' });
     const today = todayIso();
     const body = (req.body || {}) as Partial<QuestEntryInput>;

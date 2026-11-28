@@ -244,7 +244,7 @@ Working properly:
 - [ ] Scores match a hand calculation for at least three settled test Quests
 - [ ] A test Signal Quest run with `npm run quests:run-tests` on the maintainer's computer, its verdicts checked against `npm run backtest` run on the same test files, and docs/TRACK_RECORD.md regenerated
 - [ ] An opening brief written with `npm run quests:brief` on the maintainer's computer for a test Debate Quest, read by the maintainer, and an evidence map exported after a test close
-- [ ] Private entries on drafts are refused once Quests go live (today a draft takes private entries so it can be tested)
+- [x] Private entries on drafts are refused once Quests go live (built 28 November, the maintainer's choice: a draft takes private entries only until the first Quest is approved; after that only approved Quests do)
 - [ ] Practice questions checked on the maintainer's computer for every daily and weekly series
 - [x] The UI journey tests cover the Quests page with Quests on and off (tests/smoke/journeys.mjs starts a second copy with QUESTS_ENABLED=on)
 - [ ] A test Quest of each kind settled with `npm run quests:resolve` on the maintainer's computer, and the record checked with `--verify`
