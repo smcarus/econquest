@@ -15,6 +15,7 @@
  */
 import type { ClassAssignment } from './classAssignments';
 import type { ClassTeam, TableView } from './classReport';
+import { deleteOn, deleteWarning, type GradeWeights } from './classGradebook';
 
 export type ClassRole = 'teacher' | 'marker' | 'student';
 export const CLASS_ROLES: ClassRole[] = ['teacher', 'marker', 'student'];
@@ -55,6 +56,10 @@ export interface SchoolClass {
   tableView?: TableView;
   /** Q7: teams of 3 to 5 students that share a row in the class table. */
   teams?: ClassTeam[];
+  /** Q8: days an archived class is kept before it is deleted (src/utils/classGradebook.ts). */
+  keepDays?: number;
+  /** Q8: the teacher's gradebook weights. */
+  weights?: GradeWeights;
 }
 
 export const CLASSES_OFF_REASON = 'Classes are switched off on this server. The administrator turns them on with CLASSES_ENABLED=on in .env and restarts the app.';
@@ -161,10 +166,14 @@ export interface ClassView {
   code?: string;
   /** Teacher and markers only: students see who teaches, not the other students. */
   members?: ClassMemberView[];
+  /** Q8: when an archived class is deleted, how many days it is kept, and whether its last 30 days have begun. */
+  deleteOn?: string;
+  keepDays?: number;
+  deleteWarning?: boolean;
 }
 
 /** What one member may see of a class. */
-export function classView(cls: SchoolClass, viewerId: string, nameOf: (id: string) => { username: string; displayName: string } | undefined): ClassView | null {
+export function classView(cls: SchoolClass, viewerId: string, nameOf: (id: string) => { username: string; displayName: string } | undefined, today = new Date().toISOString().slice(0, 10)): ClassView | null {
   const myRole = roleIn(cls, viewerId);
   if (!myRole) return null;
   const named = (m: ClassMember): ClassMemberView => ({ accountId: m.accountId, role: m.role, joinedAt: m.joinedAt, username: nameOf(m.accountId)?.username ?? '(account removed)', displayName: nameOf(m.accountId)?.displayName ?? '(account removed)' });
@@ -179,6 +188,7 @@ export function classView(cls: SchoolClass, viewerId: string, nameOf: (id: strin
     teachers: cls.members.filter((m) => m.role === 'teacher').map((m) => nameOf(m.accountId)?.displayName ?? '(account removed)'),
     memberCount: cls.members.length,
     ...(myRole === 'teacher' ? { code: formatJoinCode(cls.code) } : {}),
+    ...(cls.archivedAt ? { deleteOn: deleteOn(cls)!, deleteWarning: deleteWarning(cls, today), ...(myRole === 'teacher' ? { keepDays: cls.keepDays ?? 365 } : {}) } : {}),
     ...(myRole === 'student'
       ? {}
       : { members: cls.members.map(named).sort((a, b) => order[a.role] - order[b.role] || a.displayName.localeCompare(b.displayName)) }),
@@ -186,9 +196,9 @@ export function classView(cls: SchoolClass, viewerId: string, nameOf: (id: strin
 }
 
 /** Classes listed for one account: active ones first (term start, newest first), then archived. */
-export function classesFor(classes: SchoolClass[], viewerId: string, nameOf: Parameters<typeof classView>[2]): ClassView[] {
+export function classesFor(classes: SchoolClass[], viewerId: string, nameOf: Parameters<typeof classView>[2], today?: string): ClassView[] {
   return classes
-    .map((c) => classView(c, viewerId, nameOf))
+    .map((c) => classView(c, viewerId, nameOf, today))
     .filter((v): v is ClassView => v !== null)
     .sort((a, b) => Number(a.archived) - Number(b.archived) || b.term.starts.localeCompare(a.term.starts) || a.name.localeCompare(b.name));
 }

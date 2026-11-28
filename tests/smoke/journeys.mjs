@@ -382,7 +382,7 @@ try {
   });
 
   // Classes on, Quests off, with sign-in: Menu > Quests opens on the Classes tab alone.
-  await step('classes: with Quests off, a teacher makes a class, student accounts, a class Quest, a sensitive assignment and the class table', async () => {
+  await step('classes: with Quests off, a teacher makes a class, student accounts, a class Quest, a sensitive assignment, the class table and the gradebook', async () => {
     classesServer = startServer({ CLASSES_ENABLED: 'on', DATA_DIR: mkdtempSync(path.join(tmpdir(), 'econquest-journeys-classes-')) });
     await waitUp(classesServer);
     const password = 'a long journey test passphrase';
@@ -437,6 +437,9 @@ try {
       await box.locator('[data-class-table-toggle]').first().click();
       await box.locator('[data-class-table-view]').first().selectOption('numbers');
       await box.locator('[data-class-teams]').first().waitFor({ timeout: 15_000 });
+      // Q8: the gradebook opens with its weights and a CSV download.
+      await box.locator('[data-class-gradebook-toggle]').first().click();
+      await box.locator('[data-class-gradebook-csv]').first().waitFor({ timeout: 15_000 });
     } catch (err) {
       // Say on one line what the screen showed, so a failure on a CI machine can be read from the log.
       const alerts = await box.locator('[role="alert"]').allTextContents().catch(() => []);

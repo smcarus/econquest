@@ -108,3 +108,17 @@ export function saveClassQuest(dir: string, q: Quest): void {
 export function removeClassQuest(dir: string, q: Pick<Quest, 'id' | 'version'>): void {
   fs.rmSync(path.join(dir, questFileName(q)), { force: true });
 }
+
+/** Keep only the rows of a class log that pass `keep`, written atomically (Q8: deleting a class). */
+export function rewriteJsonl<T>(file: string, keep: (row: T) => boolean): number {
+  if (!fs.existsSync(file)) return 0;
+  const rows = loadJsonl<T>(file);
+  const kept = rows.filter(keep);
+  if (kept.length !== rows.length) writeFileAtomic(file, kept.map((r) => `${JSON.stringify(r)}\n`).join(''), 0o600);
+  return rows.length - kept.length;
+}
+
+/** Remove a class's own Quests folder. */
+export function removeClassQuestsDir(classesFile: string, classId: string): void {
+  fs.rmSync(classQuestsDir(classesFile, classId), { recursive: true, force: true });
+}

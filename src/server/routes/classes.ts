@@ -34,6 +34,14 @@
  *   POST   /api/classes/:id/teams                           teacher: a team of 3 to 5 students ({ name, usernames })
  *   DELETE /api/classes/:id/teams/:tid                      teacher: remove a team
  *   GET    /api/classes/:id/report/:accountId               one student's report ('me' for my own; teacher and markers for anyone)
+ * Gradebook and the end of a class (Q8; src/utils/classGradebook.ts):
+ *   GET    /api/classes/:id/gradebook                       teacher: the gradebook rows and weights
+ *   GET    /api/classes/:id/gradebook.csv                   teacher: the same as a CSV file
+ *   POST   /api/classes/:id/gradebook-settings              teacher: the weights ({ weights: { participation, accuracy, calibration, marks } })
+ *   GET    /api/classes/:id/my-record.csv                   student: my own entries, results and comments
+ *   POST   /api/classes/:id/keep                            teacher: days an archived class is kept before it is deleted
+ * An archived class is read-only. A class is archived 30 days after its term ends and deleted, with
+ * its entries, feedback, reviews and class Quests, once its keeping period has passed.
  * Class Quests (Q4; src/utils/classQuests.ts), kept in data/local/class-quests/<class id>/:
  *   GET    /api/classes/:id/class-quests                    teacher and markers: the class's own Quests
  *   POST   /api/classes/:id/class-quests                    teacher: write a Forecast or Debate Quest for the class
@@ -48,7 +56,10 @@ import type express from 'express';
 import { APP_ROOT, DATA_DIR } from '../config';
 import type { Account } from '../../utils/auth';
 import { CLASSES_NEED_SIGNIN, CLASSES_OFF_REASON, classesEnabled, classesFor, classProblems, classView, joinCodeFrom, nicknameProblems, normaliseJoinCode, roleIn, studentUsername, type ClassRole, type SchoolClass } from '../../utils/classes';
-import { appendClassEntry, appendJsonl, changeClasses, classEntriesPath, classesPath, classFeedbackPath, classQuestsDir, classReviewsPath, loadClassEntries, loadClasses, loadClassQuests, loadJsonl, removeClassQuest, saveClassQuest } from '../../utils/classStore';
+import { removeClassQuestsDir, rewriteJsonl, appendClassEntry, appendJsonl, changeClasses, classEntriesPath, classesPath, classFeedbackPath, classQuestsDir, classReviewsPath, loadClassEntries, loadClasses, loadClassQuests, loadJsonl, removeClassQuest, saveClassQuest } from '../../utils/classStore';
+import { DEFAULT_WEIGHTS, GRADEBOOK_HEADER, KEEP_DAYS_DEFAULT, countedForMarks, gradeRow, gradebookCells, keepDaysProblems, lifecycleStep, weightProblems, type GradeWeights } from '../../utils/classGradebook';
+import { toCsv } from '../../utils/csvExport';
+import { resultState } from '../../utils/questResolve';
 import { TABLE_VIEWS, TEAMS_MAX, reportSummary, tableRows, teamProblems, type ScoredClassEntry, type TableView } from '../../utils/classReport';
 
 import { loadResolutions, resolutionsPath } from '../../utils/questResolveStore';
@@ -157,13 +168,49 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     }
     return cls;
   };
-  const viewReply = (cls: SchoolClass, a: Account) => ({ enabled: true, class: classView(cls, a.id, nameOf) });
+  const viewReply = (cls: SchoolClass, a: Account) => ({ enabled: true, class: classView(cls, a.id, nameOf, now().slice(0, 10)) });
+
+  /**
+   * The end of a class: archive it 30 days after its term, delete it (and everything kept for it)
+   * once its keeping period has passed. Run when the class list is read.
+   */
+  const sweep = () => {
+    const today = now().slice(0, 10);
+    const steps = loadClasses(file).map((c) => ({ c, step: lifecycleStep(c, today) })).filter((x) => x.step);
+    if (!steps.length) return;
+    const gone: SchoolClass[] = [];
+    changeClasses(file, (classes) => {
+      for (const c of classes) {
+        const step = lifecycleStep(c, today);
+        if (step === 'archive') {
+          c.archivedAt = now();
+          c.keepDays = c.keepDays ?? KEEP_DAYS_DEFAULT;
+        }
+        if (step === 'delete') gone.push(c);
+      }
+      const ids = new Set(gone.map((c) => c.id));
+      for (let i = classes.length - 1; i >= 0; i--) if (ids.has(classes[i]!.id)) classes.splice(i, 1);
+    });
+    for (const x of steps.filter((y) => y.step === 'archive')) audit(`The class "${x.c.name}" (${x.c.term.label}) was archived, 30 days after its term ended`);
+    for (const c of gone) {
+      for (const f of [entriesFile, feedbackFile, reviewsFile]) rewriteJsonl<{ classId: string }>(f, (r) => r.classId !== c.id);
+      removeClassQuestsDir(file, c.id);
+      audit(`The class "${c.name}" (${c.term.label}) and everything kept for it were deleted at the end of its keeping period`);
+    }
+  };
+  /** Archived classes are read-only; the reply is sent when this one is. */
+  const readOnly = (cls: SchoolClass, res: express.Response): boolean => {
+    if (!cls.archivedAt) return false;
+    res.status(400).json({ enabled: true, error: 'This class is archived' });
+    return true;
+  };
 
   app.get('/api/classes', classRateLimit('read'), (_req, res) => {
     if (!enabled()) return res.json({ enabled: false, reason: CLASSES_OFF_REASON });
+    sweep();
     const a = deps.authRequired() ? deps.signedIn(res) : null;
     if (!a) return res.json({ enabled: true, needSignIn: true, reason: CLASSES_NEED_SIGNIN, classes: [], canCreate: false });
-    res.json({ enabled: true, classes: classesFor(loadClasses(file), a.id, nameOf), canCreate: a.role !== 'viewer' });
+    res.json({ enabled: true, classes: classesFor(loadClasses(file), a.id, nameOf, now().slice(0, 10)), canCreate: a.role !== 'viewer' });
   });
 
   app.post('/api/classes', classRateLimit('write'), (req, res) => {
@@ -231,6 +278,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     const cls = changeClasses(file, (classes) => {
       const c = asTeacher(classes, String(req.params.id), a, res);
       if (!c) return (sent = true), null;
+      if (readOnly(c, res)) return (sent = true), null;
       const existing = c.members.find((m) => m.accountId === target.id);
       if (existing?.role === 'teacher') {
         res.status(409).json({ enabled: true, error: 'That account teaches this class' });
@@ -302,6 +350,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     const cls = changeClasses(file, (classes) => {
       const c = asTeacher(classes, String(req.params.id), a, res);
       if (!c) return (sent = true), null;
+      if (readOnly(c, res)) return (sent = true), null;
       c.code = freshCode(classes);
       return c;
     });
@@ -314,12 +363,16 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     const a = me(res);
     if (!a) return;
     const archived = req.body?.archived !== false;
+    const keepDays = req.body?.keepDays;
+    if (archived && keepDays !== undefined && keepDaysProblems(keepDays).length) return res.status(400).json({ enabled: true, error: keepDaysProblems(keepDays).join('; ') });
     let sent = false;
     const cls = changeClasses(file, (classes) => {
       const c = asTeacher(classes, String(req.params.id), a, res);
       if (!c) return (sent = true), null;
-      if (archived) c.archivedAt = c.archivedAt ?? now();
-      else delete c.archivedAt;
+      if (archived) {
+        c.archivedAt = c.archivedAt ?? now();
+        c.keepDays = typeof keepDays === 'number' ? keepDays : c.keepDays ?? KEEP_DAYS_DEFAULT;
+      } else delete c.archivedAt;
       return c;
     });
     if (sent || !cls) return;
@@ -441,6 +494,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     const cls = changeClasses(file, (classes) => {
       const c = asTeacher(classes, String(req.params.id), a, res);
       if (!c) return (sent = true), null;
+      if (readOnly(c, res)) return (sent = true), null;
       const tz = c.timeZone || 'UTC';
       const problems = dueProblems(body.due, tz, found.quest.closesOn, now());
       if (problems.length) {
@@ -462,6 +516,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     const cls = changeClasses(file, (classes) => {
       const c = asTeacher(classes, String(req.params.id), a, res);
       if (!c) return (sent = true), null;
+      if (readOnly(c, res)) return (sent = true), null;
       const x = (c.assignments ?? []).find((y) => y.id === req.params.aid);
       if (!x) {
         res.status(404).json({ enabled: true, error: 'No assignment with that id in this class' });
@@ -523,6 +578,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     const cls = asMember(loadClasses(file), String(req.params.id), a, res);
     if (!cls) return;
     if (roleIn(cls, a.id) !== 'student') return res.status(403).json({ enabled: true, error: 'Only students of this class hand in entries' });
+    if (readOnly(cls, res)) return;
     const x = (cls.assignments ?? []).find((y) => y.id === req.params.aid);
     if (!x) return res.status(404).json({ enabled: true, error: 'No assignment with that id in this class' });
     const nowIso = now();
@@ -841,6 +897,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     const cls = changeClasses(file, (classes) => {
       const c = asTeacher(classes, String(req.params.id), a, res);
       if (!c) return (sent = true), null;
+      if (readOnly(c, res)) return (sent = true), null;
       c.tableView = view;
       return c;
     });
@@ -857,6 +914,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     const cls = changeClasses(file, (classes) => {
       const c = asTeacher(classes, String(req.params.id), a, res);
       if (!c) return (sent = true), null;
+      if (readOnly(c, res)) return (sent = true), null;
       const ids = (usernames ?? []).map((u) => deps.accountByUsername(u)?.id ?? `?${u}`);
       const teams = c.teams ?? [];
       const problems = teams.length >= TEAMS_MAX ? [`A class has at most ${TEAMS_MAX} teams`] : teamProblems(req.body?.name, usernames ? ids : null, (id) => roleIn(c, id) === 'student', (id) => teams.some((t) => t.members.includes(id)));
@@ -930,6 +988,132 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     });
   });
 
+  // ---- Gradebook, own record and keeping period (Q8) -----------------------------------------
+  /** Assignments whose Quest was withdrawn, found unresolvable or is gone: they drop out of the marks. */
+  const voidedIds = (cls: SchoolClass) => {
+    const lines = loadResolutions(resultsFile).lines;
+    return new Set(
+      (cls.assignments ?? [])
+        .filter((x) => {
+          const f = questFor(x.questId, cls.id);
+          if (!f) return true;
+          if (f.classQuest) return false;
+          const st = resultState(lines, x.questId, x.questVersion).state;
+          return st === 'withdrawn' || st === 'unresolvable';
+        })
+        .map((x) => x.id),
+    );
+  };
+  const gradebook = async (cls: SchoolClass) => {
+    const sensitive = sensitiveIds(cls);
+    const voided = voidedIds(cls);
+    const counted = (cls.assignments ?? []).filter((x) => !sensitive.has(x.id) && !voided.has(x.id));
+    const scored = countedForMarks((await scoreClass(cls)).filter((x) => !sensitive.has(x.assignmentId)), voided);
+    const marks = latestBy(
+      loadJsonl<ClassFeedback>(feedbackFile).filter((f) => f.classId === cls.id && f.mark && !sensitive.has(f.assignmentId) && !voided.has(f.assignmentId)),
+      (f) => `${f.assignmentId}:${f.accountId}:${f.by}`,
+    );
+    const weights: GradeWeights = cls.weights ?? DEFAULT_WEIGHTS;
+    const rows = cls.members
+      .filter((m) => m.role === 'student')
+      .map((m) => {
+        const mine = scored.filter((x) => x.accountId === m.accountId);
+        return gradeRow(
+          {
+            student: nameOf(m.accountId)?.displayName ?? '(account removed)',
+            username: nameOf(m.accountId)?.username ?? '',
+            assignments: counted.length,
+            handedIn: new Set(mine.map((x) => x.assignmentId)).size,
+            summary: reportSummary(mine),
+            marks: marks.filter((f) => f.accountId === m.accountId).map((f) => f.mark!),
+          },
+          weights,
+        );
+      })
+      .sort((p, q) => p.student.localeCompare(q.student));
+    return { weights, rows, leftOut: { sensitive: sensitive.size, voided: voided.size } };
+  };
+
+  app.get('/api/classes/:id/gradebook', classRateLimit('read'), async (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const cls = asTeacher(loadClasses(file), String(req.params.id), a, res);
+    if (!cls) return;
+    res.json({ enabled: true, ...(await gradebook(cls)) });
+  });
+
+  app.get('/api/classes/:id/gradebook.csv', classRateLimit('read'), async (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const cls = asTeacher(loadClasses(file), String(req.params.id), a, res);
+    if (!cls) return;
+    const g = await gradebook(cls);
+    audit(`${who(a)} downloaded the gradebook of the class "${cls.name}"`);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="econquest-gradebook.csv"');
+    res.send(toCsv(GRADEBOOK_HEADER, g.rows.map(gradebookCells)));
+  });
+
+  app.post('/api/classes/:id/gradebook-settings', classRateLimit('write'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const problems = weightProblems(req.body?.weights);
+    if (problems.length) return res.status(400).json({ enabled: true, error: problems.join('; ') });
+    let sent = false;
+    const cls = changeClasses(file, (classes) => {
+      const c = asTeacher(classes, String(req.params.id), a, res);
+      if (!c) return (sent = true), null;
+      const w = req.body.weights as GradeWeights;
+      c.weights = { participation: w.participation, accuracy: w.accuracy, calibration: w.calibration, marks: w.marks };
+      return c;
+    });
+    if (sent || !cls) return;
+    audit(`${who(a)} changed the gradebook weights of the class "${cls.name}"`);
+    res.json({ enabled: true, ok: true });
+  });
+
+  app.get('/api/classes/:id/my-record.csv', classRateLimit('read'), async (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const cls = asMember(loadClasses(file), String(req.params.id), a, res);
+    if (!cls) return;
+    if (roleIn(cls, a.id) !== 'student') return res.status(403).json({ enabled: true, error: 'This download is for students of the class' });
+    // Sensitive topics never leave this copy, not even in a student's own file.
+    const sensitive = sensitiveIds(cls);
+    const voided = voidedIds(cls);
+    const mine = (await scoreClass(cls)).filter((x) => x.accountId === a.id && !sensitive.has(x.assignmentId));
+    const feedback = latestBy(
+      loadJsonl<ClassFeedback>(feedbackFile).filter((f) => f.classId === cls.id && f.accountId === a.id && !sensitive.has(f.assignmentId)),
+      (f) => `${f.assignmentId}:${f.by}`,
+    );
+    const title = (aid: string) => (cls.assignments ?? []).find((x) => x.id === aid)?.title ?? '';
+    const answer = (ans: Record<string, number>) => (typeof ans.probability === 'number' ? ans.probability : ans.level ?? ans.value ?? ans.position ?? null);
+    const rows = [
+      ...mine.map((x) => [x.title, 'entry', x.at, answer(x.answer), x.score.status === 'settled' && x.score.answer === 'probability' ? x.score.brier : null, x.score.status === 'settled' ? x.score.skill : null, voided.has(x.assignmentId) ? 'voided' : x.score.status, '', '']),
+      ...feedback.map((f) => [title(f.assignmentId), 'feedback', f.at, null, null, null, '', f.mark ?? '', f.text]),
+    ];
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="econquest-my-class-record.csv"');
+    res.send(toCsv(['assignment', 'kind', 'at', 'answer', 'brier', 'skill', 'status', 'mark', 'text'], rows));
+  });
+
+  app.post('/api/classes/:id/keep', classRateLimit('write'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const problems = keepDaysProblems(req.body?.keepDays);
+    if (problems.length) return res.status(400).json({ enabled: true, error: problems.join('; ') });
+    let sent = false;
+    const cls = changeClasses(file, (classes) => {
+      const c = asTeacher(classes, String(req.params.id), a, res);
+      if (!c) return (sent = true), null;
+      c.keepDays = req.body.keepDays as number;
+      return c;
+    });
+    if (sent || !cls) return;
+    audit(`${who(a)} set the class "${cls.name}" to be kept ${cls.keepDays} days after archiving`);
+    res.json(viewReply(cls, a));
+  });
+
   app.post('/api/classes/:id/copy', classRateLimit('write'), (req, res) => {
     const a = me(res);
     if (!a) return;
@@ -939,6 +1123,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     const out = changeClasses(file, (classes) => {
       const to = asTeacher(classes, String(req.params.id), a, res);
       if (!to) return (sent = true), null;
+      if (readOnly(to, res)) return (sent = true), null;
       const from = classes.find((c) => c.id === fromId);
       if (!from || roleIn(from, a.id) !== 'teacher' || from.id === to.id) {
         res.status(404).json({ enabled: true, error: 'Pick another class that you teach to copy from' });

@@ -230,4 +230,8 @@ export const QUEST_TEXT_FR: Record<string, string> = {
   "A student sees only their own report": "Un étudiant ne voit que son propre bilan",
   "That account is not a student in this class": "Ce compte n'est pas celui d'un étudiant de cette classe",
   "No series on this server": "Aucune série sur ce serveur",
+  "Give the four weights": "Indiquez les quatre poids",
+  "Each weight is a number from 0 to 100": "Chaque poids est un nombre de 0 à 100",
+  "Keep an archived class for 30 to 3650 days": "Conservez une classe archivée de 30 à 3650 jours",
+  "This download is for students of the class": "Ce téléchargement est réservé aux étudiants de la classe",
 };

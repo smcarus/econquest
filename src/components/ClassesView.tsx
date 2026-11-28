@@ -11,6 +11,7 @@ import type { ClassView } from '../utils/classes';
 import { ClassAssignments } from './ClassAssignments';
 import { ClassQuests } from './ClassQuests';
 import { ClassTable } from './ClassTable';
+import { ClassGradebook } from './ClassGradebook';
 
 type ListReply = { enabled: boolean; reason?: string; needSignIn?: boolean; classes: ClassView[]; canCreate: boolean };
 type Created = { nickname: string; username: string; password: string };
@@ -155,6 +156,7 @@ function ClassCard({ cls, act, created, onCreated, otherTeaching }: { cls: Class
           </div>
         )}
       </div>
+      {cls.archived && cls.deleteOn && <ArchivedNote cls={cls} base={base} act={act} />}
 
       {cls.members && (
         <table className="w-full text-xs" data-class-members>
@@ -266,6 +268,35 @@ function ClassCard({ cls, act, created, onCreated, otherTeaching }: { cls: Class
       <ClassQuests cls={cls} />
       <ClassAssignments cls={cls} otherTeaching={otherTeaching} />
       <ClassTable cls={cls} />
+      <ClassGradebook cls={cls} />
     </li>
+  );
+}
+
+/** Q8: an archived class is read-only and is deleted on a set day; the last 30 days carry a warning. */
+function ArchivedNote({ cls, base, act }: { cls: ClassView; base: string; act: (fn: () => Promise<unknown>) => Promise<void> }) {
+  const t = useT(QUESTS);
+  const [days, setDays] = useState(String(cls.keepDays ?? 365));
+  return (
+    <div className={`text-xs p-2 space-y-1 border ${cls.deleteWarning ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/40' : 'border-slate-200 dark:border-slate-800'}`} role={cls.deleteWarning ? 'alert' : undefined} data-class-archived-note>
+      <p>{t(cls.deleteWarning ? 'gbDeleteSoon' : 'gbArchivedNote', { date: cls.deleteOn! })}</p>
+      {cls.myRole === 'teacher' && (
+        <form
+          className="flex flex-wrap items-end gap-1"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void act(() => call(`${base}/keep`, 'POST', { keepDays: Number(days) }));
+          }}
+        >
+          <label className="space-y-1">
+            <span className="block">{t('gbKeepDays')}</span>
+            <input type="number" min={30} max={3650} step={1} className="px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 w-24" value={days} onChange={(e) => setDays(e.target.value)} data-class-keep-days />
+          </label>
+          <button type="submit" className="ui-btn text-xs" data-class-keep-save>
+            {t('gbKeepSave')}
+          </button>
+        </form>
+      )}
+    </div>
   );
 }
