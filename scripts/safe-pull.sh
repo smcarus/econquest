@@ -52,6 +52,14 @@ safe_pull() {
   root="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "Not a git folder; skipping git pull."; return 1; }
   cd "$root" || return 1
 
+  # A release pinned for the term (npm run class:setup; src/utils/classRelease.ts): keep this code
+  # through the last day of the term, so a class sees the same app all term.
+  local pin="${DATA_DIR:-$root/data}/local/class-release.json"
+  if [ -f "$pin" ] && node -e 'const p=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));const t=new Date().toISOString().slice(0,10);process.exit(/^\d{4}-\d{2}-\d{2}$/.test(p.until||"")&&t<=p.until?0:1)' "$pin" 2>/dev/null; then
+    echo "Pinned for the term (until $(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).until)' "$pin")): keeping this code; no git pull. npm run class:setup -- --unpin ends the pin early."
+    return 0
+  fi
+
   local changed
   changed="$(safe_pull_generated_changes)"
   if [ -n "$changed" ]; then
