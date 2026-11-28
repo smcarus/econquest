@@ -36,6 +36,7 @@ desenvolvedores existem só em inglês.
 | Escrever um relatório | **Relatórios** (abas: Escrever uma nota, Documentos do conselho, Cadernos, Ensino) | Notas de país e de emissor, avaliações de sustentabilidade, revisões de carteira e resumos do conselho, em Markdown ou PDF com fontes e datas |
 | Escrever um texto para discussão | Gráficos do **Chat do conselho**, **Relatórios > Cadernos** | Fixe um gráfico num caderno de pesquisa com a data até onde vão os números e uma impressão digital dos números; baixe o caderno como um único zip (rascunho, dados, scripts de Python, R e Stata, arquivo de citação); depois, *Verificar se ainda vale* diz se cada número continua igual, foi revisado ou sumiu |
 | Aprender pelo caminho | Botões do cabeçalho, **Menu > Manual do usuário**, **Menu > Exemplos resolvidos** | Quatro níveis de ajuda (Ajuda desativada, Ajuda essencial, Ajuda completa, Especialista), um glossário em linguagem simples, cinco casos resolvidos, episódios didáticos e modo prova |
+| Ver o que isso significa para você | **Menu > O que isso significa para você** | Sua própria taxa de inflação a partir de como seus gastos se dividem entre os grupos oficiais de preços (começando pelos pesos oficiais da cesta quando a fonte os publica), contra a taxa geral, e o que uma mudança de juros faz com a parcela do seu empréstimo, incluindo a última mudança do banco central para um empréstimo com taxa variável. O que você digita fica apenas no seu navegador |
 | Usar seus próprios dados e testes | **Menu > Seus dados**, **Menu > Modelos e validação** | Carregue suas próprias séries em CSV; registre seu próprio teste de sinal ou modelo com as mesmas regras rígidas dos testes do app |
 | Usar os números em R, Python ou Stata | [docs/DATA_API.md](./DATA_API.md) (em inglês) | As mesmas séries, painéis e tabelas das telas, com fonte e data em cada valor |
 | Conectar um sistema de carteira | **Menu > Configurações > Tokens de API**, [docs/DATA_API.md](./DATA_API.md) (em inglês) | Outro programa lê resumos de país e eventos, envia suas posições e roda choques e repetições de crises passadas na carteira dele, cada um com um token limitado ao que você marcar. Os países e títulos da lista **Nomes ocultos** não aparecem em lugar nenhum |
@@ -418,6 +419,12 @@ Situação em 27 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./ROADMAP.md
     juntam ao Macrobond em Menu > Configurações > Suas assinaturas, cada um só com a sua própria chave,
     um de cada vez; os números ficam no seu computador, e uma série que cita um CDS é recusada enquanto
     os CDS estiverem ocultos. Ainda não testados com uma chave real.
+27. **O que isso significa para você** (27 de novembro): Menu > O que isso significa para você mostra
+    sua própria taxa de inflação a partir de como seus gastos se dividem entre os grupos oficiais de
+    preços (os grupos principais e os pesos da Eurostat para os membros da UE; alimentos, energia e o
+    resto nos demais países), contra a taxa geral, e o que uma mudança de juros faz com a parcela do seu
+    empréstimo, fixa ou variável, com a última mudança do banco central e sua data. O que você digita
+    fica apenas no seu navegador.
 
 **Próximo**
 
@@ -445,6 +452,6 @@ Situação em 27 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./ROADMAP.md
   local mensais do FMI responderam lá em 18 e 19 de novembro. As previsões oficiais, as edições em
   tempo real da OCDE e a busca nos catálogos (linhas `wb_gep`, `oecd_eo`, `oecd_rtd` e `catalogues`)
   aguardam o primeiro teste lá. O que aconteceu depois aguarda lá
-  seu primeiro teste de alarmes falsos (`npm run synth:validate`). A mesa quantitativa espera um primeiro teste com um servidor
+  seu primeiro teste de alarmes falsos (`npm run synth:validate`). O que isso significa para você aguarda a linha `eurostat_hicp_groups`, e seus grupos de preços para países fora da UE aguardam `npm run check:imf` antes de serem ativados (`IMF_CPI_GROUPS=on`). A mesa quantitativa espera um primeiro teste com um servidor
   real de ferramentas de pesquisa, e as surpresas nos dados precisam de algumas semanas de downloads
   diários para se acumular.

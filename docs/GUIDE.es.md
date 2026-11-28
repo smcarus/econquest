@@ -521,6 +521,9 @@ El **Menú** reúne todo lo que no es una página, en tres grupos después de **
   se guarda.
 - **Modo examen**: desactiva todos los pasos de IA para un examen.
 - **Ejemplos resueltos**: cinco casos de una pregunta a un memorando.
+- **Qué significa para usted**: su propia tasa de inflación según cómo reparte su gasto entre los
+  grupos oficiales de precios, frente a la tasa general, y lo que un cambio de tipos hace a la cuota de
+  su préstamo. Lo que usted introduce se queda solo en su navegador.
 - **Acerca de y licencias de datos**: la versión, una nota breve sobre privacidad
   ([PRIVACY.md](PRIVACY.md), en inglés) y si hay una versión más reciente, con los pasos para actualizar.
   Cuando la hay, el Menú muestra **Nueva versión** junto a Acerca de.

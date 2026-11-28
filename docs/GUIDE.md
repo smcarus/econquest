@@ -481,6 +481,9 @@ data* and *Learn*. Items worth knowing first:
   on your computer. Off by default; shown on screen only and never saved.
 - **Exam mode**: turns every AI step off for a class test.
 - **Worked examples**: five case studies from a question to a memo.
+- **What this means for you**: your own inflation rate from how you split your spending over the
+  official price groups, against the headline rate, and what a rate change does to your loan payment.
+  What you enter stays in your browser only.
 - **About & data licences**: the version, a short note on privacy ([PRIVACY.md](PRIVACY.md)), and
   whether a newer version is out, with the steps to update. When one is, the Menu shows **New
   version** beside About.

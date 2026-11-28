@@ -18,6 +18,10 @@ import { crisisSentence, crisisWarning, CRISIS_NOT_RUN } from '../../utils/crisi
 import { esSentence, externalSustainability } from '../../utils/externalSustainability';
 import { driversSentence, inflationDrivers, NO_DRIVER_SOURCE } from '../../utils/inflationDrivers';
 import { fetchInflationDrivers } from '../feeds/inflationDrivers';
+import { fetchPriceGroups } from '../feeds/priceGroups';
+import { fetchCbpolPull } from '../feeds/positioning';
+import { policyRateFor } from '../../utils/bisPolicyRates';
+import { cbLastMove } from '../../utils/loanPayment';
 import { fetchPwt } from '../feeds/pwt';
 import { bankSovereign, bsSentence, type YearValue } from '../../utils/bankSovereign';
 import { incidenceContext } from '../../utils/policyIncidence';
@@ -419,6 +423,20 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     if (!inputs) return res.json({ iso3, ok: false, reason: 'The consumer price sources have not answered yet' });
     const r = inflationDrivers(inputs);
     res.json({ iso3, ...r, ...(r.ok ? { sentence: driversSentence(r, name) } : {}) });
+  });
+  // What this means for you (PY1-PY3, src/utils/priceGroups.ts, src/utils/loanPayment.ts): the official price
+  // groups and weights, and the central bank's last move for a variable loan. Your split and your loan stay in
+  // your browser: nothing you enter is sent here.
+  app.get('/api/your-prices/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const hist = await quick(modelHistory());
+    const oecdCovered = Boolean(hist?.cpi && areaSeries(iso3, hist.cpi)?.points?.length);
+    const groups = (await quick(fetchPriceGroups(iso3, oecdCovered))) ?? { ok: false as const, reason: 'The consumer price sources have not answered yet' };
+    const cbpol = await quick(fetchCbpolPull());
+    const bis = policyRateFor(iso3, cbpol);
+    const imfPol = loadImfPolicy()?.series?.[iso3];
+    const cbMove = cbLastMove(bis, imfPol ? { points: imfPol.points, long: imfPol.long } : null);
+    res.json({ iso3, countryName: catalogEntry(iso3)?.countryName || iso3, groups, cbMove });
   });
   // Growth accounting (G27, src/utils/growthAccounting.ts): capital, hours, human capital and TFP from the Penn World Table.
   app.get('/api/growth-accounting/:iso3', async (req, res) => {
