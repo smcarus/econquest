@@ -132,6 +132,8 @@ su ordenador.
   memorando y una nota de una página para quien no es economista, y vea cómo les fue a los países
   después de hacer el mismo tipo de cambio.
 - **Escribir un informe** en Markdown o PDF, con cada fuente y fecha.
+- **Ver qué significa para usted**: su propia tasa de inflación según lo que gasta, y lo que un cambio
+  de tipos hace a la cuota de su préstamo, guardado solo en su navegador.
 - **Aprender sobre la marcha** con cuatro niveles de ayuda, un glosario en lenguaje claro y cinco
   ejemplos guiados.
 - **Usar las cifras en R, Python, Stata o Excel**, o conectar otro programa a la aplicación.

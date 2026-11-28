@@ -509,6 +509,9 @@ O **Menu** reúne tudo o que não é uma página, em três grupos depois de **Fe
   executa e no qual entra no seu computador. Desligado por padrão; só na tela e nunca salvos.
 - **Modo prova**: desliga todos os passos de IA para uma prova.
 - **Exemplos resolvidos**: cinco casos, de uma pergunta a um memorando.
+- **O que isso significa para você**: sua própria taxa de inflação a partir de como você divide seus
+  gastos entre os grupos oficiais de preços, contra a taxa geral, e o que uma mudança de juros faz com
+  a parcela do seu empréstimo. O que você digita fica apenas no seu navegador.
 - **Sobre e licenças de dados**: a versão, uma nota curta sobre privacidade ([PRIVACY.md](PRIVACY.md),
   em inglês) e se há uma versão mais nova, com os passos para atualizar. Quando há, o Menu mostra **Nova
   versão** ao lado de Sobre.

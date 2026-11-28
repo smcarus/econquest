@@ -1,6 +1,6 @@
 # EconQuest Terminal: Methodology
 
-**Version 1.11, 27 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of the main branch on 27 November 2026 (after release 0.3.0, through pull request #724).
+**Version 1.12, 27 November 2026** (changes since version 1.0 are listed at the end). Describes the software as of the main branch on 27 November 2026 (after release 0.3.0, through pull request #725, with What this means for you).
 Licensed under [CC BY 4.0](../LICENSE-docs.md). Research, not validated advice.
 
 This document sets out how the EconQuest Terminal sources its data, how its council of agents
@@ -741,6 +741,46 @@ made-up jump of one standard deviation is reported but is not a pass condition. 
 yearly histories, so it runs on the developer's computer. Register `synthetic_control`; rules in the
 [Methods note](./METHODS.md).
 
+### 5.8 What this means for you: your own inflation rate and your loan
+
+Menu > What this means for you turns two published figures into one household's terms, for the
+country in view. It is arithmetic on official figures, not a model, and it is not in the register.
+
+- **Price groups.** One source per country, never mixed. EU members: Eurostat HICP annual rates by
+  main group (COICOP divisions). From January 2026 Eurostat publishes the 2018 classification
+  (`prc_hicp_minr`, 13 groups); the older classification (`prc_hicp_manr`, 12 groups, to December
+  2025) is used only when the newer one does not answer. The official basket weights
+  (`prc_hicp_inw`, per mille, set each year) are read in the same classification as the rates and
+  shown as % of the basket with their year; when that classification has no weights they read
+  Missing and are not borrowed from the other one, because some groups changed content. Other
+  countries: food, energy and everything else (core) from the sources the inflation drivers tool
+  reads (BLS for the United States, the OECD for its other members), which publish no weights. The
+  IMF CPI dataset's groups for other countries are matched by name in the dataset's own structure,
+  as for the IMF headline CPI, and are read only when `IMF_CPI_GROUPS=on` is set after
+  `npm run check:imf` shows the match is right on a computer that reaches the IMF.
+- **Your rate.** Your rate = Σ (your share of spending in a group ÷ 100) × the group's annual rate,
+  for the newest month every group you spend in has. Shares are scaled to add up to 100, and the app
+  says when it scaled them. Each group's term in the sum is its push. A group you spend in with no
+  figures makes the whole rate Missing with the reason; nothing is filled in. The split starts from
+  the official weights (scaled to 100) where there are any, otherwise empty.
+- **Against headline.** The published all-items rate is shown beside yours. The same sum with the
+  official weights is shown too: it differs a little from the published headline because the
+  published index is chain-linked and weights change each year, so that gap comes from the method,
+  not from your spending.
+- **Loan payment.** A loan repaid in equal monthly amounts: payment = balance × r ÷ (1 − (1 + r)^−n),
+  with r the yearly rate ÷ 12 and n the months left (balance ÷ n at a zero rate); interest-only
+  loans pay balance × r. A variable loan's payment changes at once with the rate change you enter. A
+  fixed loan's payment does not change until the fixed period ends; then it is worked out on the
+  balance still owed and the months left (at an unchanged rate it is the same payment).
+- **The central bank's last move.** For a variable loan, the payment if the lender passed on the
+  central bank's last move in full, with its date and source: the BIS policy rate series first, else
+  the IMF monthly policy rate; when neither has a move, Missing with the reason. Lenders do not always
+  pass on the full move, and the screen says so.
+- **Privacy.** The groups, weights and the central bank's move come from the server
+  (`GET /api/your-prices/:iso3`); your split and your loan are worked out in the browser and kept
+  only in its local storage. They are never sent to the server and are not in data/, the audit log,
+  Backup or For people. *Clear what I entered* removes them.
+
 ## 6. The signal standard
 
 Every signal that makes a forward claim is held to the same standard. It applies to new signals and
@@ -1127,6 +1167,10 @@ The terminal states what it cannot do. In particular:
   such), credit ratings, PMIs, government bond auction results outside the United States, consensus
   forecasts, and some countries' series (for example inflation targets and decision dates for many
   lower-income countries; policy rates for these countries are monthly, from the IMF).
+- **Your own inflation rate** (5.8) treats each group's annual rate as fixed-weight and adds it up,
+  so it is close to, not the same as, an index built for your basket; groups within a group (rent
+  against energy inside housing, for example) are not split further; and outside the EU there are
+  only three parts, with no official weights to start from.
 - **Revised data.** Where real-time vintages are not available, tests use today's revised data and
   say so. OECD figures obtained through DBnomics can lag the official release by about five months.
 - **Small samples.** Many emerging-market series are short and stress episodes cluster. Results from a
@@ -1296,6 +1340,7 @@ Per-model references are given in the [Methods note](./METHODS.md).
 | 1.9 | 26 November 2026 | Builds that can be checked (13): pinned build steps, software parts lists, checksums and signed build proof on each release, code scanning; where problem reports go until the public repository opens (1.1) |
 | 1.10 | 27 November 2026 | What happened after (5.7): a country against a synthetic twin after a change it made, the changes found by rules, files and the user, placebo and other checks, the pooled view, the brief section and the pre-registered false-alarm test; references for synthetic control and devaluations |
 | 1.11 | 27 November 2026 | Paid data behind the user's own account (3.5): the data subscription with Macrobond, Trading Economics and EODHD, each off by default and used only with the user's own key; figures kept on the user's computer; CDS mappings refused while CDS is hidden |
+| 1.12 | 27 November 2026 | What this means for you (5.8): your own inflation rate from your split over the official price groups (Eurostat main groups and weights in one classification, food, energy and the rest elsewhere, IMF groups after a check), the gap to headline and its part that comes from the method, loan payments with your own rate change and the central bank's last move, and entries kept only in the browser; the limits of the personal rate (14) |
 
 ---
 

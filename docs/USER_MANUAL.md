@@ -1261,14 +1261,31 @@ hold no figures of their own; the handout reads them from the app's series when 
 
 - **The Menu** is in three groups after **Tools**: *Set up* (Settings, Account, Offline data, Your
   data, Sharing mode, Exam mode, Find data), *Check the data* (Data health, Models & validation, Audit
-  log, Idea journal) and *Learn* (User manual, Worked examples, About & data licences, Report a
-  problem, Quests). Settings shows *AI: not set* until a model works.
+  log, Idea journal) and *Learn* (What this means for you, User manual, Worked examples, About & data
+  licences, Report a problem, Quests). Settings shows *AI: not set* until a model works.
 - **Report a problem**: opens a new GitHub issue with the app's version filled in; you read it and
   send it yourself. When a panel cannot be drawn, its note has *Copy details* (version, where, the
   error and the first lines of the component stack; no figures or saved data) and *Report this
   problem*. Until the public copy opens, Report a problem and Flag open issues on
   github.com/smcarus/econquest (`ISSUE_REPO` in `src/utils/problemReport.ts`); sending one needs a
   free GitHub account.
+- **What this means for you** (B4): your own inflation rate and your loan payment, for the country
+  open in Research. *Your inflation rate*: the official price groups (for EU members Eurostat's main
+  groups, 13 from 2026, with the official basket weights and their year; elsewhere food, energy and
+  everything else, with no official weights) with each group's price change over the year. Enter
+  your share of spending in each; the split starts from the official weights where there are any.
+  The app scales the shares to 100 if they do not add up and says so, then shows your rate for the
+  newest month every group you spend in has, against the published headline, with the biggest push,
+  a chart of the last 24 months (Show the numbers), Cite, how it is worked out and what is Missing. A
+  group you spend in with no figures makes your rate Missing with the reason. *Your loan*: the
+  balance still owed, the yearly rate, the years left, variable or fixed (with the years left at the
+  fixed rate), capital and interest or interest only, and a rate change to try (1 point to start).
+  It shows your payment now and with the change (for a fixed loan, from the end of the fixed period),
+  and for a variable loan the payment if your lender passed on the central bank's last move in full,
+  with its date and source (BIS, else the IMF monthly series), or Missing with the reason. What you
+  enter stays in this browser only: it is not sent to the app's server and is not in Backup, the
+  audit log or For people. *Clear what I entered* removes it. To see another country, open it in
+  Research first. In English, Spanish, French and Portuguese. Method: Methodology 5.8.
 - **Worked examples** (W1): five guided case studies for the country open in Research, each going
   from a question to a short memo with the app's own screens: debt sustainability ("Is government
   debt on a path the country can keep up?"), inflation and interest rates ("Is the central bank's

@@ -131,6 +131,8 @@ seu computador.
   de uma página para quem não é economista, e veja como os países se saíram depois de fazer o mesmo
   tipo de mudança.
 - **Escrever um relatório** em Markdown ou PDF, com cada fonte e data.
+- **Ver o que isso significa para você**: sua própria taxa de inflação a partir do que você gasta, e o
+  que uma mudança de juros faz com a parcela do seu empréstimo, guardado apenas no seu navegador.
 - **Aprender no caminho** com quatro níveis de ajuda, um glossário em linguagem simples e cinco
   exemplos guiados.
 - **Usar os números em R, Python, Stata ou Excel**, ou conectar outro programa ao app.

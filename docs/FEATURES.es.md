@@ -36,6 +36,7 @@ de referencia; las órdenes y las notas para desarrolladores solo están en ingl
 | Escribir un informe | **Informes** (pestañas: Escribir una nota, Documentos del consejo, Cuadernos, Docencia) | Notas de país y de emisor, evaluaciones de sostenibilidad, revisiones de cartera e informes del consejo, en Markdown o PDF con fuentes y fechas |
 | Escribir un documento de trabajo | Gráficos del **Chat del consejo**, **Informes > Cuadernos** | Fije un gráfico en un cuaderno de investigación con la fecha hasta la que llegan sus cifras y una huella de las cifras; descargue el cuaderno como un solo zip (borrador, datos, scripts de Python, R y Stata, archivo de cita); más tarde, *Comprobar que se mantiene* dice si cada cifra sigue igual, se revisó o ya no está |
 | Aprender sobre la marcha | Botones de la cabecera, **Menú > Manual de usuario**, **Menú > Ejemplos resueltos** | Cuatro niveles de ayuda (Ayuda desactivada, Ayuda clave, Ayuda completa, Experto), un glosario en lenguaje sencillo, cinco casos resueltos, episodios didácticos y modo examen |
+| Ver qué significa para usted | **Menú > Qué significa para usted** | Su propia tasa de inflación según cómo se reparte su gasto entre los grupos oficiales de precios (partiendo de las ponderaciones oficiales de la cesta cuando la fuente las publica), frente a la tasa general, y lo que un cambio de tipos hace a la cuota de su préstamo, incluido el último movimiento del banco central para un préstamo variable. Lo que usted introduce se queda solo en su navegador |
 | Usar sus propios datos y pruebas | **Menú > Sus datos**, **Menú > Modelos y validación** | Cargue sus propias series CSV; registre su propia prueba de señal o modelo con las mismas reglas estrictas que las de la aplicación |
 | Usar las cifras en R, Python o Stata | [docs/DATA_API.md](./DATA_API.md) (en inglés) | Las mismas series, paneles y tablas que muestran las pantallas, con fuente y fecha en cada valor |
 | Conectar un sistema de cartera | **Menú > Configuración > Tokens de API**, [docs/DATA_API.md](./DATA_API.md) (en inglés) | Otro programa lee resúmenes de país y eventos, envía sus posiciones y ejecuta choques y repeticiones de crisis pasadas sobre su cartera, cada uno con un token limitado a lo que usted marque. Los países y valores de la lista de **Nombres ocultos** no aparecen en ninguna parte |
@@ -426,6 +427,12 @@ Situación al 27 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./ROADMAP.md
     suman a Macrobond en Menú > Configuración > Sus suscripciones, cada uno solo con su propia clave y
     uno a la vez; las cifras se quedan en su ordenador, y una serie que nombra un CDS se rechaza
     mientras los CDS estén ocultos. Aún no probados con una clave real.
+27. **Qué significa para usted** (27 de noviembre): Menú > Qué significa para usted muestra su propia
+    tasa de inflación según cómo se reparte su gasto entre los grupos oficiales de precios (los grupos
+    principales y las ponderaciones de Eurostat para los miembros de la UE; alimentos, energía y el resto
+    en otros países), frente a la tasa general, y lo que un cambio de tipos hace a la cuota de su
+    préstamo, fijo o variable, con el último movimiento del banco central y su fecha. Lo que usted
+    introduce se queda solo en su navegador.
 
 **Siguiente**
 
@@ -454,6 +461,6 @@ Situación al 27 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./ROADMAP.md
   oficiales y tipos del mercado local mensuales del FMI respondieron allí el 18 y el 19 de noviembre.
   Las previsiones oficiales, las ediciones en tiempo real de la OCDE y la búsqueda en catálogos (filas
   `wb_gep`, `oecd_eo`, `oecd_rtd` y `catalogues`) esperan su primera prueba allí. Qué pasó después espera allí
-  su primera prueba de falsas alarmas (`npm run synth:validate`). La mesa cuantitativa espera una
+  su primera prueba de falsas alarmas (`npm run synth:validate`). Qué significa para usted espera la fila `eurostat_hicp_groups`, y sus grupos de precios para países fuera de la UE esperan `npm run check:imf` antes de activarse (`IMF_CPI_GROUPS=on`). La mesa cuantitativa espera una
   primera prueba con un servidor real de herramientas de investigación, y las sorpresas en los datos
   necesitan unas semanas de descargas diarias para acumularse.

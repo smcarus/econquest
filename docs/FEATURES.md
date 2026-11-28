@@ -37,6 +37,7 @@ roadmap and the developer notes. The short introduction and the install steps ar
 | Write a report | **Reports** (tabs: Write a note, Council documents, Notebooks, Teaching) | Country notes, issuer notes, debt sustainability assessments, portfolio and client reviews and council briefs, as Markdown or PDF with sources and dates |
 | Write a working paper | **Council chat** charts, **Reports > Notebooks** | Pin a chart to a research notebook with the date its figures run to and a fingerprint of the figures; download the notebook as one zip (draft, data, Python, R and Stata scripts, citation file); later, *Check it still holds* says whether each figure is the same, revised or gone |
 | Learn as you go | Header buttons, **Menu > User manual**, **Menu > Worked examples** | Four help levels (Help off, Key help, Full help, Expert), a plain-language glossary, five worked case studies, teaching episodes and exam mode |
+| See what it means for you | **Menu > What this means for you** | Your own inflation rate from how your spending splits over the official price groups (starting from the official basket weights where the source publishes them), set against the headline rate, and what a rate change does to your loan payment, including the central bank's last move for a variable loan. What you enter stays in your browser only |
 | Bring your own data and tests | **Menu > Your data**, **Menu > Models & validation** | Load your own CSV series; register your own signal or model test under the same strict rules as the app's own |
 | Use the figures in R, Python or Stata | [docs/DATA_API.md](./DATA_API.md) | The same series, panels and tables the screens show, with source and date on every value |
 | Connect a portfolio system | **Menu > Settings > API tokens**, [docs/DATA_API.md](./DATA_API.md) | Another program reads country snapshots and events, sends its positions in, and runs shocks and past-crisis replays on its portfolio, each with a token limited to what you tick ([details](#connecting-an-outside-system)) |
@@ -434,6 +435,11 @@ Where things stand on 27 November 2026 (details and status in [docs/ROADMAP.md](
     Macrobond under Menu > Settings > Your subscriptions, each used only with your own key, one at a
     time; figures stay on your computer, and a series that names a CDS is refused while CDS is
     hidden. Not yet tried against a live key.
+27. **What this means for you** (27 November): Menu > What this means for you shows your own
+    inflation rate from how your spending splits over the official price groups (Eurostat's main
+    groups and basket weights for EU members; food, energy and the rest elsewhere), against the
+    headline rate, and what a rate change does to your loan payment, fixed or variable, with the
+    central bank's last move and its date. What you enter stays in your browser only.
 
 **Next**
 
@@ -459,7 +465,7 @@ Where things stand on 27 November 2026 (details and status in [docs/ROADMAP.md](
   rates, policy rates and local market rates answered there on 18 and 19 November. The official
   forecasts, the OECD real-time editions and the catalogue search (rows `wb_gep`, `oecd_eo`,
   `oecd_rtd` and `catalogues`) wait for their first check there. What happened after waits
-  for its first false-alarm test there (`npm run synth:validate`). The Quant desk waits
+  for its first false-alarm test there (`npm run synth:validate`). What this means for you waits for row `eurostat_hicp_groups`, and its price groups for countries outside the EU wait for `npm run check:imf` before they are switched on (`IMF_CPI_GROUPS=on`). The Quant desk waits
   for a first check against a real research-tools server, and data surprises need some weeks of daily
   downloads to build up.
 

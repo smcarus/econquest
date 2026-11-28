@@ -399,6 +399,14 @@ own. Instead of a measure, you can weigh what an event means for one market (the
 government bonds): the app copies in its own market figures as they stood on the review's date. None
 of this is a forecast. It lays out the case so that someone else can check every step.
 
+**What this means for you.** Menu > What this means for you turns the headline figures into one
+household's terms. Headline inflation is an average over everyone's spending; you enter how your own
+spending splits over the official price groups (food, housing, transport and so on, starting from the
+official basket weights where the source publishes them), and the app adds up each group's price
+change at your shares to give your own rate beside the headline one. For a loan it shows the monthly
+payment now and after a rate change you choose, and for a variable loan after the central bank's last
+move, with its date. What you enter stays in your browser and is never sent to the app's server.
+
 **What happened after: a country against its twin.** In a policy review's Precedents step you can
 pick a change the country made, such as a big budget swing, a devaluation or a new fiscal rule, and
 a figure such as inflation. The app builds a "twin": a mix of other countries whose figure moved like
@@ -649,6 +657,9 @@ other.
 - **The World Bank models are old teaching copies.** Only six countries' models are public, their
   figures are years out of date, and the app runs one change at a time. A result is what the model
   says, not what the World Bank forecasts.
+- **Your own rate is close, not exact.** It adds up each group's yearly change at your shares, so it
+  is near what an index built for your basket would show, not the same; outside the EU there are only
+  three groups. A loan payment uses the standard formula; your lender's figure can differ.
 - **A twin is not proof.** What happened after compares one country with a mix of others that did
   not make the same change. Something else that happened in the same years can explain the gap, and
   a result for one country does not show the change would work the same way elsewhere.
