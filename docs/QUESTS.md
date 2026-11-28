@@ -23,6 +23,7 @@ Quests stay off until every box in the checklist below is ticked. Only the proje
 | Resolver: results worked out from the feeds, recorded by `npm run quests:resolve` in the hash-chained `quests/resolutions.jsonl`; yearly figures read as first published; disputes, withdrawals and notes; Results tab and result on each Quest page; recorded results used for scores | Built and tested, switched off |
 | Quests tab on Menu > Models & validation, beside Track record: the recorded results and the chain check, shown only while Quests are on | Built and tested, switched off |
 | Links to Quests about a country under the country header and under each Council chat answer (up to three, open ones first, with See all Quests); a link opens the Quests screen on that Quest | Built and tested, switched off |
+| Report a data problem on every Quest page: a new GitHub issue with the Quest and the figures the page showed filled in, read and sent by the person | Built and tested, switched off |
 | Public entries by pull request (`quests/entries/<id>/<login>.<n>.json`): Prepare entry in the app opens GitHub's prefilled page; the entry checker (`npm run quests:entries`, CI job `Quest entries`); replacements numbered and kept; emailed entries posted by a maintainer; entries hidden in the app until close, then shown with scores and the spread | Built and tested, switched off |
 | Contributor statistics and scoreboard: skill with a 90% range, beat no change, calibration, sharpness, record against the crowd, fields, streak, each shown only above its minimum; rankings after 12 settled forecasts and a 90-day-old GitHub account; seasons, all-time and field tables (`npm run quests:stats`, Scoreboard tab) | Built and tested, switched off |
 | Quest generator (`npm run quests:generate`: weekly Brent and currency Quests, monthly policy-rate Quests, as drafts), batch approval (`npm run quests:approve`), weekly digest (`npm run quests:digest`) and "This week" on the Quests page | Built and tested, switched off |
@@ -272,7 +273,7 @@ Planned, to build before Quests are switched on for everyone (added November 202
 - [ ] A rule-based check of the figures quoted in revealed debate entries (no AI judging)
 - [ ] A welcome Action for first-time contributors and a "good first Quest" label
 - [ ] Badges for taking part, not rankings
-- [ ] A "report a data problem" link on every Quest
+- [x] A "report a data problem" link on every Quest (built 28 November: opens a new GitHub issue naming the Quest and the figures its page showed; the person sends it)
 - [ ] Debate rules and a report link on every thread, locked a week after the Quest settles
 - [ ] A monthly round-up Action
 - [x] One first replication challenge, on a paper the maintainer picks: Bohn (1998), `bra-bohn-replication`, with the guide and starters in `quests/replications/bohn/`

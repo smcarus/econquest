@@ -336,4 +336,6 @@ export const QUESTS_FR: Messages<typeof QUESTS> = {
   linksCountry: 'Quêtes sur ce pays :',
   linksCouncil: 'Quêtes sur ce sujet :',
   linksAll: 'Voir toutes les quêtes',
+  reportData: 'Signaler un problème de données',
+  reportDataNote: '(ouvre un nouveau ticket sur GitHub avec cette quête et ses chiffres déjà remplis ; vous le relisez et l’envoyez vous-même)',
 };

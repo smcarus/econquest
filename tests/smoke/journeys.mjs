@@ -342,6 +342,8 @@ try {
     await box.locator('[data-quest-row]').first().click();
     await box.locator('[data-quest-figures], [data-quest-log], [data-quest-argument]').first().waitFor({ timeout: 15_000 });
     await noCrash(qp);
+    const report = await box.locator('[data-quest-report-data]').getAttribute('href');
+    if (!report || !report.includes('/issues/new?title=Quest%20data%20problem')) throw new Error('the Quest has no report-a-data-problem link');
     await qp.keyboard.press('Escape');
     const settled = await (await qp.request.get(`${questsServer.base}/api/quests/settled`)).json();
     if (settled.enabled !== true || !Array.isArray(settled.rows)) throw new Error('/api/quests/settled did not answer with Quests on');

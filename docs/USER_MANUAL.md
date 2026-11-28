@@ -1321,6 +1321,8 @@ hold no figures of their own; the handout reads them from the app's series when 
   - *Enter publicly*: prepares an entry file and opens GitHub's ready-made page, so your score can
     count on the public tables. It needs a free GitHub account and is public for good (see
     [PRIVACY.md](./PRIVACY.md#quests)).
+  - *Report a data problem* on each Quest opens a new GitHub issue with the Quest and the figures
+    its page showed filled in; you add what is wrong and send it yourself.
   - *Results* shows every recorded result and whether the record of results is intact; the same view
     is in Models & validation, beside Track record. *Scoreboard*, *Health* and *Stances* follow the
     rules in [QUESTS.md](./QUESTS.md).

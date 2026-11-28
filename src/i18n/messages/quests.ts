@@ -15,6 +15,8 @@ export const QUESTS = defineMessages('quests', {
   linksCountry: 'Quests about this country:',
   linksCouncil: 'Quests on this:',
   linksAll: 'See all Quests',
+  reportData: 'Report a data problem',
+  reportDataNote: '(opens a new issue on GitHub with this Quest and its figures filled in; you read it and send it yourself)',
   practiceQHigher: 'On {date}, {name} was {value} {unit}. What was the probability it would be higher on the first value published on or after {end}?',
   practiceQLower: 'On {date}, {name} was {value} {unit}. What was the probability it would be lower on the first value published on or after {end}?',
 

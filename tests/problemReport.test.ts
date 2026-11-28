@@ -36,3 +36,16 @@ test('Menu > Report a problem fills in only the version', () => {
   assert.match(u.searchParams.get('body') ?? '', /App version: 0\.3\.0/);
   assert.equal(FEEDBACK_REPO, ISSUE_REPO);
 });
+
+test('every Quest has a report-a-data-problem link naming the Quest and the figures its page showed', async () => {
+  const { questDataProblemUrl, ISSUE_REPO } = await import('../src/utils/problemReport');
+  const url = questDataProblemUrl({ version: '0.3.0', questId: 'bra-growth-2026', questVersion: 1, title: 'Brazil growth', figures: [{ series: 'Real GDP growth (BRA)', shown: 'Missing: The feed did not answer', source: 'IMF WEO' }] });
+  assert.ok(url.startsWith(`https://github.com/${ISSUE_REPO}/issues/new?title=Quest%20data%20problem%3A%20bra-growth-2026&body=`));
+  const body = decodeURIComponent(url.split('&body=')[1]!);
+  assert.match(body, /Quest: bra-growth-2026 v1, "Brazil growth"/);
+  assert.match(body, /Real GDP growth \(BRA\): Missing: The feed did not answer \(IMF WEO\)/);
+  assert.match(body, /App version: 0\.3\.0/);
+  assert.match(decodeURIComponent(questDataProblemUrl({ version: 'x', questId: 'd', questVersion: 1, title: 'D', figures: [] }).split('&body=')[1]!), /reads no series/);
+  const dialog = (await import('node:fs')).readFileSync('src/components/QuestsDialog.tsx', 'utf8');
+  assert.match(dialog, /data-quest-report-data/);
+});
