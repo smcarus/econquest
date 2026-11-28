@@ -193,7 +193,8 @@ pode participar, para que muita gente trabalhe nos problemas de um país, teste 
 outros contra os dados e construa um histórico de quem prevê bem. **As Quests estão construídas, mas
 desligadas.** Menu > Quests aparece em cinza ("Ainda não disponível") até que cada item da lista em
 [docs/QUESTS.md](./QUESTS.md) seja marcado e o projeto se torne público. Para experimentar no seu
-computador, adicione `QUESTS_ENABLED=on` ao `.env` e reinicie.
+computador, ative-as em Menu > Configurações > Quests e turmas, ou adicione `QUESTS_ENABLED=on` ao
+`.env` e reinicie.
 
 ![Menu > Quests com QUESTS_ENABLED=on: lista de Quests em rascunho com tipo e data do resultado](./images/18-quests.png)
 

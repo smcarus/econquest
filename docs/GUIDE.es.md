@@ -617,7 +617,8 @@ ordenador que ejecuta EconQuest debe permitirlo (`HOST="0.0.0.0"` y `ALLOWED_HOS
 Los Retos están desactivados para todos hasta que se complete la lista de lanzamiento de
 [QUESTS.md](./QUESTS.md). Para probarlos en su ordenador:
 
-1. Añada `QUESTS_ENABLED=on` al archivo `.env` de su carpeta de EconQuest y reinicie la aplicación.
+1. Abra **Menú > Configuración > Retos y clases** y elija *Activado* para los retos (sin reiniciar). O
+   añada `QUESTS_ENABLED=on` al archivo `.env` de su carpeta de EconQuest y reinicie la aplicación.
 2. Abra **Menú > Retos**. La ventana de Retos está en inglés por ahora. La lista muestra la pregunta de
    cada Reto, su tipo (Forecast, Debate, Replication o Signal), si es un borrador y cuándo se espera su
    resultado. Filtre por tipo o por fecha.

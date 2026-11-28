@@ -514,6 +514,23 @@ export const MENU = defineMessages('menu', {
   mn_search: 'Search this document',
   mn_notLoaded: '{file} could not be loaded. Check that the server is running.',
   mn_noMatch: 'No section matches "{q}". Clear the search to see the whole {doc}.',
+  // Settings > Quests and classes (src/components/FeatureSettings.tsx)
+  set_p_quests: "Quests and classes",
+  fs_intro: "Turn Quests and Classes on or off for everyone who uses this copy of the app. A choice made here wins over .env; \"Follow .env\" goes back to QUESTS_ENABLED and CLASSES_ENABLED there. No restart is needed.",
+  fs_quests: "Quests",
+  fs_questsHelp: "Forecasts and debates on real economic data, scored when the data comes in (Menu > Quests).",
+  fs_classes: "Classes",
+  fs_classesHelp: "Quests in the classroom: classes, assignments, feedback and a gradebook. Classes also need sign-in (Menu > Account).",
+  fs_on: "On",
+  fs_off: "Off",
+  fs_env: "Follow .env (now {state})",
+  fs_stOn: "on",
+  fs_stOff: "off",
+  fs_nowApp: "Now {state}, set here.",
+  fs_nowEnv: "Now {state}, from .env.",
+  fs_locked: "Only the computer running the app, or an administrator when sign-in is on, can change these.",
+  fs_saved: "Saved.",
+  fs_last: "Last changed by {by}.",
 });
 
 /** The translate function useT(MENU) returns, for helpers outside a component. */

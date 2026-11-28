@@ -8,7 +8,7 @@ Quests are open questions about economies, sovereigns and geopolitical risk that
 
 Quests stay off until every box in the checklist below is ticked. Only the project maintainer turns them on for a release.
 
-- **For testing on your own computer:** add `QUESTS_ENABLED=on` to `.env` (or the environment) and restart. Any other value, or none, keeps them off.
+- **For testing on your own computer:** open **Menu > Settings > Quests and classes** and choose *On* (only the computer running the app, or an administrator when sign-in is on). No restart is needed. The choice is kept in `data/local/features.json` and wins over `.env`; *Follow .env* goes back to `QUESTS_ENABLED=on` in `.env` (or the environment), which works as before. Any other value, or none, keeps them off. Classes have the same switch on the same page.
 - **For a release:** the maintainer ticks the checklist, then changes this page's status line and the default in `.env.example` in the same pull request.
 
 ## What works today

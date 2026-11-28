@@ -64,7 +64,7 @@ export interface SchoolClass {
   handInKey?: { publicKey: string; privateKey: string };
 }
 
-export const CLASSES_OFF_REASON = 'Classes are switched off on this server. The administrator turns them on with CLASSES_ENABLED=on in .env and restarts the app.';
+export const CLASSES_OFF_REASON = 'Classes are switched off on this server. An administrator turns them on in Menu > Settings > Quests and classes.';
 export const CLASSES_NEED_SIGNIN = 'Classes need sign-in, because each role in a class belongs to an account. An administrator makes the first account in Menu > Account.';
 
 export function classesEnabled(value: string | undefined): boolean {

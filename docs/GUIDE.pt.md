@@ -606,7 +606,8 @@ ligue antes o login por conta).
 As Quests estão desligadas para todos até que a lista de lançamento em [QUESTS.md](./QUESTS.md) esteja
 completa. Para experimentar no seu computador:
 
-1. Adicione `QUESTS_ENABLED=on` ao arquivo `.env` da sua pasta do EconQuest e reinicie o app.
+1. Abra **Menu > Configurações > Quests e turmas** e escolha *Ativado* para as Quests (sem reiniciar).
+   Ou adicione `QUESTS_ENABLED=on` ao arquivo `.env` da sua pasta do EconQuest e reinicie o app.
 2. Abra **Menu > Quests**. A janela das Quests está em inglês por enquanto. A lista mostra a pergunta de
    cada Quest, seu tipo (Forecast, Debate, Replication ou Signal), se é rascunho e quando o resultado é
    esperado. Filtre por tipo ou por data.

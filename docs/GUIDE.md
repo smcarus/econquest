@@ -576,7 +576,8 @@ see [HOME_SERVER.md](./HOME_SERVER.md), and turn on sign-in first).
 Quests are switched off for everyone until the launch checklist in [QUESTS.md](./QUESTS.md) is done.
 To try them on your own computer:
 
-1. Add `QUESTS_ENABLED=on` to the `.env` file in your EconQuest folder and restart the app.
+1. Open **Menu > Settings > Quests and classes** and choose *On* for Quests (no restart). Or add
+   `QUESTS_ENABLED=on` to the `.env` file in your EconQuest folder and restart the app.
 2. Open **Menu > Quests**. The list shows each Quest's question, its kind (Forecast, Debate,
    Replication or Signal), whether it is a draft, and when its result is due. Filter by kind or due
    date.

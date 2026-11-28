@@ -196,7 +196,8 @@ cualquiera puede participar, para que muchas personas trabajen sobre los problem
 prueba sus razonamientos con los datos y construyan un historial de quién prevé bien. **Los Retos están
 construidos pero desactivados.** Menú > Retos aparece en gris («Aún no disponible») hasta que se marque
 cada punto de la lista de [docs/QUESTS.md](./QUESTS.md) y el proyecto sea público. Para probarlos
-en su ordenador, añada `QUESTS_ENABLED=on` a `.env` y reinicie.
+en su ordenador, actívelos en Menú > Configuración > Retos y clases, o añada `QUESTS_ENABLED=on` a
+`.env` y reinicie.
 
 ![Menú > Retos con QUESTS_ENABLED=on: lista de Retos en borrador con su tipo y fecha de resultado](./images/18-quests.png)
 
