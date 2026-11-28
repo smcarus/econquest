@@ -16,6 +16,7 @@ import type { SeriesSet } from '../src/utils/seriesHistory';
 function draftsOnlyDir(): string {
   const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'qd-')), 'quests');
   fs.cpSync(path.join(process.cwd(), 'quests'), dir, { recursive: true });
+  fs.mkdirSync(path.join(dir, 'drafts'), { recursive: true }); // git keeps no empty folder
   for (const f of fs.readdirSync(dir)) {
     if (!f.endsWith('.json') || ['manifest.json', 'levels.json', 'stats.json', 'accounts.json', 'test-verdicts.json'].includes(f)) continue;
     const q = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
