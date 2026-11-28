@@ -1351,6 +1351,9 @@ hold no figures of their own; the handout reads them from the app's series when 
     can turn on *peer review*: after the due time each student reviews two classmates' arguments
     without names. *Mark as a sensitive topic* hides names from students and markers and keeps those
     entries on this computer.
+    *Class table* shows how each student's forecasts scored; the teacher chooses what students see
+    of it and makes teams of 3 to 5 that share a row. *Report* opens a printable page for one
+    student (students press *My report*), with a calibration chart after 10 settled answers.
   - Country pages and Council chat answers show up to three *Quests about this country*; a link
     opens that Quest. Researchers can read settled forecasts and their scores from R, Python or Stata
     ([DATA_API.md](./DATA_API.md)).

@@ -28,6 +28,12 @@
  *   POST   /api/classes/:id/assignments/:aid/feedback       teacher and markers: comment on one entry (by its ref), with an optional mark
  *   GET    /api/classes/:id/assignments/:aid/peer           students: the arguments to review and reviews of their own; teacher and markers: all reviews
  *   POST   /api/classes/:id/assignments/:aid/peer           student: review a classmate's argument (by its ref), after the last due time
+ * Class table and reports (Q7; src/utils/classReport.ts):
+ *   GET    /api/classes/:id/table                           the class table, as the class setting lets me see it
+ *   POST   /api/classes/:id/table-settings                  teacher: what students see ({ tableView: own | nicknames | numbers })
+ *   POST   /api/classes/:id/teams                           teacher: a team of 3 to 5 students ({ name, usernames })
+ *   DELETE /api/classes/:id/teams/:tid                      teacher: remove a team
+ *   GET    /api/classes/:id/report/:accountId               one student's report ('me' for my own; teacher and markers for anyone)
  * Class Quests (Q4; src/utils/classQuests.ts), kept in data/local/class-quests/<class id>/:
  *   GET    /api/classes/:id/class-quests                    teacher and markers: the class's own Quests
  *   POST   /api/classes/:id/class-quests                    teacher: write a Forecast or Debate Quest for the class
@@ -43,6 +49,14 @@ import { APP_ROOT, DATA_DIR } from '../config';
 import type { Account } from '../../utils/auth';
 import { CLASSES_NEED_SIGNIN, CLASSES_OFF_REASON, classesEnabled, classesFor, classProblems, classView, joinCodeFrom, nicknameProblems, normaliseJoinCode, roleIn, studentUsername, type ClassRole, type SchoolClass } from '../../utils/classes';
 import { appendClassEntry, appendJsonl, changeClasses, classEntriesPath, classesPath, classFeedbackPath, classQuestsDir, classReviewsPath, loadClassEntries, loadClasses, loadClassQuests, loadJsonl, removeClassQuest, saveClassQuest } from '../../utils/classStore';
+import { TABLE_VIEWS, TEAMS_MAX, reportSummary, tableRows, teamProblems, type ScoredClassEntry, type TableView } from '../../utils/classReport';
+
+import { loadResolutions, resolutionsPath } from '../../utils/questResolveStore';
+import { scoreEntry, type EntryScore, type QuestEntry } from '../../utils/questEntries';
+import type { ForecastQuest } from '../../utils/quests';
+import type { Point } from '../../utils/questScoring';
+import type { SeriesSet } from '../../utils/seriesHistory';
+import { FEED_DOWN, WORLD_SET, scoreFromRecord } from './quests';
 import { entryRef, feedbackProblems, latestBy, peerAllocation, reviewProblems, type ClassFeedback, type ClassReview } from '../../utils/classFeedback';
 import { CLASS_QUESTS_MAX, classQuestFileProblems, classQuestFrom, classQuestId, shiftClassQuest, type ClassQuestInput } from '../../utils/classQuests';
 import { questLevel } from '../../utils/questLevels';
@@ -79,6 +93,10 @@ export interface ClassDeps {
   questsDir?: string;
   /** Defaults to data/local/class-entries.jsonl. */
   entriesFile?: string;
+  /** Series for scoring class entries (Q7); without it, forecasts show as waiting for data. */
+  seriesFor?: (iso3: string) => Promise<SeriesSet>;
+  /** Recorded results; defaults to quests/resolutions.jsonl. */
+  resolutionsFile?: string;
 }
 
 export function registerClassRoutes(app: express.Express, deps: ClassDeps): void {
@@ -735,6 +753,181 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     const row: ClassReview = { id: crypto.randomUUID(), classId: cls.id, assignmentId: x.id, authorId: author, reviewerId: a.id, text: String(req.body.text).trim(), at: now() };
     appendJsonl(reviewsFile, row);
     res.json({ enabled: true, ok: true });
+  });
+
+  // ---- Class table, teams and student reports (Q7) ------------------------------------------
+  const resultsFile = deps.resolutionsFile ?? resolutionsPath(questsDir);
+  /** Daily or weekly points for a series, or why there are none. */
+  const pointsFor = async (ref: { country: string; series: string }): Promise<Point[] | { reason: string }> => {
+    if (!deps.seriesFor) return { reason: 'No series on this server' };
+    try {
+      const set = await deps.seriesFor(ref.country === 'WLD' ? WORLD_SET : ref.country);
+      const x = set.series.find((y) => y.id === ref.series);
+      if (!x || !x.points.length) return { reason: set.missing.find((m) => m.id === ref.series)?.reason || 'No published values' };
+      return x.points.map((pt) => ({ date: pt.date, value: pt.value }));
+    } catch {
+      return { reason: FEED_DOWN };
+    }
+  };
+  /** Every counted entry of the class (the latest per student and assignment), scored. */
+  const scoreClass = async (cls: SchoolClass): Promise<ScoredClassEntry[]> => {
+    const all = loadClassEntries(entriesFile).filter((e) => e.classId === cls.id);
+    const recorded = loadResolutions(resultsFile).lines;
+    const today = now().slice(0, 10);
+    const cache = new Map<string, Promise<Point[] | { reason: string }>>();
+    const get = (ref: { country: string; series: string }) => {
+      const k = `${ref.country}|${ref.series}`;
+      if (!cache.has(k)) cache.set(k, pointsFor(ref));
+      return cache.get(k)!;
+    };
+    const out: ScoredClassEntry[] = [];
+    for (const x of cls.assignments ?? []) {
+      const found = questFor(x.questId, cls.id);
+      for (const e of latestEntries(all, x.id)) {
+        const like = { questId: e.questId, questVersion: e.questVersion, answer: e.answer } as QuestEntry;
+        let score: EntryScore;
+        const q = found?.quest;
+        if (!q) score = { status: 'unresolvable', note: 'The Quest is no longer on file' };
+        else if (q.type === 'debate') score = { status: 'debate', note: 'Debate Quests are argued, not scored' };
+        else score = (!found.classQuest && scoreFromRecord(like, recorded)) || (q.type === 'forecast' ? await scoreForecast(like, q, get, today) : { status: 'waiting', note: `Scored after ${q.closesOn}` });
+        out.push({ accountId: e.accountId, assignmentId: x.id, title: x.title, answer: e.answer as Record<string, number>, at: e.at, score });
+      }
+    }
+    return out;
+  };
+  const scoreForecast = async (like: QuestEntry, q: ForecastQuest, get: (ref: { country: string; series: string }) => Promise<Point[] | { reason: string }>, today: string): Promise<EntryScore> => {
+    const pts = new Map<string, Point[] | { reason: string }>();
+    for (const r of [q.rule, ...(q.fallback !== 'unresolvable' ? [q.fallback.rule] : [])]) pts.set(`${r.ref.country}|${r.ref.series}`, await get(r.ref));
+    return scoreEntry(like, q, (rule) => pts.get(`${rule.ref.country}|${rule.ref.series}`) ?? { reason: 'No series' }, today);
+  };
+  /** Entries on a sensitive assignment stay out of the table; only the teacher and the student see them, in the report. */
+  const sensitiveIds = (cls: SchoolClass) => new Set((cls.assignments ?? []).filter((x) => x.sensitive).map((x) => x.id));
+
+  app.get('/api/classes/:id/table', classRateLimit('read'), async (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const cls = asMember(loadClasses(file), String(req.params.id), a, res);
+    if (!cls) return;
+    const role = roleIn(cls, a.id)!;
+    const view: TableView = cls.tableView ?? 'own';
+    const hidden = sensitiveIds(cls);
+    const scored = (await scoreClass(cls)).filter((x) => !hidden.has(x.assignmentId));
+    const students = cls.members.filter((m) => m.role === 'student').map((m) => m.accountId);
+    const numbers = hiddenNames(students, cls.id, 'Student');
+    const display = (id: string) => nameOf(id)?.displayName ?? '(account removed)';
+    const staff = role !== 'student';
+    const name = (id: string) => (staff || id === a.id || view === 'nicknames' ? display(id) : numbers.get(id) ?? 'Student');
+    const rows = tableRows(scored, (id) => (students.includes(id) ? id : null))
+      .filter((r) => staff || view !== 'own' || r.key === a.id)
+      .map((r) => ({ ...r, key: undefined, name: name(r.key), mine: r.key === a.id, ...(staff ? { accountId: r.key } : {}) }));
+    const teams = cls.teams ?? [];
+    const teamOf = new Map(teams.flatMap((t) => t.members.map((m) => [m, t.id] as const)));
+    const myTeam = teamOf.get(a.id);
+    const teamRows = tableRows(scored, (id) => teamOf.get(id) ?? null)
+      .filter((r) => staff || view !== 'own' || r.key === myTeam)
+      .map((r) => {
+        const t = teams.find((y) => y.id === r.key)!;
+        return { ...r, key: undefined, id: t.id, name: t.name, mine: t.id === myTeam, members: staff || t.id === myTeam || view === 'nicknames' ? t.members.map(display) : t.members.map((m) => numbers.get(m) ?? 'Student') };
+      });
+    res.json({ enabled: true, tableView: view, rows, teams: teamRows, allTeams: staff ? teams.map((t) => ({ id: t.id, name: t.name, members: t.members.map(display) })) : undefined, sensitiveLeftOut: hidden.size > 0 });
+  });
+
+  app.post('/api/classes/:id/table-settings', classRateLimit('write'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const view = req.body?.tableView as TableView;
+    if (!TABLE_VIEWS.includes(view)) return res.status(400).json({ enabled: true, error: 'Choose what students see of the class table' });
+    let sent = false;
+    const cls = changeClasses(file, (classes) => {
+      const c = asTeacher(classes, String(req.params.id), a, res);
+      if (!c) return (sent = true), null;
+      c.tableView = view;
+      return c;
+    });
+    if (sent || !cls) return;
+    audit(`${who(a)} set what students see of the class table to "${view}" in the class "${cls.name}"`);
+    res.json({ enabled: true, ok: true });
+  });
+
+  app.post('/api/classes/:id/teams', classRateLimit('write'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const usernames = Array.isArray(req.body?.usernames) ? (req.body.usernames as unknown[]).map((u) => String(u ?? '').trim().toLowerCase()).filter(Boolean) : null;
+    let sent = false;
+    const cls = changeClasses(file, (classes) => {
+      const c = asTeacher(classes, String(req.params.id), a, res);
+      if (!c) return (sent = true), null;
+      const ids = (usernames ?? []).map((u) => deps.accountByUsername(u)?.id ?? `?${u}`);
+      const teams = c.teams ?? [];
+      const problems = teams.length >= TEAMS_MAX ? [`A class has at most ${TEAMS_MAX} teams`] : teamProblems(req.body?.name, usernames ? ids : null, (id) => roleIn(c, id) === 'student', (id) => teams.some((t) => t.members.includes(id)));
+      if (problems.length) {
+        res.status(400).json({ enabled: true, error: problems.join('; ') });
+        return (sent = true), null;
+      }
+      c.teams = [...teams, { id: crypto.randomUUID(), name: String(req.body.name).trim(), members: [...new Set(ids)] }];
+      return c;
+    });
+    if (sent || !cls) return;
+    audit(`${who(a)} made a team in the class "${cls.name}"`);
+    res.json({ enabled: true, ok: true });
+  });
+
+  app.delete('/api/classes/:id/teams/:tid', classRateLimit('write'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    let sent = false;
+    const cls = changeClasses(file, (classes) => {
+      const c = asTeacher(classes, String(req.params.id), a, res);
+      if (!c) return (sent = true), null;
+      if (!(c.teams ?? []).some((t) => t.id === req.params.tid)) {
+        res.status(404).json({ enabled: true, error: 'No team with that id in this class' });
+        return (sent = true), null;
+      }
+      c.teams = (c.teams ?? []).filter((t) => t.id !== req.params.tid);
+      return c;
+    });
+    if (sent || !cls) return;
+    audit(`${who(a)} removed a team in the class "${cls.name}"`);
+    res.json({ enabled: true, ok: true });
+  });
+
+  app.get('/api/classes/:id/report/:accountId', classRateLimit('read'), async (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const cls = asMember(loadClasses(file), String(req.params.id), a, res);
+    if (!cls) return;
+    const role = roleIn(cls, a.id)!;
+    const target = req.params.accountId === 'me' ? a.id : String(req.params.accountId);
+    if (role === 'student' && target !== a.id) return res.status(403).json({ enabled: true, error: 'A student sees only their own report' });
+    if (roleIn(cls, target) !== 'student') return res.status(404).json({ enabled: true, error: 'That account is not a student in this class' });
+    // A marker does not see entries on a sensitive topic; the teacher and the student do.
+    const hidden = role === 'marker' ? sensitiveIds(cls) : new Set<string>();
+    const mine = (await scoreClass(cls)).filter((x) => x.accountId === target && !hidden.has(x.assignmentId));
+    const assignments = new Map((cls.assignments ?? []).map((x) => [x.id, x]));
+    const feedback = latestBy(
+      loadJsonl<ClassFeedback>(feedbackFile).filter((f) => f.classId === cls.id && f.accountId === target && !hidden.has(f.assignmentId)),
+      (f) => `${f.assignmentId}:${f.by}`,
+    );
+    const reviews = latestBy(
+      loadJsonl<ClassReview>(reviewsFile).filter((r) => r.classId === cls.id && r.authorId === target && !hidden.has(r.assignmentId) && assignments.get(r.assignmentId) && peerOpen(assignments.get(r.assignmentId)!)),
+      (r) => `${r.assignmentId}:${r.reviewerId}`,
+    );
+    res.json({
+      enabled: true,
+      student: nameOf(target)?.displayName ?? '(account removed)',
+      className: cls.name,
+      term: cls.term.label,
+      madeAt: now(),
+      summary: reportSummary(mine),
+      entries: mine
+        .sort((p, q) => p.at.localeCompare(q.at))
+        .map((x) => {
+          const q = questFor(assignments.get(x.assignmentId)?.questId ?? '', cls.id)?.quest;
+          return { title: x.title, answer: x.answer, at: x.at, score: x.score, ...(q?.type === 'debate' ? { positions: q.positions } : {}) };
+        }),
+      feedback: feedback.map((f) => ({ assignment: assignments.get(f.assignmentId)?.title ?? '', by: nameOf(f.by)?.displayName ?? '(account removed)', text: f.text, mark: f.mark ?? '', at: f.at })),
+      reviews: reviews.map((r) => ({ assignment: assignments.get(r.assignmentId)?.title ?? '', text: r.text, at: r.at })),
+    });
   });
 
   app.post('/api/classes/:id/copy', classRateLimit('write'), (req, res) => {

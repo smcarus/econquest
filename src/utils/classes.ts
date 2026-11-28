@@ -14,6 +14,7 @@
  * Browser-safe: no server imports. The file store is src/utils/classStore.ts.
  */
 import type { ClassAssignment } from './classAssignments';
+import type { ClassTeam, TableView } from './classReport';
 
 export type ClassRole = 'teacher' | 'marker' | 'student';
 export const CLASS_ROLES: ClassRole[] = ['teacher', 'marker', 'student'];
@@ -50,6 +51,10 @@ export interface SchoolClass {
   assignments?: ClassAssignment[];
   /** Server-only key for entry references (Q6; src/utils/classFeedback.ts entryRef); never sent out. */
   refSecret?: string;
+  /** Q7: what students see of the class table (their own row when not set). */
+  tableView?: TableView;
+  /** Q7: teams of 3 to 5 students that share a row in the class table. */
+  teams?: ClassTeam[];
 }
 
 export const CLASSES_OFF_REASON = 'Classes are switched off on this server. The administrator turns them on with CLASSES_ENABLED=on in .env and restarts the app.';

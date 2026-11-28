@@ -147,8 +147,8 @@ const PRACTICE_TTL_MS = 60 * 60 * 1000;
 const PRACTICE_MAX = 2000;
 
 /** World series (Brent, WTI) are in every country's set; read them from this one. */
-const WORLD_SET = 'USA';
-const FEED_DOWN = 'The feed did not answer';
+export const WORLD_SET = 'USA';
+export const FEED_DOWN = 'The feed did not answer';
 
 function summary(q: Quest, approved: boolean, today: string, levels: Record<string, QuestLevel>) {
   return {

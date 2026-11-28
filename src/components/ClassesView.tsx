@@ -10,6 +10,7 @@ import { useT } from '../i18n/useLang';
 import type { ClassView } from '../utils/classes';
 import { ClassAssignments } from './ClassAssignments';
 import { ClassQuests } from './ClassQuests';
+import { ClassTable } from './ClassTable';
 
 type ListReply = { enabled: boolean; reason?: string; needSignIn?: boolean; classes: ClassView[]; canCreate: boolean };
 type Created = { nickname: string; username: string; password: string };
@@ -264,6 +265,7 @@ function ClassCard({ cls, act, created, onCreated, otherTeaching }: { cls: Class
       )}
       <ClassQuests cls={cls} />
       <ClassAssignments cls={cls} otherTeaching={otherTeaching} />
+      <ClassTable cls={cls} />
     </li>
   );
 }

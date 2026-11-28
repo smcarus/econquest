@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Classes (step Q7): a scored class table on each class card; the teacher chooses whether students
+  see only their own row, classmates by nickname or as numbers, and makes teams of 3 to 5 that share
+  a row. A one-page printable report per student with a calibration chart after 10 settled answers,
+  a plain-words coach and every comment received.
 - Classes (step Q6): the teacher and markers write feedback on each entry, with an optional short
   mark; students read the feedback on their own entry. Optional anonymous peer review on Debate
   Quests: after the due time each student reviews two classmates' arguments without names. A
