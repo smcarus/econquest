@@ -392,18 +392,27 @@ try {
     await cp.getByRole('button', { name: 'Menu', exact: true }).click();
     await cp.getByRole('menuitem', { name: /^Quests/ }).first().click();
     const box = cp.locator('[data-quests]');
-    await box.locator('[data-classes]').waitFor({ timeout: 15_000 });
-    await box.locator('[data-classes-name]').fill('Macro 101');
-    await box.locator('[data-classes-term]').fill('Spring 2027');
-    await box.locator('[data-classes-starts]').fill('2027-01-11');
-    await box.locator('[data-classes-ends]').fill('2027-05-07');
-    await box.locator('[data-classes-make]').click();
-    const code = (await box.locator('[data-class-code]').first().textContent({ timeout: 15_000 })) || '';
-    if (!/^[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(code.trim())) throw new Error(`the join code looks wrong: "${code}"`);
-    await box.locator('[data-class-nicknames]').fill('José\nAmina');
-    await box.locator('[data-class-make-students]').click();
-    await box.locator('[data-class-created]').waitFor({ timeout: 15_000 });
-    await box.locator('[data-class-member="jose"]').waitFor({ timeout: 15_000 });
+    try {
+      await box.locator('[data-classes]').waitFor({ timeout: 15_000 });
+      await box.locator('[data-classes-name]').fill('Macro 101');
+      // Name the zone, so the class does not depend on the browser's own time zone.
+      await box.locator('[data-classes-tz]').fill('America/Chicago');
+      await box.locator('[data-classes-term]').fill('Spring 2027');
+      await box.locator('[data-classes-starts]').fill('2027-01-11');
+      await box.locator('[data-classes-ends]').fill('2027-05-07');
+      await box.locator('[data-classes-make]').click();
+      const code = (await box.locator('[data-class-code]').first().textContent({ timeout: 15_000 })) || '';
+      if (!/^[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(code.trim())) throw new Error(`the join code looks wrong: "${code}"`);
+      await box.locator('[data-class-nicknames]').fill('José\nAmina');
+      await box.locator('[data-class-make-students]').click();
+      await box.locator('[data-class-created]').waitFor({ timeout: 15_000 });
+      await box.locator('[data-class-member="jose"]').waitFor({ timeout: 15_000 });
+    } catch (err) {
+      // Say on one line what the screen showed, so a failure on a CI machine can be read from the log.
+      const alerts = await box.locator('[role="alert"]').allTextContents().catch(() => []);
+      const shown = ((await box.textContent({ timeout: 2_000 }).catch(() => '')) || '').replace(/\s+/g, ' ').slice(0, 600);
+      throw new Error(`${String(err?.message || err).split('\n')[0]} | alerts: ${JSON.stringify(alerts)} | screen: ${shown}`);
+    }
     await noCrash(cp);
     await ctx.close();
   });
