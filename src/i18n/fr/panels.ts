@@ -154,6 +154,7 @@ export const PANELS_FR: Messages<typeof PANELS> = {
   bohn_sample: "Échantillon",
   bohn_sampleVal: "{from}-{to}, {n} années, R² {r2}",
   bohn_note: "Un relevé du comportement passé, pas une prévision ; l'absence de réaction ne signifie pas à elle seule que la dette est insoutenable.",
+  bohn_csv: 'Télécharger ces lignes (CSV)',
   bohn_pb: "Solde primaire, % du PIB",
   bohn_debtLag: "Dette de l'année précédente, % du PIB",
   bohn_gap: "Écart de production, %",

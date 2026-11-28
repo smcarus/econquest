@@ -160,3 +160,14 @@ export function bohnSentence(r: Extract<BohnOutcome, { ok: true }>, countryName:
   if (r.verdict === 'weak') return `${countryName}'s primary balance has risen only weakly with debt (${est}); significant at 10% but not 5%, so the record gives limited assurance.`;
   return `No evidence that ${countryName}'s primary balance rises when debt is higher (${est}). The record gives no assurance that fiscal policy has stabilised debt; this does not by itself show debt is unsustainable.`;
 }
+
+/** The CSV header of the rows download (no byte order mark: the R, Python and Stata starters read it). */
+export const BOHN_CSV_HEADER = ['iso3', 'year', 'primary_balance_pct_gdp', 'debt_lag_pct_gdp', 'output_gap_pct', 'method'];
+
+/**
+ * The exact rows the estimate used, one per year, for anyone who wants to rebuild it in their own code
+ * (the Bohn replication Quest). The method sits on every row so the file stands alone.
+ */
+export function bohnCsvRows(r: Extract<BohnOutcome, { ok: true }>, iso3: string): Array<Array<string | number | undefined>> {
+  return r.rows.map((x) => [iso3, x.year, x.primaryBalance, x.debtLag, r.withGap ? x.gap : undefined, r.method]);
+}

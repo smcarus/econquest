@@ -7,7 +7,7 @@
   "type": "replication",
   "tool": "history_data",
   "title": "Reproduce the Bohn fiscal reaction estimate for Brazil",
-  "summary": "Country Research > History & data shows a Bohn fiscal reaction estimate: how the primary balance responds to last year's debt. Reproduce the app's coefficient for Brazil in R, Python or Stata from the same IMF series, and explain any difference.",
+  "summary": "Research > History & data > Fiscal reaction shows a Bohn (1998) fiscal reaction estimate: how the primary balance responds to last year's debt. Download the rows the app used, reproduce the app's coefficient for Brazil in R, Python or Stata, and explain any difference. A step-by-step guide and starter scripts are in quests/replications/bohn/ in the project's files.",
   "target": "Brazil, Bohn fiscal reaction panel: the coefficient on lagged debt, with the sample years and settings the panel states.",
   "tolerance": 0.005,
   "countries": [

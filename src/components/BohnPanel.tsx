@@ -92,7 +92,10 @@ export const BohnPanel: React.FC<{ iso3: string; countryName: string }> = ({ iso
             <p className="text-xs text-slate-500 dark:text-slate-400">{t('c_method', { method: reply.method })}. {t('bohn_note')}</p>
             <button type="button" className="ui-pill" aria-pressed={showRows} onClick={() => setShowRows(!showRows)}>
               {showRows ? t('c_hideYears') : t('c_showYears')}
-            </button>
+            </button>{' '}
+            <a className="ui-pill" href={`/api/bohn/${encodeURIComponent(iso3)}.csv`} download data-bohn-csv="true">
+              {t('bohn_csv')}
+            </a>
             {showRows && (
               <table className="w-full text-xs">
                 <thead>

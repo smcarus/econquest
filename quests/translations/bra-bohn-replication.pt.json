@@ -4,7 +4,7 @@
   "lang": "pt",
   "translator": "smcarus",
   "title": "Reproduza a estimativa de reação fiscal de Bohn para o Brasil",
-  "summary": "Pesquisa por país > Histórico e dados mostra uma estimativa de reação fiscal de Bohn: como o saldo primário responde à dívida do ano anterior. Reproduza o coeficiente do aplicativo para o Brasil em R, Python ou Stata com as mesmas séries do FMI e explique qualquer diferença.",
+  "summary": "Pesquisa > Histórico e dados > Reação fiscal mostra uma estimativa de reação fiscal de Bohn (1998): como o resultado primário responde à dívida do ano anterior. Baixe as linhas que o aplicativo usou, reproduza o coeficiente do aplicativo para o Brasil em R, Python ou Stata e explique qualquer diferença. Um guia passo a passo e scripts iniciais estão em quests/replications/bohn/ nos arquivos do projeto.",
   "knownLimits": [
     "O FMI revisa seu histórico a cada edição do WEO; use a edição que o aplicativo indica e diga qual você usou.",
     "Um script que mostre que o aplicativo está errado também resolve a Quest."

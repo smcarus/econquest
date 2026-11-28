@@ -4,7 +4,7 @@
   "lang": "fr",
   "translator": "smcarus",
   "title": "Reproduisez l'estimation de réaction budgétaire de Bohn pour le Brésil",
-  "summary": "Recherche pays > Historique et données affiche une estimation de réaction budgétaire de Bohn : comment le solde primaire réagit à la dette de l'année précédente. Reproduisez le coefficient de l'application pour le Brésil en R, Python ou Stata à partir des mêmes séries du FMI, et expliquez tout écart.",
+  "summary": "Recherche > Historique et données > Réaction budgétaire affiche une estimation de réaction budgétaire de Bohn (1998) : comment le solde primaire réagit à la dette de l'année précédente. Téléchargez les lignes utilisées par l'application, reproduisez le coefficient de l'application pour le Brésil en R, Python ou Stata, et expliquez tout écart. Un guide pas à pas et des scripts de départ se trouvent dans quests/replications/bohn/ parmi les fichiers du projet.",
   "knownLimits": [
     "Le FMI révise son historique à chaque édition du WEO ; utilisez l'édition indiquée par l'application et dites laquelle vous avez utilisée.",
     "Un script qui montre que l'application se trompe résout aussi la quête."
