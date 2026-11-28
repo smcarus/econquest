@@ -1357,6 +1357,10 @@ hold no figures of their own; the handout reads them from the app's series when 
     *Gradebook* (teacher) sets the weights and downloads the marks as a CSV file; students use
     *Download my record*. A class is archived 30 days after its term ends and deleted after the
     keeping period the teacher sets; everyone sees the deletion day, with a warning 30 days before.
+    A student who works on their own copy of the app instead of the class's copy hands in by file:
+    the teacher presses *Download hand-in sheet* on the assignment and sends it; the student opens it
+    under *Menu > Quests > Hand in*, answers and presses *Seal and save the file*, and sends the file
+    back; the teacher picks it with *Load sealed files*. Both see the same fingerprint.
   - Country pages and Council chat answers show up to three *Quests about this country*; a link
     opens that Quest. Researchers can read settled forecasts and their scores from R, Python or Stata
     ([DATA_API.md](./DATA_API.md)).

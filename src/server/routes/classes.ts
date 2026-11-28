@@ -42,6 +42,9 @@
  *   POST   /api/classes/:id/keep                            teacher: days an archived class is kept before it is deleted
  * An archived class is read-only. A class is archived 30 days after its term ends and deleted, with
  * its entries, feedback, reviews and class Quests, once its keeping period has passed.
+ * Sealed hand-in files (Q9; src/utils/classHandIn.ts), for students on their own copy:
+ *   GET    /api/classes/:id/assignments/:aid/sheet          teacher: the hand-in sheet for an assignment (with the class's public key)
+ *   POST   /api/classes/:id/assignments/:aid/hand-ins       teacher: load a sealed file; it becomes the student's entry
  * Class Quests (Q4; src/utils/classQuests.ts), kept in data/local/class-quests/<class id>/:
  *   GET    /api/classes/:id/class-quests                    teacher and markers: the class's own Quests
  *   POST   /api/classes/:id/class-quests                    teacher: write a Forecast or Debate Quest for the class
@@ -60,6 +63,7 @@ import { removeClassQuestsDir, rewriteJsonl, appendClassEntry, appendJsonl, chan
 import { DEFAULT_WEIGHTS, GRADEBOOK_HEADER, KEEP_DAYS_DEFAULT, countedForMarks, gradeRow, gradebookCells, keepDaysProblems, lifecycleStep, weightProblems, type GradeWeights } from '../../utils/classGradebook';
 import { toCsv } from '../../utils/csvExport';
 import { resultState } from '../../utils/questResolve';
+import { SHEET_KIND, SEALED_MAX_BYTES, sealedProblems, type HandInPayload, type HandInSheet, type SealedHandIn } from '../../utils/classHandIn';
 import { TABLE_VIEWS, TEAMS_MAX, reportSummary, tableRows, teamProblems, type ScoredClassEntry, type TableView } from '../../utils/classReport';
 
 import { loadResolutions, resolutionsPath } from '../../utils/questResolveStore';
@@ -641,7 +645,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
           rationale: e.rationale ?? '',
           code: e.code ?? '',
           at: e.at,
-          ...(role === 'student' ? {} : { username: hide ? '' : nameOf(e.accountId)?.username ?? '', ai: e.ai, replaced: replaced(e.accountId), late: e.at > dueFor(x, e.accountId).dueUtc }),
+          ...(role === 'student' ? {} : { handIn: e.via === 'hand-in', username: hide ? '' : nameOf(e.accountId)?.username ?? '', ai: e.ai, replaced: replaced(e.accountId), late: e.at > dueFor(x, e.accountId).dueUtc }),
         }))
         .sort((p, q) => p.name.localeCompare(q.name, undefined, { numeric: true })),
     });
@@ -1112,6 +1116,129 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     if (sent || !cls) return;
     audit(`${who(a)} set the class "${cls.name}" to be kept ${cls.keepDays} days after archiving`);
     res.json(viewReply(cls, a));
+  });
+
+  // ---- Sealed hand-in files (Q9) -------------------------------------------------------------
+  /** The class's key pair for sealed files, made the first time a sheet is downloaded. */
+  const handInKeyOf = (classId: string) => {
+    const have = loadClasses(file).find((c) => c.id === classId)?.handInKey;
+    if (have) return have;
+    return changeClasses(file, (classes) => {
+      const c = classes.find((y) => y.id === classId)!;
+      if (!c.handInKey) {
+        const pair = crypto.generateKeyPairSync('rsa', { modulusLength: 3072 });
+        c.handInKey = { publicKey: pair.publicKey.export({ type: 'spki', format: 'der' }).toString('base64'), privateKey: pair.privateKey.export({ type: 'pkcs8', format: 'pem' }).toString() };
+      }
+      return c.handInKey;
+    });
+  };
+  const sheetIdOf = (classId: string, assignmentId: string) => entryRef(secretOf(classId), assignmentId, 'hand-in-sheet');
+  const fingerprint = (x: Pick<SealedHandIn, 'key' | 'iv' | 'data'>) => crypto.createHash('sha256').update(`${x.key}.${x.iv}.${x.data}`).digest('hex').slice(0, 16);
+  /** Open a sealed file with the class's private key; null when it cannot be opened or was changed. */
+  const openSealed = (x: SealedHandIn, privateKey: string): HandInPayload | null => {
+    try {
+      const key = crypto.privateDecrypt({ key: privateKey, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256' }, Buffer.from(x.key, 'base64'));
+      const data = Buffer.from(x.data, 'base64');
+      if (key.length !== 32 || data.length < 17) return null;
+      const d = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(x.iv, 'base64'));
+      d.setAuthTag(data.subarray(data.length - 16));
+      const plain = Buffer.concat([d.update(data.subarray(0, data.length - 16)), d.final()]).toString('utf8');
+      return JSON.parse(plain) as HandInPayload;
+    } catch {
+      return null;
+    }
+  };
+
+  app.get('/api/classes/:id/assignments/:aid/sheet', classRateLimit('read'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const cls = asTeacher(loadClasses(file), String(req.params.id), a, res);
+    if (!cls) return;
+    const x = (cls.assignments ?? []).find((y) => y.id === req.params.aid);
+    if (!x) return res.status(404).json({ enabled: true, error: 'No assignment with that id in this class' });
+    const found = questFor(x.questId, cls.id);
+    if (!found) return res.status(400).json({ enabled: true, error: 'The Quest is no longer on file' });
+    const q = found.quest;
+    const sheet: HandInSheet = {
+      kind: SHEET_KIND,
+      version: 1,
+      sheetId: sheetIdOf(cls.id, x.id),
+      classId: cls.id,
+      className: cls.name,
+      assignmentId: x.id,
+      title: x.title,
+      summary: q.summary,
+      instructions: x.instructions ?? '',
+      due: x.due,
+      dueUtc: x.dueUtc,
+      timeZone: cls.timeZone || 'UTC',
+      aiRule: x.aiRule,
+      answerKind: answerKind(q),
+      ...(q.type === 'debate' ? { positions: q.positions } : {}),
+      questId: q.id,
+      questVersion: q.version,
+      questHash: found.hash,
+      closesOn: q.closesOn,
+      publicKey: handInKeyOf(cls.id).publicKey,
+    };
+    res.setHeader('Content-Disposition', 'attachment; filename="econquest-hand-in-sheet.json"');
+    res.json(sheet);
+  });
+
+  app.post('/api/classes/:id/assignments/:aid/hand-ins', classRateLimit('write'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const cls = asTeacher(loadClasses(file), String(req.params.id), a, res);
+    if (!cls) return;
+    if (readOnly(cls, res)) return;
+    const x = (cls.assignments ?? []).find((y) => y.id === req.params.aid);
+    if (!x) return res.status(404).json({ enabled: true, error: 'No assignment with that id in this class' });
+    const sealed = req.body?.sealed as SealedHandIn;
+    if (JSON.stringify(sealed ?? '').length > SEALED_MAX_BYTES) return res.status(400).json({ enabled: true, error: 'The hand-in file is too large' });
+    const shape = sealedProblems(sealed);
+    if (shape.length) return res.status(400).json({ enabled: true, error: shape.join('; ') });
+    if (sealed.classId !== cls.id || sealed.assignmentId !== x.id || sealed.sheetId !== sheetIdOf(cls.id, x.id)) return res.status(400).json({ enabled: true, error: 'This hand-in file was made for another assignment' });
+    const key = cls.handInKey;
+    const payload = key ? openSealed(sealed, key.privateKey) : null;
+    if (!payload || payload.sheetId !== sealed.sheetId) return res.status(400).json({ enabled: true, error: 'The hand-in file cannot be opened: it was changed, or sealed for another class' });
+    const seal = fingerprint(sealed);
+    if (loadClassEntries(entriesFile).some((e) => e.seal === seal)) return res.status(409).json({ enabled: true, error: 'This hand-in file is already loaded' });
+    const student = deps.accountByUsername(String(payload.username || '').trim().toLowerCase());
+    if (!student || roleIn(cls, student.id) !== 'student') return res.status(400).json({ enabled: true, error: 'The username in this hand-in file is not a student in this class' });
+    const found = questFor(x.questId, cls.id);
+    if (!found) return res.status(400).json({ enabled: true, error: 'The Quest is no longer on file' });
+    if (payload.questHash !== found.hash) return res.status(400).json({ enabled: true, error: 'This hand-in file was made for another version of the Quest' });
+    const sealedAt = typeof payload.sealedAt === 'string' && !Number.isNaN(Date.parse(payload.sealedAt)) ? new Date(payload.sealedAt).toISOString() : '';
+    if (!sealedAt) return res.status(400).json({ enabled: true, error: 'The hand-in file has no time' });
+    const quest = found.quest as EntryQuest;
+    const input = {
+      questId: quest.id,
+      answer: answerFor(quest, payload.answer ?? {}),
+      ...(typeof payload.rationale === 'string' && payload.rationale.trim() ? { rationale: payload.rationale.trim().slice(0, 4000) } : {}),
+      ...(typeof payload.code === 'string' && payload.code.trim() ? { code: payload.code.trim() } : {}),
+    };
+    const problems = [...entryProblems(input, quest, sealedAt.slice(0, 10)), ...aiProblems(x.aiRule, payload.aiNote, payload.aiDeclaredNone)];
+    if (problems.length) return res.status(400).json({ enabled: true, error: problems.join('; ') });
+    const entry: ClassEntry = {
+      id: crypto.randomUUID(),
+      classId: cls.id,
+      assignmentId: x.id,
+      accountId: student.id,
+      questId: quest.id,
+      questVersion: quest.version,
+      questHash: found.hash,
+      answer: input.answer,
+      ...(input.rationale ? { rationale: input.rationale } : {}),
+      ...(input.code ? { code: input.code } : {}),
+      ai: { rule: x.aiRule, ...(x.aiRule === 'note' ? { note: String(payload.aiNote).trim().slice(0, 1000) } : {}), ...(x.aiRule === 'none' ? { declaredNone: true } : {}) },
+      at: sealedAt,
+      via: 'hand-in',
+      seal,
+      loadedAt: now(),
+    };
+    appendClassEntry(entriesFile, entry);
+    audit(`${who(a)} loaded a sealed hand-in from ${student.username} for ${x.id} in the class "${cls.name}" (fingerprint ${seal})`);
+    res.json({ enabled: true, student: student.displayName, fingerprint: seal, sealedAt, late: sealedAt > dueFor(x, student.id).dueUtc });
   });
 
   app.post('/api/classes/:id/copy', classRateLimit('write'), (req, res) => {

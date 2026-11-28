@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Classes (step Q9): sealed hand-in files for students on their own copy of the app. The teacher
+  downloads a hand-in sheet for an assignment; the student opens it under Menu > Quests > Hand in,
+  answers and seals the file in the browser (AES-256-GCM, key locked with the class's RSA-OAEP
+  public key); the teacher loads it once into the class, late files are shown as late, and both
+  see the same fingerprint.
 - Classes (step Q8): a gradebook with the teacher's weights (participation, accuracy, calibration,
   marks) as a CSV download; each student downloads their own record; withdrawn or unresolvable
   Quests drop out of the marks and sensitive topics never leave the copy. A class is archived and

@@ -54,6 +54,10 @@ export interface ClassEntry {
   code?: string;
   ai: { rule: AiRule; note?: string; declaredNone?: boolean };
   at: string;
+  /** Q9: handed in as a sealed file from the student's own copy; `at` is that computer's time. */
+  via?: 'hand-in';
+  seal?: string;
+  loadedAt?: string;
 }
 
 export function validTimeZone(tz: unknown): tz is string {
