@@ -248,6 +248,7 @@ dans le journal d'audit).
 
 - [docs/FEATURES.fr.md](./docs/FEATURES.fr.md) : tout ce que fait l'application, en détail, en français
 - [docs/GUIDE.fr.md](./docs/GUIDE.fr.md) : guide pas à pas avec captures, en français
+- [docs/TEACHING.fr.md](./docs/TEACHING.fr.md) : enseigner avec les quêtes en classe, de l'installation au carnet de notes, en français
 - En anglais : [INSTALL.md](./docs/INSTALL.md) (installation), [USER_MANUAL.md](./docs/USER_MANUAL.md)
   (manuel), [GLOSSARY.md](./docs/GLOSSARY.md) (glossaire ; aussi dans l'application en français),
   [METHODOLOGY.md](./docs/METHODOLOGY.md), [HOW_IT_WORKS.md](./docs/HOW_IT_WORKS.md), [METHODS.md](./docs/METHODS.md),

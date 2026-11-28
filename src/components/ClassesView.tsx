@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { QUESTS } from '../i18n/messages/quests';
 import { readLang, translateText } from '../i18n/lang';
-import { useT } from '../i18n/useLang';
+import { useLang, useT } from '../i18n/useLang';
 import type { ClassView } from '../utils/classes';
 import { ClassAssignments } from './ClassAssignments';
 import { ClassQuests } from './ClassQuests';
@@ -15,6 +15,10 @@ import { ClassGradebook } from './ClassGradebook';
 
 type ListReply = { enabled: boolean; reason?: string; needSignIn?: boolean; classes: ClassView[]; canCreate: boolean };
 type Created = { nickname: string; username: string; password: string };
+
+/** Q13: the teacher guide, in the reader's language where there is one (English otherwise). */
+const GUIDE = 'https://github.com/e-conquest/econquest/blob/main/docs/TEACHING';
+export const guideUrl = (lang: string) => `${GUIDE}${lang === 'es' || lang === 'fr' ? `.${lang}` : ''}.md`;
 
 const fieldCls = 'px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white';
 
@@ -27,6 +31,7 @@ async function call(url: string, method = 'GET', body?: unknown) {
 
 export function ClassesView() {
   const t = useT(QUESTS);
+  const lang = useLang();
   const [data, setData] = useState<ListReply | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [code, setCode] = useState('');
@@ -91,6 +96,11 @@ export function ClassesView() {
           data-classes-new
         >
           <div className="text-sm font-medium">{t('classesNew')}</div>
+          <p className="text-xs text-slate-500">
+            <a className="underline" href={guideUrl(lang)} target="_blank" rel="noreferrer" data-classes-guide>
+              {t('classesGuide')}
+            </a>
+          </p>
           <div className="flex flex-wrap gap-2 items-end">
             <label className="text-xs space-y-1">
               <span className="block">{t('classesName')}</span>

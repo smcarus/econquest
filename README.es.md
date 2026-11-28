@@ -246,6 +246,7 @@ registro de auditoría).
 
 - [docs/FEATURES.es.md](./docs/FEATURES.es.md): todo lo que hace la aplicación, en detalle, en español
 - [docs/GUIDE.es.md](./docs/GUIDE.es.md): guía paso a paso con capturas, en español
+- [docs/TEACHING.es.md](./docs/TEACHING.es.md): enseñar con los retos en una clase, de la instalación al libro de calificaciones, en español
 - En inglés: [INSTALL.md](./docs/INSTALL.md) (instalación), [USER_MANUAL.md](./docs/USER_MANUAL.md)
   (manual), [GLOSSARY.md](./docs/GLOSSARY.md) (glosario; también dentro de la aplicación en español),
   [METHODOLOGY.md](./docs/METHODOLOGY.md), [HOW_IT_WORKS.md](./docs/HOW_IT_WORKS.md), [METHODS.md](./docs/METHODS.md),

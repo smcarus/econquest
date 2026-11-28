@@ -628,4 +628,5 @@ export const QUESTS_PT: Messages<typeof QUESTS> = {
   hiSealNote: "O horário do arquivo vem deste computador. Seu professor vê esse horário e quando o arquivo chegou.",
   hiSeal: "Selar e salvar o arquivo",
   hiSealed: "Selado {at}. Impressão digital {fp}: seu professor verá a mesma impressão digital ao carregar o arquivo. Envie o arquivo salvo ao seu professor.",
+  classesGuide: "Guia para professores: um período, da instalação ao diário de notas (abre no GitHub; em inglês, espanhol e francês)",
 };
