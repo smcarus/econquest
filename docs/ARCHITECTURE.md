@@ -255,7 +255,7 @@ there rather than into `server.ts`. Every address an outside program may call is
 | `npm run lint` | The type check, normal and strict |
 | `npm run test:smoke` | Opens every page of the built app (run `npm run build` first) in Chromium with every feed down, and fails on a crash or a blocked request |
 | `npm run test:journeys` | The main tasks, click by click |
-| `npm run test:a11y` | WCAG 2.2 A and AA rules on the main pages, and a keyboard focus pass on Workspace, Research and the phone layout |
+| `npm run test:a11y` | WCAG 2.2 A and AA rules on the main pages and the classroom screens, a keyboard focus pass on Workspace, Research, the phone layout and the classroom screens, and a 320-pixel reflow check of the classroom screens |
 
 How the network is replaced in tests:
 

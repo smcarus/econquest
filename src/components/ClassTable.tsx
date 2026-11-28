@@ -101,9 +101,9 @@ export function ClassTable({ cls }: { cls: ClassView }) {
           <p className="text-slate-500">{t('ctExplain')}</p>
           {data.sensitiveLeftOut && <p className="text-slate-500">{t('ctSensitiveOut')}</p>}
           {teacher && (
-            <label className="inline-flex items-center gap-1">
+            <label className="flex flex-wrap items-center gap-1 max-w-full">
               <span>{t('ctViewLabel')}</span>
-              <select className={fieldCls} value={data.tableView} onChange={(e) => void act(() => call(`${base}/table-settings`, 'POST', { tableView: e.target.value }))} data-class-table-view>
+              <select className={`${fieldCls} max-w-full`} value={data.tableView} onChange={(e) => void act(() => call(`${base}/table-settings`, 'POST', { tableView: e.target.value }))} data-class-table-view>
                 <option value="own">{t('ctView_own')}</option>
                 <option value="nicknames">{t('ctView_nicknames')}</option>
                 <option value="numbers">{t('ctView_numbers')}</option>
