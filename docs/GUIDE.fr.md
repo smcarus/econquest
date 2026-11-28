@@ -631,7 +631,9 @@ voir [HOME_SERVER.md](./HOME_SERVER.md), et activez d'abord la connexion par com
 Les Quêtes sont désactivées pour tous tant que la liste de lancement de [QUESTS.md](./QUESTS.md) n'est pas
 terminée. Pour les essayer sur votre ordinateur :
 
-1. Ajoutez `QUESTS_ENABLED=on` au fichier `.env` de votre dossier EconQuest et redémarrez l'application.
+1. Ouvrez **Menu > Réglages > Quêtes et classes** et choisissez *Activé* pour les quêtes (sans
+   redémarrer). Ou ajoutez `QUESTS_ENABLED=on` au fichier `.env` de votre dossier EconQuest et
+   redémarrez l'application.
 2. Ouvrez **Menu > Quêtes**. La fenêtre des Quêtes est en anglais pour l'instant. La liste montre la
    question de chaque Quête, son type (Forecast, Debate, Replication ou Signal), si c'est un brouillon et
    quand son résultat est attendu. Filtrez par type ou par date.

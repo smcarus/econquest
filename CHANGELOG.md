@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Settings: a *Quests and classes* page turns Quests and Classes on or off without editing `.env`
+  or restarting (On, Off, or Follow .env). Only the computer running the app, or an administrator
+  when sign-in is on, can change it; each change goes in the audit log.
 - Quests: all 118 Quests on file are approved (the starter pack, the Bohn replication and the
   spring 2027 term). Drafts now take private entries no longer, under the existing rule. Tests
   build their own draft fixtures instead of relying on which Quests are approved.

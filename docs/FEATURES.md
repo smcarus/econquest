@@ -193,8 +193,8 @@ Quests turn open economic questions into a public, scored game anyone can join, 
 can work on a country's problems, test each other's reasoning against the data, and build a record of
 who forecasts well. **Quests are built but switched off.** Menu > Quests is greyed out ("Not yet
 available") until every item on the checklist in [docs/QUESTS.md](./QUESTS.md) is ticked and the
-project has gone public. To try them on your own computer, add `QUESTS_ENABLED=on` to `.env` and
-restart.
+project has gone public. To try them on your own computer, turn them on in Menu > Settings > Quests
+and classes, or add `QUESTS_ENABLED=on` to `.env` and restart.
 
 ![Menu > Quests with QUESTS_ENABLED=on: a list of draft Quests with their type and result date](./images/18-quests.png)
 

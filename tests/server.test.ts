@@ -12,6 +12,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { getSnapshotDataStatus } from '../src/utils/dataStatus.ts';
 import type { OpenDataSnapshot, WatchlistItem } from '../src/types/council.ts';
+import { CLASSES_OFF_REASON } from '../src/utils/classes.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const port = 3900 + Math.floor(Math.random() * 500);
@@ -1127,6 +1128,32 @@ test('exam mode: switched from this computer, AI steps answer with figures only,
     assert.equal((await (await put(false)).json()).on, false);
   }
   assert.equal((await (await fetch(`${base}/api/exam-mode/opened`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ what: 'country', label: 'x' }) })).json()).recorded, false);
+});
+
+test('Quests and Classes switches in Settings: a choice here wins over .env, Follow .env goes back, no restart', async () => {
+  const put = (body: unknown) => fetch(`${base}/api/settings/features`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const before = await (await fetch(`${base}/api/settings/features`)).json();
+  assert.equal(before.canChange, true);
+  assert.equal(before.quests.source, 'env');
+  const envOn = before.quests.envOn;
+  try {
+    const on = await put({ quests: envOn ? 'off' : 'on' });
+    assert.equal(on.status, 200);
+    const j = await on.json();
+    assert.deepEqual(j.quests, { on: !envOn, source: 'app', envOn });
+    assert.equal(Boolean((await (await fetch(`${base}/api/quests`)).json()).enabled), !envOn, 'the Quests routes follow at once');
+    const cls = await (await put({ classes: 'on' })).json();
+    assert.equal(cls.classes.on, true);
+    assert.notEqual((await (await fetch(`${base}/api/classes`)).json()).reason, CLASSES_OFF_REASON);
+    assert.equal((await put({ quests: 'maybe' })).status, 400);
+    assert.equal((await put({ exam: 'on' })).status, 400);
+    assert.match(await (await fetch(`${base}/api/audit?q=Quests`)).text(), /Quests turned (on|off) by/);
+  } finally {
+    const back = await (await put({ quests: 'env', classes: 'env' })).json();
+    assert.equal(back.quests.source, 'env');
+    assert.equal(back.quests.on, envOn);
+    assert.equal(back.classes.source, 'env');
+  }
 });
 
 test('correlation IDs: sent back on every reply and written into the audit entries a call makes', async () => {

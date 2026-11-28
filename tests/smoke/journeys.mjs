@@ -311,6 +311,33 @@ try {
     await page.keyboard.press('Escape');
   });
 
+  await step('quests switch in Settings: on from Settings opens the menu item at once, Follow .env turns it off again', async () => {
+    await page.getByRole('button', { name: 'Menu', exact: true }).click();
+    await page.getByRole('menuitem', { name: /^Settings/ }).first().click();
+    await page.locator('[data-settings-tab="quests"]').click();
+    const box = page.locator('[data-feature="quests"]');
+    await box.waitFor({ timeout: 15_000 });
+    // The radio button follows the server's reply, so click and wait for the page to say "on".
+    await box.locator('[data-feature-choice="quests-on"]').click();
+    await page.locator('[data-feature="quests"] [data-feature-now="on"]').waitFor({ timeout: 15_000 }).catch(async (e) => {
+      throw new Error(`${e.message.split('\n')[0]}; the page says: ${(await page.locator('[data-feature-settings]').innerText()).replace(/\s+/g, ' ').slice(-300)}`);
+    });
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Menu', exact: true }).click();
+    const item = page.getByRole('menuitem', { name: /^Quests/ }).first();
+    await page.waitForFunction(() => {
+      const el = [...document.querySelectorAll('[role="menuitem"]')].find((e) => /^Quests/.test((e.textContent || '').trim()));
+      return el && !el.hasAttribute('disabled') && el.getAttribute('aria-disabled') !== 'true';
+    }, null, { timeout: 15_000 }).catch(() => {
+      throw new Error('Menu > Quests is still greyed after turning Quests on in Settings');
+    });
+    if (await item.isDisabled()) throw new Error('Menu > Quests is still greyed after turning Quests on in Settings');
+    await page.keyboard.press('Escape');
+    const back = await page.request.put(`${base}/api/settings/features`, { data: { quests: 'env' } });
+    if (!back.ok()) throw new Error(`could not set Quests back to follow .env: HTTP ${back.status()}`);
+    if ((await (await page.request.get(`${base}/api/quests`)).json()).enabled !== false) throw new Error('Quests stayed on after Follow .env');
+  });
+
   await step('sign-in: first account, then everyone signs in', async () => {
     const password = 'a long journey test passphrase';
     const made = await page.request.post(`${base}/api/auth/setup`, { data: { username: 'tester', displayName: 'Journey Test', password } });

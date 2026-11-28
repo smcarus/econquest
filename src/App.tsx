@@ -138,6 +138,7 @@ import { THEME_STORAGE_KEY, initialDark, savedThemeChoice, systemPrefersDark } f
 import { blankProblemUrl } from './utils/problemReport';
 import { shortcutFor } from './utils/shortcuts';
 import { scrollBehavior } from './utils/motion';
+import { FEATURES_CHANGED_EVENT } from './utils/featureSwitches';
 
 /** Focus an element once its screen has drawn (lazy screens take a moment); gives up after 2 s. */
 function focusWhenReady(selector: string, tries = 20): void {
@@ -371,18 +372,24 @@ export default function App() {
   // Classes (Quests in the classroom) have their own switch, so Menu > Quests opens for a class even
   // while Quests are off for everyone (src/server/routes/classes.ts).
   const [classesOn, setClassesOn] = useState(false);
+  // Asked again when an administrator switches them in Menu > Settings > Quests and classes.
   useEffect(() => {
     let live = true;
-    fetch('/api/quests')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => live && setQuestsOn(Boolean(j?.enabled)))
-      .catch(() => live && setQuestsOn(false));
-    fetch('/api/classes')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => live && setClassesOn(Boolean(j?.enabled)))
-      .catch(() => live && setClassesOn(false));
+    const look = () => {
+      fetch('/api/quests')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => live && setQuestsOn(Boolean(j?.enabled)))
+        .catch(() => live && setQuestsOn(false));
+      fetch('/api/classes')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => live && setClassesOn(Boolean(j?.enabled)))
+        .catch(() => live && setClassesOn(false));
+    };
+    look();
+    window.addEventListener(FEATURES_CHANGED_EVENT, look);
     return () => {
       live = false;
+      window.removeEventListener(FEATURES_CHANGED_EVENT, look);
     };
   }, []);
   // Menu > About & data licences (undefined = closed; a string opens it on that source's licence).

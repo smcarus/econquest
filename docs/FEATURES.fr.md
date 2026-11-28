@@ -198,7 +198,8 @@ participer, pour que beaucoup de personnes travaillent sur les problèmes d'un p
 raisonnements aux données et constituent un historique de qui prévoit bien. **Les Quêtes sont construites
 mais désactivées.** Menu > Quêtes est grisé (« Pas encore disponible ») jusqu'à ce que chaque point de la
 liste de [docs/QUESTS.md](./QUESTS.md) soit coché et que le projet soit public. Pour les essayer sur
-votre ordinateur, ajoutez `QUESTS_ENABLED=on` à `.env` et redémarrez.
+votre ordinateur, activez-les dans Menu > Réglages > Quêtes et classes, ou ajoutez `QUESTS_ENABLED=on`
+à `.env` et redémarrez.
 
 ![Menu > Quêtes avec QUESTS_ENABLED=on : liste de Quêtes en brouillon avec leur type et leur date de résultat](./images/18-quests.png)
 

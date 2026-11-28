@@ -34,6 +34,9 @@ import { forwardFilePath, loadForward } from './src/utils/forwardRecordStore';
 import { fetchWithTimeout } from './src/server/http';
 import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
+import { applyFeatureChange, featureState, FEATURE_IDS, parseFeatureFile, type FeatureFile, type FeatureId } from './src/utils/featureSwitches';
+import { questsEnabled } from './src/utils/quests';
+import { classesEnabled } from './src/utils/classes';
 import { EXAM_CHOICE_REASON, EXAM_DEBATE_REASON, EXAM_REASON, examOpenedSummary, parseExamMode, type ExamModeState } from './src/utils/examMode';
 import { EMPTY_PRELOAD_STATE, NO_TIME_LIMIT_STEPS, estimateRemainingBytes, formatBytes, planPreload, progressLine, stepsToRun, summarisePreload, type PreloadState, type PreloadStep, type PreloadStepResult } from './src/utils/preload';
 import { OFFICIAL_FIGURES, officialPoints, mergeRevisions, historyRevisions, officialSeries, parseImfYears, parseWorldBankYears, type OfficialHistoryFile } from './src/utils/officialHistory';
@@ -2457,6 +2460,17 @@ function loadExamMode(): ExamModeState {
     return { on: false };
   }
 }
+// Quests and Classes switches set in Menu > Settings (src/utils/featureSwitches.ts); .env decides without one.
+const FEATURES_FILE = path.join(DATA_DIR, 'local', 'features.json');
+function loadFeatures(): FeatureFile {
+  try {
+    return parseFeatureFile(JSON.parse(fs.readFileSync(FEATURES_FILE, 'utf8')));
+  } catch {
+    return {};
+  }
+}
+const featureEnvOn = (id: FeatureId) => (id === 'quests' ? questsEnabled(process.env.QUESTS_ENABLED) : classesEnabled(process.env.CLASSES_ENABLED));
+const featureOn = (id: FeatureId) => featureState(loadFeatures(), id, featureEnvOn(id)).on;
 let morningRunning = false;
 
 function loadMorning(): MorningBriefFile {
@@ -4172,6 +4186,23 @@ async function startServer() {
     appendAudit(AUDIT_FILES, { kind: 'settings', summary: `Exam mode turned ${on ? 'on' : 'off'} by ${by}.` });
     res.json({ ...state, canChange: true });
   });
+  // Quests and Classes switches (Menu > Settings > Quests and classes): same rule as exam mode for who can change them.
+  const featuresReply = (req: express.Request, res: express.Response) => {
+    const file = loadFeatures();
+    return { ...Object.fromEntries(FEATURE_IDS.map((id) => [id, featureState(file, id, featureEnvOn(id))])), since: file.since, by: file.by, canChange: canSwitchExam(req, res) };
+  };
+  app.get('/api/settings/features', (req, res) => res.json(featuresReply(req, res)));
+  app.put('/api/settings/features', (req, res) => {
+    if (!canSwitchExam(req, res)) return res.status(403).json({ error: 'Only the computer running the app, or an admin when sign-in is on, can switch Quests and Classes.' });
+    const by = signedIn(res) ? accountName(signedIn(res)) : 'this computer';
+    const { file, problems } = applyFeatureChange(loadFeatures(), req.body, by, new Date().toISOString());
+    if (problems.length) return res.status(400).json({ error: problems.join('; ') });
+    fs.mkdirSync(path.dirname(FEATURES_FILE), { recursive: true });
+    writeFileAtomic(FEATURES_FILE, JSON.stringify(file), 0o600);
+    const said = FEATURE_IDS.filter((id) => id in (req.body || {})).map((id) => `${id === 'quests' ? 'Quests' : 'Classes'} ${req.body[id] === 'env' ? 'set to follow .env' : `turned ${req.body[id]}`}`);
+    appendAudit(AUDIT_FILES, { kind: 'settings', summary: `${said.join('; ')} by ${by}.` });
+    res.json(featuresReply(req, res));
+  });
   // Every other step that calls an AI model is refused while exam mode is on.
   const EXAM_BLOCKED = /^\/api\/(council\/(phase1-and-cascade|rerun)|ai\/try-model|morning-brief\/run|reviews\/[^/]+\/(diagnose|options|memo))$/;
   app.use((req, res, next) => {
@@ -4609,8 +4640,9 @@ async function startServer() {
     // Another computer or a script: the series are named, their figures withheld.
     return { series: [], missing: [...got.series, ...got.missing].map((x) => ({ id: x.id, label: x.label, reason: PAID_WITHHELD_REASON })) };
   };
-  registerQuestRoutes(app, { seriesFor, refuseRemoteChange, signedIn, loadOfficialHistory });
+  registerQuestRoutes(app, { seriesFor, refuseRemoteChange, signedIn, loadOfficialHistory, enabled: () => featureOn('quests') });
   registerClassRoutes(app, {
+    enabled: () => featureOn('classes'),
     signedIn,
     seriesFor,
     authRequired: () => currentMode() === 'required',

@@ -1,6 +1,6 @@
 import { CDS_HIDDEN } from '../utils/cdsHidden';
 import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
-import { Archive, Bell, FlaskConical, Plug, CheckCircle2, CreditCard, Sunrise, Cpu, ExternalLink, Eye, EyeOff, KeyRound, Lock, Settings2, X, XCircle, Wrench } from 'lucide-react';
+import { Archive, Bell, FlaskConical, Plug, CheckCircle2, CreditCard, Sunrise, Cpu, ExternalLink, Eye, EyeOff, KeyRound, Lock, Settings2, X, XCircle, Wrench, GraduationCap } from 'lucide-react';
 import type { AIRuntimeConfig } from '../types/council';
 import { AiModelSettings } from './AiModelSettings';
 import { BackupSettings } from './BackupSettings';
@@ -15,6 +15,7 @@ const SubscriptionSeries = lazy(() => import('./SubscriptionSeries'));
 const BrokerPrices = lazy(() => import('./BrokerPrices'));
 const ApiTokenSettings = lazy(() => import('./ApiTokenSettings'));
 const HiddenNamesSettings = lazy(() => import('./HiddenNamesSettings'));
+const FeatureSettings = lazy(() => import('./FeatureSettings'));
 const ResearchToolsTest = lazy(() => import('./ResearchToolsTest'));
 
 /**
@@ -196,7 +197,7 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
   );
 };
 
-export type SettingsTab = 'ai' | 'keys' | 'paid' | 'subscriptions' | 'alerts' | 'research' | 'morning' | 'backup' | 'tokens' | 'hidden' | 'tools';
+export type SettingsTab = 'ai' | 'keys' | 'paid' | 'subscriptions' | 'alerts' | 'research' | 'morning' | 'backup' | 'tokens' | 'hidden' | 'quests' | 'tools';
 
 /** The pages of Settings, in order, and which key sections each one shows. */
 const PAGES: Array<{ id: SettingsTab; sections: KeySection[] }> = [
@@ -215,6 +216,8 @@ const PAGES: Array<{ id: SettingsTab; sections: KeySection[] }> = [
   { id: 'tokens', sections: [] },
   // Hidden names (console integration item 8, src/utils/exclusions.ts).
   { id: 'hidden', sections: [] },
+  // Quests and Classes switches (src/utils/featureSwitches.ts).
+  { id: 'quests', sections: [] },
   { id: 'tools', sections: [] },
 ];
 const PAGE_ICON: Record<SettingsTab, React.ReactNode> = {
@@ -228,6 +231,7 @@ const PAGE_ICON: Record<SettingsTab, React.ReactNode> = {
   backup: <Archive className="w-3.5 h-3.5" aria-hidden />,
   tokens: <Plug className="w-3.5 h-3.5" aria-hidden />,
   hidden: <EyeOff className="w-3.5 h-3.5" aria-hidden />,
+  quests: <GraduationCap className="w-3.5 h-3.5" aria-hidden />,
   tools: <Wrench className="w-3.5 h-3.5" aria-hidden />,
 };
 
@@ -352,6 +356,15 @@ export const SettingsDialog: React.FC<{
               <div className="mt-3">
                 <Suspense fallback={<p className="text-xs text-slate-500">{t('c_loading')}</p>}>
                   <ApiTokenSettings />
+                </Suspense>
+              </div>
+            </section>
+          ) : tab === 'quests' ? (
+            <section className="flex-1 min-w-0 overflow-y-auto px-4 py-3" aria-labelledby="settings-quests-title">
+              <h3 id="settings-quests-title" className="ui-section-title">{t('set_p_quests')}</h3>
+              <div className="mt-3">
+                <Suspense fallback={<p className="text-xs text-slate-500">{t('c_loading')}</p>}>
+                  <FeatureSettings />
                 </Suspense>
               </div>
             </section>

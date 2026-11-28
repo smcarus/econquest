@@ -1300,7 +1300,8 @@ hold no figures of their own; the handout reads them from the app's series when 
   working and space for your own answers: *Copy* or *Download (.md)*, then write the conclusion in
   your own words. To work an example for another country, open that country in Research first. In
   English, Spanish, French and Portuguese.
-- **Quests** (switched off until the maintainer turns them on with `QUESTS_ENABLED=on`; until then
+- **Quests** (switched off until an administrator turns them on in *Menu > Settings > Quests and
+  classes*, or with `QUESTS_ENABLED=on` in `.env`; until then
   the item is greyed and reads *Not yet available*): open economics and policy questions anyone can
   answer, argue and check, in English, Spanish, French and Portuguese. There are four kinds:
   *Forecast* (will a published figure be higher or lower, above or below a line, or what will it
@@ -1334,7 +1335,8 @@ hold no figures of their own; the handout reads them from the app's series when 
   - *Replays*: questions about the past, in packs of four weeks for the start of a term. Press *Try*,
     give your answer, and see at once what happened and how you did against the base rate (or against
     "no change" for a number). Your results are kept on this computer.
-  - *Classes* (only when the administrator turns classes on with `CLASSES_ENABLED=on`, and only with
+  - *Classes* (only when the administrator turns classes on in *Menu > Settings > Quests and classes*
+    or with `CLASSES_ENABLED=on`, and only with
     sign-in): join a class with the code your teacher gives you, or, with an Analyst or Admin account,
     make a class for a term. The teacher sees the join code, adds markers and students, makes student
     accounts from nicknames (each password is shown once) and archives the class. Students see the
@@ -1409,6 +1411,10 @@ hold no figures of their own; the handout reads them from the app's series when 
   does not reveal what is hidden. *Show again* removes one; *Clear the list* removes all. Each change
   is written to the audit log as counts. A program with a token that may set hidden names can change
   the list too.
+- **Quests and classes** (Settings > Quests and classes): turns Quests and Classes on or off for
+  everyone using this copy, with no restart. Each has *On*, *Off* and *Follow .env* (which goes back to
+  `QUESTS_ENABLED` and `CLASSES_ENABLED` in `.env`). Only the computer running the app, or an
+  administrator when sign-in is on, can change them; each change is written to the audit log.
 - **Your data**: load your own series from a CSV file, for figures the app does not have (for
   example a series from your country's statistics office or a central bank report). Pick the file,
   give it a name, unit, frequency, country (or *Not about one country*) and say where the figures came
