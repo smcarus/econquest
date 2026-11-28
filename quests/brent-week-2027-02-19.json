@@ -1,0 +1,37 @@
+{
+  "id": "brent-week-2027-02-19",
+  "version": 1,
+  "registeredOn": "2026-11-28",
+  "opensOn": "2027-02-12",
+  "author": "smcarus",
+  "type": "forecast",
+  "title": "Will Brent crude be higher on 26 February 2027 than on 19 February 2027?",
+  "summary": "Give the probability that the price of Brent crude oil (the main world benchmark, US EIA daily spot price) on the first day published on or after 26 February 2027 is higher than on the day entries close, 19 February 2027. A short Quest: you see your score within about two weeks.",
+  "countries": [
+    "WLD"
+  ],
+  "topics": [
+    "commodities"
+  ],
+  "region": "Global",
+  "closesOn": "2027-02-19",
+  "rule": {
+    "kind": "direction",
+    "ref": {
+      "country": "WLD",
+      "series": "commodity_eia_rbrte"
+    },
+    "from": "closesOn",
+    "to": {
+      "on": "2027-02-26"
+    },
+    "op": "higher"
+  },
+  "fallback": "unresolvable",
+  "level": "intro",
+  "knownLimits": [
+    "EIA publishes daily spot prices a few days late; the Quest settles when the value for the date is out.",
+    "Over a single week, oil moves mostly on news nobody can know in advance; the base rate is close to 50%."
+  ],
+  "approvedBy": "smcarus"
+}

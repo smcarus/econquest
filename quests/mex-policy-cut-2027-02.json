@@ -1,0 +1,37 @@
+{
+  "id": "mex-policy-cut-2027-02",
+  "version": 1,
+  "registeredOn": "2026-11-28",
+  "opensOn": "2027-01-17",
+  "author": "smcarus",
+  "type": "forecast",
+  "title": "Will the central bank of Mexico have cut its policy rate by 28 February 2027?",
+  "summary": "Give the probability that the central bank policy rate of Mexico (BIS daily series) on 28 February 2027 is lower than on the day entries close, 31 January 2027. The policy rate is the interest rate the central bank sets; a cut makes borrowing cheaper and usually happens when inflation is falling or the economy is weak.",
+  "countries": [
+    "MEX"
+  ],
+  "topics": [
+    "monetary"
+  ],
+  "region": "Americas",
+  "closesOn": "2027-01-31",
+  "rule": {
+    "kind": "direction",
+    "ref": {
+      "country": "MEX",
+      "series": "policy_rate"
+    },
+    "from": "closesOn",
+    "to": {
+      "on": "2027-02-28"
+    },
+    "op": "lower"
+  },
+  "fallback": "unresolvable",
+  "level": "intro",
+  "knownLimits": [
+    "BIS daily data can lag a decision by a few days.",
+    "Whether a meeting falls in the window matters; check the central bank's own calendar before answering."
+  ],
+  "approvedBy": "smcarus"
+}
