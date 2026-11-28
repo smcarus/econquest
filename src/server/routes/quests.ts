@@ -48,6 +48,10 @@
  *   GET  /api/quests/settled                 as JSON
  *   GET  /api/export/quests/forecasts.csv    as a table (also .xlsx); 404 QUESTS_OFF while Quests are off
  *
+ * Maintainer dashboard (go-live checklist): GET /api/quests/maintainer, what needs doing now (file
+ * problems, the results chain, results due, tests to run, drafts ready to approve, missing translations);
+ * administrators only when sign-in is on.
+ *
  * Digest (step 8):
  *   GET  /api/quests/digest           this week: closing soon, opening, results recorded, results due
  */
@@ -60,7 +64,8 @@ import type { SeriesSet } from '../../utils/seriesHistory';
 import { questHorizon, questSeriesRefs, questSettlesOn, questStatus, questsEnabled, QUESTS_OFF_REASON, HORIZON_LABEL, type DebateQuest, type ForecastQuest, type Quest } from '../../utils/quests';
 import { describeRule, type QuestSeriesRef as QuestSeriesRefLike } from '../../utils/questRules';
 import { questSeriesDef } from '../../utils/questSeries';
-import { loadPacks, loadQuests, loadTranslations } from '../../utils/questStore';
+import { checkQuests, loadPacks, loadQuests, loadTranslations } from '../../utils/questStore';
+import { maintainerSummary } from '../../utils/questMaintainer';
 import { translationKey } from '../../utils/questTranslations';
 import { answerFor, classTable, countedEntries, entryProblems, replicationScore, practiceWindow, scoreEntry, scorePractice, type QuestEntry, type QuestEntryInput } from '../../utils/questEntries';
 import { appendEntry, entryFilePath, loadEntries } from '../../utils/questEntryStore';
@@ -347,6 +352,29 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     res.json({ enabled: true, axes: STANCE_AXES, profiles: loadProfiles(dir), repo: repoOf() || null });
   });
 
+  // Maintainer dashboard (go-live checklist): what needs doing now, from the files on every call. With
+  // sign-in on, only administrators see it.
+  app.get('/api/quests/maintainer', (_req, res) => {
+    if (!enabled()) return off(res);
+    const who = deps.signedIn?.(res);
+    if (who && who.role !== 'admin') return res.status(403).json({ enabled: true, error: 'Only an administrator sees the maintainer dashboard' });
+    const quests = loadQuests(dir);
+    const rec = loadResolutions(resultsFile);
+    const tests = loadTestRecord(testRecordPath(dir)).record;
+    res.json({
+      enabled: true,
+      ...maintainerSummary({
+        quests,
+        fileProblems: checkQuests(dir).problems,
+        lines: rec.lines,
+        brokenAt: rec.brokenAt,
+        entries: loadPublicEntries(dir),
+        translations: loadTranslations(dir, quests),
+        testsRun: new Set(tests.runs.map((r) => `${r.questId}@${r.questVersion}`)),
+        today: todayIso(),
+      }),
+    });
+  });
   app.get('/api/quests/digest', (_req, res) => {
     if (!enabled()) return off(res);
     res.json({ enabled: true, ...questDigest(loadQuests(dir), loadResolutions(resultsFile).lines, todayIso()) });

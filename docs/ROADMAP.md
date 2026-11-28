@@ -183,7 +183,7 @@ ship only when Quests are switched on for everyone, not with the classroom chang
 - Links to Quests from country pages and from Council chat (built 28 November, shown only while Quests are on).
 - Sealed public entries: each entry is locked in with a fingerprint before the deadline and revealed
   after it, so nobody can copy or change a forecast.
-- A dashboard for maintainers.
+- A dashboard for maintainers (built 28 November: the Maintainer tab on Menu > Quests).
 - On GitHub: an Ideas category where people vote on suggestions; a contributor, reviewer and steward
   ladder in GOVERNANCE.md; a Discussion thread opened for each Quest, with the result posted when it
   settles; a rule-based check of the figures quoted in revealed debate entries (no AI judging); a

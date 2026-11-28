@@ -1328,6 +1328,9 @@ hold no figures of their own; the handout reads them from the app's series when 
   - *Results* shows every recorded result and whether the record of results is intact; the same view
     is in Models & validation, beside Track record. *Scoreboard*, *Health* and *Stances* follow the
     rules in [QUESTS.md](./QUESTS.md).
+  - *Maintainer* (for whoever runs the project's Quests): what needs doing now, such as results due
+    to record, drafts ready to approve, files with problems or missing translations, each with the
+    command that does it. With sign-in on, only administrators see it.
   - Country pages and Council chat answers show up to three *Quests about this country*; a link
     opens that Quest. Researchers can read settled forecasts and their scores from R, Python or Stata
     ([DATA_API.md](./DATA_API.md)).

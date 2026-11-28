@@ -337,6 +337,10 @@ try {
     const box = qp.locator('[data-quests]');
     await box.waitFor({ timeout: 15_000 });
     await box.locator('[data-quest-row]').first().waitFor({ timeout: 15_000 });
+    await box.locator('[data-quests-tab="maint"]').click();
+    await box.locator('[data-quest-maintainer-counts]').waitFor({ timeout: 15_000 });
+    if (!(await box.locator('[data-quest-maintainer-item="draftsToApprove"]').count())) throw new Error('the maintainer dashboard does not list the drafts ready to approve');
+    await box.locator('[data-quests-tab="quests"]').click();
     await box.locator('[data-quests-pack]').selectOption('starter');
     await box.locator('[data-quest-pack-group]').first().waitFor({ timeout: 5000 });
     await box.locator('[data-quest-row]').first().click();
