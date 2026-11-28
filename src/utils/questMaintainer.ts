@@ -8,8 +8,9 @@ import { questSettlesOn } from './quests';
 import { resultState, type ResolutionLine } from './questResolve';
 import { QUEST_TRANSLATION_LANGS, translationKey, type QuestTranslationMap } from './questTranslations';
 import { countedPublicEntries, type PublicEntry } from './questPublicEntries';
+import { termWindowOpen } from './questGenerator';
 
-export type MaintainerKind = 'fileProblems' | 'chainBroken' | 'resultsDue' | 'testsToRun' | 'draftsToApprove' | 'translationsMissing';
+export type MaintainerKind = 'fileProblems' | 'chainBroken' | 'resultsDue' | 'testsToRun' | 'draftsToApprove' | 'translationsMissing' | 'termWindow';
 
 export interface MaintainerItem {
   kind: MaintainerKind;
@@ -60,6 +61,8 @@ export function maintainerSummary(p: {
     for (const l of QUEST_TRANSLATION_LANGS) if (!have[l]) missing.push(`${x.quest.id} (${l})`);
   }
   if (missing.length) items.push(item('translationsMissing', missing));
+  // Classes need a Quest they can follow through a few weeks of term (step Q5).
+  if (approved.length && !termWindowOpen(approved, today)) items.push(item('termWindow', [], 'npm run quests:generate'));
   const openNow = approved.filter((x) => x.quest.opensOn <= today && today <= x.quest.closesOn).length;
   const publicEntries = approved.reduce((n, x) => n + countedPublicEntries(p.entries, x.quest.id, x.quest.version).length, 0);
   const results = new Set(lines.filter((l) => l.kind === 'settled' || l.kind === 'unresolvable').map((l) => `${l.questId}@${l.questVersion}`)).size;

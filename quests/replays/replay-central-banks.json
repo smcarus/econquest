@@ -1,0 +1,182 @@
+{
+  "id": "replay-central-banks",
+  "title": {
+    "en": "Replays: central bank policy rates",
+    "es": "Repeticiones: tipos oficiales de los bancos centrales",
+    "fr": "Rejeux : taux directeurs des banques centrales",
+    "pt": "Replays: juros básicos dos bancos centrais"
+  },
+  "summary": {
+    "en": "Questions about the past on policy rates: cuts, hikes and where the rate ended up, scored at once against what happened.",
+    "es": "Preguntas sobre el pasado acerca de los tipos oficiales: recortes, subidas y dónde terminó el tipo, puntuadas al momento con lo que ocurrió.",
+    "fr": "Des questions sur le passé à propos des taux directeurs : baisses, hausses et niveau atteint, notées tout de suite d’après ce qui s’est passé.",
+    "pt": "Perguntas sobre o passado a respeito dos juros básicos: cortes, altas e onde a taxa terminou, com nota na hora a partir do que aconteceu."
+  },
+  "level": "intermediate",
+  "weeks": [
+    {
+      "week": 1,
+      "title": {
+        "en": "A cut within a month?",
+        "es": "¿Un recorte en un mes?",
+        "fr": "Une baisse en un mois ?",
+        "pt": "Um corte em um mês?"
+      },
+      "items": [
+        {
+          "id": "usa-cut-month",
+          "title": {
+            "en": "Was the US policy rate lower four weeks later?",
+            "es": "¿Estaba el tipo oficial de Estados Unidos más bajo cuatro semanas después?",
+            "fr": "Le taux directeur américain était-il plus bas quatre semaines plus tard ?",
+            "pt": "O juro básico dos Estados Unidos estava mais baixo quatro semanas depois?"
+          },
+          "country": "USA",
+          "series": "policy_rate",
+          "kind": "direction",
+          "op": "lower",
+          "days": 28,
+          "level": "intermediate"
+        },
+        {
+          "id": "mex-cut-month",
+          "title": {
+            "en": "Was Mexico's policy rate lower four weeks later?",
+            "es": "¿Estaba el tipo oficial de México más bajo cuatro semanas después?",
+            "fr": "Le taux directeur du Mexique était-il plus bas quatre semaines plus tard ?",
+            "pt": "O juro básico do México estava mais baixo quatro semanas depois?"
+          },
+          "country": "MEX",
+          "series": "policy_rate",
+          "kind": "direction",
+          "op": "lower",
+          "days": 28,
+          "level": "intermediate"
+        }
+      ]
+    },
+    {
+      "week": 2,
+      "title": {
+        "en": "Hikes over two months",
+        "es": "Subidas en dos meses",
+        "fr": "Des hausses sur deux mois",
+        "pt": "Altas em dois meses"
+      },
+      "items": [
+        {
+          "id": "bra-hike-2m",
+          "title": {
+            "en": "Was Brazil's policy rate higher eight weeks later?",
+            "es": "¿Estaba el tipo oficial de Brasil más alto ocho semanas después?",
+            "fr": "Le taux directeur du Brésil était-il plus haut huit semaines plus tard ?",
+            "pt": "O juro básico do Brasil estava mais alto oito semanas depois?"
+          },
+          "country": "BRA",
+          "series": "policy_rate",
+          "kind": "direction",
+          "op": "higher",
+          "days": 56,
+          "level": "intermediate"
+        },
+        {
+          "id": "tur-hike-2m",
+          "title": {
+            "en": "Was Turkey's policy rate higher eight weeks later?",
+            "es": "¿Estaba el tipo oficial de Turquía más alto ocho semanas después?",
+            "fr": "Le taux directeur de la Turquie était-il plus haut huit semaines plus tard ?",
+            "pt": "O juro básico da Turquia estava mais alto oito semanas depois?"
+          },
+          "country": "TUR",
+          "series": "policy_rate",
+          "kind": "direction",
+          "op": "higher",
+          "days": 56,
+          "level": "intermediate"
+        }
+      ]
+    },
+    {
+      "week": 3,
+      "title": {
+        "en": "A quarter-point move",
+        "es": "Un movimiento de un cuarto de punto",
+        "fr": "Un mouvement d’un quart de point",
+        "pt": "Um movimento de um quarto de ponto"
+      },
+      "items": [
+        {
+          "id": "zaf-cut-quarter",
+          "title": {
+            "en": "Was South Africa's policy rate at least a quarter point lower a quarter later?",
+            "es": "¿Estaba el tipo oficial de Sudáfrica al menos un cuarto de punto más bajo un trimestre después?",
+            "fr": "Le taux directeur de l’Afrique du Sud était-il plus bas d’au moins un quart de point un trimestre plus tard ?",
+            "pt": "O juro básico da África do Sul estava pelo menos um quarto de ponto mais baixo um trimestre depois?"
+          },
+          "country": "ZAF",
+          "series": "policy_rate",
+          "kind": "threshold",
+          "op": "below",
+          "delta": -0.2,
+          "days": 91,
+          "level": "intermediate"
+        },
+        {
+          "id": "ind-hike-quarter",
+          "title": {
+            "en": "Was India's policy rate at least a quarter point higher a quarter later?",
+            "es": "¿Estaba el tipo oficial de la India al menos un cuarto de punto más alto un trimestre después?",
+            "fr": "Le taux directeur de l’Inde était-il plus haut d’au moins un quart de point un trimestre plus tard ?",
+            "pt": "O juro básico da Índia estava pelo menos um quarto de ponto mais alto um trimestre depois?"
+          },
+          "country": "IND",
+          "series": "policy_rate",
+          "kind": "threshold",
+          "op": "above",
+          "delta": 0.2,
+          "days": 91,
+          "level": "intermediate"
+        }
+      ]
+    },
+    {
+      "week": 4,
+      "title": {
+        "en": "Where did the rate end up?",
+        "es": "¿Dónde terminó el tipo?",
+        "fr": "Où le taux a-t-il fini ?",
+        "pt": "Onde a taxa terminou?"
+      },
+      "items": [
+        {
+          "id": "usa-level-quarter",
+          "title": {
+            "en": "What was the US policy rate a quarter later?",
+            "es": "¿Cuál era el tipo oficial de Estados Unidos un trimestre después?",
+            "fr": "Quel était le taux directeur américain un trimestre plus tard ?",
+            "pt": "Qual era o juro básico dos Estados Unidos um trimestre depois?"
+          },
+          "country": "USA",
+          "series": "policy_rate",
+          "kind": "level",
+          "days": 91,
+          "level": "intermediate"
+        },
+        {
+          "id": "bra-level-quarter",
+          "title": {
+            "en": "What was Brazil's policy rate a quarter later?",
+            "es": "¿Cuál era el tipo oficial de Brasil un trimestre después?",
+            "fr": "Quel était le taux directeur du Brésil un trimestre plus tard ?",
+            "pt": "Qual era o juro básico do Brasil um trimestre depois?"
+          },
+          "country": "BRA",
+          "series": "policy_rate",
+          "kind": "level",
+          "days": 91,
+          "level": "intermediate"
+        }
+      ]
+    }
+  ]
+}

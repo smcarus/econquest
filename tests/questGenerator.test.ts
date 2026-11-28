@@ -1,13 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { digestMarkdown, generateQuests, MONTHLY_POLICY, questDigest, WEEKLY_FX } from '../src/utils/questGenerator';
+import { digestMarkdown, generateQuests, MONTHLY_POLICY, questDigest, termWindowOpen, WEEKLY_FX } from '../src/utils/questGenerator';
 import { questProblems, type ForecastQuest } from '../src/utils/quests';
 import type { ResolutionLine } from '../src/utils/questResolve';
 
 test('the generator drafts weekly and monthly Quests that pass the checker and carry no figures', () => {
   const { quests, skipped } = generateQuests({ today: '2026-11-07', weeks: 2, author: 'smcarus', existing: new Set(['brent-week-2026-11-20']) });
   assert.deepEqual(skipped, []);
-  assert.equal(quests.length, 2 * (1 + WEEKLY_FX.length) + MONTHLY_POLICY.length - 1);
+  assert.equal(quests.length, 2 * (2 + WEEKLY_FX.length) + MONTHLY_POLICY.length - 1, 'two weekly closes, each with a week and a four-week Brent Quest');
   assert.ok(!quests.some((q) => q.id === 'brent-week-2026-11-20'), 'existing ids are skipped');
   for (const q of quests) {
     assert.deepEqual(questProblems(q, { approved: false, fileName: `${q.id}.json` }), [], q.id);
@@ -21,6 +21,14 @@ test('the generator drafts weekly and monthly Quests that pass the checker and c
   assert.equal(brent.closesOn, '2026-11-27');
   assert.equal(new Date('2026-11-27T00:00:00Z').getUTCDay(), 5, 'weekly Quests close on Fridays');
   assert.deepEqual((brent.rule as { to: { on: string } }).to, { on: '2026-12-04' });
+  const far = quests.find((q) => q.id === 'brent-4w-2026-11-27')!;
+  assert.deepEqual((far.rule as { to: { on: string } }).to, { on: '2026-12-25' });
+  assert.equal(far.level, 'intro');
+  // The first close of a month also gets an eight-week Quest.
+  const dec = generateQuests({ today: '2026-11-27', weeks: 1, author: 'smcarus', existing: new Set() }).quests;
+  assert.equal(dec.find((q) => q.id === 'brent-8w-2026-12-04')?.level, 'intermediate');
+  assert.equal(termWindowOpen(quests.map((quest) => ({ quest })), '2026-11-21'), true, 'a Quest settling in two to eight weeks is open');
+  assert.equal(termWindowOpen([], '2026-11-21'), false);
   const usa = quests.find((q) => q.id === 'usa-policy-cut-2026-12')!;
   assert.equal(usa.closesOn, '2026-11-30');
   assert.equal(usa.title, 'Will the central bank of the United States have cut its policy rate by 31 December 2026?');

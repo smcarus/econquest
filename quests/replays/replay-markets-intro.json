@@ -1,0 +1,183 @@
+{
+  "id": "replay-markets-intro",
+  "title": {
+    "en": "Replays: oil and currencies",
+    "es": "Repeticiones: petróleo y monedas",
+    "fr": "Rejeux : pétrole et monnaies",
+    "pt": "Replays: petróleo e moedas"
+  },
+  "summary": {
+    "en": "Questions about the past on oil prices and exchange rates, scored at once against what happened. For the first weeks of a term, before live Quests settle.",
+    "es": "Preguntas sobre el pasado acerca del precio del petróleo y los tipos de cambio, puntuadas al momento con lo que ocurrió. Para las primeras semanas del curso, antes de que se resuelvan los retos en vivo.",
+    "fr": "Des questions sur le passé à propos du prix du pétrole et des taux de change, notées tout de suite d’après ce qui s’est passé. Pour les premières semaines du semestre, avant que les quêtes en direct soient tranchées.",
+    "pt": "Perguntas sobre o passado a respeito do preço do petróleo e do câmbio, com nota na hora a partir do que aconteceu. Para as primeiras semanas do período, antes de as Quests ao vivo serem resolvidas."
+  },
+  "level": "intro",
+  "weeks": [
+    {
+      "week": 1,
+      "title": {
+        "en": "Oil, a week ahead",
+        "es": "Petróleo, una semana después",
+        "fr": "Le pétrole, une semaine plus tard",
+        "pt": "Petróleo, uma semana depois"
+      },
+      "items": [
+        {
+          "id": "brent-week-up",
+          "title": {
+            "en": "Was Brent crude higher a week later?",
+            "es": "¿Estaba el Brent más alto una semana después?",
+            "fr": "Le Brent était-il plus haut une semaine plus tard ?",
+            "pt": "O Brent estava mais alto uma semana depois?"
+          },
+          "country": "WLD",
+          "series": "commodity_eia_rbrte",
+          "kind": "direction",
+          "op": "higher",
+          "days": 7,
+          "level": "intro"
+        },
+        {
+          "id": "wti-week-up",
+          "title": {
+            "en": "Was WTI crude higher a week later?",
+            "es": "¿Estaba el WTI más alto una semana después?",
+            "fr": "Le WTI était-il plus haut une semaine plus tard ?",
+            "pt": "O WTI estava mais alto uma semana depois?"
+          },
+          "country": "WLD",
+          "series": "commodity_eia_rwtc",
+          "kind": "direction",
+          "op": "higher",
+          "days": 7,
+          "level": "intro"
+        }
+      ]
+    },
+    {
+      "week": 2,
+      "title": {
+        "en": "Currencies, a week ahead",
+        "es": "Monedas, una semana después",
+        "fr": "Les monnaies, une semaine plus tard",
+        "pt": "Moedas, uma semana depois"
+      },
+      "items": [
+        {
+          "id": "brl-week-weaker",
+          "title": {
+            "en": "Was the Brazilian real weaker against the dollar a week later?",
+            "es": "¿Estaba el real brasileño más débil frente al dólar una semana después?",
+            "fr": "Le réal brésilien était-il plus faible face au dollar une semaine plus tard ?",
+            "pt": "O real estava mais fraco frente ao dólar uma semana depois?"
+          },
+          "country": "BRA",
+          "series": "fx_per_usd",
+          "kind": "direction",
+          "op": "higher",
+          "days": 7,
+          "level": "intro"
+        },
+        {
+          "id": "zar-week-weaker",
+          "title": {
+            "en": "Was the South African rand weaker against the dollar a week later?",
+            "es": "¿Estaba el rand sudafricano más débil frente al dólar una semana después?",
+            "fr": "Le rand sud-africain était-il plus faible face au dollar une semaine plus tard ?",
+            "pt": "O rand sul-africano estava mais fraco frente ao dólar uma semana depois?"
+          },
+          "country": "ZAF",
+          "series": "fx_per_usd",
+          "kind": "direction",
+          "op": "higher",
+          "days": 7,
+          "level": "intro"
+        }
+      ]
+    },
+    {
+      "week": 3,
+      "title": {
+        "en": "Oil, a month ahead",
+        "es": "Petróleo, un mes después",
+        "fr": "Le pétrole, un mois plus tard",
+        "pt": "Petróleo, um mês depois"
+      },
+      "items": [
+        {
+          "id": "brent-month-up",
+          "title": {
+            "en": "Was Brent crude higher four weeks later?",
+            "es": "¿Estaba el Brent más alto cuatro semanas después?",
+            "fr": "Le Brent était-il plus haut quatre semaines plus tard ?",
+            "pt": "O Brent estava mais alto quatro semanas depois?"
+          },
+          "country": "WLD",
+          "series": "commodity_eia_rbrte",
+          "kind": "direction",
+          "op": "higher",
+          "days": 28,
+          "level": "intro"
+        },
+        {
+          "id": "brent-month-range",
+          "title": {
+            "en": "Did Brent crude stay within a tenth of its price four weeks later?",
+            "es": "¿Se mantuvo el Brent dentro de una décima parte de su precio cuatro semanas después?",
+            "fr": "Le Brent est-il resté à moins d’un dixième de son prix quatre semaines plus tard ?",
+            "pt": "O Brent ficou dentro de um décimo do seu preço quatro semanas depois?"
+          },
+          "country": "WLD",
+          "series": "commodity_eia_rbrte",
+          "kind": "between",
+          "band": 10,
+          "relative": true,
+          "days": 28,
+          "level": "intro"
+        }
+      ]
+    },
+    {
+      "week": 4,
+      "title": {
+        "en": "Currencies, a month ahead",
+        "es": "Monedas, un mes después",
+        "fr": "Les monnaies, un mois plus tard",
+        "pt": "Moedas, um mês depois"
+      },
+      "items": [
+        {
+          "id": "mxn-month-weaker",
+          "title": {
+            "en": "Was the Mexican peso weaker against the dollar four weeks later?",
+            "es": "¿Estaba el peso mexicano más débil frente al dólar cuatro semanas después?",
+            "fr": "Le peso mexicain était-il plus faible face au dollar quatre semaines plus tard ?",
+            "pt": "O peso mexicano estava mais fraco frente ao dólar quatro semanas depois?"
+          },
+          "country": "MEX",
+          "series": "fx_per_usd",
+          "kind": "direction",
+          "op": "higher",
+          "days": 28,
+          "level": "intro"
+        },
+        {
+          "id": "inr-month-weaker",
+          "title": {
+            "en": "Was the Indian rupee weaker against the dollar four weeks later?",
+            "es": "¿Estaba la rupia india más débil frente al dólar cuatro semanas después?",
+            "fr": "La roupie indienne était-elle plus faible face au dollar quatre semaines plus tard ?",
+            "pt": "A rúpia indiana estava mais fraca frente ao dólar quatro semanas depois?"
+          },
+          "country": "IND",
+          "series": "fx_per_usd",
+          "kind": "direction",
+          "op": "higher",
+          "days": 28,
+          "level": "intro"
+        }
+      ]
+    }
+  ]
+}

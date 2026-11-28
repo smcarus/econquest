@@ -4,6 +4,8 @@
  * The generator drafts Forecast Quests on a fixed cadence for the maintainer to approve in a batch:
  *   weekly    Brent crude, and a few emerging-market currencies against the dollar, one week after
  *             entries close (entries open a week before they close)
+ *   longer    Brent four weeks after every weekly close, and eight weeks after the first close of each
+ *             month, so a class always has a Quest open that settles two to eight weeks out
  *   monthly   central bank policy rates: lower at the end of the next month than when entries close
  *             (a cut), for a set of central banks the BIS daily series covers
  * Every draft asks "higher or lower than on the day entries close", so a Quest file never carries a
@@ -14,7 +16,7 @@
  * The digest is the weekly "closing soon / opening / settled" summary, in plain words, for the
  * Discussions post and the app. Browser-safe, pure.
  */
-import { questSettlesOn, questStatus, type ForecastQuest, type Quest, type QuestRegion, type QuestTopic } from './quests';
+import { questSettlesOn, questStatus, type ForecastQuest, type Quest, type QuestLevel, type QuestRegion, type QuestTopic } from './quests';
 import { questProblems } from './quests';
 import { seriesProblem } from './questSeries';
 import { describeOutcome, resultState, type ResolutionLine } from './questResolve';
@@ -64,8 +66,8 @@ const fridayOnOrAfter = (d: string) => {
   return addDaysIso(d, (5 - day + 7) % 7);
 };
 
-function draft(base: { id: string; title: string; summary: string; countries: string[]; topics: QuestTopic[]; region: QuestRegion; registeredOn: string; opensOn: string; closesOn: string; rule: ForecastQuest['rule']; knownLimits: string[]; author: string; tutorial?: boolean }): ForecastQuest {
-  return { id: base.id, version: 1, registeredOn: base.registeredOn, opensOn: base.opensOn, author: base.author, type: 'forecast', title: base.title, summary: base.summary, countries: base.countries, topics: base.topics, region: base.region, closesOn: base.closesOn, rule: base.rule, fallback: 'unresolvable', level: 'intro', knownLimits: base.knownLimits } as ForecastQuest;
+function draft(base: { id: string; title: string; summary: string; countries: string[]; topics: QuestTopic[]; region: QuestRegion; registeredOn: string; opensOn: string; closesOn: string; rule: ForecastQuest['rule']; knownLimits: string[]; author: string; tutorial?: boolean; level?: QuestLevel }): ForecastQuest {
+  return { id: base.id, version: 1, registeredOn: base.registeredOn, opensOn: base.opensOn, author: base.author, type: 'forecast', title: base.title, summary: base.summary, countries: base.countries, topics: base.topics, region: base.region, closesOn: base.closesOn, rule: base.rule, fallback: 'unresolvable', level: base.level ?? 'intro', knownLimits: base.knownLimits } as ForecastQuest;
 }
 
 export interface GenerateOptions {
@@ -111,6 +113,28 @@ export function generateQuests(o: GenerateOptions): { quests: ForecastQuest[]; s
         author: o.author,
       }),
     );
+    // Longer Brent Quests, so a class always has one open that settles two to eight weeks out:
+    // four weeks after every weekly close, and eight weeks after the first close of each month.
+    for (const weeks of close.slice(8) <= '07' ? [4, 8] : [4]) {
+      const far = addDaysIso(close, 7 * weeks);
+      add(
+        draft({
+          id: `brent-${weeks}w-${close}`,
+          title: `Will Brent crude be higher on ${longDate(far)} than on ${longDate(close)}?`,
+          summary: `Give the probability that the price of Brent crude oil (US EIA daily spot price) on the first day published on or after ${longDate(far)} is higher than on the day entries close, ${longDate(close)}. A term-length Quest: the result comes ${weeks} weeks after entries close, so a class can follow it and discuss what moved the price.`,
+          countries: ['WLD'],
+          topics: ['commodities'],
+          region: 'Global',
+          registeredOn: o.today,
+          opensOn: open,
+          closesOn: close,
+          rule: { kind: 'direction', ref: { country: 'WLD', series: 'commodity_eia_rbrte' }, from: 'closesOn', to: { on: far }, op: 'higher' },
+          knownLimits: ['EIA publishes daily spot prices a few days late; the Quest settles when the value for the date is out.', `Over ${weeks} weeks, supply decisions, the world economy and the dollar all move oil; nobody knows most of that news in advance.`],
+          author: o.author,
+          level: weeks === 8 ? 'intermediate' : 'intro',
+        }),
+      );
+    }
     for (const c of WEEKLY_FX) {
       add(
         draft({
@@ -206,4 +230,14 @@ export function digestMarkdown(d: Digest): string {
     'Scores are against the base rate (how often the same thing happened before). Forecasting practice, not investment advice.',
     '',
   ].join('\n');
+}
+
+/**
+ * Whether some Quest is open today and settles 14 to 56 days from now (classroom step Q5): a class
+ * then always has a Quest it can follow through a few weeks of term.
+ */
+export function termWindowOpen(quests: Array<{ quest: Quest }>, today: string): boolean {
+  const lo = addDaysIso(today, 14);
+  const hi = addDaysIso(today, 56);
+  return quests.some(({ quest }) => quest.opensOn <= today && quest.closesOn >= today && questSettlesOn(quest) >= lo && questSettlesOn(quest) <= hi);
 }

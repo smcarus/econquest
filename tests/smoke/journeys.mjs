@@ -344,6 +344,10 @@ try {
     await box.locator('[data-quests-tab="maint"]').click();
     await box.locator('[data-quest-maintainer-counts]').waitFor({ timeout: 15_000 });
     if (!(await box.locator('[data-quest-maintainer-item="draftsToApprove"]').count())) throw new Error('the maintainer dashboard does not list the drafts ready to approve');
+    // Replays (Q5): four packs, week by week; with the feeds down a try says why, never a made-up figure.
+    await box.locator('[data-quests-tab="replay"]').click();
+    await box.locator('[data-quest-replay-week="4"]').waitFor({ timeout: 15_000 });
+    if ((await box.locator('[data-quest-replay-pack] option').count()) !== 4) throw new Error('the Replays tab does not list four packs');
     // Classes are on in this copy, but sign-in is off: the tab says classes need accounts.
     await box.locator('[data-quests-tab="classes"]').click();
     await box.locator('[data-classes-off]').waitFor({ timeout: 15_000 });
