@@ -148,9 +148,12 @@ A steady flow of Quests keeps people coming back, so the app drafts routine ones
 - **Weekly**: Brent crude, and seven currencies against the US dollar (Brazilian real, Mexican peso, South African rand, Turkish lira, Indian rupee, Indonesian rupiah, Japanese yen): higher or lower one week after entries close. Entries open a week before they close, on a Friday.
 - **Monthly**: whether eleven central banks (the United States, Brazil, Mexico, Chile, Colombia, South Africa, Turkey, Poland, Hungary, India, Indonesia) will have cut their policy rate by the end of the next month. Entries open two weeks before the end of the month.
 
+Drafts for the spring 2027 term are on file: a one-week Brent Quest closing each Friday from 15 January to 7 May 2027, a four-week Brent Quest each week (and an eight-week one each month), and monthly policy-rate Quests for the eleven central banks, 93 in all, each in four languages. A class can set them as soon as they are on file; they become public Quests when the maintainer approves them.
+
 Every generated Quest asks "higher or lower than on the day entries close", so no figure is ever written into a Quest file, and each passes the same checker as a hand-written Quest. The app has no calendar of data releases or central-bank meetings yet; when it gets one, Quests dated to those events can be added here.
 
 1. `npm run quests:generate -- --weeks 4` lists what it would draft; add `--write` to write the drafts into `quests/drafts/`.
+   To draft a whole term ahead, give its first day and the kinds wanted: `npm run quests:generate -- --from 2027-01-08 --weeks 17 --kinds brent,brent-long,policy --write` (kinds: `brent`, `brent-long`, `fx`, `policy`; up to 26 weeks). `--write` also writes Spanish, French and Portuguese text for each draft into `quests/translations/`.
 2. Read them, edit or delete any you do not want.
 3. `npm run quests:approve -- --by <your login> <id> <id> ...` moves each to `quests/`, sets you as approver and records its fingerprint in `quests/manifest.json`. It refuses a draft that fails the checker or whose entries have already closed.
 4. Commit `quests/` in a pull request.

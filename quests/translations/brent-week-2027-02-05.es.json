@@ -1,0 +1,12 @@
+{
+  "quest": "brent-week-2027-02-05",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "¿Estará el Brent más alto el 12 de febrero de 2027 que el 5 de febrero de 2027?",
+  "summary": "Indique la probabilidad de que el precio del petróleo Brent (la principal referencia mundial, precio spot diario de la EIA de EE. UU.) el primer día publicado a partir del 12 de febrero de 2027 sea mayor que el día en que cierran las respuestas, el 5 de febrero de 2027. Un reto corto: verá su puntuación en unas dos semanas.",
+  "knownLimits": [
+    "La EIA publica los precios spot diarios con unos días de retraso; el reto se resuelve cuando sale el valor de la fecha.",
+    "En una sola semana, el petróleo se mueve sobre todo por noticias que nadie puede conocer de antemano; la tasa base está cerca del 50%."
+  ]
+}

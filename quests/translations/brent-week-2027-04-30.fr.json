@@ -1,0 +1,12 @@
+{
+  "quest": "brent-week-2027-04-30",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "Le Brent sera-t-il plus haut le 7 mai 2027 que le 30 avril 2027 ?",
+  "summary": "Donnez la probabilité que le prix du pétrole Brent (la principale référence mondiale, prix spot quotidien de l'EIA américaine) le premier jour publié à partir du 7 mai 2027 soit plus élevé que le jour de clôture des réponses, le 30 avril 2027. Une quête courte : vous verrez votre note dans environ deux semaines.",
+  "knownLimits": [
+    "L'EIA publie les prix spot quotidiens avec quelques jours de retard ; la quête se résout quand la valeur de la date est publiée.",
+    "Sur une seule semaine, le pétrole bouge surtout sur des nouvelles que personne ne peut connaître à l'avance ; le taux de base est proche de 50%."
+  ]
+}

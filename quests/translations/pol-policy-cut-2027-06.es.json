@@ -1,0 +1,12 @@
+{
+  "quest": "pol-policy-cut-2027-06",
+  "version": 1,
+  "lang": "es",
+  "translator": "smcarus",
+  "title": "¿Habrá recortado el banco central de Polonia su tasa de política al 30 de junio de 2027?",
+  "summary": "Indique la probabilidad de que la tasa de política del banco central de Polonia (serie diaria del BIS) el 30 de junio de 2027 sea menor que el día en que cierran las respuestas, el 31 de mayo de 2027. La tasa de política es el tipo de interés que fija el banco central; un recorte abarata el crédito y suele llegar cuando la inflación baja o la economía está débil.",
+  "knownLimits": [
+    "Los datos diarios del BIS pueden ir unos días por detrás de una decisión.",
+    "Importa si cae una reunión dentro del plazo; consulte el calendario del propio banco central antes de responder."
+  ]
+}

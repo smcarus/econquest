@@ -86,6 +86,12 @@ Real Forecast Quests take weeks to settle. To give students practice from day on
 exchange rates, and positioning). Each try picks a past date, shows what was known then, and scores
 the answer at once. Students see how often they beat the base rate.
 
+For the weeks after that, short Forecast Quests are on file for a January to May term: a one-week Brent
+Quest closing each Friday (scored about two weeks later), a four-week Brent Quest each week, and
+monthly Quests on eleven central banks' policy rates, in English, Spanish, French and Portuguese.
+Setting one weekly and one four-week Quest from week 3 gives each student the 10 settled answers the
+calibration chart needs by about week 10.
+
 ## During the term
 
 ### Set a Quest for the class
