@@ -471,7 +471,7 @@ Qual modelo serve para qual computador, e os ajustes que o app usa, estão em Re
 
 ## 9. Ferramentas, checagem dos dados e o menu
 
-![Menu aberto em três grupos: Configurar (Configurações com IA: não configurada, Conta, Dados offline, Seus dados, Modo compartilhamento, Modo prova, Buscar dados), Verificar os dados (Saúde dos dados, Modelos e validação, Log de auditoria, Diário de ideias) e Aprender (Manual do usuário, Exemplos resolvidos, Sobre e licenças de dados, Relatar um problema, Quests em cinza)](images/16-menu.png)
+![Menu aberto em três grupos: Configurar (Configurações com IA: não configurada, Conta, Dados offline, Seus dados, Modo compartilhamento, Modo prova, Buscar dados), Verificar os dados (Saúde dos dados, Modelos e validação, Log de auditoria, Diário de ideias) e Aprender (O que isso significa para você, Manual do usuário, Exemplos resolvidos, Sobre e licenças de dados, Relatar um problema, Quests em cinza)](images/16-menu.png)
 
 O **Menu** reúne tudo o que não é uma página, em três grupos depois de **Ferramentas**: *Configurar*,
 *Verificar os dados* e *Aprender*. O que vale conhecer primeiro:
@@ -522,7 +522,10 @@ O **Menu** reúne tudo o que não é uma página, em três grupos depois de **Fe
 - **Atalhos de teclado**: aperte **?** para ver a lista. **/** vai para a caixa de pergunta do
   conselho, **Cmd+K** (Ctrl+K no Windows) busca nas ferramentas, **Cmd+,** abre as configurações e
   **Esc** fecha uma janela. / e ? não fazem nada enquanto você digita numa caixa.
-- **Quests**: em cinza, "Ainda não disponível" ([seção 12](#12-experimentar-as-quests)).
+- **Quests**: em cinza, "Ainda não disponível", até você ligá-las em **Configurações > Quests e
+  turmas** ([seção 12](#12-experimentar-as-quests)).
+- **Conta**: crie aqui a primeira conta de administrador quando compartilhar o app ou conduzir uma
+  turma; a partir daí, todos entram com login.
 
 ![Menu > Ferramentas: ferramentas agrupadas por tarefa e depois Configurar, com Conexões de dados e sua contagem de fontes](images/14-data-connections.png)
 
@@ -601,21 +604,66 @@ ligue antes o login por conta).
 
 ## 12. Experimentar as Quests
 
-![Janela das Quests com QUESTS_ENABLED=on: abas Quests, My entries, Class table, Results, Scoreboard, Stances, Health, e uma lista de Quests em rascunho](images/18-quests.png)
+![Janela das Quests: abas Quests, Replays, Minhas respostas, Tabela da turma, Resultados, Classificação, Posições, Saúde, Manutenção, Turmas e Entregar, com o Pacote inicial escolhido (captura em inglês)](images/18-quests.png)
 
-As Quests estão desligadas para todos até que a lista de lançamento em [QUESTS.md](./QUESTS.md) esteja
-completa. Para experimentar no seu computador:
+As Quests são perguntas abertas sobre economias que você responde e confere com números reais, por
+exemplo "A taxa básica de juros do Brasil estará mais baixa em 31 de março?". Elas estão desligadas
+para todos até que a lista de lançamento em [QUESTS.md](./QUESTS.md) esteja completa, mas você pode
+ligá-las na sua própria cópia quando quiser:
 
-1. Abra **Menu > Configurações > Quests e turmas** e escolha *Ativado* para as Quests (sem reiniciar).
-   Ou adicione `QUESTS_ENABLED=on` ao arquivo `.env` da sua pasta do EconQuest e reinicie o app.
-2. Abra **Menu > Quests**. A janela das Quests está em inglês por enquanto. A lista mostra a pergunta de
-   cada Quest, seu tipo (Forecast, Debate, Replication ou Signal), se é rascunho e quando o resultado é
-   esperado. Filtre por tipo ou por data.
-3. Abra uma Quest para ver sua regra, os números ao vivo com que será resolvida e seus limites conhecidos.
-4. **Log privately** guarda sua resposta só neste computador; **Practice** responde a perguntas passadas e
-   pontua na hora; **My entries** lista o que você registrou e como pontuou.
-5. **Results**, **Scoreboard**, **Stances** e **Health** mostram as Quests resolvidas, as estatísticas dos
-   participantes, as perguntas opcionais de posição econômica e se o sistema está funcionando.
+1. Abra **Menu > Configurações > Quests e turmas** e escolha *Ativado* para as Quests. A mudança vale
+   na hora, sem reiniciar. (O jeito antigo continua funcionando: adicione `QUESTS_ENABLED=on` ao
+   arquivo `.env` da sua pasta do EconQuest e reinicie.) Só o computador que roda o app, ou um
+   administrador quando o login está ligado, pode mudar isso.
 
-Quando as Quests forem públicas, **Enter publicly** vai preparar para você um pull request para o
-repositório público. A página Recursos e detalhes explica [como o jogo funciona](./FEATURES.pt.md#quests-soluções-econômicas-construídas-por-muitos).
+   ![Configurações > Quests e turmas: Ativado, Desativado ou Seguir o .env para as Quests e para as turmas (captura em inglês)](images/23-settings-quests.png)
+
+2. Abra **Menu > Quests**. A janela está em português, inglês, espanhol e francês, como o resto do
+   app. Cada linha mostra a pergunta, o tipo (Previsão, Debate, Replicação ou Sinal), o nível
+   (introdutório, intermediário ou avançado) e quando o resultado é esperado. Filtre por tipo, nível,
+   data ou pacote.
+3. Está começando? Escolha o **Pacote inicial** em *Pacote*: 25 problemas agrupados por tema, de um
+   tutorial curto sobre o petróleo Brent a inflação, dívida, moedas, emprego, comércio e países de
+   renda mais baixa. As linhas marcadas *Pratique agora* podem ser feitas na hora com números passados.
+4. Abra uma Quest para ler a regra em palavras, o último número de cada série com que ela será
+   resolvida (ou "Ausente" com o motivo) e o que ela não pode dizer.
+5. Responda de uma de três formas:
+   - **Praticar com o passado** dá a você um período passado do mesmo tamanho com a resposta escondida
+     e pontua na hora. Nada é salvo.
+   - **Registrar em particular** guarda sua previsão só neste computador, selada com uma impressão
+     digital para que não possa ser mudada depois. **Minhas respostas** mostra a previsão e, quando o
+     resultado sair, a pontuação.
+   - **Participar em público** prepara uma resposta para o repositório público. Precisa de uma conta
+     gratuita no GitHub e vai contar quando as Quests forem públicas.
+6. Os **Replays** são perguntas sobre o passado, em pacotes de quatro semanas. Clique em *Tentar*,
+   responda e veja na hora o que aconteceu e como você se saiu contra o palpite mais simples.
+7. **Resultados** lista cada resultado registrado e confere se o registro não foi alterado. A mesma
+   visão fica ao lado do histórico de resultados em **Menu > Modelos e validação**. **Classificação**,
+   **Posições** e **Saúde** mostram as estatísticas dos participantes, as perguntas opcionais de posição
+   econômica e se o sistema de Quests está funcionando.
+
+As Quests também chegam até você: a página de um país e cada resposta do chat do Conselho mostram até
+três *Quests sobre este país*, e um link abre essa Quest.
+
+**Reproduzir um estudo publicado.** A Quest de replicação *Reproduza a estimativa de reação fiscal de Bohn
+para o Brasil* pede que você refaça, com seu próprio programa, a estimativa do app sobre como o
+orçamento do Brasil reage à dívida (Bohn, 1998). A página da Quest
+traz o download dos dados, um guia em quatro idiomas e programas iniciais para R, Python e Stata em
+`quests/replications/bohn/`. Os programas só carregam os dados; a conta é com você.
+
+**Conduzir uma turma.** Um professor pode usar as Quests com uma turma em um só computador, que os
+alunos abrem no navegador. As turmas precisam de contas, para que cada pessoa tenha sua própria
+função:
+
+1. No computador que roda o app, abra **Menu > Conta** e crie a primeira conta de administrador. A
+   senha precisa ter pelo menos 12 caracteres (uma frase curta é o mais fácil de lembrar) e não pode
+   conter o nome de usuário. A partir daí, todos entram com login.
+2. Em **Menu > Configurações > Quests e turmas**, escolha *Ativado* para as turmas.
+3. Em **Menu > Quests > Turmas**, dê à turma um nome, um fuso horário e as datas do período e clique
+   em *Criar a turma*. O cartão da turma mostra um código de entrada; cole uma lista de apelidos em
+   *Criar contas de aluno* para criar todas as contas de uma vez.
+
+`npm run class:setup` faz os passos 1 e 2 com um só comando e abre o app para a rede da escola. O
+período completo, de passar Quests com horário de entrega a comentários, tabela da turma e boletim de
+notas, está no [guia do professor](./TEACHING.md) (em inglês, espanhol e francês). A página Recursos e
+detalhes explica [como o jogo funciona](./FEATURES.pt.md#quests-soluções-econômicas-construídas-por-muitos).

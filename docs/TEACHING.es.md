@@ -61,6 +61,13 @@ Ponga el último día del periodo después de `--until`. Esto:
 Después inicie la aplicación como siempre (`npm run go` en un Mac, `npm run dev` en cualquier
 computador). Añada `--local` para probarla primero solo en su computador.
 
+¿Prefiere no usar la línea de órdenes? En el computador donde se ejecuta la aplicación, cree su
+cuenta de administrador en **Menú > Cuenta** (una contraseña de al menos 12 caracteres que no contenga
+su nombre de usuario) y luego elija *Activado* para las clases en **Menú > Configuración > Retos y
+clases**. Ambos cambios son inmediatos. Los estudiantes en otros equipos solo pueden llegar a la
+aplicación cuando está abierta a la red del centro (`HOST="0.0.0.0"` en `.env`, vea
+[HOME_SERVER.md](./HOME_SERVER.md)), algo que `npm run class:setup` hace por usted.
+
 ### 3. Cree la clase
 
 Inicie sesión, abra **Menú > Retos** y elija la pestaña **Clases**.
@@ -235,6 +242,7 @@ teclado visible y nada que obligue a desplazarse de lado a 320 píxeles de ancho
 
 | Lo que ve | Qué hacer |
 | --- | --- |
+| No aparece la pestaña Clases, o Menú > Retos está en gris | Las clases están desactivadas. Un administrador elige *Activado* para las clases en Menú > Configuración > Retos y clases; no hace falta reiniciar. Las clases también necesitan inicio de sesión: cree la primera cuenta de administrador en Menú > Cuenta. |
 | Los estudiantes no pueden abrir la dirección | Compruebe que la aplicación está en marcha y que el computador y los estudiantes están en la misma red. Si la red wifi del centro aísla los equipos, pida a informática que permita el puerto 3000 hacia este computador (vea SCHOOL_IT.md). |
 | Una cifra dice «Falta» | La fuente no respondió o aún no publicó. Se muestra el motivo. El reto se resuelve cuando llega la cifra. |
 | Un estudiante olvidó su contraseña | Un administrador la restablece en Menú > Usuarios; la nueva contraseña se muestra una vez. |

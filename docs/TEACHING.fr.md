@@ -63,6 +63,14 @@ Indiquez le dernier jour du semestre après `--until`. Cette commande :
 Démarrez ensuite l'application comme d'habitude (`npm run go` sur un Mac, `npm run dev` sur tout
 ordinateur). Ajoutez `--local` pour l'essayer d'abord sur votre seul ordinateur.
 
+Vous préférez éviter la ligne de commande ? Sur l'ordinateur qui fait tourner l'application, créez
+votre compte administrateur dans **Menu > Compte** (un mot de passe d'au moins 12 caractères qui ne
+contient pas votre nom d'utilisateur), puis choisissez *Activé* pour les classes dans **Menu >
+Réglages > Quêtes et classes**. Les deux changements sont immédiats. Les étudiants sur d'autres
+appareils ne peuvent joindre l'application qu'une fois celle-ci ouverte au réseau de l'établissement
+(`HOST="0.0.0.0"` dans `.env`, voir [HOME_SERVER.md](./HOME_SERVER.md)), ce que `npm run class:setup`
+fait pour vous.
+
 ### 3. Créez la classe
 
 Connectez-vous, ouvrez **Menu > Quêtes** et choisissez l'onglet **Classes**.
@@ -246,6 +254,7 @@ large. Voir [ACCESSIBILITY.md](./ACCESSIBILITY.md) (en anglais).
 
 | Ce que vous voyez | Que faire |
 | --- | --- |
+| Pas d'onglet Classes, ou Menu > Quêtes est grisé | Les classes sont désactivées. Un administrateur choisit *Activé* pour les classes dans Menu > Réglages > Quêtes et classes ; aucun redémarrage n'est nécessaire. Les classes demandent aussi la connexion par compte : créez le premier compte administrateur dans Menu > Compte. |
 | Les étudiants ne peuvent pas ouvrir l'adresse | Vérifiez que l'application tourne et que l'ordinateur et les étudiants sont sur le même réseau. Si le wifi de l'établissement isole les appareils, demandez au service informatique d'autoriser le port 3000 vers cet ordinateur (voir SCHOOL_IT.md). |
 | Un chiffre indique « Manquant » | La source n'a pas répondu ou n'a pas encore publié. La raison est affichée. La quête se résout quand le chiffre arrive. |
 | Un étudiant a oublié son mot de passe | Un administrateur le réinitialise dans Menu > Utilisateurs ; le nouveau mot de passe s'affiche une fois. |

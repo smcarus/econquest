@@ -36,6 +36,7 @@ de referencia; las órdenes y las notas para desarrolladores solo están en ingl
 | Escribir un informe | **Informes** (pestañas: Escribir una nota, Documentos del consejo, Cuadernos, Docencia) | Notas de país y de emisor, evaluaciones de sostenibilidad, revisiones de cartera e informes del consejo, en Markdown o PDF con fuentes y fechas |
 | Escribir un documento de trabajo | Gráficos del **Chat del consejo**, **Informes > Cuadernos** | Fije un gráfico en un cuaderno de investigación con la fecha hasta la que llegan sus cifras y una huella de las cifras; descargue el cuaderno como un solo zip (borrador, datos, scripts de Python, R y Stata, archivo de cita); más tarde, *Comprobar que se mantiene* dice si cada cifra sigue igual, se revisó o ya no está |
 | Aprender sobre la marcha | Botones de la cabecera, **Menú > Manual de usuario**, **Menú > Ejemplos resueltos** | Cuatro niveles de ayuda (Ayuda desactivada, Ayuda clave, Ayuda completa, Experto), un glosario en lenguaje sencillo, cinco casos resueltos, episodios didácticos y modo examen |
+| Practicar pronósticos, dar clase | **Menú > Retos**, **Menú > Configuración > Retos y clases** | Preguntas abiertas que se resuelven con cifras reales y se puntúan frente a la suposición más simple, un Paquete de inicio de 25 problemas, repeticiones de preguntas pasadas, un estudio publicado para reproducir, y clases con hora de entrega, comentarios y libro de calificaciones ([cómo probarlos](./GUIDE.es.md#12-probar-los-retos), [guía para docentes](./TEACHING.es.md)). Desactivados hasta que usted los active |
 | Ver qué significa para usted | **Menú > Qué significa para usted** | Su propia tasa de inflación según cómo se reparte su gasto entre los grupos oficiales de precios (partiendo de las ponderaciones oficiales de la cesta cuando la fuente las publica), frente a la tasa general, y lo que un cambio de tipos hace a la cuota de su préstamo, incluido el último movimiento del banco central para un préstamo variable. Lo que usted introduce se queda solo en su navegador |
 | Usar sus propios datos y pruebas | **Menú > Sus datos**, **Menú > Modelos y validación** | Cargue sus propias series CSV; registre su propia prueba de señal o modelo con las mismas reglas estrictas que las de la aplicación |
 | Usar las cifras en R, Python o Stata | [docs/DATA_API.md](./DATA_API.md) (en inglés) | Las mismas series, paneles y tablas que muestran las pantallas, con fuente y fecha en cada valor |
@@ -199,7 +200,7 @@ cada punto de la lista de [docs/QUESTS.md](./QUESTS.md) y el proyecto sea públi
 en su ordenador, actívelos en Menú > Configuración > Retos y clases, o añada `QUESTS_ENABLED=on` a
 `.env` y reinicie.
 
-![Menú > Retos con QUESTS_ENABLED=on: lista de Retos en borrador con su tipo y fecha de resultado](./images/18-quests.png)
+![Menú > Retos activado: el Paquete de inicio, con el tipo, el nivel y la fecha de resultado de cada Reto (captura en inglés)](./images/18-quests.png)
 
 **Qué es un Reto.** Un archivo en `quests/` con una pregunta y una regla escrita sobre cómo se resuelve
 con las propias fuentes de la aplicación. Hay cuatro tipos:
@@ -235,12 +236,28 @@ con las propias fuentes de la aplicación. Hay cuatro tipos:
   previsión solo se resuelven con fuentes cuyos términos permiten compartir con atribución; las
   preguntas sobre conflictos, disturbios o víctimas solo se plantean como Debates; sin apuestas ni
   premios. Los Retos no son un mercado de apuestas.
-- **En el aula.** Los docentes pueden usar Retos con un código de clase y una tabla de clase privada; se
-  prevé un piloto de un trimestre con dos profesores.
+- **Un lugar para empezar.** El Paquete de inicio reúne 25 problemas por tema, desde un tutorial
+  sobre el petróleo Brent hasta los países de menores ingresos, cada uno con su nivel (inicial,
+  intermedio o avanzado). Las Repeticiones son preguntas del pasado en paquetes de cuatro semanas, que
+  se puntúan en cuanto responde. El Reto de replicación sobre la reacción fiscal de Bohn (1998) para
+  Brasil trae una descarga de datos, una guía en cuatro idiomas y programas de inicio en R, Python y
+  Stata que solo cargan los datos.
+- **Donde ya está usted.** Las páginas de país y las respuestas del chat del Consejo enlazan hasta tres
+  Retos sobre ese país, y los resultados registrados están junto al historial de resultados en Menú >
+  Modelos y validación. Los investigadores pueden leer los pronósticos resueltos y sus puntuaciones
+  desde R, Python o Stata ([DATA_API.md](./DATA_API.md)).
+- **En el aula.** Con las clases activadas (Menú > Configuración > Retos y clases) y el inicio de
+  sesión en marcha, un docente crea una clase con un código para unirse, asigna Retos con hora de
+  entrega en la zona horaria de la clase y una regla sobre herramientas de IA, escribe comentarios,
+  organiza revisión anónima entre compañeros en los debates y descarga un libro de calificaciones con
+  pesos. Quien trabaja en su propia copia entrega archivos sellados. La
+  [guía para docentes](./TEACHING.es.md) recorre un curso completo; se prevé un piloto de un trimestre
+  con dos profesores.
 
-Hay catorce Retos en borrador en `quests/drafts/`; ninguno está aprobado todavía. Las reglas completas,
-los pasos del responsable y la lista de lanzamiento están en [docs/QUESTS.md](./QUESTS.md) (en
-inglés).
+Hay 118 Retos en archivo, todos aprobados: el Paquete de inicio, la replicación de Bohn, los debates y
+93 Retos de pronóstico para un curso de enero a mayo de 2027, cada uno en español, inglés, francés y
+portugués. Las reglas completas, los pasos del responsable y la lista de lanzamiento están en
+[docs/QUESTS.md](./QUESTS.md) (en inglés).
 
 ---
 
@@ -298,7 +315,7 @@ El método completo está en [docs/METHODOLOGY.md](./METHODOLOGY.md) (en inglés
 
 ## Hoja de ruta
 
-Situación al 27 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./ROADMAP.md), en inglés):
+Situación al 28 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./ROADMAP.md), en inglés):
 
 **Hecho**
 
@@ -434,6 +451,24 @@ Situación al 27 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./ROADMAP.md
     en otros países), frente a la tasa general, y lo que un cambio de tipos hace a la cuota de su
     préstamo, fijo o variable, con el último movimiento del banco central y su fecha. Lo que usted
     introduce se queda solo en su navegador.
+28. **Retos listos para probar en la aplicación** (27 y 28 de noviembre): toda la ventana de Retos y
+    el texto de cada Reto en español, francés y portugués; un Paquete de inicio de 25 problemas por
+    tema; el reto de replicación de Bohn (1998) con descarga de datos, guía y programas de inicio en R,
+    Python y Stata; los pronósticos resueltos en la API de datos para investigadores; los resultados
+    junto al historial de resultados; enlaces desde las páginas de país y el chat del Consejo; una
+    pestaña de Mantenimiento; y los 118 Retos en archivo aprobados, incluido un curso de enero a mayo
+    de 2027. Siguen desactivados para todos hasta la publicación; actívelos en su propia copia en
+    Menú > Configuración > Retos y clases.
+29. **Retos en el aula** (28 de noviembre): clases con código para unirse y funciones de docente,
+    corrector y estudiante; preparación con una sola orden (`npm run class:setup`); Retos asignados con
+    hora de entrega, una regla sobre herramientas de IA y prórrogas; Retos de clase escritos por el
+    docente, con niveles; repeticiones y paquetes por curso; comentarios, revisión anónima entre
+    compañeros y una opción para temas delicados; la tabla de la clase, equipos y un informe de una
+    página por estudiante; un libro de calificaciones con pesos; archivos de entrega sellados; una
+    revisión de accesibilidad de las pantallas del aula en el ancho de un teléfono; una prueba de carga
+    para 40 estudiantes; y una guía para docentes en inglés, español y francés
+    ([TEACHING.es.md](./TEACHING.es.md)). Las clases necesitan inicio de sesión; actívelas en Menú >
+    Configuración > Retos y clases.
 
 **Siguiente**
 
@@ -450,8 +485,10 @@ Situación al 27 de noviembre de 2026 (detalle en [docs/ROADMAP.md](./ROADMAP.md
 
 **En espera**
 
-- **Retos en el aula**: el plan está completo (13 cambios pequeños y luego un piloto de un trimestre
-  con dos profesores); la construcción empieza cuando el responsable del proyecto lo indique.
+- **Retos en el aula**: construidos, salvo los enlaces con la comunidad en GitHub, que esperan al
+  repositorio público. Después viene un piloto de un trimestre con dos profesores.
+- **Retos en el ordenador del responsable**: `npm run quests:live-check` (las cifras en vivo y la
+  práctica de cada Reto, la descarga de Bohn y sus programas de inicio) espera su primera ejecución allí.
 - **Árabe y suajili**: previstos, en pausa por decisión del responsable del proyecto.
 - **La aplicación para el teléfono**: en pausa hasta después de la publicación.
 - **Comprobaciones en el ordenador del responsable**: algunas fuentes (clima, trayectorias de

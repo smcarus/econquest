@@ -36,6 +36,7 @@ desenvolvedores existem só em inglês.
 | Escrever um relatório | **Relatórios** (abas: Escrever uma nota, Documentos do conselho, Cadernos, Ensino) | Notas de país e de emissor, avaliações de sustentabilidade, revisões de carteira e resumos do conselho, em Markdown ou PDF com fontes e datas |
 | Escrever um texto para discussão | Gráficos do **Chat do conselho**, **Relatórios > Cadernos** | Fixe um gráfico num caderno de pesquisa com a data até onde vão os números e uma impressão digital dos números; baixe o caderno como um único zip (rascunho, dados, scripts de Python, R e Stata, arquivo de citação); depois, *Verificar se ainda vale* diz se cada número continua igual, foi revisado ou sumiu |
 | Aprender pelo caminho | Botões do cabeçalho, **Menu > Manual do usuário**, **Menu > Exemplos resolvidos** | Quatro níveis de ajuda (Ajuda desativada, Ajuda essencial, Ajuda completa, Especialista), um glossário em linguagem simples, cinco casos resolvidos, episódios didáticos e modo prova |
+| Praticar previsões, conduzir uma turma | **Menu > Quests**, **Menu > Configurações > Quests e turmas** | Perguntas abertas resolvidas com números reais e pontuadas contra o palpite mais simples, um Pacote inicial de 25 problemas, replays de perguntas passadas, um estudo publicado para reproduzir, e turmas com horário de entrega, comentários e boletim de notas ([como experimentar](./GUIDE.pt.md#12-experimentar-as-quests), [guia do professor](./TEACHING.md)). Desligadas até você ligar |
 | Ver o que isso significa para você | **Menu > O que isso significa para você** | Sua própria taxa de inflação a partir de como seus gastos se dividem entre os grupos oficiais de preços (começando pelos pesos oficiais da cesta quando a fonte os publica), contra a taxa geral, e o que uma mudança de juros faz com a parcela do seu empréstimo, incluindo a última mudança do banco central para um empréstimo com taxa variável. O que você digita fica apenas no seu navegador |
 | Usar seus próprios dados e testes | **Menu > Seus dados**, **Menu > Modelos e validação** | Carregue suas próprias séries em CSV; registre seu próprio teste de sinal ou modelo com as mesmas regras rígidas dos testes do app |
 | Usar os números em R, Python ou Stata | [docs/DATA_API.md](./DATA_API.md) (em inglês) | As mesmas séries, painéis e tabelas das telas, com fonte e data em cada valor |
@@ -196,7 +197,7 @@ desligadas.** Menu > Quests aparece em cinza ("Ainda não disponível") até que
 computador, ative-as em Menu > Configurações > Quests e turmas, ou adicione `QUESTS_ENABLED=on` ao
 `.env` e reinicie.
 
-![Menu > Quests com QUESTS_ENABLED=on: lista de Quests em rascunho com tipo e data do resultado](./images/18-quests.png)
+![Menu > Quests ligadas: o Pacote inicial, com o tipo, o nível e a data do resultado de cada Quest (captura em inglês)](./images/18-quests.png)
 
 **O que é uma Quest.** Um arquivo em `quests/` com uma pergunta e uma regra escrita de como ela é
 resolvida a partir das próprias fontes do app. Há quatro tipos:
@@ -232,11 +233,27 @@ resolvida a partir das próprias fontes do app. Há quatro tipos:
   se resolvem em fontes cujos termos permitem compartilhar com crédito; perguntas sobre conflitos,
   distúrbios ou vítimas só entram como Debates; sem apostas e sem prêmios. As Quests não são um mercado de
   apostas.
-- **Na sala de aula.** Professores podem usar as Quests com um código de turma e uma tabela de turma
-  privada; está planejado um piloto de um semestre com dois professores.
+- **Um lugar para começar.** O Pacote inicial reúne 25 problemas por tema, de um tutorial sobre o
+  petróleo Brent aos países de renda mais baixa, cada um com seu nível (introdutório, intermediário ou
+  avançado). Os Replays são perguntas sobre o passado em pacotes de quatro semanas, pontuadas assim que
+  você responde. A Quest de replicação sobre a reação fiscal de Bohn (1998) para o Brasil vem com
+  download dos dados, um guia em quatro idiomas e programas iniciais em R, Python e Stata que só
+  carregam os dados.
+- **Onde você já está.** As páginas de país e as respostas do chat do Conselho levam a até três Quests
+  sobre aquele país, e os resultados registrados ficam ao lado do histórico de resultados em Menu >
+  Modelos e validação. Pesquisadores podem ler as previsões resolvidas e suas pontuações em R, Python
+  ou Stata ([DATA_API.md](./DATA_API.md)).
+- **Na sala de aula.** Com as turmas ligadas (Menu > Configurações > Quests e turmas) e o login
+  configurado, o professor cria uma turma com um código de entrada, passa Quests com horário de
+  entrega no fuso da turma e uma regra sobre ferramentas de IA, escreve comentários, organiza revisão
+  anônima entre colegas nos debates e baixa um boletim de notas com pesos. Quem trabalha na sua
+  própria cópia entrega arquivos selados. O [guia do professor](./TEACHING.md) (em inglês, espanhol e
+  francês) percorre um período inteiro; está planejado um piloto de um semestre com dois professores.
 
-Há catorze Quests em rascunho em `quests/drafts/`; nenhuma foi aprovada ainda. As regras completas, os
-passos do responsável e a lista de lançamento estão em [docs/QUESTS.md](./QUESTS.md) (em inglês).
+Há 118 Quests no arquivo, todas aprovadas: o Pacote inicial, a replicação de Bohn, os debates e 93
+Quests de previsão para um período de janeiro a maio de 2027, cada uma em português, inglês, espanhol e
+francês. As regras completas, os passos do responsável e a lista de lançamento estão em
+[docs/QUESTS.md](./QUESTS.md) (em inglês).
 
 ---
 
@@ -295,7 +312,7 @@ O método completo está em [docs/METHODOLOGY.md](./METHODOLOGY.md) (em inglês)
 
 ## Roteiro
 
-Situação em 27 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./ROADMAP.md), em inglês):
+Situação em 28 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./ROADMAP.md), em inglês):
 
 **Feito**
 
@@ -426,6 +443,23 @@ Situação em 27 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./ROADMAP.md
     resto nos demais países), contra a taxa geral, e o que uma mudança de juros faz com a parcela do seu
     empréstimo, fixa ou variável, com a última mudança do banco central e sua data. O que você digita
     fica apenas no seu navegador.
+28. **Quests prontas para experimentar no app** (27 e 28 de novembro): toda a janela das Quests e o
+    texto de cada Quest em espanhol, francês e português; um Pacote inicial de 25 problemas por tema; o
+    desafio de replicação de Bohn (1998) com download dos dados, guia e programas iniciais em R, Python
+    e Stata; as previsões resolvidas na API de dados para pesquisadores; os resultados ao lado do
+    histórico de resultados; links nas páginas de país e no chat do Conselho; uma aba de Manutenção; e
+    as 118 Quests do arquivo aprovadas, incluindo um período de janeiro a maio de 2027. Continuam
+    desligadas para todos até o lançamento público; ligue-as na sua própria cópia em Menu >
+    Configurações > Quests e turmas.
+29. **Quests na sala de aula** (28 de novembro): turmas com código de entrada e funções de professor,
+    corretor e aluno; configuração com um só comando (`npm run class:setup`); Quests passadas com
+    horário de entrega, uma regra sobre ferramentas de IA e prorrogações; Quests da turma escritas pelo
+    professor, com níveis; replays e pacotes por período; comentários, revisão anônima entre colegas e
+    uma opção para temas sensíveis; a tabela da turma, equipes e um relatório de uma página por aluno;
+    um boletim de notas com pesos; arquivos de entrega selados; uma revisão de acessibilidade das telas
+    de sala de aula na largura de um celular; um teste de carga para 40 alunos; e um guia do professor
+    em inglês, espanhol e francês ([TEACHING.md](./TEACHING.md)). As turmas precisam de login; ligue-as
+    em Menu > Configurações > Quests e turmas.
 
 **Próximo**
 
@@ -441,8 +475,10 @@ Situação em 27 de novembro de 2026 (detalhes em [docs/ROADMAP.md](./ROADMAP.md
 
 **Em espera**
 
-- **Quests na sala de aula**: o plano está completo (13 mudanças pequenas e depois um piloto de um
-  semestre com dois professores); a construção começa quando o responsável pelo projeto disser.
+- **Quests na sala de aula**: construídas, menos os links com a comunidade no GitHub, que esperam o
+  repositório público. Depois vem um piloto de um semestre com dois professores.
+- **Quests no computador do responsável**: `npm run quests:live-check` (os números ao vivo e a prática
+  de cada Quest, o download de Bohn e seus programas iniciais) espera a primeira execução lá.
 - **Árabe e suaíli**: planejados, pausados pelo responsável pelo projeto.
 - **O app para celular**: pausado até depois do lançamento.
 - **Checagens no computador do responsável**: algumas fontes (clima, trajetórias de tempestades,

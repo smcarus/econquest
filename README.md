@@ -119,6 +119,8 @@ connect it with your own key and pick the series you want; those figures stay on
 - **See what it means for you**: your own inflation rate from what you spend, and what a rate change
   does to your loan payment, kept in your browser only.
 - **Learn as you go** with four help levels, a plain-language glossary and five worked examples.
+- **Practise forecasting with Quests**: open questions settled from real figures, a starter pack of
+  25 problems, and classes for teachers (switched on in Menu > Settings > Quests and classes).
 - **Use the figures in R, Python, Stata or Excel**, or connect another program to the app.
 
 Every figure, chart and test works without any AI model. The full list of tasks and tools is in
@@ -141,8 +143,8 @@ the weather and insurance tools, using it on a phone, and trying Quests.
 | ![Compare countries: story leads for the G20 watchlist](docs/images/10-compare.png) **Compare countries.** Story leads and where markets and the data disagree. | ![Policy review page with the new review form](docs/images/12-policy-review.png) **Review a policy.** Frame a problem and work it through to a memo. |
 | ![Settings > AI model with Ollama selected and the referee model fields](docs/images/13-settings-ai.png) **Choose an AI model.** Fast model for the desks, large model for the referee. | ![Research page in Spanish](docs/images/17-research-es.png) **Switch language.** The EN / ES / FR / PT button in the header. |
 
-The screenshots were taken on 24 November 2026 (two in the guide, Quests and Peers, are from
-13 November) from a local build of the main branch, replaying feed
+The screenshots were taken on 24 November 2026 (the menu, Quests and Settings > Quests and classes
+on 28 November; Peers on 13 November) from a local build of the main branch, replaying feed
 replies recorded on 5 November 2026 from the sources whose terms allow passing data on. That is why
 many figures read Missing in them; on a computer that reaches the feeds, more fill in.
 

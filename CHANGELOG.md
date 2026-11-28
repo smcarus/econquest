@@ -5,6 +5,15 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Documents brought up to date with Quests and Quests in the classroom: the guide's Quests section in
+  English, Spanish, French and Portuguese now covers the Settings switch, the Starter pack, practice,
+  replays, the Bohn replication, links from country pages and Council chat, and how to run a class
+  (the first administrator account, its password rule, and switching Classes on); the features page
+  in four languages (a Quests row, the Quests section, done items 28 and 29, what waits); a README
+  line in four languages; the user manual's Account entry (the first administrator account and the
+  password rule); the teacher guide in three languages (setting up without the command line, and
+  what to do when the Classes tab is missing); the school IT page; the plain-language guide (version
+  1.12) and the methodology (version 1.13, section 12); the roadmap; and a new Quests screenshot.
 - Settings: a *Quests and classes* page turns Quests and Classes on or off without editing `.env`
   or restarting (On, Off, or Follow .env). Only the computer running the app, or an administrator
   when sign-in is on, can change it; each change goes in the audit log.

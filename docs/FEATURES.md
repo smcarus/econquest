@@ -37,6 +37,7 @@ roadmap and the developer notes. The short introduction and the install steps ar
 | Write a report | **Reports** (tabs: Write a note, Council documents, Notebooks, Teaching) | Country notes, issuer notes, debt sustainability assessments, portfolio and client reviews and council briefs, as Markdown or PDF with sources and dates |
 | Write a working paper | **Council chat** charts, **Reports > Notebooks** | Pin a chart to a research notebook with the date its figures run to and a fingerprint of the figures; download the notebook as one zip (draft, data, Python, R and Stata scripts, citation file); later, *Check it still holds* says whether each figure is the same, revised or gone |
 | Learn as you go | Header buttons, **Menu > User manual**, **Menu > Worked examples** | Four help levels (Help off, Key help, Full help, Expert), a plain-language glossary, five worked case studies, teaching episodes and exam mode |
+| Practise forecasting, teach a class | **Menu > Quests**, **Menu > Settings > Quests and classes** | Open questions settled from real figures and scored against a simple guess, a Starter pack of 25 problems, replays of past questions, a published study to reproduce, and classes with due times, feedback and a gradebook ([how to try them](./GUIDE.md#12-try-quests), [teacher guide](./TEACHING.md)). Switched off until you turn them on |
 | See what it means for you | **Menu > What this means for you** | Your own inflation rate from how your spending splits over the official price groups (starting from the official basket weights where the source publishes them), set against the headline rate, and what a rate change does to your loan payment, including the central bank's last move for a variable loan. What you enter stays in your browser only |
 | Bring your own data and tests | **Menu > Your data**, **Menu > Models & validation** | Load your own CSV series; register your own signal or model test under the same strict rules as the app's own |
 | Use the figures in R, Python or Stata | [docs/DATA_API.md](./DATA_API.md) | The same series, panels and tables the screens show, with source and date on every value |
@@ -196,7 +197,7 @@ available") until every item on the checklist in [docs/QUESTS.md](./QUESTS.md) i
 project has gone public. To try them on your own computer, turn them on in Menu > Settings > Quests
 and classes, or add `QUESTS_ENABLED=on` to `.env` and restart.
 
-![Menu > Quests with QUESTS_ENABLED=on: a list of draft Quests with their type and result date](./images/18-quests.png)
+![Menu > Quests switched on: the Starter pack, with each Quest's kind, level and result date](./images/18-quests.png)
 
 **What a Quest is.** One file in `quests/`, with a question and a stated rule for how it is settled
 from the app's own feeds. There are four kinds:
@@ -229,11 +230,25 @@ from the app's own feeds. There are four kinds:
 - **Rules that keep it sound.** No figures written into a Quest file; Forecast Quests settle only on
   sources whose terms allow sharing with credit; questions on conflict, unrest or casualties run only
   as Debates; no stakes and no prizes. Quests are not a betting market.
-- **In the classroom.** Teachers can run Quests with a class code and a private class table; a
-  one-term pilot with two professors is planned ([docs/ROADMAP.md](./ROADMAP.md)).
+- **A place to start.** The Starter pack holds 25 problems by topic, from a Brent oil tutorial to
+  lower-income countries, with a level on each (intro, intermediate or advanced). Replays are past
+  questions in four-week packs, scored the moment you answer. The Replication Quest on the Bohn
+  (1998) fiscal reaction estimate for Brazil comes with a data download, a guide in four languages and
+  R, Python and Stata starter scripts that only load the data.
+- **Where you already are.** Country pages and Council chat answers link to up to three Quests about
+  that country, and settled results sit beside Track record in Menu > Models & validation.
+  Researchers can read settled forecasts and their scores from R, Python or Stata
+  ([DATA_API.md](./DATA_API.md)).
+- **In the classroom.** With Classes switched on (Menu > Settings > Quests and classes) and sign-in
+  set up, a teacher makes a class with a join code, sets Quests with due times in the class's time
+  zone and a rule on AI tools, writes feedback, runs anonymous peer review on debates, and downloads
+  a weighted gradebook. Students who work on their own copy hand in sealed files. The
+  [teacher guide](./TEACHING.md) walks through one term; a one-term pilot with two professors is
+  planned ([docs/ROADMAP.md](./ROADMAP.md)).
 
-Fourteen draft Quests are in `quests/drafts/`; none is approved yet. The full rules, the maintainer's
-steps and the launch checklist are in [docs/QUESTS.md](./QUESTS.md) and
+118 Quests are on file, all approved: the Starter pack, the Bohn replication, the debates and 93
+Forecast Quests for a January to May 2027 term, each in English, Spanish, French and Portuguese. The
+full rules, the maintainer's steps and the launch checklist are in [docs/QUESTS.md](./QUESTS.md) and
 [quests/README.md](../quests/README.md).
 
 ---
@@ -325,7 +340,7 @@ The full method is in [docs/METHODOLOGY.md](./METHODOLOGY.md); the same in plain
 
 ## Roadmap
 
-Where things stand on 27 November 2026 (details and status in [docs/ROADMAP.md](./ROADMAP.md)):
+Where things stand on 28 November 2026 (details and status in [docs/ROADMAP.md](./ROADMAP.md)):
 
 **Done**
 
@@ -440,6 +455,21 @@ Where things stand on 27 November 2026 (details and status in [docs/ROADMAP.md](
     groups and basket weights for EU members; food, energy and the rest elsewhere), against the
     headline rate, and what a rate change does to your loan payment, fixed or variable, with the
     central bank's last move and its date. What you enter stays in your browser only.
+28. **Quests ready to try in the app** (27 and 28 November): the whole Quests screen and every
+    Quest's text in Spanish, French and Portuguese; a Starter pack of 25 problems by topic; the Bohn
+    (1998) replication challenge with a data download, a guide and R, Python and Stata starter
+    scripts; settled forecasts in the researcher data API; results beside Track record; links from
+    country pages and Council chat; a Maintainer tab; and all 118 Quests on file approved, including
+    a January to May 2027 term. Still switched off for everyone until the public release; turn them on
+    for your own copy in Menu > Settings > Quests and classes.
+29. **Quests in the classroom** (28 November): classes with a join code and teacher, marker and
+    student roles; one-command setup (`npm run class:setup`); Quests set with due times, a rule on AI
+    tools and extensions; class Quests written by the teacher, with levels; replays and term packs;
+    feedback, anonymous peer review and a switch for sensitive topics; the class table, teams and a
+    one-page report per student; a weighted gradebook; sealed hand-in files; an accessibility check of
+    the classroom screens at phone width; a load test for 40 students; and a teacher guide in English,
+    Spanish and French ([TEACHING.md](./TEACHING.md)). Classes need sign-in; switch them on in
+    Menu > Settings > Quests and classes.
 
 **Next**
 
@@ -454,8 +484,10 @@ Where things stand on 27 November 2026 (details and status in [docs/ROADMAP.md](
 
 **Waiting**
 
-- **Quests in the classroom**: the plan is complete (13 small changes, then a one-term pilot with
-  two professors); building starts when the maintainer says go.
+- **Quests in the classroom**: built, apart from the community links on GitHub, which wait for the
+  public repository. Next comes a one-term pilot with two professors.
+- **Quests on the maintainer's computer**: `npm run quests:live-check` (the live figures and practice
+  for each Quest, the Bohn download and its starter scripts) waits for its first run there.
 - **Arabic and Swahili**: planned, paused by the maintainer.
 - **The phone app**: paused until after the public release.
 - **Checks on the maintainer's computer**: some sources (weather, storm tracks, central bank assets,
