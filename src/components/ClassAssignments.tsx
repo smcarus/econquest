@@ -347,7 +347,7 @@ function AssignmentItem({ a, cls, base, act }: { a: Assignment; cls: ClassView; 
       {panel === 'feedback' && <MyFeedback aBase={aBase} />}
       {panel === 'peer' && <PeerReview aBase={aBase} positions={a.positions} archived={cls.archived} />}
       {entries && (
-        <div className="overflow-x-auto" data-class-entries>
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t('asgEntries')} data-class-entries>
           {entries.hidden && <p className="text-slate-500">{t('asgHidden')}</p>}
           <table className="w-full">
             <caption className="sr-only">{t('asgEntries')}</caption>
