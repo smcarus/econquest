@@ -9,10 +9,22 @@ import { registerQuestRoutes } from '../src/server/routes/quests';
 import { questsEnabled, QUESTS_OFF_REASON } from '../src/utils/quests';
 import type { SeriesSet } from '../src/utils/seriesHistory';
 
-async function serve(enabled: boolean, seriesFor: (iso3: string) => Promise<SeriesSet>, entryFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'qr-')), 'e.jsonl')) {
+/**
+ * A copy of quests/ with no approved Quests, for tests about drafts: once any Quest is approved,
+ * drafts stop taking private entries (tests/questDataApi.test.ts covers that rule).
+ */
+function draftsOnlyDir(): string {
+  const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'qd-')), 'quests');
+  fs.cpSync(path.join(process.cwd(), 'quests'), dir, { recursive: true });
+  for (const f of fs.readdirSync(dir)) if (f.endsWith('.json') && f !== 'levels.json') fs.rmSync(path.join(dir, f));
+  fs.writeFileSync(path.join(dir, 'manifest.json'), '{}\n');
+  return dir;
+}
+
+async function serve(enabled: boolean, seriesFor: (iso3: string) => Promise<SeriesSet>, entryFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'qr-')), 'e.jsonl'), dir = path.join(process.cwd(), 'quests')) {
   const app = express();
   app.use(express.json());
-  registerQuestRoutes(app, { seriesFor, enabled: () => enabled, dir: path.join(process.cwd(), 'quests'), entryFile, random: () => 0.5 });
+  registerQuestRoutes(app, { seriesFor, enabled: () => enabled, dir, entryFile, random: () => 0.5 });
   const server = app.listen(0);
   await new Promise((r) => server.once('listening', r));
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -82,7 +94,7 @@ const longSet = (iso3: string): SeriesSet => {
 };
 
 test('private entries: logged, hashed, listed as counted, and refused when the answer is wrong', async () => {
-  const s = await serve(true, async (i) => longSet(i));
+  const s = await serve(true, async (i) => longSet(i), undefined, draftsOnlyDir());
   try {
     const post = (body: unknown) => fetch(`${s.base}/api/quests/tur-policy-2027h1/private`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     assert.equal((await post({ answer: { probability: 2 } })).status, 400);
