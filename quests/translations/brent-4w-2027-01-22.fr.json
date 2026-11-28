@@ -1,0 +1,12 @@
+{
+  "quest": "brent-4w-2027-01-22",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "Le Brent sera-t-il plus haut le 19 février 2027 que le 22 janvier 2027 ?",
+  "summary": "Donnez la probabilité que le prix du pétrole Brent (prix spot quotidien de l'EIA américaine) le premier jour publié à partir du 19 février 2027 soit plus élevé que le jour de clôture des réponses, le 22 janvier 2027. Une quête sur le semestre : le résultat arrive 4 semaines après la clôture, si bien qu'une classe peut la suivre et discuter de ce qui a fait bouger le prix.",
+  "knownLimits": [
+    "L'EIA publie les prix spot quotidiens avec quelques jours de retard ; la quête se résout quand la valeur de la date est publiée.",
+    "Sur 4 semaines, les décisions de production, l'économie mondiale et le dollar font bouger le pétrole ; personne ne connaît à l'avance l'essentiel de ces nouvelles."
+  ]
+}

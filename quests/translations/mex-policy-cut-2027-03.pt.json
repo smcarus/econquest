@@ -1,0 +1,12 @@
+{
+  "quest": "mex-policy-cut-2027-03",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "O banco central do México terá cortado sua taxa básica até 31 de março de 2027?",
+  "summary": "Indique a probabilidade de que a taxa básica do banco central do México (série diária do BIS) em 31 de março de 2027 seja menor do que no dia em que as respostas fecham, 28 de fevereiro de 2027. A taxa básica é a taxa de juros que o banco central define; um corte barateia o crédito e costuma vir quando a inflação está caindo ou a economia está fraca.",
+  "knownLimits": [
+    "Os dados diários do BIS podem atrasar alguns dias em relação a uma decisão.",
+    "Importa se uma reunião cai dentro do prazo; consulte o calendário do próprio banco central antes de responder."
+  ]
+}

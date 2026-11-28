@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { digestMarkdown, generateQuests, MONTHLY_POLICY, questDigest, termWindowOpen, WEEKLY_FX } from '../src/utils/questGenerator';
 import { questProblems, type ForecastQuest } from '../src/utils/quests';
 import type { ResolutionLine } from '../src/utils/questResolve';
+import { generatedTranslations } from '../src/utils/questGeneratorText';
+import { translationProblems } from '../src/utils/questTranslations';
 
 test('the generator drafts weekly and monthly Quests that pass the checker and carry no figures', () => {
   const { quests, skipped } = generateQuests({ today: '2026-11-07', weeks: 2, author: 'smcarus', existing: new Set(['brent-week-2026-11-20']) });
@@ -48,4 +50,37 @@ test('the digest lists what closes and opens this week and results recorded in t
   assert.match(md, /## Quests this week \(7 November 2026 to 14 November 2026\)/);
   assert.match(md, /\*\*T c\*\*: Yes, it happened/);
   assert.match(questDigest(quests, [], '2026-11-07').due.map((x) => x.id).join(), /c/);
+});
+
+test('generator: --from drafts a later term and --kinds keeps only the kinds named', () => {
+  const { quests } = generateQuests({ today: '2026-11-28', from: '2027-01-08', weeks: 17, kinds: ['brent', 'brent-long', 'policy'], author: 'smcarus', existing: new Set() });
+  assert.ok(quests.length > 0);
+  assert.ok(quests.every((q) => !q.id.includes('-fx-week-')), 'no currency Quests when fx is not named');
+  const weekly = quests.filter((q) => q.id.startsWith('brent-week-')).map((q) => q.closesOn).sort();
+  assert.equal(weekly.length, 17, 'one weekly Brent Quest for each week of the term');
+  assert.equal(weekly[0], '2027-01-15');
+  assert.ok(weekly.every((d) => new Date(`${d}T00:00:00Z`).getUTCDay() === 5), 'weekly Quests close on Fridays');
+  assert.ok(quests.every((q) => q.opensOn >= '2027-01-01'), 'nothing opens before the term');
+  assert.ok(quests.some((q) => q.id.includes('-policy-cut-')));
+  // A start date in the past is ignored: drafting starts from today.
+  const past = generateQuests({ today: '2026-11-28', from: '2026-01-01', weeks: 2, kinds: ['brent'], author: 'smcarus', existing: new Set() });
+  assert.ok(past.quests.every((q) => q.closesOn > '2026-11-28'));
+});
+
+test('generator: each generated Quest gets Spanish, French and Portuguese text that passes the translation rules', () => {
+  const { quests } = generateQuests({ today: '2026-11-28', from: '2027-01-08', weeks: 6, author: 'smcarus', existing: new Set() });
+  const kinds = new Set<string>();
+  for (const q of quests) {
+    const ts = generatedTranslations(q, 'smcarus');
+    assert.deepEqual(ts.map((t) => t.lang), ['es', 'fr', 'pt'], q.id);
+    for (const t of ts) {
+      assert.deepEqual(translationProblems(t, q), [], `${q.id} ${t.lang}`);
+      assert.equal(t.translator, 'smcarus');
+    }
+    kinds.add(q.id.replace(/-\d{4}-.*$/, '').replace(/^[a-z]{3}-/, ''));
+  }
+  for (const k of ['brent-week', 'brent-4w', 'fx-week', 'policy-cut']) assert.ok(kinds.has(k), `covers ${k}`);
+  const fr = generatedTranslations(quests.find((q) => q.id.startsWith('brent-week-'))!, 'smcarus').find((t) => t.lang === 'fr')!;
+  assert.match(fr.title, /janvier 2027/);
+  assert.match(fr.summary, /vous verrez/);
 });

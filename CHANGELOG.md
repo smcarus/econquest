@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Quests: `npm run quests:generate` takes `--from` (draft a later term) and `--kinds` (brent,
+  brent-long, fx, policy), and writes Spanish, French and Portuguese text beside each draft. 93
+  drafts for a January to May 2027 term are on file: weekly and four-week Brent Quests and monthly
+  policy-rate Quests, enough for each student to reach the 10 settled answers the calibration chart
+  needs.
 - Classes (step Q13): a teacher guide for one term, from setup to the gradebook, in English, Spanish
   and French (docs/TEACHING.md, TEACHING.es.md, TEACHING.fr.md), linked from the READMEs and from
   the Classes tab.

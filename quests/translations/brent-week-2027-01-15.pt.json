@@ -1,0 +1,12 @@
+{
+  "quest": "brent-week-2027-01-15",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "O Brent estará mais alto em 22 de janeiro de 2027 do que em 15 de janeiro de 2027?",
+  "summary": "Indique a probabilidade de que o preço do petróleo Brent (a principal referência mundial, preço spot diário da EIA dos EUA) no primeiro dia publicado a partir de 22 de janeiro de 2027 seja maior do que no dia em que as respostas fecham, 15 de janeiro de 2027. Uma Quest curta: você verá sua nota em cerca de duas semanas.",
+  "knownLimits": [
+    "A EIA publica os preços spot diários com alguns dias de atraso; a Quest é resolvida quando sai o valor da data.",
+    "Em uma única semana, o petróleo se move sobretudo por notícias que ninguém pode conhecer com antecedência; a taxa base fica perto de 50%."
+  ]
+}

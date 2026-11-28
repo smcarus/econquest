@@ -70,11 +70,18 @@ function draft(base: { id: string; title: string; summary: string; countries: st
   return { id: base.id, version: 1, registeredOn: base.registeredOn, opensOn: base.opensOn, author: base.author, type: 'forecast', title: base.title, summary: base.summary, countries: base.countries, topics: base.topics, region: base.region, closesOn: base.closesOn, rule: base.rule, fallback: 'unresolvable', level: base.level ?? 'intro', knownLimits: base.knownLimits } as ForecastQuest;
 }
 
+export const GENERATE_KINDS = ['brent', 'brent-long', 'fx', 'policy'] as const;
+export type GenerateKind = (typeof GENERATE_KINDS)[number];
+
 export interface GenerateOptions {
   /** Today (YYYY-MM-DD): the registered date. */
   today: string;
-  /** Draft Quests whose entries close in the next `weeks` weeks from `today`. */
+  /** Draft Quests whose entries close in the `weeks` weeks after `from` (or `today`). */
   weeks: number;
+  /** Start from this date instead of today, to draft a whole term ahead (registeredOn stays `today`). */
+  from?: string;
+  /** Only these kinds (default all): weekly Brent, longer Brent, weekly currencies, monthly policy rates. */
+  kinds?: GenerateKind[];
   author: string;
   /** Ids already on file (drafts or approved); these are skipped. */
   existing: Set<string>;
@@ -84,8 +91,10 @@ export interface GenerateOptions {
 export function generateQuests(o: GenerateOptions): { quests: ForecastQuest[]; skipped: Array<{ id: string; why: string }> } {
   const out: ForecastQuest[] = [];
   const skipped: Array<{ id: string; why: string }> = [];
-  const add = (q: ForecastQuest) => {
-    if (o.existing.has(q.id)) return;
+  const start = o.from && o.from > o.today ? o.from : o.today;
+  const want = (k: GenerateKind) => !o.kinds || o.kinds.includes(k);
+  const add = (q: ForecastQuest, kind: GenerateKind) => {
+    if (!want(kind) || o.existing.has(q.id)) return;
     const problems = questProblems(q, { approved: false, fileName: `${q.id}.json` });
     const series = seriesProblem(q.rule.ref.country, q.rule.ref.series);
     if (series) problems.push(series);
@@ -94,7 +103,7 @@ export function generateQuests(o: GenerateOptions): { quests: ForecastQuest[]; s
   };
   // Weekly: entries close on Fridays from the second week on, so each is open a full week first.
   for (let w = 1; w <= o.weeks; w++) {
-    const close = fridayOnOrAfter(addDaysIso(o.today, 7 * w));
+    const close = fridayOnOrAfter(addDaysIso(start, 7 * w));
     const open = addDaysIso(close, -7);
     const to = addDaysIso(close, 7);
     add(
@@ -112,6 +121,7 @@ export function generateQuests(o: GenerateOptions): { quests: ForecastQuest[]; s
         knownLimits: ['EIA publishes daily spot prices a few days late; the Quest settles when the value for the date is out.', 'Over a single week, oil moves mostly on news nobody can know in advance; the base rate is close to 50%.'],
         author: o.author,
       }),
+      'brent',
     );
     // Longer Brent Quests, so a class always has one open that settles two to eight weeks out:
     // four weeks after every weekly close, and eight weeks after the first close of each month.
@@ -133,6 +143,7 @@ export function generateQuests(o: GenerateOptions): { quests: ForecastQuest[]; s
           author: o.author,
           level: weeks === 8 ? 'intermediate' : 'intro',
         }),
+        'brent-long',
       );
     }
     for (const c of WEEKLY_FX) {
@@ -151,14 +162,15 @@ export function generateQuests(o: GenerateOptions): { quests: ForecastQuest[]; s
           knownLimits: ['The ECB does not fix on TARGET holidays; the first fixing on or after each date is used.', 'The rate is crossed through the euro, so it can differ slightly from rates quoted directly against the dollar.'],
           author: o.author,
         }),
+        'fx',
       );
     }
   }
   // Monthly: entries close on the last day of each month in range; the rate is read at the end of the next month.
   const months = new Set<string>();
-  for (let d = addDaysIso(o.today, 7); d <= addDaysIso(o.today, 7 * o.weeks); d = addDaysIso(d, 1)) months.add(monthEnd(d));
+  for (let d = addDaysIso(start, 7); d <= addDaysIso(start, 7 * o.weeks); d = addDaysIso(d, 1)) months.add(monthEnd(d));
   for (const close of [...months].sort()) {
-    if (close <= addDaysIso(o.today, 6)) continue;
+    if (close <= addDaysIso(start, 6)) continue;
     const to = monthEnd(addDaysIso(close, 1));
     const open = addDaysIso(close, -14);
     for (const c of MONTHLY_POLICY) {
@@ -177,6 +189,7 @@ export function generateQuests(o: GenerateOptions): { quests: ForecastQuest[]; s
           knownLimits: ['BIS daily data can lag a decision by a few days.', 'Whether a meeting falls in the window matters; check the central bank\'s own calendar before answering.'],
           author: o.author,
         }),
+        'policy',
       );
     }
   }

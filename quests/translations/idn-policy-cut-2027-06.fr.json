@@ -1,0 +1,12 @@
+{
+  "quest": "idn-policy-cut-2027-06",
+  "version": 1,
+  "lang": "fr",
+  "translator": "smcarus",
+  "title": "La banque centrale d'Indonésie aura-t-elle baissé son taux directeur d'ici le 30 juin 2027 ?",
+  "summary": "Donnez la probabilité que le taux directeur de la banque centrale d'Indonésie (série quotidienne de la BRI) le 30 juin 2027 soit plus bas que le jour de clôture des réponses, le 31 mai 2027. Le taux directeur est le taux d'intérêt fixé par la banque centrale ; une baisse rend le crédit moins cher et intervient en général quand l'inflation recule ou que l'économie est faible.",
+  "knownLimits": [
+    "Les données quotidiennes de la BRI peuvent avoir quelques jours de retard sur une décision.",
+    "Il importe qu'une réunion tombe dans la période ; consultez le calendrier de la banque centrale elle-même avant de répondre."
+  ]
+}

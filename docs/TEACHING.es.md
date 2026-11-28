@@ -90,6 +90,13 @@ después tasas de política, tipos de cambio y posicionamiento). Cada intento el
 muestra lo que se sabía entonces y califica la respuesta al instante. El estudiante ve con qué
 frecuencia superó la tasa base.
 
+Para las semanas siguientes hay retos de previsión cortos para un periodo de enero a mayo: un reto
+semanal sobre el Brent que cierra cada viernes (se puntúa unas dos semanas después), un reto de
+cuatro semanas sobre el Brent cada semana y retos mensuales sobre la tasa de política de once bancos
+centrales, en inglés, español, francés y portugués. Si asigna un reto semanal y uno de cuatro semanas
+desde la semana 3, cada estudiante tendrá hacia la semana 10 las 10 respuestas resueltas que necesita
+el gráfico de calibración.
+
 ## Durante el periodo
 
 ### Asigne un reto a la clase

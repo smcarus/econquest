@@ -1,0 +1,12 @@
+{
+  "quest": "pol-policy-cut-2027-02",
+  "version": 1,
+  "lang": "pt",
+  "translator": "smcarus",
+  "title": "O banco central da Polônia terá cortado sua taxa básica até 28 de fevereiro de 2027?",
+  "summary": "Indique a probabilidade de que a taxa básica do banco central da Polônia (série diária do BIS) em 28 de fevereiro de 2027 seja menor do que no dia em que as respostas fecham, 31 de janeiro de 2027. A taxa básica é a taxa de juros que o banco central define; um corte barateia o crédito e costuma vir quando a inflação está caindo ou a economia está fraca.",
+  "knownLimits": [
+    "Os dados diários do BIS podem atrasar alguns dias em relação a uma decisão.",
+    "Importa se uma reunião cai dentro do prazo; consulte o calendário do próprio banco central antes de responder."
+  ]
+}

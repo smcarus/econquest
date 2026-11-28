@@ -92,6 +92,13 @@ débuter, puis taux directeurs, taux de change et positionnement). Chaque essai 
 passée, montre ce que l'on savait alors et note la réponse aussitôt. L'étudiant voit à quelle
 fréquence il a fait mieux que le taux de base.
 
+Pour les semaines suivantes, des quêtes de prévision courtes sont prêtes pour un semestre de janvier
+à mai : une quête d'une semaine sur le Brent qui clôt chaque vendredi (notée environ deux semaines
+plus tard), une quête de quatre semaines sur le Brent chaque semaine et des quêtes mensuelles sur le
+taux directeur de onze banques centrales, en anglais, espagnol, français et portugais. Si vous donnez
+une quête d'une semaine et une de quatre semaines à partir de la semaine 3, chaque élève aura vers la
+semaine 10 les 10 réponses résolues dont le graphique de calibration a besoin.
+
 ## Pendant le semestre
 
 ### Donnez une quête à la classe
