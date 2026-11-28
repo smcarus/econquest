@@ -1,0 +1,181 @@
+{
+  "id": "replay-positioning",
+  "title": {
+    "en": "Replays: positioning and longer horizons",
+    "es": "Repeticiones: posicionamiento y horizontes más largos",
+    "fr": "Rejeux : positionnement et horizons plus longs",
+    "pt": "Replays: posicionamento e horizontes mais longos"
+  },
+  "summary": {
+    "en": "Harder questions about the past: how leveraged funds positioned in currency futures, and oil and policy rates over half a year, scored at once against what happened.",
+    "es": "Preguntas más difíciles sobre el pasado: cómo se posicionaron los fondos apalancados en futuros de divisas, y el petróleo y los tipos oficiales en medio año, puntuadas al momento con lo que ocurrió.",
+    "fr": "Des questions plus difficiles sur le passé : le positionnement des fonds à effet de levier sur les contrats à terme de devises, et le pétrole et les taux directeurs sur six mois, notées tout de suite d’après ce qui s’est passé.",
+    "pt": "Perguntas mais difíceis sobre o passado: como os fundos alavancados se posicionaram em futuros de moedas, e o petróleo e os juros básicos em meio ano, com nota na hora a partir do que aconteceu."
+  },
+  "level": "advanced",
+  "weeks": [
+    {
+      "week": 1,
+      "title": {
+        "en": "Funds and the yen",
+        "es": "Los fondos y el yen",
+        "fr": "Les fonds et le yen",
+        "pt": "Os fundos e o iene"
+      },
+      "items": [
+        {
+          "id": "jpy-funds-week",
+          "title": {
+            "en": "Were leveraged funds more long the yen a week later?",
+            "es": "¿Estaban los fondos apalancados más largos en yenes una semana después?",
+            "fr": "Les fonds à effet de levier étaient-ils plus acheteurs de yen une semaine plus tard ?",
+            "pt": "Os fundos alavancados estavam mais comprados em iene uma semana depois?"
+          },
+          "country": "JPN",
+          "series": "cftc_lev_net",
+          "kind": "direction",
+          "op": "higher",
+          "days": 7,
+          "level": "advanced"
+        },
+        {
+          "id": "mxn-funds-month",
+          "title": {
+            "en": "Were leveraged funds less long the peso four weeks later?",
+            "es": "¿Estaban los fondos apalancados menos largos en pesos cuatro semanas después?",
+            "fr": "Les fonds à effet de levier étaient-ils moins acheteurs de peso quatre semaines plus tard ?",
+            "pt": "Os fundos alavancados estavam menos comprados em peso quatro semanas depois?"
+          },
+          "country": "MEX",
+          "series": "cftc_lev_net",
+          "kind": "direction",
+          "op": "lower",
+          "days": 28,
+          "level": "advanced"
+        }
+      ]
+    },
+    {
+      "week": 2,
+      "title": {
+        "en": "How far did positions move?",
+        "es": "¿Cuánto se movieron las posiciones?",
+        "fr": "Jusqu’où les positions ont-elles bougé ?",
+        "pt": "Quanto as posições se moveram?"
+      },
+      "items": [
+        {
+          "id": "jpy-funds-level",
+          "title": {
+            "en": "What was the leveraged funds' net position in yen futures four weeks later?",
+            "es": "¿Cuál era la posición neta de los fondos apalancados en futuros del yen cuatro semanas después?",
+            "fr": "Quelle était la position nette des fonds à effet de levier sur les contrats à terme du yen quatre semaines plus tard ?",
+            "pt": "Qual era a posição líquida dos fundos alavancados em futuros do iene quatro semanas depois?"
+          },
+          "country": "JPN",
+          "series": "cftc_lev_net",
+          "kind": "level",
+          "days": 28,
+          "level": "advanced"
+        },
+        {
+          "id": "brl-funds-range",
+          "title": {
+            "en": "Did the funds' net position in real futures stay within five points four weeks later?",
+            "es": "¿Se mantuvo la posición neta de los fondos en futuros del real dentro de cinco puntos cuatro semanas después?",
+            "fr": "La position nette des fonds sur les contrats à terme du réal est-elle restée à moins de cinq points quatre semaines plus tard ?",
+            "pt": "A posição líquida dos fundos em futuros do real ficou dentro de cinco pontos quatro semanas depois?"
+          },
+          "country": "BRA",
+          "series": "cftc_lev_net",
+          "kind": "between",
+          "band": 5,
+          "days": 28,
+          "level": "advanced"
+        }
+      ]
+    },
+    {
+      "week": 3,
+      "title": {
+        "en": "Oil over half a year",
+        "es": "El petróleo en medio año",
+        "fr": "Le pétrole sur six mois",
+        "pt": "O petróleo em meio ano"
+      },
+      "items": [
+        {
+          "id": "brent-half-up10",
+          "title": {
+            "en": "Was Brent crude more than a tenth higher half a year later?",
+            "es": "¿Estaba el Brent más de una décima parte más alto medio año después?",
+            "fr": "Le Brent était-il plus haut de plus d’un dixième six mois plus tard ?",
+            "pt": "O Brent estava mais de um décimo mais alto meio ano depois?"
+          },
+          "country": "WLD",
+          "series": "commodity_eia_rbrte",
+          "kind": "threshold",
+          "op": "above",
+          "delta": 10,
+          "relative": true,
+          "days": 182,
+          "level": "advanced"
+        },
+        {
+          "id": "brent-half-level",
+          "title": {
+            "en": "What was the price of Brent crude half a year later?",
+            "es": "¿Cuál era el precio del Brent medio año después?",
+            "fr": "Quel était le prix du Brent six mois plus tard ?",
+            "pt": "Qual era o preço do Brent meio ano depois?"
+          },
+          "country": "WLD",
+          "series": "commodity_eia_rbrte",
+          "kind": "level",
+          "days": 182,
+          "level": "advanced"
+        }
+      ]
+    },
+    {
+      "week": 4,
+      "title": {
+        "en": "Policy rates over half a year",
+        "es": "Los tipos oficiales en medio año",
+        "fr": "Les taux directeurs sur six mois",
+        "pt": "Os juros básicos em meio ano"
+      },
+      "items": [
+        {
+          "id": "usa-half-level",
+          "title": {
+            "en": "What was the US policy rate half a year later?",
+            "es": "¿Cuál era el tipo oficial de Estados Unidos medio año después?",
+            "fr": "Quel était le taux directeur américain six mois plus tard ?",
+            "pt": "Qual era o juro básico dos Estados Unidos meio ano depois?"
+          },
+          "country": "USA",
+          "series": "policy_rate",
+          "kind": "level",
+          "days": 182,
+          "level": "advanced"
+        },
+        {
+          "id": "tur-half-range",
+          "title": {
+            "en": "Did Turkey's policy rate stay within five points half a year later?",
+            "es": "¿Se mantuvo el tipo oficial de Turquía dentro de cinco puntos medio año después?",
+            "fr": "Le taux directeur de la Turquie est-il resté à moins de cinq points six mois plus tard ?",
+            "pt": "O juro básico da Turquia ficou dentro de cinco pontos meio ano depois?"
+          },
+          "country": "TUR",
+          "series": "policy_rate",
+          "kind": "between",
+          "band": 5,
+          "days": 182,
+          "level": "advanced"
+        }
+      ]
+    }
+  ]
+}

@@ -13,6 +13,10 @@
  *   GET  /api/quests/class/:code   the class table for a class code (this server only)
  *   GET  /api/quests/:id/practice  a past window of the Quest's own length, answer hidden
  *   POST /api/quests/practice/:token  score a practice answer at once (kept in memory only)
+ * Replays and term packs (classroom step Q5; src/utils/questReplays.ts), saved on this computer:
+ *   GET  /api/quests/replays                       the replay packs, and my saved results
+ *   GET  /api/quests/replays/:pack/:item/new       a past start for one replay item, answer hidden
+ *   POST /api/quests/replays/answer/:token         score it at once and save it (data/local/quest-replays.jsonl)
  *
  * Results (step 5), kept in quests/resolutions.jsonl and written only by `npm run quests:resolve`:
  *   GET  /api/quests/results       every recorded line, whether the chain holds, each Quest's state
@@ -64,7 +68,8 @@ import type { SeriesSet } from '../../utils/seriesHistory';
 import { questHorizon, questSeriesRefs, questSettlesOn, questStatus, questsEnabled, QUESTS_OFF_REASON, HORIZON_LABEL, type DebateQuest, type ForecastQuest, type Quest, type QuestLevel } from '../../utils/quests';
 import { describeRule, type QuestSeriesRef as QuestSeriesRefLike } from '../../utils/questRules';
 import { questSeriesDef } from '../../utils/questSeries';
-import { checkQuests, loadLevels, loadPacks, loadQuests, loadTranslations } from '../../utils/questStore';
+import { appendReplayResult, checkQuests, loadLevels, loadPacks, loadQuests, loadReplayPacks, loadReplayResults, loadTranslations, replayResultsPath } from '../../utils/questStore';
+import { replayAnswerProblems, replayQuestion, replaySummary, scoreReplay, type ReplayAnswer, type ReplayQuestion } from '../../utils/questReplays';
 import { questLevel } from '../../utils/questLevels';
 import { maintainerSummary } from '../../utils/questMaintainer';
 import { translationKey } from '../../utils/questTranslations';
@@ -112,6 +117,8 @@ export interface QuestDeps {
   today?: () => string;
   /** owner/name of the public repository that takes entries; defaults to process.env.QUESTS_REPO. */
   repo?: () => string;
+  /** Where replay results are kept; defaults to data/local/quest-replays.jsonl. */
+  replayFile?: string;
 }
 
 /** The public repository for entries: owner/name, or '' when not set. */
@@ -520,6 +527,48 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
       ref: q.rule.ref,
       op,
     });
+  });
+
+  // ---- Replays (classroom step Q5) -----------------------------------------------------------
+  const replayFile = deps.replayFile ?? replayResultsPath(DATA_DIR);
+  const replayOwner = (res: express.Response) => deps.signedIn?.(res)?.id ?? 'local';
+  const replays = new Map<string, { at: number; owner: string; packId: string; itemId: string; country: string; series: string; question: ReplayQuestion; points: Point[] }>();
+  app.get('/api/quests/replays', (_req, res) => {
+    if (!enabled()) return off(res);
+    const owner = replayOwner(res);
+    const mine = loadReplayResults(replayFile).filter((r) => r.accountId === owner);
+    res.json({ enabled: true, packs: loadReplayPacks(dir), results: mine.slice(-50).reverse(), summary: replaySummary(mine) });
+  });
+
+  app.get('/api/quests/replays/:pack/:item/new', async (req, res) => {
+    if (!enabled()) return off(res);
+    const pack = loadReplayPacks(dir).find((p) => p.id === req.params.pack);
+    const item = pack?.weeks.flatMap((w) => w.items).find((i) => i.id === req.params.item);
+    if (!pack || !item) return res.status(404).json({ enabled: true, error: 'No replay with that id' });
+    const pts = await pointsFor({ country: item.country, series: item.series });
+    if ('reason' in pts) return res.json({ enabled: true, error: pts.reason });
+    const q = replayQuestion(item, pts, todayIso(), deps.random ?? Math.random);
+    if ('reason' in q) return res.json({ enabled: true, error: q.reason });
+    for (const [k, v] of replays) if (Date.now() - v.at > PRACTICE_TTL_MS) replays.delete(k);
+    if (replays.size >= PRACTICE_MAX) replays.delete(replays.keys().next().value as string);
+    const token = crypto.randomBytes(12).toString('hex');
+    replays.set(token, { at: Date.now(), owner: replayOwner(res), packId: pack.id, itemId: item.id, country: item.country, series: item.series, question: q, points: pts });
+    const def = questSeriesDef(item.series);
+    res.json({ enabled: true, token, question: q, ref: { country: item.country, series: item.series }, unit: def?.unit ?? '', label: def?.label ?? item.series });
+  });
+
+  app.post('/api/quests/replays/answer/:token', (req, res) => {
+    if (!enabled()) return off(res);
+    const p = replays.get(String(req.params.token));
+    if (!p || Date.now() - p.at > PRACTICE_TTL_MS || p.owner !== replayOwner(res)) return res.status(404).json({ enabled: true, error: 'This replay has expired; ask for a new one' });
+    const problems = replayAnswerProblems(p.question, req.body?.answer);
+    if (problems.length) return res.status(400).json({ enabled: true, error: problems.join('; ') });
+    const answer = (p.question.kind === 'level' ? { level: Number(req.body.answer.level) } : { probability: Number(req.body.answer.probability) }) as ReplayAnswer;
+    replays.delete(String(req.params.token));
+    const r = scoreReplay(p.question, answer, p.points);
+    if ('reason' in r) return res.json({ enabled: true, error: r.reason });
+    appendReplayResult(replayFile, { at: new Date().toISOString(), accountId: p.owner, packId: p.packId, itemId: p.itemId, country: p.country, series: p.series, question: p.question, answer, end: r.end, score: r.score });
+    res.json({ enabled: true, end: r.end, score: r.score });
   });
 
   app.post('/api/quests/:id/private', (req, res) => {

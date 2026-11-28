@@ -200,4 +200,9 @@ export const QUEST_TEXT_FR: Record<string, string> = {
   "Settled on the first daily price on or after the date.": "Tranchée sur le premier prix quotidien à la date ou après.",
   "IMF World Economic Outlook. An annual value is settled as the IMF published it in the first edition read on or after the settle date; later revisions are noted, never applied.": "Perspectives de l’économie mondiale du FMI. Une valeur annuelle est tranchée telle que le FMI l’a publiée dans la première édition lue à la date de règlement ou après ; les révisions ultérieures sont notées, jamais appliquées.",
   "World Bank World Development Indicators. An annual value is settled as first read on or after the settle date; later revisions are noted, never applied.": "Indicateurs du développement dans le monde de la Banque mondiale. Une valeur annuelle est tranchée telle qu’elle a été lue pour la première fois à la date de règlement ou après ; les révisions ultérieures sont notées, jamais appliquées.",
+  "No replay with that id": "Aucun rejeu avec cet identifiant",
+  "This replay has expired; ask for a new one": "Ce rejeu a expiré ; demandez-en un nouveau",
+  "Not enough history for this replay yet": "Pas encore assez d’historique pour ce rejeu",
+  "A replay needs a daily or weekly series": "Un rejeu a besoin d’une série quotidienne ou hebdomadaire",
+  "Give your forecast as a number": "Donnez votre prévision sous forme de nombre",
 };

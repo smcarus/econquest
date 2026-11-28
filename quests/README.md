@@ -37,6 +37,8 @@ Translations of a Quest's text go in `translations/<Quest file name without .jso
 
 Packs go in `packs/<id>.json`: a named list of Quest ids grouped by topic, a `level` (`intro`, `intermediate` or `advanced`) and titles in English, Spanish, French and Portuguese (see [docs/QUESTS.md](../docs/QUESTS.md#packs)). `packs/starter.json` is the starter pack.
 
+Replay packs go in `replays/<id>.json`: weeks of questions about the past on a daily or weekly series (higher or lower, above or below a step from the start value, inside a range, or the value itself), each with a level and titles in all four languages, for the first weeks of a term (see [docs/QUESTS.md](../docs/QUESTS.md)). A replay item holds question parameters only (a horizon in days, a step), never a figure from the series.
+
 Every Quest has a level: `intro`, `intermediate` or `advanced`. A new Quest puts `"level"` in its own file. An approved Quest cannot change, so the Quests approved before levels existed take theirs from `levels.json`, a map from Quest id to level. `npm run quests:check` lists any Quest with no level.
 
 Guides and starter scripts for Replication Quests go in `replications/<name>/`; `replications/bohn/` is the Bohn (1998) challenge.

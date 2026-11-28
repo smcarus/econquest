@@ -1,0 +1,186 @@
+{
+  "id": "replay-currencies",
+  "title": {
+    "en": "Replays: exchange rate moves",
+    "es": "Repeticiones: movimientos del tipo de cambio",
+    "fr": "Rejeux : mouvements des taux de change",
+    "pt": "Replays: movimentos do câmbio"
+  },
+  "summary": {
+    "en": "Questions about the past on how far emerging-market currencies moved against the dollar, scored at once against what happened.",
+    "es": "Preguntas sobre el pasado acerca de cuánto se movieron las monedas emergentes frente al dólar, puntuadas al momento con lo que ocurrió.",
+    "fr": "Des questions sur le passé sur l’ampleur des mouvements des monnaies émergentes face au dollar, notées tout de suite d’après ce qui s’est passé.",
+    "pt": "Perguntas sobre o passado a respeito de quanto as moedas emergentes se moveram frente ao dólar, com nota na hora a partir do que aconteceu."
+  },
+  "level": "intermediate",
+  "weeks": [
+    {
+      "week": 1,
+      "title": {
+        "en": "A big week?",
+        "es": "¿Una semana movida?",
+        "fr": "Une semaine agitée ?",
+        "pt": "Uma semana agitada?"
+      },
+      "items": [
+        {
+          "id": "brl-week-2pct",
+          "title": {
+            "en": "Did the real lose more than two per cent against the dollar in a week?",
+            "es": "¿Perdió el real más de un dos por ciento frente al dólar en una semana?",
+            "fr": "Le réal a-t-il perdu plus de deux pour cent face au dollar en une semaine ?",
+            "pt": "O real perdeu mais de dois por cento frente ao dólar em uma semana?"
+          },
+          "country": "BRA",
+          "series": "fx_per_usd",
+          "kind": "threshold",
+          "op": "above",
+          "delta": 2,
+          "relative": true,
+          "days": 7,
+          "level": "intermediate"
+        },
+        {
+          "id": "try-week-2pct",
+          "title": {
+            "en": "Did the lira lose more than two per cent against the dollar in a week?",
+            "es": "¿Perdió la lira más de un dos por ciento frente al dólar en una semana?",
+            "fr": "La livre a-t-elle perdu plus de deux pour cent face au dollar en une semaine ?",
+            "pt": "A lira perdeu mais de dois por cento frente ao dólar em uma semana?"
+          },
+          "country": "TUR",
+          "series": "fx_per_usd",
+          "kind": "threshold",
+          "op": "above",
+          "delta": 2,
+          "relative": true,
+          "days": 7,
+          "level": "intermediate"
+        }
+      ]
+    },
+    {
+      "week": 2,
+      "title": {
+        "en": "A quiet month?",
+        "es": "¿Un mes tranquilo?",
+        "fr": "Un mois calme ?",
+        "pt": "Um mês calmo?"
+      },
+      "items": [
+        {
+          "id": "mxn-month-range",
+          "title": {
+            "en": "Did the peso stay within three per cent of where it started, four weeks later?",
+            "es": "¿Se mantuvo el peso a menos de un tres por ciento de donde empezó, cuatro semanas después?",
+            "fr": "Le peso est-il resté à moins de trois pour cent de son point de départ, quatre semaines plus tard ?",
+            "pt": "O peso ficou a menos de três por cento de onde começou, quatro semanas depois?"
+          },
+          "country": "MEX",
+          "series": "fx_per_usd",
+          "kind": "between",
+          "band": 3,
+          "relative": true,
+          "days": 28,
+          "level": "intermediate"
+        },
+        {
+          "id": "idr-month-range",
+          "title": {
+            "en": "Did the rupiah stay within three per cent of where it started, four weeks later?",
+            "es": "¿Se mantuvo la rupia indonesia a menos de un tres por ciento de donde empezó, cuatro semanas después?",
+            "fr": "La roupie indonésienne est-elle restée à moins de trois pour cent de son point de départ, quatre semaines plus tard ?",
+            "pt": "A rupia indonésia ficou a menos de três por cento de onde começou, quatro semanas depois?"
+          },
+          "country": "IDN",
+          "series": "fx_per_usd",
+          "kind": "between",
+          "band": 3,
+          "relative": true,
+          "days": 28,
+          "level": "intermediate"
+        }
+      ]
+    },
+    {
+      "week": 3,
+      "title": {
+        "en": "Stronger over two months?",
+        "es": "¿Más fuerte en dos meses?",
+        "fr": "Plus forte sur deux mois ?",
+        "pt": "Mais forte em dois meses?"
+      },
+      "items": [
+        {
+          "id": "zar-2m-stronger",
+          "title": {
+            "en": "Was the rand stronger against the dollar eight weeks later?",
+            "es": "¿Estaba el rand más fuerte frente al dólar ocho semanas después?",
+            "fr": "Le rand était-il plus fort face au dollar huit semaines plus tard ?",
+            "pt": "O rand estava mais forte frente ao dólar oito semanas depois?"
+          },
+          "country": "ZAF",
+          "series": "fx_per_usd",
+          "kind": "direction",
+          "op": "lower",
+          "days": 56,
+          "level": "intermediate"
+        },
+        {
+          "id": "inr-2m-stronger",
+          "title": {
+            "en": "Was the rupee stronger against the dollar eight weeks later?",
+            "es": "¿Estaba la rupia más fuerte frente al dólar ocho semanas después?",
+            "fr": "La roupie était-elle plus forte face au dollar huit semaines plus tard ?",
+            "pt": "A rúpia estava mais forte frente ao dólar oito semanas depois?"
+          },
+          "country": "IND",
+          "series": "fx_per_usd",
+          "kind": "direction",
+          "op": "lower",
+          "days": 56,
+          "level": "intermediate"
+        }
+      ]
+    },
+    {
+      "week": 4,
+      "title": {
+        "en": "Where did it end up?",
+        "es": "¿Dónde terminó?",
+        "fr": "Où a-t-elle fini ?",
+        "pt": "Onde terminou?"
+      },
+      "items": [
+        {
+          "id": "brl-level-month",
+          "title": {
+            "en": "How many reais did a dollar buy four weeks later?",
+            "es": "¿Cuántos reales compraba un dólar cuatro semanas después?",
+            "fr": "Combien de réais un dollar achetait-il quatre semaines plus tard ?",
+            "pt": "Quantos reais um dólar comprava quatro semanas depois?"
+          },
+          "country": "BRA",
+          "series": "fx_per_usd",
+          "kind": "level",
+          "days": 28,
+          "level": "intermediate"
+        },
+        {
+          "id": "jpy-level-month",
+          "title": {
+            "en": "How many yen did a dollar buy four weeks later?",
+            "es": "¿Cuántos yenes compraba un dólar cuatro semanas después?",
+            "fr": "Combien de yens un dollar achetait-il quatre semaines plus tard ?",
+            "pt": "Quantos ienes um dólar comprava quatro semanas depois?"
+          },
+          "country": "JPN",
+          "series": "fx_per_usd",
+          "kind": "level",
+          "days": 28,
+          "level": "intermediate"
+        }
+      ]
+    }
+  ]
+}

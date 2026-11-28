@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Quests (step Q5, still switched off): a Replays tab with four packs of questions about the past, four
+  weeks each, for the start of a term; every rule type, scored at once against what happened with a
+  base rate known on the start day, and saved on this computer. The generator also drafts Brent
+  Quests that settle four and eight weeks out, and the Maintainer tab says when none is open.
 - Classes (step Q4): a teacher writes class Quests (a Forecast from the fixed rule types, or a Debate)
   for one class, with a level; they are kept with the class in data/local/class-quests/ and can be set
   like any other Quest. Every Quest and pack now has a level (intro, intermediate or advanced), with a

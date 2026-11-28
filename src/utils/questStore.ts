@@ -7,6 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { collectionProblems, questProblems, QUEST_LEVELS, type Quest, type QuestLevel } from './quests';
 import { levelsFileProblems, questsWithoutLevel } from './questLevels';
+import { replayPackProblems, type ReplayPack, type ReplayResult } from './questReplays';
 import { translationKey, translationProblems, translationText, type QuestTranslation, type QuestTranslationMap } from './questTranslations';
 import { packProblems, type QuestPack } from './questPacks';
 
@@ -83,6 +84,7 @@ export function checkQuests(questsDir: string, manifest = readManifest(questsDir
   Object.assign(problems, checkTranslations(questsDir, files));
   Object.assign(problems, checkPacks(questsDir, files));
   Object.assign(problems, checkLevels(questsDir, files));
+  Object.assign(problems, checkReplayPacks(questsDir));
   return { files, problems, ok: Object.keys(problems).length === 0 };
 }
 
@@ -235,4 +237,66 @@ export function loadLevels(questsDir: string): Record<string, QuestLevel> {
   const levels = (f.json as { levels?: unknown }).levels;
   if (!levels || typeof levels !== 'object' || Array.isArray(levels)) return {};
   return Object.fromEntries(Object.entries(levels as Record<string, unknown>).filter(([, v]) => QUEST_LEVELS.includes(v as QuestLevel))) as Record<string, QuestLevel>;
+}
+
+/** quests/replays/*.json: replay packs for the first weeks of a term (src/utils/questReplays.ts). */
+function readReplayFiles(questsDir: string): TranslationFile[] {
+  const dir = path.join(questsDir, 'replays');
+  let names: string[] = [];
+  try {
+    names = fs.readdirSync(dir).filter((n) => n.endsWith('.json')).sort();
+  } catch {
+    return [];
+  }
+  return names.map((name) => {
+    const rel = `quests/replays/${name}`;
+    try {
+      return { name, rel, json: JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8')) };
+    } catch (e) {
+      return { name, rel, json: null, parseError: (e as Error).message };
+    }
+  });
+}
+
+export function checkReplayPacks(questsDir: string): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const f of readReplayFiles(questsDir)) {
+    const p = f.parseError ? [`not valid JSON: ${f.parseError}`] : replayPackProblems(f.json, f.name);
+    if (p.length) out[f.rel] = p;
+  }
+  return out;
+}
+
+/** The replay packs that pass their checks. */
+export function loadReplayPacks(questsDir: string): ReplayPack[] {
+  return readReplayFiles(questsDir)
+    .filter((f) => !f.parseError && replayPackProblems(f.json, f.name).length === 0)
+    .map((f) => f.json as ReplayPack);
+}
+
+/** Saved replay results (data/local/quest-replays.jsonl), one per line, oldest first. */
+export function replayResultsPath(dataDir: string): string {
+  return path.join(dataDir, 'local', 'quest-replays.jsonl');
+}
+
+export function loadReplayResults(file: string): ReplayResult[] {
+  let text = '';
+  try {
+    text = fs.readFileSync(file, 'utf8');
+  } catch {
+    return [];
+  }
+  return text.split('\n').flatMap((line) => {
+    if (!line.trim()) return [];
+    try {
+      return [JSON.parse(line) as ReplayResult];
+    } catch {
+      return [];
+    }
+  });
+}
+
+export function appendReplayResult(file: string, r: ReplayResult): void {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.appendFileSync(file, `${JSON.stringify(r)}\n`, { mode: 0o600 });
 }

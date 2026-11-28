@@ -1331,6 +1331,9 @@ hold no figures of their own; the handout reads them from the app's series when 
   - *Maintainer* (for whoever runs the project's Quests): what needs doing now, such as results due
     to record, drafts ready to approve, files with problems or missing translations, each with the
     command that does it. With sign-in on, only administrators see it.
+  - *Replays*: questions about the past, in packs of four weeks for the start of a term. Press *Try*,
+    give your answer, and see at once what happened and how you did against the base rate (or against
+    "no change" for a number). Your results are kept on this computer.
   - *Classes* (only when the administrator turns classes on with `CLASSES_ENABLED=on`, and only with
     sign-in): join a class with the code your teacher gives you, or, with an Analyst or Admin account,
     make a class for a term. The teacher sees the join code, adds markers and students, makes student

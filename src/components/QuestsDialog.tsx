@@ -24,6 +24,7 @@ import { packText, type QuestPack } from '../utils/questPacks';
 import { questTextIn, questTitleIn, type QuestTranslationLang, type QuestText, type QuestTranslationMap } from '../utils/questTranslations';
 import { useLang, useT, useTx } from '../i18n/useLang';
 import { ClassesView } from './ClassesView';
+import { QuestReplays } from './QuestReplays';
 import { questDataProblemUrl } from '../utils/problemReport';
 import { APP_CITATION } from '../utils/citation';
 import { versionWithCommit } from '../utils/buildInfo';
@@ -85,7 +86,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null, classesOn = 
   const [openId, setOpenId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
-  const [view, setView] = useState<'quests' | 'mine' | 'class' | 'results' | 'board' | 'stances' | 'health' | 'maint' | 'classes'>('quests');
+  const [view, setView] = useState<'quests' | 'replay' | 'mine' | 'class' | 'results' | 'board' | 'stances' | 'health' | 'maint' | 'classes'>('quests');
   const lang = useLang();
   const t = useT(QUESTS);
   const [english, setEnglish] = useState(false);
@@ -167,6 +168,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null, classesOn = 
               {(
                 [
                   'quests',
+                  'replay',
                   'mine',
                   'class',
                   'results',
@@ -183,6 +185,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null, classesOn = 
               ))}
             </div>
           )}
+          {list && list.enabled && !openId && view === 'replay' && <QuestReplays />}
           {list && list.enabled && !openId && view === 'mine' && <MyEntries titleOf={titleOf} />}
           {list && list.enabled && !openId && view === 'class' && <ClassTable />}
           {list && list.enabled && !openId && view === 'results' && <Results titleOf={titleOf} />}
