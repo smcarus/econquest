@@ -13,6 +13,7 @@
  *
  * Browser-safe: no server imports. The file store is src/utils/classStore.ts.
  */
+import type { ClassAssignment } from './classAssignments';
 
 export type ClassRole = 'teacher' | 'marker' | 'student';
 export const CLASS_ROLES: ClassRole[] = ['teacher', 'marker', 'student'];
@@ -43,6 +44,10 @@ export interface SchoolClass {
   members: ClassMember[];
   /** Set when the teacher archives the class: nobody can join, and it leaves the active list. */
   archivedAt?: string;
+  /** IANA time zone the class's due times are set in (Q3); UTC when not given. */
+  timeZone?: string;
+  /** Quests set for the class (Q3; src/utils/classAssignments.ts). */
+  assignments?: ClassAssignment[];
 }
 
 export const CLASSES_OFF_REASON = 'Classes are switched off on this server. The administrator turns them on with CLASSES_ENABLED=on in .env and restarts the app.';
@@ -142,6 +147,7 @@ export interface ClassView {
   term: ClassTerm;
   myRole: ClassRole;
   archived: boolean;
+  timeZone: string;
   teachers: string[];
   memberCount: number;
   /** Teacher only. */
@@ -162,6 +168,7 @@ export function classView(cls: SchoolClass, viewerId: string, nameOf: (id: strin
     term: cls.term,
     myRole,
     archived: Boolean(cls.archivedAt),
+    timeZone: cls.timeZone || 'UTC',
     teachers: cls.members.filter((m) => m.role === 'teacher').map((m) => nameOf(m.accountId)?.displayName ?? '(account removed)'),
     memberCount: cls.members.length,
     ...(myRole === 'teacher' ? { code: formatJoinCode(cls.code) } : {}),

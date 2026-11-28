@@ -11,16 +11,32 @@
  *   POST   /api/classes/:id/students            teacher: make Viewer accounts from nicknames; passwords shown once
  *   POST   /api/classes/:id/code                teacher: a new join code (the old one stops working)
  *   POST   /api/classes/:id/archive             teacher: archive or restore ({ archived: true | false })
+ * Assignments (Q3; src/utils/classAssignments.ts):
+ *   GET    /api/classes/:id/quests                          teacher: Quests that can be set
+ *   GET    /api/classes/:id/assignments                     the assignments, with my own due time
+ *   POST   /api/classes/:id/assignments                     teacher: set a Quest (due time, AI rule, instructions)
+ *   POST   /api/classes/:id/assignments/:aid/extension      teacher: a private due time for one student ({ due: null } removes it)
+ *   POST   /api/classes/:id/assignments/:aid/reveal         teacher: show entries to students before the last due time
+ *   DELETE /api/classes/:id/assignments/:aid                teacher: remove an assignment
+ *   POST   /api/classes/:id/assignments/:aid/entries        student: hand in (or replace) an entry before the due time
+ *   GET    /api/classes/:id/assignments/:aid/entries        teacher and markers: all; students: their own until the last due time
+ *   POST   /api/classes/:id/copy                            teacher: copy assignments from another class, dates moved by the term gap
+ *   GET    /api/classes/:id/calendar.ics                    the due times as a calendar file
  *
  * Account roles (Viewer, Analyst, Admin; src/utils/permissions.ts) still decide what an account may
  * do in the rest of the app. A class role only decides what it may do in that class.
  */
 import crypto from 'crypto';
+import path from 'path';
 import type express from 'express';
-import { DATA_DIR } from '../config';
+import { APP_ROOT, DATA_DIR } from '../config';
 import type { Account } from '../../utils/auth';
 import { CLASSES_NEED_SIGNIN, CLASSES_OFF_REASON, classesEnabled, classesFor, classProblems, classView, joinCodeFrom, nicknameProblems, normaliseJoinCode, roleIn, studentUsername, type ClassRole, type SchoolClass } from '../../utils/classes';
-import { changeClasses, classesPath, loadClasses } from '../../utils/classStore';
+import { appendClassEntry, changeClasses, classEntriesPath, classesPath, loadClassEntries, loadClasses } from '../../utils/classStore';
+import { AI_RULES, INSTRUCTIONS_MAX, aiProblems, assignmentsIcs, daysBetween, dueFor, dueProblems, entriesVisibleToStudents, latestEntries, shiftLocal, validTimeZone, zonedToUtc, type AiRule, type ClassAssignment, type ClassEntry } from '../../utils/classAssignments';
+import { loadQuests } from '../../utils/questStore';
+import { answerFor, entryProblems, type EntryQuest } from '../../utils/questEntries';
+import type { Quest } from '../../utils/quests';
 import { RateLimiter, type Bucket } from '../../utils/requestLimits';
 
 /** Class calls per caller: the app-wide limit applies too; joining is tighter, so codes cannot be guessed. */
@@ -44,11 +60,17 @@ export interface ClassDeps {
   makeStudent: (username: string, displayName: string) => { account: Account; password: string };
   audit?: (summary: string) => void;
   now?: () => Date;
+  /** Where Quest files are (quests/); class assignments read them even while Quests are off. */
+  questsDir?: string;
+  /** Defaults to data/local/class-entries.jsonl. */
+  entriesFile?: string;
 }
 
 export function registerClassRoutes(app: express.Express, deps: ClassDeps): void {
   const enabled = deps.enabled ?? (() => classesEnabled(process.env.CLASSES_ENABLED));
   const file = deps.file ?? classesPath(DATA_DIR);
+  const entriesFile = deps.entriesFile ?? classEntriesPath(DATA_DIR);
+  const questsDir = deps.questsDir ?? path.join(APP_ROOT, 'quests');
   const now = () => (deps.now ? deps.now() : new Date()).toISOString();
   const audit = deps.audit ?? (() => {});
   const nameOf = (id: string) => {
@@ -115,6 +137,8 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     if (a.role === 'viewer') return res.status(403).json({ enabled: true, error: 'A Viewer account cannot make a class. Ask your administrator for an Analyst account' });
     const body = (req.body || {}) as { name?: unknown; term?: Record<string, unknown> };
     const problems = classProblems(body);
+    const tzGiven = (req.body as { timeZone?: unknown })?.timeZone;
+    if (tzGiven !== undefined && tzGiven !== '' && !validTimeZone(tzGiven)) problems.push('Give the time zone as a name like America/Chicago');
     if (problems.length) return res.status(400).json({ enabled: true, error: problems.join('; ') });
     const cls = changeClasses(file, (classes) => {
       const c: SchoolClass = {
@@ -124,6 +148,7 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
         code: freshCode(classes),
         createdAt: now(),
         createdBy: a.id,
+        timeZone: validTimeZone((req.body as { timeZone?: unknown })?.timeZone) ? String((req.body as { timeZone?: unknown }).timeZone) : 'UTC',
         members: [{ accountId: a.id, role: 'teacher', joinedAt: now() }],
       };
       classes.push(c);
@@ -264,5 +289,286 @@ export function registerClassRoutes(app: express.Express, deps: ClassDeps): void
     if (sent || !cls) return;
     audit(`${who(a)} ${archived ? 'archived' : 'restored'} the class "${cls.name}"`);
     res.json(viewReply(cls, a));
+  });
+
+  // ---- Assignments (Q3) ----------------------------------------------------------------------
+  /** Quests a class can be set: any Quest on file but Signal Quests (entered in public only), still taking entries. */
+  const settable = (today: string) =>
+    loadQuests(questsDir).filter((x) => x.quest.type !== 'signal' && x.quest.closesOn >= today);
+  const questFor = (id: string) => loadQuests(questsDir).find((x) => x.quest.id === id && x.quest.type !== 'signal');
+  const answerKind = (q: Quest) => (q.type === 'debate' ? 'position' : q.type === 'replication' ? 'value' : q.type === 'forecast' && q.rule.kind === 'level' ? 'level' : 'probability');
+  /** The class, if I am in it; otherwise the reply already sent. */
+  const asMember = (classes: SchoolClass[], id: string, a: Account, res: express.Response): SchoolClass | null => {
+    const cls = classes.find((c) => c.id === id);
+    if (!cls || !roleIn(cls, a.id)) {
+      res.status(404).json({ enabled: true, error: 'No class with that id that you are in' });
+      return null;
+    }
+    return cls;
+  };
+  const assignmentView = (cls: SchoolClass, x: ClassAssignment, a: Account, entries: ClassEntry[], nowIso: string) => {
+    const role = roleIn(cls, a.id)!;
+    const mine = dueFor(x, a.id);
+    const latest = latestEntries(entries, x.id);
+    const myEntry = latest.find((e) => e.accountId === a.id);
+    return {
+      id: x.id,
+      questId: x.questId,
+      questVersion: x.questVersion,
+      title: x.title,
+      due: mine.due,
+      dueUtc: mine.dueUtc,
+      extended: mine.extended,
+      classDue: x.due,
+      aiRule: x.aiRule,
+      instructions: x.instructions ?? '',
+      open: nowIso <= mine.dueUtc,
+      entriesVisible: role !== 'student' || entriesVisibleToStudents(x, nowIso),
+      revealed: Boolean(x.revealedAt),
+      ...(myEntry ? { myEntry: { answer: myEntry.answer, rationale: myEntry.rationale ?? '', at: myEntry.at } } : {}),
+      ...(role === 'student'
+        ? {}
+        : {
+            entryCount: latest.length,
+            studentCount: cls.members.filter((m) => m.role === 'student').length,
+            extensions: x.extensions.map((e) => ({ accountId: e.accountId, username: nameOf(e.accountId)?.username ?? '(account removed)', due: e.due })),
+          }),
+    };
+  };
+
+  app.get('/api/classes/:id/quests', classRateLimit('read'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const cls = asTeacher(loadClasses(file), String(req.params.id), a, res);
+    if (!cls) return;
+    const today = now().slice(0, 10);
+    res.json({
+      enabled: true,
+      quests: settable(today).map((x) => ({ id: x.quest.id, title: x.quest.title, type: x.quest.type, closesOn: x.quest.closesOn, approved: x.approved })),
+    });
+  });
+
+  app.get('/api/classes/:id/assignments', classRateLimit('read'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const cls = asMember(loadClasses(file), String(req.params.id), a, res);
+    if (!cls) return;
+    const entries = loadClassEntries(entriesFile).filter((e) => e.classId === cls.id);
+    const nowIso = now();
+    const list = (cls.assignments ?? []).slice().sort((x, y) => x.dueUtc.localeCompare(y.dueUtc));
+    res.json({
+      enabled: true,
+      timeZone: cls.timeZone || 'UTC',
+      assignments: list.map((x) => {
+        const q = questFor(x.questId)?.quest;
+        return { ...assignmentView(cls, x, a, entries, nowIso), answerKind: q ? answerKind(q) : 'probability', positions: q?.type === 'debate' ? q.positions : undefined, questMissing: !q };
+      }),
+    });
+  });
+
+  app.post('/api/classes/:id/assignments', classRateLimit('write'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const body = (req.body || {}) as { questId?: unknown; due?: unknown; aiRule?: unknown; instructions?: unknown };
+    const found = questFor(String(body.questId || ''));
+    if (!found) return res.status(400).json({ enabled: true, error: 'Pick a Quest on file (Signal Quests are entered in public, so they cannot be set for a class)' });
+    const aiRule = body.aiRule as AiRule;
+    if (!AI_RULES.includes(aiRule)) return res.status(400).json({ enabled: true, error: 'Choose a rule on AI use' });
+    const instructions = typeof body.instructions === 'string' ? body.instructions.trim() : '';
+    if (instructions.length > INSTRUCTIONS_MAX) return res.status(400).json({ enabled: true, error: `Instructions: at most ${INSTRUCTIONS_MAX} characters` });
+    let sent = false;
+    const cls = changeClasses(file, (classes) => {
+      const c = asTeacher(classes, String(req.params.id), a, res);
+      if (!c) return (sent = true), null;
+      const tz = c.timeZone || 'UTC';
+      const problems = dueProblems(body.due, tz, found.quest.closesOn, now());
+      if (problems.length) {
+        res.status(400).json({ enabled: true, error: problems.join('; ') });
+        return (sent = true), null;
+      }
+      const x: ClassAssignment = { id: crypto.randomUUID(), questId: found.quest.id, questVersion: found.quest.version, title: found.quest.title, due: String(body.due), dueUtc: zonedToUtc(String(body.due), tz)!, aiRule, ...(instructions ? { instructions } : {}), extensions: [], createdAt: now() };
+      c.assignments = [...(c.assignments ?? []), x];
+      return c;
+    });
+    if (sent || !cls) return;
+    audit(`${who(a)} set the Quest ${found.quest.id} for the class "${cls.name}"`);
+    res.json({ enabled: true, ok: true });
+  });
+
+  /** Teacher changes to one assignment: an extension, showing entries early, or removing it. */
+  const changeAssignment = (req: express.Request, res: express.Response, a: Account, change: (c: SchoolClass, x: ClassAssignment) => string | null, summary: string) => {
+    let sent = false;
+    const cls = changeClasses(file, (classes) => {
+      const c = asTeacher(classes, String(req.params.id), a, res);
+      if (!c) return (sent = true), null;
+      const x = (c.assignments ?? []).find((y) => y.id === req.params.aid);
+      if (!x) {
+        res.status(404).json({ enabled: true, error: 'No assignment with that id in this class' });
+        return (sent = true), null;
+      }
+      const problem = change(c, x);
+      if (problem) {
+        res.status(400).json({ enabled: true, error: problem });
+        return (sent = true), null;
+      }
+      return c;
+    });
+    if (sent || !cls) return;
+    audit(`${who(a)} ${summary} in the class "${cls.name}"`);
+    res.json({ enabled: true, ok: true });
+  };
+
+  app.post('/api/classes/:id/assignments/:aid/extension', classRateLimit('write'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const target = deps.accountByUsername(String(req.body?.username || '').trim().toLowerCase());
+    changeAssignment(req, res, a, (c, x) => {
+      if (!target || roleIn(c, target.id) !== 'student') return 'That username is not a student in this class';
+      if (req.body?.due === null) {
+        x.extensions = x.extensions.filter((e) => e.accountId !== target.id);
+        return null;
+      }
+      const q = questFor(x.questId);
+      if (!q) return 'The Quest is no longer on file';
+      const tz = c.timeZone || 'UTC';
+      const problems = dueProblems(req.body?.due, tz, q.quest.closesOn, now());
+      if (problems.length) return problems.join('; ');
+      x.extensions = [...x.extensions.filter((e) => e.accountId !== target.id), { accountId: target.id, due: String(req.body.due), dueUtc: zonedToUtc(String(req.body.due), tz)! }];
+      return null;
+    }, `changed the due time for ${target?.username ?? 'a student'} on ${req.params.aid}`);
+  });
+
+  app.post('/api/classes/:id/assignments/:aid/reveal', classRateLimit('write'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    changeAssignment(req, res, a, (_c, x) => {
+      x.revealedAt = x.revealedAt ?? now();
+      return null;
+    }, `showed the entries for ${req.params.aid} to students`);
+  });
+
+  app.delete('/api/classes/:id/assignments/:aid', classRateLimit('write'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    changeAssignment(req, res, a, (c, x) => {
+      c.assignments = (c.assignments ?? []).filter((y) => y.id !== x.id);
+      return null;
+    }, `removed the assignment ${req.params.aid}`);
+  });
+
+  app.post('/api/classes/:id/assignments/:aid/entries', classRateLimit('write'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const cls = asMember(loadClasses(file), String(req.params.id), a, res);
+    if (!cls) return;
+    if (roleIn(cls, a.id) !== 'student') return res.status(403).json({ enabled: true, error: 'Only students of this class hand in entries' });
+    const x = (cls.assignments ?? []).find((y) => y.id === req.params.aid);
+    if (!x) return res.status(404).json({ enabled: true, error: 'No assignment with that id in this class' });
+    const nowIso = now();
+    if (nowIso > dueFor(x, a.id).dueUtc) return res.status(400).json({ enabled: true, error: 'This assignment is past its due time' });
+    const found = questFor(x.questId);
+    if (!found) return res.status(400).json({ enabled: true, error: 'The Quest is no longer on file' });
+    const body = (req.body || {}) as { answer?: Record<string, unknown>; rationale?: unknown; code?: unknown; aiNote?: unknown; aiDeclaredNone?: unknown };
+    const quest = found.quest as EntryQuest;
+    const input = {
+      questId: quest.id,
+      answer: answerFor(quest, body.answer ?? {}),
+      ...(typeof body.rationale === 'string' && body.rationale.trim() ? { rationale: body.rationale.trim().slice(0, 4000) } : {}),
+      ...(typeof body.code === 'string' && body.code.trim() ? { code: body.code.trim() } : {}),
+    };
+    const problems = [...entryProblems(input, quest, nowIso.slice(0, 10)), ...aiProblems(x.aiRule, body.aiNote, body.aiDeclaredNone)];
+    if (problems.length) return res.status(400).json({ enabled: true, error: problems.join('; ') });
+    const entry: ClassEntry = {
+      id: crypto.randomUUID(),
+      classId: cls.id,
+      assignmentId: x.id,
+      accountId: a.id,
+      questId: quest.id,
+      questVersion: quest.version,
+      questHash: found.hash,
+      answer: input.answer,
+      ...(input.rationale ? { rationale: input.rationale } : {}),
+      ...(input.code ? { code: input.code } : {}),
+      ai: { rule: x.aiRule, ...(x.aiRule === 'note' ? { note: String(body.aiNote).trim().slice(0, 1000) } : {}), ...(x.aiRule === 'none' ? { declaredNone: true } : {}) },
+      at: nowIso,
+    };
+    appendClassEntry(entriesFile, entry);
+    res.json({ enabled: true, entry: { answer: entry.answer, rationale: entry.rationale ?? '', at: entry.at } });
+  });
+
+  app.get('/api/classes/:id/assignments/:aid/entries', classRateLimit('read'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const cls = asMember(loadClasses(file), String(req.params.id), a, res);
+    if (!cls) return;
+    const x = (cls.assignments ?? []).find((y) => y.id === req.params.aid);
+    if (!x) return res.status(404).json({ enabled: true, error: 'No assignment with that id in this class' });
+    const role = roleIn(cls, a.id)!;
+    const all = loadClassEntries(entriesFile).filter((e) => e.classId === cls.id);
+    let latest = latestEntries(all, x.id);
+    if (role === 'student' && !entriesVisibleToStudents(x, now())) latest = latest.filter((e) => e.accountId === a.id);
+    const replaced = (accountId: string) => all.filter((e) => e.assignmentId === x.id && e.accountId === accountId).length - 1;
+    res.json({
+      enabled: true,
+      hiddenUntilDue: role === 'student' && !entriesVisibleToStudents(x, now()),
+      entries: latest
+        .map((e) => ({
+          name: nameOf(e.accountId)?.displayName ?? '(account removed)',
+          mine: e.accountId === a.id,
+          answer: e.answer,
+          rationale: e.rationale ?? '',
+          code: e.code ?? '',
+          at: e.at,
+          ...(role === 'student' ? {} : { username: nameOf(e.accountId)?.username ?? '', ai: e.ai, replaced: replaced(e.accountId), late: e.at > dueFor(x, e.accountId).dueUtc }),
+        }))
+        .sort((p, q) => p.name.localeCompare(q.name)),
+    });
+  });
+
+  app.post('/api/classes/:id/copy', classRateLimit('write'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const fromId = String(req.body?.fromClassId || '');
+    const today = now().slice(0, 10);
+    let sent = false;
+    const out = changeClasses(file, (classes) => {
+      const to = asTeacher(classes, String(req.params.id), a, res);
+      if (!to) return (sent = true), null;
+      const from = classes.find((c) => c.id === fromId);
+      if (!from || roleIn(from, a.id) !== 'teacher' || from.id === to.id) {
+        res.status(404).json({ enabled: true, error: 'Pick another class that you teach to copy from' });
+        return (sent = true), null;
+      }
+      const shift = daysBetween(from.term.starts, to.term.starts);
+      const tz = to.timeZone || 'UTC';
+      const copied: string[] = [];
+      const skipped: string[] = [];
+      for (const x of from.assignments ?? []) {
+        const due = shiftLocal(x.due, shift);
+        const q = questFor(x.questId);
+        const problems = q ? dueProblems(due, tz, q.quest.closesOn, now()) : ['The Quest is no longer on file'];
+        if (q && q.quest.closesOn < today) problems.unshift(`The Quest closed on ${q.quest.closesOn}`);
+        if (problems.length) {
+          skipped.push(`${x.title}: ${problems[0]}`);
+          continue;
+        }
+        to.assignments = [...(to.assignments ?? []), { id: crypto.randomUUID(), questId: x.questId, questVersion: q!.quest.version, title: q!.quest.title, due, dueUtc: zonedToUtc(due, tz)!, aiRule: x.aiRule, ...(x.instructions ? { instructions: x.instructions } : {}), extensions: [], createdAt: now() }];
+        copied.push(x.title);
+      }
+      return { to, from, copied, skipped };
+    });
+    if (sent || !out) return;
+    audit(`${who(a)} copied ${out.copied.length} assignment(s) from "${out.from.name}" to "${out.to.name}"`);
+    res.json({ enabled: true, copied: out.copied, skipped: out.skipped });
+  });
+
+  app.get('/api/classes/:id/calendar.ics', classRateLimit('read'), (req, res) => {
+    const a = me(res);
+    if (!a) return;
+    const cls = asMember(loadClasses(file), String(req.params.id), a, res);
+    if (!cls) return;
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="econquest-class.ics"');
+    res.send(assignmentsIcs(cls.name, cls.assignments ?? [], a.id, now()));
   });
 }
