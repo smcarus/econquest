@@ -157,7 +157,7 @@ professor does.
 | Q6 | Feedback, optional anonymous peer review, a switch for sensitive topics. Built 28 November (feedback with a mark, peer review on debates, names hidden on sensitive topics) |
 | Q7 | Class table settings and a one-page student report. Built 28 November (table views, teams of 3 to 5, report with calibration chart and coach) |
 | Q8 | Gradebook file, voided Quests left out of marks, archived classes deleted after a period the professor sets. Built 28 November (weighted gradebook CSV, student record, archive read-only, deletion after the keeping period with a 30-day warning) |
-| Q9 | Sealed hand-in files for students working on their own copies |
+| Q9 | Sealed hand-in files for students working on their own copies. Built 28 November (hand-in sheet with the class's public key; the answer sealed in the browser with AES-256-GCM and RSA-OAEP; loaded once by the teacher, shown late by the student's own clock, same fingerprint on both screens) |
 | Q10 | Accessibility review of the classroom screens (WCAG 2.2 AA, as the rest of the app is checked since 26 November), designed for phone width first |
 | Q11 | Load test: 40 students on one modest laptop |
 | Q12 | Community links on GitHub (publish an entry, class tags, packs), after the public release |

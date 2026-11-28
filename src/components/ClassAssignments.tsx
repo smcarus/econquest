@@ -3,7 +3,7 @@
  * the class's time zone, a rule on AI use and instructions, gives single students more time, shows
  * entries early and copies last term's assignments; students hand in before their due time and see
  * classmates' entries once everyone's time is up. Feedback, peer review and sensitive topics (Q6) are
- * in ./ClassFeedback.tsx. Server: src/server/routes/classes.ts.
+ * in ./ClassFeedback.tsx; sealed hand-in files (Q9) in ./ClassHandInFile.tsx. Server: src/server/routes/classes.ts.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { QUESTS } from '../i18n/messages/quests';
@@ -14,6 +14,7 @@ import type { QuestLevel } from '../utils/quests';
 import type { ClassView } from '../utils/classes';
 import type { AiRule } from '../utils/classAssignments';
 import { FeedbackCell, MyFeedback, PeerReview, useAnonName, type FeedbackRow } from './ClassFeedback';
+import { TeacherHandIns } from './ClassHandInFile';
 
 type Answer = { probability?: number; level?: number; position?: number; value?: number };
 type Assignment = {
@@ -342,6 +343,7 @@ function AssignmentItem({ a, cls, base, act }: { a: Assignment; cls: ClassView; 
           </button>
         )}
       </div>
+      {teacher && !a.questMissing && <TeacherHandIns aBase={aBase} archived={cls.archived} onLoaded={() => void act(async () => {})} />}
       {panel === 'feedback' && <MyFeedback aBase={aBase} />}
       {panel === 'peer' && <PeerReview aBase={aBase} positions={a.positions} archived={cls.archived} />}
       {entries && (

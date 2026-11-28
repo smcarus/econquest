@@ -24,6 +24,7 @@ import { packText, type QuestPack } from '../utils/questPacks';
 import { questTextIn, questTitleIn, type QuestTranslationLang, type QuestText, type QuestTranslationMap } from '../utils/questTranslations';
 import { useLang, useT, useTx } from '../i18n/useLang';
 import { ClassesView } from './ClassesView';
+import { SealedHandInTab } from './ClassHandInFile';
 import { QuestReplays } from './QuestReplays';
 import { questDataProblemUrl } from '../utils/problemReport';
 import { APP_CITATION } from '../utils/citation';
@@ -86,7 +87,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null, classesOn = 
   const [openId, setOpenId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
-  const [view, setView] = useState<'quests' | 'replay' | 'mine' | 'class' | 'results' | 'board' | 'stances' | 'health' | 'maint' | 'classes'>('quests');
+  const [view, setView] = useState<'quests' | 'replay' | 'mine' | 'class' | 'results' | 'board' | 'stances' | 'health' | 'maint' | 'classes' | 'handin'>('quests');
   const lang = useLang();
   const t = useT(QUESTS);
   const [english, setEnglish] = useState(false);
@@ -177,6 +178,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null, classesOn = 
                   'health',
                   'maint',
                   ...(classesOn ? (['classes'] as const) : []),
+                  'handin',
                 ] as const
               ).map((k) => (
                 <button key={k} type="button" role="tab" aria-selected={view === k} onClick={() => setView(k)} className={`px-3 py-1.5 text-sm ${view === k ? 'border-b-2 border-blue-600 text-slate-900 dark:text-white' : 'text-slate-500'}`} data-quests-tab={k}>
@@ -194,6 +196,7 @@ export function QuestsDialog({ onClose, items = [], focusId = null, classesOn = 
           {list && list.enabled && !openId && view === 'health' && <Health titleOf={titleOf} />}
           {list && list.enabled && !openId && view === 'maint' && <Maintainer />}
           {list && list.enabled && !openId && view === 'classes' && <ClassesView />}
+          {list && list.enabled && !openId && view === 'handin' && <SealedHandInTab />}
           {list && list.enabled && !openId && view === 'quests' && (
             <>
               <ThisWeek onOpen={open} titleOf={titleOf} />

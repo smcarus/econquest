@@ -23,6 +23,7 @@
  * Run after `npm run build`:  npm run test:journeys
  */
 import { spawn } from 'node:child_process';
+import { generateKeyPairSync, privateDecrypt, createDecipheriv, constants as cryptoConstants } from 'node:crypto';
 import { mkdtempSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -351,6 +352,28 @@ try {
     // Classes are on in this copy, but sign-in is off: the tab says classes need accounts.
     await box.locator('[data-quests-tab="classes"]').click();
     await box.locator('[data-classes-off]').waitFor({ timeout: 15_000 });
+    // Q9: on their own copy a student opens a hand-in sheet, answers and seals it in the browser;
+    // only the matching private key opens the saved file.
+    await box.locator('[data-quests-tab="handin"]').click();
+    const pair = generateKeyPairSync('rsa', { modulusLength: 2048, publicKeyEncoding: { type: 'spki', format: 'der' }, privateKeyEncoding: { type: 'pkcs8', format: 'pem' } });
+    const sheet = { kind: 'econquest-hand-in-sheet', version: 1, sheetId: 'sheet1', classId: 'c1', className: 'Macro 101', assignmentId: 'a1', title: 'Will Brent be higher at the end of January?', summary: '', instructions: '', due: '2099-01-01T23:59', dueUtc: '2099-01-02T05:59:00.000Z', timeZone: 'America/Chicago', aiRule: 'note', answerKind: 'probability', questId: 'q1', questVersion: 1, questHash: 'h1', closesOn: '2099-01-01', publicKey: pair.publicKey.toString('base64') };
+    await box.locator('[data-hand-in-sheet]').setInputFiles({ name: 'sheet.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(sheet)) });
+    await box.locator('[data-hand-in-username]').fill('jose');
+    await box.locator('[data-hand-in-answer]').fill('70');
+    await box.locator('[data-hand-in-rationale]').fill('Winter demand.');
+    await box.locator('[data-hand-in-ai-note]').fill('I did not use AI tools for this.');
+    const [dl] = await Promise.all([qp.waitForEvent('download', { timeout: 15_000 }), box.locator('[data-hand-in-seal]').click()]);
+    await box.locator('[data-hand-in-sealed]').waitFor({ timeout: 15_000 });
+    const chunks = [];
+    for await (const c of await dl.createReadStream()) chunks.push(c);
+    const sealed = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    if (JSON.stringify(sealed).includes('Winter demand')) throw new Error('the sealed file shows the answer');
+    const aesKey = privateDecrypt({ key: pair.privateKey, padding: cryptoConstants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256' }, Buffer.from(sealed.key, 'base64'));
+    const body = Buffer.from(sealed.data, 'base64');
+    const dec = createDecipheriv('aes-256-gcm', aesKey, Buffer.from(sealed.iv, 'base64'));
+    dec.setAuthTag(body.subarray(body.length - 16));
+    const opened = JSON.parse(Buffer.concat([dec.update(body.subarray(0, body.length - 16)), dec.final()]).toString('utf8'));
+    if (opened.username !== 'jose' || opened.answer?.probability !== 0.7) throw new Error('the sealed file does not open to the answer given');
     await box.locator('[data-quests-tab="quests"]').click();
     await box.locator('[data-quests-pack]').selectOption('starter');
     await box.locator('[data-quest-pack-group]').first().waitFor({ timeout: 5000 });
@@ -382,7 +405,7 @@ try {
   });
 
   // Classes on, Quests off, with sign-in: Menu > Quests opens on the Classes tab alone.
-  await step('classes: with Quests off, a teacher makes a class, student accounts, a class Quest, a sensitive assignment, the class table and the gradebook', async () => {
+  await step('classes: with Quests off, a teacher makes a class, student accounts, a class Quest, a sensitive assignment, a hand-in sheet, the class table and the gradebook', async () => {
     classesServer = startServer({ CLASSES_ENABLED: 'on', DATA_DIR: mkdtempSync(path.join(tmpdir(), 'econquest-journeys-classes-')) });
     await waitUp(classesServer);
     const password = 'a long journey test passphrase';
@@ -433,6 +456,11 @@ try {
       await box.locator('[data-class-assignment-sensitive]').check();
       await box.locator('[data-class-assignment-save]').click();
       await box.locator('[data-class-sensitive-on]').first().waitFor({ timeout: 15_000 });
+      // Q9: the assignment offers a hand-in sheet that carries the class's public key only.
+      const sheetHref = await box.locator('[data-class-sheet]').first().getAttribute('href', { timeout: 15_000 });
+      const sheet = await (await cp.request.get(`${classesServer.base}${sheetHref}`)).json();
+      if (sheet.kind !== 'econquest-hand-in-sheet' || !sheet.publicKey || JSON.stringify(sheet).includes('PRIVATE')) throw new Error('the hand-in sheet is wrong');
+      await box.locator('[data-class-load-sealed]').first().waitFor({ state: 'attached', timeout: 15_000 });
       // Q7: the class table opens and the teacher chooses what students see.
       await box.locator('[data-class-table-toggle]').first().click();
       await box.locator('[data-class-table-view]').first().selectOption('numbers');
