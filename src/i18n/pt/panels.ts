@@ -154,6 +154,7 @@ export const PANELS_PT: Messages<typeof PANELS> = {
   bohn_sample: "Amostra",
   bohn_sampleVal: "{from}-{to}, {n} anos, R² {r2}",
   bohn_note: "Um registro do comportamento passado, não uma previsão; não encontrar resposta não significa, por si só, que a dívida seja insustentável.",
+  bohn_csv: 'Baixar estas linhas (CSV)',
   bohn_pb: "Saldo primário, % do PIB",
   bohn_debtLag: "Dívida do ano anterior, % do PIB",
   bohn_gap: "Hiato do produto, %",

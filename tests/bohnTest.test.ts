@@ -52,3 +52,16 @@ test('Newey-West with no lags equals the White (HC0) standard error', () => {
   const hc0 = Math.sqrt(x.reduce((a, v, i) => a + (v - m) ** 2 * e[i] ** 2, 0) / sxx ** 2);
   assert.ok(Math.abs(se[1] - hc0) < 1e-9, `${se[1]} vs ${hc0}`);
 });
+
+test('the rows download holds every year used, with the method on each row', async () => {
+  const { BOHN_CSV_HEADER, bohnCsvRows } = await import('../src/utils/bohnTest.ts');
+  const pb = years.map((_, i) => (i === 0 ? 0 : -2 + 0.06 * debtPath[i - 1] + 0.2 * noise(i)));
+  const r = bohnTest({ primaryBalance: series(pb), debt: series(debtPath) });
+  assert.ok(r.ok);
+  const rows = bohnCsvRows(r, 'TST');
+  assert.equal(rows.length, r.n);
+  assert.equal(BOHN_CSV_HEADER.length, rows[0]!.length);
+  assert.deepEqual(rows[0]!.slice(0, 4), ['TST', r.rows[0]!.year, r.rows[0]!.primaryBalance, r.rows[0]!.debtLag]);
+  assert.equal(rows[0]![4], undefined, 'no output gap column value when the gap is left out');
+  assert.equal(rows[0]![5], r.method);
+});

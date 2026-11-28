@@ -113,6 +113,8 @@ A Replication Quest asks people to rebuild a figure the app shows, for example t
 4. **Matching.** An entry reproduces the figure when it is within the Quest's tolerance of the app's figure. An entry that differs is not "wrong": if its notes show the app made a mistake, the maintainer opens a bug against the app and records a note naming the entry (`--note`), and that entry solves the Quest.
 5. **Contributor pages** list each replication and whether it reproduced the app's figure. Replications are never ranked.
 
+**The first challenge: Bohn (1998).** `bra-bohn-replication` asks for the app's fiscal reaction coefficient for Brazil. The Fiscal reaction panel (Research > History & data) has **Download these rows (CSV)** (`/api/bohn/<ISO3>.csv`): the exact years, primary balance, last year's debt, output gap and the method the app states. `quests/replications/bohn/` holds a step-by-step guide in English, Spanish, French and Portuguese, and R, Python and Stata starters that load that file and print it. The starters stop before the regression, by the maintainer's choice, so a match is still an independent check of the app.
+
 ## Translations
 
 A Quest can be read in Spanish (usted), French (vous) and Brazilian Portuguese (você). The English Quest file is always the rule that settles it; a translation only helps people read it.
@@ -271,7 +273,7 @@ Planned, to build before Quests are switched on for everyone (added November 202
 - [ ] A "report a data problem" link on every Quest
 - [ ] Debate rules and a report link on every thread, locked a week after the Quest settles
 - [ ] A monthly round-up Action
-- [ ] One first replication challenge, on a paper the maintainer picks
+- [x] One first replication challenge, on a paper the maintainer picks: Bohn (1998), `bra-bohn-replication`, with the guide and starters in `quests/replications/bohn/`
 
 ## Rules Quests keep
 

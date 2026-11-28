@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Quests (still switched off): the first replication challenge, Bohn (1998) on Brazil. The Fiscal
+  reaction panel can download the exact rows it used (CSV, with the method on each row);
+  `quests/replications/bohn/` has a step-by-step guide in four languages and R, Python and Stata
+  starters that load the data and leave the regression to the person.
 - Quests (still switched off): a starter pack of 25 economic and policy problems by topic (Start
   here, inflation and interest rates, debt and budgets, currencies, growth and jobs, trade and
   commodities, lower-income countries), with 11 new draft Quests (Turkey and Kenya inflation, Ghana

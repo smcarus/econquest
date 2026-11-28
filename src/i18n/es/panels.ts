@@ -163,6 +163,7 @@ export const PANELS_ES: Partial<Record<Keys, string>> = {
   bohn_sample: 'Muestra',
   bohn_sampleVal: '{from}-{to}, {n} años, R² {r2}',
   bohn_note: 'Un registro del comportamiento pasado, no un pronóstico; no encontrar respuesta no significa por sí solo que la deuda sea insostenible.',
+  bohn_csv: 'Descargar estas filas (CSV)',
   bohn_pb: 'Saldo primario, % del PIB',
   bohn_debtLag: 'Deuda del año anterior, % del PIB',
   bohn_gap: 'Brecha del producto, %',

@@ -37,4 +37,6 @@ Translations of a Quest's text go in `translations/<Quest file name without .jso
 
 Packs go in `packs/<id>.json`: a named list of Quest ids grouped by topic, with titles in English, Spanish, French and Portuguese (see [docs/QUESTS.md](../docs/QUESTS.md#packs)). `packs/starter.json` is the starter pack.
 
-Quest text, translations, packs, entries and evidence maps are licensed under CC BY 4.0.
+Guides and starter scripts for Replication Quests go in `replications/<name>/`; `replications/bohn/` is the Bohn (1998) challenge.
+
+Quest text, translations, packs, guides, entries and evidence maps are licensed under CC BY 4.0.

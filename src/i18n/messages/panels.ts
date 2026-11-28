@@ -169,6 +169,7 @@ export const PANELS = defineMessages('panels', {
   bohn_sample: 'Sample',
   bohn_sampleVal: '{from}-{to}, {n} years, R² {r2}',
   bohn_note: 'A record of past behaviour, not a forecast; no response found does not by itself mean debt is unsustainable.',
+  bohn_csv: 'Download these rows (CSV)',
   bohn_pb: 'Primary balance, % GDP',
   bohn_debtLag: 'Debt last year, % GDP',
   bohn_gap: 'Output gap, %',
