@@ -2154,7 +2154,7 @@ export default function App() {
       <Suspense fallback={null}>{isYourPricesOpen && <YourPricesDialog iso3={run.iso3} countryName={run.countryName} onClose={() => setIsYourPricesOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isOwnDataOpen && <OwnSeriesDialog onClose={() => setIsOwnDataOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isQuestsOpen && questsOn && <QuestsDialog items={liveWatchlistItems} onClose={() => setIsQuestsOpen(false)} />}</Suspense>
-      <Suspense fallback={null}>{registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}</Suspense>
+      <Suspense fallback={null}>{registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} questsOn={Boolean(questsOn)} onClose={() => setRegisterFocus(undefined)} />}</Suspense>
       <Suspense fallback={null}>{isUsersOpen && me && <UsersDialog me={me} onClose={() => setIsUsersOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isAccountOpen && <AccountDialog onClose={() => setIsAccountOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isShortcutsOpen && <ShortcutsDialog onClose={() => setIsShortcutsOpen(false)} />}</Suspense>

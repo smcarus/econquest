@@ -688,6 +688,35 @@ function Results({ titleOf }: { titleOf: (id: string, english: string) => string
   );
 }
 
+/**
+ * Menu > Models & validation > Quests (go-live checklist): the same record of results and chain check
+ * as the Results tab here, shown beside the app's own track record. Nothing when Quests are off.
+ */
+export function QuestTrackRecord() {
+  const t = useT(QUESTS);
+  const lang = useLang();
+  const [list, setList] = useState<ListReply | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetch('/api/quests')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => live && setList(j))
+      .catch(() => live && setList(null));
+    return () => {
+      live = false;
+    };
+  }, []);
+  const tr = list && list.enabled ? list.translations : undefined;
+  const titleOf = useCallback((id: string, english: string) => questTitleIn(id, english, lang, tr), [lang, tr]);
+  if (!list || !list.enabled) return null;
+  return (
+    <section className="space-y-2" data-quest-track-record>
+      <h3 className="ui-section-title">{t('title')}</h3>
+      <Results titleOf={titleOf} />
+    </section>
+  );
+}
+
 const LOGIN_KEY = 'econquest.questsLogin.v1';
 const readLogin = () => {
   try {

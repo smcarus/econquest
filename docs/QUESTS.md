@@ -21,7 +21,7 @@ Quests stay off until every box in the checklist below is ticked. Only the proje
 | Practice on past data (answer hidden, scored at once, not saved) | Built and tested, switched off |
 | Class table for a class code (private to the server it runs on) | Built and tested, switched off |
 | Resolver: results worked out from the feeds, recorded by `npm run quests:resolve` in the hash-chained `quests/resolutions.jsonl`; yearly figures read as first published; disputes, withdrawals and notes; Results tab and result on each Quest page; recorded results used for scores | Built and tested, switched off |
-| Quests tab on Menu > Track record | Not built (added when Quests go live, so nothing shows while they are off) |
+| Quests tab on Menu > Models & validation, beside Track record: the recorded results and the chain check, shown only while Quests are on | Built and tested, switched off |
 | Public entries by pull request (`quests/entries/<id>/<login>.<n>.json`): Prepare entry in the app opens GitHub's prefilled page; the entry checker (`npm run quests:entries`, CI job `Quest entries`); replacements numbered and kept; emailed entries posted by a maintainer; entries hidden in the app until close, then shown with scores and the spread | Built and tested, switched off |
 | Contributor statistics and scoreboard: skill with a 90% range, beat no change, calibration, sharpness, record against the crowd, fields, streak, each shown only above its minimum; rankings after 12 settled forecasts and a 90-day-old GitHub account; seasons, all-time and field tables (`npm run quests:stats`, Scoreboard tab) | Built and tested, switched off |
 | Quest generator (`npm run quests:generate`: weekly Brent and currency Quests, monthly policy-rate Quests, as drafts), batch approval (`npm run quests:approve`), weekly digest (`npm run quests:digest`) and "This week" on the Quests page | Built and tested, switched off |
@@ -244,9 +244,9 @@ Working properly:
 - [ ] An opening brief written with `npm run quests:brief` on the maintainer's computer for a test Debate Quest, read by the maintainer, and an evidence map exported after a test close
 - [ ] Private entries on drafts are refused once Quests go live (today a draft takes private entries so it can be tested)
 - [ ] Practice questions checked on the maintainer's computer for every daily and weekly series
-- [ ] The UI smoke and journey tests cover the Quests page with Quests on and off
+- [x] The UI journey tests cover the Quests page with Quests on and off (tests/smoke/journeys.mjs starts a second copy with QUESTS_ENABLED=on)
 - [ ] A test Quest of each kind settled with `npm run quests:resolve` on the maintainer's computer, and the record checked with `--verify`
-- [ ] A Quests tab on Menu > Track record shows the recorded results and the chain check
+- [x] A Quests tab on Menu > Models & validation (beside Track record) shows the recorded results and the chain check
 - [ ] The public board built with `npm run quests:board` on the public repository, checked on a phone, and GitHub Pages switched on for it
 - [ ] `npm run quests:stats` run on the maintainer's computer: account dates looked up, figures checked by hand for one contributor with test entries
 - [ ] The Health tab checked against a hand count for the test Quests, and the six-month review date written in the maintainer's calendar

@@ -4,10 +4,11 @@
  * pre-registered backtest. See src/data/modelRegister.ts.
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { Download, FlaskConical, List, Play, ShieldQuestion, Table2, X } from 'lucide-react';
+import { Compass, Download, FlaskConical, List, Play, ShieldQuestion, Table2, X } from 'lucide-react';
 import { lazyNamed } from './LazyDesk';
 import { useT } from '../i18n/useLang';
 import { YOUR_TESTS } from '../i18n/messages/yourTests';
+import { QUESTS } from '../i18n/messages/quests';
 import { MODEL_REGISTER, REGISTER_HEADER, registerRows, STATUS_LABEL, type ValidationStatus } from '../data/modelRegister';
 import { ValidationBadge } from './ValidationBadge';
 import { TestLedgerTable } from './TestLedgerTable';
@@ -23,6 +24,8 @@ import { alsoReported, forecastRegisterStatus, forecastVerdicts } from '../utils
 const YourTests = lazyNamed(() => import('./YourTests'), 'YourTests');
 // Policy outcome checks (roadmap P1): downloaded when the track record is opened.
 const PolicyTrackRecord = lazyNamed(() => import('./PolicyTrackRecord'), 'PolicyTrackRecord');
+// Quests results and their chain check (Quests go-live checklist): only when Quests are switched on.
+const QuestTrackRecord = lazyNamed(() => import('./QuestsDialog'), 'QuestTrackRecord');
 
 const csvCell = (v: string) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
 
@@ -48,7 +51,7 @@ function downloadCsv(v: ValidationReply | null) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | null; onClose: () => void }) {
+export function ModelRegisterDialog({ focusId, onClose, questsOn = false }: { focusId?: string | null; onClose: () => void; questsOn?: boolean }) {
   const [open, setOpen] = useState<string | null>(focusId ?? null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
 
@@ -65,8 +68,9 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
   const v = useValidation();
   const holmMap = validationHolm(v);
   const [runError, setRunError] = useState<string | null>(null);
-  const [view, setView] = useState<'register' | 'record' | 'mine'>('register');
+  const [view, setView] = useState<'register' | 'record' | 'mine' | 'quests'>('register');
   const ty = useT(YOUR_TESTS);
+  const tq = useT(QUESTS);
   const counts = MODEL_REGISTER.reduce<Partial<Record<ValidationStatus, number>>>((acc, e) => {
     const s = effectiveStatus(e.id, e.status, v);
     return { ...acc, [s]: (acc[s] ?? 0) + 1 };
@@ -129,6 +133,17 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
             >
               <FlaskConical className="w-3.5 h-3.5" aria-hidden /> {ty('tab')}
             </button>
+            {questsOn && (
+              <button
+                type="button"
+                onClick={() => setView(view === 'quests' ? 'register' : 'quests')}
+                aria-pressed={view === 'quests'}
+                className="ui-btn ui-btn-ghost inline-flex items-center gap-1"
+                data-quest-record-toggle
+              >
+                <Compass className="w-3.5 h-3.5" aria-hidden /> {tq('title')}
+              </button>
+            )}
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400" data-backtest-status>
             {v?.lastRun ? `Backtests last run ${when(v.lastRun.at)}.` : 'Backtests not run yet on this computer.'} They pull the long free histories (BIS policy rates since 1990, OECD leading indicator, CFTC since 2006), so they need a connection and take a minute or two. Same as `npm run backtest`.{v?.lastRun ? '' : " Until they run here, each badge shows the project's published verdict (docs/TRACK_RECORD.md), marked as such."}
@@ -153,6 +168,11 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
           {view === 'mine' && (
             <React.Suspense fallback={null}>
               <YourTests />
+            </React.Suspense>
+          )}
+          {view === 'quests' && questsOn && (
+            <React.Suspense fallback={null}>
+              <QuestTrackRecord />
             </React.Suspense>
           )}
           <ul className={`divide-y divide-slate-100 dark:divide-slate-800 ${view !== 'register' ? 'hidden' : ''}`}>
