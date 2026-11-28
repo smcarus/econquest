@@ -180,7 +180,7 @@ outreach to economics departments.
 These join the public Quests go-live checklist (docs/QUESTS.md). They need the public repository and
 ship only when Quests are switched on for everyone, not with the classroom changes:
 
-- Links to Quests from country pages and from Council chat.
+- Links to Quests from country pages and from Council chat (built 28 November, shown only while Quests are on).
 - Sealed public entries: each entry is locked in with a fingerprint before the deadline and revealed
   after it, so nobody can copy or change a forecast.
 - A dashboard for maintainers.

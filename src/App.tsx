@@ -62,6 +62,7 @@ import { PortfolioOverlayPanel } from './components/PortfolioOverlayPanel';
 import { START_REVIEW_EVENT } from './utils/reviewHandoff';
 import { COUNTRY_TOOL_EVENT, isCountryTool } from './utils/countryTools';
 import { OPEN_IDEAS_EVENT } from './utils/ideaHandoff';
+import { OPEN_QUESTS_EVENT, takeQuestFocus } from './utils/questHandoff';
 import { EXPLAIN_EVENT } from './utils/explainHandoff';
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './utils/refereeModel';
 import { ResearchScopeBar, isResearchScope, type ResearchScope } from './components/ResearchScopeBar';
@@ -357,6 +358,16 @@ export default function App() {
   // QUESTS_ENABLED=on (docs/QUESTS.md). null = not known yet, shown as off.
   const [isQuestsOpen, setIsQuestsOpen] = useState(false);
   const [questsOn, setQuestsOn] = useState<boolean | null>(null);
+  // Links to a Quest from a country page or a Council chat answer (src/utils/questHandoff.ts).
+  const [questFocus, setQuestFocus] = useState<string | null>(null);
+  useEffect(() => {
+    const go = () => {
+      setQuestFocus(takeQuestFocus());
+      setIsQuestsOpen(true);
+    };
+    window.addEventListener(OPEN_QUESTS_EVENT, go);
+    return () => window.removeEventListener(OPEN_QUESTS_EVENT, go);
+  }, []);
   useEffect(() => {
     let live = true;
     fetch('/api/quests')
@@ -1617,7 +1628,10 @@ export default function App() {
                         hint: questsOn ? '' : t('notYet'),
                         title: questsOn ? t('questsOnTitle') : t('questsOffTitle'),
                         disabled: !questsOn,
-                        onClick: () => setIsQuestsOpen(true),
+                        onClick: () => {
+                          setQuestFocus(null);
+                          setIsQuestsOpen(true);
+                        },
                         className: questsOn ? '' : 'opacity-60 cursor-not-allowed',
                       },
                       {
@@ -2153,7 +2167,7 @@ export default function App() {
       </Suspense>
       <Suspense fallback={null}>{isYourPricesOpen && <YourPricesDialog iso3={run.iso3} countryName={run.countryName} onClose={() => setIsYourPricesOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isOwnDataOpen && <OwnSeriesDialog onClose={() => setIsOwnDataOpen(false)} />}</Suspense>
-      <Suspense fallback={null}>{isQuestsOpen && questsOn && <QuestsDialog items={liveWatchlistItems} onClose={() => setIsQuestsOpen(false)} />}</Suspense>
+      <Suspense fallback={null}>{isQuestsOpen && questsOn && <QuestsDialog items={liveWatchlistItems} focusId={questFocus} onClose={() => { setIsQuestsOpen(false); setQuestFocus(null); }} />}</Suspense>
       <Suspense fallback={null}>{registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} questsOn={Boolean(questsOn)} onClose={() => setRegisterFocus(undefined)} />}</Suspense>
       <Suspense fallback={null}>{isUsersOpen && me && <UsersDialog me={me} onClose={() => setIsUsersOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isAccountOpen && <AccountDialog onClose={() => setIsAccountOpen(false)} />}</Suspense>
