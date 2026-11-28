@@ -382,7 +382,7 @@ try {
   });
 
   // Classes on, Quests off, with sign-in: Menu > Quests opens on the Classes tab alone.
-  await step('classes: with Quests off, a teacher makes a class, student accounts and a class Quest', async () => {
+  await step('classes: with Quests off, a teacher makes a class, student accounts, a class Quest and a sensitive assignment', async () => {
     classesServer = startServer({ CLASSES_ENABLED: 'on', DATA_DIR: mkdtempSync(path.join(tmpdir(), 'econquest-journeys-classes-')) });
     await waitUp(classesServer);
     const password = 'a long journey test passphrase';
@@ -423,6 +423,16 @@ try {
       await box.locator('[data-class-quest-on]').fill(day(40));
       await box.locator('[data-class-quest-save]').click();
       await box.locator('[data-class-quest]').first().waitFor({ timeout: 15_000 });
+      // Q6: set it for the class as a sensitive topic; the notice says names are hidden.
+      await box.locator('[data-class-new-assignment]').click();
+      const pick = box.locator('[data-class-assignment-quest]');
+      await pick.locator('option', { hasText: 'Brazil' }).first().waitFor({ state: 'attached', timeout: 15_000 });
+      const qid = await pick.locator('option', { hasText: 'Brazil' }).first().getAttribute('value');
+      await pick.selectOption(qid || '');
+      await box.locator('[data-class-assignment-date]').fill(day(7));
+      await box.locator('[data-class-assignment-sensitive]').check();
+      await box.locator('[data-class-assignment-save]').click();
+      await box.locator('[data-class-sensitive-on]').first().waitFor({ timeout: 15_000 });
     } catch (err) {
       // Say on one line what the screen showed, so a failure on a CI machine can be read from the log.
       const alerts = await box.locator('[role="alert"]').allTextContents().catch(() => []);

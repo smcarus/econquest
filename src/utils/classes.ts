@@ -48,6 +48,8 @@ export interface SchoolClass {
   timeZone?: string;
   /** Quests set for the class (Q3; src/utils/classAssignments.ts). */
   assignments?: ClassAssignment[];
+  /** Server-only key for entry references (Q6; src/utils/classFeedback.ts entryRef); never sent out. */
+  refSecret?: string;
 }
 
 export const CLASSES_OFF_REASON = 'Classes are switched off on this server. The administrator turns them on with CLASSES_ENABLED=on in .env and restarts the app.';

@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Classes (step Q6): the teacher and markers write feedback on each entry, with an optional short
+  mark; students read the feedback on their own entry. Optional anonymous peer review on Debate
+  Quests: after the due time each student reviews two classmates' arguments without names. A
+  sensitive-topic switch hides names from students and markers and keeps those entries on this
+  computer.
 - Quests (step Q5, still switched off): a Replays tab with four packs of questions about the past, four
   weeks each, for the start of a term; every rule type, scored at once against what happened with a
   base rate known on the start day, and saved on this computer. The generator also drafts Brent

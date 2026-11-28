@@ -154,7 +154,7 @@ professor does.
 | Q3 | Assignments: dates in local time, an AI rule, private extensions, entries hidden until close, copy last term. Built 28 November (class time zone, AI rule, extensions, calendar file) |
 | Q4 | Professor-written class Quests with intro, intermediate and advanced tags. Built 28 November (class Quests in data/local/class-quests/, quests/levels.json, Level filter) |
 | Q5 | Replay Quests and four ready-made term packs. Built 28 November (Replays tab, quests/replays/, four- and eight-week Brent Quests in the generator) |
-| Q6 | Feedback, optional anonymous peer review, a switch for sensitive topics |
+| Q6 | Feedback, optional anonymous peer review, a switch for sensitive topics. Built 28 November (feedback with a mark, peer review on debates, names hidden on sensitive topics) |
 | Q7 | Class table settings and a one-page student report |
 | Q8 | Gradebook file, voided Quests left out of marks, archived classes deleted after a period the professor sets |
 | Q9 | Sealed hand-in files for students working on their own copies |

@@ -2,7 +2,8 @@
  * Assignments inside a class card (roadmap Phase 5, Q3): the teacher sets a Quest with a due time in
  * the class's time zone, a rule on AI use and instructions, gives single students more time, shows
  * entries early and copies last term's assignments; students hand in before their due time and see
- * classmates' entries once everyone's time is up. Server: src/server/routes/classes.ts.
+ * classmates' entries once everyone's time is up. Feedback, peer review and sensitive topics (Q6) are
+ * in ./ClassFeedback.tsx. Server: src/server/routes/classes.ts.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { QUESTS } from '../i18n/messages/quests';
@@ -12,6 +13,7 @@ import { describeRule, RULE_WORDS, type QuestRule, type RuleWords } from '../uti
 import type { QuestLevel } from '../utils/quests';
 import type { ClassView } from '../utils/classes';
 import type { AiRule } from '../utils/classAssignments';
+import { FeedbackCell, MyFeedback, PeerReview, useAnonName, type FeedbackRow } from './ClassFeedback';
 
 type Answer = { probability?: number; level?: number; position?: number; value?: number };
 type Assignment = {
@@ -27,6 +29,8 @@ type Assignment = {
   open: boolean;
   entriesVisible: boolean;
   revealed: boolean;
+  peerReview?: boolean;
+  sensitive?: boolean;
   answerKind: 'probability' | 'level' | 'position' | 'value';
   positions?: string[];
   classQuest?: boolean;
@@ -39,7 +43,7 @@ type Assignment = {
   studentCount?: number;
   extensions?: Array<{ accountId: string; username: string; due: string }>;
 };
-type EntryRow = { name: string; mine: boolean; answer: Answer; rationale: string; code: string; at: string; username?: string; ai?: { rule: AiRule; note?: string; declaredNone?: boolean }; replaced?: number; late?: boolean };
+type EntryRow = { name: string; ref?: string; mine: boolean; answer: Answer; rationale: string; code: string; at: string; username?: string; ai?: { rule: AiRule; note?: string; declaredNone?: boolean }; replaced?: number; late?: boolean };
 
 export const fieldCls = 'px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white';
 
@@ -154,6 +158,8 @@ function NewAssignment({ base, act }: { base: string; act: (fn: () => Promise<un
   const [time, setTime] = useState('23:59');
   const [aiRule, setAiRule] = useState<AiRule>('note');
   const [instructions, setInstructions] = useState('');
+  const [peerReview, setPeerReview] = useState(false);
+  const [sensitive, setSensitive] = useState(false);
   useEffect(() => {
     if (open) call(`${base}/quests`).then((j) => setQuests(j.quests)).catch(() => setQuests([]));
   }, [open, base]);
@@ -170,11 +176,13 @@ function NewAssignment({ base, act }: { base: string; act: (fn: () => Promise<un
       onSubmit={(e) => {
         e.preventDefault();
         void act(async () => {
-          await call(`${base}/assignments`, 'POST', { questId, due: `${date}T${time}`, aiRule, instructions });
+          await call(`${base}/assignments`, 'POST', { questId, due: `${date}T${time}`, aiRule, instructions, peerReview: peerReview && q?.type === 'debate', sensitive });
           setOpen(false);
           setQuestId('');
           setDate('');
           setInstructions('');
+          setPeerReview(false);
+          setSensitive(false);
         });
       }}
       data-class-assignment-form
@@ -226,6 +234,16 @@ function NewAssignment({ base, act }: { base: string; act: (fn: () => Promise<un
         <span className="block">{t('asgInstructions')}</span>
         <textarea className={`${fieldCls} w-full h-16`} value={instructions} onChange={(e) => setInstructions(e.target.value)} data-class-assignment-instructions />
       </label>
+      {q?.type === 'debate' && (
+        <label className="text-xs flex items-start gap-1">
+          <input type="checkbox" className="mt-0.5" checked={peerReview} onChange={(e) => setPeerReview(e.target.checked)} data-class-assignment-peer />
+          <span>{t('fbPeer')}</span>
+        </label>
+      )}
+      <label className="text-xs flex items-start gap-1">
+        <input type="checkbox" className="mt-0.5" checked={sensitive} onChange={(e) => setSensitive(e.target.checked)} data-class-assignment-sensitive />
+        <span>{t('fbSensitive')}</span>
+      </label>
       <div className="flex gap-1">
         <button type="submit" className="ui-btn text-xs" disabled={!questId || !date} data-class-assignment-save>
           {t('asgSet')}
@@ -244,15 +262,25 @@ function AssignmentItem({ a, cls, base, act }: { a: Assignment; cls: ClassView; 
   const student = cls.myRole === 'student';
   const when = whenText(a.due, a.dueUtc, cls.timeZone);
   const ruleText = useRuleText();
+  const anon = useAnonName();
   const [entries, setEntries] = useState<{ rows: EntryRow[]; hidden: boolean } | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackRow[]>([]);
+  const [panel, setPanel] = useState<'' | 'feedback' | 'peer'>('');
   const [extUser, setExtUser] = useState('');
   const [extDate, setExtDate] = useState('');
   const [extTime, setExtTime] = useState('23:59');
   const aBase = `${base}/assignments/${encodeURIComponent(a.id)}`;
   const showEntries = async () => {
     const j = await call(`${aBase}/entries`);
+    // Feedback first, so each entry's form opens with the marker's own note already in it.
+    if (!student) await loadFeedback();
     setEntries({ rows: j.entries, hidden: j.hiddenUntilDue });
   };
+  const loadFeedback = async () => {
+    const f = await call(`${aBase}/feedback`);
+    setFeedback(f.feedback);
+  };
+  const isDebate = a.answerKind === 'position';
   return (
     <li className="border border-slate-200 dark:border-slate-800 p-2 space-y-1 text-xs" data-class-assignment={a.questId}>
       <div className="text-sm text-slate-900 dark:text-white">{a.title}</div>
@@ -270,6 +298,8 @@ function AssignmentItem({ a, cls, base, act }: { a: Assignment; cls: ClassView; 
       {a.summary && <p className="whitespace-pre-wrap" data-class-assignment-summary>{a.summary}</p>}
       {a.rule && <p className="text-slate-600 dark:text-slate-300">{t('cqSettledBy', { rule: ruleText(a.rule) })}</p>}
       <div className="text-slate-500">{t(`asgAiShown_${a.aiRule}` as keyof typeof QUESTS.en)}</div>
+      {a.peerReview && <div className="text-slate-500" data-class-peer-on>{t('fbPeerOn')}</div>}
+      {a.sensitive && <div className="text-amber-800 dark:text-amber-300" data-class-sensitive-on>{t('fbSensitiveOn')}</div>}
       {a.instructions && <p className="whitespace-pre-wrap">{a.instructions}</p>}
       {a.questMissing && <p className="text-rose-700 dark:text-rose-400">{t('asgQuestMissing')}</p>}
       {a.myEntry && <p data-class-my-entry>{t('asgMyEntry', { answer: answerText(a.myEntry.answer, a.positions), at: new Date(a.myEntry.at).toLocaleString() })}</p>}
@@ -279,6 +309,26 @@ function AssignmentItem({ a, cls, base, act }: { a: Assignment; cls: ClassView; 
         {(a.entriesVisible || a.myEntry) && (
           <button type="button" className="ui-btn ui-btn-ghost text-xs" onClick={() => void act(showEntries)} data-class-show-entries>
             {t('asgEntries')}
+          </button>
+        )}
+        {student && a.myEntry && (
+          <button type="button" className="ui-btn ui-btn-ghost text-xs" aria-expanded={panel === 'feedback'} onClick={() => setPanel(panel === 'feedback' ? '' : 'feedback')} data-class-show-feedback>
+            {t('fbShow')}
+          </button>
+        )}
+        {a.peerReview && (
+          <button type="button" className="ui-btn ui-btn-ghost text-xs" aria-expanded={panel === 'peer'} onClick={() => setPanel(panel === 'peer' ? '' : 'peer')} data-class-show-peer>
+            {t('pvShow')}
+          </button>
+        )}
+        {teacher && !cls.archived && isDebate && (
+          <button type="button" className="ui-btn ui-btn-ghost text-xs" onClick={() => void act(() => call(`${aBase}/settings`, 'POST', { peerReview: !a.peerReview }))} data-class-peer-toggle>
+            {a.peerReview ? t('fbPeerTurnOff') : t('fbPeerTurnOn')}
+          </button>
+        )}
+        {teacher && !cls.archived && (
+          <button type="button" className="ui-btn ui-btn-ghost text-xs" onClick={() => void act(() => call(`${aBase}/settings`, 'POST', { sensitive: !a.sensitive }))} data-class-sensitive-toggle>
+            {a.sensitive ? t('fbSensitiveTurnOff') : t('fbSensitiveTurnOn')}
           </button>
         )}
         {teacher && !a.revealed && (
@@ -292,6 +342,8 @@ function AssignmentItem({ a, cls, base, act }: { a: Assignment; cls: ClassView; 
           </button>
         )}
       </div>
+      {panel === 'feedback' && <MyFeedback aBase={aBase} />}
+      {panel === 'peer' && <PeerReview aBase={aBase} positions={a.positions} archived={cls.archived} />}
       {entries && (
         <div data-class-entries>
           {entries.hidden && <p className="text-slate-500">{t('asgHidden')}</p>}
@@ -303,13 +355,14 @@ function AssignmentItem({ a, cls, base, act }: { a: Assignment; cls: ClassView; 
                 <th scope="col" className="font-normal">{t('asgColAnswer')}</th>
                 <th scope="col" className="font-normal">{t('asgColWhy')}</th>
                 {!student && <th scope="col" className="font-normal">{t('asgColAi')}</th>}
+                {!student && <th scope="col" className="font-normal">{t('fbShow')}</th>}
               </tr>
             </thead>
             <tbody>
               {entries.rows.map((r) => (
-                <tr key={`${r.name}-${r.at}`} className="border-t border-slate-100 dark:border-slate-800 align-top">
+                <tr key={`${r.ref ?? r.name}-${r.at}`} className="border-t border-slate-100 dark:border-slate-800 align-top">
                   <td>
-                    {r.name}
+                    {anon(r.name)}
                     {r.late ? ` (${t('asgLate')})` : ''}
                     {r.replaced ? ` (${t('asgReplaced', { n: r.replaced })})` : ''}
                   </td>
@@ -319,6 +372,11 @@ function AssignmentItem({ a, cls, base, act }: { a: Assignment; cls: ClassView; 
                     {r.code ? ` ${r.code}` : ''}
                   </td>
                   {!student && <td>{r.ai?.note ?? (r.ai?.declaredNone ? t('asgAiDeclaredNone') : '')}</td>}
+                  {!student && r.ref && (
+                    <td className="min-w-48">
+                      <FeedbackCell aBase={aBase} entryRef={r.ref} rows={feedback.filter((f) => f.ref === r.ref)} archived={cls.archived} onSaved={() => void loadFeedback()} />
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
